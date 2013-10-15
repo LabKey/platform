@@ -4248,3 +4248,8 @@ div.facet_header .x4-panel-header-text
     background-color: #ffffff !important;
     border-width: 0 !important;
 }
+
+.x4-progress-default
+{
+    background-color: #ffffff;
+}

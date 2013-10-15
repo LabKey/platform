@@ -17,24 +17,20 @@
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <%
 AdminController.ModuleStatusBean bean = (AdminController.ModuleStatusBean)getModelBean();
 %>
-<script type="text/javascript">
-    try
-    {
-        LABKEY.requiresExt4Sandbox(true);
-    }
-    catch (err)
-    {
-        // In cases where the upgrade/install has gone bad, the server may not be sending down JS files any more
-        // so we have to handle cases when we can't use the Client API or ExtJS
-        handleException(err);        
-    }
-</script>
-
 <br/>
 
 <div>This step will <%= h(bean.verb.toLowerCase()) %> the modules needed to use LabKey Server.</div>
@@ -43,20 +39,21 @@ AdminController.ModuleStatusBean bean = (AdminController.ModuleStatusBean)getMod
 <div id="progressBarDiv"></div>
 
 <script type="text/javascript">
+    // TODO: Move this all out of global
     try
     {
+        Ext4.onReady(function() {
 
-        var progressBar = Ext4.create('Ext.ProgressBar',
-        {
-            renderTo: 'progressBarDiv',
-            width: 500,
-            text: 'Checking status...'
+            Ext4.create('Ext.ProgressBar', {
+                renderTo: 'progressBarDiv',
+                id: 'status-progress',
+                width: 500,
+                text: 'Checking status...',
+                task: new Ext4.util.DelayedTask(requestProgress)
+            });
+
+            requestProgress();
         });
-
-
-        var task = new Ext.util.DelayedTask(requestProgress);
-
-        requestProgress();
     }
     catch (err)
     {
@@ -144,7 +141,7 @@ AdminController.ModuleStatusBean bean = (AdminController.ModuleStatusBean)getMod
             {
                 progress += 2;
             }
-            if (module.state == 'Started')
+            else if (module.state == 'Started')
             {
                 progress += 3;
             }
@@ -158,10 +155,14 @@ AdminController.ModuleStatusBean bean = (AdminController.ModuleStatusBean)getMod
             }
         }
 
-        progressBar.updateProgress(progress / (3*o.modules.length), message);
+        var progressBar = Ext4.getCmp('status-progress');
+        if (progressBar) {
+            progressBar.updateProgress(progress / (3*o.modules.length), message);
+        }
+
         if (!o.startupComplete)
         {
-            task.delay(500);
+            (progressBar ? progressBar.task.delay(500) : '');
         }
         else
         {
@@ -171,7 +172,7 @@ AdminController.ModuleStatusBean bean = (AdminController.ModuleStatusBean)getMod
     }
 </script>
 <br/>
-<div id="completeDiv" style="visibility: hidden">
+<div id="completeDiv" style="visibility: hidden;">
     <%-- Send new installs to set their defaults, and upgrades to the complete page --%>
     <%= PageFlowUtil.generateButton("Next", bean.nextURL, null, "id=\"nextButton\"") %>
 </div>
