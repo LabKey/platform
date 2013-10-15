@@ -219,12 +219,15 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
 
     /**
      * Callback once the file has been written to the server's file system.
+     * @param files HTTP parameter name -> [File as saved on disk (potentially renamed to be unique, Original file name in POST]
      * @return a meaningful handle that the client can use to refer to the file
      */
     protected abstract String getResponse(Map<String, Pair<File, String>> files, FORM form) throws UploadException;
 
     private void error(Writer writer, String message, int statusCode) throws IOException
     {
+        getViewContext().getResponse().reset();
+        getViewContext().getResponse().setContentType("text/plain");
         getViewContext().getResponse().setStatus(statusCode);
         writer.write(PageFlowUtil.jsString(message));
         writer.flush();

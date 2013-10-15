@@ -564,7 +564,7 @@ public class DomainImporter
             else
             {
                 uploadStatusLabel.setHTML("&nbsp;");
-                Window.alert("File upload failed: " + event.getResults());
+                Window.alert("File upload failed. " + (event.getResults() == null ? "" : event.getResults()));
             }
         }
 
