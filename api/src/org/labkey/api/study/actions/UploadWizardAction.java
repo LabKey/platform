@@ -651,7 +651,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         @Override
-        protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException, SQLException
+        protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
         {
             // may want to just put this in a js file and include it in all the wizard pages
             out.write("<script type=\"text/javascript\">\n");

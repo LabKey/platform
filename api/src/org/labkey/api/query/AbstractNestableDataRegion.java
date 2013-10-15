@@ -48,7 +48,7 @@ public abstract class AbstractNestableDataRegion extends DataRegion
         _ajaxNestedGridURL = url;
     }
 
-    public void _renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
+    public void renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
     {
         if (_expanded)
         {
@@ -64,7 +64,7 @@ public abstract class AbstractNestableDataRegion extends DataRegion
             displayColumnList.add(new EmptyDisplayColumn());
         }
 
-        super._renderTable(ctx, out);
+        super.renderTable(ctx, out);
         if (_groupedRS != null)
         {
             _groupedRS.close();

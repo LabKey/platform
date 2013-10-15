@@ -16,15 +16,14 @@
 package org.labkey.api.view;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableViewForm;
-import org.labkey.api.data.ColumnInfo;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.sql.SQLException;
 
 public class UpdateView extends DataView
 {
@@ -45,12 +44,12 @@ public class UpdateView extends DataView
         return col.isShownInUpdateView();
     }
 
-
-    protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException, SQLException
+    protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
     {
         if (null != getRenderContext().getForm())
         {
-            getDataRegion().renderUpdateForm(ctx, out);
+            ctx.setMode(DataRegion.MODE_UPDATE);
+            getDataRegion().render(ctx, out);
         }
         else
         {

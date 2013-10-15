@@ -691,18 +691,6 @@ public class DataRegion extends AbstractDataRegion
         return _totalRows;
     }
 
-    /**
-     * Sets ctx to MODE_GRID and renders as usual.
-     * Sets ctx to MODE_GRID and renders as usual.
-     */
-    @Deprecated
-    public void renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
-    {
-        ctx.setMode(MODE_GRID);
-        //Force through bottleneck
-        render(ctx, out);
-    }
-
     public class ParameterViewBean
     {
         public String dataRegionName;
@@ -725,7 +713,7 @@ public class DataRegion extends AbstractDataRegion
         }
     }
 
-    protected void _renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
+    protected void renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
     {
         if (!ctx.getViewContext().hasPermission(ReadPermission.class))
         {
@@ -1589,15 +1577,7 @@ public class DataRegion extends AbstractDataRegion
         return null;
     }
 
-    @Deprecated
-    public void renderDetails(RenderContext ctx, Writer out) throws SQLException, IOException
-    {
-        ctx.setMode(MODE_DETAILS);
-        render(ctx, out);
-    }
-
-
-    public void _renderDetails(RenderContext ctx, Writer out) throws SQLException, IOException
+    private void renderDetails(RenderContext ctx, Writer out) throws SQLException, IOException
     {
         if (!ctx.getViewContext().hasPermission(ReadPermission.class))
         {
@@ -1688,18 +1668,7 @@ public class DataRegion extends AbstractDataRegion
         }
     }
 
-    /**
-     * Just sets a value in context and calls render
-     */
-    @Deprecated
-    public void renderInputForm(RenderContext ctx, Writer out) throws SQLException, IOException
-    {
-        ctx.setMode(MODE_INSERT);
-        //Force through bottleneck
-        render(ctx, out);
-    }
-
-    private void _renderInputForm(RenderContext ctx, Writer out) throws SQLException, IOException
+    private void renderInputForm(RenderContext ctx, Writer out) throws IOException
     {
         Map rowMap = ctx.getRow();
         //For inserts, just treat the posted strings as the rowmap
@@ -1712,17 +1681,7 @@ public class DataRegion extends AbstractDataRegion
         renderForm(ctx, out);
     }
 
-    /**
-     * Just sets a value in context and calls render
-     */
-    public void renderUpdateForm(RenderContext ctx, Writer out) throws SQLException, IOException
-    {
-        ctx.setMode(MODE_UPDATE);
-        //Force through bottleneck
-        render(ctx, out);
-    }
-
-    private void _renderUpdateForm(RenderContext ctx, Writer out) throws SQLException, IOException
+    private void renderUpdateForm(RenderContext ctx, Writer out) throws IOException
     {
         TableViewForm viewForm = ctx.getForm();
         Map<String, Object> valueMap = ctx.getRow();
@@ -2398,16 +2357,16 @@ public class DataRegion extends AbstractDataRegion
             switch (mode)
             {
                 case MODE_INSERT:
-                    _renderInputForm(ctx, out);
+                    renderInputForm(ctx, out);
                     return;
                 case MODE_UPDATE:
-                    _renderUpdateForm(ctx, out);
+                    renderUpdateForm(ctx, out);
                     return;
                 case MODE_DETAILS:
-                    _renderDetails(ctx, out);
+                    renderDetails(ctx, out);
                     return;
                 default:
-                    _renderTable(ctx, out);
+                    renderTable(ctx, out);
             }
         }
         catch (SQLException x)

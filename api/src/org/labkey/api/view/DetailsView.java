@@ -15,12 +15,16 @@
  */
 package org.labkey.api.view;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.PkFilter;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.TableViewForm;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.sql.SQLException;
 
 public class DetailsView extends DataView
 {
@@ -49,18 +53,18 @@ public class DetailsView extends DataView
         return col.isShownInDetailsView();
     }
 
-    protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException, SQLException
+    protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
     {
+        ctx.setMode(DataRegion.MODE_DETAILS);
         if (ctx.getResults() == null)
         {
             Filter filter = ctx.getBaseFilter();
             assert _pk != null || filter != null;
             if (null == filter)
-                ctx.setBaseFilter(
-                        new PkFilter(getTable(), _pk));
-            getDataRegion().renderDetails(ctx, out);
+                ctx.setBaseFilter(new PkFilter(getTable(), _pk));
+            getDataRegion().render(ctx, out);
         }
         else
-            getDataRegion().renderDetails(ctx, out);
+            getDataRegion().render(ctx, out);
     }
 }

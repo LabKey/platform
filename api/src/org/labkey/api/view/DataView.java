@@ -17,9 +17,15 @@ package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.log4j.Level;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.ResultsImpl;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableViewForm;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
@@ -35,10 +41,10 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Set;
 
 
@@ -128,6 +134,7 @@ public abstract class DataView extends WebPartView<RenderContext>
         return _dataRegion;
     }
 
+    /** Whether the column should be included at all in the current view */
     protected abstract boolean isColumnIncluded(ColumnInfo col);
 
     public void setContainer(Container c)
@@ -151,20 +158,13 @@ public abstract class DataView extends WebPartView<RenderContext>
     }
 
 
-    protected abstract void _renderDataRegion(RenderContext ctx, Writer out) throws IOException, SQLException;
+    protected abstract void _renderDataRegion(RenderContext ctx, Writer out) throws IOException;
 
 
     @Override
-    public void renderView(RenderContext model, PrintWriter out) throws IOException, ServletException
+    public void renderView(RenderContext model, PrintWriter out) throws IOException
     {
-        try
-        {
-            _renderDataRegion(getRenderContext(), out);
-        }
-        catch (SQLException x)
-        {
-            _log.log(Level.ERROR, this, x);
-        }
+        _renderDataRegion(getRenderContext(), out);
     }
 
     public String createVerifySelectedScript(ActionURL url, String objectsDescription)

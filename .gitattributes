@@ -7882,7 +7882,6 @@ internal/src/org/labkey/api/view/JavaScriptFilter.java -text
 internal/src/org/labkey/api/view/LinkBarView.java -text
 internal/src/org/labkey/api/view/SiteDownServlet.java -text
 internal/src/org/labkey/api/view/StaticContentCachingFilter.java -text
-internal/src/org/labkey/api/view/StatsView.java -text
 internal/src/org/labkey/api/view/addWebPart.jsp -text
 internal/src/org/labkey/api/view/customizeClientAPIWebPart.jsp -text
 internal/src/org/labkey/api/webdav/ActionResource.java -text

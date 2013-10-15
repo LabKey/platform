@@ -27,7 +27,6 @@ import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,7 +86,7 @@ public class InsertView extends DataView
         _initialValues.put(inputName, value);
     }
 
-    protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException, SQLException
+    protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
     {
         TableViewForm form = ctx.getForm();
         assert form != null || getTable() != null;
@@ -132,7 +131,9 @@ public class InsertView extends DataView
 
         ctx.setForm(form);
         ctx.put("setFocusId", _focusId);
-        getDataRegion().renderInputForm(ctx, out);
+
+        ctx.setMode(DataRegion.MODE_INSERT);
+        getDataRegion().render(ctx, out);
     }
     
     public void setFocusId(String focusId)

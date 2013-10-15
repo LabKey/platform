@@ -172,6 +172,10 @@ public class SimpleUserSchema extends UserSchema
         return null;
     }
 
+    /**
+     * Supports combining a "real" table in the database with a Domain that adds extra columns that are stored in
+     * OntologyManager, and joined based on the _objectUriCol.
+     */
     public static class  SimpleTable<SchemaType extends UserSchema> extends FilteredTable<SchemaType> implements UpdateableTableInfo
     {
         protected ColumnInfo _objectUriCol;

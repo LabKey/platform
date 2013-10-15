@@ -16,12 +16,15 @@
 package org.labkey.api.view;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.springframework.validation.Errors;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.sql.SQLException;
 
 public class GridView extends DataView
 {
@@ -53,7 +56,7 @@ public class GridView extends DataView
         getRenderContext().setBaseSort(sort);
     }
 
-    protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException, SQLException
+    protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
     {
         // UNDONE
         //String err = PageFlowUtil.getStrutsError(ctx.getRequest(), "dataregion_" + getDataRegion().getName());
@@ -61,6 +64,8 @@ public class GridView extends DataView
         if (err != null && err.length() > 0)
             out.write(err.replaceAll(System.getProperty("line.separator"), "<br>"));
 
-        getDataRegion().renderTable(ctx, out);
+        ctx.setMode(DataRegion.MODE_GRID);
+        //Force through bottleneck
+        getDataRegion().render(ctx, out);
     }
 }
