@@ -176,7 +176,7 @@ public class DefaultFolderType implements FolderType
                 }
         }
 
-        Set<Module> active = c.getActiveModules(false);
+        Set<Module> active = c.getActiveModules(user);
         Set<Module> requiredActive = c.getRequiredModules();
 
         if (null == active)
@@ -185,7 +185,7 @@ public class DefaultFolderType implements FolderType
             active = new HashSet<>(active); //Need to copy since returned set is unmodifiable.
 
         active.addAll(requiredActive);
-        c.setActiveModules(active);
+        c.setActiveModules(active, user);
         Portal.saveParts(c, all);
 
         // A few things left to do; ordering is important

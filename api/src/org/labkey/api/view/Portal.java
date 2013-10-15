@@ -890,7 +890,7 @@ public class Portal
         public Map<String, String> rightWebPartNames;
     }
 
-    private static void addCustomizeDropdowns(Container c, HttpView template, String id, Collection occupiedLocations)
+    private static void addCustomizeDropdowns(ViewContext context, HttpView template, String id, Collection occupiedLocations)
     {
         Set<String> regionNames = getRegionMap().keySet();
         boolean rightEmpty = !occupiedLocations.contains(WebPartFactory.LOCATION_RIGHT);
@@ -899,7 +899,7 @@ public class Portal
         
         for (String regionName : regionNames)
         {
-            Map<String, String> partsToAdd = Portal.getPartsToAdd(c, regionName);
+            Map<String, String> partsToAdd = Portal.getPartsToAdd(context, regionName);
 
             if (WebPartFactory.LOCATION_RIGHT.equals(regionName) && rightEmpty)
                 rightParts = partsToAdd;
@@ -1020,7 +1020,7 @@ public class Portal
         }
 
         if (canCustomize)
-            addCustomizeDropdowns(context.getContainer(), template, id, locations);
+            addCustomizeDropdowns(context, template, id, locations);
     }
 
     @Nullable
@@ -1176,9 +1176,10 @@ public class Portal
         }
     }
 
-    public static Map<String, String> getPartsToAdd(Container c, String location)
+    public static Map<String, String> getPartsToAdd(ViewContext context, String location)
     {
         //TODO: Cache these
+        Container c = context.getContainer();
         Map<String, String> webPartNames = new TreeMap<>();
 
         for (Module module : ModuleLoader.getInstance().getModules())

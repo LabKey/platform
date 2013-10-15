@@ -1356,6 +1356,18 @@ public class ModuleLoader implements Filter
         return _modules;
     }
 
+    public List<Module> getModules(boolean userHasEnableRestrictedModulesPermission)
+    {
+        if (userHasEnableRestrictedModulesPermission)
+            return getModules();
+
+        List<Module> modules = new ArrayList<>();
+        for (Module module : _modules)
+            if (!module.getRequireSitePermission())
+                modules.add(module);
+        return modules;
+    }
+
     // Return a set of data source names representing all external data sources that are required for module schemas
     public Set<String> getAllModuleDataSources()
     {
@@ -1629,6 +1641,31 @@ public class ModuleLoader implements Filter
         {
             return Collections.unmodifiableCollection(new ArrayList<>(_folderTypes.values()));
         }
+    }
+
+    /** @return an unmodifiable collection of ALL registered folder types, even those that have been disabled on this
+     * server by an administrator, except if the user does not have EnableRestrictedModules permission then folder types
+     * that have restricted modules are excluded */
+    public Collection<FolderType> getFolderTypes(boolean userHasEnableRestrictedModules)
+    {
+        if (userHasEnableRestrictedModules)
+        {
+            return getAllFolderTypes();
+        }
+
+        ArrayList<FolderType> allFolderTypes = null;
+        synchronized (_folderTypes)
+        {
+            allFolderTypes = new ArrayList<>(_folderTypes.values());
+        }
+
+        ArrayList<FolderType> folderTypes = new ArrayList<>();
+        for (FolderType folderType : allFolderTypes)
+        {
+            if (!Container.hasRestrictedModule(folderType))
+                folderTypes.add(folderType);
+        }
+        return folderTypes;
     }
 
     /** @return all of the folder types that have not been explicitly disabled by an administrator. New folder types

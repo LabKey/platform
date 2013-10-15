@@ -2458,7 +2458,7 @@ public class PageFlowUtil
                 modules.addAll(cd.getRequiredModuleContexts(c, u));
             }
 
-            for (Module m : c.getActiveModules())
+            for (Module m : c.getActiveModules(u))
             {
                 modules.add(m);
             }

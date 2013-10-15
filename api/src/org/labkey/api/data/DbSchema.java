@@ -30,6 +30,7 @@ import org.labkey.api.query.TableSorter;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.security.SecurityPolicyManager;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.JunitUtil;
@@ -908,7 +909,7 @@ public class DbSchema
         return row;
     }
 
-    public static String checkAllContainerCols(boolean bfix) throws SQLException
+    public static String checkAllContainerCols(User user, boolean bfix) throws SQLException
     {
         List<Module> modules = ModuleLoader.getInstance().getModules();
         ResultSet rs1 = null;
@@ -988,7 +989,7 @@ public class DbSchema
                     }
                 }
 
-                recovered.setActiveModules(modulesOfOrphans);
+                recovered.setActiveModules(modulesOfOrphans, user);
 
                 return sbOut.toString();
             }

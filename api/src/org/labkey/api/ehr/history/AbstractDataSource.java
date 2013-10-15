@@ -282,7 +282,7 @@ abstract public class AbstractDataSource implements HistoryDataSource
 
     public boolean isAvailable(Container c, User u)
     {
-        return c.getActiveModules().contains(ModuleLoader.getInstance().getModule("ehr"));
+        return c.getActiveModules(u).contains(ModuleLoader.getInstance().getModule("ehr"));
     }
 
     abstract protected String getHtml(Results rs, boolean redacted) throws SQLException;

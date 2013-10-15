@@ -327,4 +327,6 @@ public interface Module extends Comparable<Module>
 
     @Nullable
     public String getResourcePath();
+
+    public boolean getRequireSitePermission();
 }

@@ -231,7 +231,7 @@ public class SimpleModule extends SpringModule
             {
                 public QuerySchema getSchema(final DefaultSchema schema)
                 {
-                    if (schema.getContainer().getActiveModules().contains(SimpleModule.this))
+                    if (schema.getContainer().getActiveModules(schema.getUser()).contains(SimpleModule.this))
                     {
                         DbSchema dbSchema = DbSchema.get(schemaName);
                         return QueryService.get().createSimpleUserSchema(dbSchema.getQuerySchemaName(), null, schema.getUser(), schema.getContainer(), dbSchema);

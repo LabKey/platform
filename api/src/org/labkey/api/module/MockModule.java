@@ -382,4 +382,11 @@ public class MockModule implements Module
     {
         return null;
     }
+
+    @Override
+    public boolean getRequireSitePermission()
+    {
+        return false;
+    }
+
 }

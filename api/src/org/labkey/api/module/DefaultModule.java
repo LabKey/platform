@@ -136,6 +136,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _sourcePath = null;
     private File _explodedPath = null;
     protected String _resourcePath = null;
+    private boolean _requireSitePermission = false;
 
     protected DefaultModule()
     {
@@ -893,6 +894,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                         }
                     }
                 }
+
+                if (mt.getEnableOptions() != null && mt.getEnableOptions().isSetRequireSitePermission())
+                {
+                    _requireSitePermission = true;
+                }
             }
             catch(Exception e)
             {
@@ -1267,5 +1273,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public LinkedHashSet<ClientDependency> getClientDependencies(Container c, User u)
     {
         return _clientDependencies;
+    }
+
+    @Override
+    public boolean getRequireSitePermission()
+    {
+        return _requireSitePermission;
     }
 }

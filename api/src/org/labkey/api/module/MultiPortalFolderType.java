@@ -427,9 +427,9 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
                 NavTree moduleMenu = new NavTree("Go To Module");
 
-                for (Module module : tabContainer.getActiveModules())
+                for (Module module : tabContainer.getActiveModules(ctx.getUser()))
                 {
-                    if (null == module || module.equals(tabContainer.getDefaultModule()))
+                    if (null == module || module.equals(tabContainer.getDefaultModule(ctx.getUser())))
                         continue;
 
                     ActionURL tabUrl = module.getTabURL(tabContainer, ctx.getUser());

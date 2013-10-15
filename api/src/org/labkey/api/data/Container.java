@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -38,6 +39,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.EnableRestrictedModules;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -663,7 +665,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (!FolderType.NONE.equals(ft))
             return ft.getStartURL(this, user);
 
-        Module module = getDefaultModule();
+        Module module = getDefaultModule(user);
         if (module != null)
         {
             ActionURL helper = module.getTabURL(this, user);
@@ -675,6 +677,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
     public Module getDefaultModule()
+    {
+        return getDefaultModule(null);
+    }
+
+    public Module getDefaultModule(@Nullable User user)
     {
         if (isRoot())
             return null;
@@ -700,11 +707,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
             //should be there already if it's not portal, but if it is core, we have to add it for upgrade
             if (defaultModuleName.compareToIgnoreCase("Core") == 0)
             {
-                Set<Module> modules = new HashSet<>(getActiveModules());
+                Set<Module> modules = new HashSet<>(getActiveModules(user));
                 if (!modules.contains(defaultModule))
                 {
                     modules.add(defaultModule);
-                    setActiveModules(modules);
+                    setActiveModules(modules, user);
                 }
             }
 
@@ -719,14 +726,25 @@ public class Container implements Serializable, Comparable<Container>, Securable
         setFolderType(folderType, ensureModules, errors);
     }
 
+    public void setFolderType(FolderType folderType, Set<Module> ensureModules, User user)
+    {
+        BindException errors = new BindException(new Object(), "dummy");
+        setFolderType(folderType, ensureModules, user, errors);
+    }
+
     public void setFolderType(FolderType folderType, Set<Module> ensureModules, BindException errors)
     {
-        setFolderType(folderType, ModuleLoader.getInstance().getUpgradeUser(), errors);
+        setFolderType(folderType, ensureModules,ModuleLoader.getInstance().getUpgradeUser(), errors);
+    }
+
+    public void setFolderType(FolderType folderType, Set<Module> ensureModules, User user, BindException errors)
+    {
+        setFolderType(folderType, user, errors);
         if (!errors.hasErrors())
         {
             Set<Module> modules = new HashSet<>(folderType.getActiveModules());
             modules.addAll(ensureModules);
-            setActiveModules(modules);
+            setActiveModules(modules, user);
         }
     }
 
@@ -738,12 +756,19 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public void setFolderType(FolderType folderType, User user, BindException errors)
     {
-        ContainerManager.setFolderType(this, folderType, user, errors);
-
-        if (!errors.hasErrors())
+        if (hasRestrictedModule(folderType) && !hasEnableRestrictedModules(user))
         {
-            if (isWorkbook())
-                appendWorkbookModulesToParent();
+            errors.reject(SpringActionController.ERROR_MSG, "The folder type requires a restricted module to which you do not have permission.");
+        }
+        else
+        {
+            ContainerManager.setFolderType(this, folderType, user, errors);
+
+            if (!errors.hasErrors())
+            {
+                if (isWorkbook())
+                    appendWorkbookModulesToParent(new HashSet<Module>(), user);
+            }
         }
     }
 
@@ -785,26 +810,31 @@ public class Container implements Serializable, Comparable<Container>, Securable
         _defaultModule = null;
     }
 
-
     public void setActiveModules(Set<Module> modules)
     {
-        if(isWorkbook())
+        setActiveModules(modules, null);
+    }
+
+    public void setActiveModules(Set<Module> modules, @Nullable User user)
+    {
+        if (isWorkbook())
         {
-            appendWorkbookModulesToParent(modules);
+            appendWorkbookModulesToParent(modules, user);
             return;
         }
 
+        boolean userHasEnableRestrictedModules = hasEnableRestrictedModules(user);
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(this, "activeModules", true);
         props.clear();
         for (Module module : modules)
         {
-            if (null != module)
+            if (null != module && userCanAccessModule(module, userHasEnableRestrictedModules))
                 props.put(module.getName(), Boolean.TRUE.toString());
         }
 
         for (Module module : getRequiredModules())
         {
-            if (null != module)
+            if (null != module && userCanAccessModule(module, userHasEnableRestrictedModules))
                 props.put(module.getName(), Boolean.TRUE.toString());
         }
 
@@ -819,27 +849,39 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public void appendWorkbookModulesToParent(Set<Module> newModules)
     {
-        if(!isWorkbook())
+        appendWorkbookModulesToParent(newModules, null);
+    }
+
+    public void appendWorkbookModulesToParent(Set<Module> newModules, @Nullable User user)
+    {
+        if (!isWorkbook())
             return;
 
         boolean isChanged = false;
         Set<Module> existingModules = new HashSet<>();
-        existingModules.addAll(getParent().getActiveModules(false, false));
+        existingModules.addAll(getParent().getActiveModules(false, false, user));
 
-        newModules.addAll(getFolderType().getActiveModules());
-
-        for(Module m : newModules)
+        boolean userHasEnableRestrictedModules = hasEnableRestrictedModules(user);
+        for (Module m : newModules)
         {
-            if(!existingModules.contains(m))
+            if (!existingModules.contains(m) && userCanAccessModule(m, userHasEnableRestrictedModules))
+            {
+                isChanged = true;
+                existingModules.add(m);
+            }
+        }
+        for (Module m : getFolderType().getActiveModules())
+        {
+            if (!existingModules.contains(m) && userCanAccessModule(m, userHasEnableRestrictedModules))
             {
                 isChanged = true;
                 existingModules.add(m);
             }
         }
 
-        if(isChanged)
+        if (isChanged)
         {
-            getParent().setActiveModules(existingModules);
+            getParent().setActiveModules(existingModules, user);
         }
     }
 
@@ -858,12 +900,22 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public Set<Module> getActiveModules(boolean init, boolean includeDepencendies)
     {
+        return getActiveModules(init, includeDepencendies, null);
+    }
+
+    public Set<Module> getActiveModules(@Nullable User user)
+    {
+        return getActiveModules(false, true, user);
+    }
+
+    public Set<Module> getActiveModules(boolean init, boolean includeDepencendies, @Nullable User user)
+    {
         if(isWorkbook())
         {
             if(init)
-                appendWorkbookModulesToParent();
+                appendWorkbookModulesToParent(new HashSet<Module>(), user);
 
-            return getParent().getActiveModules(init, includeDepencendies);
+            return getParent().getActiveModules(init, includeDepencendies, user);
         }
 
         //Short-circuit for root module
@@ -880,6 +932,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         //get active web parts for this container
         List<Portal.WebPart> activeWebparts = Portal.getParts(this);
+
+        boolean userHasEnableRestrictedModules = hasEnableRestrictedModules(user);
 
         // store active modules, checking first that the container still exists -- junit test creates and deletes
         // containers quickly and this check helps keep the search indexer from creating orphaned property sets.
@@ -907,7 +961,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                     {
                         //get module associated with this web part & add to props
                         Module activeModule = mapWebPartModule.get(activeWebPart.getName());
-                        if (activeModule != null)
+                        if (activeModule != null && userCanAccessModule(activeModule, userHasEnableRestrictedModules))
                             propsWritable.put(activeModule.getName(), Boolean.TRUE.toString());
                     }
                 }
@@ -915,23 +969,28 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 // enable 'default' tabs:
                 for (Module module : allModules)
                 {
-                    if (module.getTabDisplayMode() == Module.TabDisplayMode.DISPLAY_USER_PREFERENCE_DEFAULT)
+                    if (module.getTabDisplayMode() == Module.TabDisplayMode.DISPLAY_USER_PREFERENCE_DEFAULT &&
+                        userCanAccessModule(module, userHasEnableRestrictedModules))
+                    {
                         propsWritable.put(module.getName(), Boolean.TRUE.toString());
+                    }
                 }
             }
             else
             {
                 //if this is a subfolder, set active modules to inherit from parent
-                Set<Module> parentModules = getParent().getActiveModules(false, false);
+                Set<Module> parentModules = getParent().getActiveModules(false, false, user);
                 for (Module module : parentModules)
                 {
-                    //set the default module for the subfolder to be the default module of the parent.
-                    Module parentDefault = getParent().getDefaultModule();
+                    if (userCanAccessModule(module, userHasEnableRestrictedModules))
+                    {
+                        //set the default module for the subfolder to be the default module of the parent.
+                        Module parentDefault = getParent().getDefaultModule(user);
+                        if (module.equals(parentDefault))
+                            setDefaultModule(module);
 
-                    if (module.equals(parentDefault))
-                        setDefaultModule(module);
-
-                    propsWritable.put(module.getName(), Boolean.TRUE.toString());
+                        propsWritable.put(module.getName(), Boolean.TRUE.toString());
+                    }
                 }
             }
             PropertyManager.saveProperties(propsWritable);
@@ -949,25 +1008,18 @@ public class Container implements Serializable, Comparable<Container>, Securable
             }
         }
 
-       // ensure all modules for folder type are added (may have been added after save
+        // ensure all modules for folder type are added (may have been added after save)
         if (!getFolderType().equals(FolderType.NONE))
         {
             for (Module module : getFolderType().getActiveModules())
             {
                 // check for null, since there's no guarantee that a third-party folder type has all its
                 // active modules installed on this system (so nulls may end up in the list- bug 6757):
+                // Don't restrict based on userHasEnableRestrictedModules, since user is already accessing folder
                 if (module != null)
                     modules.add(module);
             }
         }
-
-        // Container tab inherits from parent
-/*        if (isContainerTab())
-        {
-            for (Module module : getParent().getActiveModules())
-                if (null != module)
-                    modules.add(module);
-        }   */
 
         // add all 'always display' modules, remove all 'never display' modules:
         for (Module module : allModules)
@@ -977,13 +1029,16 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
 
         Set<Module> activeModules;
-        if(includeDepencendies)
+        if (includeDepencendies)
         {
             Set<Module> withDependencies = new HashSet<>();
             for (Module m : modules)
             {
                 withDependencies.add(m);
-                withDependencies.addAll(m.getResolvedModuleDependencies());
+                Set<Module> dependencies = m.getResolvedModuleDependencies();
+                for (Module dependent : dependencies)
+//                    if (userCanAccessModule(dependent, userHasEnableRestrictedModules))           // TODO: check dependencies
+                        withDependencies.add(dependent);
             }
 
             activeModules = Collections.unmodifiableSet(withDependencies);
@@ -1085,7 +1140,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         containerProps.put("isContainerTab", isContainerTab());
         containerProps.put("type", getContainerNoun());
         JSONArray activeModuleNames = new JSONArray();
-        for (Module module : getActiveModules())
+        for (Module module : getActiveModules(user))
         {
             activeModuleNames.put(module.getName());
         }
@@ -1296,5 +1351,26 @@ public class Container implements Serializable, Comparable<Container>, Securable
             }
         }
         return folderTabs;
+    }
+
+    public boolean hasEnableRestrictedModules(@Nullable User user)
+    {
+        boolean userHasEnableRestrictedModules = false;
+        if (null != user && hasPermission(user, EnableRestrictedModules.class))
+            userHasEnableRestrictedModules = true;
+        return userHasEnableRestrictedModules;
+    }
+
+    public static boolean userCanAccessModule(Module module, boolean userHasEnableRestrictedModules)
+    {
+        return userHasEnableRestrictedModules || !module.getRequireSitePermission();
+    }
+
+    public static boolean hasRestrictedModule(FolderType folderType)
+    {
+        for (Module module : folderType.getActiveModules())
+            if (module.getRequireSitePermission())
+                return true;
+        return false;
     }
 }

@@ -79,9 +79,9 @@ public class CustomFolderType implements FolderType
     {
         if (null == c)
             return AppProps.getInstance().getHomePageActionURL();
-        if (null == c.getDefaultModule())
+        if (null == c.getDefaultModule(u))
             return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
-        return c.getDefaultModule().getTabURL(c, u);
+        return c.getDefaultModule(u).getTabURL(c, u);
     }
     public HelpTopic getHelpTopic() { return null; }
 
