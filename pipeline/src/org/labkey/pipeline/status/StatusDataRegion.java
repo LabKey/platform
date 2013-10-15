@@ -64,11 +64,11 @@ public class StatusDataRegion extends DataRegion
         out.write("</a>&nbsp;&nbsp;</td>\n");
     }
 
-    protected void _renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
+    protected void renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
     {
         if (_apiAction == null)
         {
-            super._renderTable(ctx, out);
+            super.renderTable(ctx, out);
             return;
         }
         
@@ -113,7 +113,7 @@ public class StatusDataRegion extends DataRegion
         out.write("<div id=\"statusFailureDiv\" class=\"labkey-error\" style=\"display: none\"></div>");
         out.write("<div id=\"statusRegionDiv\">");
 
-        super._renderTable(ctx, out);
+        super.renderTable(ctx, out);
 
         out.write("</div>");
     }
