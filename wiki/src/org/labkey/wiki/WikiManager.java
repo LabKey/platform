@@ -65,6 +65,7 @@ import org.labkey.api.wiki.WikiService;
 import org.labkey.wiki.model.RadeoxMacroProxy;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
+import org.labkey.wiki.model.WikiVersionsGrid;
 import org.labkey.wiki.model.WikiView;
 import org.labkey.wiki.renderer.HtmlRenderer;
 import org.labkey.wiki.renderer.PlainTextRenderer;
@@ -883,6 +884,16 @@ public class WikiManager implements WikiService
         {
             throw new RuntimeException(x);
         }
+    }
+
+    public WebPartView getHistoryView(Container c, String name)
+    {
+        Wiki wiki = WikiSelectManager.getWiki(c, new HString(name));
+        if (null == wiki)
+            return null;
+        WikiVersion version = wiki.getLatestVersion();
+        WikiVersionsGrid view = new WikiVersionsGrid(wiki, version, null);
+        return view;
     }
 
     @Override

@@ -100,6 +100,7 @@ import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiEditModel;
 import org.labkey.wiki.model.WikiTree;
 import org.labkey.wiki.model.WikiVersion;
+import org.labkey.wiki.model.WikiVersionsGrid;
 import org.labkey.wiki.model.WikiView;
 import org.labkey.wiki.permissions.IncludeScriptPermission;
 import org.springframework.validation.BindException;
@@ -1489,68 +1490,14 @@ public class WikiController extends SpringActionController
             if (!perms.allowUpdate(_wiki))
                 throw new UnauthorizedException("You do not have permissions to view the history for this page!");
 
-            TableInfo tinfoVersions = CommSchema.getInstance().getTableInfoPageVersions();
-            TableInfo tinfoPages = CommSchema.getInstance().getTableInfoPages();
-
-            // Highlight the current version in the history grid
-            final int version = _wikiversion.getVersion();
-            DataRegion dr = new DataRegion() {
-                @Override
-                protected String getRowClass(RenderContext ctx, int rowIndex)
-                {
-                    if (((Integer)ctx.get("Version")).intValue() == version)
-                        return "labkey-alternate-row";
-                    else
-                        return "labkey-row";
-                }
-            };
-
-            //look up page name
-            LookupColumn entityIdLookup = new LookupColumn(tinfoVersions.getColumn("PageEntityId"),
-                    tinfoPages.getColumn("EntityId"), tinfoPages.getColumn("Name"));
-            entityIdLookup.setLabel("Page Name");
-
-            //look up container (for filter)
-            LookupColumn containerLookup = new LookupColumn(tinfoVersions.getColumn("PageEntityId"),
-                    tinfoPages.getColumn("EntityId"), tinfoPages.getColumn("Container"));
-            DataColumn containerData = new DataColumn(containerLookup);
-            containerData.setVisible(false);
-
-            //version url
-            DataColumn versionData = new DataColumn(tinfoVersions.getColumn("Version"));
-            dr.addDisplayColumn(versionData);
-
-            dr.addDisplayColumn(new DataColumn(tinfoVersions.getColumn("Title")));
-            dr.addColumn(entityIdLookup);
-            dr.addDisplayColumn(containerData);
-
-            ColumnInfo colCreatedBy = tinfoVersions.getColumn("CreatedBy");
-            // Set a custom renderer for the CreatedBy column
-            DisplayColumn dc = new DisplayColumnCreatedBy(colCreatedBy);
-            dr.addDisplayColumn(dc);
-
-            dr.addDisplayColumn(new DataColumn(tinfoVersions.getColumn("Created")));
-
-            ButtonBar buttonBar = new ButtonBar();
-            dr.setButtonBar(buttonBar);
-
-            //filter on container and page name
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition(containerLookup.getName(), getContainer().getId());
-            filter.addCondition(entityIdLookup.getName(), wikiname);
-
-            //sort DESC on version number
-            Sort sort = new Sort("-version");
-
-            GridView gridView = new GridView(dr, errors);
-            gridView.setFilter(filter);
-            gridView.setSort(sort);
+            GridView gridView = new WikiVersionsGrid(_wiki, _wikiversion, errors);
 
             LinkBarView lb = new LinkBarView(
                     new Pair<>("return to page", getViewContext().cloneActionURL().setAction("page").toString()),
                     new Pair<>("view current version", getViewContext().cloneActionURL().setAction("version").toString())
                     );
             lb.setDrawLine(true);
+            lb.setFrame(WebPartView.FrameType.NONE);
             lb.setTitle("History");
 
             VBox view = new VBox(lb, gridView);
@@ -1573,6 +1520,7 @@ public class WikiController extends SpringActionController
             return getVersionsURL(_wiki.getName());
         }
     }
+
 
 
     private ActionURL getMakeCurrentURL(HString pageName, int version)
