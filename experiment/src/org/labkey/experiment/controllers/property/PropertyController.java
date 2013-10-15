@@ -253,7 +253,18 @@ public class PropertyController extends SpringActionController
 
         protected String getResponse(Map<String, Pair<File, String>> files, FileUploadForm form) throws UploadException
         {
-            assert files.size() == 1 : "Only one file is supported";
+            if (files.size() > 1)
+            {
+                StringBuilder message = new StringBuilder();
+                String separator = "";
+                for (Pair<File, String> fileStringPair : files.values())
+                {
+                    message.append(separator);
+                    separator = ", ";
+                    message.append(fileStringPair.getValue());
+                }
+                throw new UploadException("Only one file is supported, but " + files.size() + " were uploaded: " + message, 400);
+            }
             // Store the file in the session, and delete it when the session expires
             HttpSession session = getViewContext().getSession();
 
