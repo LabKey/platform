@@ -986,20 +986,27 @@ public class CoreController extends SpringActionController
 
             try
             {
-                Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, (workbook ? Container.TYPE.workbook : Container.TYPE.normal), getUser());
-
                 String folderTypeName = json.getString("folderType");
                 if (folderTypeName == null && workbook)
                 {
                     folderTypeName = WorkbookFolderType.NAME;
                 }
+
+                FolderType folderType = null;
                 if (folderTypeName != null)
                 {
-                    FolderType folderType = ModuleLoader.getInstance().getFolderType(folderTypeName);
-                    if (folderType != null)
-                    {
-                        newContainer.setFolderType(folderType, getUser());
-                    }
+                    folderType = ModuleLoader.getInstance().getFolderType(folderTypeName);
+                }
+
+                if (null != folderType && Container.hasRestrictedModule(folderType) && !getContainer().hasEnableRestrictedModules(getUser()))
+                {
+                    throw new UnauthorizedException("The folder type requires a restricted module to which you do not have permission.");
+                }
+
+                Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, (workbook ? Container.TYPE.workbook : Container.TYPE.normal), getUser());
+                if (folderType != null)
+                {
+                    newContainer.setFolderType(folderType, getUser());
                 }
 
                 return new ApiSimpleResponse(newContainer.toJSON(getUser()));

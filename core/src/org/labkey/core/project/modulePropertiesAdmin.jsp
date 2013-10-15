@@ -41,7 +41,7 @@
     hasPermission = target.hasPermission(ctx.getUser(), ReadPermission.class);
 
     List<String> modules = new ArrayList<>();
-    for (Module m : target.getActiveModules())
+    for (Module m : target.getActiveModules(ctx.getUser()))
     {
         if(m.getModuleProperties().size() > 0)
         {

@@ -531,7 +531,7 @@ public class PipelineController extends SpringActionController
 
             PipelineDirectoryImpl entry = new PipelineDirectoryImpl(pr, relativePath, browseURL);
             List<PipelineProvider> providers = PipelineService.get().getPipelineProviders();
-            Set<Module> activeModules = c.getActiveModules();
+            Set<Module> activeModules = c.getActiveModules(getUser());
             for (PipelineProvider provider : providers)
             {
                 boolean showAllActions = form.isAllActions();

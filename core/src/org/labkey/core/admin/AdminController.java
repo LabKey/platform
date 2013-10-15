@@ -599,7 +599,7 @@ public class AdminController extends SpringActionController
             //note: this has been altered to use Container.getRequiredModules() instead of FolderType
             //this is b/c a parent container must consider child workbooks when determining the set of requiredModules
             Set<Module> requiredModules = c.getRequiredModules(); //folderType.getActiveModules() != null ? folderType.getActiveModules() : new HashSet<Module>();
-            Set<Module> activeModules = c.getActiveModules();
+            Set<Module> activeModules = c.getActiveModules(getUser());
 
             for (Module m : allModules)
             {
@@ -3467,7 +3467,7 @@ public class AdminController extends SpringActionController
             {
                 String sqlcheck=null;
                 if (fixRequested.equalsIgnoreCase("container"))
-                       sqlcheck = DbSchema.checkAllContainerCols(true);
+                       sqlcheck = DbSchema.checkAllContainerCols(getUser(), true);
                 if (fixRequested.equalsIgnoreCase("descriptor"))
                        sqlcheck = OntologyManager.doProjectColumnCheck(true);
                 contentBuilder.append(sqlcheck);
@@ -3475,7 +3475,7 @@ public class AdminController extends SpringActionController
             else
             {
                 contentBuilder.append("\n<br/><br/>Checking Container Column References...");
-                String strTemp = DbSchema.checkAllContainerCols(false);
+                String strTemp = DbSchema.checkAllContainerCols(getUser(), false);
                 if (strTemp.length() > 0)
                 {
                     contentBuilder.append(strTemp);
@@ -4266,7 +4266,7 @@ public class AdminController extends SpringActionController
                                     activeModules.add(module);
                             }
 
-                            c.setFolderType(FolderType.NONE, activeModules);
+                            c.setFolderType(FolderType.NONE, activeModules, getUser());
                             Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
                             c.setDefaultModule(defaultModule);
                         }

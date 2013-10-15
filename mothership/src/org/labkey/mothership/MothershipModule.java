@@ -110,9 +110,9 @@ public class MothershipModule extends DefaultModule
             ExceptionUtil.logExceptionToMothership(null, e);
         }
 
-        Set<Module> modules = new HashSet<>(c.getActiveModules());
+        Set<Module> modules = new HashSet<>(c.getActiveModules(moduleContext.getUpgradeUser()));
         modules.add(this);
-        c.setActiveModules(modules);
+        c.setActiveModules(modules, moduleContext.getUpgradeUser());
         c.setDefaultModule(this);
     }
 

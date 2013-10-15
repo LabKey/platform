@@ -210,7 +210,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
         if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
         {
-            container.setFolderType(FolderType.NONE, activeModules, errors);
+            container.setFolderType(FolderType.NONE, activeModules, getUser(), errors);
             Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
             container.setDefaultModule(defaultModule);
         }
@@ -220,7 +220,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             if (container.isContainerTab() && folderType.hasContainerTabs())
                 errors.reject(null, "You cannot set a tab folder to a folder type that also has tab folders");
             else
-                container.setFolderType(folderType, activeModules, errors);
+                container.setFolderType(folderType, activeModules, getUser(), errors);
         }
         if (errors.hasErrors())
             return false;

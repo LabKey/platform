@@ -896,7 +896,7 @@ public class WikiController extends SpringActionController
         {
             //add wiki to active modules
             activeModules.add(module);
-            cDest.setActiveModules(activeModules);
+            cDest.setActiveModules(activeModules, getUser());
         }
     }
 

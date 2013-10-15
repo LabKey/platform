@@ -44,8 +44,9 @@ var defaultModules = new Object();
     final ViewContext context = HttpView.currentContext();
     Container c = context.getContainer();
     FolderManagementAction.FolderManagementForm form = (FolderManagementAction.FolderManagementForm) HttpView.currentModel();
-    Collection<FolderType> allFolderTypes = ModuleLoader.getInstance().getAllFolderTypes();
-    List<Module> allModules = new ArrayList<>(ModuleLoader.getInstance().getModules());
+    boolean userHasEnableRestrictedModulesPermission = c.hasEnableRestrictedModules(context.getUser());
+    Collection<FolderType> allFolderTypes = ModuleLoader.getInstance().getFolderTypes(userHasEnableRestrictedModulesPermission);
+    List<Module> allModules = new ArrayList<>(ModuleLoader.getInstance().getModules(userHasEnableRestrictedModulesPermission));
     Collections.sort(allModules, new Comparator<Module>()
     {
         public int compare(Module o1, Module o2)
@@ -62,7 +63,7 @@ var defaultModules = new Object();
         dependencyMapJson.put(m, dependencyMap.get(m));
     }
 
-    Module defaultModule = c.getDefaultModule();
+    Module defaultModule = c.getDefaultModule(context.getUser());
     FolderType folderType = c.getFolderType();
     String path = c.getPath();
 

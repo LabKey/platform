@@ -77,7 +77,7 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
                 if (null != folderType)
                 {
                     // It's sorta BrandNew, but not really; say it's not and SubImporter will handle container tabs correctly
-                    c.setFolderType(folderType, activeModules);
+                    c.setFolderType(folderType, activeModules, ctx.getUser());
                 }
                 else
                 {

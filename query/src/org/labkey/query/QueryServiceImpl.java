@@ -340,7 +340,7 @@ public class QueryServiceImpl extends QueryService
 
     public List<QueryDefinition> getFileBasedQueryDefs(User user, Container container, String schemaName, Path path, Module... extraModules)
     {
-        Collection<Module> modules = container.getActiveModules();
+        Collection<Module> modules = container.getActiveModules(user);
         HashSet<Module> allModules = new HashSet<>(modules);
         allModules.addAll(Arrays.asList(extraModules));
 
@@ -1528,7 +1528,7 @@ public class QueryServiceImpl extends QueryService
         }
 
         // Finally, look for file-based definitions in modules
-        Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : schema.getContainer().getActiveModules();
+        Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : schema.getContainer().getActiveModules(schema.getUser());
         for (Module module : modules)
         {
             Collection<? extends Resource> queryMetadatas;

@@ -52,9 +52,9 @@ public class FolderTypeWriterFactory implements FolderWriterFactory
             FolderType ftXml = folderXml.addNewFolderType();
             ftXml.setName(c.getFolderType().getName());
 
-            if (null != c.getDefaultModule())
+            if (null != c.getDefaultModule(ctx.getUser()))
             {
-                ftXml.setDefaultModule(c.getDefaultModule().getName());
+                ftXml.setDefaultModule(c.getDefaultModule(ctx.getUser()).getName());
             }             
 
             FolderType.Modules modulesXml = ftXml.addNewModules();

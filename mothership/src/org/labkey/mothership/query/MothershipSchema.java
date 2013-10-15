@@ -95,7 +95,7 @@ public class MothershipSchema extends UserSchema
         {
             public QuerySchema getSchema(DefaultSchema schema)
             {
-                if (schema.getContainer().getActiveModules().contains(ModuleLoader.getInstance().getModule(MothershipModule.NAME)))
+                if (schema.getContainer().getActiveModules(schema.getUser()).contains(ModuleLoader.getInstance().getModule(MothershipModule.NAME)))
                 {
                     return new MothershipSchema(schema.getUser(), schema.getContainer());
                 }
