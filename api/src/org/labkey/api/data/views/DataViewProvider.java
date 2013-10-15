@@ -88,7 +88,10 @@ public interface DataViewProvider
             status,
             
             customThumbnail,
-            customThumbnailFileName
+            customThumbnailFileName,
+
+            customIcon,
+            customIconFileName
         }
 
         // a list of thumbnail types

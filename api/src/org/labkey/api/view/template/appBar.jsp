@@ -77,13 +77,13 @@
                             if (navTree.isDisabled())
                                 classes = classes + " labkey-app-bar-tab-hidden";
 
-                            if (navTree.getChildCount() == 0)
+                            if (!context.hasPermission(context.getUser(), AdminPermission.class) || navTree.getChildCount() == 0)
                                 classes = classes + " labkey-no-tab-menu";
                 %>
                         <li class="<%=text(classes)%>">
                             <a href="<%=h(navTree.getHref())%>" id="<%=h(navTree.getText())%>Tab"><%=h(navTree.getText())%></a>
                             <%
-                                if(navTree.getChildCount() > 0)
+                                if(context.hasPermission(context.getUser(), AdminPermission.class) && navTree.getChildCount() > 0)
                                 {
                             %>
                                     <span class="labkey-tab-menu" style="visibility:hidden;">
