@@ -28,6 +28,7 @@ import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.*;
 import org.labkey.api.util.DateUtil;
 import org.labkey.data.xml.queryCustomView.OperatorType;
 
@@ -431,6 +432,20 @@ public enum CompareType
             public boolean meetsCriteria(Object value, Object[] paramVals)
             {
                 throw new UnsupportedOperationException("Conditional formatting not yet supported for MV indicators");
+            }
+        },
+    MEMBER_OF("Is Member Of", "memberof", true, " does not have a missing value indicator", "MEMBER_OF", OperatorType.MEMBEROF)
+        {
+            @Override
+            MemberOfClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            {
+                return new MemberOfClause(fieldKey, value);
+            }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] paramVals)
+            {
+                throw new UnsupportedOperationException("Conditional formatting not yet supported for MEMBER_OF");
             }
         };
 
@@ -1333,5 +1348,92 @@ public enum CompareType
             SQLFragment sql = new SQLFragment(qcColumn.getAlias() + " IS " + (isNull ? "" : "NOT ") + "NULL");
             return sql;
         }
+    }
+
+    private static class MemberOfClause extends CompareClause
+    {
+        MemberOfClause(FieldKey fieldKey, Object value)
+        {
+            super(fieldKey, CompareType.MEMBER_OF, value);
+        }
+
+        @Override
+        public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            ColumnInfo colInfo = columnMap != null ? columnMap.get(_fieldKey) : null;
+            String alias = colInfo != null ? colInfo.getAlias() : _fieldKey.getName();
+
+            if (getParamVals().length == 0)
+            {
+                return new SQLFragment("(1 = 2)");
+            }
+
+            return getMemberOfSQL(dialect, new SQLFragment(alias), new SQLFragment("?", convertParamValue(colInfo, getParamVals()[0])));
+        }
+
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            return "ISMEMBEROF(" + getParamVals()[0] + ", " + getLabKeySQLColName(_fieldKey) + ")";
+        }
+
+        @Override
+        protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        {
+            // Try to resolve the parameter value to a Group object
+            if (getParamVals().length > 0)
+            {
+                try
+                {
+                    Integer groupId = (Integer)ConvertUtils.convert(String.valueOf(getParamVals()[0]), Integer.class);
+                    if (groupId != null)
+                    {
+                        Group group = org.labkey.api.security.SecurityManager.getGroup(groupId.intValue());
+                        if (group != null)
+                        {
+                            sb.append("Is a member of the group '").append(group.getName()).append("'");
+                            return;
+                        }
+                    }
+                }
+                catch (ConversionException ignored) {}
+            }
+            // Couldn't resolve the group for whatever reason
+            sb.append("Invalid 'member of' filter");
+        }
+    }
+
+    /** Generates SQL that checks if the given user id is a member of the group id */
+    public static SQLFragment getMemberOfSQL(SqlDialect dialect, SQLFragment userIdSQL, SQLFragment groupIdSQL)
+    {
+        SQLFragment ret = new SQLFragment();
+        ret.append("(").append(groupIdSQL).append(") IN (");
+        if (dialect.isPostgreSQL())
+        {
+            ret.append(
+                "WITH RECURSIVE allmembers(userid, groupid) AS (\n" +
+                "   SELECT userid, groupid FROM core.members WHERE userid = ").append(userIdSQL).append(
+                "\nUNION\n" +
+                "   SELECT a.groupid as userid, m.groupid as groupid FROM allmembers a, core.members m WHERE a.groupid=m.userid\n" +
+                ")\n" +
+                "SELECT groupid FROM allmembers"
+            );
+        }
+        else
+        {
+            // nested WITH doesn't seem to work on SQL Server
+            // ONLY WORKS 3 LEVELS DEEP!
+            SQLFragment onelevel = new SQLFragment(), twolevel = new SQLFragment(), threelevel = new SQLFragment();
+            onelevel.append("SELECT groupid FROM core.members _M1_ where _M1_.userid=(").append(userIdSQL).append(")");
+            twolevel.append("SELECT groupid FROM core.members _M2_ WHERE _M2_.userid IN (").append(onelevel).append(")");
+            threelevel.append("SELECT groupid FROM core.members _M3_ WHERE _M3_.userid IN (").append(twolevel).append(")");
+            ret.append(onelevel).append(" UNION ").append(twolevel).append(" UNION ").append(threelevel);
+        }
+
+        ret.append(" UNION SELECT (").append(userIdSQL).append(")");
+        ret.append(" UNION SELECT ").append(Group.groupGuests);
+        ret.append(" UNION SELECT ").append(Group.groupUsers).append(" WHERE 0 < (").append(userIdSQL).append(")");
+        ret.append(")");
+        return ret;
     }
 }

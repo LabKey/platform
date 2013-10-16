@@ -757,7 +757,8 @@ LABKEY.Utils.convertToTable(
         &lt;/script&gt;
         */
         onError : function(error){
-            LABKEY.ExtAdapter.Msg.hide();
+            if (LABKEY.ExtAdapter.Msg.isVisible())
+                LABKEY.ExtAdapter.Msg.hide();
 
             if(!error)
                 return;

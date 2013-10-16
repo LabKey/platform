@@ -1954,6 +1954,21 @@ LABKEY.Query.Filter.ContainsOneOf = function (columnName, value)
 LABKEY.Query.Filter.ContainsOneOf.prototype = new LABKEY.Query.Filter;
 
 /**
+ * @class LABKEY.Query.Filter.MemberOf subclass of {@link LABKEY.Query.Filter}.
+ *      Finds rows where the column value corresponds to a user that is a member of a group with the id of the supplied filter value.
+ * @augments LABKEY.Query.Filter
+ * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
+ * or a {@link LABKEY.FieldKey}
+ * @param value Value used as the filter criterion.
+ * @constructor
+ */
+LABKEY.Query.Filter.MemberOf = function (columnName, value)
+{
+    LABKEY.Query.Filter.call(this, columnName, value, LABKEY.Filter.Types.MEMBER_OF);
+};
+LABKEY.Query.Filter.ContainsOneOf.prototype = new LABKEY.Query.Filter;
+
+/**
  * @class LABKEY.Query.Filter.ContainsNoneOf subclass of {@link LABKEY.Query.Filter}.
  *      Finds rows where the column value does not contain any of the supplied filter values. The values should be supplied
  *      as a semi-colon-delimited list (e.g., 'a;b;c').

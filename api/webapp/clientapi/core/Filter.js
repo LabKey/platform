@@ -44,6 +44,7 @@
  * @property {LABKEY.Filter.FilterDefinition} Types.STARTS_WITH Finds rows where the column value starts with the filter value.
  * @property {LABKEY.Filter.FilterDefinition} Types.IN Finds rows where the column value equals one of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
  * @property {LABKEY.Filter.FilterDefinition} Types.NOT_IN Finds rows where the column value is not in any of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
+ * @property {LABKEY.Filter.FilterDefinition} Types.MEMBER_OF Finds rows where the column value contains a user id that is a member of the group id of the supplied filter value.
  * @property {LABKEY.Filter.FilterDefinition} Types.CONTAINS_ONE_OF Finds rows where the column value contains any of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
  * @property {LABKEY.Filter.FilterDefinition} Types.CONTAINS_NONE_OF Finds rows where the column value does not contain any of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
  *
@@ -91,6 +92,7 @@ LABKEY.Filter = new function()
         startswith : 'doesnotstartwith',
         'in' : 'notin',
         notin : 'in',
+        memberof : 'memberof',
         containsoneof : 'containsnoneof',
         containsnoneof : 'containsoneof',
         hasmvvalue : 'nomvvalue',
@@ -200,6 +202,7 @@ LABKEY.Filter = new function()
             EQUALS_NONE_OF: createFilterType("Does Not Equal Any Of", "notin", true, true, 'Does Not Equal Any Of (e.g. \"a;b;c\")'),
             NOT_IN: createFilterType("Does Not Equal Any Of", "notin", true, true, 'Does Not Equal Any Of (e.g. \"a;b;c\")'),
             CONTAINS_ONE_OF : createFilterType("Contains One Of", "containsoneof", true, true, 'Contains One Of (e.g. \"a;b;c\")'),
+            MEMBER_OF : createFilterType("Member Of", "memberof", true, false, 'Member Of'),
             CONTAINS_NONE_OF : createFilterType("Does Not Contain Any Of", "containsnoneof", true, true, 'Does Not Contain Any Of (e.g. \"a;b;c\")'),
             HAS_MISSING_VALUE : createFilterType("Has a missing value indicator", "hasmvvalue", false, null),
             DOES_NOT_HAVE_MISSING_VALUE : createFilterType("Does not have a missing value indicator", "nomvvalue", false, null)
