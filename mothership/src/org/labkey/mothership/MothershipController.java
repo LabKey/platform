@@ -915,6 +915,7 @@ public class MothershipController extends SpringActionController
         private boolean _enterprisePipelineEnabled;
         private String _servletContainer;
         private boolean _usedInstaller;
+        private String _description;
 
         public String getSvnURL()
         {
@@ -1092,7 +1093,7 @@ public class MothershipController extends SpringActionController
         public ServerSession toSession(Container container)
         {
             ServerSession session = new ServerSession();
-            SoftwareRelease release = MothershipManager.get().ensureSoftwareRelease(container, parseSvnRevision(), getSvnURL());
+            SoftwareRelease release = MothershipManager.get().ensureSoftwareRelease(container, parseSvnRevision(), getSvnURL(), getDescription());
             session.setSoftwareReleaseId(release.getSoftwareReleaseId());
 
             session.setServerSessionGUID(getServerSessionGUID());
@@ -1143,6 +1144,16 @@ public class MothershipController extends SpringActionController
         public void setUsedInstaller(boolean usedInstaller)
         {
             _usedInstaller = usedInstaller;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
         }
     }
 

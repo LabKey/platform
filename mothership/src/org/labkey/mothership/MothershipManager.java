@@ -128,7 +128,7 @@ public class MothershipManager
 
     private static final Object ENSURE_SOFTWARE_RELEASE_LOCK = new Object();
 
-    public SoftwareRelease ensureSoftwareRelease(Container container, Integer svnRevision, String svnURL)
+    public SoftwareRelease ensureSoftwareRelease(Container container, Integer svnRevision, String svnURL, String description)
     {
         synchronized (ENSURE_SOFTWARE_RELEASE_LOCK)
         {
@@ -152,6 +152,16 @@ public class MothershipManager
                 {
                     filter.addCondition(FieldKey.fromString("SVNURL"), svnURL);
                 }
+
+                if (description == null)
+                {
+                    filter.addCondition(FieldKey.fromString("Description"), "UnknownSVN;NotSVN", CompareType.IN);
+                }
+                else
+                {
+                    filter.addCondition(FieldKey.fromString("Description"), description);
+                }
+
                 SoftwareRelease result = new TableSelector(getTableInfoSoftwareRelease(), filter, null).getObject(SoftwareRelease.class);
                 if (result == null)
                 {
@@ -159,7 +169,6 @@ public class MothershipManager
                     result.setSVNRevision(svnRevision);
                     result.setSVNURL(svnURL);
                     result.setContainer(container.getId());
-                    String description;
                     if (svnURL != null)
                     {
                         if (svnURL.startsWith("https://hedgehog.fhcrc.org/tor/stedi/"))
@@ -180,12 +189,12 @@ public class MothershipManager
                         }
                         else
                         {
-                            description = "UnknownSVN";
+                            description = description != null ? description : "UnknownSVN";
                         }
                     }
                     else
                     {
-                        description = "NotSVN";
+                        description = description != null ? description : "NotSVN";
                     }
                     result.setDescription(description);
                     result = Table.insert(null, getTableInfoSoftwareRelease(), result);
