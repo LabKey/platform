@@ -22,7 +22,6 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.security.User;
 
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -32,46 +31,44 @@ import java.util.Map;
  */
 public class PropertyCache
 {
-    private static final BlockingStringKeyCache<Map<String, String>> BLOCKING_CACHE = CacheManager.getBlockingStringKeyCache(10000, CacheManager.DAY, "Properties", new PropertyLoader());
+    private final BlockingStringKeyCache<Map<String, String>> _blockingCache;
 
-    public static @Nullable Map<String, String> getProperties(User user, Container container, String category)
+    PropertyCache(String name, CacheLoader<String, Map<String, String>> propertyLoader)
     {
-        String key = getCacheKey(user, container, category);
-
-        return BLOCKING_CACHE.get(key, new Object[]{user, container, category});
+        _blockingCache = CacheManager.getBlockingStringKeyCache(10000, CacheManager.DAY, name, propertyLoader);
     }
 
-    public static void remove(PropertyMap map)
+    @Nullable Map<String, String> getProperties(User user, Container container, String category)
+    {
+        String key = getCacheKey(container, user, category);
+
+        return _blockingCache.get(key, new Object[]{container, user, category});
+    }
+
+    void remove(PropertyMap map)
     {
         Object[] params = map.getCacheParams();
 
-        BLOCKING_CACHE.remove(getCacheKey((Integer)params[0], (String)params[1], (String)params[2]));
+        _blockingCache.remove(getCacheKey((String) params[0], (Integer) params[1], (String) params[2]));
     }
 
-    public static void remove(User user, Container container, String category)
+    void removeAll(Container c)
     {
-        BLOCKING_CACHE.remove(getCacheKey(user.getUserId(), container.getId(), category));
+        _blockingCache.removeUsingPrefix(c.getId());
     }
 
-    private static String getCacheKey(User user, Container container, String category)
+    void remove(Container container, User user, String category)
     {
-        return getCacheKey(user.getUserId(), container.getId(), category);
+        _blockingCache.remove(getCacheKey(container.getId(), user.getUserId(), category));
     }
 
-    private static String getCacheKey(int userId, String containerId, String category)
+    private static String getCacheKey(Container c, User user, String category)
     {
-        return String.valueOf(userId) + "/" + String.valueOf(containerId) + "/" + category;
+        return getCacheKey(c.getId(), user.getUserId(), category);
     }
 
-    private static class PropertyLoader implements CacheLoader<String, Map<String, String>>
+    private static String getCacheKey(String containerId, int userId, String category)
     {
-        @Override
-        public Map<String, String> load(String key, Object argument)
-        {
-            Object[] params = (Object[])argument;
-            PropertyMap map = PropertyManager.getWritableProperties((User)params[0], (Container)params[1], (String)params[2], false);
-
-            return null != map ? Collections.unmodifiableMap(map) : null;
-        }
+        return String.valueOf(containerId) + "/" + String.valueOf(userId) + "/" + category;
     }
 }

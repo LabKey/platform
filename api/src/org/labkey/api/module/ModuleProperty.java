@@ -216,12 +216,12 @@ public class ModuleProperty
         User propertyUser = PropertyManager.SHARED_USER;  // Only shared properties are supported
 
         String value;
-        if(isCanSetPerContainer())
+        if (isCanSetPerContainer())
             value = PropertyManager.getProperty(propertyUser, c, getCategory(), getName());
         else
             value = PropertyManager.getProperty(propertyUser, ContainerManager.getRoot(), getCategory(), getName());
 
-        if(value == null)
+        if (value == null)
             value = getDefaultValue();
 
         return value;

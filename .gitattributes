@@ -201,6 +201,7 @@ api/src/org/labkey/api/data/AJAXDetailsDisplayColumn.java -text
 api/src/org/labkey/api/data/AbstractDataRegion.java -text
 api/src/org/labkey/api/data/AbstractFileDisplayColumn.java -text
 api/src/org/labkey/api/data/AbstractForeignKey.java -text
+api/src/org/labkey/api/data/AbstractPropertyStore.java -text
 api/src/org/labkey/api/data/AbstractSelectorTestCase.java -text
 api/src/org/labkey/api/data/AbstractTableInfo.java -text
 api/src/org/labkey/api/data/Aggregate.java -text
@@ -253,6 +254,7 @@ api/src/org/labkey/api/data/DimensionColumnInfo.java -text
 api/src/org/labkey/api/data/DisplayColumnDecorator.java -text
 api/src/org/labkey/api/data/DisplayColumnFactory.java -text
 api/src/org/labkey/api/data/DisplayColumnGroup.java -text
+api/src/org/labkey/api/data/EncryptedPropertyStore.java -text
 api/src/org/labkey/api/data/Entity.java -text
 api/src/org/labkey/api/data/EnumConverter.java -text
 api/src/org/labkey/api/data/EnumTableInfo.java -text
@@ -298,6 +300,7 @@ api/src/org/labkey/api/data/MvUtil.java -text
 api/src/org/labkey/api/data/NestableDataRegion.java -text
 api/src/org/labkey/api/data/NestableQueryView.java -text
 api/src/org/labkey/api/data/NestedRenderContext.java -text
+api/src/org/labkey/api/data/NormalPropertyStore.java -text
 api/src/org/labkey/api/data/NullColumnInfo.java -text
 api/src/org/labkey/api/data/OORDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/OutOfRangeDisplayColumn.java -text
@@ -312,6 +315,7 @@ api/src/org/labkey/api/data/Project.java -text
 api/src/org/labkey/api/data/PropertyCache.java -text
 api/src/org/labkey/api/data/PropertySchema.java -text
 api/src/org/labkey/api/data/PropertyStorageSpec.java -text
+api/src/org/labkey/api/data/PropertyStore.java -text
 api/src/org/labkey/api/data/QueryProfiler.java -text
 api/src/org/labkey/api/data/RemappingDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/RenderColumn.java -text

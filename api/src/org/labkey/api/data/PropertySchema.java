@@ -25,7 +25,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 public class PropertySchema
 {
     private static final PropertySchema _instance = new PropertySchema();
-    private static final String SCHEMA_NAME = "prop";
+    public static final String SCHEMA_NAME = "prop";
 
     public static PropertySchema getInstance()
     {
