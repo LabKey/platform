@@ -160,6 +160,7 @@ public class TableUpdaterFileListener implements FileListener
         // Build up SQL that can be used for both the file and any children
         SQLFragment sharedSQL = new SQLFragment("UPDATE ");
         sharedSQL.append(_table);
+        sharedSQL.append(_table.getSqlDialect().isSqlServer() ? " WITH (UPDLOCK)" : "");
         sharedSQL.append(" SET ");
         if (_table.getColumn("Modified") != null)
         {
@@ -182,7 +183,20 @@ public class TableUpdaterFileListener implements FileListener
         singleEntrySQL.add(destPath);
         singleEntrySQL.add(srcPath);
 
-        int rows = new SqlExecutor(schema).execute(singleEntrySQL);
+        int rows = -1;
+        for (int retry=0 ; retry<2 ; retry++)
+        {
+            try
+            {
+                rows = new SqlExecutor(schema).execute(singleEntrySQL);
+                break;
+            }
+            catch (RuntimeException x)
+            {
+                if (retry > 0 || _table.getSchema().getScope().isTransactionActive() || !SqlDialect.isTransactionException(x))
+                    throw x;
+            }
+        }
         LOG.info("Updated " + rows + " row in " + _table + " for move from " + src + " to " + dest);
 
         // Skip attempting to fix up child paths if we know that the entry is a file. If it's not (either it's a
