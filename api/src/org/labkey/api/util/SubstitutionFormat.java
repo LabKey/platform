@@ -16,8 +16,8 @@
 package org.labkey.api.util;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -43,7 +43,7 @@ import java.util.Map;
 */
 public enum SubstitutionFormat
 {
-    passThrough
+    passThrough("none")
         {
             @Override
             public String format(String value)
@@ -51,7 +51,7 @@ public enum SubstitutionFormat
                 return value;
             }
         },
-    htmlEncode
+    htmlEncode("html")
         {
             @Override
             public String format(String value)
@@ -59,23 +59,50 @@ public enum SubstitutionFormat
                 return PageFlowUtil.filter(value);
             }
         },
-    urlEncode
+    urlEncode("path")
         {
             @Override
             public String format(String value)
             {
                 return PageFlowUtil.encodePath(value);
             }
+        },
+    encodeURIComponent("uricomponent")  // like javascript encodeURIComponent
+        {
+            @Override
+            public String format(String value)
+            {
+                return PageFlowUtil.encodeURIComponent(value);
+            }
+        },
+    encodeURI("uri")  // like javascript encodeURI
+        {
+            @Override
+            public String format(String value)
+            {
+                return PageFlowUtil.encodeURI(value);
+            }
         };
+
+    final String _shortName;
+
+    SubstitutionFormat(String name)
+    {
+        _shortName = name;
+    }
 
     public abstract String format(String value);
 
-    private final static Map<String, SubstitutionFormat> _map = new HashMap<>();
+    private final static Map<String, SubstitutionFormat> _map = new CaseInsensitiveHashMap<>();
 
     static
     {
         for (SubstitutionFormat format : SubstitutionFormat.values())
+        {
             _map.put(format.name(), format);
+            if (null != format._shortName)
+                _map.put(format._shortName, format);
+        }
     }
 
     // More lenient than SubstitutionFormat.valueOf(), returns null for non-match

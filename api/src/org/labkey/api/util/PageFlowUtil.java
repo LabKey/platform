@@ -111,6 +111,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Formatter;
@@ -579,6 +580,8 @@ public class PageFlowUtil
     /**
      * URL Encode string.
      * NOTE! this should be used on parts of a url, not an entire url
+     *
+     * Like JavaScript encodeURIComponent()
      */
     public static String encode(String s)
     {
@@ -587,6 +590,56 @@ public class PageFlowUtil
         try
         {
             return pattern.matcher(URLEncoder.encode(s, "UTF-8")).replaceAll("%20");
+        }
+        catch (UnsupportedEncodingException x)
+        {
+            throw new RuntimeException(x);
+        }
+    }
+
+    public static String encodeURIComponent(String s)
+    {
+        return encode(s);
+    }
+
+    /**
+     * Like JavaScript encodeURI()
+     */
+    static final BitSet dontEncode = new BitSet(256);
+    static
+    {   String except = ",/?:@&=+$#_-.*";
+        for (int i=0 ; i<except.length() ; i++)
+            dontEncode.set(except.charAt(i));
+        for (int i='a' ; i<='z' ; i++)
+            dontEncode.set(i);
+        for (int i='A' ; i<='Z' ; i++)
+            dontEncode.set(i);
+        for (int i='0' ; i<='9' ; i++)
+            dontEncode.set(i);
+    }
+
+    public static String encodeURI(String s)
+    {
+        try
+        {
+            StringBuilder sb = new StringBuilder();
+            int len=s.length(),start=0,end=0;
+            while (start < s.length())
+            {
+                for (end=start; end < len && dontEncode.get(s.charAt(end)) ; end++)
+                    { /* */ }
+                sb.append(s,start,end);
+                if (end < len)
+                {
+                    String ch = s.substring(end,end+1);
+                    if (ch.charAt(0)==' ')
+                        sb.append("%20");
+                    else
+                        sb.append(URLEncoder.encode(ch, "UTF-8"));
+                }
+                start = end+1;
+            }
+            return sb.toString();
         }
         catch (UnsupportedEncodingException x)
         {
@@ -2250,6 +2303,18 @@ public class PageFlowUtil
             assertEquals(filter("this is a test<"), "this is a test&lt;");
             assertEquals(filter("'t'&his is a test\""), "&#039;t&#039;&amp;his is a test&quot;");
             assertEquals(filter("<>\"&"), "&lt;&gt;&quot;&amp;");
+        }
+
+
+        @Test
+        public void testEncode()
+        {
+            assertEquals("%20", encode(" "));
+            assertEquals("/hello/world?", encodeURI("/hello/world?"));
+            assertEquals("/hel%20lo/wo%3Crld?", encodeURI("/hel lo/wo<rld?"));
+            assertEquals("/hel%20lo/wo%3Crld?%3E", encodeURI("/hel lo/wo<rld?>"));
+            assertEquals("%2Fhello%2Fworld%3F", encodeURIComponent("/hello/world?"));
+            assertEquals("%2Fhello%2Fworld", encodeURIComponent("/hello/world"));
         }
 
 

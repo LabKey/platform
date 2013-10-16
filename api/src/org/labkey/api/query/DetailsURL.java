@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
 public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression implements HasViewContext
 {
     public static Pattern actionPattern = Pattern.compile("/?[\\w\\-]+/[\\w\\-]+.view?.*");
-    public static Pattern classPattern = Pattern.compile("[\\w\\.\\$]+\\.class?.*");
+    public static Pattern classPattern = Pattern.compile("[\\w\\.\\$]+\\.class(\\?.*)?");
 
     protected ContainerContext _containerContext;
 
@@ -204,11 +204,24 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
             }
             else if (classPattern.matcher(expr).matches())
             {
-                String className = expr.substring(0,expr.indexOf(".class?"));
+                int indexClass = expr.indexOf(".class?");
+                int indexQuery = expr.length();
+                if (indexClass >= 0)
+                {
+                    indexQuery = indexClass + ".class?".length();
+                }
+                else
+                {
+                    if (expr.endsWith(".class"))
+                        indexClass = expr.length()-".class".length();
+                    else
+                        indexClass = expr.length();
+                }
+                String className = expr.substring(0,indexClass);
                 Class<Controller> cls;
                 try { cls = (Class<Controller>)Class.forName(className); } catch (Exception x) {throw new IllegalArgumentException("action class '" + className + "' not found: " + expr);}
                 _parsedUrl = new ActionURL(cls, null);
-                _parsedUrl.setRawQuery(expr.substring(expr.indexOf('?')+1));
+                _parsedUrl.setRawQuery(expr.substring(indexQuery));
             }
             else
                 throw new IllegalArgumentException(

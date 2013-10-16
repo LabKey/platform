@@ -22,16 +22,15 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
 
-import javax.script.Bindings;
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.Writer;
@@ -117,18 +116,29 @@ public class StringExpressionFactory
             if (str.startsWith("mailto:"))
                 expr = new FieldKeyStringExpression(str);
             else if (StringUtilsLabKey.startsWithURL(str))
+            {
                 expr = new URLStringExpression(str);
+            }
             else if (null == DetailsURL.validateURL(str))
+            {
                 expr = DetailsURL.fromString(str);
+            }
             else
             {
                 // improve compatibility with old URLs
-                // UNDONE: remove these, or make a new createHelper() 
-                ActionURL url = new ActionURL(str);
-                if (StringUtils.isEmpty(url.getExtraPath()))
-                    expr = new DetailsURL(url);
-                else
-                    expr = new URLStringExpression(url);
+                // UNDONE: remove these, or make a new createHelper()
+                try
+                {
+                    ActionURL url = new ActionURL(str);
+                    if (StringUtils.isEmpty(url.getExtraPath()))
+                        expr = new DetailsURL(url);
+                }
+                catch (IllegalArgumentException x)
+                {
+                    //
+                }
+                if (null == expr)
+                    expr = new URLStringExpression(str);
             }
         }
         catch (URISyntaxException x)
@@ -196,7 +206,7 @@ public class StringExpressionFactory
     //
     // StringExpression implementations
     //
-    
+
 
     protected static abstract class StringPart implements Cloneable
     {
@@ -239,16 +249,40 @@ public class StringExpressionFactory
             return _value;
         }
     }
+
     private static class SubstitutePart extends StringPart
     {
         protected String _value;
-        public SubstitutePart(String value)
+        final protected SubstitutionFormat _substitutionFormat;
+
+        public SubstitutePart(String value, boolean urlEncodeSubstitutions)
+        {
+            // Does the string end with a known format function? If so, save it for later and trim it off the string.
+            int colon = value.lastIndexOf(':');
+            SubstitutionFormat format = null;
+
+            if (colon > -1)
+            {
+                format = SubstitutionFormat.getFormat(value.substring(colon + 1));
+
+                if (null != format)
+                    value = value.substring(0, colon);
+            }
+
+            _value = value;
+            _substitutionFormat = (null != format ? format : urlEncodeSubstitutions ? SubstitutionFormat.urlEncode : SubstitutionFormat.passThrough);
+        }
+
+        public SubstitutePart(String value, SubstitutionFormat sf)
         {
             _value = value;
+            _substitutionFormat = sf;
         }
+
         public String getValue(Map map)
         {
-            return valueOf(map.get(_value));
+            String s = valueOf(map.get(_value));
+            return _substitutionFormat.format(s);
         }
 
         @Override
@@ -257,6 +291,8 @@ public class StringExpressionFactory
             return "${" + _value + "}";
         }
     }
+
+
     private static class RenderContextPart extends SubstitutePart
     {
         public enum Substitution
@@ -337,7 +373,7 @@ public class StringExpressionFactory
 
         public RenderContextPart(String value)
         {
-            super(value);
+            super(value, SubstitutionFormat.urlEncode);
             assert SUPPORTED_SUBSTITUTIONS.contains(value);
         }
 
@@ -347,7 +383,8 @@ public class StringExpressionFactory
             if (!(map instanceof RenderContext))
                 return "";
 
-            return Substitution.valueOf(_value).getValue((RenderContext)map);
+            String s = Substitution.valueOf(_value).getValue((RenderContext)map);
+            return _substitutionFormat.format(s);
         }
 
         @Override
@@ -357,17 +394,6 @@ public class StringExpressionFactory
         }
     }
 
-    private static class EncodePart extends SubstitutePart
-    {
-        public EncodePart(String value)
-        {
-            super(value);
-        }
-        public String getValue(Map map)
-        {
-            return PageFlowUtil.encodePath(valueOf(map.get(_value)));
-        }
-    }
 
     
 
@@ -563,45 +589,28 @@ public class StringExpressionFactory
         
         protected StringPart parsePart(String expr)
         {
-            if (_urlEncodeSubstitutions)
-                return new EncodePart(expr);
-            else
-                return new SubstitutePart(expr);
+            return new SubstitutePart(expr, _urlEncodeSubstitutions);
         }
     }
 
 
-    private static class FieldPart extends StringPart
+    private static class FieldPart extends SubstitutePart
     {
         private FieldKey _key;
-        private final boolean _urlEncodeSubstitutions;  // Should probably use _format for this
-        private final SubstitutionFormat _format;
-
-        FieldPart(String s)
-        {
-            this(s, true);
-        }
 
         FieldPart(String s, boolean urlEncodeSubstitutions)
         {
-            // Does the string end with a known format function? If so, save it for later and trim it off the string.
-            int colon = s.lastIndexOf(':');
-            SubstitutionFormat format = null;
-
-            if (colon > -1)
-            {
-                format = SubstitutionFormat.getFormat(s.substring(colon + 1));
-
-                if (null != format)
-                    s = s.substring(0, colon);
-            }
-
-            _key = FieldKey.decode(s);
-            _urlEncodeSubstitutions = urlEncodeSubstitutions;
-            _format = (null != format ? format : SubstitutionFormat.passThrough);
+            super(s, urlEncodeSubstitutions);
+            _key = FieldKey.decode(_value);
         }
 
-        String getValue(Map map)
+        FieldPart(FieldKey key, SubstitutionFormat sf)
+        {
+            super(key.toString(), sf);
+            _key = key;
+        }
+
+        public String getValue(Map map)
         {
             Object lookupKey = _key;
 
@@ -618,9 +627,8 @@ public class StringExpressionFactory
                 return null;
             }
 
-            String value = _format.format(valueOf(map.get(lookupKey)));
-
-            return _urlEncodeSubstitutions ? PageFlowUtil.encodePath(value) : value;
+            String s = valueOf(map.get(lookupKey));
+            return _substitutionFormat.format(s);
         }
 
         @Override
@@ -770,7 +778,6 @@ public class StringExpressionFactory
         {
             super("");
             _source = source.trim();
-            new URLHelper(_source);
         }
 
         public URLStringExpression(ActionURL url)
@@ -780,16 +787,31 @@ public class StringExpressionFactory
         }
 
         @Override
+        protected void parse()
+        {
+            super.parse();
+            // special case if entire pattern consists of one substituion, don't encode
+            if (1 == _parsedExpression.size())
+            {
+                StringPart p = _parsedExpression.get(0);
+                if (p instanceof FieldPart)
+                {
+                    FieldPart fp = (FieldPart)p;
+                    _parsedExpression.set(0,new FieldPart(fp._key,SubstitutionFormat.passThrough));
+                }
+            }
+        }
+
+        @Override
         public String eval(Map context)
         {
             String ret = super.eval(context);
             int i = StringUtils.indexOfAny(ret, ": /");
-            if (i != -1 && ret.charAt(i) == ':')
-            {
-                int s = ret.indexOf("script");
-                if (s > -1 && s < i)
-                    return null;
-            }
+            if (-1 == i)
+                i = ret.length();
+            int s = ret.indexOf("script");
+            if (s > -1 && s < i)
+                return null;
             return ret;
         }
     }
@@ -811,46 +833,6 @@ public class StringExpressionFactory
         else
             return url.getURIString(true);
     }
-
-
-    /** example */
-    public static class ScriptEngineStringExpression extends AbstractStringExpression
-    {
-        ScriptEngine _engine;
-
-        class ScriptPart extends SubstitutePart
-        {
-            ScriptPart(String value)
-            {
-                super(value);
-            }
-            public String getValue(Map map)
-            {
-                if (!(map instanceof Bindings))
-                    throw new IllegalArgumentException();
-                try
-                {
-                    return valueOf(_engine.eval(_value, (Bindings)map));
-                }
-                catch (ScriptException x)
-                {
-                    throw new RuntimeException(x);
-                }
-            }
-        }
-        
-        ScriptEngineStringExpression(String source, ScriptEngine engine)
-        {
-            super(source);
-            _engine = engine;
-        }
-
-        protected StringPart parsePart(String expr)
-        {
-            return new ScriptPart(expr);
-        }
-    }
-
 
 
     public static class TestCase extends Assert
@@ -890,6 +872,101 @@ public class StringExpressionFactory
             FieldKeyStringExpression lookup = fkse.remapFieldKeys(new FieldKey(null, "A"), remap);
             assertEquals("details.view?id=5&title=title%20one", lookup.eval(m));
         }
+
+
+        @Test public void testEncoding()
+        {
+            {
+                StringExpression se = FieldKeyStringExpression.create("${html:htmlEncode}|${pass:passThrough}|${url:urlEncode}", false, AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
+                Map<Object,Object> m = new HashMap<>();
+                m.put(new FieldKey(null,"html"),"<script></script>");
+                m.put(new FieldKey(null,"pass"),"<pass>10%</pass>");
+                m.put(new FieldKey(null,"url"),"<url>10%</url>");
+                String s = se.eval(m);
+                assertEquals("&lt;script&gt;&lt;/script&gt;|<pass>10%</pass>|%3Curl%3E10%25%3C/url%3E",s);
+            }
+
+            {
+                StringExpression se = StringExpressionFactory.create("${html:htmlEncode}|${pass:passThrough}|${url:urlEncode}", false);
+                Map<Object,Object> m = new HashMap<>();
+                m.put("html","<script></script>");
+                m.put("pass","<pass>10%</pass>");
+                m.put("url","<url>10%</url>");
+                String s = se.eval(m);
+                assertEquals("&lt;script&gt;&lt;/script&gt;|<pass>10%</pass>|%3Curl%3E10%25%3C/url%3E",s);
+            }
+        }
+
+        @Test
+        public void testCreateUrl()
+        {
+            Container container = JunitUtil.getTestContainer();
+            String containerPath = container.getPath();
+            String contextPath = AppProps.getInstance().getContextPath();
+            ActionURL url = new ActionURL("controller","action",container);
+            ActionURL urlBegin = new ActionURL("project","begin",container);
+            String s;
+            Map<FieldKey,Object> m = new HashMap<>();
+
+            /* test auto-detect of details URL, 'old' details url, mailto:, etc etc */
+            StringExpression a = StringExpressionFactory.createURL("mailto:tester@test.labkey.com");
+            assertTrue(a instanceof FieldKeyStringExpression);
+            assertEquals("mailto:tester@test.labkey.com", a.eval(Collections.emptyMap()));
+
+            StringExpression b = StringExpressionFactory.createURL("http://www.labkey.com/");
+            assertTrue(b instanceof URLStringExpression);
+            assertEquals("http://www.labkey.com/", b.eval(Collections.emptyMap()));
+
+            StringExpression c = StringExpressionFactory.createURL("https://www.labkey.com/");
+            assertTrue(c instanceof URLStringExpression);
+            assertEquals("https://www.labkey.com/", c.eval(Collections.emptyMap()));
+
+            StringExpression d = StringExpressionFactory.createURL("ftp://www.labkey.com/");
+            assertTrue(d instanceof URLStringExpression);
+            assertEquals("ftp://www.labkey.com/", d.eval(Collections.emptyMap()));
+
+            StringExpression e = StringExpressionFactory.createURL("/controller/action.view");
+            assertTrue(e instanceof DetailsURL);
+            ((DetailsURL)e).setContainerContext(container);
+            s = e.eval(Collections.emptyMap());
+            assertEquals(url.getLocalURIString(), s);
+
+            StringExpression f = StringExpressionFactory.createURL("org.labkey.core.portal.ProjectController$BeginAction.class");
+            assertTrue(f instanceof DetailsURL);
+            ((DetailsURL)f).setContainerContext(container);
+            s = f.eval(Collections.emptyMap());
+            assertEquals(urlBegin.getLocalURIString(), s);
+
+            StringExpression g = StringExpressionFactory.createURL("org.labkey.core.portal.ProjectController$BeginAction.class?q=labkey");
+            assertTrue(g instanceof DetailsURL);
+            ((DetailsURL)g).setContainerContext(container);
+            s = g.eval(Collections.emptyMap());
+            urlBegin.addParameter("q","labkey");
+            assertEquals(urlBegin.getLocalURIString(), s);
+
+            m.put(new FieldKey(null,"h"),"http://www.labkey.com/");
+            StringExpression h = StringExpressionFactory.createURL("${h}");
+            assertTrue(h instanceof URLStringExpression);
+            s = h.eval(m);
+            assertEquals("http://www.labkey.com/",s);
+
+            m.put(new FieldKey(null,"i"),"javascript://www.labkey.com");
+            StringExpression i = StringExpressionFactory.createURL("${i}");
+            assertTrue(i instanceof URLStringExpression);
+            s = i.eval(m);
+            assertNull(s);
+
+            StringExpression j = StringExpressionFactory.createURL("${i:urlEncode}");
+            assertTrue(j instanceof URLStringExpression);
+            s = j.eval(m);
+            assertNull(s);
+
+            StringExpression k = StringExpressionFactory.createURL("${i:htmlEncode}");
+            assertTrue(k instanceof URLStringExpression);
+            s = k.eval(m);
+            assertNull(s);
+        }
+
 
         @Test
         public void testAddParameter() throws URISyntaxException
