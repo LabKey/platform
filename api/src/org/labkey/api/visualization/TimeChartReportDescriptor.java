@@ -180,7 +180,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
                 }
 
                 // update dimension queryName
-                if (measures.getJSONObject(i).has("dimension"))
+                if (measures.getJSONObject(i).has("dimension") && !measures.getJSONObject(i).isNull("dimension"))
                 {
                     dimensionUpdates = updateJSONObjectQueryNameReference(measures.getJSONObject(i).getJSONObject("dimension"), "queryName", changes);
                 }
