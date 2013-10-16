@@ -153,7 +153,7 @@
         // add a cell to show the file name after selection
         var fileNameCell = file.mainRow.insertCell(-1);
         fileNameCell.width = "100%";
-        fileNameCell.innerHTML = '<label"></label>';
+        fileNameCell.innerHTML = '<label></label>';
         file.fileNameLabel = fileNameCell.children[0];
 
         // add a new row for error messages, collapsed by default
