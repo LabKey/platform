@@ -342,6 +342,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                     xtype : 'fieldset',
                     title : 'Knitr Options',
                     collapsible : true,
+                    collapsed   : true,
                     defaults    : {xtype : 'radio', labelWidth : 12},
                     items : [
                         {name : 'knitrFormat',
@@ -369,6 +370,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                     xtype : 'fieldset',
                     title : 'JavaScript Options',
                     collapsible : true,
+                    collapsed   : true,
                     defaults    : {xtype : 'checkbox', labelWidth : 12},
                     items : [
                         {name : 'useGetDataApi',
@@ -402,6 +404,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                     title : 'Report Thumbnail',
                     defaults    : {xtype : 'radio'},
                     collapsible : true,
+                    collapsed   : true,
                     items       : thumbnails
                 });
             }
@@ -420,6 +423,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                     xtype : 'fieldset',
                     title : 'Shared Scripts',
                     collapsible : true,
+                    collapsed   : true,
                     defaults    : {xtype : 'checkbox'},
                     items : scripts
                 });
@@ -432,6 +436,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                     xtype : 'fieldset',
                     title : 'Study Options',
                     collapsible : true,
+                    collapsed   : true,
                     defaults    : {xtype : 'checkbox', labelWidth : 12},
                     items : [
                         {name : 'filterParam',

@@ -2205,6 +2205,7 @@ public class ReportsController extends SpringActionController
 
                 WebPartView view = factory.getWebPartView(getViewContext(), part);
 
+                setTitle("Manage Views");
                 setHelpTopic(new HelpTopic("manageViews"));
                 view.setTitle("Manage Views");
                 view.setIsWebPart(false);
