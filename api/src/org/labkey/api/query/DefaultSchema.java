@@ -44,11 +44,6 @@ final public class DefaultSchema extends AbstractSchema
     {
         private final Module _module;
 
-//        public SchemaProvider()
-//        {
-//            this(null);
-//        }
-
         public SchemaProvider(@NotNull Module module)
         {
             _module = module;
