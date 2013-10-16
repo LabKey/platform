@@ -253,6 +253,10 @@ public class PropertyController extends SpringActionController
 
         protected String getResponse(Map<String, Pair<File, String>> files, FileUploadForm form) throws UploadException
         {
+            if (files.isEmpty())
+            {
+                throw new UploadException("No files uploaded", 400);
+            }
             if (files.size() > 1)
             {
                 StringBuilder message = new StringBuilder();
