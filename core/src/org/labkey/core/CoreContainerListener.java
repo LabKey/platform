@@ -52,7 +52,7 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
     {
         try
         {
-            PropertyManager.purgeObjectProperties(c.getId());
+            PropertyManager.purgeObjectProperties(c);
             MvUtil.containerDeleted(c);
 
             // Delete any rows in test.TestTable associated with this container

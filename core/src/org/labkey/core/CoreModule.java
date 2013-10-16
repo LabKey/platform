@@ -214,7 +214,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     public double getVersion()
     {
-        return 13.21;
+        return 13.22;
     }
 
     @Override
@@ -793,7 +793,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return Arrays.asList
             (
                 CoreSchema.getInstance().getSchemaName(),       // core
-                PropertyManager.getSchemaName(),                // prop
+                PropertySchema.getInstance().getSchemaName(),   // prop
                 TestSchema.getInstance().getSchemaName()        // test
             );
     }

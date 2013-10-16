@@ -31,6 +31,7 @@
 			<ns:column columnName="ObjectId"/>
 			<ns:column columnName="Category"/>
 			<ns:column columnName="UserId"/>
+			<ns:column columnName="Encryption"/>
 		</ns:columns>
 	</ns:table>
 	<ns:table tableName="PropertyEntries" tableDbType="VIEW">

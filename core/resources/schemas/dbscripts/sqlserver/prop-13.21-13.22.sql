@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2010 LabKey Corporation
+ * Copyright (c) 2013 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
--- Selects only the unencrypted values
-CREATE VIEW prop.PropertyEntries AS
-    SELECT ObjectId, Category, UserId, Name, Value FROM prop.Properties JOIN prop.PropertySets ON PropertySets.Set = Properties.Set WHERE Encryption = 'None';
+-- Add a column that specifies algorithm used to encrypt all values in this property set
+ALTER TABLE prop.PropertySets
+    ADD Encryption VARCHAR(100) NOT NULL DEFAULT 'None';
