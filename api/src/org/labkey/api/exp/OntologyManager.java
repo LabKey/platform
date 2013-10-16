@@ -578,12 +578,12 @@ public class OntologyManager
         return m;
 	}
 
-	public static int ensureObject(Container container, String objectURI) throws SQLException
+	public static int ensureObject(Container container, String objectURI)
 	{
 		return ensureObject(container, objectURI, (Integer) null);
 	}
 
-	public static int ensureObject(Container container, String objectURI, String ownerURI) throws SQLException
+	public static int ensureObject(Container container, String objectURI, String ownerURI)
 	{
 		Integer ownerId = null;
 		if (null != ownerURI)
@@ -591,7 +591,7 @@ public class OntologyManager
 		return ensureObject(container, objectURI, ownerId);
 	}
 
-    public static int ensureObject(Container container, String objectURI, Integer ownerId) throws SQLException
+    public static int ensureObject(Container container, String objectURI, Integer ownerId)
 	{
 		//TODO: (marki) Transact?
 		Integer i = objectIdCache.get(objectURI);
@@ -605,7 +605,14 @@ public class OntologyManager
 			o.setContainer(container);
 			o.setObjectURI(objectURI);
 			o.setOwnerObjectId(ownerId);
-			o = Table.insert(null, getTinfoObject(), o);
+            try
+            {
+                o = Table.insert(null, getTinfoObject(), o);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
 		}
 
 		objectIdCache.put(objectURI, o.getObjectId());
