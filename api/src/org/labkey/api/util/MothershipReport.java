@@ -16,6 +16,7 @@
 
 package org.labkey.api.util;
 
+import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
@@ -249,6 +250,10 @@ public class MothershipReport implements Runnable
         if (coreModule.getSvnRevision() != null)
         {
             addParam("svnRevision", coreModule.getSvnRevision());
+        }
+        if (!NumberUtils.isNumber(coreModule.getSvnRevision()))
+        {
+            addParam("description", "Core v" + coreModule.getFormattedVersion());
         }
         String svnURL = coreModule.getSvnUrl();
         if (svnURL != null)
