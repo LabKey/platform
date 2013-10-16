@@ -247,6 +247,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     {
                         text: 'Export as Script',
                         icon: LABKEY.contextPath + '/_icons/text.png',
+                        hidden: !this.isDeveloper,
                         disabled: true
                     }
                 ]

@@ -1045,13 +1045,16 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             });
         }
 
-        // add the export to script menu item
-        this.exportMenu.add({
-            text: 'Export as Script',
-            icon: LABKEY.contextPath + '/_icons/text.png',
-            handler: this.exportChartToScript,
-            scope: this
-        });
+        // add the export to script menu item for developers
+        if (this.isDeveloper)
+        {
+            this.exportMenu.add({
+                text: 'Export as Script',
+                icon: LABKEY.contextPath + '/_icons/text.png',
+                handler: this.exportChartToScript,
+                scope: this
+            });
+        }
         this.exportMenuBtn.setDisabled(!this.supportedBrowser);
 
         // show warning message, if there is one

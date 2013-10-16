@@ -116,6 +116,8 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
 
     private void _updateReportQueryNameChange(User user, Container container, SchemaKey schemaKey, Collection<QueryPropertyChange> changes)
     {
+        Logger logger = Logger.getLogger(ReportQueryChangeListener.class);
+
         // most property updates only care about the query name old value string and new value string
         Map<String, String> queryNameChangeMap = new HashMap<>();
         for (QueryPropertyChange qpc : changes)
@@ -159,13 +161,21 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
 
                 if (hasUpdates)
                 {
-                    ContainerUser rptContext = new DefaultContainerUser(container, UserManager.getUser(descriptor.getModifiedBy()));
-                    ReportService.get().saveReport(rptContext, descriptor.getReportKey(), report, true);
+                    User reportOwner = UserManager.getUser(descriptor.getModifiedBy());
+                    if (reportOwner != null)
+                    {
+                        ContainerUser rptContext = new DefaultContainerUser(container, reportOwner);
+                        ReportService.get().saveReport(rptContext, descriptor.getReportKey(), report, true);
+                    }
+                    else
+                    {
+                        logger.warn("The owner of the '" + descriptor.getReportName() + "' report does not exist: UserId " + descriptor.getModifiedBy());
+                    }
                 }
             }
             catch (Exception e)
             {
-                Logger.getLogger(ReportQueryChangeListener.class).error("An error occurred upgrading report properties: ", e);
+                logger.error("An error occurred upgrading report properties: ", e);
             }
         }
     }

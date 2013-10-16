@@ -54,7 +54,7 @@
         Ext4.QuickTips.init();
 
         var panel = Ext4.create('LABKEY.ext4.SurveyDesignPanel', {
-            height          : 653,
+            height          : 650,
             surveyId        : <%=form.getRowId()%>,
             renderTo        : <%=q(renderId)%>,
             schemaName      : <%=q(form.getSchemaName())%>,

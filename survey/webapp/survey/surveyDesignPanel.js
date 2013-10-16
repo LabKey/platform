@@ -284,7 +284,6 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
 
         this.metadataId = Ext4.id();
         var formPanel = Ext4.create('Ext.form.Panel', {
-            //border  : false,
             frame   : false,
             html    : '<textarea rows="44" name="metadata" id="' + this.metadataId + '"></textarea>',
             region  : 'center',
@@ -306,6 +305,9 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
 
                 this.codeMirror.setSize(null, size.height + 'px');
                 LABKEY.codemirror.RegisterEditorInstance('metadata', this.codeMirror);
+
+                // Issue 18776: different browsers set textarea size differently for rows="40", so set outer panel height plus the height of the top bar
+                this.setHeight(size.height + 32);
             }
         }, this);
 
