@@ -512,6 +512,9 @@ public class Query
             if (tinfo instanceof ContainerFilterable && tinfo.supportsContainerFilter() && getContainerFilter() != null)
                 ((ContainerFilterable) tinfo).setContainerFilter(getContainerFilter());
 
+            if (_parseErrors.size() > 0)
+                return null;
+
             return tinfo;
         }
         catch (RuntimeException x)

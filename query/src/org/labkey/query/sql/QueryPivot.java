@@ -309,7 +309,16 @@ public class QueryPivot extends QueryRelation
                 assert !getParseErrors().isEmpty();
                 return _pivotValues;
             }
-            rs = Table.executeQuery(getSchema().getDbSchema(), sqlPivotValues);
+            try
+            {
+                rs = Table.executeQuery(getSchema().getDbSchema(), sqlPivotValues);
+            }
+            catch (QueryService.NamedParameterNotProvided npnp)
+            {
+                parseError("When used with parameterized query, PIVOT requires an explicit values list", null);
+                parseError(npnp.getMessage(), null);
+                return _pivotValues;
+            }
             JdbcType type = JdbcType.valueOf(rs.getMetaData().getColumnType(1));
             int columnCount = rs.getMetaData().getColumnCount();
             while (rs.next())
@@ -383,6 +392,9 @@ public class QueryPivot extends QueryRelation
     TableInfo getTableInfo()
     {
         QueryTableInfo qti = new PivotTableInfo();
+        if (!getParseErrors().isEmpty())
+            return null;
+
         try
         {
             getPivotValues();
@@ -390,6 +402,7 @@ public class QueryPivot extends QueryRelation
         catch (QueryService.NamedParameterNotProvided x)
         {
             parseError("When used with parameterized query, PIVOT requires an explicit values list", null);
+            parseError(x.getMessage(), null);
             return null;
         }
         catch (SQLException x)
