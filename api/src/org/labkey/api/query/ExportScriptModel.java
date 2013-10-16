@@ -197,7 +197,7 @@ public abstract class ExportScriptModel
 
     protected String doubleQuote(String val)
     {
-        return "\"" + val + "\"";
+        return "\"" + val.replace("\"", "\\\"") + "\"";
     }
 
     protected String indent(int indentSpaces)

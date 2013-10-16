@@ -63,7 +63,7 @@ public class RExportScriptModel extends ExportScriptModel
 
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
-        return "c(\"" + name + "\",\"" + operator.getScriptName() + "\",\"" + value + "\")";
+        return "c(" + doubleQuote(name) + ", " + doubleQuote(operator.getScriptName()) + ", " + doubleQuote(value) + ")";
     }
 
     public String getContainerFilterString()
@@ -72,7 +72,7 @@ public class RExportScriptModel extends ExportScriptModel
         if (null == containerFilter || null == containerFilter.getType())
             return "NULL";
         else
-            return (" \"" + (containerFilter.getType().name()) + "\" " );
+            return (" " + doubleQuote(containerFilter.getType().name()) + " " );
     }
 
     @Override
