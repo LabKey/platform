@@ -35,7 +35,7 @@ public interface DomainProperty extends ImportAliasable
     String getDescription();
     String getFormat();
     String getConceptURI();
-    
+
     Domain getDomain();
     IPropertyType getType();
     FacetingBehaviorType getFacetingBehavior();
@@ -103,4 +103,10 @@ public interface DomainProperty extends ImportAliasable
     void removeValidator(int validatorId);
 
     void copyFrom(DomainProperty propSrc, Container targetContainer);
+
+    /**
+     * Sets whether this property is being loaded as part of a schema import.  If so then
+     * making a schema change will cause the property to be dropped and re-added
+     */
+    void setSchemaImport(boolean isSchemaImport);
 }
