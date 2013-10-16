@@ -19,7 +19,11 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.*;
+import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.CSRF;
+import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -28,7 +32,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @Deprecated
@@ -84,11 +87,7 @@ public class OpenSSOController extends SpringActionController
 
         public boolean handlePost(ConfigProperties form, BindException errors) throws Exception
         {
-            Map<String, String> props = new HashMap<String, String>(getViewContext().getExtendedProperties());
-            props.remove("x");
-            props.remove("y");
-
-            OpenSSOManager.get().writeSystemSettings(props);
+            OpenSSOManager.get().writeSystemSettings(null);
             OpenSSOManager.get().activate();
 
             return true;

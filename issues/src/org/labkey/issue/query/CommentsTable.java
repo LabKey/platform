@@ -18,6 +18,10 @@ package org.labkey.issue.query;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.issues.IssuesSchema;
@@ -59,7 +63,33 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
         addColumn(createdBy);
 
         addWrapColumn(_rootTable.getColumn("Created"));
-        addWrapColumn(_rootTable.getColumn("Comment"));     // TODO: Special display column to render the HTML comment
+        ColumnInfo comment = addWrapColumn(_rootTable.getColumn("Comment"));
+
+        // Special display column to render the HTML comment with proper formatting
+        comment.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                DataColumn dc = new DataColumn(colInfo) {
+                    @Override
+                    public String getFormattedValue(RenderContext ctx)
+                    {
+                        String html = super.getFormattedValue(ctx);
+
+                        // Comment HTML is stored in the database, so use an HTML5 scoped style tag to remove the borders
+                        // Unconventional, but this seems to be supported on most browsers
+                        String inline = "<style type=\"text/css\" scoped>table.issues-Changes td {border:none;}</style>";
+
+                        return "<span>" + inline + "</span>" + html;
+                    }
+                };
+                dc.setHtmlFiltered(false);
+                dc.setPreserveNewlines(false);
+
+                return dc;
+            }
+        });
 
         // Don't need a "Details" column
         setDetailsURL(AbstractTableInfo.LINK_DISABLER);

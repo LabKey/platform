@@ -15,17 +15,15 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.query.ExpInputTable;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.query.ExpInputTable;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.ReadPermission;
-
-import java.util.Collection;
 
 /**
  * User: jeckels
