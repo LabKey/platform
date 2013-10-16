@@ -1942,43 +1942,58 @@ public class QueryController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public class TruncateTableAction extends ApiAction<QueryForm>
     {
+        UserSchema schema;
+        TableInfo table;
 
         @Override
-        public ApiResponse execute(QueryForm queryForm, BindException errors) throws Exception
+        public void validateForm(QueryForm form, Errors errors)
         {
-            int deletedRows;
-            TableInfo table = getTableInfo(getContainer(), getUser(), queryForm.getSchemaName(), queryForm.getQueryName());
-            try{
-                table.getSchema().getScope().ensureTransaction();
-                ApiSimpleResponse response = new ApiSimpleResponse();
-                QueryUpdateService updater = queryForm.getQuerySettings().getTable(queryForm.getSchema()).getUpdateService();
-                deletedRows = updater.truncateRows(getUser(), getContainer(), null);
+            String schemaName = form.getSchemaName();
+            String queryName = form.getQueryName();
 
-                response.put("success", true);
-                response.put("deletedRows", deletedRows);
-                table.getSchema().getScope().commitTransaction();
-                return response;
-            }
-            finally
+            if (null == schemaName || null == queryName)
+                errors.reject(ERROR_MSG, "You must supply a schemaName and queryName!");
+
+            if (!errors.hasErrors())
             {
-                table.getSchema().getScope().closeConnection();
+                schema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaName);
+                if (null == schema)
+                {
+                    errors.reject(ERROR_MSG, "The schema '" + schemaName + "' does not exist.");
+                }
+
+                if (!errors.hasErrors())
+                {
+                    table = schema.getTable(queryName);
+                    if (null == table)
+                    {
+                        errors.reject(ERROR_MSG, "The query '" + queryName + "' in the schema '" + schemaName + "' does not exist.");
+                    }
+                }
             }
         }
 
-        @NotNull
-        protected TableInfo getTableInfo(Container container, User user, String schemaName, String queryName)
+        @Override
+        public ApiResponse execute(QueryForm form, BindException errors) throws Exception
         {
-            if (null == schemaName || null == queryName)
-                throw new IllegalArgumentException("You must supply a schemaName and queryName!");
+            int deletedRows;
+            QueryUpdateService qus = table.getUpdateService();
 
-            UserSchema schema = QueryService.get().getUserSchema(user, container, schemaName);
-            if (null == schema)
-                throw new IllegalArgumentException("The schema '" + schemaName + "' does not exist.");
+            if (null == qus)
+                throw new IllegalArgumentException("The query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "' is not truncatable.");
 
-            TableInfo table = schema.getTable(queryName);
-            if (table == null)
-                throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName + "' does not exist.");
-            return table;
+            try (DbScope.Transaction transaction = table.getSchema().getScope().ensureTransaction())
+            {
+                deletedRows = qus.truncateRows(getUser(), getContainer(), null);
+                transaction.commit();
+            }
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            response.put("success", true);
+            response.put("deletedRows", deletedRows);
+
+            return response;
         }
     }
 

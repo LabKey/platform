@@ -79,6 +79,9 @@
     &nbsp;<%=generateButton("Manage Datasets", manageTypesURL)%>
     &nbsp;<%=generateButton("Delete Dataset", deleteDatasetURL,
         "return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')")%><%
+%>
+&nbsp;<a class="labkey-button" onClick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; truncateTable();"> <span>Delete All Rows</span></a>
+<%
 }
 if (permissions.contains(UpdatePermission.class))
 {
@@ -98,9 +101,6 @@ if (permissions.contains(UpdatePermission.class))
         <a class="labkey-button" href="#" onclick="showLinkDialog()"><span>Link or Define Dataset</span></a>
 <%
     }
-    %>
-    &nbsp;<a class="labkey-button" onClick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; truncateTable();"> <span>Delete All Rows</span></a>
-<%
 }
 if (!pipelineSet)
 {
