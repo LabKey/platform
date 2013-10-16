@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.exp.ExperimentException;
@@ -30,8 +31,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.view.ViewContext;
 
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
 
 /**
  * User: dax
@@ -42,9 +41,13 @@ public interface AssaySaveHandler
     void setProvider(AssayProvider provider);
     AssayProvider getProvider();
     ExpExperiment handleBatch(ViewContext context, JSONObject batchJson, ExpProtocol protocol) throws Exception;
-    ExpRun handleRun(ViewContext context, JSONObject runJson, ExpProtocol protocol, ExpExperiment batch) throws JSONException, ValidationException, ExperimentException, SQLException;
+    ExpRun handleRun(ViewContext context, JSONObject runJson, ExpProtocol protocol, ExpExperiment batch)
+            throws JSONException, ValidationException, ExperimentException, SQLException;
     ExpData handleData(ViewContext context, JSONObject dataJson) throws ValidationException;
     ExpMaterial handleMaterial(ViewContext context, JSONObject materialJson) throws ValidationException;
+    void handleProtocolApplications(ViewContext context, ExpProtocol protocol, ExpRun run, JSONArray inputDataArray,
+            JSONArray dataArray, JSONArray inputMaterialArray, JSONObject runJsonObject, JSONArray outputDataArray,
+            JSONArray outputMaterialArray) throws ExperimentException, ValidationException;
     void handleProperties(ViewContext context, ExpObject object, DomainProperty[] dps, JSONObject propertiesJson) throws ValidationException, JSONException;
     void beforeSave(ViewContext context, JSONObject rootJson, ExpProtocol protocol)throws Exception;
     void afterSave(ViewContext context, ExpExperiment batch, ExpProtocol protocol) throws Exception;

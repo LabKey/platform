@@ -61,9 +61,8 @@ import java.util.Map;
  */
 public class DefaultAssaySaveHandler implements AssaySaveHandler
 {
-    private static final Logger LOG = Logger.getLogger(DefaultAssaySaveHandler.class);
+    protected static final Logger LOG = Logger.getLogger(DefaultAssaySaveHandler.class);
     protected AssayProvider _provider;
-    private boolean _deleteProtocolApplications = true;
 
     public AssayProvider getProvider()
     {
@@ -98,11 +97,6 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
         }
 
         return batch;
-    }
-
-    public void setDeleteProtocolApplications(boolean deletelProtocolApplications)
-    {
-        _deleteProtocolApplications = deletelProtocolApplications;
     }
 
     @Override
@@ -267,7 +261,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
                 materialOutputs = runJsonObject.getJSONArray(ExperimentJSONConverter.MATERIAL_OUTPUTS);
             }
 
-            rewriteProtocolApplications(context, protocol, _provider, run, dataInputs, dataRows, materialInputs, runJsonObject, dataOutputs, materialOutputs);
+            handleProtocolApplications(context, protocol, run, dataInputs, dataRows, materialInputs, runJsonObject, dataOutputs, materialOutputs);
             AssayPublishService.get().autoCopyResults(protocol, run, context.getUser(), context.getContainer());
         }
 
@@ -300,22 +294,24 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
         }
     }
 
-
-    private void rewriteProtocolApplications(ViewContext context, ExpProtocol protocol, AssayProvider provider, ExpRun run,
-                                             JSONArray inputDataArray, JSONArray dataArray,
-                                             JSONArray inputMaterialArray, JSONObject runJsonObject,
-                                             JSONArray outputDataArray, JSONArray outputMaterialArray)
-            throws ExperimentException, ValidationException
+    protected ExpData generateResultData(ViewContext context, ExpRun run, JSONArray dataArray, Map<ExpData, String> outputData)
     {
-        // First, clear out any old data analysis results
-        for (ExpData data : run.getOutputDatas(provider.getDataType()))
+        ExpData newData = null;
+
+        // Don't create an empty result data file if there are other outputs from this run, or if the user didn't
+        // include any data rows
+        if (dataArray.length() > 0 && outputData.isEmpty())
         {
-            if (data.getDataFileUrl() == null)
-            {
-                data.delete(context.getUser());
-            }
+            newData = DefaultAssayRunCreator.createData(run.getContainer(), null, "Analysis Results", _provider.getDataType(), true);
+            newData.save(context.getUser());
+            outputData.put(newData, ExpDataRunInput.DEFAULT_ROLE);
         }
 
+        return newData;
+    }
+
+    protected Map<ExpData, String> getInputData(ViewContext context, JSONArray inputDataArray) throws ValidationException
+    {
         Map<ExpData, String> inputData = new HashMap<>();
         for (int i = 0; i < inputDataArray.length(); i++)
         {
@@ -323,6 +319,11 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
             inputData.put(handleData(context, dataObject), dataObject.optString(ExperimentJSONConverter.ROLE, ExpDataRunInput.DEFAULT_ROLE));
         }
 
+        return inputData;
+    }
+
+    protected Map<ExpMaterial, String> getInputMaterial(ViewContext context, JSONArray inputMaterialArray) throws ValidationException
+    {
         Map<ExpMaterial, String> inputMaterial = new HashMap<>();
         for (int i=0; i < inputMaterialArray.length(); i++)
         {
@@ -332,9 +333,50 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
                 inputMaterial.put(material, materialObject.optString(ExperimentJSONConverter.ROLE, ExpMaterialRunInput.DEFAULT_ROLE));
         }
 
-        // Delete the contents of the run if allowed
-        if (_deleteProtocolApplications)
-            run.deleteProtocolApplications(context.getUser());
+        return inputMaterial;
+    }
+
+    protected void importRows(ViewContext context, ExpRun run, ExpData tsvData, ExpProtocol protocol, JSONObject runJsonObject, JSONArray dataArray)
+            throws ValidationException, ExperimentException
+    {
+        if (tsvData != null)
+        {
+            List<Map<String, Object>> rawData = dataArray.toMapList();
+
+            // programmatic qc validation
+            DataTransformer dataTransformer = _provider.getRunCreator().getDataTransformer();
+            if (dataTransformer != null)
+                dataTransformer.transformAndValidate(_provider.createRunUploadContext(context, protocol.getRowId(), runJsonObject, rawData), run);
+
+            TsvDataHandler dataHandler = new TsvDataHandler();
+            dataHandler.setAllowEmptyData(true);
+            dataHandler.importRows(tsvData, context.getUser(), run, protocol, _provider, rawData);
+        }
+    }
+
+    protected void clearOutputDatas(ViewContext context, ExpRun run)
+    {
+        for (ExpData data : run.getOutputDatas(_provider.getDataType()))
+        {
+            if (data.getDataFileUrl() == null)
+            {
+                data.delete(context.getUser());
+            }
+        }
+    }
+
+    @Override
+    public void handleProtocolApplications(ViewContext context, ExpProtocol protocol, ExpRun run, JSONArray inputDataArray,
+        JSONArray dataArray, JSONArray inputMaterialArray, JSONObject runJsonObject, JSONArray outputDataArray,
+        JSONArray outputMaterialArray) throws ExperimentException, ValidationException
+    {
+        // First, clear out any old data analysis results
+        clearOutputDatas(context, run);
+
+        Map<ExpData, String> inputData = getInputData(context, inputDataArray);
+        Map<ExpMaterial, String> inputMaterial = getInputMaterial(context, inputMaterialArray);
+
+        run.deleteProtocolApplications(context.getUser());
 
         // Recreate the run
         Map<ExpData, String> outputData = new HashMap<>();
@@ -346,15 +388,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
             outputData.put(handleData(context, dataObject), dataObject.optString(ExperimentJSONConverter.ROLE, ExpDataRunInput.DEFAULT_ROLE));
         }
 
-        ExpData newData = null;
-        // Don't create an empty result data file if there are other outputs from this run, or if the user didn't
-        // include any data rows
-        if (dataArray.length() > 0 && outputData.isEmpty())
-        {
-            newData = DefaultAssayRunCreator.createData(run.getContainer(), null, "Analysis Results", provider.getDataType(), true);
-            newData.save(context.getUser());
-            outputData.put(newData, ExpDataRunInput.DEFAULT_ROLE);
-        }
+        ExpData newData = generateResultData(context, run, dataArray, outputData);
 
         Map<ExpMaterial, String> outputMaterial = new HashMap<>();
         for (int i=0; i < outputMaterialArray.length(); i++)
@@ -364,8 +398,6 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
             if (material != null)
                 outputMaterial.put(material, materialObject.optString(ExperimentJSONConverter.ROLE, "Material"));
         }
-
-        List<Map<String, Object>> rawData = dataArray.toMapList();
 
         run = ExperimentService.get().saveSimpleExperimentRun(run,
                 inputMaterial,
@@ -392,17 +424,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
             }
         }
 
-        if (tsvData != null)
-        {
-            // programmatic qc validation
-            DataTransformer dataTransformer = _provider.getRunCreator().getDataTransformer();
-            if (dataTransformer != null)
-                dataTransformer.transformAndValidate(_provider.createRunUploadContext(context, protocol.getRowId(), runJsonObject, rawData), run);
-
-            TsvDataHandler dataHandler = new TsvDataHandler();
-            dataHandler.setAllowEmptyData(true);
-            dataHandler.importRows(tsvData, context.getUser(), run, protocol, _provider, rawData);
-        }
+        importRows(context, run, tsvData, protocol, runJsonObject, dataArray);
     }
 
     @Override
