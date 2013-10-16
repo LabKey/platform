@@ -19,7 +19,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
@@ -33,8 +33,15 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
-import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /*
  * User: brittp
@@ -49,6 +56,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
     private static final String USER_DEFAULT_VALUE_LSID_PREFIX = "UserDefaultValue";
     private static final String USER_DEFAULT_VALUE_DOMAIN_PARENT = "UserDefaultValueParent";
 
+    private final Lock _lock = new ReentrantLock();
 
     private String getContainerDefaultsLSID(Container container, Domain domain)
     {
@@ -104,14 +112,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
         // we create a parent object for this domain; this allows us to delete all instances later, even if there are
         // multiple scopes under the parent.
         String parentLSID = getUserDefaultsParentLSID(container, user, domain);
-        try
-        {
-            OntologyManager.ensureObject(container, parentLSID);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
+        OntologyManager.ensureObject(container, parentLSID);
         String objectLSID = getUserDefaultsLSID(container, user, domain, scope);
         replaceObject(container, domain, objectLSID, parentLSID, values);
     }
@@ -135,49 +136,36 @@ public class DefaultValueServiceImpl extends DefaultValueService
 
     private void replaceObject(Container container, Domain domain, String objectLSID, @Nullable String parentLSID, Map<DomainProperty, Object> values) throws ExperimentException
     {
-        try
+        try (DbScope.Transaction t = OntologyManager.getExpSchema().getScope().ensureTransaction(_lock))
         {
-            OntologyManager.getExpSchema().getScope().ensureTransaction();
+            OntologyManager.deleteOntologyObject(objectLSID, container, true);
+            OntologyManager.ensureObject(container, objectLSID, parentLSID);
+            List<ObjectProperty> objectProperties = new ArrayList<>();
 
-            synchronized (this)
+            for (DomainProperty property : domain.getProperties())
             {
-                OntologyManager.deleteOntologyObject(objectLSID, container, true);
-                OntologyManager.ensureObject(container, objectLSID, parentLSID);
-                List<ObjectProperty> objectProperties = new ArrayList<>();
-
-                for (DomainProperty property : domain.getProperties())
+                Object value = values.get(property);
+                // Leave it out if it's null, which will prevent it from failing validators
+                if (value != null)
                 {
-                    Object value = values.get(property);
-                    // Leave it out if it's null, which will prevent it from failing validators
-                    if (value != null)
+                    try
                     {
-                        try
-                        {
-                            ObjectProperty prop = new ObjectProperty(objectLSID, container, property.getPropertyURI(), value,
-                                    property.getPropertyDescriptor().getPropertyType(), property.getName());
-                            objectProperties.add(prop);
-                        }
-                        catch (ConversionException e)
-                        {
-                            Logger.getLogger(DefaultValueServiceImpl.class).warn("Unable to convert default value '" + value + "' for property " + property.getName() + ", dropping it");
-                        }
+                        ObjectProperty prop = new ObjectProperty(objectLSID, container, property.getPropertyURI(), value,
+                                property.getPropertyDescriptor().getPropertyType(), property.getName());
+                        objectProperties.add(prop);
+                    }
+                    catch (ConversionException e)
+                    {
+                        Logger.getLogger(DefaultValueServiceImpl.class).warn("Unable to convert default value '" + value + "' for property " + property.getName() + ", dropping it");
                     }
                 }
-                OntologyManager.insertProperties(container, objectLSID, objectProperties.toArray(new ObjectProperty[objectProperties.size()]));
             }
-                OntologyManager.getExpSchema().getScope().commitTransaction();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
+            OntologyManager.insertProperties(container, objectLSID, objectProperties.toArray(new ObjectProperty[objectProperties.size()]));
+            t.commit();
         }
         catch (ValidationException e)
         {
             throw new ExperimentException(e);
-        }
-        finally
-        {
-            OntologyManager.getExpSchema().getScope().closeConnection();
         }
     }
 

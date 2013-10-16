@@ -44,7 +44,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,24 +94,9 @@ public class AssaySchemaImpl extends AssaySchema
     }
 
     @Override
-    public Set<String> getVisibleTableNames()
-    {
-        return Collections.singleton(ASSAY_LIST_TABLE_NAME);
-    }
-
     public Set<String> getTableNames()
     {
-        Set<String> names = new TreeSet<>(new Comparator<String>()
-        {
-            public int compare(String o1, String o2)
-            {
-                return o1.compareToIgnoreCase(o2);
-            }
-        });
-
-        names.addAll(getVisibleTableNames());
-
-        return names;
+        return Collections.singleton(ASSAY_LIST_TABLE_NAME);
     }
 
     private Map<ExpProtocol, AssayProvider> getProtocols()
