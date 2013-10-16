@@ -56,6 +56,7 @@ public class DomainPropertyImpl implements DomainProperty
     PropertyDescriptor _pd;
     boolean _deleted;
     boolean _schemaChanged;
+    boolean _schemaImport;
     List<PropertyValidatorImpl> _validators;
     List<ConditionalFormat> _formats;
 
@@ -179,6 +180,13 @@ public class DomainPropertyImpl implements DomainProperty
     public void delete()
     {
         _deleted = true;
+    }
+
+    @Override
+    public void setSchemaImport(boolean isSchemaImport)
+    {
+        // if this flag is set True then the column is dropped and recreated by its Domain if there is a type change
+        _schemaImport = isSchemaImport;
     }
 
     public void setName(String name)
@@ -371,6 +379,17 @@ public class DomainPropertyImpl implements DomainProperty
         return pd;
     }
 
+    public boolean isRecreateRequired()
+    {
+        return _schemaChanged && _schemaImport;
+    }
+
+    public void markAsNew()
+    {
+        assert isRecreateRequired() && !isNew();
+        _pd.setPropertyId(0);
+    }
+
     private PropertyDescriptor edit()
     {
         if (_pdOld == null)
@@ -489,11 +508,6 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getPropertyId() == 0;
     }
 
-    public boolean isSchemaChanged()
-    {
-        return _schemaChanged;
-    }
-
     public boolean isDirty()
     {
         if (_pdOld != null) return true;
@@ -554,6 +568,7 @@ public class DomainPropertyImpl implements DomainProperty
 
         _pdOld = null;
         _schemaChanged = false;
+        _schemaImport = false;
 
         for (PropertyValidatorImpl validator : ensureValidators())
         {
@@ -734,21 +749,35 @@ public class DomainPropertyImpl implements DomainProperty
             // verify no change
             OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
             assertFalse(_dp.isDirty());
-            assertFalse(_dp.isSchemaChanged());
+            assertFalse(_dp._schemaChanged);
 
             // change a property
             _pd.setProtected(true);
             OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
             assertTrue(_dp.isDirty());
-            assertFalse(_dp.isSchemaChanged());
+            assertFalse(_dp._schemaChanged);
             assertTrue(_dp.isProtected() == _pd.isProtected());
 
-            // change the schema
+            // Issue #18738 change the schema outside of a schema reload and verify that the column
+            // change the schema but don't mark the property as "Schema Import"
+            // this will allow whatever type changes the UI allows (text -> multiline, for example)
             resetProperties(d, domainURI, c);
             _pd.setRangeURI("http://www.w3.org/2001/XMLSchema#double");
             OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
             assertTrue(_dp.isDirty());
-            assertTrue(_dp.isSchemaChanged());
+            assertTrue(_dp._schemaChanged);
+            assertFalse(_dp.isRecreateRequired());
+            assertTrue(StringUtils.equalsIgnoreCase(_dp.getRangeURI(), _pd.getRangeURI()));
+
+            // setting schema import to true will enable the _schemaChanged flag to toggle
+            // so it should be set true here
+            resetProperties(d, domainURI, c);
+            _dp.setSchemaImport(true);
+            _pd.setRangeURI("http://www.w3.org/2001/XMLSchema#double");
+            OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
+            assertTrue(_dp.isDirty());
+            assertTrue(_dp._schemaChanged);
+            assertTrue(_dp.isRecreateRequired());
             assertTrue(StringUtils.equalsIgnoreCase(_dp.getRangeURI(), _pd.getRangeURI()));
 
             // verify no change when setting value to the same value as it was
@@ -757,7 +786,8 @@ public class DomainPropertyImpl implements DomainProperty
             _pd.setProtected(false);
             OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
             assertFalse(_dp.isDirty());
-            assertFalse(_dp.isSchemaChanged());
+            assertFalse(_dp._schemaChanged);
+            assertFalse(_dp.isRecreateRequired());
 
             // verify Lookup is set to null with null schema
             resetProperties(d, domainURI, c);
@@ -789,7 +819,7 @@ public class DomainPropertyImpl implements DomainProperty
             _pd.setLookupSchema(schema);
             OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
             assertTrue(_dp.isDirty() == expectedDirty);
-            assertFalse(_dp.isSchemaChanged());
+            assertFalse(_dp._schemaChanged);
 
             // verify the lookup object returned
             Lookup l = _dp.getLookup();

@@ -276,7 +276,7 @@ public class DomainImpl implements Domain
             // Delete first #8978
             for (DomainPropertyImpl impl : _properties)
             {
-                if (impl._deleted)
+                if (impl._deleted || (impl.isRecreateRequired()))
                 {
                     impl.delete(user);
                     propsDropped.add(impl);
@@ -300,6 +300,11 @@ public class DomainImpl implements Domain
             {
                 if (!impl._deleted)
                 {
+                    if (impl.isRecreateRequired())
+                    {
+                        impl.markAsNew();
+                    }
+
                     if (impl.isNew())
                     {
                         if (impl._pd.isRequired())
@@ -311,14 +316,6 @@ public class DomainImpl implements Domain
                     else
                     {
                         propChanged |= impl.isDirty();
-                        if (impl.isSchemaChanged())
-                        {
-                            // Our column had a schema change (type change, for example) so we should drop
-                            // and re-add it.
-                            propsDropped.add(impl);
-                            propsAdded.add(impl);
-                        }
-
                         if (impl._pdOld != null)
                         {
                             // If this field is newly required, or it's required and we're disabling MV indicators on

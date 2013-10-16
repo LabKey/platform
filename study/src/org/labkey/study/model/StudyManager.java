@@ -2998,6 +2998,9 @@ public class StudyManager
 
             if (null != p)
             {
+                // Enable the domain to make schema changes for this property if required
+                // by dropping/adding the property and its storage at domain save time
+                p.setSchemaImport(true);
                 OntologyManager.updateDomainPropertyFromDescriptor(p, ipd.pd);
             }
             else
