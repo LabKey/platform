@@ -96,6 +96,9 @@ public class ExcelPlateReader implements PlateReader
             {
                 Row plateRow = plateSheet.getRow(row + startRow);
                 Cell cell = plateRow.getCell(col + startCol);
+                if (cell.getCellType() != Cell.CELL_TYPE_NUMERIC)
+                    throw new ExperimentException(dataFile.getName() + " does not appear to be a valid data file, there are non-numeric values on the plate");
+
                 cellValues[row][col] = cell.getNumericCellValue();
             }
         }

@@ -121,7 +121,7 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
         return null;
     }
 
-    public void setPropertyValue(String entityId, Container container, String propertyName, Object value) throws ValidationException
+    public synchronized void setPropertyValue(String entityId, Container container, String propertyName, Object value) throws ValidationException
     {
         if (entityId == null || container == null)
             return;
