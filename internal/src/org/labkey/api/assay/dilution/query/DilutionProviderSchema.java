@@ -25,14 +25,11 @@ import org.labkey.api.data.EnumTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayProviderSchema;
 import org.labkey.api.study.assay.AssayService;
 
-import javax.activation.DataHandler;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.query;
 
+import org.labkey.api.module.Module;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.data.Container;

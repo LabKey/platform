@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.query;
 
+import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.*;
 import org.labkey.api.data.*;
@@ -164,11 +165,17 @@ public class ExpSchema extends AbstractExpSchema
     public static final String SCHEMA_NAME = "exp";
     public static final String SCHEMA_DESCR = "Contains data about experiment runs, data files, materials, sample sets, etc.";
 
-    static public void register()
+    static public void register(final Module module)
     {
-        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider()
+        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider(module)
         {
-            public QuerySchema getSchema(DefaultSchema schema)
+            @Override
+            public boolean isAvailable(DefaultSchema schema, Module module)
+            {
+                return true;
+            }
+
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new ExpSchema(schema.getUser(), schema.getContainer());
             }

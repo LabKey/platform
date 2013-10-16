@@ -30,6 +30,11 @@ import java.util.Set;
 
 abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
 {
+    public FolderSchemaProvider()
+    {
+        super(null);
+    }
+
     static public class FolderSchema extends UserSchema
     {
         QuerySchema _fallback;

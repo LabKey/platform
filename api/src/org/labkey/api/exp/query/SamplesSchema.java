@@ -19,6 +19,7 @@ package org.labkey.api.exp.query;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.labkey.api.query.*;
 import org.labkey.api.data.Container;
@@ -49,10 +50,17 @@ public class SamplesSchema extends AbstractExpSchema
         return map;
     }
 
-    static public void register()
+    static public void register(final Module module)
     {
-        DefaultSchema.registerProvider("Samples", new DefaultSchema.SchemaProvider() {
-            public QuerySchema getSchema(DefaultSchema schema)
+        DefaultSchema.registerProvider("Samples", new DefaultSchema.SchemaProvider(module) {
+            @Override
+            public boolean isAvailable(DefaultSchema schema, Module module)
+            {
+                // createSchema must check if the Samples schema is available since it passes the sample set map as a constructor argument
+                return true;
+            }
+
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 Map<String, ExpSampleSet> map = getSampleSetMap(schema.getContainer(), schema.getUser());
                 if (map.isEmpty())

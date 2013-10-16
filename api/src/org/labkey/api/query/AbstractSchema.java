@@ -18,6 +18,7 @@ package org.labkey.api.query;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
+import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.NavTree;

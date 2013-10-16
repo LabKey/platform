@@ -23,6 +23,7 @@ import org.labkey.api.collections.ConcurrentCaseInsensitiveSortedMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 
@@ -41,7 +42,38 @@ final public class DefaultSchema extends AbstractSchema
 {
     static public abstract class SchemaProvider
     {
-        abstract public @Nullable QuerySchema getSchema(DefaultSchema schema);
+        private final Module _module;
+
+//        public SchemaProvider()
+//        {
+//            this(null);
+//        }
+
+        public SchemaProvider(@NotNull Module module)
+        {
+            _module = module;
+        }
+
+        public final @NotNull Module getModule() { return _module; }
+
+        public final @Nullable QuerySchema getSchema(DefaultSchema schema)
+        {
+            if (!isAvailable(schema, _module))
+                return null;
+
+            return createSchema(schema, _module);
+        }
+
+        /**
+         * Returns true if the schema should be made available in the schema tree in this container.
+         * The default implementation will only publish the schema if the module is active in the container.
+         */
+        public boolean isAvailable(DefaultSchema schema, Module module)
+        {
+            return module == null || schema.getContainer().getActiveModules().contains(module);
+        }
+
+        abstract public @Nullable QuerySchema createSchema(DefaultSchema schema, Module module);
     }
 
     static public abstract class DynamicSchemaProvider
@@ -68,28 +100,28 @@ final public class DefaultSchema extends AbstractSchema
     {
         registerProvider("Folder", new FolderSchemaProvider()
         {
-            public QuerySchema getSchema(DefaultSchema schema)
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new FolderSchema(schema.getUser(), schema.getContainer(), null);
             }
         });
         registerProvider("Project", new FolderSchemaProvider()
         {
-            public QuerySchema getSchema(DefaultSchema schema)
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 Container container = schema.getContainer().getProject();
                 return new FolderSchema(schema.getUser(), container, DefaultSchema.get(schema.getUser(), container));
             }
         });
         registerProvider("Shared", new FolderSchemaProvider(){
-            public QuerySchema getSchema(DefaultSchema schema)
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 Container container = ContainerManager.getSharedContainer();
                 return new FolderSchema(schema.getUser(), container, DefaultSchema.get(schema.getUser(), container));
             }
         });
         registerProvider("Site", new FolderSchemaProvider(){
-            public QuerySchema getSchema(DefaultSchema schema)
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 Container container = ContainerManager.getRoot();
                 return new FolderSchema(schema.getUser(), container, null);

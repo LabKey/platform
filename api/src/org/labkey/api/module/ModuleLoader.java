@@ -424,6 +424,9 @@ public class ModuleLoader implements Filter
         if (modulesRequiringUpgrade.isEmpty() && additionalSchemasRequiringUpgrade.isEmpty())
         {
             completeUpgrade(coreRequiredUpgrade);
+
+            // If no upgrade is required, we can begin module startup
+            //ensureStartupComplete();
         }
         else
         {
