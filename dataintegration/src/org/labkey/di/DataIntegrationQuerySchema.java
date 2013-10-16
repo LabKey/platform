@@ -19,6 +19,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySchema;
@@ -115,9 +116,9 @@ public class DataIntegrationQuerySchema extends UserSchema
 
     public static void register(final DataIntegrationModule module)
     {
-        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider()
+        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider(module)
         {
-            public QuerySchema getSchema(DefaultSchema schema)
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new DataIntegrationQuerySchema(schema.getUser(), schema.getContainer());
             }

@@ -27,6 +27,8 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.*;
 import org.labkey.api.security.*;
@@ -535,7 +537,7 @@ public class UserController extends SpringActionController
 
         protected QueryView createQueryView(final ShowUsersForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
         {
-            CoreQuerySchema schema = new CoreQuerySchema(getUser(), getContainer());
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
             QuerySettings settings = schema.getSettings(getViewContext(), DATA_REGION_NAME, getContainer().isRoot() ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME);
             settings.setAllowChooseView(true);
             settings.getBaseSort().insertSortColumn("email");
@@ -1324,8 +1326,8 @@ public class UserController extends SpringActionController
                 // Allow display and edit of users with invalid email addresses so they can be fixed, #12276.
             }
 
-            CoreQuerySchema schema = new CoreQuerySchema(getUser(), getContainer());
-            QueryUpdateForm quf = new QueryUpdateForm(schema.createTable(CoreQuerySchema.SITE_USERS_TABLE_NAME), getViewContext());
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
+            QueryUpdateForm quf = new QueryUpdateForm(schema.getTable(CoreQuerySchema.SITE_USERS_TABLE_NAME), getViewContext());
             DetailsView detailsView = new DetailsView(quf);
             DataRegion rgn = detailsView.getDataRegion();
 

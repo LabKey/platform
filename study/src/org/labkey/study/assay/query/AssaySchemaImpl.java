@@ -29,6 +29,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
@@ -66,7 +67,18 @@ public class AssaySchemaImpl extends AssaySchema
 
     static public class Provider extends DefaultSchema.SchemaProvider
     {
-        public QuerySchema getSchema(DefaultSchema schema)
+        public Provider(@Nullable Module module)
+        {
+            super(module);
+        }
+
+        @Override
+        public boolean isAvailable(DefaultSchema schema, Module module)
+        {
+            return true;
+        }
+
+        public QuerySchema createSchema(DefaultSchema schema, Module module)
         {
             return new AssaySchemaImpl(schema.getUser(), schema.getContainer(), null);
         }

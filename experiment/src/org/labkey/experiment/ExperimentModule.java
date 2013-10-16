@@ -111,8 +111,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         DefaultValueService.setInstance(new DefaultValueServiceImpl());
 
         ExperimentProperty.register();
-        SamplesSchema.register();
-        ExpSchema.register();
+        SamplesSchema.register(this);
+        ExpSchema.register(this);
         PropertyService.get().registerDomainKind(new SampleSetDomainType());
     }
 

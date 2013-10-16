@@ -20,6 +20,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
@@ -45,10 +46,17 @@ public class AuditQuerySchema extends UserSchema
     public static final String AUDIT_TABLE_NAME = "audit";
     private static Set<String> _tables = new HashSet<>();
 
-    static public void register()
+    static public void register(Module module)
     {
-        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider() {
-            public QuerySchema getSchema(DefaultSchema schema)
+        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider(module) {
+            @Override
+            public boolean isAvailable(DefaultSchema schema, Module module)
+            {
+                return true;
+            }
+
+            @Override
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new AuditQuerySchema(schema.getUser(), schema.getContainer());
             }

@@ -18,6 +18,7 @@ package org.labkey.announcements.query;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.*;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 
@@ -54,11 +55,11 @@ public class AnnouncementSchema extends UserSchema
         TABLE_NAMES = Collections.unmodifiableSet(names);
     }
 
-    public static void register()
+    public static void register(Module module)
     {
-        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider()
+        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider(module)
         {
-            public QuerySchema getSchema(DefaultSchema schema)
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 // Brute force fix for #3453 -- no query access to secure message board  TODO: Filter based on permissions instead.
                 if (AnnouncementsController.getSettings(schema.getContainer()).isSecure())

@@ -248,9 +248,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PlateService.register(new PlateManager());
         AssayService.setInstance(new AssayManager());
         StudyService.register(StudyServiceImpl.INSTANCE);
-        DefaultSchema.registerProvider(StudyQuerySchema.SCHEMA_NAME, new StudySchemaProvider());
-        DefaultSchema.registerProvider(PlateSchema.SCHEMA_NAME, new PlateSchema.Provider());
-        DefaultSchema.registerProvider(AssaySchemaImpl.NAME, new AssaySchemaImpl.Provider());
+        DefaultSchema.registerProvider(StudyQuerySchema.SCHEMA_NAME, new StudySchemaProvider(this));
+        DefaultSchema.registerProvider(PlateSchema.SCHEMA_NAME, new PlateSchema.Provider(this));
+        DefaultSchema.registerProvider(AssaySchemaImpl.NAME, new AssaySchemaImpl.Provider(this));
 
         PropertyService.get().registerDomainKind(new VisitDatasetDomainKind());
         PropertyService.get().registerDomainKind(new DateDatasetDomainKind());

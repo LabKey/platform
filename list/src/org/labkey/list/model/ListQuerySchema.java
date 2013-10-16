@@ -23,6 +23,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
@@ -45,11 +46,17 @@ public class ListQuerySchema extends UserSchema
     public static final String NAME = "lists";
     public static final String DESCR = "Contains a data table for each defined list";
 
-    public static void register()
+    public static void register(Module module)
     {
-        DefaultSchema.registerProvider(NAME, new DefaultSchema.SchemaProvider()
+        DefaultSchema.registerProvider(NAME, new DefaultSchema.SchemaProvider(module)
         {
-            public QuerySchema getSchema(DefaultSchema schema)
+            @Override
+            public boolean isAvailable(DefaultSchema schema, Module module)
+            {
+                return true;
+            }
+
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new ListQuerySchema(schema.getUser(), schema.getContainer());
             }

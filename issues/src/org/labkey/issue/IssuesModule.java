@@ -72,7 +72,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     protected void init()
     {
         addController("issues", IssuesController.class);
-        IssuesQuerySchema.register();
+        IssuesQuerySchema.register(this);
 
         EmailTemplateService.get().registerTemplate(IssueUpdateEmailTemplate.class);
     }

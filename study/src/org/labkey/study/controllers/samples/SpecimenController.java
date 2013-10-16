@@ -61,9 +61,12 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -3400,7 +3403,7 @@ public class SpecimenController extends BaseStudyController
         public Map<String, CustomView> getCustomViews(ViewContext context)
         {
             // 13485 - Use provider to handle NULL study
-            StudyQuerySchema schema = (StudyQuerySchema) new StudySchemaProvider().getSchema(DefaultSchema.get(context.getUser(), context.getContainer()));
+            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), SchemaKey.fromParts(StudyQuerySchema.SCHEMA_NAME));
             QueryDefinition def = QueryService.get().createQueryDefForTable(schema, "SpecimenDetail");
             return def.getCustomViews(context.getUser(), context.getRequest(), false, false);
         }

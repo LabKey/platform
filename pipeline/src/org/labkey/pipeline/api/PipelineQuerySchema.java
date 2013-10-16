@@ -24,6 +24,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -59,11 +60,17 @@ public class PipelineQuerySchema extends UserSchema
         TABLE_NAMES = Collections.unmodifiableSet(names);
     }
 
-    public static void register()
+    public static void register(Module module)
     {
-        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider()
+        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider(module)
         {
-            public QuerySchema getSchema(DefaultSchema schema)
+            @Override
+            public boolean isAvailable(DefaultSchema schema, Module module)
+            {
+                return true;
+            }
+
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new PipelineQuerySchema(schema.getUser(), schema.getContainer());
             }

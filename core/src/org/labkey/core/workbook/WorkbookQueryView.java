@@ -19,8 +19,10 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.Sort;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.view.ActionURL;
@@ -29,14 +31,9 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.core.CoreController;
 import org.labkey.core.query.CoreQuerySchema;
 
-/**
- * User: labkey
- * Date: Jan 5, 2010
- * Time: 5:09:55 PM
- */
 public class WorkbookQueryView extends QueryView
 {
-    public WorkbookQueryView(ViewContext ctx, CoreQuerySchema schema)
+    public WorkbookQueryView(ViewContext ctx, UserSchema schema)
     {
         super(schema);
 

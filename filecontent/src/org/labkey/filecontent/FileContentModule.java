@@ -28,13 +28,16 @@ import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.filecontent.message.FileContentDigestProvider;
 import org.labkey.filecontent.message.FileEmailConfig;
 import org.labkey.filecontent.message.ShortMessageDigest;
 
+import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -89,9 +92,16 @@ public class FileContentModule extends DefaultModule
         WebdavService.get().addProvider(new FileWebdavProvider());
 
         // initialize message digests
-        ShortMessageDigest.getInstance().initializeTimer();
         ShortMessageDigest.getInstance().addProvider(new FileContentDigestProvider(FileEmailConfig.SHORT_DIGEST));
         DailyMessageDigest.getInstance().addProvider(new FileContentDigestProvider(FileEmailConfig.DAILY_DIGEST));
+        ContextListener.addStartupListener("Short Message Digest", new StartupListener()
+        {
+            @Override
+            public void moduleStartupComplete(ServletContext servletContext)
+            {
+                ShortMessageDigest.getInstance().initializeTimer();
+            }
+        });
 
         // initialize message config provider
         MessageConfigService.getInstance().registerConfigType(new FileEmailConfig());

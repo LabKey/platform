@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySettings;
@@ -647,4 +648,12 @@ public class StudyQuerySchema extends UserSchema
             root.addChild("Manage datasets", new ActionURL(StudyController.ManageTypesAction.class, getContainer()));
         return root;
     }
+
+    @Override
+    public boolean isHidden()
+    {
+        // Don't display the study schema if the study doesn't exist in the current container.
+        return _study == null;
+    }
+
 }

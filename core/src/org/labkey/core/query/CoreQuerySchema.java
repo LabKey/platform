@@ -27,6 +27,7 @@ import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
@@ -56,6 +57,7 @@ public class CoreQuerySchema extends UserSchema
     private Set<Integer> _projectUserIds;
     final boolean _mustCheckPermissions;
 
+    public static final String NAME = "core";
     public static final String USERS_TABLE_NAME = "Users";
     public static final String GROUPS_TABLE_NAME = "Groups";
     public static final String USERS_AND_GROUPS_TABLE_NAME = "UsersAndGroups";
@@ -75,7 +77,7 @@ public class CoreQuerySchema extends UserSchema
 
     public CoreQuerySchema(User user, Container c, boolean mustCheckPermissions)
     {
-        super("core", SCHEMA_DESCR, user, c, CoreSchema.getInstance().getSchema());
+        super(NAME, SCHEMA_DESCR, user, c, CoreSchema.getInstance().getSchema());
         _mustCheckPermissions = mustCheckPermissions;
     }
 

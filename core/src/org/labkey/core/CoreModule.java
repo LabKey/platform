@@ -52,6 +52,9 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.ExcelLoader;
@@ -258,9 +261,16 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         ModuleStaticResolverImpl.get();
 
-        DefaultSchema.registerProvider("core", new DefaultSchema.SchemaProvider()
+        DefaultSchema.registerProvider("core", new DefaultSchema.SchemaProvider(this)
         {
-            public QuerySchema getSchema(DefaultSchema schema)
+            @Override
+            public boolean isAvailable(DefaultSchema schema, Module module)
+            {
+                return true;
+            }
+
+            @Override
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new CoreQuerySchema(schema.getUser(), schema.getContainer());
             }
@@ -333,7 +343,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 {
                     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
                     {
-                        WorkbookQueryView wbqview = new WorkbookQueryView(portalCtx, new CoreQuerySchema(portalCtx.getUser(), portalCtx.getContainer()));
+                        UserSchema schema = QueryService.get().getUserSchema(portalCtx.getUser(), portalCtx.getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
+                        WorkbookQueryView wbqview = new WorkbookQueryView(portalCtx, schema);
                         VBox box = new VBox(new WorkbookSearchView(wbqview), wbqview);
                         box.setFrame(WebPartView.FrameType.PORTAL);
                         box.setTitle("Workbooks");

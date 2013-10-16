@@ -98,7 +98,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     {
         addController("announcements", AnnouncementsController.class);
         AnnouncementService.setInstance(new AnnouncementServiceImpl());
-        AnnouncementSchema.register();
+        AnnouncementSchema.register(this);
         DiscussionService.register(new DiscussionServiceImpl());
     }
 

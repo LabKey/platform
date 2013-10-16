@@ -47,8 +47,11 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.view.SetupForm;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -1062,7 +1065,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             settings.setAllowChooseView(true);
             settings.getBaseSort().insertSortColumn("DisplayName");
 
-            QueryView queryView = new QueryView(new CoreQuerySchema(getViewContext().getUser(), getViewContext().getContainer()), settings, _errors)
+            UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
+            QueryView queryView = new QueryView(schema, settings, _errors)
             {
                 @Override
                 public List<DisplayColumn> getDisplayColumns()

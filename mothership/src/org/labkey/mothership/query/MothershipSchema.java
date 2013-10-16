@@ -27,7 +27,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.issues.IssuesUrls;
-import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
@@ -46,7 +46,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.mothership.MothershipController;
 import org.labkey.mothership.MothershipManager;
-import org.labkey.mothership.MothershipModule;
 import org.labkey.mothership.StackTraceDisplayColumn;
 import org.springframework.validation.BindException;
 
@@ -89,17 +88,13 @@ public class MothershipSchema extends UserSchema
         super(SCHEMA_NAME, SCHEMA_DESCR, user, container, MothershipManager.get().getSchema());
     }
 
-    static public void register()
+    static public void register(Module module)
     {
-        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider()
+        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider(module)
         {
-            public QuerySchema getSchema(DefaultSchema schema)
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
-                if (schema.getContainer().getActiveModules(schema.getUser()).contains(ModuleLoader.getInstance().getModule(MothershipModule.NAME)))
-                {
-                    return new MothershipSchema(schema.getUser(), schema.getContainer());
-                }
-                return null;
+                return new MothershipSchema(schema.getUser(), schema.getContainer());
             }
         });
     }

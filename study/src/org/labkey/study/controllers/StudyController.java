@@ -51,6 +51,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -74,6 +75,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
@@ -159,7 +161,6 @@ import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishManager;
-import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
@@ -1496,7 +1497,7 @@ public class StudyController extends BaseStudyController
         protected TableViewForm getCommand(HttpServletRequest request) throws Exception
         {
             User user = getUser();
-            QuerySchema schema = new StudySchemaProvider().getSchema(DefaultSchema.get(user, getViewContext().getContainer()));
+            UserSchema schema = QueryService.get().getUserSchema(user, getViewContext().getContainer(), SchemaKey.fromParts(StudyQuerySchema.SCHEMA_NAME));
             TableViewForm form = new TableViewForm(schema.getTable("StudyProperties"));
             form.setViewContext(getViewContext());
             return form;
@@ -2908,6 +2909,7 @@ public class StudyController extends BaseStudyController
                 if (null == visit)
                     return Collections.emptyList();
             }
+
             StudyQuerySchema querySchema = new StudyQuerySchema(study, context.getUser(), true);
             QuerySettings qs = querySchema.getSettings(context, DataSetQueryView.DATAREGION, def.getName());
             qs.setViewName(viewName);
@@ -3629,6 +3631,7 @@ public class StudyController extends BaseStudyController
                 lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), true, false);
             if (lsids == null || lsids.isEmpty())
                 return new HtmlView("No data rows selected.  " + PageFlowUtil.textLink("back", "javascript:back()"));
+
             StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
             DataSetQuerySettings qs = new DataSetQuerySettings(getViewContext().getBindPropertyValues(), DataSetQueryView.DATAREGION);
 

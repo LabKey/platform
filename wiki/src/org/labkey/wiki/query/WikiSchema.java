@@ -19,6 +19,7 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.EnumTableInfo;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
@@ -45,11 +46,17 @@ public class WikiSchema extends UserSchema
         TABLE_NAMES = Collections.unmodifiableSet(names);
     }
 
-    public static void register()
+    public static void register(Module module)
     {
-        DefaultSchema.registerProvider(WikiService.SCHEMA_NAME, new DefaultSchema.SchemaProvider()
+        DefaultSchema.registerProvider(WikiService.SCHEMA_NAME, new DefaultSchema.SchemaProvider(module)
         {
-            public QuerySchema getSchema(DefaultSchema schema)
+            @Override
+            public boolean isAvailable(DefaultSchema schema, Module module)
+            {
+                return true;
+            }
+
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new WikiSchema(schema.getUser(), schema.getContainer());
             }

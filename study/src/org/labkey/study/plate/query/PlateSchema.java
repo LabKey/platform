@@ -16,6 +16,8 @@
 
 package org.labkey.study.plate.query;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -43,13 +45,21 @@ public class PlateSchema extends UserSchema
 
     static public class Provider extends DefaultSchema.SchemaProvider
     {
-        public QuerySchema getSchema(DefaultSchema schema)
+        public Provider(@Nullable Module module)
+        {
+            super(module);
+        }
+
+        @Override
+        public boolean isAvailable(DefaultSchema schema, Module module)
         {
             PlateTemplate[] templates = PlateService.get().getPlateTemplates(schema.getContainer());
-            if (templates != null && templates.length > 0)
-                return new PlateSchema(schema.getUser(), schema.getContainer());
-            else
-                return null;
+            return templates != null && templates.length > 0;
+        }
+
+        public QuerySchema createSchema(DefaultSchema schema, Module module)
+        {
+            return new PlateSchema(schema.getUser(), schema.getContainer());
         }
     }
 
@@ -71,7 +81,7 @@ public class PlateSchema extends UserSchema
     public static PlateQueryView createPlateQueryView(ViewContext context, SimpleFilter filter)
     {
         String name = "Plate";
-        UserSchema schema = new PlateSchema(context.getUser(), context.getContainer());
+        UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), SchemaKey.fromParts(SCHEMA_NAME));
         QuerySettings settings = schema.getSettings(context, name, name);
         return new PlateQueryViewImpl(context, settings, filter);
     }
@@ -82,7 +92,7 @@ public class PlateSchema extends UserSchema
         if (type != null)
             name += "_" + type.name();
 
-        UserSchema schema = new PlateSchema(context.getUser(), context.getContainer());
+        UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), SchemaKey.fromParts(SCHEMA_NAME));
         QuerySettings settings = schema.getSettings(context, name, name);
         return new PlateQueryViewImpl(context, settings, filter);
     }

@@ -16,6 +16,7 @@
 
 package org.labkey.issue.query;
 
+import org.labkey.api.module.Module;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
@@ -68,10 +69,17 @@ public class IssuesQuerySchema extends UserSchema
         tableNames = Collections.unmodifiableSet(tableNames);
     }
 
-    static public void register()
+    static public void register(final Module module)
     {
-        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider() {
-            public QuerySchema getSchema(DefaultSchema schema)
+        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider(module) {
+            @Override
+            public boolean isAvailable(DefaultSchema schema, Module module)
+            {
+                // CONSIDER: use default implementation and only publish schema if module is active
+                return true;
+            }
+
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new IssuesQuerySchema(schema.getUser(), schema.getContainer());
             }

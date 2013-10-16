@@ -125,7 +125,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         EmailTemplateService.get().registerTemplate(PipelineManager.PipelineDigestJobSuccess.class);
         EmailTemplateService.get().registerTemplate(PipelineManager.PipelineDigestJobFailed.class);
 
-        PipelineQuerySchema.register();
+        PipelineQuerySchema.register(this);
     }
 
     @Override

@@ -24,6 +24,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.DefaultModule;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.DefaultSchema;
@@ -101,13 +102,11 @@ public class SurveyModule extends DefaultModule
 
         SurveyService.setInstance(new SurveyServiceImpl());
 
-        DefaultSchema.registerProvider("survey", new DefaultSchema.SchemaProvider()
+        DefaultSchema.registerProvider("survey", new DefaultSchema.SchemaProvider(this)
         {
-            public QuerySchema getSchema(DefaultSchema schema)
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
-                if (schema.getContainer().getActiveModules().contains(ModuleLoader.getInstance().getModule("survey")))
-                    return new SurveyQuerySchema(schema.getUser(), schema.getContainer());
-                return null;
+                return new SurveyQuerySchema(schema.getUser(), schema.getContainer());
             }
         });
 

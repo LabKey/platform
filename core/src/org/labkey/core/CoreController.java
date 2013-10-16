@@ -943,7 +943,8 @@ public class CoreController extends SpringActionController
 
             //otherwise, return a workbooks list with the search view
             HtmlView message = new HtmlView("<p class='labkey-error'>Could not find a workbook with id '" + form.getId() + "' in this folder or subfolders. Try searching or entering a different id.</p>");
-            WorkbookQueryView wbqview = new WorkbookQueryView(getViewContext(), new CoreQuerySchema(getUser(), getContainer()));
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
+            WorkbookQueryView wbqview = new WorkbookQueryView(getViewContext(), schema);
             return new VBox(message, new WorkbookSearchView(wbqview), wbqview);
         }
 

@@ -16,11 +16,10 @@
 package org.labkey.survey.query;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;

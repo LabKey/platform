@@ -126,7 +126,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
 
         ServiceRegistry.get().getService(FolderSerializationRegistry.class).addFactories(new WikiWriterFactory(), new WikiImporterFactory());
 
-        WikiSchema.register();
+        WikiSchema.register(this);
     }
 
     private void bootstrap(ModuleContext moduleContext)

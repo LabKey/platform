@@ -16,7 +16,9 @@
 
 package org.labkey.study.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.study.model.StudyImpl;
@@ -24,7 +26,18 @@ import org.labkey.study.model.StudyManager;
 
 public class StudySchemaProvider extends DefaultSchema.SchemaProvider
 {
-    public QuerySchema getSchema(DefaultSchema schema)
+    public StudySchemaProvider(@Nullable Module module)
+    {
+        super(module);
+    }
+
+    @Override
+    public boolean isAvailable(DefaultSchema schema, Module module)
+    {
+        return true;
+    }
+
+    public QuerySchema createSchema(DefaultSchema schema, Module module)
     {
         Container container = schema.getContainer();
         StudyImpl study = StudyManager.getInstance().getStudy(container);

@@ -66,7 +66,7 @@ public class MothershipModule extends DefaultModule
     protected void init()
     {
         addController("mothership", MothershipController.class);
-        MothershipSchema.register();
+        MothershipSchema.register(this);
     }
 
     @NotNull

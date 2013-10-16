@@ -68,7 +68,7 @@ public class AuditModule extends DefaultModule
 
     public void doStartup(ModuleContext moduleContext)
     {
-        AuditQuerySchema.register();
+        AuditQuerySchema.register(this);
         AuditLogService.get().addAuditViewFactory(new SiteSettingsAuditViewFactory());
         AuditLogService.registerAuditType(new SiteSettingsAuditProvider());
 

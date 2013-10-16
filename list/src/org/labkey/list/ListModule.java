@@ -86,7 +86,7 @@ public class ListModule extends DefaultModule
     {
         addController("list", ListController.class);
         ListService.setInstance(new ListServiceImpl());
-        ListQuerySchema.register();
+        ListQuerySchema.register(this);
 
         // NOTE: This domain kind is only maintained for purposes of migrating lists to hard tables.
         PropertyService.get().registerDomainKind(new ListDomainType());
