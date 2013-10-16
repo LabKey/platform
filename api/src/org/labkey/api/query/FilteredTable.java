@@ -502,7 +502,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
         ColumnInfo containerColumn = _rootTable.getColumn(getContainerFilterColumn());
         if (containerColumn != null && getContainer() != null)
         {
-            clearConditions(containerColumn.getName());
+            clearConditions(containerColumn.getFieldKey());
             addCondition(new SimpleFilter(filter.createFilterClause(getSchema(), containerColumn.getFieldKey(), getContainer())));
         }
     }

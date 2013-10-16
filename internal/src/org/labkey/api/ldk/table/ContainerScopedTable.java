@@ -80,6 +80,7 @@ public class ContainerScopedTable extends SimpleUserSchema.SimpleTable
         return this;
     }
 
+    @NotNull
     @Override
     public ContainerFilter getContainerFilter()
     {
