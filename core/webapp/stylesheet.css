@@ -2271,17 +2271,6 @@ div.labkey-webpart-menu div.labkey-wiki p {
     padding: 0 2px 2px;
 }
 
-/* for Knitr reports in the report designer script view, also picks up attributes from labkey-knitr class*/
-div.labkey-knitr-design
-{
-    margin-left: 0.83em;
-}
-
-.labkey-knitr-design pre
-{
-    margin-bottom : 0.83em;
-}
-
 /* for Knitr reports in the reports web-part; does not pick up  */
 div.labkey-knitr h1
 {
