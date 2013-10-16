@@ -1047,27 +1047,42 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
             try
             {
-                Class clazz = Class.forName(displayColumnClassName);
-
-                if (DisplayColumnFactory.class.isAssignableFrom(clazz))
+                if (displayColumnClassName.equals("DEFAULT"))
                 {
-                    //noinspection unchecked
-                    Class<DisplayColumnFactory> factoryClass = (Class<DisplayColumnFactory>)clazz;
-
-                    if (null == props)
-                    {
-                        Constructor<DisplayColumnFactory> ctor = factoryClass.getConstructor();
-                        _displayColumnFactory = ctor.newInstance();
-                    }
-                    else
-                    {
-                        Constructor<DisplayColumnFactory> ctor = factoryClass.getConstructor(MultiMap.class);
-                        _displayColumnFactory = ctor.newInstance(props);
-                    }
+                    _displayColumnFactory = DEFAULT_FACTORY;
+                }
+                else if (displayColumnClassName.equals("NOWRAP"))
+                {
+                    _displayColumnFactory = NOWRAP_FACTORY;
+                }
+                else if (displayColumnClassName.equals("NOLOOKUP"))
+                {
+                    _displayColumnFactory = NOLOOKUP_FACTORY;
                 }
                 else
                 {
-                    _log.error("Class is not a DisplayColumnFactory: " + displayColumnClassName);
+                    Class clazz = Class.forName(displayColumnClassName);
+
+                    if (DisplayColumnFactory.class.isAssignableFrom(clazz))
+                    {
+                        //noinspection unchecked
+                        Class<DisplayColumnFactory> factoryClass = (Class<DisplayColumnFactory>)clazz;
+
+                        if (null == props)
+                        {
+                            Constructor<DisplayColumnFactory> ctor = factoryClass.getConstructor();
+                            _displayColumnFactory = ctor.newInstance();
+                        }
+                        else
+                        {
+                            Constructor<DisplayColumnFactory> ctor = factoryClass.getConstructor(MultiMap.class);
+                            _displayColumnFactory = ctor.newInstance(props);
+                        }
+                    }
+                    else
+                    {
+                        _log.error("Class is not a DisplayColumnFactory: " + displayColumnClassName);
+                    }
                 }
             }
             catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e)
