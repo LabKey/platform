@@ -730,19 +730,17 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
         }
     },
 
-
     gotoError : function(error)
     {
         var _editor = error.type == 'xml' ? this.metaEditor : this.sourceEditor;
         this.tabPanel.setActiveTab(_editor);
-        if (_editor && _editor.codeMirror)
+        if (_editor && _editor.codeMirror && (error.line || error.col))
         {
             var pos = {ch : 0};
             if (error && error.line)
                 pos.line = Math.max(0,error.line-1);
             if (error && error.col)
                 pos.ch = Math.max(0,error.col);
-
             _editor.codeMirror.setCursor(pos);
             _editor.codeMirror.scrollIntoView(pos);
 
