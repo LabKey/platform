@@ -332,6 +332,20 @@ public abstract class SqlDialect
         return ("42P01".equals(sqlstate) || "42S02".equals(sqlstate) || "S0002".equals(sqlstate));
     }
 
+    public static boolean isConfigurationException(Exception x)
+    {
+        SQLException sqlx = null;
+        if (x instanceof RuntimeSQLException)
+            sqlx = ((RuntimeSQLException)x).getSQLException();
+        else if (x instanceof SQLException)
+            sqlx = (SQLException)x;
+        if (null == sqlx)
+            return false;
+        String sqlState = sqlx.getSQLState();
+        if (null == sqlState)
+            return false;
+        return sqlState.equals("42501"); // Insufficient Privilege // TODO verify SQL Server
+    }
 
     // Do dialect-specific work for this new data source.
     public void prepareNewDbScope(DbScope scope)

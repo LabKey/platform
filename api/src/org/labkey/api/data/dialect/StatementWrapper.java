@@ -1584,7 +1584,13 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     private void afterExecute(String sql, Exception x)
     {
         if (null != x)
+        {
             ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.DialectSQL, sql, true);
+            if (SqlDialect.isConfigurationException(x))
+            {
+                ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+            }
+        }
         _logStatement(sql, x);
     }
     
