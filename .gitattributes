@@ -663,6 +663,7 @@ core/src/org/labkey/core/admin/installComplete.jsp -text
 core/src/org/labkey/core/admin/logging.jsp -text
 core/src/org/labkey/core/admin/lookAndFeelProperties.jsp -text
 core/src/org/labkey/core/admin/lookAndFeelResources.jsp -text
+core/src/org/labkey/core/admin/maintenance.jsp -text
 core/src/org/labkey/core/admin/manageFolders.jsp -text
 core/src/org/labkey/core/admin/memTracker.jsp -text
 core/src/org/labkey/core/admin/moduleErrors.jsp -text

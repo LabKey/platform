@@ -28,6 +28,7 @@ import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -460,9 +461,12 @@ public class AdminController extends SpringActionController
             return new ActionURL(ResetPropertiesAction.class, c);
         }
 
-        public ActionURL getMaintenanceURL()
+        public ActionURL getMaintenanceURL(URLHelper returnURL)
         {
-            return new ActionURL(MaintenanceAction.class, ContainerManager.getRoot());
+            ActionURL url = new ActionURL(MaintenanceAction.class, ContainerManager.getRoot());
+            if (returnURL != null)
+                url.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
+            return url;
         }
 
         public ActionURL getManageFoldersURL(Container c)
@@ -547,12 +551,25 @@ public class AdminController extends SpringActionController
         }
     }
 
+    public static class MaintenanceBean
+    {
+        public String content;
+        public ActionURL loginURL;
+    }
 
+    /**
+     * During upgrade, startup, or maintenance mode, the user will be redirected to
+     * MaintenanceAction and only admin users will be allowed to log into the server.
+     * The maintenance.jsp page checks startup is complete or adminOnly mode is turned off
+     * and will redirect to the returnURL or the loginURL.
+     *
+     * See Issue 18758 for more information.
+     */
     @RequiresNoPermission
     @AllowedDuringUpgrade
-    public class MaintenanceAction extends SimpleViewAction
+    public class MaintenanceAction extends SimpleViewAction<ReturnUrlForm>
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
         {
             if (!getUser().isSiteAdmin())
             {
@@ -565,12 +582,48 @@ public class AdminController extends SpringActionController
             {
                 content =  wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
             }
-            return new HtmlView("The site is currently undergoing maintenance", content);
+
+            ActionURL loginURL = null;
+            if (getUser().isGuest())
+            {
+                ActionURL returnURL = form.getReturnActionURL();
+                if (returnURL != null)
+                    loginURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(ContainerManager.getRoot(), returnURL);
+                else
+                    loginURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL();
+            }
+
+            MaintenanceBean bean = new MaintenanceBean();
+            bean.content = content;
+            bean.loginURL = loginURL;
+
+            JspView view = new JspView<>("/org/labkey/core/admin/maintenance.jsp", bean, errors);
+            view.setTitle("The site is currently undergoing maintenance");
+            return view;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
+        }
+    }
+
+    /**
+     * Similar to SqlScriptController.GetModuleStatusAction except that Guest is
+     * allowed to check that the startup is complete.
+     */
+    @RequiresNoPermission
+    @AllowedDuringUpgrade
+    public class StartupStatusAction extends ApiAction
+    {
+        @Override
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            JSONObject result = new JSONObject();
+            result.put("startupComplete", ModuleLoader.getInstance().isStartupComplete());
+            result.put("adminOnly",  AppProps.getInstance().isUserRequestedAdminOnlyMode());
+
+            return new ApiSimpleResponse(result);
         }
     }
 
