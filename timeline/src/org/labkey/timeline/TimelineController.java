@@ -16,14 +16,7 @@
 
 package org.labkey.timeline;
 
-import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.NavTree;
-import org.springframework.validation.BindException;
-import org.springframework.web.servlet.ModelAndView;
 
 public class TimelineController extends SpringActionController
 {
@@ -32,19 +25,5 @@ public class TimelineController extends SpringActionController
     public TimelineController() throws Exception
     {
         setActionResolver(_actionResolver);
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class BeginAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            return new HtmlView("Timeline", "Timeline only supplies a web part and an API.");
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root;
-        }
     }
 }

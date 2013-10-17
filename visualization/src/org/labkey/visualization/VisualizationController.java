@@ -31,7 +31,6 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.ExtendedApiQueryResponse;
-import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.announcements.DiscussionService;
@@ -82,7 +81,6 @@ import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -415,27 +413,6 @@ public class VisualizationController extends SpringActionController
         public QueryType getQueryType()
         {
             return _queryType;
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class BeginAction extends RedirectAction
-    {
-        @Override
-        public URLHelper getSuccessURL(Object o)
-        {
-            return PageFlowUtil.urlProvider(VisualizationUrls.class).getTimeChartDesignerURL(getContainer());
-        }
-
-        @Override
-        public boolean doAction(Object o, BindException errors) throws Exception
-        {
-            return true;
-        }
-
-        @Override
-        public void validateCommand(Object target, Errors errors)
-        {
         }
     }
 
