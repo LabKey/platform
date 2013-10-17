@@ -255,7 +255,7 @@ public class PropertyController extends SpringActionController
         {
             if (files.isEmpty())
             {
-                throw new UploadException("No files uploaded", 400);
+                throw new UploadException("No file(s) uploaded, or the uploaded file was empty", 400);
             }
             if (files.size() > 1)
             {
