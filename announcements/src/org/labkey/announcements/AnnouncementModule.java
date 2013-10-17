@@ -75,7 +75,7 @@ import java.util.Set;
 public class AnnouncementModule extends DefaultModule implements SearchService.DocumentProvider
 {
     public static final String WEB_PART_NAME = "Messages";
-
+    public static final String NAME = "Announcements";
 
     public AnnouncementModule()
     {
@@ -85,7 +85,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @Override
     public String getName()
     {
-        return "Announcements";
+        return NAME;
     }
 
     @Override

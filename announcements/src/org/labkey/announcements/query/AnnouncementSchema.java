@@ -15,10 +15,12 @@
  */
 package org.labkey.announcements.query;
 
+import org.labkey.announcements.AnnouncementModule;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.*;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 
@@ -59,13 +61,17 @@ public class AnnouncementSchema extends UserSchema
     {
         DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider(module)
         {
+            @Override
+            public boolean isAvailable(DefaultSchema schema, Module module)
+            {
+                // Schema is always available unless marked as secure.
+                // Brute force fix for #3453 -- no query access to secure message board  TODO: Filter based on permissions instead.
+                return !AnnouncementsController.getSettings(schema.getContainer()).isSecure();
+            }
+
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
-                // Brute force fix for #3453 -- no query access to secure message board  TODO: Filter based on permissions instead.
-                if (AnnouncementsController.getSettings(schema.getContainer()).isSecure())
-                    return null;
-                else
-                    return new AnnouncementSchema(schema.getUser(), schema.getContainer());
+                return new AnnouncementSchema(schema.getUser(), schema.getContainer());
             }
         });
     }
@@ -140,5 +146,12 @@ public class AnnouncementSchema extends UserSchema
     public Set<String> getTableNames()
     {
         return TABLE_NAMES;
+    }
+
+    @Override
+    public boolean isHidden()
+    {
+        Module module = ModuleLoader.getInstance().getModule(AnnouncementModule.NAME);
+        return !getContainer().getActiveModules().contains(module);
     }
 }
