@@ -43,14 +43,10 @@ public class QUnion extends QExpr
         {
             node.appendSource(builder);
 			builder.popPrefix();
-            if (getTokenType() == SqlBaseParser.UNION_ALL)
-                builder.pushPrefix(") UNION ALL (");
-            else
-			    builder.pushPrefix(") UNION (");
+            builder.pushPrefix(") " + SqlParser.tokenName(getTokenType()) + " (");
         }
         builder.append(")");
     }
-
 
     public void appendSql(SqlBuilder builder, Query query)
     {

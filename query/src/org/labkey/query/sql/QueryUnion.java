@@ -93,7 +93,7 @@ public class QueryUnion extends QueryRelation
                 select.markAllSelected(qunion);
                 _termList.add(select);
             }
-            else if (n instanceof QUnion && (_qunion.getTokenType() == SqlBaseParser.UNION || n.getTokenType() == SqlBaseParser.UNION_ALL))
+            else if (n instanceof QUnion && canFlatten(_qunion.getTokenType(),n.getTokenType()))
 			{
                 collectUnionTerms((QUnion)n);
 			}
@@ -104,6 +104,19 @@ public class QueryUnion extends QueryRelation
 				_termList.add(union);
 			}
         }
+    }
+
+    private boolean canFlatten(int parent, int child)
+    {
+        // INTERSECT,INTERSECT ok
+        // UNION,UNION ok
+        // UNION,UNION_ALL ok
+        // UNION_ALL,UNION_ALL ok
+        // don't flatten other combinations
+        // UNION_ALL,UNION NOT OK
+        if (parent == SqlBaseParser.UNION && child == SqlBaseParser.UNION_ALL)
+            return true;
+        return parent == child && parent != SqlBaseParser.EXCEPT;
     }
 
 
@@ -212,7 +225,7 @@ public class QueryUnion extends QueryRelation
 			unionSql.append("(");
 			unionSql.append(sql);
 			unionSql.append(")");
-			unionOperator = _qunion.getTokenType() == SqlBaseParser.UNION_ALL ? "\nUNION ALL\n" : "\nUNION\n";
+			unionOperator = "\n" + SqlParser.tokenName(_qunion.getTokenType()) + "\n";
 		}
 
         List<Map.Entry<QExpr,Boolean>> sort = null == _qorderBy ? null : _qorderBy.getSort();
@@ -373,7 +386,7 @@ public class QueryUnion extends QueryRelation
 			sb.append("(");
 			sb.append(sql);
 			sb.append(")");
-			unionOperator = _qunion.getTokenType() == SqlBaseParser.UNION_ALL ? "\nUNION ALL\n" : "\nUNION\n";
+			unionOperator = "\n" + SqlParser.tokenName(_qunion.getTokenType()) + "\n";
 		}
 
 		return sb.toString();

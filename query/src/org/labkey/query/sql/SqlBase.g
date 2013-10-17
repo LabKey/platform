@@ -142,6 +142,7 @@ DOT : '.';
 ELSE : 'else';
 END : 'end';
 ESCAPE : 'escape';
+EXCEPT : 'except';
 EXISTS : 'exists';
 FALSE : 'false';
 FROM : 'from';
@@ -152,6 +153,7 @@ IFDEFINED : 'ifdefined';
 IN : 'in';
 INNER : 'inner';
 INSERT : 'insert';
+INTERSECT : 'intersect';
 INTO : 'into';
 IS : 'is';
 JOIN : 'join';
@@ -279,7 +281,7 @@ insertablePropertySpec
 
 
 union
-  : unionTerm (u=UNION^ (ALL! { $u.tree.getToken().setType(UNION_ALL); } )? unionTerm)*
+  : unionTerm ((EXCEPT^|INTERSECT^|(u=UNION^ (ALL! { $u.tree.getToken().setType(UNION_ALL); })?)) unionTerm)*
   ;
 
 

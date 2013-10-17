@@ -150,9 +150,9 @@ public class SqlParser
 			{
 				CommonTree parseRoot = (CommonTree) selectScope.getTree();
 				assert parseRoot != null;
+//                assert dump(parseRoot);
                 assert parseRoot.getType() == STATEMENT;
                 assert parseRoot.getChildCount()==1 || parseRoot.getChildCount()==2;
-//                assert dump(parseRoot);
 
                 CommonTree parameters;
                 if (parseRoot.getChildCount() == 2)
@@ -171,9 +171,9 @@ public class SqlParser
                     }
                 }
                 CommonTree selectStmt = (CommonTree)parseRoot.getChild(parseRoot.getChildCount()-1);
-                if (selectStmt.getType() != QUERY && selectStmt.getType() != UNION && selectStmt.getType() != UNION_ALL)
+                if (selectStmt.getType() != QUERY && !isSetOperator(selectStmt.getType()))
                 {
-                    _parseErrors.add(new QueryParseException(tokenName(selectStmt.getType()) + " statements are not supported", null, parseRoot.getLine(), parseRoot.getCharPositionInLine()));
+                    errors.add(new QueryParseException(tokenName(selectStmt.getType()) + " statements are not supported", null, parseRoot.getLine(), parseRoot.getCharPositionInLine()));
                     return null;
                 }
 
@@ -200,6 +200,21 @@ public class SqlParser
 			return null;
 		}
 	}
+
+
+    private boolean isSetOperator(int type)
+    {
+        switch (type)
+        {
+            case UNION:
+            case UNION_ALL:
+            case INTERSECT:
+            case EXCEPT:
+                return true;
+            default:
+                return false;
+        }
+    }
 
 
     public QNode getRoot()
@@ -415,11 +430,11 @@ public class SqlParser
             "between","both",
             "case","class","count",
             "delete","desc","distinct",
-            "elements","else","empty","end","escape","exists",
+            "elements","else","empty","end","escape","except","exists",
             "false","fetch","from","full",
             "group",
             "having",
-            "in","indices","inner","insert","into","is",
+            "in","indices","inner","insert","intersect","into","is",
             "join",
             "leading","left","like","limit",
             "max","member","min",
@@ -598,6 +613,8 @@ public class SqlParser
             case HEX_DIGIT: return "HEX_DIGIT";
             case COMMENT: return "COMMENT";
             case LINE_COMMENT: return "LINE COMMENT";
+            case EXCEPT: return "EXCEPT";
+            case INTERSECT: return "INTERSECT";
         }
         return null;
     }
@@ -1152,6 +1169,8 @@ public class SqlParser
             case DISTINCT:
                 q = new QDistinct();
 				break;
+            case EXCEPT:
+            case INTERSECT:
 			case UNION:
             case UNION_ALL:
 				return new QUnion(node);
