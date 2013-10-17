@@ -438,16 +438,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
                     // ignore
                 }
 
-                if (user.isGuest())
+                if (!user.isSiteAdmin())
                 {
-                    if (returnURL != null)
-                        return PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(ContainerManager.getRoot(), returnURL);
-                    else
-                        return PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL();
-                }
-                else if (!user.isSiteAdmin())
-                {
-                    return PageFlowUtil.urlProvider(AdminUrls.class).getMaintenanceURL();
+                    return PageFlowUtil.urlProvider(AdminUrls.class).getMaintenanceURL(returnURL);
                 }
                 else if (upgradeRequired || !startupComplete)
                 {
