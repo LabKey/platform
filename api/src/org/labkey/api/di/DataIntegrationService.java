@@ -25,4 +25,5 @@ import org.labkey.api.module.Module;
 public interface DataIntegrationService
 {
     public void registerDescriptors(Module module);
+    public void registerStepProviders();
 }

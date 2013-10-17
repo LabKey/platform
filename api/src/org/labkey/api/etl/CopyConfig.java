@@ -25,7 +25,10 @@ import org.labkey.api.query.SchemaKey;
  *
  * This is a simple POJO that can be used to describe a simple copy operation.
  * Doesn't specify anything about filtering of source, etc.  However, for convienence, does
- * have a place to put name of a timestamp column
+ * have a place to put name of a timestamp column.
+ *
+ * There are now also flags to indicate the use of a source or filterStrategy. These were
+ * introduced to support stored procedure transforms for which source and filter are optional.
  */
 public class CopyConfig
 {
@@ -39,6 +42,8 @@ public class CopyConfig
     protected SchemaKey _targetSchema;
     protected String _targetQuery;
     protected TargetOptions _targetOptions = TargetOptions.append;
+    protected boolean _useSource = true;
+    protected boolean _useFilterStrategy = true;
 
     public CopyConfig()
     {
@@ -146,5 +151,25 @@ public class CopyConfig
     public void setId(String id)
     {
         _id = id;
+    }
+
+    public boolean isUseSource()
+    {
+        return _useSource;
+    }
+
+    public void setUseSource(boolean useSource)
+    {
+         _useSource = useSource;
+    }
+
+    public boolean isUseFilterStrategy()
+    {
+        return _useFilterStrategy;
+    }
+
+    public void setUseFilterStrategy(boolean useFilterStrategy)
+    {
+        _useFilterStrategy = useFilterStrategy;
     }
 }
