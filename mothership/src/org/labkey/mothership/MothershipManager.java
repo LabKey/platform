@@ -155,12 +155,9 @@ public class MothershipManager
 
                 if (description == null)
                 {
-                    filter.addCondition(FieldKey.fromString("Description"), "UnknownSVN;NotSVN", CompareType.IN);
+                    description = fabricateDescription(svnURL, svnRevision);
                 }
-                else
-                {
-                    filter.addCondition(FieldKey.fromString("Description"), description);
-                }
+                filter.addCondition(FieldKey.fromString("Description"), description);
 
                 SoftwareRelease result = new TableSelector(getTableInfoSoftwareRelease(), filter, null).getObject(SoftwareRelease.class);
                 if (result == null)
@@ -169,33 +166,6 @@ public class MothershipManager
                     result.setSVNRevision(svnRevision);
                     result.setSVNURL(svnURL);
                     result.setContainer(container.getId());
-                    if (svnURL != null)
-                    {
-                        if (svnURL.startsWith("https://hedgehog.fhcrc.org/tor/stedi/"))
-                        {
-                            description = svnURL.substring("https://hedgehog.fhcrc.org/tor/stedi/".length());
-                            if (description.endsWith("/server"))
-                            {
-                                description = description.substring(0, description.length() - "/server".length());
-                            }
-                            if (description.startsWith("branches/"))
-                            {
-                                description = description.substring("branches/".length());
-                            }
-                            if (svnRevision != null)
-                            {
-                                description = description + " - " + svnRevision;
-                            }
-                        }
-                        else
-                        {
-                            description = description != null ? description : "UnknownSVN";
-                        }
-                    }
-                    else
-                    {
-                        description = description != null ? description : "NotSVN";
-                    }
                     result.setDescription(description);
                     result = Table.insert(null, getTableInfoSoftwareRelease(), result);
                 }
@@ -209,6 +179,40 @@ public class MothershipManager
         }
     }
 
+    private String fabricateDescription(String svnURL, Integer svnRevision)
+    {
+        String description = null;
+
+        if (svnURL != null)
+        {
+            if (svnURL.startsWith("https://hedgehog.fhcrc.org/tor/stedi/"))
+            {
+                description = svnURL.substring("https://hedgehog.fhcrc.org/tor/stedi/".length());
+                if (description.endsWith("/server"))
+                {
+                    description = description.substring(0, description.length() - "/server".length());
+                }
+                if (description.startsWith("branches/"))
+                {
+                    description = description.substring("branches/".length());
+                }
+                if (svnRevision != null)
+                {
+                    description = description + " - " + svnRevision;
+                }
+            }
+            else
+            {
+                description = description != null ? description : "UnknownSVN";
+            }
+        }
+        else
+        {
+            description = description != null ? description : "NotSVN";
+        }
+
+        return description;
+    }
 
     public ServerInstallation getServerInstallation(String serverGUID, Container c)
     {
