@@ -84,7 +84,7 @@ public class SimpleQueryTransformStep extends TransformTask
         }
     }
 
-    private void recordWork(RecordedAction action)
+    protected void recordWork(RecordedAction action)
     {
         if (-1 != _recordsInserted)
             action.addProperty(TransformProperty.RecordsInserted.getPropertyDescriptor(), _recordsInserted);
