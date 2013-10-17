@@ -806,6 +806,8 @@ public class StringExpressionFactory
         public String eval(Map context)
         {
             String ret = super.eval(context);
+            if (null == ret)
+                return null;
             int i = StringUtils.indexOfAny(ret, ": /");
             if (-1 == i)
                 i = ret.length();
