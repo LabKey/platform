@@ -432,9 +432,12 @@ core/resources/schemas/dbscripts/sqlserver/core-13.12-13.13.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-13.13-13.14.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-13.14-13.15.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-13.20-13.21.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-13.22-13.23.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/group_concat_install.sql -text
+core/resources/schemas/dbscripts/sqlserver/group_concat_install_1.00.23696.sql -text
+core/resources/schemas/dbscripts/sqlserver/group_concat_uninstall.sql -text
 core/resources/schemas/dbscripts/sqlserver/labkey-0.00-13.21.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/bootstrap.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/core-0.00-1.21.sql -text
@@ -621,6 +624,7 @@ core/src/org/labkey/core/CoreController.java -text
 core/src/org/labkey/core/CoreFirstRequestHandler.java -text
 core/src/org/labkey/core/CoreModule.java -text
 core/src/org/labkey/core/CoreUpgradeCode.java -text
+core/src/org/labkey/core/GroupConcatInstallationManager.java -text
 core/src/org/labkey/core/ModulePropertiesTestCase.java -text
 core/src/org/labkey/core/admin/AbstractFileSiteSettingsAction.java -text
 core/src/org/labkey/core/admin/ActionsHelper.java -text

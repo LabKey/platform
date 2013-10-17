@@ -15,9 +15,25 @@
  */
 package org.labkey.core;
 
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.DeferredUpgrade;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.Selector;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
@@ -25,14 +41,12 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.settings.AbstractSettingsGroup;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.Portal;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UsersDomainKind;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -67,49 +81,31 @@ public class CoreUpgradeCode implements UpgradeCode
         ModuleLoader.getInstance().handleUnkownModules();
     }
 
-    // invoked by core-12.10-12.20.sql
+    static final String CURRENT_GROUP_CONCAT_VERSION = "1.00.23696";
+
+    // invoked by core-13.22-13.23.sql
     @SuppressWarnings({"UnusedDeclaration"})
     public void installGroupConcat(ModuleContext context)
     {
-        try
+        SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
+
+        // Install only on SQL Server
+        if (dialect.isSqlServer())
         {
-            SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
+            GroupConcatInstallationManager manager = new GroupConcatInstallationManager();
 
-            // Run the install script only if dialect supports GROUP_CONCAT
-            if (dialect.isSqlServer() && dialect.supportsGroupConcat())
-            {
-                try
-                {
-                    // Attempt to use the core.GROUP_CONCAT() aggregate function. If this succeeds, we'll skip the install step.
-                    SqlExecutor executor = new SqlExecutor(CoreSchema.getInstance().getSchema());
-                    executor.setLogLevel(Level.OFF);  // We expect this to fail in most cases... shut off data layer logging
-                    executor.execute("SELECT x.G, core.GROUP_CONCAT('Foo') FROM (SELECT 1 AS G) x GROUP BY G");
-                    return;
-                }
-                catch (Exception e)
-                {
-                    //
-                }
+            // Just return if newest version is already present... probably installed by admin before upgrade
+            if (manager.isInstalled(CURRENT_GROUP_CONCAT_VERSION))
+                return;
 
-                FileSqlScriptProvider provider = new FileSqlScriptProvider(ModuleLoader.getInstance().getCoreModule());
-                SqlScriptRunner.SqlScript script = new FileSqlScriptProvider.FileSqlScript(provider, CoreSchema.getInstance().getSchema(), "group_concat_install.sql", "core");
+            boolean success = manager.uninstallPrevious(context);
 
-                try (Connection conn = CoreSchema.getInstance().getSchema().getScope().getUnpooledConnection())
-                {
-                    SqlScriptManager.get(provider, script.getSchema()).runScript(context.getUpgradeUser(), script, context, conn);
-                }
-            }
-        }
-        catch (Throwable t)
-        {
-            // The GROUP_CONCAT install script can fail for a variety of reasons, e.g., the database user lacks sufficient
-            // permissions. If the automatic install fails then log and display the exception to admins, but continue
-            // upgrading. Not having GROUP_CONCAT is not a disaster; admin can install the function manually later.
+            // If we can't uninstall the old version then give up; GroupConcatInstallationManager already logged the error
+            if (!success)
+                return;
 
-            // Wrap the exception to provide an explanation to the admin
-            Exception wrap = new Exception("Failure installing GROUP_CONCAT aggregate function. This function is required for optimal operation of this server. Contact LabKey if you need assistance installing this function.", t);
-            ExceptionUtil.logExceptionToMothership(null, wrap);
-            ModuleLoader.getInstance().addModuleFailure("Core", wrap);
+            // Attempt to install the new version
+            manager.install(context, "group_concat_install_1.00.23696.sql");
         }
     }
 

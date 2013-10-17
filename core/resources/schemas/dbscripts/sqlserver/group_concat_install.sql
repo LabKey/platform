@@ -53,6 +53,8 @@
     merchantability, fitness for a particular purpose and non-infringement.
 
     Installation script for GROUP_CONCAT functions. Tested in SSMS 2008R2.
+
+    This script installs GROUP_CONCAT SQL Server CLR 1.00.11845 (Beta)
 */
 SET NOCOUNT ON ;
 GO
