@@ -15,8 +15,8 @@
  */
 package org.labkey.di.steps;
 
-import org.labkey.api.etl.CopyConfig;
-import org.labkey.api.query.SchemaKey;
+import org.apache.xmlbeans.XmlException;
+import org.labkey.etl.xml.TransformType;
 
 /**
  * User: matthewb
@@ -25,46 +25,28 @@ import org.labkey.api.query.SchemaKey;
  *
  * Metadata for a simple query transform
  */
-public class SimpleQueryTransformStepMeta extends CopyConfig implements StepMeta
+public class SimpleQueryTransformStepMeta extends StepMetaImpl
 {
-    Class targetStepClass = SimpleQueryTransformStep.class;
-    Class taskClass;
-    private String description;
-
-    public Class getTargetStepClass()
-    {
-        return targetStepClass;
-    }
-
-    public void setTargetStepClass(Class targetStepClass)
-    {
-        this.targetStepClass = targetStepClass;
-    }
-
-    public Class getTaskClass()
-    {
-        return taskClass;
-    }
-
-    public void setTaskClass(Class taskClass)
-    {
-        this.taskClass = taskClass;
-    }
-
-    public String getDescription()
-    {
-        return description;
-    }
-
-    public void setDescription(String description)
-    {
-        this.description = description;
-    }
-
     @Override
     public String toString()
     {
         return getSourceSchema().toString() + "." + getSourceQuery() + " --> " +
                 getTargetSchema().toString() + "." + getTargetQuery();
+    }
+
+    @Override
+    protected void parseWorkOptions(TransformType transformXML) throws XmlException
+    {
+        if (null != transformXML.getSource())
+        {
+            super.parseSource(transformXML);
+        }
+        else throw new XmlException(INVALID_SOURCE);
+
+        if (null != transformXML.getDestination())
+        {
+            super.parseDestination(transformXML);
+        }
+        else throw new XmlException(INVALID_DESTINATION);
     }
 }

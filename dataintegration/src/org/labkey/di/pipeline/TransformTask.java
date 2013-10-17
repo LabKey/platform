@@ -16,14 +16,25 @@
 package org.labkey.di.pipeline;
 
 import org.labkey.api.data.ParameterDescription;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.di.VariableMap;
 import org.labkey.di.VariableMapImpl;
+import org.labkey.di.data.TransformProperty;
+import org.labkey.di.filters.FilterStrategy;
+import org.labkey.di.filters.ModifiedSinceFilterStrategy;
+import org.labkey.di.steps.StepMeta;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Date;
 
 /**
@@ -32,14 +43,29 @@ import java.util.Date;
  */
 abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactory>
 {
+    final protected TransformJobContext _context;
+    final protected StepMeta _meta;
     final private TransformPipelineJob _txJob;
     final private RecordedActionSet _records = new RecordedActionSet();
     final private VariableMap _variableMap;
 
+    // todo: make these long again but then update the AbstractParameter code
+    // or else you'll get a cast exception. Note that when this change is made, StoredProcedureStep will need be updated
+    // where it casts the output parameters.
+    protected int _recordsInserted = -1;
+    protected int _recordsDeleted = -1;
+    protected int _recordsModified = -1;
+
     public static final String INPUT_ROLE = "Row Source";
     public static final String OUTPUT_ROLE = "Row Destination";
+    FilterStrategy _filterStrategy = null;
 
-    public TransformTask(TransformTaskFactory factory, PipelineJob job)
+    public TransformTask(TransformTaskFactory factory, PipelineJob job, StepMeta meta)
+    {
+        this(factory, job, meta, null);
+    }
+
+    public TransformTask(TransformTaskFactory factory, PipelineJob job, StepMeta meta, TransformJobContext context)
     {
         super(factory, job);
 
@@ -48,6 +74,13 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             _variableMap = _txJob.getStepVariableMap(factory.getId().getName());
         else
             _variableMap = new VariableMapImpl();
+        _context = context;
+        _meta = meta;
+    }
+
+    public static String getNumRowsString(int rows)
+    {
+        return rows + " row" + (rows != 1 ? "s" : "");
     }
 
     protected TransformPipelineJob getTransformJob()
@@ -93,6 +126,60 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         }
     }
 
-    abstract public boolean hasWork();
+    public boolean hasWork()
+    {
+        QuerySchema sourceSchema = DefaultSchema.get(_context.getUser(), _context.getContainer(), _meta.getSourceSchema());
+        if (null == sourceSchema || null == sourceSchema.getDbSchema())
+            throw new IllegalArgumentException("ERROR: Source schema not found: " + _meta.getSourceSchema());
+
+        TableInfo t = sourceSchema.getTable(_meta.getSourceQuery());
+        if (null == t)
+            throw new IllegalArgumentException("Could not find table: " +  _meta.getSourceSchema() + "." + _meta.getSourceQuery());
+
+        FilterStrategy filterStrategy = getFilterStrategy();
+        return filterStrategy.hasWork();
+    }
+
+    protected FilterStrategy getFilterStrategy()
+    {
+        if (null == _filterStrategy)
+        {
+            FilterStrategy.Factory factory = null;
+            ScheduledPipelineJobDescriptor jd = _context.getJobDescriptor();
+            if (jd instanceof TransformDescriptor)
+                factory = ((TransformDescriptor)jd).getDefaultFilterFactory();
+            if (null == factory)
+                factory = new ModifiedSinceFilterStrategy.Factory();
+
+            _filterStrategy = factory.getFilterStrategy(_context, _meta);
+        }
+
+        return _filterStrategy;
+    }
+
     abstract public void doWork(RecordedAction action) throws PipelineJobException;
+
+    protected void recordWork(RecordedAction action)
+    {
+        if (-1 != _recordsInserted)
+            action.addProperty(TransformProperty.RecordsInserted.getPropertyDescriptor(), _recordsInserted);
+        if (-1 != _recordsDeleted)
+            action.addProperty(TransformProperty.RecordsDeleted.getPropertyDescriptor(), _recordsDeleted);
+        if (-1 != _recordsModified)
+            action.addProperty(TransformProperty.RecordsModified.getPropertyDescriptor(), _recordsModified);
+        try
+        {
+            // input is source table
+            // output is dest table, or a stored procedure
+            // todo: this is a fake URI, figure out the real story for the Data Input/Ouput for a transform step
+            if (_meta.isUseSource())
+            {
+                action.addInput(new URI(_meta.getSourceSchema() + "." + _meta.getSourceQuery()), TransformTask.INPUT_ROLE);
+            }
+            action.addOutput(new URI(_meta.getTargetSchema() + "." + _meta.getTargetQuery()), TransformTask.OUTPUT_ROLE, false);
+        }
+        catch (URISyntaxException ignore)
+        {
+        }
+    }
 }

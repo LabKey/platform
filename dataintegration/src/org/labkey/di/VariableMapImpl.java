@@ -71,6 +71,17 @@ public class VariableMapImpl implements VariableMap
         }
     }
 
+    public VariableMapImpl(VariableMap parentScope, JSONObject json)
+    {
+        _outer = parentScope;
+        if (json != null)
+        {
+            for (Map.Entry<String, Object> e : json.entrySet())
+            {
+                put(e.getKey(), e.getValue());
+            }
+        }
+    }
 
     @Override
     public Object get(String key)

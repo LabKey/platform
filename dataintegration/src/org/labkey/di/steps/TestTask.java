@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.di.pipeline;
+package org.labkey.di.steps;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.pipeline.PipelineJob;
@@ -21,7 +21,8 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.di.VariableMap;
 import org.labkey.di.data.TransformProperty;
-import org.labkey.di.steps.SimpleQueryTransformStepMeta;
+import org.labkey.di.pipeline.TransformTask;
+import org.labkey.di.pipeline.TransformTaskFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -54,7 +55,7 @@ public class TestTask extends TransformTask
 
     public TestTask(TransformTaskFactory factory, PipelineJob job, SimpleQueryTransformStepMeta meta)
     {
-        super(factory, job);
+        super(factory, job, meta);
         _meta = meta;
     }
 

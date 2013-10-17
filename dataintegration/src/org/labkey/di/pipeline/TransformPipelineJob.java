@@ -67,8 +67,29 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
         File etlLogFile = new File(etlLogDir, DateUtil.formatDateTime(new Date(), "yyyy-MM-dd HH-mm-ss") + ".etl.log");
         _transformJobContext = new TransformJobContext(etlDescriptor, info.getContainer(), info.getUser());
         setLogFile(etlLogFile);
+        initVariableMap(info);
     }
 
+    private void initVariableMap(TransformJobContext info)
+    {
+        JSONObject state = TransformManager.get().getTransformConfiguration(info.getContainer(), info.getJobDescriptor()).getJsonState();
+        if (!state.isEmpty())
+        {
+            for (Map.Entry<String, Object> e : state.entrySet())
+            {
+                _variableMap.put(e.getKey(), e.getValue());
+            }
+            JSONObject steps = (JSONObject)_variableMap.get("steps");
+            if (!steps.isEmpty())
+            {
+                for (String k : steps.keySet())
+                {
+                    _stepVariableMaps.put(k, new VariableMapImpl(_variableMap, steps.getJSONObject(k)));
+                }
+            }
+        }
+        _variableMap.put(TransformProperty.RanStep1, false, VariableMap.Scope.global);
+    }
 
     public VariableMap getVariableMap()
     {
@@ -101,6 +122,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
         if (status.equals(PipelineJob.COMPLETE_STATUS))
         {
             JSONObject state = _variableMap.toJSONObject();
+            state.remove(TransformProperty.RanStep1);
             JSONObject steps = new JSONObject();
             for (Map.Entry<String,VariableMapImpl> e : _stepVariableMaps.entrySet())
             {

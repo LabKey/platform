@@ -41,7 +41,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
-import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -51,7 +50,6 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.SchemaKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -73,11 +71,14 @@ import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.filters.ModifiedSinceFilterStrategy;
 import org.labkey.di.filters.RunFilterStrategy;
 import org.labkey.di.filters.SelectAllFilterStrategy;
-import org.labkey.di.steps.SimpleQueryTransformStepMeta;
+import org.labkey.di.steps.SimpleQueryTransformStepProvider;
+import org.labkey.di.steps.StepMeta;
+import org.labkey.di.steps.StepProvider;
+import org.labkey.di.steps.StoredProcedureStepProvider;
+import org.labkey.di.steps.TestTaskProvider;
 import org.labkey.etl.xml.EtlDocument;
 import org.labkey.etl.xml.EtlType;
 import org.labkey.etl.xml.FilterType;
-import org.labkey.etl.xml.SchemaQueryType;
 import org.labkey.etl.xml.TransformType;
 import org.labkey.etl.xml.TransformsType;
 import org.quartz.CronExpression;
@@ -116,6 +117,7 @@ public class TransformManager implements DataIntegrationService
     private static final TransformManager INSTANCE = new TransformManager();
     private static final Logger LOG = Logger.getLogger(TransformManager.class);
     private static final String JOB_GROUP_NAME = "org.labkey.di.pipeline.ETLManager";
+    private List<StepProvider> _providers = new ArrayList<>();
 
     public static TransformManager get()
     {
@@ -148,7 +150,7 @@ public class TransformManager implements DataIntegrationService
         Long interval = null;
         CronExpression cron = null;
 
-        final ArrayList<SimpleQueryTransformStepMeta> stepMetaDatas = new ArrayList<>();
+        final ArrayList<StepMeta> stepMetaDatas = new ArrayList<>();
         final Path resourcePath = resource.getPath();
         final CaseInsensitiveHashSet stepIds = new CaseInsensitiveHashSet();
         final String configName = getConfigName(resourcePath.getName());
@@ -204,7 +206,7 @@ public class TransformManager implements DataIntegrationService
                 TransformType[] transformTypes = transforms.getTransformArray();
                 for (TransformType t : transformTypes)
                 {
-                    SimpleQueryTransformStepMeta meta = buildSimpleQueryTransformStepMeta(t, stepIds);
+                    StepMeta meta = buildTransformStepMeta(t, stepIds);
                     stepMetaDatas.add(meta);
                 }
             }
@@ -256,7 +258,7 @@ public class TransformManager implements DataIntegrationService
 
     private FilterStrategy.Factory createFilterFactory(FilterType filterTypeXML)
     {
-        String className = StringUtils.defaultString(filterTypeXML.getClassName(), ModifiedSinceFilterStrategy.class.getName());
+        String className = StringUtils.defaultString(filterTypeXML.getClassName().toString(), ModifiedSinceFilterStrategy.class.getName());
         if (!className.contains("."))
             className = "org.labkey.di.filters." + className;
         if (className.equals(ModifiedSinceFilterStrategy.class.getName()))
@@ -274,90 +276,38 @@ public class TransformManager implements DataIntegrationService
     static final String TYPE_REQUIRED = "Transform type attribute is required";
     static final String ID_REQUIRED = "Id attribute is required";
     static final String DUPLICATE_ID = "Id attribute must be unique for each Transform";
-    static final String INVALID_TARGET_OPTION = "Invalid targetOption attribute value specified";
-    static final String INVALID_SOURCE_OPTION = "Invalid sourceOption attribute value specified";
+    public static final String INVALID_TARGET_OPTION = "Invalid targetOption attribute value specified";
+    public static final String INVALID_SOURCE_OPTION = "Invaild sourceOption attribute value specified";
 
-    private SimpleQueryTransformStepMeta buildSimpleQueryTransformStepMeta(TransformType transformXML, Set<String> stepIds) throws XmlException
+    private StepMeta buildTransformStepMeta(TransformType transformXML, Set<String> stepIds) throws XmlException
     {
-        SimpleQueryTransformStepMeta meta = new SimpleQueryTransformStepMeta();
-
         if (null == transformXML.getId())
             throw new XmlException(ID_REQUIRED);
-
         if (stepIds.contains(transformXML.getId()))
             throw new XmlException(DUPLICATE_ID);
 
-        stepIds.add(transformXML.getId());
-        meta.setId(transformXML.getId());
-
-        if (null != transformXML.getDescription())
-        {
-            meta.setDescription(transformXML.getDescription());
-        }
-
-        String className = transformXML.getType();
-
-        if (null == className)
-        {
-            className = TransformTask.class.getName();
-        }
-
-        try
-        {
-            Class taskClass = Class.forName(className);
-            if (isValidTaskClass(taskClass))
-            {
-                meta.setTaskClass(taskClass);
-            }
-            else
-            {
-                throw new XmlException(INVALID_TYPE);
-            }
-        }
-        catch (ClassNotFoundException e)
+        StepProvider provider = getStepProvider(transformXML.getType());
+        if (null == provider)
         {
             throw new XmlException(INVALID_TYPE);
         }
 
-        SchemaQueryType source = transformXML.getSource();
-
-        if (null != source)
+        Class taskClass = provider.getStepClass();
+        StepMeta meta;
+        if (isValidTaskClass(taskClass))
         {
-            meta.setSourceSchema(SchemaKey.fromString(source.getSchemaName()));
-            meta.setSourceQuery(source.getQueryName());
-            if (null != source.getTimestampColumnName())
-                meta.setSourceTimestampColumnName(source.getTimestampColumnName());
-            if (null != source.getSourceOption())
-            {
-                try
-                {
-                    meta.setSourceOptions(CopyConfig.SourceOptions.valueOf(source.getSourceOption()));
-                }
-                catch (IllegalArgumentException x)
-                {
-                    throw new XmlException(INVALID_SOURCE_OPTION);
-                }
-            }
+            meta = provider.createMetaInstance();
+            meta.setProvider(provider);
+        }
+        else
+        {
+            throw new XmlException(INVALID_TYPE);
         }
 
-        SchemaQueryType destination = transformXML.getDestination();
+        meta.parseConfig(transformXML); // will throw XmlException on validation error
 
-        if (null != destination)
-        {
-            meta.setTargetSchema(SchemaKey.fromString(destination.getSchemaName()));
-            meta.setTargetQuery(destination.getQueryName());
-            if (null != destination.getTargetOption())
-            {
-                try
-                {
-                    meta.setTargetOptions(CopyConfig.TargetOptions.valueOf(destination.getTargetOption()));
-                }
-                catch (IllegalArgumentException x)
-                {
-                    throw new XmlException(INVALID_TARGET_OPTION);
-                }
-            }
-        }
+        // Only add to the list of steps after passing validation, including whatever extra validation was in StepMeta
+        stepIds.add(transformXML.getId());
 
         return meta;
     }
@@ -773,7 +723,28 @@ public class TransformManager implements DataIntegrationService
         DescriptorCache.registerModule(module);
     }
 
+    @Override
+    public void registerStepProviders()
+    {
+        _providers.add(new SimpleQueryTransformStepProvider());
+        _providers.add(new StoredProcedureStepProvider());
+        _providers.add(new TestTaskProvider());
 
+    }
+
+    @Nullable
+    public StepProvider getStepProvider(String providerName)
+    {
+        for (StepProvider potential : _providers)
+        {
+            if (potential.getName().equals(providerName) || potential.getLegacyNames().contains(providerName))
+            {
+                return potential;
+            }
+        }
+
+        return null;
+    }
 
     //
     // Tests

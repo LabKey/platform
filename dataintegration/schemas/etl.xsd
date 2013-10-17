@@ -11,23 +11,52 @@
 
     <complexType name="EtlType">
         <all>
-            <element name="name" type="string" maxOccurs="1" />
-            <element name="description" type="string" maxOccurs="1" />
-            <element name="transforms" type="etl:TransformsType" maxOccurs="1" />
-            <element name="schedule" type="etl:ScheduleType" maxOccurs="1" />
-            <element name="incrementalFilter" type="etl:FilterType" minOccurs="0" maxOccurs="1" />
+            <element name="name" type="string" maxOccurs="1"/>
+            <element name="description" type="string" maxOccurs="1"/>
+            <element name="transforms" type="etl:TransformsType" maxOccurs="1"/>
+            <element name="schedule" type="etl:ScheduleType" maxOccurs="1" minOccurs="0"/>
+            <element name="incrementalFilter" type="etl:FilterType" minOccurs="0" maxOccurs="1"/>
         </all>
     </complexType>
 
 
     <complexType name="SchemaQueryType">
-        <attribute name="schemaName" type="string" use="required" />
-        <attribute name="queryName" type="string" use="required" />
-        <attribute name="timestampColumnName" type="string" use="optional" />
-        <attribute name="sourceOption" type="string" use="optional" />
-        <attribute name="targetOption" type="string" use="optional" />
+        <attribute name="schemaName" type="string" use="required"/>
+        <attribute name="queryName" type="string" use="required"/>
+        <attribute name="timestampColumnName" type="string" use="optional"/>
+        <attribute name="sourceOption" type="etl:SourceOptionType" use="optional"/>
+        <attribute name="targetOption" type="etl:TargetOptionType" use="optional"/>
     </complexType>
 
+    <simpleType name ="SourceOptionType">
+        <restriction base="string">
+            <enumeration value="deleteRowsAfterSelect"/>
+            <!-- TODO: This has not yet been implemented . -->
+        </restriction>
+    </simpleType>
+
+    <simpleType name="TargetOptionType">
+        <restriction base="string">
+            <enumeration value="merge"/>
+            <enumeration value="append"/>
+            <enumeration value="truncate"/>
+        </restriction>
+    </simpleType>
+
+    <complexType name="SchemaProcedureType">
+        <sequence minOccurs="0" maxOccurs="unbounded">
+            <element name="parameter" type="etl:ProcedureParameterType"/>
+        </sequence>
+        <attribute name="schemaName" type="string" use="required"/>
+        <attribute name="procedureName" type="string" use="required"/>
+        <attribute name="useTransaction" type="boolean" use="optional" default="true"/>
+    </complexType>
+
+    <complexType name="ProcedureParameterType">
+        <attribute name="name" type="string" use="required"/>
+        <attribute name="value" type="string" use="required"/>
+        <attribute name="override" type="boolean" use="optional"/>
+    </complexType>
 
     <complexType name="TransformsType">
         <sequence minOccurs="0" maxOccurs="unbounded">
@@ -35,68 +64,77 @@
         </sequence>
     </complexType>
 
-
     <complexType name="TransformType">
         <all>
-            <element name="properties" type="etl:PropertiesType" minOccurs="0" maxOccurs="1" />
-            <element name="description" type="string" minOccurs="1" maxOccurs="1"/>
-            <element name="source" type="etl:SchemaQueryType" maxOccurs="1" minOccurs="1" />
-            <element name="destination" type="etl:SchemaQueryType" maxOccurs="1" minOccurs="1" />
+            <element name="properties" type="etl:PropertiesType" minOccurs="0" maxOccurs="1"/>
+            <element name="description" type="string" minOccurs="0" maxOccurs="1"/>
+            <element name="source" type="etl:SchemaQueryType" maxOccurs="1" minOccurs="0"/>
+            <element name="destination" type="etl:SchemaQueryType" maxOccurs="1" minOccurs="0"/>
+            <element name="procedure" type="etl:SchemaProcedureType" maxOccurs="1" minOccurs="0"/>
         </all>
-        <attribute name="id" type="string" use="required" />
-        <attribute name="type" type="string" use="required" />
-        <attribute name="file" type="string" />
-        <attribute name="streaming" type="boolean" default="true" />
+        <attribute name="id" type="string" use="required"/>
+        <attribute name="type" type="string"/>
+        <attribute name="file" type="string"/>
+        <attribute name="streaming" type="boolean" default="true"/>
     </complexType>
-
 
     <complexType name="PropertiesType">
         <all>
-            <element name="property" type="string" minOccurs="0" />
+            <element name="property" type="string" minOccurs="0"/>
         </all>
     </complexType>
 
-
     <complexType name="PropertyType">
-        <attribute name="name" type="string" use="required" />
-        <attribute name="value" type="string" use="required" />
+        <attribute name="name" type="string" use="required"/>
+        <attribute name="value" type="string" use="required"/>
     </complexType>
 
 
     <complexType name="ScheduleType">
         <all>
-            <element name="poll" type="etl:PollType" minOccurs="0" />
-            <element name="cron" type="etl:CronType" minOccurs="0" />
+            <element name="poll" type="etl:PollType" minOccurs="0"/>
+            <element name="cron" type="etl:CronType" minOccurs="0"/>
         </all>
     </complexType>
 
 
     <complexType name="PollType">
-        <attribute name="interval" type="string" use="required" />
+        <attribute name="interval" type="string" use="required"/>
     </complexType>
 
 
     <complexType name="CronType">
-        <attribute name="expression" type="string" use="required" />
+        <attribute name="expression" type="string" use="required"/>
     </complexType>
 
 
     <complexType name="FilterType">
         <all>
-            <element name="properties" type="etl:PropertiesType"/>
+            <element name="properties" type="etl:PropertiesType" minOccurs="0"/>
         </all>
 
-        <attribute name="className" type="string" use="optional" />
-        <attribute name="selectAll" type="boolean" use="optional" />
+        <attribute name="className" type="etl:FilterClassType" use="optional"/>
+
+        <!-- TODO: temp removing this attribute until it is implemented. Intended to be an in-app configurable override to the filter strategy
+        <attribute name="selectAll" type="boolean" use="optional"/>
+        -->
 
         <!-- org.labkey.di.filters.ModifiedSinceFilterStrategy -->
-        <attribute name="timestampColumnName" type="string" use="optional" />
+        <attribute name="timestampColumnName" type="string" use="optional"/>
 
         <!-- org.labkey.di.filters.RunFilterStrategy -->
-        <attribute name="runTableSchema" type="string" use="optional" />
-        <attribute name="runTable" type="string" use="optional" />
-        <attribute name="pkColumnName" type="string" use="optional" />
-        <attribute name="fkColumnName" type="string" use="optional" />
+        <attribute name="runTableSchema" type="string" use="optional"/>
+        <attribute name="runTable" type="string" use="optional"/>
+        <attribute name="pkColumnName" type="string" use="optional"/>
+        <attribute name="fkColumnName" type="string" use="optional"/>
     </complexType>
+
+    <simpleType name="FilterClassType">
+        <restriction base="string">
+            <enumeration value="RunFilterStrategy"/>
+            <enumeration value="ModifiedSinceFilterStrategy"/>
+            <enumeration value="SelectAllFilterStrategy"/>
+        </restriction>
+    </simpleType>
 
 </schema>

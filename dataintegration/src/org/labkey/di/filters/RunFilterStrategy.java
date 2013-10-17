@@ -26,6 +26,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.di.VariableMap;
@@ -99,7 +100,7 @@ public class RunFilterStrategy implements FilterStrategy
             throw new IllegalArgumentException("Column not found: " + _runTableName + "." + _runPkCol);
 
 
-        if (null != _config)
+        if (null != _config && _config.isUseSource())
         {
             QuerySchema sourceSchema = DefaultSchema.get(_context.getUser(), _context.getContainer(), _config.getSourceSchema());
             if (null == sourceSchema)
@@ -152,8 +153,8 @@ public class RunFilterStrategy implements FilterStrategy
 
         Integer nextRunId;
         Object v = variables.get(TransformProperty.IncrementalRunId.getPropertyDescriptor().getName());
-
-        if (v instanceof Integer)
+        Boolean ranStep1 = (Boolean)variables.get(TransformProperty.RanStep1);
+        if (v instanceof Integer && ranStep1)
         {
             nextRunId = (Integer)v;
         }
@@ -161,10 +162,14 @@ public class RunFilterStrategy implements FilterStrategy
         {
             nextRunId = findNextRunId();
             variables.put(TransformProperty.IncrementalRunId.getPropertyDescriptor(), nextRunId, VariableMap.Scope.global);
+            variables.put(TransformProperty.RanStep1, true, VariableMap.Scope.global);
         }
 
         if (null != nextRunId)
-            return new SimpleFilter(_sourceFkCol.getFieldKey(), nextRunId, CompareType.EQUAL);
+        {
+            FieldKey sourceField = _config.isUseSource() ? _sourceFkCol.getFieldKey() : FieldKey.fromString("filterRunId");
+            return new SimpleFilter(sourceField, nextRunId, CompareType.EQUAL);
+        }
         else
             return new SimpleFilter(new SimpleFilter.FalseClause());
     }

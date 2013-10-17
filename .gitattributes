@@ -860,7 +860,6 @@ dataintegration/src/org/labkey/di/filters/SelectAllFilterStrategy.java -text
 dataintegration/src/org/labkey/di/pipeline/DescriptorCache.java -text
 dataintegration/src/org/labkey/di/pipeline/ETLPipelineProvider.java -text
 dataintegration/src/org/labkey/di/pipeline/EtlDirectoryListener.java -text
-dataintegration/src/org/labkey/di/pipeline/TestTask.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformConfiguration.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformDescriptor.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformJobContext.java -text
@@ -873,7 +872,15 @@ dataintegration/src/org/labkey/di/pipeline/TransformTask.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformTaskFactory.java -text
 dataintegration/src/org/labkey/di/steps/SimpleQueryTransformStep.java -text
 dataintegration/src/org/labkey/di/steps/SimpleQueryTransformStepMeta.java -text
+dataintegration/src/org/labkey/di/steps/SimpleQueryTransformStepProvider.java -text
 dataintegration/src/org/labkey/di/steps/StepMeta.java -text
+dataintegration/src/org/labkey/di/steps/StepMetaImpl.java -text
+dataintegration/src/org/labkey/di/steps/StepProvider.java -text
+dataintegration/src/org/labkey/di/steps/StoredProcedureStep.java -text
+dataintegration/src/org/labkey/di/steps/StoredProcedureStepMeta.java -text
+dataintegration/src/org/labkey/di/steps/StoredProcedureStepProvider.java -text
+dataintegration/src/org/labkey/di/steps/TestTask.java -text
+dataintegration/src/org/labkey/di/steps/TestTaskProvider.java -text
 dataintegration/src/org/labkey/di/view/DataIntegrationController.java -text
 dataintegration/src/org/labkey/di/view/processedETLJobs.jsp -text
 dataintegration/src/org/labkey/di/view/transformConfiguration.jsp -text

@@ -53,7 +53,6 @@ import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Path;
@@ -65,8 +64,8 @@ import org.labkey.di.VariableMap;
 import org.labkey.di.data.TransformDataType;
 import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
-import org.labkey.di.steps.SimpleQueryTransformStep;
-import org.labkey.di.steps.SimpleQueryTransformStepMeta;
+import org.labkey.di.steps.StepMeta;
+import org.labkey.di.steps.TestTask;
 import org.quartz.CronExpression;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.Job;
@@ -106,10 +105,10 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
     // steps
     private final FilterStrategy.Factory _defaultFactory;
-    private final ArrayList<SimpleQueryTransformStepMeta> _stepMetaDatas;
+    private final ArrayList<StepMeta> _stepMetaDatas;
 
 
-    public TransformDescriptor(String id, String name, String description, String moduleName, Long interval, CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<SimpleQueryTransformStepMeta> stepMetaDatas) throws XmlException, IOException
+    public TransformDescriptor(String id, String name, String description, String moduleName, Long interval, CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<StepMeta> stepMetaDatas) throws XmlException, IOException
     {
         _id = id;
         _name = name;
@@ -228,7 +227,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             if (null == c)
                 return false;
 
-            for (SimpleQueryTransformStepMeta stepMeta : _stepMetaDatas)
+            for (StepMeta stepMeta : _stepMetaDatas)
             {
                 /* <FOR TESTING ONLY> */
                 boolean throwNullPointerException = false;
@@ -238,21 +237,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
                 }
                 /* </FOR TESTING ONLY> */
 
-                // TODO : mapping from Step -> StepMeta should not be hard coded
-                TransformTask step;
-
-                if (TransformTask.class.equals(stepMeta.getTaskClass()))
-                {
-                    step = new SimpleQueryTransformStep(null, null, stepMeta, (TransformJobContext)context);
-                }
-                else if (TestTask.class.equals(stepMeta.getTaskClass()))
-                {
-                    step = new TestTask(null, null, stepMeta);
-                }
-                else
-                {
-                    throw new ConfigurationException("Unexpected class: " + stepMeta.getTaskClass());
-                }
+                TransformTask step = stepMeta.getProvider().createStepInstance(null, null, stepMeta, (TransformJobContext)context);
 
                 if (step.hasWork())
                     return true;
@@ -361,26 +346,10 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         if (i != 0)
             throw new IllegalArgumentException();
 
-        SimpleQueryTransformStepMeta meta = getTransformStepMetaFromTaskId(factory.getId());
+        StepMeta meta = getTransformStepMetaFromTaskId(factory.getId());
 
-        if (meta.getTaskClass().equals(TransformTask.class))
-            return new SimpleQueryTransformStep(factory, job, meta, context);
-        else
-        if (meta.getTaskClass().equals(TestTask.class))
-            return new TestTask(factory, job, meta);
+        return meta.getProvider().createStepInstance(factory, job, meta, context);
 
-        return null;
-
-//        Class c = meta.getTargetStepClass();
-//        try
-//        {
-//            PipelineJob.Task task = (PipelineJob.Task)c.getConstructor(meta.getClass()).newInstance(meta);
-//            return task;
-//        }
-//        catch (NoSuchMethodException|InstantiationException|IllegalAccessException|InvocationTargetException|ClassCastException x)
-//        {
-//            throw new RuntimeException(x);
-//        }
     }
 
 
@@ -400,10 +369,10 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 */
 
 
-    private SimpleQueryTransformStepMeta getTransformStepMetaFromTaskId(TaskId tid)
+    private StepMeta getTransformStepMetaFromTaskId(TaskId tid)
     {
         // step ids are guaranteed to be unique
-        for (SimpleQueryTransformStepMeta meta : _stepMetaDatas)
+        for (StepMeta meta : _stepMetaDatas)
         {
             if (StringUtils.equals(meta.getId(), tid.getName()))
                 return meta;
@@ -438,10 +407,10 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
         // Register all the tasks that are associated with this transform and
         // associate the correct stepMetaData with the task via the index
-        for (SimpleQueryTransformStepMeta meta : _stepMetaDatas)
+        for (StepMeta meta : _stepMetaDatas)
         {
             String taskName = meta.getId();
-            Class taskClass = meta.getTaskClass();
+            Class taskClass = meta.getProvider().getStepClass();
             // check to see if this class is part of our known transform tasks
             if (TransformTask.class.isAssignableFrom(taskClass))
             {
@@ -803,7 +772,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
         private boolean isValidStep(TransformDescriptor d, String stepName)
         {
-            for (SimpleQueryTransformStepMeta meta : d._stepMetaDatas)
+            for (StepMeta meta : d._stepMetaDatas)
             {
                 if (stepName.equalsIgnoreCase(meta.getId()))
                     return true;
@@ -826,7 +795,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         private void verifyData(TransformDescriptor d, String dataName, boolean isInput)
         {
             boolean found = false;
-            for(SimpleQueryTransformStepMeta meta : d._stepMetaDatas)
+            for(StepMeta meta : d._stepMetaDatas)
             {
                 String name;
 

@@ -21,7 +21,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.etl.AsyncDataIterator;
 import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.etl.DataIteratorBuilder;
@@ -43,8 +42,6 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.di.TransformDataIteratorBuilder;
 import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
-import org.labkey.di.filters.ModifiedSinceFilterStrategy;
-import org.labkey.di.pipeline.TransformDescriptor;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformTask;
 import org.labkey.di.pipeline.TransformTaskFactory;
@@ -63,37 +60,14 @@ import java.sql.SQLException;
 public class SimpleQueryTransformStep extends TransformTask
 {
     final SimpleQueryTransformStepMeta _meta;
-    final TransformJobContext _context;
-    // todo: make these long again but then update the AbstractParameter code
-    // or else you'll get a cast exception.
-    int _recordsInserted = -1;
-    int _recordsDeleted = -1;
 
     boolean _useAsynchrousQuery = false;
 
     public SimpleQueryTransformStep(TransformTaskFactory f, PipelineJob job, SimpleQueryTransformStepMeta meta, TransformJobContext context)
     {
-        super(f, job);
+        super(f, job, meta, context);
         _meta = meta;
-        _context = context;
     }
-
-
-    @Override
-    public boolean hasWork()
-    {
-        QuerySchema sourceSchema = DefaultSchema.get(_context.getUser(), _context.getContainer(), _meta.getSourceSchema());
-        if (null == sourceSchema || null == sourceSchema.getDbSchema())
-            throw new IllegalArgumentException("ERROR: Source schema not found: " + _meta.getSourceSchema());
-
-        TableInfo t = sourceSchema.getTable(_meta.getSourceQuery());
-        if (null == t)
-            throw new IllegalArgumentException("Could not find table: " +  _meta.getSourceSchema() + "." + _meta.getSourceQuery());
-
-        FilterStrategy filterStrategy = getFilterStrategy();
-        return filterStrategy.hasWork();
-    }
-
 
     public void doWork(RecordedAction action) throws PipelineJobException
     {
@@ -109,7 +83,6 @@ public class SimpleQueryTransformStep extends TransformTask
             getJob().getLogger().error(x);
         }
     }
-
 
     private void recordWork(RecordedAction action)
     {
@@ -236,11 +209,6 @@ public class SimpleQueryTransformStep extends TransformTask
         }
     }
 
-    static String getNumRowsString(int rows)
-    {
-        return rows + " row" + (rows != 1 ? "s" : "");
-    }
-
     static int appendToTarget(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source, Logger log)
     {
         QuerySchema querySchema =  DefaultSchema.get(u, c, meta.getTargetSchema());
@@ -289,25 +257,5 @@ public class SimpleQueryTransformStep extends TransformTask
         {
             throw new RuntimeSQLException(sqlx);
         }
-    }
-
-
-    FilterStrategy _filterStrategy = null;
-
-    FilterStrategy getFilterStrategy()
-    {
-        if (null == _filterStrategy)
-        {
-            FilterStrategy.Factory factory = null;
-            ScheduledPipelineJobDescriptor jd = _context.getJobDescriptor();
-            if (jd instanceof TransformDescriptor)
-                factory = ((TransformDescriptor)jd).getDefaultFilterFactory();
-            if (null == factory)
-                factory = new ModifiedSinceFilterStrategy.Factory();
-
-            _filterStrategy = factory.getFilterStrategy(_context, _meta);
-        }
-
-        return _filterStrategy;
     }
 }
