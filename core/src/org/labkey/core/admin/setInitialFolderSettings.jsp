@@ -15,21 +15,24 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.files.FileContentService" %>
+<%@ page import="org.labkey.api.files.FileContentService"%>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="java.io.File" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="java.io.File" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%
-    JspView<AdminController.ProjectSettingsForm> me = (JspView<AdminController.ProjectSettingsForm>) HttpView.currentView();
-    AdminController.ProjectSettingsForm form = me.getModelBean();
-    Container c = me.getViewContext().getContainer();
+<%!
 
-    String contextPath = me.getViewContext().getContextPath();
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        resources.add(ClientDependency.fromFilePath("createFolder.css"));
+        return resources;
+    }
+%>
+<%
     String projectDefaultRoot = "";
 
     File siteRoot = ServiceRegistry.get().getService(FileContentService.class).getSiteDefaultRoot();
@@ -43,10 +46,9 @@
         }
     }
 %>
-<script type="text/javascript">
-    LABKEY.requiresExt4Sandbox(true);
-    LABKEY.requiresCss('/createFolder.css');
-</script>
+<%=formatMissedErrors("form")%>
+<p></p>
+<div id="setInitialFolderSettingsDiv"></div>
 <script type="text/javascript">
     Ext4.onReady(function(){
         Ext4.FocusManager.enable(false);
@@ -152,8 +154,4 @@
 
     });
 </script>
-
-<%=formatMissedErrors("form")%>
-<p></p>
-<div id="setInitialFolderSettingsDiv"></div>
 
