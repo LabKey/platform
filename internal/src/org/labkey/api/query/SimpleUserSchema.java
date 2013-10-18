@@ -313,19 +313,13 @@ public class SimpleUserSchema extends UserSchema
                     if (_userSchema.getDbSchema().getName().equalsIgnoreCase(lookupSchemaName))
                         lookupSchemaName = _userSchema.getName();
 
-                    boolean joinWithContainer = false;
-                    if (fk instanceof ColumnInfo.SchemaForeignKey)
-                    {
-                        joinWithContainer = ((ColumnInfo.SchemaForeignKey)fk).isJoinWithContainer();
-                    }
-
                     boolean useRawFKValue = false;
                     if (fk instanceof QueryForeignKey)
                     {
                         useRawFKValue = ((QueryForeignKey)fk).isUseRawFKValue();
                     }
 
-                    ForeignKey wrapFk = new QueryForeignKey(fk.getLookupSchemaName(), getUserSchema().getContainer(), getUserSchema().getUser(), fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName(), useRawFKValue);
+                    ForeignKey wrapFk = new QueryForeignKey(lookupSchemaName, getUserSchema().getContainer(), getUserSchema().getUser(), fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName(), useRawFKValue);
                     if (fk instanceof MultiValuedForeignKey)
                     {
                         wrapFk = new MultiValuedForeignKey(wrapFk, ((MultiValuedForeignKey)fk).getJunctionLookup());
