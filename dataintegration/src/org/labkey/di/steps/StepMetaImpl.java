@@ -16,8 +16,10 @@
 package org.labkey.di.steps;
 
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.impl.values.XmlValueOutOfRangeException;
 import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.di.pipeline.TransformManager;
 import org.labkey.etl.xml.SchemaQueryType;
 import org.labkey.etl.xml.TransformType;
 
@@ -29,13 +31,6 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
 {
     protected String description;
     protected StepProvider provider;
-
-    // errors
-    static final String INVALID_TARGET_OPTION = "Invalid targetOption attribute value specified";
-    static final String INVALID_SOURCE_OPTION = "Invalid sourceOption attribute value specified";
-    static final String INVALID_SOURCE = "No source element specified.";
-    static final String INVALID_DESTINATION = "No destination element specified.";
-    static final String INVALID_PROCEDURE = "No procedure element specified.";
 
     @Override
     public StepProvider getProvider()
@@ -88,16 +83,14 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
             setSourceQuery(source.getQueryName());
             if (null != source.getTimestampColumnName())
                 setSourceTimestampColumnName(source.getTimestampColumnName());
-            if (null != source.getSourceOption())
+            try
             {
-                try
-                {
-                    setSourceOptions(CopyConfig.SourceOptions.valueOf(source.getSourceOption().toString()));
-                }
-                catch (IllegalArgumentException x)
-                {
-                    throw new XmlException(INVALID_SOURCE_OPTION);
-                }
+                if (null != source.getSourceOption())
+                   setSourceOptions(CopyConfig.SourceOptions.valueOf(source.getSourceOption().toString()));
+            }
+            catch (XmlValueOutOfRangeException e)
+            {
+                throw new XmlException(TransformManager.INVALID_SOURCE_OPTION);
             }
         }
     }
@@ -110,16 +103,14 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
         {
             setTargetSchema(SchemaKey.fromString(destination.getSchemaName()));
             setTargetQuery(destination.getQueryName());
-            if (null != destination.getTargetOption())
+            try
             {
-                try
-                {
+                if (null != destination.getTargetOption())
                     setTargetOptions(CopyConfig.TargetOptions.valueOf(destination.getTargetOption().toString()));
-                }
-                catch (IllegalArgumentException x)
-                {
-                    throw new XmlException(INVALID_TARGET_OPTION);
-                }
+            }
+            catch (XmlValueOutOfRangeException e)
+            {
+                throw new XmlException(TransformManager.INVALID_TARGET_OPTION);
             }
         }
     }

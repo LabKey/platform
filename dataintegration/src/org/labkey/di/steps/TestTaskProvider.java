@@ -20,6 +20,7 @@ import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformTask;
 import org.labkey.di.pipeline.TransformTaskFactory;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -38,7 +39,7 @@ public class TestTaskProvider implements StepProvider
     @Override
     public List<String> getLegacyNames()
     {
-        return Collections.emptyList();
+        return Collections.unmodifiableList(Arrays.asList("org.labkey.di.steps.TestTask"));
     }
 
     @Override

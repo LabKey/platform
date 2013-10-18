@@ -16,6 +16,7 @@
 package org.labkey.di.steps;
 
 import org.apache.xmlbeans.XmlException;
+import org.labkey.di.pipeline.TransformManager;
 import org.labkey.etl.xml.TransformType;
 
 /**
@@ -41,12 +42,12 @@ public class SimpleQueryTransformStepMeta extends StepMetaImpl
         {
             super.parseSource(transformXML);
         }
-        else throw new XmlException(INVALID_SOURCE);
+        else throw new XmlException(TransformManager.INVALID_SOURCE);
 
         if (null != transformXML.getDestination())
         {
             super.parseDestination(transformXML);
         }
-        else throw new XmlException(INVALID_DESTINATION);
+        else throw new XmlException(TransformManager.INVALID_DESTINATION);
     }
 }

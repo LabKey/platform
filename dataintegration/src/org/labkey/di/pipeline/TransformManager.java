@@ -276,8 +276,12 @@ public class TransformManager implements DataIntegrationService
     static final String TYPE_REQUIRED = "Transform type attribute is required";
     static final String ID_REQUIRED = "Id attribute is required";
     static final String DUPLICATE_ID = "Id attribute must be unique for each Transform";
+    // errors used by stepMeta's
     public static final String INVALID_TARGET_OPTION = "Invalid targetOption attribute value specified";
-    public static final String INVALID_SOURCE_OPTION = "Invaild sourceOption attribute value specified";
+    public static final String INVALID_SOURCE_OPTION = "Invalid sourceOption attribute value specified";
+    public static final String INVALID_SOURCE = "No source element specified.";
+    public static final String INVALID_DESTINATION = "No destination element specified.";
+    public static final String INVALID_PROCEDURE = "No procedure element specified.";
 
     private StepMeta buildTransformStepMeta(TransformType transformXML, Set<String> stepIds) throws XmlException
     {

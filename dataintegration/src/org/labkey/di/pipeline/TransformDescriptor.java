@@ -450,6 +450,9 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         private static final String NO_CLASS = "noclass.xml";
         private static final String BAD_SOURCE_OPT = "badsourceopt.xml";
         private static final String BAD_TARGET_OPT = "badtargetopt.xml";
+        private static final String BAD_SOURCE = "badsource.xml";
+        private static final String BAD_TARGET = "badtarget.xml";
+        private static final String BAD_PROCEDURE = "badprocedure.xml";
         private static final int TRY_QUANTA = 100; // ms
         private static final int NUM_TRIES = 100; // retry for a maximum of 10 seconds
         private static final Module module = ModuleLoader.getInstance().getModule("DataIntegration");
@@ -525,6 +528,9 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             checkInvalidSyntax(getFile(INVALID_CLASS), TransformManager.INVALID_TYPE);
             checkInvalidSyntax(getFile(BAD_SOURCE_OPT), TransformManager.INVALID_SOURCE_OPTION);
             checkInvalidSyntax(getFile(BAD_TARGET_OPT), TransformManager.INVALID_TARGET_OPTION);
+            checkInvalidSyntax(getFile(BAD_SOURCE), TransformManager.INVALID_SOURCE);
+            checkInvalidSyntax(getFile(BAD_TARGET), TransformManager.INVALID_DESTINATION);
+            checkInvalidSyntax(getFile(BAD_PROCEDURE), TransformManager.INVALID_PROCEDURE);
         }
 
         @Test
@@ -605,7 +611,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             TransformPipelineJob job = (TransformPipelineJob) d.getPipelineJob(context);
 
             VariableMap map = job.getVariableMap();
-            assert map.keySet().size() == 0;
+            assert map.keySet().size() == 1; // The transient "RunStep1" flag added at initialization.
 
             // add a transient variable (non-persisted) to the variable map
             // and ensure it doesn't show up in the protocol application properties

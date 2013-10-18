@@ -17,6 +17,7 @@ package org.labkey.di.steps;
 
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.di.pipeline.TransformManager;
 import org.labkey.etl.xml.ProcedureParameterType;
 import org.labkey.etl.xml.SchemaProcedureType;
 import org.labkey.etl.xml.TransformType;
@@ -75,7 +76,7 @@ public class StoredProcedureStepMeta extends StepMetaImpl
                 }
             }
         }
-        else throw new XmlException(INVALID_PROCEDURE);
+        else throw new XmlException(TransformManager.INVALID_PROCEDURE);
 
     }
 
