@@ -21,6 +21,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySettings;
@@ -38,6 +39,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.CohortImpl;
@@ -652,8 +654,9 @@ public class StudyQuerySchema extends UserSchema
     @Override
     public boolean isHidden()
     {
-        // Don't display the study schema if the study doesn't exist in the current container.
-        return _study == null;
+        // Don't display the study module isn't active in the container
+        Module studyModule = ModuleLoader.getInstance().getModule(StudyModule.MODULE_NAME);
+        return !getContainer().getActiveModules().contains(studyModule);
     }
 
 }
