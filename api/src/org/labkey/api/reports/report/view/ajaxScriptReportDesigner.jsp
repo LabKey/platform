@@ -147,7 +147,6 @@
     // TODO, add an action to get this information
     Map<String, Object> reportConfig = new HashMap<String, Object>();
 
-    reportConfig.put("script", StringUtils.trimToEmpty(bean.getScript()));
     reportConfig.put("schemaName", bean.getSchemaName());
     reportConfig.put("queryName", bean.getQueryName());
     reportConfig.put("viewName", bean.getViewName());
@@ -200,7 +199,8 @@
             redirectUrl     : <%=q(bean.getRedirectUrl())%>,
 
             sharedScripts   : <%=text(jsonMapper.writeValueAsString(sharedScripts))%>,
-            reportConfig    : <%=text(jsonMapper.writeValueAsString(reportConfig))%>
+            reportConfig    : <%=text(jsonMapper.writeValueAsString(reportConfig))%>,
+            script          : <%=q(StringUtils.trimToEmpty(bean.getScript()))%>
         });
 
         var _resize = function(w,h) {
