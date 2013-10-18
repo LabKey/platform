@@ -30,6 +30,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.util.UnexpectedException;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -58,7 +59,14 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     /** If container != null, it will be set as a constant in the insert statement */
     public static DataIteratorBuilder create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, DataIteratorContext context)
     {
-        TableInsertDataIterator it = new TableInsertDataIterator(data.getDataIterator(context), table, c, context);
+        DataIterator di = data.getDataIterator(context);
+        if (null == di)
+        {
+            if (!context.getErrors().hasErrors())
+                throw new NullPointerException("getDataIterator() returned NULL");
+            return null;
+        }
+        TableInsertDataIterator it = new TableInsertDataIterator(di, table, c, context);
         return it;
     }
 
