@@ -90,7 +90,7 @@
                 reportId: <%=q(id != null ? id.toString() : "")%>,
                 elementId: '<%=h(elementId)%>',
                 success: viewSavedChart,
-                failure: savedChartFailure
+                failure: displayFailureException
             });
         }
     });
@@ -99,8 +99,15 @@
     {
         // get the type information from the server
         LABKEY.Query.Visualization.getTypes({
-            successCallback : function(types){storeVisualizationTypes(types, config);},
-            failureCallback : function(info, response, options) {LABKEY.Utils.displayAjaxErrorResponse(response, options);},
+            successCallback : function(types){
+                storeVisualizationTypes(types, config);
+            },
+            failureCallback : function(info, response, options) {
+                if (info.exception)
+                    displayFailureException(info);
+                else
+                    LABKEY.Utils.displayAjaxErrorResponse(response, options);
+            },
             scope: this
         });
     }
@@ -145,9 +152,9 @@
         }
     }
 
-    function savedChartFailure(result)
+    function displayFailureException(info)
     {
-        Ext4.get('<%=h(elementId)%>').update("<span class='labkey-error'>" + result.exception + "</span>");
+        Ext4.get('<%=h(elementId)%>').update("<span class='labkey-error'>" + info.exception + "</span>");
     }
 
     function initializeTimeChartPanel(config, chartInfo, saveReportInfo) {

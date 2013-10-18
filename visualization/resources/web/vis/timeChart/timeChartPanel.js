@@ -18,10 +18,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     // study subject noun information
     SUBJECT : {
-        tableName: LABKEY.moduleContext.study.subject.tableName,
-        columnName: LABKEY.moduleContext.study.subject.columnName,
-        nounPlural: LABKEY.moduleContext.study.subject.nounPlural,
-        nounSingular: LABKEY.moduleContext.study.subject.nounSingular
+        tableName: LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.tableName : 'Participant',
+        columnName: LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.columnName : 'ParticipantId',
+        nounPlural: LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.nounPlural : 'Participants',
+        nounSingular: LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.nounSingular : 'Participant'
     },
 
     constructor : function(config){
@@ -800,6 +800,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         }
 
         var queryConfig = {
+            nounSingular: this.SUBJECT.nounSingular,
             chartInfo: this.chartInfo,
             dataLimit: this.dataLimit,
             defaultNumberFormat: this.defaultNumberFormat,
@@ -1008,7 +1009,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         // issue 17132: only apply clipRect if the user set a custom axis range
         var applyClipRect = LABKEY.vis.TimeChartHelper.generateApplyClipRect(this.chartInfo);
 
-        LABKEY.vis.TimeChartHelper.generateAcrossChartAxisRanges(this.chartInfo, this.chartData, seriesList);
+        LABKEY.vis.TimeChartHelper.generateAcrossChartAxisRanges(this.chartInfo, this.chartData, seriesList, this.SUBJECT.nounSingular);
 
         // remove any existing charts, remove items from the exportMenu button
         this.chart.removeAll();
@@ -1020,7 +1021,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         this.toggleSaveButtons(false);
 
-        this.plotConfigInfoArr = LABKEY.vis.TimeChartHelper.generatePlotConfigs(this.chartInfo, this.chartData, seriesList, applyClipRect, this.maxCharts);
+        this.plotConfigInfoArr = LABKEY.vis.TimeChartHelper.generatePlotConfigs(this.chartInfo, this.chartData, seriesList, applyClipRect, this.maxCharts, this.SUBJECT.columnName);
 
         // warn if the max number of charts has been exceeded
         if (this.plotConfigInfoArr.length >= this.maxCharts)
@@ -1163,7 +1164,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         var individualColumnAliases = this.chartData.individual ? this.chartData.individual.columnAliases : null;
         var aggregateColumnAliases = this.chartData.aggregate ? this.chartData.aggregate.columnAliases : null;
-        var intervalKey = LABKEY.vis.TimeChartHelper.generateIntervalKey(this.chartInfo, individualColumnAliases, aggregateColumnAliases);
+        var intervalKey = LABKEY.vis.TimeChartHelper.generateIntervalKey(this.chartInfo, individualColumnAliases, aggregateColumnAliases, this.SUBJECT.nounSingular);
         var visitMap = this.chartData.individual ? this.chartData.individual.visitMap : this.chartData.aggregate.visitMap;
         var tickMap = LABKEY.vis.TimeChartHelper.generateTickMap(visitMap);
 
@@ -1171,8 +1172,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             renderTo: newChartDiv.getId(),
             clipRect: applyClipRect,
             labels: this.generateLabels(mainTitle, forExport),
-            layers: LABKEY.vis.TimeChartHelper.generateLayers(this.chartInfo, visitMap, individualColumnAliases, aggregateColumnAliases, aggregateData, seriesList, intervalKey),
-            aes: LABKEY.vis.TimeChartHelper.generateAes(this.chartInfo, visitMap, individualColumnAliases, intervalKey),
+            layers: LABKEY.vis.TimeChartHelper.generateLayers(this.chartInfo, visitMap, individualColumnAliases, aggregateColumnAliases, aggregateData, seriesList, intervalKey, this.SUBJECT.columnName),
+            aes: LABKEY.vis.TimeChartHelper.generateAes(this.chartInfo, visitMap, individualColumnAliases, intervalKey, this.SUBJECT.columnName),
             scales: LABKEY.vis.TimeChartHelper.generateScales(this.chartInfo, tickMap, this.chartData.numberFormats),
             width: newChartDiv.getWidth() - 20, // -20 prevents horizontal scrollbars in cases with multiple charts.
             height: chartHeight - 20, // -20 prevents vertical scrollbars in cases with one chart.

@@ -9,6 +9,9 @@ if(!LABKEY.vis) {
 
 LABKEY.vis.TimeChartHelper = new function() {
 
+    var studyNounSingular = LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.nounSingular : 'Participant';
+    var studyNounColumnName = LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.columnName : 'ParticipantId';
+
     var generateLabels = function(mainTitle, axisArr) {
         var xTitle = '', yLeftTitle = '', yRightTitle = '';
         for (var i = 0; i < axisArr.length; i++)
@@ -115,7 +118,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         };
     };
 
-    var generateIntervalKey = function(config, individualColumnAliases, aggregateColumnAliases) {
+    var generateIntervalKey = function(config, individualColumnAliases, aggregateColumnAliases, nounSingular) {
         if (config.measures.length == 0)
             throw "There must be at least one specified measure in the chartInfo config!";
         if (!individualColumnAliases && !aggregateColumnAliases)
@@ -128,8 +131,8 @@ LABKEY.vis.TimeChartHelper = new function() {
         else
         {
             return individualColumnAliases ?
-                LABKEY.vis.getColumnAlias(individualColumnAliases, LABKEY.moduleContext.study.subject.nounSingular + "Visit/Visit") :
-                LABKEY.vis.getColumnAlias(aggregateColumnAliases, LABKEY.moduleContext.study.subject.nounSingular + "Visit/Visit");
+                LABKEY.vis.getColumnAlias(individualColumnAliases, (nounSingular || studyNounSingular) + "Visit/Visit") :
+                LABKEY.vis.getColumnAlias(aggregateColumnAliases, (nounSingular || studyNounSingular) + "Visit/Visit");
         }
     };
 
@@ -141,7 +144,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         return tickMap;
     };
 
-    var generateAes = function(config, visitMap, individualColumnAliases, intervalKey) {
+    var generateAes = function(config, visitMap, individualColumnAliases, intervalKey, nounColumnName) {
         if (config.measures.length == 0)
             throw "There must be at least one specified measure in the chartInfo config!";
 
@@ -151,7 +154,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         else
             xAes = function(row) { return visitMap[row[intervalKey].value].displayOrder; };
 
-        var individualSubjectColumn = individualColumnAliases ? LABKEY.vis.getColumnAlias(individualColumnAliases, LABKEY.moduleContext.study.subject.columnName) : null;
+        var individualSubjectColumn = individualColumnAliases ? LABKEY.vis.getColumnAlias(individualColumnAliases, nounColumnName || studyNounColumnName) : null;
 
         return {
             x: xAes,
@@ -161,7 +164,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         };
     };
 
-    var generateLayers = function(config, visitMap, individualColumnAliases, aggregateColumnAliases, aggregateData, seriesList, intervalKey) {
+    var generateLayers = function(config, visitMap, individualColumnAliases, aggregateColumnAliases, aggregateData, seriesList, intervalKey, nounColumnName) {
         if (config.measures.length == 0)
             throw "There must be at least one specified measure in the chartInfo config!";
         if (!individualColumnAliases && !aggregateColumnAliases)
@@ -169,7 +172,7 @@ LABKEY.vis.TimeChartHelper = new function() {
 
         var layers = [];
         var isDateBased = config.measures[0].time == "date";
-        var individualSubjectColumn = individualColumnAliases ? LABKEY.vis.getColumnAlias(individualColumnAliases, LABKEY.moduleContext.study.subject.columnName) : null;
+        var individualSubjectColumn = individualColumnAliases ? LABKEY.vis.getColumnAlias(individualColumnAliases, nounColumnName || studyNounColumnName) : null;
         var aggregateSubjectColumn = "UniqueId";
 
         var generateLayerAes = function(name, yAxisSide, columnName){
@@ -412,18 +415,18 @@ LABKEY.vis.TimeChartHelper = new function() {
         return arr;
     };
 
-    var generateDataSortArray = function(subject, firstMeasure, isDateBased) {
+    var generateDataSortArray = function(subject, firstMeasure, isDateBased, nounSingular) {
         return [
             subject,
             {
                 schemaName : firstMeasure.dateOptions ? firstMeasure.dateOptions.dateCol.schemaName : firstMeasure.measure.schemaName,
                 queryName : firstMeasure.dateOptions ? firstMeasure.dateOptions.dateCol.queryName : firstMeasure.measure.queryName,
-                name : isDateBased ? firstMeasure.dateOptions.dateCol.name : LABKEY.moduleContext.study.subject.nounSingular + "Visit/Visit/DisplayOrder"
+                name : isDateBased ? firstMeasure.dateOptions.dateCol.name : (nounSingular || studyNounSingular) + "Visit/Visit/DisplayOrder"
             },
             {
                 schemaName : firstMeasure.dateOptions ? firstMeasure.dateOptions.dateCol.schemaName : firstMeasure.measure.schemaName,
                 queryName : firstMeasure.dateOptions ? firstMeasure.dateOptions.dateCol.queryName : firstMeasure.measure.queryName,
-                name : LABKEY.moduleContext.study.subject.nounSingular + "Visit/Visit"
+                name : (nounSingular || studyNounSingular) + "Visit/Visit"
             }
         ];
     };
@@ -440,7 +443,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         );
     };
 
-    var generateAcrossChartAxisRanges = function(config, data, seriesList) {
+    var generateAcrossChartAxisRanges = function(config, data, seriesList, nounSingular) {
         if (config.measures.length == 0)
             throw "There must be at least one specified measure in the chartInfo config!";
         if (!data.individual && !data.aggregate)
@@ -480,7 +483,7 @@ LABKEY.vis.TimeChartHelper = new function() {
             else
             {
                 var visitMap = data.individual ? data.individual.visitMap : data.aggregate.visitMap;
-                xName = LABKEY.vis.getColumnAlias(columnAliases, LABKEY.moduleContext.study.subject.nounSingular + "Visit/Visit");
+                xName = LABKEY.vis.getColumnAlias(columnAliases, (nounSingular || studyNounSingular) + "Visit/Visit");
                 xFunc = function(row){
                     return visitMap[row[xName].value].displayOrder;
                 };
@@ -600,12 +603,12 @@ LABKEY.vis.TimeChartHelper = new function() {
         }
     };
 
-    var generatePlotConfigs = function(config, data, seriesList, applyClipRect, maxCharts) {
+    var generatePlotConfigs = function(config, data, seriesList, applyClipRect, maxCharts, nounColumnName) {
         var plotConfigInfoArr = [];
 
         var subjectColumnName = null;
         if (data.individual)
-            subjectColumnName = LABKEY.vis.getColumnAlias(data.individual.columnAliases, LABKEY.moduleContext.study.subject.columnName);
+            subjectColumnName = LABKEY.vis.getColumnAlias(data.individual.columnAliases, nounColumnName || studyNounColumnName);
 
         var generateGroupSeries = function(rows, groups, subjectColumn) {
             // subjectColumn is the aliasColumnName looked up from the getData response columnAliases array
@@ -794,7 +797,6 @@ LABKEY.vis.TimeChartHelper = new function() {
         var counter = config.chartInfo.displayIndividual && config.chartInfo.displayAggregate ? 2 : 1;
         var isDateBased = config.chartInfo.measures[0].time == "date";
         var seriesList = generateSeriesList(config.chartInfo.measures);
-        var nounSingular = LABKEY.moduleContext.study.subject.nounSingular;
 
         // Issue 16156: for date based charts, give error message if there are no calculated interval values
         chartData.hasIntervalData = !isDateBased;
@@ -891,7 +893,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                             response.hasNegativeValues[s.name] = true;
                     }
 
-                    var visitMappedName = LABKEY.vis.getColumnAlias(response.columnAliases, nounSingular + "Visit/Visit");
+                    var visitMappedName = LABKEY.vis.getColumnAlias(response.columnAliases, (config.nounSingular || studyNounSingular) + "Visit/Visit");
                     if (!isDateBased && row[visitMappedName])
                     {
                         var visitVal = row[visitMappedName].value;
@@ -918,6 +920,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         {
             //Get data for individual lines.
             LABKEY.Query.Visualization.getData({
+                containerPath: config.containerPath,
                 success: function(response) {
                     successCallback(response, "individual");
                 },
@@ -925,7 +928,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                     config.failure.call(config.scope, info);
                 },
                 measures: config.chartInfo.measures,
-                sorts: generateDataSortArray(config.chartInfo.subject, config.chartInfo.measures[0], isDateBased),
+                sorts: generateDataSortArray(config.chartInfo.subject, config.chartInfo.measures[0], isDateBased, config.nounSingular),
                 limit : config.dataLimit || 10000,
                 filterUrl: config.chartInfo.filterUrl,
                 filterQuery: config.chartInfo.filterQuery
@@ -944,6 +947,7 @@ LABKEY.vis.TimeChartHelper = new function() {
             }
 
             LABKEY.Query.Visualization.getData({
+                containerPath: config.containerPath,
                 success: function(response) {
                     successCallback(response, "aggregate");
                 },
@@ -956,7 +960,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                     {schemaName: 'study', queryName: 'ParticipantGroupCohortUnion', name: 'GroupingOrder', values: [0,1]},
                     {schemaName: 'study', queryName: 'ParticipantGroupCohortUnion', name: 'UniqueId', values: groups}
                 ],
-                sorts: generateDataSortArray(config.chartInfo.subject, config.chartInfo.measures[0], isDateBased),
+                sorts: generateDataSortArray(config.chartInfo.subject, config.chartInfo.measures[0], isDateBased, config.nounSingular),
                 limit : config.dataLimit || 10000,
                 filterUrl: config.chartInfo.filterUrl,
                 filterQuery: config.chartInfo.filterQuery
@@ -981,8 +985,8 @@ LABKEY.vis.TimeChartHelper = new function() {
 
         if (config.chartSubjectSelection == "subjects" && config.subject.values.length == 0)
         {
-            message = "No " + LABKEY.moduleContext.study.subject.nounSingular.toLowerCase() + " selected. " +
-                    "Please select at least one " + LABKEY.moduleContext.study.subject.nounSingular.toLowerCase() + ".";
+            message = "No " + studyNounSingular.toLowerCase() + " selected. " +
+                    "Please select at least one " + studyNounSingular.toLowerCase() + ".";
             return {success: false, message: message};
         }
 

@@ -115,6 +115,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "        }\n" +
             "\n" +
             "        queryConfig.success = selectRowsCallback;\n" +
+            "        queryConfig.containerPath = \"{{containerPath}}\";\n" +
             "        LABKEY.Query.selectRows(queryConfig);\n" +
             "    };\n" +
             "\n" +
@@ -126,6 +127,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
     compileTemplate: function(input) {
         return this.SCRIPT_TEMPLATE
                 .replace('{{chartConfig}}', LABKEY.ExtAdapter.encode(input.chartConfig))
-                .replace('{{queryConfig}}', LABKEY.ExtAdapter.encode(input.queryConfig));
+                .replace('{{queryConfig}}', LABKEY.ExtAdapter.encode(input.queryConfig))
+                .replace('{{containerPath}}', LABKEY.container.path);
     }
 });

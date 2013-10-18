@@ -19,6 +19,8 @@ Ext4.define('LABKEY.vis.TimeChartScriptPanel', {
             "    var DEFAULT_WIDTH = 1075;\n" +
             "    var DEFAULT_SINGLE_CHART_HEIGHT = 600;\n" +
             "    var DEFAULT_MULTI_CHART_HEIGHT = 380;\n" +
+            "    var STUDY_NOUN = LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.nounSingular : '{{studyNounSingular}}';\n" +
+            "    var STUDY_NOUN_COLUMN = LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.columnName : '{{studyNounColumnName}}';\n" +
             "\n" +
             "    // chartConfig is the saved information about the chart (measures, dimensions, labels, scales, etc.)\n" +
             "    var chartConfig = {{chartConfig}};\n" +
@@ -48,14 +50,14 @@ Ext4.define('LABKEY.vis.TimeChartScriptPanel', {
             "        var individualColumnAliases = responseData.individual ? responseData.individual.columnAliases : null;\n" +
             "        var aggregateColumnAliases = responseData.aggregate ? responseData.aggregate.columnAliases : null;\n" +
             "        var visitMap = responseData.individual ? responseData.individual.visitMap : responseData.aggregate.visitMap;\n" +
-            "        var intervalKey = TCH.generateIntervalKey(chartConfig, individualColumnAliases, aggregateColumnAliases);\n" +
-            "        var aes = TCH.generateAes(chartConfig, visitMap, individualColumnAliases, intervalKey);\n" +
+            "        var intervalKey = TCH.generateIntervalKey(chartConfig, individualColumnAliases, aggregateColumnAliases, STUDY_NOUN);\n" +
+            "        var aes = TCH.generateAes(chartConfig, visitMap, individualColumnAliases, intervalKey, STUDY_NOUN_COLUMN);\n" +
             "        var tickMap = TCH.generateTickMap(visitMap);\n" +
             "        var seriesList = TCH.generateSeriesList(chartConfig.measures);\n" +
             "        var applyClipRect = TCH.generateApplyClipRect(chartConfig);\n" +
             "\n" +
             "        // Once we have the data, we can set all of the axis min/max range values\n" +
-            "        TCH.generateAcrossChartAxisRanges(chartConfig, responseData, seriesList);\n" +
+            "        TCH.generateAcrossChartAxisRanges(chartConfig, responseData, seriesList, STUDY_NOUN);\n" +
             "        var scales = TCH.generateScales(chartConfig, tickMap, responseData.numberFormats);\n" +
             "\n" +
             "        // Validate that the chart data has expected values and give warnings if certain elements are not present\n" +
@@ -72,14 +74,14 @@ Ext4.define('LABKEY.vis.TimeChartScriptPanel', {
             "        }\n" +
             "\n" +
             "        // For time charts, we allow multiple plots to be displayed by participant, group, or measure/dimension\n" +
-            "        var plotConfigsArr = TCH.generatePlotConfigs(chartConfig, responseData, seriesList, applyClipRect, DEFAULT_MAX_CHARTS);\n" +
+            "        var plotConfigsArr = TCH.generatePlotConfigs(chartConfig, responseData, seriesList, applyClipRect, DEFAULT_MAX_CHARTS, STUDY_NOUN_COLUMN);\n" +
             "        for (var configIndex = plotConfigsArr.length - 1; configIndex >= 0; configIndex--)\n" +
             "        {\n" +
             "            var clipRect = plotConfigsArr[configIndex].applyClipRect;\n" +
             "            var series = plotConfigsArr[configIndex].series;\n" +
             "            var height = plotConfigsArr.length > 1 ? DEFAULT_MULTI_CHART_HEIGHT : DEFAULT_SINGLE_CHART_HEIGHT;\n" +
             "            var labels = TCH.generateLabels(plotConfigsArr[configIndex].title, chartConfig.axis);\n" +
-            "            var layers = TCH.generateLayers(chartConfig, visitMap, individualColumnAliases, aggregateColumnAliases, plotConfigsArr[configIndex].aggregateData, series, intervalKey);\n" +
+            "            var layers = TCH.generateLayers(chartConfig, visitMap, individualColumnAliases, aggregateColumnAliases, plotConfigsArr[configIndex].aggregateData, series, intervalKey, STUDY_NOUN_COLUMN);\n" +
             "            var data = plotConfigsArr[configIndex].individualData ? plotConfigsArr[configIndex].individualData : plotConfigsArr[configIndex].aggregateData;\n" +
             "\n" +
             "            var plotConfig = {\n" +
@@ -123,6 +125,8 @@ Ext4.define('LABKEY.vis.TimeChartScriptPanel', {
             "\n" +
             "        // When all the dependencies are loaded, we load the data using time chart helper getChartData\n" +
             "        var queryConfig = {\n" +
+            "            containerPath: \"{{containerPath}}\",\n" +
+            "            nounSingular: STUDY_NOUN,\n" +
             "            chartInfo: chartConfig,\n" +
             "            dataLimit: DEFAULT_DATA_LIMIT,\n" +
             "            defaultNumberFormat: DEFAULT_NUMBER_FORMAT,\n" +
@@ -137,5 +141,13 @@ Ext4.define('LABKEY.vis.TimeChartScriptPanel', {
             "    // Load the script dependencies for charts. \n" +
             "    LABKEY.requiresScript('/vis/timeChart/timeChartHelper.js', true, function(){LABKEY.vis.TimeChartHelper.loadVisDependencies(dependencyCallback);});\n" +
             "})();\n" +
-            "</script>"
+            "</script>",
+
+    compileTemplate: function(input) {
+        return this.SCRIPT_TEMPLATE
+                .replace('{{chartConfig}}', LABKEY.ExtAdapter.encode(input.chartConfig))
+                .replace('{{studyNounSingular}}', LABKEY.moduleContext.study.subject.nounSingular)
+                .replace('{{studyNounColumnName}}', LABKEY.moduleContext.study.subject.columnName)
+                .replace('{{containerPath}}', LABKEY.container.path);
+    }
 });
