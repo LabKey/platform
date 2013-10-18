@@ -187,7 +187,10 @@ public abstract class
                 int line = args.get(0).getLine();
                 int column = args.get(0).getColumn();
                 if (args.get(0).getTokenType() != SqlBaseLexer.QUOTED_STRING)
+                {
                     parseErrors.add(new QueryParseException(_name.toUpperCase() + "() function expects quoted string arguments", null, line, column));
+                    return;
+                }
 
                 String className = "";
                 String propertyName = "";
@@ -261,9 +264,15 @@ public abstract class
                 if (args.size() != 2)
                     return;
                 if (args.get(0).getTokenType() != SqlBaseLexer.QUOTED_STRING)
+                {
                     parseErrors.add(new QueryParseException(_name.toUpperCase() + "() function expects quoted string arguments", null, args.get(0).getLine(), args.get(0).getColumn()));
+                    return;
+                }
                 if (args.get(1).getTokenType() != SqlBaseLexer.QUOTED_STRING)
+                {
                     parseErrors.add(new QueryParseException(_name.toUpperCase() + "() function expects quoted string arguments", null, args.get(1).getLine(), args.get(1).getColumn()));
+                    return;
+                }
 
                 String moduleName = toSimpleString(new SQLFragment(args.get(0).getTokenText()));
                 Module module = ModuleLoader.getInstance().getModule(moduleName);
