@@ -111,7 +111,7 @@ public class StudyFolderTabs
             ActionURL currentURL = viewContext.getActionURL();
             return super.isSelectedPage(viewContext) ||
                     currentURL.getController().equalsIgnoreCase("study-reports") ||
-                    currentURL.getController().equalsIgnoreCase("reports") ||
+                    (currentURL.getController().equalsIgnoreCase("reports") && !currentURL.getAction().equalsIgnoreCase("manageviews")) ||
                     currentURL.getController().equalsIgnoreCase("dataset") ||
                     currentURL.getController().equalsIgnoreCase("visualization") ||
                     currentURL.getAction().equalsIgnoreCase("dataset");
@@ -201,7 +201,8 @@ public class StudyFolderTabs
             return super.isSelectedPage(viewContext) ||
                     currentURL.getController().equalsIgnoreCase("study-definition") ||
                     currentURL.getController().equalsIgnoreCase("cohort") ||
-                    currentURL.getController().equalsIgnoreCase("study-properties");
+                    currentURL.getController().equalsIgnoreCase("study-properties") ||
+                    (currentURL.getController().equalsIgnoreCase("reports") && currentURL.getAction().equalsIgnoreCase("manageviews"));
         }
 
         @Override
