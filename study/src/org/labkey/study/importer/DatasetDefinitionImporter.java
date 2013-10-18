@@ -16,6 +16,7 @@
 
 package org.labkey.study.importer;
 
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
@@ -35,11 +36,11 @@ import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * User: adam
@@ -73,10 +74,34 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
                 Container c = ctx.getContainer();
 
                 if (manifestDatasetsXml.isSetDefaultDateFormat())
-                    StudyManager.getInstance().setDefaultDateFormatString(c, manifestDatasetsXml.getDefaultDateFormat());
+                {
+                    String dateFormat = manifestDatasetsXml.getDefaultDateFormat();
+
+                    try
+                    {
+                        FastDateFormat.getInstance(dateFormat);
+                        StudyManager.getInstance().setDefaultDateFormatString(c, manifestDatasetsXml.getDefaultDateFormat());
+                    }
+                    catch (IllegalArgumentException e)
+                    {
+                        ctx.getLogger().warn("Illegal default date format specified: " + e.getMessage());
+                    }
+                }
 
                 if (manifestDatasetsXml.isSetDefaultNumberFormat())
-                    StudyManager.getInstance().setDefaultNumberFormatString(c, manifestDatasetsXml.getDefaultNumberFormat());
+                {
+                    String numberFormat =  manifestDatasetsXml.getDefaultNumberFormat();
+
+                    try
+                    {
+                        new DecimalFormat(numberFormat);
+                        StudyManager.getInstance().setDefaultNumberFormatString(c, numberFormat);
+                    }
+                    catch (IllegalArgumentException e)
+                    {
+                        ctx.getLogger().warn("Illegal default number format specified: " + e.getMessage());
+                    }
+                }
 
                 DatasetsDocument.Datasets.Datasets2.Dataset[] datasets = manifestDatasetsXml.getDatasets().getDatasetArray();
 
