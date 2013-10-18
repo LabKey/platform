@@ -8,12 +8,17 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     extend : 'LABKEY.vis.GenericOptionsPanel',
 
     constructor : function(config){
-        if(config.renderType == 'null'){
+        if (!config.renderType || config.renderType == 'null') {
             config.renderType = 'box_plot';
         }
+
+        if (config.pointType == null) {
+           config.pointType = 'outliers';
+        }
+
         Ext4.applyIf(config, {
             renderType: 'box_plot',
-            width: 300
+            width: 310
         });
 
         this.callParent([config]);
@@ -26,41 +31,16 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     initComponent : function() {
 
         var labelSeparator = '';
-        var labelWidth = 80;
-        var data = [
-            {renderType: 'scatter_plot', label: 'Scatter Plot'},
-            {renderType: 'box_plot', label: 'Box Plot'},
-            {renderType: 'auto_plot', label: 'Auto Plot'}
-        ];
+        var labelWidth = 85;
 
-        if(this.customRenderTypes){
-            for(renderType in this.customRenderTypes){
-                data.push({
-                    renderType: renderType,
-                    label: this.customRenderTypes[renderType].label
-                });
-            }
-        }
-
-        this.renderTypeStore = Ext4.create('Ext.data.Store', {
-            fields: ['renderType', 'label'],
-            data: data
-        });
-
-        this.renderTypeCombo = Ext4.create('Ext.form.ComboBox', {
-            fieldLabel: 'Plot Type',
-            store: this.renderTypeStore,
+        this.jitterCheckbox = Ext4.create('Ext.form.field.Checkbox', {
+            name: 'jitter',
+            fieldLabel: "Jitter Points?",
             labelSeparator: labelSeparator,
             labelWidth: labelWidth,
-            width: 293, // It'd be great if this didn't have to be hard-coded
-            queryMode: 'local',
-            editable: false,
-            forceSelection: true,
-            displayField: 'label',
-            valueField: 'renderType',
-            value: this.renderType,
+            value: this.position == 'jitter',
             listeners: {
-                change: function(combo){
+                change: function(cb, newVal, oldVal){
                     if(!this.suppressEvents){
                         this.hasChanges = true;
                     }
@@ -237,7 +217,9 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         });
 
         this.items = [
-            this.renderTypeCombo,
+            this.getRenderTypeCombo(labelWidth, labelSeparator),
+            this.getPointCombo(labelWidth, labelSeparator),
+            this.jitterCheckbox,
             this.lineWidthSlider,
             this.opacitySlider,
             this.pointSizeSlider,
@@ -261,6 +243,93 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.callParent();
     },
 
+    getRenderTypeCombo: function(labelWidth, labelSeparator){
+        if (!this.renderTypeCombo) {
+            var renderTypes = [
+                {renderType: 'scatter_plot', label: 'Scatter Plot'},
+                {renderType: 'box_plot', label: 'Box Plot'},
+                {renderType: 'auto_plot', label: 'Auto Plot'}
+            ];
+
+            if(this.customRenderTypes){
+                for(var renderType in this.customRenderTypes){
+                    renderTypes.push({
+                        renderType: renderType,
+                        label: this.customRenderTypes[renderType].label
+                    });
+                }
+            }
+
+            this.renderTypeStore = Ext4.create('Ext.data.Store', {
+                fields: ['renderType', 'label'],
+                data: renderTypes
+            });
+
+            this.renderTypeCombo = Ext4.create('Ext.form.ComboBox', {
+                fieldLabel: 'Plot Type',
+                store: this.renderTypeStore,
+                labelSeparator: labelSeparator,
+                labelWidth: labelWidth,
+                width: 293, // It'd be great if this didn't have to be hard-coded
+                queryMode: 'local',
+                editable: false,
+                forceSelection: true,
+                displayField: 'label',
+                valueField: 'renderType',
+                value: this.renderType,
+                listeners: {
+                    change: function(combo){
+                        if(!this.suppressEvents){
+                            this.hasChanges = true;
+                        }
+                    },
+                    scope: this
+                }
+            });
+        }
+
+        return this.renderTypeCombo;
+    },
+
+    getPointCombo: function(labelWidth, labelSeparator){
+        if (!this.pointCombo) {
+            var pointTypes = [
+                {pointType: 'outliers', label: 'Outliers Only'},
+                {pointType: 'all', label: 'All'},
+                {pointType: 'none', label: 'None'}
+            ];
+
+            this.pointTypeStore = Ext4.create('Ext.data.Store', {
+                fields: ['pointType', 'label'],
+                data: pointTypes
+            });
+
+            this.pointTypeCombo = Ext4.create('Ext.form.ComboBox', {
+                fieldLabel: 'Show Points',
+                store: this.pointTypeStore,
+                labelSeparator: labelSeparator,
+                labelWidth: labelWidth,
+                width: 293, // It'd be great if this didn't have to be hard-coded
+                queryMode: 'local',
+                editable: false,
+                forceSelection: true,
+                displayField: 'label',
+                valueField: 'pointType',
+                value: this.pointType,
+                listeners: {
+                    change: function(combo){
+                        if(!this.suppressEvents){
+                            this.hasChanges = true;
+                        }
+                    },
+                    scope: this
+                }
+            });
+        }
+
+        return this.pointTypeCombo;
+    },
+
     applyChangesButtonClicked: function() {
         this.fireEvent('closeOptionsWindow', false);
         this.checkForChangesAndFireEvents();
@@ -280,6 +349,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     getPanelOptionValues: function() {
         return {
             renderType: this.getRenderType(),
+            pointType: this.getPointType(),
+            position: this.getPosition(),
             opacity: this.getOpacity(),
             pointSize: this.getPointSize(),
             pointFillColor: this.getPointColor(),
@@ -310,6 +381,10 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.setWidth(initValues.width);
         if (initValues.hasOwnProperty("height"))
             this.setHeight(initValues.height);
+        if (initValues.hasOwnProperty("position"))
+            this.setPosition(initValues.position);
+        if (initValues.hasOwnProperty("pointType"))
+            this.setPointType(initValues.pointType);
 
         this.hasChanges = false;
     },
@@ -319,6 +394,14 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         if(chartConfig.renderType){
             this.setRenderType(chartConfig.renderType);
+        }
+
+        if(chartConfig.pointType) {
+            this.setPointType(chartConfig.pointType);
+        }
+
+        if(chartConfig.geomOptions.position) {
+            this.setPosition(chartConfig.geomOptions.position);
         }
 
         if(chartConfig.geomOptions.opacity){
@@ -364,6 +447,22 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.renderTypeCombo.setValue(value);
     },
 
+    getPointType: function(){
+        return this.pointTypeCombo.getValue();
+    },
+
+    setPointType: function(value){
+        this.pointTypeCombo.setValue(value);
+    },
+
+    getPosition: function() {
+        return this.jitterCheckbox.getValue() ? 'jitter' : null;
+    },
+
+    setPosition: function(value) {
+        this.jitterCheckbox.setValue(value == 'jitter');
+    },
+
     getOpacity: function(){
         return this.opacitySlider.getValue() / 100;
     },
@@ -405,11 +504,17 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     },
 
     getFillColor: function(){
+        if (this.getPointType() == 'all') {
+            return 'none';
+        }
+
         return this.fillColorPicker.getValue();
     },
 
     setFillColor: function(value){
-        this.fillColorPicker.select(value);
+        if(value != 'none') {
+            this.fillColorPicker.select(value);
+        }
     },
 
     getWidth: function(){

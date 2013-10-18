@@ -112,14 +112,6 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
 
         if (chartType === "scatter_plot") {
-            if (measures.color) {
-                aes.color = generateGroupingAcc(measures.color.name);
-            }
-
-            if (measures.shape) {
-                aes.shape = generateGroupingAcc(measures.shape.name);
-            }
-
             aes.hoverText = generatePointHover(measures);
         } else if (chartType === "box_plot") {
             if (measures.color) {
@@ -132,6 +124,16 @@ LABKEY.vis.GenericChartHelper = new function(){
 
             aes.hoverText = generateBoxplotHover();
             aes.outlierHoverText = generatePointHover(measures);
+        }
+
+        // color/shape aes are not dependent on chart type. If we have a box plot with all points enabled, then we
+        // create a second layer for points. So we'll need this no matter what.
+        if (measures.color) {
+            aes.color = generateGroupingAcc(measures.color.name);
+        }
+
+        if (measures.shape) {
+            aes.shape = generateGroupingAcc(measures.shape.name);
         }
 
         if (measures.pointClickFn) {
@@ -283,22 +285,33 @@ LABKEY.vis.GenericChartHelper = new function(){
         };
     };
 
+    var generatePointGeom = function(chartOptions){
+        return new LABKEY.vis.Geom.Point({
+            opacity: chartOptions.opacity,
+            size: chartOptions.pointSize,
+            color: '#' + chartOptions.pointFillColor,
+            position: chartOptions.position
+        });
+    };
+
+    var generateBoxplotGeom = function(chartOptions){
+        return new LABKEY.vis.Geom.Boxplot({
+            lineWidth: chartOptions.lineWidth,
+            outlierOpacity: chartOptions.opacity,
+            outlierFill: '#' + chartOptions.pointFillColor,
+            outlierSize: chartOptions.pointSize,
+            color: '#' + chartOptions.lineColor,
+            fill: chartOptions.boxFillColor == 'none' ? chartOptions.boxFillColor : '#' + chartOptions.boxFillColor,
+            position: chartOptions.position,
+            showOutliers: chartOptions.showOutliers
+        });
+    };
+
     var generateGeom = function(chartType, chartOptions) {
         if (chartType == "box_plot") {
-            return new LABKEY.vis.Geom.Boxplot({
-                lineWidth: chartOptions.lineWidth,
-                outlierOpacity: chartOptions.opacity,
-                outlierFill: '#' + chartOptions.pointFillColor,
-                outlierSize: chartOptions.pointSize,
-                color: '#' + chartOptions.lineColor,
-                fill: '#' + chartOptions.boxFillColor
-            });
+            return generateBoxplotGeom(chartOptions);
         } else if (chartType == "scatter_plot") {
-            return new LABKEY.vis.Geom.Point({
-                opacity: chartOptions.opacity,
-                size: chartOptions.pointSize,
-                color: '#' + chartOptions.pointFillColor
-            });
+            return generatePointGeom(chartOptions);
         }
     };
 
@@ -436,6 +449,8 @@ LABKEY.vis.GenericChartHelper = new function(){
         generateGroupingAcc: generateGroupingAcc,
         generatePointClickFn: generatePointClickFn,
         generateGeom: generateGeom,
+        generateBoxplotGeom: generateBoxplotGeom,
+        generatePointGeom: generatePointGeom,
         validateXAxis: validateXAxis,
         validateYAxis: validateYAxis,
         loadVisDependencies: loadVisDependencies

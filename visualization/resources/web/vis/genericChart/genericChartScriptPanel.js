@@ -37,6 +37,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "        // chartConfig is the saved information about the chart (labels, scales, etc.)\n" +
             "        var gch = LABKEY.vis.GenericChartHelper;\n" +
             "        var chartConfig = {{chartConfig}};\n" +
+            "        chartConfig.geomOptions.showOutliers = chartConfig.pointType ? chartConfig.pointType == 'outliers' : true;\n" +
             "        var DEFAULT_WIDTH = 800, DEFAULT_HEIGHT = 600;\n" +
             "        var chartType = gch.getChartType(chartConfig.renderType, chartConfig.measures.x.normalizedType);\n" +
             "        var layerConfig = {\n" +
@@ -69,6 +70,18 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "            return;\n" +
             "        }\n" +
             "\n" +
+            "        var layers = [];\n" +
+            "\n" +
+            "" +
+            "        if(chartConfig.pointType == 'all') {\n" +
+            "           layers.push(new LABKEY.vis.Layer({\n" +
+            "               data: responseData.rows,\n" +
+            "               geom: gch.generatePointGeom(chartConfig.geomOptions),\n" +
+            "               aes: {hoverText: gch.generatePointHover(chartConfig.measures)}\n" +
+            "           }));\n" +
+            "        }\n" +
+            "\n" +
+            "        layers.push(new LABKEY.vis.Layer(layerConfig));\n" +
             "        var plotConfig = {\n" +
             "            renderTo: chartId,\n" +
             "            width: chartConfig.width ? chartConfig.width : DEFAULT_WIDTH,\n" +
@@ -76,7 +89,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "            labels: labels,\n" +
             "            aes: aes,\n" +
             "            scales: scales,\n" +
-            "            layers: [new LABKEY.vis.Layer(layerConfig)],\n" +
+            "            layers: layers,\n" +
             "            data: responseData.rows\n" +
             "        }\n" +
             "        var plot = new LABKEY.vis.Plot(plotConfig);\n" +

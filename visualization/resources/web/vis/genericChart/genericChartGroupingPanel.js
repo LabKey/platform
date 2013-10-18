@@ -91,7 +91,7 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
 
         var singlePointRadio = {
             xtype: 'radio',
-            name: 'pointType',
+            name: 'shapeType',
             inputValue: 'single',
             boxLabel: 'Single shape',
             checked: this.colorType ? this.colorType === 'single' : true,
@@ -100,7 +100,7 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
 
         var categoricalPointRadio = {
             xtype: 'radio',
-            name: 'pointType',
+            name: 'shapeType',
             id: 'shapeCategory',
             inputValue: 'measure',
             boxLabel: 'By category',
@@ -108,32 +108,32 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
             width: 150
         };
 
-        this.pointTypeRadioGroup = Ext4.create('Ext.form.RadioGroup', {
+        this.shapeRadioGroup = Ext4.create('Ext.form.RadioGroup', {
             fieldLabel: 'Point Shape',
             vertical: false,
             width: 300,
             columns: 2,
             items: [singlePointRadio, categoricalPointRadio],
-            value: this.pointType ? this.pointType : 'single',
+            value: this.shapeType ? this.shapeType : 'single',
             listeners: {
                 change: function(radioGroup, newVal){
                     if(!this.suppressEvents){
                         this.hasChanges = true;
                     }
 
-                    this.pointCombo.setDisabled(newVal.pointType === 'single');
+                    this.pointCombo.setDisabled(newVal.shapeType === 'single');
                 },
                 scope: this
             }
         });
 
-        groupingItems.push(this.pointTypeRadioGroup);
+        groupingItems.push(this.shapeRadioGroup);
 
         this.pointCombo = Ext4.create('Ext.form.field.ComboBox', {
             fieldLabel: 'Point Category',
             name: 'pointMeasure',
             store: this.store,
-            disabled: this.pointType ? this.pointType === 'single' : true,
+            disabled: this.shapeType ? this.shapeType === 'single' : true,
             editable: false,
             valueField: 'name',
             displayField: 'label',
@@ -191,7 +191,7 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
             values.color = this.getColorMeasure();
         }
 
-        if (this.getPointType() == "measure") {
+        if (this.getShapeType() == "measure") {
             values.shape = this.getPointMeasure();
         }
 
@@ -208,8 +208,8 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
             this.setColorMeasure(initValues.colorMeasure);
         }
 
-        if(initValues.hasOwnProperty('pointType')){
-            this.setPointType(initValues.pointType);
+        if(initValues.hasOwnProperty('shapeType')){
+            this.setShapeType(initValues.shapeType);
         }
 
         if(initValues.hasOwnProperty('pointMeasure')){
@@ -228,7 +228,7 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
         }
 
         if(config.shape){
-            this.setPointType('measure');
+            this.setShapeType('measure');
             this.setPointMeasure(config.shape);
         }
 
@@ -258,12 +258,12 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
         this.colorCombo.setValue(value.name);
     },
 
-    getPointType: function(){
-        return this.pointTypeRadioGroup.getValue().pointType;
+    getShapeType: function(){
+        return this.shapeRadioGroup.getValue().shapeType;
     },
 
-    setPointType: function(value){
-        this.pointTypeRadioGroup.setValue({pointType: value});
+    setShapeType: function(value){
+        this.shapeRadioGroup.setValue({shapeType: value});
     },
 
     getPointMeasure: function(){

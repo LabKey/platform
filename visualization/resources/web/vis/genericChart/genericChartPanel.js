@@ -879,7 +879,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             title: 'Plot Options',
             hidden: true,
             border: 1,
-            width: 325,
+            width: 330,
             resizable: false,
             cls: 'data-window',
             modal: true,
@@ -1179,13 +1179,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         config.width = chartOptions.width;
         config.height = chartOptions.height;
         config.renderType = chartOptions.renderType;
+        config.pointType = chartOptions.pointType;
         config.geomOptions = {
             boxFillColor: chartOptions.boxFillColor,
             lineColor: chartOptions.lineColor,
             lineWidth: chartOptions.lineWidth,
             opacity: chartOptions.opacity,
             pointFillColor: chartOptions.pointFillColor,
-            pointSize: chartOptions.pointSize
+            pointSize: chartOptions.pointSize,
+            position: chartOptions.position
         };
         config.scales = {
             x: {trans: xAxisOptions.scaleTrans},
@@ -1683,6 +1685,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         chartConfig.measures.x = this.measures.x;
         chartConfig.measures.y = this.measures.y;
+        chartConfig.geomOptions.showOutliers = chartConfig.pointType ? chartConfig.pointType == 'outliers' : true;
 
         if (this.customRenderTypes && this.customRenderTypes[this.renderType]) {
             customRenderType = this.customRenderTypes[this.renderType];
@@ -1723,10 +1726,17 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (customRenderType && customRenderType.generatePlotConfig) {
             plotConfig = customRenderType.generatePlotConfig(this, chartConfig, newChartDiv.id, width, height, this.chartData.rows, aes, scales, labels);
         } else {
-            layerConfig = {
-                data: this.chartData.rows,
-                geom: geom
-            };
+            var layers = [];
+
+            if(chartConfig.pointType == 'all') {
+                layers.push(new LABKEY.vis.Layer({
+                    data: this.chartData.rows,
+                    geom: GCH.generatePointGeom(chartConfig.geomOptions),
+                    aes: {hoverText: GCH.generatePointHover(chartConfig.measures)}
+                }));
+            }
+
+            layers.push(new LABKEY.vis.Layer({data: this.chartData.rows, geom: geom}));
 
             plotConfig = {
                 renderTo: newChartDiv.id,
@@ -1735,7 +1745,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 labels: labels,
                 aes: aes,
                 scales: scales,
-                layers: [new LABKEY.vis.Layer(layerConfig)],
+                layers: layers,
                 data: this.chartData.rows
             };
         }
@@ -2064,7 +2074,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (tempDivId)
         {
             // export the temp chart as a pdf with the chart title as the file name
-            LABKEY.vis.SVGConverter.convert(Ext4.get(tempDivId).child('svg').dom, 'pdf', this.getChartOptions().mainTitle);
+            LABKEY.vis.SVGConverter.convert(Ext4.get(tempDivId).child('svg').dom, 'pdf', this.getChartConfig().labels.main);
             Ext4.getCmp(tempDivId).destroy();
         }
     },
@@ -2198,33 +2208,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     showMainTitleWindow: function(){
         this.mainTitleWindow.show();
-    },
-
-    getChartOptions: function(){
-        var chartOptions = {};
-        var mainTitle = this.mainTitlePanel.getPanelOptionValues().title;
-
-        Ext.apply(chartOptions, this.optionsPanel.getPanelOptionValues());
-
-        if(!this.mainTitlePanel.userEditedTitle || mainTitle == null || mainTitle == undefined){
-            chartOptions.mainTitle = this.getDefaultTitle();
-            this.mainTitlePanel.setMainTitle(chartOptions.mainTitle, true);
-        } else {
-            chartOptions.mainTitle = mainTitle;
-        }
-
-        chartOptions.yAxis = this.yMeasurePanel.getPanelOptionValues();
-        chartOptions.xAxis = this.xMeasurePanel.getPanelOptionValues();
-
-        chartOptions.grouping = this.groupingPanel.getPanelOptionValues();
-
-        chartOptions.developer = this.developerPanel.getPanelOptionValues();
-
-        if(this.getCustomChartOptions){
-            chartOptions.customOptions = this.getCustomChartOptions();
-        }
-
-        return chartOptions;
     },
 
     getDefaultTitle: function(){
