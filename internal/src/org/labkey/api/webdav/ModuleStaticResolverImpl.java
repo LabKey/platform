@@ -177,8 +177,11 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                 roots.add(extraWebappDir);
 
             // modules
+            //  - add in reverse dependency order, allows modules to replace index.html for instance
             HashSet<String> seen = new HashSet<>();
-            for (Module m : ModuleLoader.getInstance().getModules())
+            ArrayList<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
+            Collections.reverse(modules);
+            for (Module m : modules)
             {
                 for (File d :  m.getStaticFileDirectories())
                 {
