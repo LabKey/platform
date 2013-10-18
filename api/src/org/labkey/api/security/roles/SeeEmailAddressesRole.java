@@ -16,11 +16,8 @@
 package org.labkey.api.security.roles;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.security.permissions.SeeUserEmailAddressesPermission;
 
 /*

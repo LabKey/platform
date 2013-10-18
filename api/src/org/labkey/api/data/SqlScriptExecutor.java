@@ -209,11 +209,7 @@ public class SqlScriptExecutor
             {
                 throw new RuntimeException("Can't find method " + _methodName + "(ModuleContext moduleContext) on class " + _upgradeCode.getClass().getName(), e);
             }
-            catch (InvocationTargetException e)
-            {
-                throw new RuntimeException("Can't invoke method " + _methodName + "(ModuleContext moduleContext) on class " + _upgradeCode.getClass().getName(), e);
-            }
-            catch (IllegalAccessException e)
+            catch (InvocationTargetException | IllegalAccessException e)
             {
                 throw new RuntimeException("Can't invoke method " + _methodName + "(ModuleContext moduleContext) on class " + _upgradeCode.getClass().getName(), e);
             }
