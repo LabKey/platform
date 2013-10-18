@@ -23,6 +23,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
     initComponent : function() {
 
         this.items = [];
+        this.reportConfig.script = this.script;
 
         this.items.push(this.createViewPanel());
         if (this.reportConfig.schemaName && this.reportConfig.queryName) {
