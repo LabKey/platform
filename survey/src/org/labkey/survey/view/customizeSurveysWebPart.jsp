@@ -48,30 +48,40 @@ This webpart displays a list of survey instances created by the end user. Select
 
 <script type="text/javascript">
     Ext4.onReady(function(){
+
+        var surveyDesignCombo = Ext4.create('Ext.form.field.ComboBox', {
+            xtype: 'combo',
+            id : "SurveyDesignComboId", // for selenium testing
+            width: 400,
+            fieldLabel: 'Survey Design',
+            emptyText: 'Select a survey design for this webpart',
+            disabled: true,
+            name: 'surveyDesignId',
+            queryMode: 'local',
+            editable : false,
+            valueField: 'RowId',
+            displayField: 'Label',
+            value : <%=surveyDesignId%>,
+            store: Ext4.create('LABKEY.ext4.Store', {
+                schemaName: "survey",
+                queryName: "SurveyDesigns",
+                columns: "RowId,Label",
+                autoLoad: true,
+                sort: "Label",
+                listeners: {
+                    load: function() {
+                        surveyDesignCombo.enable();
+                    }
+                }
+            })
+        });
+
         var surveyDesignPanel = Ext4.create('Ext.form.Panel', {
             border : false,
             renderTo : <%=q(divId)%>,
             bodyStyle : 'background-color: transparent;',
             standardSubmit: true,
-            items : [{
-                xtype: 'combo',
-                width: 400,
-                fieldLabel: 'Survey Design',
-                emptyText: 'Select a survey design for this webpart',
-                name: 'surveyDesignId',
-                queryMode: 'local',
-                editable : false,
-                valueField: 'RowId',
-                displayField: 'Label',
-                value : <%=surveyDesignId%>,
-                store: Ext4.create('LABKEY.ext4.Store', {
-                    schemaName: "survey",
-                    queryName: "SurveyDesigns",
-                    columns: "RowId,Label",
-                    autoLoad: true,
-                    sort: "Label"
-                })
-            }],
+            items : [surveyDesignCombo],
             dockedItems: [{
                 xtype: 'toolbar',
                 dock: 'bottom',
