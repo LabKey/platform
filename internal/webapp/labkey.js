@@ -637,6 +637,7 @@ LABKEY.requiresVisualization = function(callback, scope)
         scripts = [
             '/vis/lib/d3-2.0.4.min.js',
             '/vis/lib/raphael-min-2.1.0.js',
+            'vis/SVGConverter.js',
             '/vis/vis.min.js'
         ];
     }
