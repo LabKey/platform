@@ -37,7 +37,52 @@ if (typeof LABKEY == "undefined")
 
     LABKEY._requestedCssFiles = {};
     LABKEY._requestedScriptFiles = [];
+
     LABKEY._loadedScriptFiles = {};
+
+    LABKEY._loadCache = function(key, cb, s)
+    {
+//        console.log('miss --', key);
+        // The value as an array denotes the cache resource is in flight
+        if (!LABKEY._loadedScriptFiles[key])
+            LABKEY._loadedScriptFiles[key] = [];
+
+        if (typeof cb === "function")
+            LABKEY._loadedScriptFiles[key].push({fn: cb, scope: s});
+    };
+
+    LABKEY._inCache = function(key)
+    {
+//        console.log('hit --', key);
+        return LABKEY._loadedScriptFiles[key] === true;
+    };
+
+    LABKEY._inFlightCache = function(key)
+    {
+        return Object.prototype.toString.call(LABKEY._loadedScriptFiles[key]) == "[object Array]"
+    },
+
+    LABKEY._callbacksOnCache = function(key)
+    {
+//        console.log('calling --', key);
+        var cbs = LABKEY._loadedScriptFiles[key];
+
+        // set the cache to hit
+        LABKEY._loadedScriptFiles[key] = true;
+
+        // call on the callbacks who have been waiting for this resource
+        if (Object.prototype.toString.call(cbs) == "[object Array]")
+        {
+            var cb;
+            for (var c=0; c < cbs.length; c++)
+            {
+                cb = cbs[c];
+                if (typeof cb.fn === "function")
+                    cb.fn.call(cb.scope);
+            }
+        }
+    };
+
     LABKEY._emptyFunction = function(){};
 
     var nullConsole =
@@ -106,6 +151,12 @@ LABKEY.requiresScript = function(file, immediate, callback, scope, inOrder)
     if (arguments.length < 2)
         immediate = true;
 
+    var onScriptLoad = function(cb, s)
+    {
+        if (typeof cb == "function")
+            cb.call(s);
+    };
+
     if (Object.prototype.toString.call(file) == "[object Array]")
     {
         var requestedLength = file.length;
@@ -116,26 +167,40 @@ LABKEY.requiresScript = function(file, immediate, callback, scope, inOrder)
             var chain = function()
             {
                 loaded++;
-                if (loaded == requestedLength && typeof callback == 'function')
-                {
-                    callback.call(scope);
-                }
+                if (loaded == requestedLength)
+                    onScriptLoad(callback, scope);
                 else if (loaded < requestedLength)
                     LABKEY.requiresScript(file[loaded], immediate, chain, true);
             };
-            LABKEY.requiresScript(file[loaded], immediate, chain, true);
+
+            if (LABKEY._inCache(file[loaded]))
+            {
+                chain();
+            }
+            else
+                LABKEY.requiresScript(file[loaded], immediate, chain, true);
         }
         else
         {
+            // request all the scripts (order does not matter)
             var allDone = function()
             {
                 loaded++;
-                if (loaded == requestedLength && typeof callback == 'function')
-                    callback.call(scope);
+                if (loaded == requestedLength)
+                {
+                    onScriptLoad(callback, scope);
+                }
             };
 
             for (var i = 0; i < file.length; i++)
-                LABKEY.requiresScript(file[i], immediate, allDone);
+            {
+                if (LABKEY._inCache(file[i]))
+                {
+                    allDone();
+                }
+                else
+                    LABKEY.requiresScript(file[i], immediate, allDone);
+            }
         }
         return;
     }
@@ -145,25 +210,30 @@ LABKEY.requiresScript = function(file, immediate, callback, scope, inOrder)
         file = file.substring(1);
     }
 
-    if (this._loadedScriptFiles[file])
+    if (LABKEY._inCache(file))
     {
-        if (typeof callback == "function")
-            callback.call(scope);
+        // cache hit -- script is loaded and ready to go
+        onScriptLoad(callback, scope);
         return;
     }
-
-    function onScriptLoad()
+    else if (LABKEY._inFlightCache(file))
     {
-        if (typeof callback == "function")
-            callback.call(scope);
+        // cache miss -- in flight
+        LABKEY._loadCache(file, callback, scope);
+        return;
+    }
+    else
+    {
+        // cache miss
+        LABKEY._loadCache(file, callback, scope);
     }
 
     if (!immediate)
+    {
         this._requestedScriptFiles.push({file: file, callback: callback, scope: scope});
+    }
     else
     {
-        this._loadedScriptFiles[file] = true;
-
         //although FireFox and Safari allow scripts to use the DOM
         //during parse time, IE does not. So if the document is
         //closed, use the DOM to create a script element and append it
@@ -180,19 +250,24 @@ LABKEY.requiresScript = function(file, immediate, callback, scope, inOrder)
                 type: "text/javascript"
             });
 
+            var cacheLoader = function()
+            {
+                LABKEY._callbacksOnCache(file);
+            };
+
             // IE has a different way of handling <script> loads
             if (script.readyState)
             {
-                script.onreadystatechange = function () {
+                script.onreadystatechange = function() {
                     if (script.readyState == "loaded" || script.readyState == "complete") {
                         script.onreadystatechange = null;
-                        onScriptLoad();
+                        cacheLoader();
                     }
                 }
             }
             else
             {
-                script.onload = onScriptLoad;
+                script.onload = cacheLoader;
             }
         }
         else
@@ -203,15 +278,15 @@ LABKEY.requiresScript = function(file, immediate, callback, scope, inOrder)
 
 LABKEY.loadedScripts = function()
 {
-    var ret = (arguments.length > 0 && this._loadedScriptFiles[arguments[0]]) ? true : false
+    var ret = (arguments.length > 0 && LABKEY._loadedScriptFiles[arguments[0]]) ? true : false;
     for (var i = 0 ; i < arguments.length ; i++)
-        this._loadedScriptFiles[arguments[i]] = true;
+        LABKEY._loadedScriptFiles[arguments[i]] = true;
     return ret;
 };
 
 LABKEY.requestedCssFiles = function()
 {
-    var ret = (arguments.length > 0 && this._requestedCssFiles[arguments[0]]) ? true : false
+    var ret = (arguments.length > 0 && this._requestedCssFiles[arguments[0]]) ? true : false;
     for (var i = 0 ; i < arguments.length ; i++)
         this._requestedCssFiles[arguments[i]] = true;
     return ret;
@@ -220,8 +295,11 @@ LABKEY.requestedCssFiles = function()
 LABKEY.addElemToHead = function(elemName, attributes)
 {
     var elem = document.createElement(elemName);
-    for(var attr in attributes)
-        elem[attr] = attributes[attr];
+    for (var a in attributes) {
+        if (attributes.hasOwnProperty(a)) {
+            elem[a] = attributes[a];
+        }
+    }
     return document.getElementsByTagName("head")[0].appendChild(elem);
 };
 
@@ -529,35 +607,41 @@ LABKEY.showNavTrail = function()
         elem.style.visibility = "visible";
 };
 
-LABKEY.requiresVisualization = function ()
+LABKEY.requiresVisualization = function(callback, scope)
 {
     if(!LABKEY.vis){
         LABKEY.vis = {};
     }
 
+    var scripts;
+
     if (LABKEY.devMode)
     {
-        LABKEY.requiresScript('vis/lib/raphael-2.1.0.js');
-        LABKEY.requiresScript('vis/lib/d3-2.0.4.js');
-
-        LABKEY.requiresScript('vis/lib/patches.js');
-        LABKEY.requiresScript('vis/src/utils.js');
-        LABKEY.requiresScript('vis/src/geom.js');
-        LABKEY.requiresScript('vis/src/stat.js');
-        LABKEY.requiresScript('vis/src/scale.js');
-        LABKEY.requiresScript('vis/src/layer.js');
-        LABKEY.requiresScript('vis/src/plot.js');
-        LABKEY.requiresScript("vis/SVGConverter.js");
+        scripts = [
+            '/vis/lib/d3-2.0.4.min.js',
+            '/vis/lib/raphael-min-2.1.0.js',
+            '/vis/lib/patches.js',
+            '/vis/src/utils.js',
+            '/vis/src/geom.js',
+            '/vis/src/stat.js',
+            '/vis/src/scale.js',
+            '/vis/src/layer.js',
+            '/vis/src/plot.js',
+            'vis/SVGConverter.js'
+        ];
 
         // NOTE: If adding a required file you must add to vis.lib.xml for proper packaging
     }
     else
     {
-        LABKEY.requiresScript('vis/lib/raphael-min-2.1.0.js');
-        LABKEY.requiresScript('vis/lib/d3-2.0.4.min.js');
-        LABKEY.requiresScript("vis/SVGConverter.js");
-        LABKEY.requiresScript('vis/vis.min.js');
+        scripts = [
+            '/vis/lib/d3-2.0.4.min.js',
+            '/vis/lib/raphael-min-2.1.0.js',
+            '/vis/vis.min.js'
+        ];
     }
+
+    LABKEY.requiresScript(scripts, true, callback, scope, true);
 };
 
 // If we're in demo mode, replace each ID with an equal length string of "*".  This code should match DemoMode.id().
