@@ -16,6 +16,7 @@
 package org.labkey.study.importer;
 
 import com.drew.lang.annotations.Nullable;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.controllers.StudyController;
@@ -66,7 +67,13 @@ public class QcStatesImporter implements InternalStudyImporter
                 Map<String, Integer> stateMap = new HashMap<>();
 
                 for (QCState existingState : StudyManager.getInstance().getQCStates(ctx.getContainer()))
-                    stateMap.put(existingState.getLabel(), existingState.getRowId());
+                {
+                    // replace any existing states unless they are currently in use
+                    if (!StudyManager.getInstance().isQCStateInUse(existingState))
+                        StudyManager.getInstance().deleteQCState(existingState);
+                    else
+                        stateMap.put(existingState.getLabel(), existingState.getRowId());
+                }
 
                 if (states != null)
                 {
@@ -74,14 +81,20 @@ public class QcStatesImporter implements InternalStudyImporter
                     {
                         if (!stateMap.containsKey(state.getName()))
                         {
-                            QCState newState = new QCState();
-                            newState.setContainer(ctx.getContainer());
-                            newState.setLabel(state.getName());
-                            newState.setDescription(state.getDescription());
-                            newState.setPublicData(state.getPublic());
+                            if (!StringUtils.isBlank(state.getName()))
+                            {
+                                QCState newState = new QCState();
+                                newState.setContainer(ctx.getContainer());
 
-                            newState = StudyManager.getInstance().insertQCState(ctx.getUser(), newState);
-                            stateMap.put(newState.getLabel(), newState.getRowId());
+                                newState.setLabel(state.getName());
+                                newState.setDescription(state.getDescription());
+                                newState.setPublicData(state.getPublic());
+
+                                newState = StudyManager.getInstance().insertQCState(ctx.getUser(), newState);
+                                stateMap.put(newState.getLabel(), newState.getRowId());
+                            }
+                            else
+                                ctx.getLogger().warn("Ignoring QC state with blank name");
                         }
                     }
                 }

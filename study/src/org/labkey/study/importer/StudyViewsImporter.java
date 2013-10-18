@@ -64,19 +64,26 @@ public class StudyViewsImporter implements InternalStudyImporter
                         if (participantView != null)
                         {
                             String participantFileName = participantView.getFile();
-                            InputStream is = folder.getInputStream(participantFileName);
+                            try (InputStream is = folder.getInputStream(participantFileName))
+                            {
+                                if (is != null)
+                                {
+                                    CustomParticipantView view = StudyManager.getInstance().getCustomParticipantView(study);
+                                    if (view == null)
+                                        view = new CustomParticipantView();
 
-                            CustomParticipantView view = StudyManager.getInstance().getCustomParticipantView(study);
-                            if (view == null)
-                                view = new CustomParticipantView();
-
-                            view.setBody(IOUtils.toString(is));
-                            view.setActive(participantView.getActive());
-                            StudyManager.getInstance().saveCustomParticipantView(study, ctx.getUser(), view);
-                            IOUtils.closeQuietly(is);
+                                    view.setBody(IOUtils.toString(is));
+                                    view.setActive(participantView.getActive());
+                                    StudyManager.getInstance().saveCustomParticipantView(study, ctx.getUser(), view);
+                                }
+                                else
+                                    ctx.getLogger().fatal("Unable to load custom participant view file specified in settings : " + participantFileName);
+                            }
                         }
                     }
                 }
+                else
+                    ctx.getLogger().fatal("Unable to load the study views setting file : " + settingsFileName);
             }
         }
     }
