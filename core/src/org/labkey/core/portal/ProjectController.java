@@ -208,14 +208,6 @@ public class ProjectController extends SpringActionController
 
             return url;
         }
-
-        @Override
-        public ActionURL getResetDefaultTabsURL(Container c, ActionURL returnURL)
-        {
-            ActionURL result = new ActionURL(ResetDefaultTabsAction.class, c);
-            result.addReturnURL(returnURL);
-            return result;
-        }
     }
 
 
@@ -284,33 +276,6 @@ public class ProjectController extends SpringActionController
         public void setPageId(String pageId)
         {
             _pageId = pageId;
-        }
-    }
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class ResetDefaultTabsAction extends org.labkey.api.action.RedirectAction<ReturnUrlForm>
-    {
-        @Override
-        public URLHelper getSuccessURL(ReturnUrlForm returnUrlForm)
-        {
-            return returnUrlForm.getReturnActionURL(getContainer().getStartURL(getUser()));
-        }
-
-        @Override
-        public boolean doAction(ReturnUrlForm returnUrlForm, BindException errors) throws Exception
-        {
-            FolderType folderType = getContainer().getFolderType();
-            if (folderType.hasConfigurableTabs())
-            {
-                folderType.resetDefaultTabs(getContainer());
-            }
-            return true;
-        }
-
-        @Override
-        public void validateCommand(ReturnUrlForm target, Errors errors)
-        {
-            
         }
     }
 
