@@ -654,6 +654,8 @@ public class Portal
 
     public static void resetPages(Container c, List<FolderTab> tabs, boolean resetIndexes)
     {
+        // NOTE: this should not be called when we're refreshing a page or tabs or anything;
+        //       It should only be called because of a user action (e.g. change folder type) or when importing folders
         boolean mustUpdateIndexes = false;              // Sometimes we just need to unhide some pages that are already there
         Map<String, PortalPage> pageMap = new HashMap<>(Portal.getPages(c, true));
         int maxOriginalIndex = 0;

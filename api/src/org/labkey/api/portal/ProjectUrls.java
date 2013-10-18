@@ -39,5 +39,4 @@ public interface ProjectUrls extends UrlProvider
     ActionURL getDeletePortalPageURL(Container c, String pageId, ActionURL returnURL);
     ActionURL getExpandCollapseURL(Container c, String path, String treeId);
     ActionURL getFileBrowserURL(Container c, String path);
-    ActionURL getResetDefaultTabsURL(Container c, ActionURL returnURL);
 }

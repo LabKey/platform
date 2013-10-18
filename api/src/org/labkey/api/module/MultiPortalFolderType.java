@@ -90,12 +90,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
             }
         }
 
-        if (folderTabs.isEmpty())
-        {
-            folderType.resetDefaultTabs(container);
-            folderTabs = folderType.getDefaultTabs();
-        }
-
+        // OK if there are no pages at this point
         return folderTabs;
     }
 
