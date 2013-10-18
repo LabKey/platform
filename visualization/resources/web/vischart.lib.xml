@@ -16,7 +16,7 @@
     </library>
     <dependencies>
         <dependency path="Ext4"/>
-        <dependency path="clientapi/ext3" />
+        <dependency path="clientapi/ext3" /> <!-- DataRegion.js required by genericChartPanel -->
         <dependency path="vis/vis"/>
         <dependency path="codemirror"/>
     </dependencies>

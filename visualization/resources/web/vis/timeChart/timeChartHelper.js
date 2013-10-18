@@ -1091,13 +1091,6 @@ LABKEY.vis.TimeChartHelper = new function() {
         return {success: true, message: message};
     };
 
-    // Since the time chart and generic chart have the same vis dependencies to load, use the GenericChartHelper here
-    var loadVisDependencies = function(callback, scope) {
-        LABKEY.requiresScript('/vis/genericChart/genericChartHelper.js', true, function(){
-            LABKEY.vis.GenericChartHelper.loadVisDependencies(callback, scope);
-        });
-    };
-
     return {
         generateLabels : generateLabels,
         generateScales : generateScales,
@@ -1116,6 +1109,6 @@ LABKEY.vis.TimeChartHelper = new function() {
         getChartData : getChartData,
         validateChartConfig : validateChartConfig,
         validateChartData : validateChartData,
-        loadVisDependencies: loadVisDependencies
+        loadVisDependencies: LABKEY.requiresVisualization
     };
 };
