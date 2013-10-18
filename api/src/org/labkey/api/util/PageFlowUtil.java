@@ -2053,6 +2053,7 @@ public class PageFlowUtil
 
     static Integer serverHash = null;
 
+    // This is used during server-side JavaScript initialization -- see core/resources/scripts/labkey/init.js
     public static JSONObject jsInitObject()
     {
         return jsInitObject(new LinkedHashSet<ClientDependency>());
