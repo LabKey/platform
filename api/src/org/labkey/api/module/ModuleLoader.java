@@ -80,10 +80,8 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.sql.DataSource;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -96,7 +94,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -652,42 +649,6 @@ public class ModuleLoader implements Filter
         // Unknown version... good luck
         return null;
     }
-
-    private void removeAPIFiles(Set<File> unclaimedFiles, File webappRoot) throws IOException
-    {
-        File apiContentFile = new File(webappRoot, "WEB-INF/apiFiles.list");
-
-        BufferedReader reader = null;
-        try
-        {
-            reader = new BufferedReader(new FileReader(apiContentFile));
-            String line;
-            while ((line = reader.readLine()) != null)
-            {
-                unclaimedFiles.remove(new File(webappRoot, line));
-            }
-        }
-        finally
-        {
-            if (reader != null) { try { reader.close(); } catch (IOException e) {} }
-        }
-    }
-
-    private Set<File> listCurrentFiles(File file) throws IOException
-    {
-        Set<File> result = new HashSet<>();
-        result.add(file);
-        if (file.isDirectory())
-        {
-            for (File content : file.listFiles())
-            {
-                result.addAll(listCurrentFiles(content));
-            }
-        }
-        return result;
-    }
-
-
 
     // Enumerate each jdbc DataSource in labkey.xml and tell DbScope to initialize them
     private void initializeDataSources() throws ServletException
