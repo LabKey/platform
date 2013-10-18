@@ -232,7 +232,7 @@ LABKEY.Query.Visualization = new function() {
 
             LABKEY.Ajax.request(
             {
-                url : LABKEY.ActionURL.buildURL("visualization", "getData"),
+                url : LABKEY.ActionURL.buildURL("visualization", "getData", config.containerPath),
                 method : 'POST',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope, false),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
