@@ -174,8 +174,8 @@ if (!pipelineSet)
             hasVisitAssociations = true;
             VisitDataSetType type = vm.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.OPTIONAL;
             %><tr>
-                <td><%= visit.getDisplayString() %></td>
-                <td><%= type == VisitDataSetType.NOT_ASSOCIATED ? "&nbsp;" : type.getLabel() %></td>
+                <td><%= h(visit.getDisplayString()) %></td>
+                <td><%= type == VisitDataSetType.NOT_ASSOCIATED ? "&nbsp;" : h(type.getLabel()) %></td>
             </tr><%
         }
     }
@@ -233,11 +233,11 @@ if (!pipelineSet)
         for (DataSet def : study.getDataSetsByType(new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER}))
         {
 %>
-                {label: "<%=def.getLabel()%>", id: <%=def.getDataSetId()%>},
+                {label: "<%=h(def.getLabel())%>", id: <%=def.getDataSetId()%>},
 <%
         }
 %>
-            ]
+            ];
 
             var datasetStore = Ext4.create('Ext.data.Store', {
                 fields: ['label', 'id'],

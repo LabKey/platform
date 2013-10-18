@@ -370,13 +370,12 @@ public class ReportViewProvider implements DataViewProvider
 
                     if (props.containsKey(Property.customThumbnail.name()))
                     {
-                        // custom thumbnail file provided by the user is stored in the properties map as an InputStream
-                        InputStream is = (InputStream)props.get(Property.customThumbnail.name());
-                        String filename = (String)props.get(Property.customThumbnailFileName.name());
-
                         // TODO: I don't like this... need to rethink static vs. dynamic providers. Reports that aren't dynamic providers should still allow custom thumbnails
                         if (report instanceof DynamicThumbnailProvider)
                         {
+                            // custom thumbnail file provided by the user is stored in the properties map as an InputStream
+                            InputStream is = (InputStream)props.get(Property.customThumbnail.name());
+                            String filename = (String)props.get(Property.customThumbnailFileName.name());
                             String contentType = null != filename ? new MimeMap().getContentTypeFor(filename) : null;
                             DynamicThumbnailProvider wrapper = new ImageStreamThumbnailProvider((DynamicThumbnailProvider)report, is, contentType, ImageType.Large);
 
@@ -392,11 +391,10 @@ public class ReportViewProvider implements DataViewProvider
 
                     if (props.containsKey(Property.customIcon.name()))
                     {
-                        InputStream is = (InputStream)props.get(Property.customIcon.name());
-                        String filename = (String)props.get(Property.customIconFileName);
-
                         if (report instanceof DynamicThumbnailProvider)
                         {
+                            InputStream is = (InputStream)props.get(Property.customIcon.name());
+                            String filename = (String)props.get(Property.customIconFileName);
                             String contentType = null != filename ? new MimeMap().getContentTypeFor(filename) : null;
                             DynamicThumbnailProvider wrapper = new ImageStreamThumbnailProvider((DynamicThumbnailProvider)report, is, contentType, ImageType.Small);
 
