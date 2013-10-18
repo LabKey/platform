@@ -254,17 +254,26 @@ public abstract class DisplayColumn extends RenderColumn
         {
             Class valueClass = getDisplayValueClass();
 
-            if (Boolean.class.isAssignableFrom(valueClass) || boolean.class.isAssignableFrom(valueClass))
-                return new BooleanFormat(formatString);
-            if (valueClass.isPrimitive() || Number.class.isAssignableFrom(valueClass))
+            try
             {
-                if (null == dfs)
-                    return new DecimalFormat(formatString);
-                else
-                    return new DecimalFormat(formatString, dfs);
+                if (Boolean.class.isAssignableFrom(valueClass) || boolean.class.isAssignableFrom(valueClass))
+                    return new BooleanFormat(formatString);
+
+                if (valueClass.isPrimitive() || Number.class.isAssignableFrom(valueClass))
+                {
+                    if (null == dfs)
+                        return new DecimalFormat(formatString);
+                    else
+                        return new DecimalFormat(formatString, dfs);
+                }
+                else if (Date.class.isAssignableFrom(valueClass))
+                {
+                    return FastDateFormat.getInstance(formatString);
+                }
             }
-            else if (Date.class.isAssignableFrom(valueClass))
-                return FastDateFormat.getInstance(formatString);
+            catch (IllegalArgumentException ignored)
+            {
+            }
         }
 
         return null;
