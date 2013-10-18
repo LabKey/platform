@@ -599,8 +599,7 @@ if (typeof LABKEY == "undefined")
                     '/vis/src/stat.js',
                     '/vis/src/scale.js',
                     '/vis/src/layer.js',
-                    '/vis/src/plot.js',
-                    'vis/SVGConverter.js'
+                    '/vis/src/plot.js'
                 ];
 
                 // NOTE: If adding a required file you must add to vis.lib.xml for proper packaging
@@ -610,7 +609,6 @@ if (typeof LABKEY == "undefined")
                 scripts = [
                     '/vis/lib/d3-2.0.4.min.js',
                     '/vis/lib/raphael-min-2.1.0.js',
-                    'vis/SVGConverter.js',
                     '/vis/vis.min.js'
                 ];
             }

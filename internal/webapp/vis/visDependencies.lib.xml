@@ -1,4 +1,6 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <!-- We only maintain this library so we can send down the dev/production versions, otherwise, -->
+    <!-- these could be listed directly as dependencies in vis.lib.xml -->
     <library compileInProductionMode="false">
         <script path="/vis/lib/d3-2.0.4.js" mode="dev"/>
         <script path="/vis/lib/d3-2.0.4.min.js" mode="production"/>

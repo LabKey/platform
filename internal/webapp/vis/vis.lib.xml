@@ -9,7 +9,6 @@
         <script path="/vis/src/plot.js"/>
     </library>
     <dependencies>
-        <dependency path="/vis/SVGConverter.js"/>
-        <dependency path="/vis/visDependencies.lib.xml"/>
+        <dependency path="/vis/visDependencies"/>
     </dependencies>
 </libraries>
