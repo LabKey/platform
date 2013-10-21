@@ -254,6 +254,110 @@ public class QueryController extends SpringActionController
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Diagnostics, "data sources", new ActionURL(DataSourceAdminAction.class, ContainerManager.getRoot()));
     }
 
+    public static class RemoteConnectionUrls {
+        public static ActionURL urlCreatetRemoteConnection(Container c)
+        {
+            ActionURL url = new ActionURL(QueryController.EditRemoteConnectionAction.class, c);
+            return url;
+        }
+
+        public static ActionURL urlEditRemoteConnection(Container c, String connectionName)
+        {
+            ActionURL url = new ActionURL(QueryController.EditRemoteConnectionAction.class, c);
+            url.addParameter("connectionName", connectionName);
+            return url;
+        }
+
+        public static ActionURL urlDeleteRemoteConnection(Container c, String connectionName)
+        {
+            ActionURL url = new ActionURL(QueryController.DeleteRemoteConnectionAction.class, c);
+            url.addParameter("connectionName", connectionName);
+            return url;
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class EditRemoteConnectionAction extends FormViewAction<RemoteConnectionForm>
+    {
+        @Override
+        public void validateCommand(RemoteConnectionForm target, Errors errors)
+        {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public ModelAndView getView(RemoteConnectionForm remoteConnectionForm, boolean reshow, BindException errors) throws Exception
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public boolean handlePost(RemoteConnectionForm remoteConnectionForm, BindException errors) throws Exception
+        {
+            return false;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public URLHelper getSuccessURL(RemoteConnectionForm remoteConnectionForm)
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class DeleteRemoteConnectionAction extends FormViewAction<RemoteConnectionForm>
+    {
+        @Override
+        public void validateCommand(RemoteConnectionForm target, Errors errors)
+        {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public ModelAndView getView(RemoteConnectionForm remoteConnectionForm, boolean reshow, BindException errors) throws Exception
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public boolean handlePost(RemoteConnectionForm remoteConnectionForm, BindException errors) throws Exception
+        {
+            return false;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public URLHelper getSuccessURL(RemoteConnectionForm remoteConnectionForm)
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+    }
+
+    public class RemoteConnectionForm {
+        private String _connectionName;
+
+        public String getConnectionName()
+        {
+            return _connectionName;
+        }
+
+        public void setConnectionName(String connectionName)
+        {
+            _connectionName = connectionName;
+        }
+    }
+
     public static class QueryUrlsImpl implements QueryUrls
     {
         public ActionURL urlSchemaBrowser(Container c)
@@ -3410,6 +3514,22 @@ public class QueryController extends SpringActionController
         {
             new BeginAction().appendNavTrail(root);
             root.addChild("Schema Administration", new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer()));
+            return root;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ManageRemoteConnectionsAction extends SimpleViewAction<QueryForm>
+    {
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/query/view/manageRemoteConnections.jsp", form, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            new BeginAction().appendNavTrail(root);
+            root.addChild("Manage Remote Connections", new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer()));
             return root;
         }
     }

@@ -870,6 +870,9 @@ dataintegration/src/org/labkey/di/pipeline/TransformQuartzJobRunner.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformRun.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformTask.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformTaskFactory.java -text
+dataintegration/src/org/labkey/di/steps/RemoteQueryTransformStep.java -text
+dataintegration/src/org/labkey/di/steps/RemoteQueryTransformStepMeta.java -text
+dataintegration/src/org/labkey/di/steps/RemoteQueryTransformStepProvider.java -text
 dataintegration/src/org/labkey/di/steps/SimpleQueryTransformStep.java -text
 dataintegration/src/org/labkey/di/steps/SimpleQueryTransformStepMeta.java -text
 dataintegration/src/org/labkey/di/steps/SimpleQueryTransformStepProvider.java -text
@@ -2498,6 +2501,7 @@ query/src/org/labkey/query/view/internalDeleteView.jsp -text
 query/src/org/labkey/query/view/internalNewView.jsp -text
 query/src/org/labkey/query/view/internalSourceView.jsp -text
 query/src/org/labkey/query/view/linkedSchema.jsp -text
+query/src/org/labkey/query/view/manageRemoteConnections.jsp -text
 query/src/org/labkey/query/view/manageViews.jsp -text
 query/src/org/labkey/query/view/multipleSchemas.jsp -text
 query/src/org/labkey/query/view/newQuery.jsp -text

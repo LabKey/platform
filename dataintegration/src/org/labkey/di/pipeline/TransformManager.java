@@ -71,6 +71,7 @@ import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.filters.ModifiedSinceFilterStrategy;
 import org.labkey.di.filters.RunFilterStrategy;
 import org.labkey.di.filters.SelectAllFilterStrategy;
+import org.labkey.di.steps.RemoteQueryTransformStepProvider;
 import org.labkey.di.steps.SimpleQueryTransformStepProvider;
 import org.labkey.di.steps.StepMeta;
 import org.labkey.di.steps.StepProvider;
@@ -731,6 +732,7 @@ public class TransformManager implements DataIntegrationService
     public void registerStepProviders()
     {
         _providers.add(new SimpleQueryTransformStepProvider());
+        _providers.add(new RemoteQueryTransformStepProvider());
         _providers.add(new StoredProcedureStepProvider());
         _providers.add(new TestTaskProvider());
 

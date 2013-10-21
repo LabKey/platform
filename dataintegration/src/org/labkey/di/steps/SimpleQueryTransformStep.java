@@ -104,8 +104,7 @@ public class SimpleQueryTransformStep extends TransformTask
         }
     }
 
-
-    public boolean executeCopy(CopyConfig meta, Container c, User u, Logger log) throws IOException, SQLException
+    public boolean validate(CopyConfig meta, Container c, User u, Logger log)
     {
         QuerySchema sourceSchema = DefaultSchema.get(u, c, meta.getSourceSchema());
         if (null == sourceSchema || null == sourceSchema.getDbSchema())
@@ -120,6 +119,18 @@ public class SimpleQueryTransformStep extends TransformTask
             log.error("ERROR: Target schema not found: " + meta.getTargetSchema());
             return false;
         }
+
+        return true;
+    }
+
+    public boolean executeCopy(CopyConfig meta, Container c, User u, Logger log) throws IOException, SQLException
+    {
+        boolean validationResult = validate(meta, c, u, log);
+        if (validationResult == false)
+            return false;
+
+        QuerySchema sourceSchema = DefaultSchema.get(u, c, meta.getSourceSchema());
+        QuerySchema targetSchema = DefaultSchema.get(u, c, meta.getTargetSchema());
 
         DbScope targetScope = targetSchema.getDbSchema().getScope();
         DbScope sourceScope = sourceSchema.getDbSchema().getScope();

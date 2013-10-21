@@ -1606,6 +1606,13 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                 iconCls: 'iconFileNew',
                 tooltip: 'Create a new query in the selected schema (requires that you select a particular schema or query within that schema).'
             });
+            tbar.push({
+                text: 'Manage Remote Connections',
+                handler: this.onManageRemoteConnectionsClick,
+                scope: this,
+                iconCls: 'iconFileNew',
+                tooltip: 'Manage remote connection credentials for remote LabKey server authentication.'
+            });
         }
 
         Ext.apply(this,{
@@ -1871,6 +1878,10 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
     onSchemaAdminClick : function() {
         window.location = LABKEY.ActionURL.buildURL("query", "admin");
+    },
+
+    onManageRemoteConnectionsClick : function() {
+        window.location = LABKEY.ActionURL.buildURL("query", "manageRemoteConnections");
     },
 
     onRefresh : function() {

@@ -26,6 +26,7 @@
         <attribute name="timestampColumnName" type="string" use="optional"/>
         <attribute name="sourceOption" type="etl:SourceOptionType" use="optional"/>
         <attribute name="targetOption" type="etl:TargetOptionType" use="optional"/>
+        <attribute name="remoteSource" type="string" use="optional"/>
     </complexType>
 
     <simpleType name ="SourceOptionType">
