@@ -323,7 +323,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
     int insertListItems(User user, List<ListItem> listItems) throws IOException;
     int insertListItems(User user, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey) throws IOException;
 
-    TableInfo getTable(User user);
+    @Nullable TableInfo getTable(User user);
 
     ActionURL urlShowDefinition();
     ActionURL urlUpdate(User user, @Nullable Object pk, @Nullable URLHelper returnUrl);

@@ -618,12 +618,12 @@ if (typeof LABKEY == "undefined")
 
         var setDirty = function (dirty)
         {
-            configs.dirty = dirty;
+            configs.dirty = (dirty ? true : false); // only set to boolean
         };
 
         var setSubmit = function (submit)
         {
-            configs.submit = submit;
+            configs.submit = (submit ? true : false); // only set to boolean
         };
 
         var showNavTrail = function()
