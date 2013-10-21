@@ -96,6 +96,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                                 if (el) {
                                     // Update the view div with the returned HTML, and make sure scripts are run
                                     LABKEY.Utils.loadAjaxContent(resp, el, function() {
+                                        cmp.doLayout();
                                         cmp.getEl().unmask();
                                     });
                                 }
@@ -202,6 +203,9 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             },
             listeners : {
                 render : function() {
+                    var panel = cmp.up('tabpanel');
+                    if (panel)
+                        panel.doLayout();
                     var dr = LABKEY.DataRegions[this.dataRegionName + '_report'];
                     if (dr) {
                         dr.disableHeaderLock();
@@ -430,7 +434,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 });
             }
 
-            if (this.reportConfig.studyOptions)
+            if (this.reportConfig.studyOptions && LABKEY.moduleContext.study)
             {
                 var subjectNoun = LABKEY.moduleContext.study.subject.nounSingular;
                 items.push({
