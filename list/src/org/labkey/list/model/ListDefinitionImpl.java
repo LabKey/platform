@@ -494,25 +494,29 @@ public class ListDefinitionImpl implements ListDefinition
     public void delete(User user) throws SQLException, DomainNotFoundException
     {
         TableInfo table = getTable(user);
-        QueryUpdateService qus = table.getUpdateService();
 
-        if (qus != null && (qus instanceof ListQueryUpdateService))
+        if (null != table)
         {
-            try (DbScope.Transaction transaction = table.getSchema().getScope().ensureTransaction())
+            QueryUpdateService qus = table.getUpdateService();
+
+            if (qus != null && (qus instanceof ListQueryUpdateService))
             {
-                // remove related attachments, discussions, and indices
-                ((ListQueryUpdateService)qus).deleteRelatedListData(user, getContainer());
+                try (DbScope.Transaction transaction = table.getSchema().getScope().ensureTransaction())
+                {
+                    // remove related attachments, discussions, and indices
+                    ((ListQueryUpdateService)qus).deleteRelatedListData(user, getContainer());
 
-                // then delete the list itself
-                Table.delete(ListManager.get().getListMetadataTable(), new Object[] {getContainer(), getListId()});
-                Domain domain = getDomain();
-                domain.delete(user);
+                    // then delete the list itself
+                    Table.delete(ListManager.get().getListMetadataTable(), new Object[] {getContainer(), getListId()});
+                    Domain domain = getDomain();
+                    domain.delete(user);
 
-                transaction.commit();
+                    transaction.commit();
+                }
+
+                SchemaKey schemaPath = SchemaKey.fromParts(ListQuerySchema.NAME);
+                QueryService.get().fireQueryDeleted(user, getContainer(), null, schemaPath, Collections.singleton(getName()));
             }
-
-            SchemaKey schemaPath = SchemaKey.fromParts(ListQuerySchema.NAME);
-            QueryService.get().fireQueryDeleted(user, getContainer(), null, schemaPath, Collections.singleton(getName()));
         }
     }
 
@@ -553,8 +557,14 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public int insertListItems(User user, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey) throws IOException
     {
-        ListQueryUpdateService lqus = (ListQueryUpdateService)getTable(user).getUpdateService();
-        return lqus.insertETL(loader, user, errors, attachmentDir, progress, supportAutoIncrementKey);
+        TableInfo table = getTable(user);
+        if (null != table)
+        {
+            ListQueryUpdateService lqus = (ListQueryUpdateService) table.getUpdateService();
+            if (null != lqus)
+                return lqus.insertETL(loader, user, errors, attachmentDir, progress, supportAutoIncrementKey);
+        }
+        return 0;
     }
 
 
@@ -598,11 +608,22 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
     /** NOTE consider using ListQuerySchema.getTable(), unless you have a good reason */
+    @Nullable
     public TableInfo getTable(User user)
     {
-        ListTable ret = new ListTable(new ListQuerySchema(user, getContainer()), this);
-        ret.afterConstruct();
-        return ret;
+        ListTable table;
+        try
+        {
+            table = new ListTable(new ListQuerySchema(user, getContainer()), this);
+            table.afterConstruct();
+        }
+        catch (IllegalStateException e)
+        {
+            /* Return a null table -- configuration failed */
+            table = null;
+        }
+
+        return table;
     }
 
     public ActionURL urlShowDefinition()

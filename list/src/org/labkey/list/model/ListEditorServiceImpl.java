@@ -19,6 +19,7 @@ import org.apache.axis.utils.StringUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
@@ -174,8 +175,11 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         {
             try
             {
-                String title = def.getTable(getUser()).getTitleColumn();
-                gwt._defaultTitleField(title);
+                TableInfo list = def.getTable(getUser());
+                if (null != list)
+                {
+                    gwt._defaultTitleField(list.getTitleColumn());
+                }
             }
             catch (Exception x)
             {

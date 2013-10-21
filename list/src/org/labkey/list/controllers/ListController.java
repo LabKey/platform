@@ -511,6 +511,9 @@ public class ListController extends SpringActionController
             _list = form.getList();
             TableInfo table = _list.getTable(getUser());
 
+            if (null == table)
+                throw new NotFoundException("List does not exist");
+
             ListQueryUpdateForm tableForm = new ListQueryUpdateForm(table, getViewContext(), _list, errors);
             DetailsView details = new DetailsView(tableForm);
 
@@ -592,7 +595,11 @@ public class ListController extends SpringActionController
             {
                 String entityId = item.getEntityId();
 
-                DomainProperty titleProperty = _list.getDomain().getPropertyByName(_list.getTable(getUser()).getTitleColumn());
+                DomainProperty titleProperty = null;
+                Domain d = _list.getDomain();
+                if (null != d)
+                    titleProperty = d.getPropertyByName(table.getTitleColumn());
+
                 Object title = (null != titleProperty ? item.getProperty(titleProperty) : null);
                 String discussionTitle = (null != title ? title.toString() : "Item " + tableForm.getPkVal());
 

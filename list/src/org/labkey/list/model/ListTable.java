@@ -93,8 +93,16 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                 {
                     PropertyDescriptor key = OntologyManager.getPropertyDescriptor(colKey.getPropertyURI(), _list.getContainer());
 
-                    colKey.setName(key.getName());
-                    colKey.setLabel(key.getLabel());
+                    if (null != key)
+                    {
+                        colKey.setName(key.getName());
+                        colKey.setLabel(key.getLabel());
+                    }
+                    else
+                    {
+                        throw new IllegalStateException("" + _list.getName() + "." + _list.getKeyName() + " (primary key) " +
+                                "has not been provisioned properly. Ensure the domain is established before constructing.");
+                    }
                 }
 
                 colKey.setKeyField(true);
@@ -103,15 +111,12 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                 colKey.setInputLength(-1);
                 colKey.setWidth("180");
 
-                // TODO : Can this somehow be asked of the Domain/Kind?
                 if (_list.getKeyType().equals(ListDefinition.KeyType.AutoIncrementInteger))
                 {
                     colKey.setAutoIncrement(true);
                     colKey.setUserEditable(false);
                     colKey.setHidden(true);
                 }
-
-                // TODO: column.setFK()?
 
                 addColumn(colKey);
                 defaultColumnsCandidates.add(colKey);

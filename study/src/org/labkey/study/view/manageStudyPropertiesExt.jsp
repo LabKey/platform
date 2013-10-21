@@ -174,7 +174,7 @@ function onSaveSuccess_formSubmit()
 {
 
     // if you want to stay on page, you need to refresh anyway to udpate attachments
-    LABKEY.submit=true;
+    LABKEY.setSubmit(true);
     var msgbox = Ext4.Msg.show({
         title:'Status',
         msg: '<span class="labkey-message">Changes saved</span>',
@@ -215,18 +215,6 @@ function submitButtonHandler()
     var form = studyPropertiesFormPanel.getForm();
     if (form.isValid())
     {
-        /* This works except for the file attachment
-         var rows = studyPropertiesFormPanel.getFormValues();
-         LABKEY.Query.updateRows(
-         {
-         schemaName:'study',
-         queryName:'StudyProperties',
-         rows:rows,
-         success : onSaveSuccess_updateRows,
-         failure : onSaveFailure_updateRows
-         });
-         */
-
         form.fileUpload = true;
         form.submit(
                 {
@@ -368,7 +356,6 @@ function renderFormPanel(data, editable){
 
         // Don't show these fields, they have a special UI for editing them
         ParticipantAliasDatasetId: true,
-        ParticipantAliasSourceProperty: true,
         ParticipantAliasSourceProperty: true,
 
         DescriptionRendererType: true,

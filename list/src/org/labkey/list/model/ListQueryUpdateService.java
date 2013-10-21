@@ -203,23 +203,26 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
         TableInfo ti = _list.getTable(user);
 
-        try (DbScope.Transaction transaction = ti.getSchema().getScope().ensureTransaction())
+        if (null != ti)
         {
-            Pump p = new Pump(dib, context);
-            p.run();
-            int inserted = p.getRowCount();
-
-            if (!errors.hasErrors())
+            try (DbScope.Transaction transaction = ti.getSchema().getScope().ensureTransaction())
             {
-                if (inserted > 0)
-                    ListManager.get().addAuditEvent(_list, user, "Bulk inserted " + inserted + " rows to list.");
-                transaction.commit();
-                ListManager.get().indexList(_list);
-                return inserted;
-            }
+                Pump p = new Pump(dib, context);
+                p.run();
+                int inserted = p.getRowCount();
 
-            return 0;
+                if (!errors.hasErrors())
+                {
+                    if (inserted > 0)
+                        ListManager.get().addAuditEvent(_list, user, "Bulk inserted " + inserted + " rows to list.");
+                    transaction.commit();
+                    ListManager.get().indexList(_list);
+                    return inserted;
+                }
+            }
         }
+
+        return 0;
     }
 
 

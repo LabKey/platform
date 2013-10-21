@@ -130,25 +130,29 @@ import java.util.Set;
             return;
 
         final ListDefinition list = ListService.get().getList(domain);
-        final Container c = list.getContainer();
         TableInfo tinfo = list.getTable(user);
-        final DomainProperty prop = domain.getPropertyByName(pd.getName());
 
-        new TableSelector(tinfo.getColumn(list.getKeyName())).forEach(new Selector.ForEachBlock<Object>() {
-            @Override
-            public void exec(Object key) throws SQLException
-            {
-                ListItem item = list.getListItem(key, user);
-                Object file = item.getProperty(prop);
+        if (null != tinfo)
+        {
+            final Container c = list.getContainer();
+            final DomainProperty prop = domain.getPropertyByName(pd.getName());
 
-                if (null != file)
+            new TableSelector(tinfo.getColumn(list.getKeyName())).forEach(new Selector.ForEachBlock<Object>() {
+                @Override
+                public void exec(Object key) throws SQLException
                 {
-                    AttachmentParent parent = new ListItemAttachmentParent(item, c);
-                    // Not auditing individual file deletions.  Not sure this is correct.
-                    AttachmentService.get().deleteAttachment(parent, file.toString(), null);
+                    ListItem item = list.getListItem(key, user);
+                    Object file = item.getProperty(prop);
+
+                    if (null != file)
+                    {
+                        AttachmentParent parent = new ListItemAttachmentParent(item, c);
+                        // Not auditing individual file deletions.  Not sure this is correct.
+                        AttachmentService.get().deleteAttachment(parent, file.toString(), null);
+                    }
                 }
-            }
-        }, Object.class);
+            }, Object.class);
+        }
     }
 
     public Set<String> getReservedPropertyNames(Domain domain)

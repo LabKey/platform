@@ -415,6 +415,10 @@ public class ListManager implements SearchService.DocumentProvider
     private int indexItems(@NotNull final SearchService.IndexTask task, final ListDefinition list, SimpleFilter filter)
     {
         TableInfo listTable = list.getTable(User.getSearchUser());
+
+        if (null == listTable)
+            return 0;
+
         FieldKeyStringExpression titleTemplate = createEachItemTitleTemplate(list, listTable);
         FieldKeyStringExpression bodyTemplate = createBodyTemplate(list.getEachItemBodySetting(), list.getEachItemBodyTemplate(), listTable);
 
@@ -541,36 +545,40 @@ public class ListManager implements SearchService.DocumentProvider
         if (setting.indexItemData())
         {
             TableInfo ti = list.getTable(User.getSearchUser());
-            FieldKeyStringExpression template = createBodyTemplate(list.getEntireListBodySetting(), list.getEntireListBodyTemplate(), ti);
-            StringBuilder data = new StringBuilder();
 
-            try
+            if (ti != null)
             {
-                Results results = null;
+                FieldKeyStringExpression template = createBodyTemplate(list.getEntireListBodySetting(), list.getEntireListBodyTemplate(), ti);
+                StringBuilder data = new StringBuilder();
 
                 try
                 {
-                    results = Table.selectForDisplay(ti, Table.ALL_COLUMNS, null, null, null, Table.ALL_ROWS, Table.NO_OFFSET);
+                    Results results = null;
 
-                    while (results.next())
+                    try
                     {
-                        Map<FieldKey, Object> map = results.getFieldKeyRowMap();
-                        data.append(template.eval(map)).append("\n");
+                        results = Table.selectForDisplay(ti, Table.ALL_COLUMNS, null, null, null, Table.ALL_ROWS, Table.NO_OFFSET);
+
+                        while (results.next())
+                        {
+                            Map<FieldKey, Object> map = results.getFieldKeyRowMap();
+                            data.append(template.eval(map)).append("\n");
+                        }
+                    }
+                    finally
+                    {
+                        if (null != results)
+                            results.close();
                     }
                 }
-                finally
+                catch (SQLException e)
                 {
-                    if (null != results)
-                        results.close();
+                    throw new RuntimeSQLException(e);
                 }
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
 
-            body.append(sep);
-            body.append(data);
+                body.append(sep);
+                body.append(data);
+            }
         }
 
         ActionURL url = list.urlShowData();
@@ -700,7 +708,6 @@ public class ListManager implements SearchService.DocumentProvider
 
     public void setItemLastIndexed(ListDefinition list, Object pk, long ms)
     {
-        // TODO: Ensure the Search user is correct to use
         TableInfo ti = list.getTable(User.getSearchUser());
 
         // The "search user" might not have access
