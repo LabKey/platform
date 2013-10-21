@@ -1192,15 +1192,18 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             maxRows: this.MAX_FILTER_CHOICES,
             success : function(d) {
                 if (d && d.values) {
-                    var recs = [], v, i=0, hasBlank = false, formattedValue;
+                    var recs = [], v, i=0, hasBlank = false, isString, formattedValue;
                     for (; i < d.values.length; i++) {
                         v = d.values[i];
                         formattedValue = this.formatValue(v);
+                        isString = Ext.isString(formattedValue);
 
-                        if (formattedValue == null || formattedValue == '' || (!Ext.isString(formattedValue) && isNaN(formattedValue)))
+                        if (formattedValue == null || (isString && formattedValue.length == 0) || (!isString && isNaN(formattedValue))) {
                             hasBlank = true;
-                        else if (v)
+                        }
+                        else if (Ext.isDefined(v)) {
                             recs.push([v, v.toString(), v.toString()]);
+                        }
                     }
 
                     if (hasBlank)
