@@ -1422,6 +1422,7 @@ api/src/org/labkey/api/util/InputStreamWrapper.java -text
 api/src/org/labkey/api/util/JdbcUtil.java -text
 api/src/org/labkey/api/util/Job.java -text
 api/src/org/labkey/api/util/JobRunner.java -text
+api/src/org/labkey/api/util/JsonUtil.java -text
 api/src/org/labkey/api/util/MXBeanAppender.java -text
 api/src/org/labkey/api/util/MatrixUtil.java -text
 api/src/org/labkey/api/util/MemTracker.java -text

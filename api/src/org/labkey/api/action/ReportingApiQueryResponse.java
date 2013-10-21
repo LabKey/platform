@@ -175,7 +175,6 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
 
     private void putDataMap(Map<String, Object> row, DisplayColumn dc, Object value)
     {
-
         String columnName = getColumnName(dc);
         if (columnName != null)
         {
@@ -184,30 +183,7 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
                 row.put("data", new HashMap<>());
             }
 
-            Map<String,Object> colMap = new HashMap<>();
-            colMap.put(ColMapEntry.value.name(), value);
-
-            //display value (if different from value)
-            Object displayValue = ensureJSONDate(dc.getDisplayValue(getRenderContext()));
-            if(null != displayValue && !displayValue.equals(value))
-                colMap.put(ColMapEntry.displayValue.name(), displayValue);
-
-            //missing values
-            if (dc instanceof MVDisplayColumn)
-            {
-                MVDisplayColumn mvColumn = (MVDisplayColumn)dc;
-                RenderContext ctx = getRenderContext();
-                colMap.put(ColMapEntry.mvValue.name(), mvColumn.getMvIndicator(ctx));
-                colMap.put(ColMapEntry.mvRawValue.name(), mvColumn.getRawValue(ctx));
-            }
-
-            if (_doItWithStyle)
-            {
-                RenderContext ctx = getRenderContext();
-                String style = dc.getCssStyle(ctx);
-                if (!StringUtils.isEmpty(style))
-                    colMap.put("style", style);
-            }
+            Map<ColMapEntry, Object> colMap = createColMap(dc);
 
             //put the column map into the data map using the column name as the key
             ((HashMap)row.get("data")).put(columnName, colMap);

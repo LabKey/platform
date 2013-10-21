@@ -363,6 +363,23 @@ public abstract class DisplayColumn extends RenderColumn
 
     }
 
+    public static Class getClassFromJsonTypeName(String typeName)
+    {
+        if (typeName == null)
+            return String.class;
+
+        switch (typeName)
+        {
+            case "boolean":  return Boolean.class;
+            case "int":      return Integer.class;
+            case "float":    return Float.class;
+            case "date":     return Date.class;
+            case "string":
+            default:         return String.class;
+        }
+    }
+
+
     /** The value to display. Not HTML or otherwise encoded. */
     public Object getDisplayValue(RenderContext ctx)
     {

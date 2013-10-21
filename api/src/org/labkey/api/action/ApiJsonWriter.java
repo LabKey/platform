@@ -134,7 +134,7 @@ public class ApiJsonWriter extends ApiResponseWriter
             {
                 String key = o.toString();
                 jg.writeFieldName(key);
-                writeValue(((Map) value).get(key));
+                writeValue(((Map) value).get(o));
             }
             jg.writeEndObject();
             if (badContext)

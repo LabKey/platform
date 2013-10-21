@@ -48,7 +48,13 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         mvValue,
         mvIndicator,
         mvRawValue,
-        url
+        url,
+        style
+    }
+
+    // Used for jackson serialization/deserialization
+    public static class ColMap extends HashMap<ColMapEntry, Object>
+    {
     }
 
     public ExtendedApiQueryResponse(QueryView view, boolean schemaEditable,
@@ -72,43 +78,7 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
     @Override
     protected void putValue(Map<String, Object> row, DisplayColumn dc) throws Exception
     {
-        //in the extended response format, each column will have a map of its own
-        //that will contain entries for value, mvValue, mvIndicator, etc.
-        Map<String,Object> colMap = new HashMap<>();
-
-        //column value
-        Object value = getColumnValue(dc);
-        colMap.put(ColMapEntry.value.name(), value);
-
-        //display value (if different from value)
-        Object displayValue = ensureJSONDate(dc.getDisplayValue(getRenderContext()));
-        if(null != displayValue && !displayValue.equals(value))
-            colMap.put(ColMapEntry.displayValue.name(), displayValue);
-
-        //url
-        if (null != value)
-        {
-            String url = dc.renderURL(getRenderContext());
-            if(null != url)
-                colMap.put(ColMapEntry.url.name(), url);
-        }
-
-        //missing values
-        if (dc instanceof MVDisplayColumn)
-        {
-            MVDisplayColumn mvColumn = (MVDisplayColumn)dc;
-            RenderContext ctx = getRenderContext();
-            colMap.put(ColMapEntry.mvValue.name(), mvColumn.getMvIndicator(ctx));
-            colMap.put(ColMapEntry.mvRawValue.name(), mvColumn.getRawValue(ctx));
-        }
-
-        if (_doItWithStyle)
-        {
-            RenderContext ctx = getRenderContext();
-            String style = dc.getCssStyle(ctx);
-            if (!StringUtils.isEmpty(style))
-                colMap.put("style", style);
-        }
+        Map<ColMapEntry, Object> colMap = createColMap(dc);
 
         //put the column map into the row map using the column name as the key
         String columnName = getColumnName(dc);
@@ -117,6 +87,49 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         {
             row.put(columnName, colMap);
         }
+    }
+
+    protected Map<ColMapEntry, Object> createColMap(DisplayColumn dc)
+    {
+        //in the extended response format, each column will have a map of its own
+        //that will contain entries for value, mvValue, mvIndicator, etc.
+        Map<ColMapEntry, Object> colMap = new ColMap();
+
+        //column value
+        Object value = getColumnValue(dc);
+        colMap.put(ColMapEntry.value, value);
+
+        //display value (if different from value)
+        Object displayValue = ensureJSONDate(dc.getDisplayValue(getRenderContext()));
+        if(null != displayValue && !displayValue.equals(value))
+            colMap.put(ColMapEntry.displayValue, displayValue);
+
+        //url
+        if (null != value)
+        {
+            String url = dc.renderURL(getRenderContext());
+            if(null != url)
+                colMap.put(ColMapEntry.url, url);
+        }
+
+        //missing values
+        if (dc instanceof MVDisplayColumn)
+        {
+            MVDisplayColumn mvColumn = (MVDisplayColumn)dc;
+            RenderContext ctx = getRenderContext();
+            colMap.put(ColMapEntry.mvValue, mvColumn.getMvIndicator(ctx));
+            colMap.put(ColMapEntry.mvRawValue, mvColumn.getRawValue(ctx));
+        }
+
+        if (_doItWithStyle)
+        {
+            RenderContext ctx = getRenderContext();
+            String style = dc.getCssStyle(ctx);
+            if (!StringUtils.isEmpty(style))
+                colMap.put(ColMapEntry.style, style);
+        }
+
+        return colMap;
     }
 
     @Override
