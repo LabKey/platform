@@ -794,7 +794,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 CaseInsensitiveHashSet.TestCase.class,
                 SwapQueue.TestCase.class,
                 ApiXmlWriter.TestCase.class,
-                TidyUtil.TestCase.class
+                TidyUtil.TestCase.class,
+                JSONDataLoader.HeaderMatchTest.class,
+                JSONDataLoader.MetadataTest.class,
+                JSONDataLoader.RowTest.class
         ));
     }
 
