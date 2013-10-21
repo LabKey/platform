@@ -128,6 +128,6 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
         return this.SCRIPT_TEMPLATE
                 .replace('{{chartConfig}}', LABKEY.ExtAdapter.encode(input.chartConfig))
                 .replace('{{queryConfig}}', LABKEY.ExtAdapter.encode(input.queryConfig))
-                .replace('{{containerPath}}', LABKEY.container.path);
+                .replace('{{containerPath}}', function(){return LABKEY.container.path});
     }
 });

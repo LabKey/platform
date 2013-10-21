@@ -148,6 +148,6 @@ Ext4.define('LABKEY.vis.TimeChartScriptPanel', {
                 .replace('{{chartConfig}}', LABKEY.ExtAdapter.encode(input.chartConfig))
                 .replace('{{studyNounSingular}}', LABKEY.moduleContext.study.subject.nounSingular)
                 .replace('{{studyNounColumnName}}', LABKEY.moduleContext.study.subject.columnName)
-                .replace('{{containerPath}}', LABKEY.container.path);
+                .replace('{{containerPath}}', function(){return LABKEY.container.path});
     }
 });
