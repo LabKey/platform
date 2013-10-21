@@ -3262,6 +3262,16 @@ public class ReportsController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public class DeleteCategoriesAction extends MutatingApiAction<CategoriesForm>
     {
+        @Override
+        public void validateForm(CategoriesForm form, Errors errors)
+        {
+            for (ViewCategory category : form.getCategories())
+            {
+                if (!category.canDelete(getContainer(), getUser()))
+                    errors.reject(ERROR_MSG, "You must be an administrator to delete a view category");
+            }
+        }
+
         public ApiResponse execute(CategoriesForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
