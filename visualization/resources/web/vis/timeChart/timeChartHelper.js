@@ -61,15 +61,15 @@ LABKEY.vis.TimeChartHelper = new function() {
             {
                 if (axis.side == "left")
                 {
-                    yLeftMin = typeof axis.range.min == "number" ? axis.range.min : null;
-                    yLeftMax = typeof axis.range.max == "number" ? axis.range.max : null;
+                    yLeftMin = typeof axis.range.min == "number" ? axis.range.min : (config.hasNoData ? 0 : null);
+                    yLeftMax = typeof axis.range.max == "number" ? axis.range.max : (config.hasNoData ? 10 : null);
                     yLeftTrans = axis.scale ? axis.scale : "linear";
                     yLeftTickFormat = numberFormats.left ? numberFormats.left : null;
                 }
                 else
                 {
-                    yRightMin = typeof axis.range.min == "number" ? axis.range.min : null;
-                    yRightMax = typeof axis.range.max == "number" ? axis.range.max : null;
+                    yRightMin = typeof axis.range.min == "number" ? axis.range.min : (config.hasNoData ? 0 : null);
+                    yRightMax = typeof axis.range.max == "number" ? axis.range.max : (config.hasNoData ? 10 : null);
                     yRightTrans = axis.scale ? axis.scale : "linear";
                     yRightTickFormat = numberFormats.right ? numberFormats.right : null;
                 }
@@ -88,7 +88,6 @@ LABKEY.vis.TimeChartHelper = new function() {
                 return tickMap[value] ? tickMap[value] : "";
             };
         }
-
 
         return {
             x: {
@@ -449,6 +448,9 @@ LABKEY.vis.TimeChartHelper = new function() {
         if (!data.individual && !data.aggregate)
             throw "We expect to either be displaying individual series lines or aggregate data!";
 
+        var rows = data.individual ? data.individual.rows : (data.aggregate ? data.aggregate.rows : []);
+        config.hasNoData = rows.length == 0;
+
         // In multi-chart case, we need to precompute the default axis ranges so that all charts share them
         // (if 'automatic across charts' is selected for the given axis)
         if (config.chartLayout != "single")
@@ -489,7 +491,6 @@ LABKEY.vis.TimeChartHelper = new function() {
                 };
             }
 
-            var rows = data.individual ? data.individual.rows : (data.aggregate ? data.aggregate.rows : []);
             if (config.axis[xAxisIndex].range.type != 'automatic_per_chart')
             {
                 if (!config.axis[xAxisIndex].range.min)
@@ -1044,16 +1045,16 @@ LABKEY.vis.TimeChartHelper = new function() {
         {
             msg = "No data found for the following measures/dimensions: " + msg;
 
-            // if there is no data for any series, error out completely
+            // if there is no data for any series, add to explanation
             if (noDataCounter == seriesList.length)
             {
-                return {success: false, message: msg};
+                var isDateBased = config && config.measures[0].time == "date";
+                if (isDateBased)
+                    msg += ". This may be the result of a missing start date value for the selected subject(s).";
             }
-            else
-            {
-                message += sep + msg;
-                sep = "<br/>";
-            }
+
+            message += sep + msg;
+            sep = "<br/>";
         }
 
         // check to make sure that data can be used in a log scale (if applicable)
