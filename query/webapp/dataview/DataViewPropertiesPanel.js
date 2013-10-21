@@ -364,7 +364,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 width      : 400
             });
 
-            if (this.data.allowCustomIcon || true) {
+            if (this.data.allowCustomThumbnail) {
                 imagesItems.push({
                     xtype      : 'filefield',
                     id         : 'customIcon',
