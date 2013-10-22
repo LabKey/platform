@@ -901,7 +901,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
     {
         var checkItems = [];
         checkItems.push({xtype: 'checkbox',
-            checked: this.expandFileUpload,
+            checked: this.expandFileUpload != undefined ? this.expandFileUpload : true,
             id: 'ck-expand-file-upload',
             handler: function(cmp, checked){this.expandFileUpload = checked;},
             scope: this,
