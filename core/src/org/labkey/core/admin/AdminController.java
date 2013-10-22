@@ -929,16 +929,9 @@ public class AdminController extends SpringActionController
         if (!binRoot.exists())
             return null;
 
-        File[] childDirs = binRoot.listFiles();
-        if (childDirs == null)
-            return null;
-
         Set<String> filenames = new CaseInsensitiveTreeSet();
 
-        for (File childDir : childDirs)
-        {
-            addAllChildren(childDir, filenames);
-        }
+        addAllChildren(binRoot, filenames);
 
         return filenames;
     }
