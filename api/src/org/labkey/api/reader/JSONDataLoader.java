@@ -395,7 +395,7 @@ public class JSONDataLoader extends DataLoader
 
         FieldKey fieldKey = null;
         String type = null;
-        Boolean mvEnabled = null;
+        Boolean mvEnabled = Boolean.FALSE;
 
         while (parser.getCurrentToken() == JsonToken.FIELD_NAME)
         {
