@@ -872,7 +872,8 @@ public class AdminController extends SpringActionController
     }
 
 
-    private static final String _libPath = "/WEB-INF/lib/";
+    private static final String LIB_PATH = "/WEB-INF/lib/";
+    private static final String JAVA_CLIENT_API_JAR_PREFIX = "labkey-client-api-";
 
     private Set<String> getWebInfJars(boolean removeInternalJars)
     {
@@ -880,16 +881,19 @@ public class AdminController extends SpringActionController
             return null;
 
         //noinspection unchecked
-        Set<String> resources = ViewServlet.getViewServletContext().getResourcePaths(_libPath);
+        Set<String> resources = ViewServlet.getViewServletContext().getResourcePaths(LIB_PATH);
         Set<String> filenames = new CaseInsensitiveTreeSet();
+        // We don't need to include licensing information for our own JAR files (only third-party JARs), so filter out
+        // our JARs that end up in WEB-INF/lib
         Set<String> internalJars = removeInternalJars ? new CsvSet("api.jar,schemas.jar,internal.jar") : Collections.<String>emptySet();
 
         // Remove path prefix and copy to a modifiable collection
         for (String filename : resources)
         {
-            String name = filename.substring(_libPath.length());
+            String name = filename.substring(LIB_PATH.length());
 
-            if (DefaultModule.isRuntimeJar(name) && !internalJars.contains(name))
+            // The Java client API JAR contains a version number in its file name, so we have to do a prefix match for it
+            if (DefaultModule.isRuntimeJar(name) && !internalJars.contains(name) && !name.startsWith(JAVA_CLIENT_API_JAR_PREFIX))
                 filenames.add(name);
         }
 
@@ -920,14 +924,21 @@ public class AdminController extends SpringActionController
         if (!AppProps.getInstance().isDevMode())
             return null;
 
-        File binRoot = new File(AppProps.getInstance().getProjectRoot(), "external/bin");
+        File binRoot = new File(AppProps.getInstance().getProjectRoot(), "external/windows");
 
         if (!binRoot.exists())
             return null;
 
+        File[] childDirs = binRoot.listFiles();
+        if (childDirs == null)
+            return null;
+
         Set<String> filenames = new CaseInsensitiveTreeSet();
 
-        addAllChildren(binRoot, filenames);
+        for (File childDir : childDirs)
+        {
+            addAllChildren(childDir, filenames);
+        }
 
         return filenames;
     }
