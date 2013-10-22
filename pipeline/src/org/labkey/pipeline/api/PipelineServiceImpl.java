@@ -445,6 +445,12 @@ public class PipelineServiceImpl extends PipelineService
         return PipelineStatusManager.getStatusFile(logFile);
     }
 
+    @Override
+    public PipelineStatusFile getStatusFile(int rowId)
+    {
+        return PipelineStatusManager.getStatusFile(rowId);
+    }
+
     public PipelineStatusFile[] getQueuedStatusFiles() throws SQLException
     {
         return PipelineStatusManager.getQueuedStatusFiles();

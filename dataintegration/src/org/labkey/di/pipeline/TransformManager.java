@@ -344,7 +344,14 @@ public class TransformManager implements DataIntegrationService
     }
 
 
-    public synchronized ActionURL runNowPipeline(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
+    public synchronized ActionURL runNowPipelineWithRedirect(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
+            throws PipelineJobException
+    {
+        Integer jobid = runNowPipeline(descriptor, container, user);
+        return null == jobid ? null : new ActionURL("pipeline-status", "details", container).addParameter("rowId", jobid);
+    }
+
+    public synchronized Integer runNowPipeline(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
             throws PipelineJobException
     {
         if (ViewServlet.isShuttingDown())
@@ -366,8 +373,7 @@ public class TransformManager implements DataIntegrationService
             {
                 PipelineService.get().setStatus(job, PipelineJob.WAITING_STATUS, null, true);
                 PipelineService.get().queueJob(job);
-                int jobid = PipelineService.get().getJobId(user, container, job.getJobGUID());
-                return new ActionURL("pipeline-status", "details", container).addParameter("rowId", jobid);
+                return PipelineService.get().getJobId(user, container, job.getJobGUID());
             }
             catch (Exception e)
             {
