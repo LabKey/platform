@@ -86,6 +86,7 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
         // setup lookups for the standard fields
         ColumnInfo created = getColumn("Created");
         created.setLabel("Date");
+        created.setFormat("DateTime");
 
         ColumnInfo container = getColumn("Container");
         ContainerForeignKey.initColumn(container, schema);
@@ -148,8 +149,10 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
         col = super.resolveColumn(newName);
         if (col != null)
         {
-            // Wrap the column with AliasedColumn so the requested name is used as the column name.
+            // Wrap the column with AliasedColumn so the requested name is used as the column name
+            // and copy the real column's label to the aliased column so it will be used in the DataRegion grid.
             AliasedColumn a = new AliasedColumn(this, name, col);
+            a.setLabel(col.getLabel());
             addColumn(a);
             return a;
         }
