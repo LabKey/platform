@@ -669,6 +669,14 @@ public class TransformManager implements DataIntegrationService
         return run;
     }
 
+    public TransformRun getTransformRunForJob(Container c, int jobId)
+    {
+        TransformRun run;
+        run = new SqlSelector(DataIntegrationQuerySchema.getSchema(),
+                "SELECT * FROM " + DataIntegrationQuerySchema.getTransformRunTableInfo().getFromSQL("x") +
+                        " WHERE container=? and jobid=?", c.getId(), jobId).getObject(TransformRun.class);
+        return run;
+    }
 
     public TransformRun insertTransformRun(User user, TransformRun run) throws SQLException
     {

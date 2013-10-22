@@ -89,6 +89,11 @@ public class TransformUtils
         return PipelineService.get().getStatusFile(rowId);
     }
 
+    public static TransformRun getTransformRun(Container c, int jobId)
+    {
+        return TransformManager.get().getTransformRunForJob(c, jobId);
+    }
+
     /**
      * Returns a transformId -> name map of the transforms in a given container
      * @param c Container of interest
