@@ -924,7 +924,7 @@ public class AdminController extends SpringActionController
         if (!AppProps.getInstance().isDevMode())
             return null;
 
-        File binRoot = new File(AppProps.getInstance().getProjectRoot(), "external/windows");
+        File binRoot = new File(AppProps.getInstance().getProjectRoot(), "external/bin");
 
         if (!binRoot.exists())
             return null;
