@@ -890,6 +890,7 @@ dataintegration/src/org/labkey/di/view/processedETLJobs.jsp -text
 dataintegration/src/org/labkey/di/view/transformConfiguration.jsp -text
 dataintegration/src/org/labkey/di/view/transformDetails.jsp -text
 dataintegration/src/org/labkey/di/view/transformHistory.jsp -text
+dataintegration/src/org/labkey/remoteapi/SelectRowsStreamHack.java -text
 demo/module.properties -text
 demo/resources/schemas/dbscripts/postgresql/demo-0.00-1.00.sql -text
 demo/resources/schemas/dbscripts/sqlserver/demo-0.00-1.00.sql -text

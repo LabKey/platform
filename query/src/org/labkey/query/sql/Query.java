@@ -16,6 +16,7 @@
 
 package org.labkey.query.sql;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -24,6 +25,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.CachedResultSet;
@@ -48,6 +50,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QuerySchema;
@@ -56,6 +59,8 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.DataLoaderService;
+import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
@@ -67,13 +72,17 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.QueryDefinitionImpl;
+import org.labkey.query.controllers.QueryController;
 import org.labkey.query.design.DgQuery;
 import org.labkey.query.design.QueryDocument;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -1533,5 +1542,53 @@ public class Query
                 ResultSetUtil.close(rs);
             }
         }
+
+        @Test
+        public void testJSONDataLoader() throws Exception
+        {
+            // note getPrimarySchema() will return NULL if there are no lists yet
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+
+            lists = DefaultSchema.get(user, c).getSchema("lists");
+            if (1==1 || null == lists)
+            {
+                _tearDown();
+                _setUp();
+                lists = DefaultSchema.get(user, c).getSchema("lists");
+            }
+
+            assertNotNull(lists);
+            assertNotNull(lists);
+            TableInfo Rinfo = lists.getTable("R");
+            assertNotNull(Rinfo);
+
+            // mock request to selectRows
+            ActionURL url = new ActionURL(QueryController.SelectRowsAction.class, c);
+            url.addParameter(QueryParam.schemaName, "lists");
+            url.addParameter(QueryParam.queryName, "R");
+
+            MockHttpServletResponse resp = ViewServlet.GET(url, user, null);
+            String content = resp.getContentAsString();
+
+            // parse the response using JSONDataLoader and count the results
+            InputStream stream = IOUtils.toInputStream(content);
+            DataLoader loader = DataLoaderService.get().createLoader("selectRows.json", ApiJsonWriter.CONTENT_TYPE_JSON, stream, false, null, JSONDataLoader.FILE_TYPE);
+            int count = 0;
+            for (Map<String, Object> row : loader)
+            {
+                Assert.assertTrue(row.containsKey("rowid"));
+                Assert.assertTrue("Expected rowid to be an Integer instance", row.get("rowid") instanceof Integer);
+
+                Assert.assertTrue(row.containsKey(TestDataLoader.COLUMNS[0]));
+                Assert.assertTrue(
+                        "Expected '" + TestDataLoader.COLUMNS[0] + "' to be a '" + TestDataLoader.CLASSES[0] + "' instance",
+                        TestDataLoader.CLASSES[0] == row.get(TestDataLoader.COLUMNS[0]).getClass());
+
+                count++;
+            }
+            Assert.assertEquals("Expected to find " + Rsize + " rows in lists.R table", Rsize, count);
+        }
+
     }
 }

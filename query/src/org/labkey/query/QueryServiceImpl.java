@@ -2129,6 +2129,30 @@ public class QueryServiceImpl extends QueryService
         return null;
     }
 
+    @Override
+    public Collection<String> getQueryDependents(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    {
+        return QueryManager.get().getQueryDependents(user, container, scope, schema, queries);
+    }
+
+    @Override
+    public void fireQueryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    {
+        QueryManager.get().fireQueryCreated(user, container, scope, schema, queries);
+    }
+
+    @Override
+    public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes)
+    {
+        QueryManager.get().fireQueryChanged(user, container, scope, schema, property, changes);
+    }
+
+    @Override
+    public void fireQueryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    {
+        QueryManager.get().fireQueryDeleted(user, container, scope, schema, queries);
+    }
+
     public static class TestCase extends Assert
     {
         ResultSet rs = null;
@@ -2276,30 +2300,8 @@ public class QueryServiceImpl extends QueryService
             assertEquals(JdbcType.VARCHAR.sqlType, rsmd.getColumnType(rs.findColumn("s")));
             }
         }
+
     }
 
 
-    @Override
-    public Collection<String> getQueryDependents(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
-    {
-        return QueryManager.get().getQueryDependents(user, container, scope, schema, queries);
-    }
-
-    @Override
-    public void fireQueryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
-    {
-        QueryManager.get().fireQueryCreated(user, container, scope, schema, queries);
-    }
-
-    @Override
-    public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes)
-    {
-        QueryManager.get().fireQueryChanged(user, container, scope, schema, property, changes);
-    }
-
-    @Override
-    public void fireQueryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
-    {
-        QueryManager.get().fireQueryDeleted(user, container, scope, schema, queries);
-    }
 }

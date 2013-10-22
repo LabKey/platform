@@ -17,27 +17,31 @@ package org.labkey.di.steps;
 
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.etl.CopyConfig;
+import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
-import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformTaskFactory;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
+import org.labkey.remoteapi.SelectRowsStreamHack;
 import org.labkey.remoteapi.query.SelectRowsCommand;
-import org.labkey.remoteapi.query.SelectRowsResponse;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.Map;
 
 /**
@@ -87,19 +91,82 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
 
         try
         {
-            // connect to the remote server and retrieve an input stream
-            Connection cn = new Connection(url, user, password);
-            SelectRowsCommand cmd = new SelectRowsCommand(meta.getSourceSchema().toString(), meta.getSourceQuery().toString());
-            InputStream is = cmd.executeStream(cn, container);
-
-            // transform the InputStream into a DataIteratorBuild by parsing the JSON
-            DataIteratorBuilder source = new JSONDataLoader(is, true, c);
-            return source;
+            return selectFromSource(meta.getSourceSchema().toString(), meta.getSourceQuery(), url, user, password, container);
         }
         catch (IOException | CommandException exception)
         {
             log.error(exception.getMessage());
             return null;
+        }
+    }
+
+    static DataIteratorBuilder selectFromSource(String schemaName, String queryName, String url, String user, String password, String container)
+            throws IOException, CommandException
+    {
+        // connect to the remote server and retrieve an input stream
+        Connection cn = new Connection(url, user, password);
+        final SelectRowsCommand cmd = new SelectRowsCommand(schemaName, queryName);
+
+        DataIteratorBuilder source = SelectRowsStreamHack.go(cn, container, cmd);
+        return source;
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void selectRows() throws Exception
+        {
+            // Execute a 'remote' query against the currently running server.
+            // We use the home container since we won't need to authenticate the user.
+            String url = AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath();
+            Container home = ContainerManager.getHomeContainer();
+            DataIteratorBuilder b = selectFromSource("core", "Containers", url, null, null, home.getPath());
+
+            DataIteratorContext context = new DataIteratorContext();
+            try (DataIterator iter = b.getDataIterator(context))
+            {
+                int idxEntityId = -1;
+                int idxID = -1;
+                int idxName = -1;
+                int idxCreated = -1;
+
+                for (int i = 1; i <= iter.getColumnCount(); i++)
+                {
+                    ColumnInfo col = iter.getColumnInfo(i);
+                    switch (col.getName())
+                    {
+                        case "EntityId": idxEntityId = i; break;
+                        case "ID":       idxID = i;       break;
+                        case "Name":     idxName = i;     break;
+                        case "Created":  idxCreated = i;  break;
+                    }
+                }
+
+                assertTrue("Expected to find EntityId column: " + idxEntityId, idxEntityId > 0);
+                assertTrue("Expected to find ID column: " + idxID, idxID > 0);
+                assertTrue("Expected to find Name column: " + idxName, idxName > 0);
+                assertTrue("Expected to find Created column: " + idxCreated, idxCreated > 0);
+
+                assertTrue("Expected to select a single row for the Home container.", iter.next());
+
+                // Check the select rows returns the Home container details
+                assertEquals(home.getId(), iter.get(idxEntityId));
+                assertTrue(iter.get(idxEntityId) instanceof String);
+
+                assertEquals(home.getRowId(), iter.get(idxID));
+                assertTrue(iter.get(idxID) instanceof Integer);
+
+                assertEquals(home.getName(), iter.get(idxName));
+                assertTrue(iter.get(idxName) instanceof String);
+
+                assertTrue(iter.get(idxCreated) instanceof Date);
+                // The remoteapi Date doesn't have milliseconds so the Dates won't be equal -- just compare day instead.
+                assertEquals(home.getCreated().getDay(), ((Date)iter.get(idxCreated)).getDay());
+
+                // We expect only one row
+                assertFalse(iter.next());
+            }
+
         }
     }
 

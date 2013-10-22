@@ -42,6 +42,7 @@ import org.labkey.di.data.TransformProperty;
 import org.labkey.di.pipeline.TransformDescriptor;
 import org.labkey.di.pipeline.ETLPipelineProvider;
 import org.labkey.di.pipeline.TransformManager;
+import org.labkey.di.steps.RemoteQueryTransformStep;
 import org.labkey.di.view.DataIntegrationController;
 
 import javax.servlet.ServletContext;
@@ -125,6 +126,14 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
         ));
     }
 
+    @NotNull
+    @Override
+    public Set<Class> getIntegrationTests()
+    {
+        return new HashSet<Class>(Arrays.asList(
+                RemoteQueryTransformStep.TestCase.class
+        ));
+    }
 
     /** web parts **/
 

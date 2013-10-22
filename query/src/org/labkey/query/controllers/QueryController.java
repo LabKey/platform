@@ -254,7 +254,8 @@ public class QueryController extends SpringActionController
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Diagnostics, "data sources", new ActionURL(DataSourceAdminAction.class, ContainerManager.getRoot()));
     }
 
-    public static class RemoteConnectionUrls {
+    public static class RemoteConnectionUrls
+    {
         public static ActionURL urlCreatetRemoteConnection(Container c)
         {
             ActionURL url = new ActionURL(QueryController.EditRemoteConnectionAction.class, c);
