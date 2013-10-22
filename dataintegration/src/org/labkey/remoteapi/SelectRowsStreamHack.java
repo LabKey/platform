@@ -1,5 +1,6 @@
 package org.labkey.remoteapi;
 
+import org.apache.tika.io.IOUtils;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -32,15 +33,19 @@ public class SelectRowsStreamHack
             {
                 try
                 {
-                    InputStream is = response.getInputStream();
-                    JSONDataLoader loader = new JSONDataLoader(is, false, null);
+                    final InputStream is = response.getInputStream();
+                    final JSONDataLoader loader = new JSONDataLoader(is, false, null);
                     WrapperDataIterator wrapper = new WrapperDataIterator(loader.getDataIterator(context))
                     {
                         @Override
                         public void close() throws IOException
                         {
-                            // close the http connection
+                            // close the InputStream and http connection
+                            if (is != null)
+                                IOUtils.closeQuietly(is);
                             response.close();
+
+                            // close the JSONDataLoader
                             super.close();
                         }
                     };
