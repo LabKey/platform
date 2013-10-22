@@ -34,6 +34,8 @@ public interface PipelineStatusFile
     {
         PipelineStatusFile getStatusFile(File logFile);
 
+        PipelineStatusFile getStatusFile(int rowId);
+
         PipelineStatusFile[] getQueuedStatusFiles() throws SQLException;
 
         PipelineStatusFile[] getQueuedStatusFiles(Container c) throws SQLException;
