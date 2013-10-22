@@ -100,10 +100,11 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     protected int _skipLines = -1;      // -1 means infer headers
     private boolean _inferTypes = true;
     protected boolean _throwOnErrors = false;
-    private Container _mvIndicatorContainer;
+    protected final Container _mvIndicatorContainer;
 
     protected DataLoader()
     {
+        _mvIndicatorContainer = null;
     }
 
     protected DataLoader(Container mvIndicatorContainer)

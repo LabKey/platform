@@ -319,7 +319,7 @@ public class JSONDataLoader extends DataLoader
 
             if ("fields".equals(fieldName) && _parser.getCurrentToken() == JsonToken.START_ARRAY && _columns == null)
             {
-                _columns = parseFields(_parser);
+                _columns = parseFields(_parser, _mvIndicatorContainer);
             }
             else
             {
@@ -339,7 +339,7 @@ public class JSONDataLoader extends DataLoader
      *
      * @throws IOException
      */
-    protected static ColumnDescriptor[] parseFields(JsonParser parser) throws IOException
+    protected static ColumnDescriptor[] parseFields(JsonParser parser, Container mvIndicatorContainer) throws IOException
     {
         JsonLocation loc = expectArrayStart(parser);
 
@@ -350,7 +350,7 @@ public class JSONDataLoader extends DataLoader
 
         while (!isArrayEnd(parser))
         {
-            ColumnDescriptor col = parseField(parser);
+            ColumnDescriptor col = parseField(parser, mvIndicatorContainer);
             if (col != null)
                 cols.add(col);
         }
@@ -358,6 +358,12 @@ public class JSONDataLoader extends DataLoader
         expectArrayEnd(parser);
 
         return cols.toArray(new ColumnDescriptor[cols.size()]);
+    }
+
+    // For testing only
+    private static ColumnDescriptor parseField(JsonParser parser) throws IOException
+    {
+        return parseField(parser, null);
     }
 
     /**
@@ -383,7 +389,7 @@ public class JSONDataLoader extends DataLoader
      *
      * @return Returns a ColumnDescriptor if the fieldKey is present.
      */
-    protected static ColumnDescriptor parseField(JsonParser parser) throws IOException
+    protected static ColumnDescriptor parseField(JsonParser parser, Container mvIndicatorContainer) throws IOException
     {
         JsonLocation loc = expectObjectStart(parser);
 
@@ -415,6 +421,7 @@ public class JSONDataLoader extends DataLoader
             else if (fieldName.equals("mvEnabled"))
             {
                 mvEnabled = parser.getValueAsBoolean();
+                parser.nextToken();
             }
             else
             {
@@ -428,7 +435,8 @@ public class JSONDataLoader extends DataLoader
         {
             col = new ColumnDescriptor(fieldKey.getName());
             col.clazz = DisplayColumn.getClassFromJsonTypeName(type);
-            //col.setMvEnabled(???);
+            if (mvEnabled)
+                col.setMvEnabled(mvIndicatorContainer);
         }
 
         expectObjectEnd(parser);
@@ -987,7 +995,7 @@ public class JSONDataLoader extends DataLoader
             JsonParser parser = createParser("[ ]");
             try
             {
-                JSONDataLoader.parseFields(parser);
+                JSONDataLoader.parseFields(parser, null);
                 fail("Expected JsonParseException");
             }
             catch (JsonParseException e)
@@ -1006,7 +1014,7 @@ public class JSONDataLoader extends DataLoader
                     "{ \"fieldKey\": [\"C\"] } " +
                 "]"
             );
-            ColumnDescriptor[] cols = JSONDataLoader.parseFields(parser);
+            ColumnDescriptor[] cols = JSONDataLoader.parseFields(parser, null);
             assertEquals(3, cols.length);
 
             assertEquals(cols[0].name, "A");
