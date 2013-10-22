@@ -20,7 +20,7 @@ public class TransformUtils
 {
     /*
 
-    Convenience class to group/wrap ETL methods. Initial intent is to aid in unit testing of ETL jobs,
+    Convenience class to group/wrap ETL methods separate from UI functionality. Initial intent is to aid unit testing of ETL jobs,
     though there could be additional utility.
 
      */
@@ -30,7 +30,7 @@ public class TransformUtils
         ScheduledPipelineJobDescriptor etl = getDescriptor(transformId);
         TransformConfiguration config = getTransformConfiguration(transformId, c);
         config.setEnabled(enabled);
-        config = TransformManager.get().saveTransformConfiguration(u, config);
+        config = saveTransformConfiguration(config, u);
 
         if (config.isEnabled())
         {
@@ -51,7 +51,7 @@ public class TransformUtils
     {
         TransformConfiguration config = getTransformConfiguration(transformId, c);
         config.setVerboseLogging(verbose);
-        TransformManager.get().saveTransformConfiguration(u, config);
+        saveTransformConfiguration(config, u);
     }
 
     public static boolean isVerbose(String transformId, Container c)
@@ -61,7 +61,17 @@ public class TransformUtils
 
     public static TransformConfiguration getTransformConfiguration(String transformId, Container c)
     {
-        return TransformManager.get().getTransformConfiguration(c, getDescriptor(transformId));
+        TransformConfiguration ret = TransformManager.get().getTransformConfiguration(c, getDescriptor(transformId));
+        if (null != ret)
+            return ret;
+        // If it didn't exist, create a new one. TransformManager getTransformConfiguration should have already done this,
+        // but for safety, do it here as well.
+        return saveTransformConfiguration(new TransformConfiguration(getDescriptor(transformId), c), null);
+    }
+
+    public static TransformConfiguration saveTransformConfiguration(TransformConfiguration config, User u)
+    {
+        return TransformManager.get().saveTransformConfiguration(u, config);
     }
 
     public static void setSchedule(String transformId, Long interval)
@@ -74,7 +84,12 @@ public class TransformUtils
         return getDescriptor(transformId).getScheduleDescription();
     }
 
-    public static String getStatus(int jobId)
+    public static String getTransformRunStatus(int jobId, Container c)
+    {
+        return getTransformRun(jobId, c).getStatus();
+    }
+
+    public static String getPipelineStatus(int jobId)
     {
         return getStatusFile(jobId).getStatus();
     }
@@ -89,7 +104,7 @@ public class TransformUtils
         return PipelineService.get().getStatusFile(rowId);
     }
 
-    public static TransformRun getTransformRun(Container c, int jobId)
+    public static TransformRun getTransformRun(int jobId, Container c)
     {
         return TransformManager.get().getTransformRunForJob(c, jobId);
     }
@@ -116,6 +131,21 @@ public class TransformUtils
         return TransformManager.get().getDescriptors(c);
     }
 
+    public static void resetState(String transformId, Container c, User u)
+    {
+        TransformConfiguration config = getTransformConfiguration(transformId, c);
+        config.setTransformState(null);
+        saveTransformConfiguration(config, u);
+    }
+
+    /**
+     * Schedule a job to run immediately, equivalent to using the "Run Now" button in the UI
+     * @param transformId The transform to run
+     * @param c Its container
+     * @param u User authorized to run the transform
+     * @return jobId of the scheduled pipeline job. null if no work to do.
+     * @throws PipelineJobException
+     */
     public static Integer runEtl(String transformId, Container c, User u) throws PipelineJobException
     {
         return TransformManager.get().runNowPipeline(getDescriptor(transformId), c, u);
