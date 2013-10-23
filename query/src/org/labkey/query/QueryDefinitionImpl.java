@@ -293,7 +293,8 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             }
             catch (XmlException xmle)
             {
-                errors.add(new MetadataParseException(XmlBeansUtil.getErrorMessage(xmle), null, xmle.getError().getLine(), xmle.getError().getColumn()));
+                XmlError error = xmle.getError();
+                errors.add(new MetadataParseException(XmlBeansUtil.getErrorMessage(xmle), null, error == null ? 0 : error.getLine(), error == null ? 0 : error.getColumn()));
             }
             for (XmlError xmle : xmlErrors)
             {

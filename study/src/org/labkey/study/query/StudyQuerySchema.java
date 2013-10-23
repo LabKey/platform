@@ -580,7 +580,8 @@ public class StudyQuerySchema extends UserSchema
             }
 
             DataSetDefinition dsd = getDatasetDefinitionByQueryName(settings.getQueryName());
-            if (dsd != null)
+            // Check for permission before deciding to treat the request as a dataset
+            if (dsd != null && dsd.canRead(getUser()))
             {
                 // Issue 18787: if dataset name and label differ, use the name for the queryName
                 if (!settings.getQueryName().equals(dsd.getName()))
