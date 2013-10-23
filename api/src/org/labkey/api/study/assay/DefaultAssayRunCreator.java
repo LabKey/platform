@@ -295,22 +295,25 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             if (context.getReRunId() != null && getProvider().getReRunSupport() == AssayProvider.ReRunSupport.ReRunAndReplace)
             {
                 final ExpRun replacedRun = ExperimentService.get().getExpRun(context.getReRunId().intValue());
-                if (replacedRun != null && replacedRun.getContainer().hasPermission(context.getUser(), UpdatePermission.class))
+                // Make sure the run to be replaced is still around
+                if (replacedRun != null)
                 {
-                    replacedRun.setReplacedByRun(run);
-                    replacedRun.save(context.getUser());
-
-                }
-                ExperimentService.get().auditRunEvent(context.getUser(), context.getProtocol(), replacedRun, null, "Run id " + replacedRun.getRowId() + " was replaced by run id " + run.getRowId());
-
-                scope.addCommitTask( new Runnable()
-                {
-                    @Override
-                    public void run()
+                    if (replacedRun.getContainer().hasPermission(context.getUser(), UpdatePermission.class))
                     {
-                        replacedRun.archiveDataFiles(context.getUser());
+                        replacedRun.setReplacedByRun(run);
+                        replacedRun.save(context.getUser());
                     }
-                }, DbScope.CommitTaskOption.POSTCOMMIT);
+                    ExperimentService.get().auditRunEvent(context.getUser(), context.getProtocol(), replacedRun, null, "Run id " + replacedRun.getRowId() + " was replaced by run id " + run.getRowId());
+
+                    scope.addCommitTask( new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            replacedRun.archiveDataFiles(context.getUser());
+                        }
+                    }, DbScope.CommitTaskOption.POSTCOMMIT);
+                }
             }
 
             transaction.commit();

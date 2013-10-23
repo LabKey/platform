@@ -163,8 +163,6 @@ public class AuthenticationManager
 
     public static List<AuthenticationProvider> getActiveProviders()
     {
-        assert (null != _activeProviders);
-
         return _activeProviders;
     }
 
