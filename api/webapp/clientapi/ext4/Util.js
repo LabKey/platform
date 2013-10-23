@@ -707,7 +707,7 @@
          * @param c
          */
         getLookupStore: function(storeId, c) {
-            if (Ext4.isString(storeId)) {
+            if (!Ext4.isString(storeId)) {
                 c = storeId;
                 storeId = Util.getLookupStoreId(c);
             }
