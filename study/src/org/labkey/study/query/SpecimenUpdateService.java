@@ -298,14 +298,10 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         List<Long> rowIds = new ArrayList<>(rows.size());
         for (int i = 0; i < rows.size(); i++)
         {
-            Object rowId = rows.get(i).get("rowid");
-            Object oldRowId = oldKeys.get(i).get("rowid");
-            if (null != rowId)
-                rowIds.add((Long)rowId);
-            else if (null != oldRowId)
-                rowIds.add((Long)oldRowId);
-            else
-                throw new IllegalArgumentException("RowId not found for a row.");
+            Map<String, Object> row = rows.get(i);
+            Map<String, Object> oldRow = oldKeys.get(i);
+            int rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
+            rowIds.add(new Long(rowId));
         }
         List<Specimen> specimens = SampleManager.getInstance().getSpecimens(container, rowIds);
         if (specimens.size() != rows.size())

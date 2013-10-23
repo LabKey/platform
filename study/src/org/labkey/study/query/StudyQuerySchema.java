@@ -582,6 +582,10 @@ public class StudyQuerySchema extends UserSchema
             DataSetDefinition dsd = getDatasetDefinitionByQueryName(settings.getQueryName());
             if (dsd != null)
             {
+                // Issue 18787: if dataset name and label differ, use the name for the queryName
+                if (!settings.getQueryName().equals(dsd.getName()))
+                    settings.setQueryName(dsd.getName());
+
                 if (!(settings instanceof DataSetQuerySettings))
                     settings = new DataSetQuerySettings(settings);
 
