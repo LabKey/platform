@@ -168,7 +168,8 @@ public class SimpleQueryTransformStep extends TransformTask
         }
         catch (Exception x)
         {
-            log.error(x);
+            // TODO: more verbose logging
+            log.error("Failed to run transform from source.", x);
             return false;
         }
         finally

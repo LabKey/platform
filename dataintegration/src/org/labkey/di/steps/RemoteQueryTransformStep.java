@@ -78,9 +78,16 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
 
     DataIteratorBuilder selectFromSource(CopyConfig meta, Container c, User u, DataIteratorContext context, Logger log) throws SQLException
     {
-        final String CATEGORY = "remote-connections";
-        String name = "Conn2";
-        // TODO: grab connection name from .xml
+        // find the category to look up in the property manager, provided by the .xml
+        final String CATEGORY = "remote-connections"; // TODO: QueryController.CATEGORY
+        if (! (meta instanceof RemoteQueryTransformStepMeta) )
+            throw new UnsupportedOperationException("This xml parser was expected an instance of RemoteQueryTransformStepMeta");
+        String name = ((RemoteQueryTransformStepMeta)meta).getRemoteSource();
+        if (name == null)
+        {
+            log.error("The remoteSource option provided in the xml must refer to a Remote Connection.");
+            return null;
+        }
 
         // Extract the username, password, and container from the secure property store
         Map<String, String> map = PropertyManager.getWritableProperties(CATEGORY + ":" + name, true);
@@ -88,6 +95,11 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
         String user = map.get("user");
         String password = map.get("password");
         String container = map.get("container");
+        if (url == null || user == null || password == null || container == null)
+        {
+            log.error("Invalid login credentials in the secure user store");
+            return null;
+        }
 
         try
         {

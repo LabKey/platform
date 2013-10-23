@@ -32,31 +32,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiAction;
-import org.labkey.api.action.ApiJsonWriter;
-import org.labkey.api.action.ApiQueryResponse;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiResponseWriter;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.ApiVersion;
-import org.labkey.api.action.ConfirmAction;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.ExportException;
-import org.labkey.api.action.ExtendedApiQueryResponse;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.HasBindParameters;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.NullSafeBindException;
-import org.labkey.api.action.RedirectAction;
-import org.labkey.api.action.ReportingApiQueryResponse;
-import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogEvent;
@@ -64,31 +40,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMapFactory;
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.CachedResultSet;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerFilterable;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.FilterInfo;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SchemaTableInfo;
-import org.labkey.api.data.ShowRows;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.TSVWriter;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.ListofMapsDataIterator;
@@ -236,6 +188,7 @@ import java.util.TreeSet;
 public class QueryController extends SpringActionController
 {
     private static final Logger LOG = Logger.getLogger(QueryController.class);
+    public static String REMOTE_CONNECTIONS_CATEGORY = "remote-connections";
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryController.class,
             ValidateQueryAction.class,
@@ -275,6 +228,12 @@ public class QueryController extends SpringActionController
             url.addParameter("connectionName", connectionName);
             return url;
         }
+
+        public static ActionURL urlEditRemoteConnectionSubmit(Container c)
+        {
+            ActionURL url = new ActionURL(QueryController.EditRemoteConnectionSubmitAction.class, c);
+            return url;
+        }
     }
 
     @RequiresSiteAdmin
@@ -289,13 +248,71 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(RemoteConnectionForm remoteConnectionForm, boolean reshow, BindException errors) throws Exception
         {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return new JspView<>("/org/labkey/query/view/createRemoteConnection.jsp", null);
         }
 
         @Override
         public boolean handlePost(RemoteConnectionForm remoteConnectionForm, BindException errors) throws Exception
         {
             return false;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public URLHelper getSuccessURL(RemoteConnectionForm remoteConnectionForm)
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class EditRemoteConnectionSubmitAction extends FormViewAction<RemoteConnectionForm>
+    {
+        @Override
+        public void validateCommand(RemoteConnectionForm target, Errors errors)
+        {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public ModelAndView getView(RemoteConnectionForm remoteConnectionForm, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/query/view/manageRemoteConnections.jsp", null);
+        }
+
+        @Override
+        public boolean handlePost(RemoteConnectionForm remoteConnectionForm, BindException errors) throws Exception
+        {
+            String name = remoteConnectionForm.getConnectionName();
+
+            String url = remoteConnectionForm.getUrl();
+            String user = remoteConnectionForm.getUser();
+            String password = remoteConnectionForm.getPassword();
+            String container = remoteConnectionForm.getContainer();
+
+            if (url == null || user == null || password == null || container == null)
+            {
+                errors.addError(new LabkeyError("All fields must be filled in"));
+                return false;
+            }
+
+            Map<String, String> map1 = PropertyManager.getWritableProperties(REMOTE_CONNECTIONS_CATEGORY, true);
+            map1.put(REMOTE_CONNECTIONS_CATEGORY + ":" + name, name);
+            PropertyManager.saveProperties(map1);
+
+            map1 = PropertyManager.getWritableProperties(REMOTE_CONNECTIONS_CATEGORY + ":" + name, true);
+            map1.put("URL", url);
+            map1.put("user", user);
+            map1.put("password", password);
+            map1.put("container", container);
+            PropertyManager.saveProperties(map1);
+
+            return true;
         }
 
         @Override
@@ -323,13 +340,25 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(RemoteConnectionForm remoteConnectionForm, boolean reshow, BindException errors) throws Exception
         {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            String name = remoteConnectionForm.getConnectionName();
+
+            // delete the index
+            Map<String, String> map1 = PropertyManager.getWritableProperties(REMOTE_CONNECTIONS_CATEGORY, true);
+            map1.remove(REMOTE_CONNECTIONS_CATEGORY + ":" + name);
+            PropertyManager.saveProperties(map1);
+
+            // delete the individual entries
+            map1 = PropertyManager.getWritableProperties(REMOTE_CONNECTIONS_CATEGORY + ":" + name, true);
+            map1.clear();
+            PropertyManager.saveProperties(map1);
+
+            return new JspView<>("/org/labkey/query/view/manageRemoteConnections.jsp", remoteConnectionForm);
         }
 
         @Override
         public boolean handlePost(RemoteConnectionForm remoteConnectionForm, BindException errors) throws Exception
         {
-            return false;  //To change body of implemented methods use File | Settings | File Templates.
+            return true;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
         @Override
@@ -345,8 +374,16 @@ public class QueryController extends SpringActionController
         }
     }
 
-    public class RemoteConnectionForm {
+    public static class RemoteConnectionForm {
         private String _connectionName;
+        private String _url;
+        private String _user;
+        private String _password;
+        private String _container;
+
+        public RemoteConnectionForm()
+        {
+        }
 
         public String getConnectionName()
         {
@@ -356,6 +393,46 @@ public class QueryController extends SpringActionController
         public void setConnectionName(String connectionName)
         {
             _connectionName = connectionName;
+        }
+
+        public String getUrl()
+        {
+            return _url;
+        }
+
+        public void setUrl(String url)
+        {
+            _url = url;
+        }
+
+        public String getUser()
+        {
+            return _user;
+        }
+
+        public void setUser(String user)
+        {
+            _user = user;
+        }
+
+        public String getPassword()
+        {
+            return _password;
+        }
+
+        public void setPassword(String password)
+        {
+            _password = password;
+        }
+
+        public String getContainer()
+        {
+            return _container;
+        }
+
+        public void setContainer(String container)
+        {
+            _container = container;
         }
     }
 

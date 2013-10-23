@@ -41,6 +41,6 @@ public class RemoteQueryTransformStepProvider implements StepProvider
     @Override
     public TransformTask createStepInstance(TransformTaskFactory f, PipelineJob job, StepMeta meta, TransformJobContext context)
     {
-        return new RemoteQueryTransformStep(f, job, (SimpleQueryTransformStepMeta)meta, context);
+        return new RemoteQueryTransformStep(f, job, (RemoteQueryTransformStepMeta)meta, context);
     }
 }

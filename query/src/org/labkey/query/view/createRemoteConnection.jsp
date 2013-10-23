@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.api.data.PropertyManager" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<h2>Manage Remote Connections</h2>
+<h2>Create A Remote Connection</h2>
 <p>
     Administrators can define external remote connections to alternate LabKey servers.
     This feature should be used with care since, depending
@@ -30,22 +30,47 @@
 <%
     Container c = getContainer();
     boolean isAdmin = getUser().isSiteAdmin();
+    String name = request.getParameter("connectionName");
+
+    Map<String, String> map1 = PropertyManager.getWritableProperties(QueryController.REMOTE_CONNECTIONS_CATEGORY + ":" + name, true);
+    String url = map1.get("URL");
+    String user = map1.get("user");
+    String password = map1.get("password");
+    String container = map1.get("container");
+
 %>
 
 <br>
-<labkey:errors></labkey:errors>
 
 <%
     if (isAdmin)
     {
-        Map<String, String> map = PropertyManager.getProperties(QueryController.REMOTE_CONNECTIONS_CATEGORY);
-        for (String field : map.keySet())
-        {
-            %> <labkey:link href="<%= QueryController.RemoteConnectionUrls.urlEditRemoteConnection(c, map.get(field))%>" text="edit"/> <%
-            %> <labkey:link href="<%= QueryController.RemoteConnectionUrls.urlDeleteRemoteConnection(c, map.get(field))%>" text="delete"/> <%
-            %> <%= h(map.get(field)) %> <br/> <%
-        } %>
-        <p/>
-<labkey:link href="<%= QueryController.RemoteConnectionUrls.urlCreatetRemoteConnection(c) %>" text="create new connection"/> <%
+%>
+<form name="editConnection" action="<%=QueryController.RemoteConnectionUrls.urlEditRemoteConnectionSubmit(c) %>" method="post">
+<table>
+    <tr>
+        <td>Connection Name:</td>
+        <td><input type="text" name="connectionName" size="50" value="<%=h(name)%>"><br></td>
+    </tr>
+    <tr>
+        <td>Server URL:</td>
+        <td><input type="text" name="url" size="50" value="<%= h(url) %>"><br></td>
+    </tr>
+    <tr>
+        <td>User: </td>
+        <td><input type="text" name="user" size="50" value="<%= h(user)%>"></td>
+    </tr>
+    <tr>
+        <td>Password: </td>
+        <td><input type="text" name="password" size="50" value="<%=h(password)%>"></td>
+    </tr>
+    <tr>
+        <td>Container: </td>
+        <td><input type="text" name="container" size="50" value="<%=h(container)%>"></td>
+    </tr>
+</table>
+    <%= generateSubmitButton("save")%>
+</form>
+<%
     }
 %>

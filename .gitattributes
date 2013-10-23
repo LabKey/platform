@@ -2495,6 +2495,7 @@ query/src/org/labkey/query/view/QueryWebPartFactory.java -text
 query/src/org/labkey/query/view/admin.jsp -text
 query/src/org/labkey/query/view/apitest.jsp -text
 query/src/org/labkey/query/view/browse.jsp -text
+query/src/org/labkey/query/view/createRemoteConnection.jsp -text
 query/src/org/labkey/query/view/deleteQuery.jsp -text
 query/src/org/labkey/query/view/editQueryWebPart.jsp -text
 query/src/org/labkey/query/view/exportTables.jsp -text
