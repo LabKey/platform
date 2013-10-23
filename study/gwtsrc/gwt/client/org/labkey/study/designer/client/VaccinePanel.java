@@ -79,12 +79,13 @@ public class VaccinePanel extends Composite
 
             if ("true".equals(PropertyUtil.getServerProperty("canAdmin")))
             {
+                final boolean showAllLookups = "true".equals(PropertyUtil.getServerProperty("showAllLookups"));
                 HorizontalPanel hp = new HorizontalPanel();
                 hp.add(new ImageButton("Configure Dropdown Options", new ClickListener()
                 {
                     public void onClick(Widget sender)
                     {
-                        VaccineLookupConfigDialog dlg = new VaccineLookupConfigDialog();
+                        DesignerLookupConfigDialog dlg = new DesignerLookupConfigDialog(true, showAllLookups);
                         dlg.setPopupPosition(sender.getAbsoluteLeft(), sender.getAbsoluteTop() + sender.getOffsetHeight());
                         dlg.show();
                     }
@@ -680,50 +681,5 @@ public class VaccinePanel extends Composite
             }
         }
         return true;
-    }
-
-    private class VaccineLookupConfigDialog extends DialogBox
-    {
-        // NOTE: this is temparary UI until we convert to using Ext4 for the study designer
-        public VaccineLookupConfigDialog()
-        {
-            this.setText("Configure Dropdown Options");
-            VerticalPanel vp = new VerticalPanel();
-
-            String containerPath = PropertyUtil.getContainerPath();
-            String baseFolderURL = PropertyUtil.getContextPath() + "/query" + containerPath + "/executeQuery.view?schemaName=study&query.queryName=";
-            String projectPath = containerPath.indexOf("/", 1) == -1 ? containerPath : containerPath.substring(0, containerPath.indexOf("/", 1));
-            String baseProjectURL = PropertyUtil.getContextPath() + "/query" + projectPath + "/executeQuery.view?schemaName=study&query.queryName=";
-            String html = "Configure dropdown options at the project level to be shared across<br/>study designs or within this folder for study specific properties.<br/><br/><table>";
-
-            String projectLink = baseProjectURL + "StudyDesignImmunogenTypes";
-            String folderLink = baseFolderURL + "StudyDesignImmunogenTypes";
-            html += "<tr><td>Immunogen Types:</td><td>[<a href='" + projectLink + "'>project</a>]</td><td>[<a href='" + folderLink + "'>folder</a>]</td></tr>";
-
-            projectLink = baseProjectURL + "StudyDesignRoutes";
-            folderLink = baseFolderURL + "StudyDesignRoutes";
-            html += "<tr><td>Routes:</td><td>[<a href='" + projectLink + "'>project</a>]</td><td>[<a href='" + folderLink + "'>folder</a>]</td></tr>";
-
-            projectLink = baseProjectURL + "StudyDesignGenes";
-            folderLink = baseFolderURL + "StudyDesignGenes";
-            html += "<tr><td>Genes:</td><td>[<a href='" + projectLink + "'>project</a>]</td><td>[<a href='" + folderLink + "'>folder</a>]</td></tr>";
-
-            projectLink = baseProjectURL + "StudyDesignSubTypes";
-            folderLink = baseFolderURL + "StudyDesignSubTypes";
-            html += "<tr><td>SubTypes:</td><td>[<a href='" + projectLink + "'>project</a>]</td><td>[<a href='" + folderLink + "'>folder</a>]</td></tr></table><br/>";
-
-            vp.add(new HTML(html));
-
-            HorizontalPanel hp = new HorizontalPanel();
-            hp.add(new ImageButton("Done", new ClickListener()
-            {
-                public void onClick(Widget sender)
-                {
-                    VaccineLookupConfigDialog.this.hide();
-                }
-            }));
-            vp.add(hp);
-            this.setWidget(vp);
-        }
     }
 }

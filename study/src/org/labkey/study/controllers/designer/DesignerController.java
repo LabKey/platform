@@ -246,6 +246,9 @@ public class DesignerController extends SpringActionController
                 params.put("edit", getViewContext().hasPermission(UpdatePermission.class) && form.isEdit() ? "true" : "false");
                 boolean canEdit = getViewContext().hasPermission(UpdatePermission.class);
                 params.put("canEdit",  Boolean.toString(canEdit));
+                boolean canAdmin = getViewContext().hasPermission(AdminPermission.class);
+                params.put("canAdmin", Boolean.toString(canAdmin));
+                params.put("showAllLookups", "true");
                 params.put("canCreateRepository", Boolean.toString(canEdit && null != info && !info.isActive()));
                 if (null != StringUtils.trimToNull(form.getFinishURL()))
                     params.put("finishURL", form.getFinishURL());

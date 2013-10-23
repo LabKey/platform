@@ -246,7 +246,7 @@ public class Designer implements EntryPoint
                 {
                     public void onClick(Widget sender)
                     {
-                        AssayLookupConfigDialog dlg = new AssayLookupConfigDialog();
+                        DesignerLookupConfigDialog dlg = new DesignerLookupConfigDialog(false, true);
                         dlg.setPopupPosition(sender.getAbsoluteLeft(), sender.getAbsoluteTop() + sender.getOffsetHeight());
                         dlg.show();
                     }
