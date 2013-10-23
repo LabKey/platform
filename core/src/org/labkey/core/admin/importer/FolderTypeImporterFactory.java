@@ -26,6 +26,8 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
+import org.springframework.validation.BindException;
+import org.springframework.validation.ObjectError;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -77,7 +79,16 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
                 if (null != folderType)
                 {
                     // It's sorta BrandNew, but not really; say it's not and SubImporter will handle container tabs correctly
-                    c.setFolderType(folderType, activeModules, ctx.getUser());
+                    BindException errors = new BindException(new Object(), "dummy");
+                    c.setFolderType(folderType, activeModules, ctx.getUser(), errors);
+                    if (errors.hasErrors())
+                    {
+                        Object error = errors.getAllErrors().get(0);
+                        if (error instanceof ObjectError)
+                            ctx.getLogger().error(((ObjectError)error).getDefaultMessage());
+                        else
+                            ctx.getLogger().error("Unknown error attempting to set folder type.");
+                    }
                 }
                 else
                 {
