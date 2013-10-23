@@ -17,6 +17,8 @@ package org.labkey.api.query;
 
 import org.labkey.api.data.TableInfo;
 
+import java.util.List;
+
 /**
  * User: kevink
  * Date: 10/9/12
@@ -38,13 +40,43 @@ public class SchemaTreeWalker<R, P> extends SimpleSchemaTreeVisitor<R, P>
     {
         R r = null;
         r = visitAndReduce(schema.getSchemas(), path, param, r);
-        r = visitAndReduce(schema.getTables(), path, param, r);
+
+        List<String> names = schema.getTableAndQueryNames(false);
+        r = visitTablesAndReduce(schema, names, path, param, r);
+        return r;
+    }
+
+    /**
+     * Helper to visit tables and queries of a user schema.
+     * If an error is thrown when creating a table/query, the <code>visitTableError</code>
+     * will be called with the name of the table and Exception.
+     */
+    protected R visitTablesAndReduce(UserSchema schema, Iterable<String> names, Path path, P param, R r)
+    {
+        for (String name : names)
+        {
+            try
+            {
+                TableInfo t = schema.getTable(name);
+                r = visitAndReduce(t, path, param, r);
+            }
+            catch (Exception e)
+            {
+                r = reduce(visitTableError(schema, name, e, path, param), r);
+            }
+        }
         return r;
     }
 
     @Override
     public R visitTable(TableInfo table, Path path, P param)
     {
-        return null;
+        return defaultAction(table, path, param);
+    }
+
+    @Override
+    public R visitTableError(UserSchema schema, String name, Exception e, Path path, P param)
+    {
+        return defaultErrorAction(schema, name, e, path, param);
     }
 }

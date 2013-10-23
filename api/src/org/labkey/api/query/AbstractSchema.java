@@ -99,8 +99,12 @@ abstract public class AbstractSchema implements QuerySchema
 
     public final Collection<TableInfo> getTables()
     {
-        Set<String> tableNames = getTableNames();
-        if (tableNames.isEmpty())
+        return getTables(getTableNames());
+    }
+
+    public final Collection<TableInfo> getTables(Collection<String> tableNames)
+    {
+        if (tableNames == null || tableNames.isEmpty())
             return Collections.emptyList();
 
         List<TableInfo> tables = new ArrayList<>(tableNames.size());

@@ -110,6 +110,14 @@ public class SimpleSchemaTreeVisitor<R, P> implements SchemaTreeVisitor<R, P>
     }
 
     /**
+     * Subclasses may choose to override this to provide a default value for all nodes.
+     */
+    protected R defaultErrorAction(SchemaTreeNode parentNode, String child, Exception e, Path parent, P param)
+    {
+        return _defaultValue;
+    }
+
+    /**
      * Subclasses may choose to override to combine two results together.
      * By default, the result from the most recently visited node is returned.
      */
@@ -178,4 +186,11 @@ public class SimpleSchemaTreeVisitor<R, P> implements SchemaTreeVisitor<R, P>
     {
         return defaultAction(table, path, param);
     }
+
+    @Override
+    public R visitTableError(UserSchema schema, String name, Exception e, Path path, P param)
+    {
+        return defaultErrorAction(schema, name, e, path, param);
+    }
+
 }
