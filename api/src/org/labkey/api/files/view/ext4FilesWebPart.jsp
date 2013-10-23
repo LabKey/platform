@@ -43,8 +43,6 @@
 
     ActionURL projConfig = urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
     int height = bean.getSize();
-    if(height == 0)
-        height = 350;
 %>
 
 <%  if (!bean.isEnabled()) { %>
@@ -62,6 +60,7 @@
 
 <!-- Set a fixed height for this div so that the whole page doesn't relayout when the file browser renders into it -->
 <div style="height: <%= height %>px" id="<%=h(bean.getContentId())%>"></div>
+
 <%  if (bean.isEnabled() && bean.isRootValid()) { %>
 
 <script type="text/javascript">
