@@ -41,6 +41,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         var scales = {};
         var data = responseData.rows;
         var fields = responseData.metaData.fields;
+        var subjectColumn = LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.columnName : 'ParticipantId';
 
         if (chartType === "box_plot") {
             scales.x = {scaleType: 'discrete'}; // Force discrete x-axis scale for box plots.
@@ -88,6 +89,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                         scales.y.tickFormat = defaultFormatFn;
                     }
                 }
+            } else if (measures.x && fields[i].name == measures.x.name && measures.x.name == subjectColumn && LABKEY.demoMode) {
+                    scales.x.tickFormat = function(){return '******'};
             }
         }
 

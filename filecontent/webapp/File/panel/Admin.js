@@ -116,11 +116,15 @@ Ext4.define('File.panel.Admin', {
                 autoScroll:true
             };
 
+            // We default to opening the upload panel. If the user never set the property, then it will not be present
+            // in the pipelineFileProperties.
+            var checked = this.pipelineFileProperties.hasOwnProperty('expandFileUpload') ? this.pipelineFileProperties.expandFileUpload : true;
+
             this.showUploadCheckBox = Ext4.create('Ext.form.field.Checkbox', {
                 boxLabel: 'Show the file upload panel by default.',
                 width: '100%',
                 margin: '0 0 0 10',
-                checked: this.pipelineFileProperties.expandFileUpload,
+                checked: checked,
                 name: 'showUpload'
             });
 
