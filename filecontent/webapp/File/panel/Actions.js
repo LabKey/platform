@@ -38,7 +38,6 @@ Ext4.define('File.panel.Actions', {
         this.items = [{
             xtype : 'checkbox',
             itemId: 'showImportCheckbox',
-            id : 'importAction',
             checked: this.importDataEnabled,
             border: false, frame: false,
             labelSeparator: '',

@@ -5,6 +5,7 @@
  */
 LABKEY.requiresCss("_images/icons.css");
 LABKEY.requiresCss("dataview/DataViewsPanel.css");
+LABKEY.requiresCss("/ux/css/CheckHeader.css");
 
 Ext4.define('File.panel.Browser', {
 
@@ -183,19 +184,11 @@ Ext4.define('File.panel.Browser', {
                         for (var c=0; c < callbacks.length; c++) {
                             Ext4.isFunction(callbacks[c].fn) ? callbacks[c].fn.call(callbacks[c].fn.scope || this, response) : undefined
                         }
-
-                        Ext4.isFunction(cb) ? cb.call(scope, response) : undefined;
                     },
                     failure: LABKEY.Utils.displayAjaxErrorResponse,
                     scope: scope
                 });
             }
-        },
-
-        _clearPipelineConfiguration : function(containerPath)
-        {
-            if(File.panel.Browser._pipelineConfigurationCache[containerPath])
-                File.panel.Browser._pipelineConfigurationCache[containerPath] = undefined;
         },
 
         _pipelineConfigurationCache : {},
@@ -273,7 +266,6 @@ Ext4.define('File.panel.Browser', {
         document.body.appendChild(testFlag);
 
         this.createActions();
-        this.initializeActions();
         this.items = this.getItems();
         this.importDataEnabled = true;
         this.initializeToolbar();
@@ -281,7 +273,6 @@ Ext4.define('File.panel.Browser', {
         // Attach listeners
         this.on('folderchange', this.onFolderChange, this);
         Ext4.Ajax.timeout = 60000;
-        File.panel.Browser._toggleActions(this.actions, 0);
         this.callParent();
     },
 
@@ -541,21 +532,19 @@ Ext4.define('File.panel.Browser', {
         var configure = function(response) {
             var json = Ext4.JSON.decode(response.responseText);
             if (json.config) {
-//                Ext4.defer(this.updateActions, 250, this);
-                this.updateActions();
+                Ext4.defer(this.updateActions, 250, this);
+
                 // First intialize all the actions prepping them to be shown
+                this.initializeActions();
 
                 // Configure the actions on the toolbar based on whether they should be shown
                 this.configureTbarActions({tbarActions: json.config.tbarActions, actions: json.config.actions});
             }
         };
-        File.panel.Browser._clearPipelineConfiguration(this.containerPath);
         File.panel.Browser._getPipelineConfiguration(configure, this.containerPath, this);
     },
 
     configureTbarActions : function(config) {
-        if(Ext4.isArray(config))
-            config = config[0];
         var tbarConfig = config.tbarActions;
         var actionButtons = config.actions;
         var toolbar = this.getDockedItems()[0];
@@ -585,23 +574,11 @@ Ext4.define('File.panel.Browser', {
                 if (mapTbarItems[tbarConfig[i].id]) {
                     actionConfig = tbarConfig[i];
                     action = this.actions[actionConfig.id];
-                    action.initialConfig.hideText = actionConfig.hideText;
-                    action.initialConfig.hideIcon = actionConfig.hideIcon;
 
-                    if(action.initialConfig.hideText && action.initialConfig.text != undefined)
-                    {
-                        action.initialConfig.prevText = action.initialConfig.text;
-                        action.initialConfig.text = undefined;
+                    // TODO: Why special processing?
+                    if (actionConfig.id == 'customize') {
+                        action.setDisabled(this.disableGeneralAdminSettings);
                     }
-                    else if(!action.initialConfig.hideText && action.initialConfig.text == undefined)
-                    {
-                        action.initialConfig.text = action.initialConfig.prevText;
-                    }
-
-//                    // TODO: Why special processing?
-//                    if (actionConfig.id == 'customize') {
-//                        action.setDisabled(this.disableGeneralAdminSettings);
-//                    }
 
                     buttons.push(action);
                 }
@@ -612,10 +589,10 @@ Ext4.define('File.panel.Browser', {
             for (i=0; i < this.tbarItems.length; i++) {
                 action = this.actions[this.tbarItems[i]];
 
-//                // TODO: Why special processing?
-//                if (this.tbarItems[i] == 'customize') {
-//                    action.setDisabled(this.disableGeneralAdminSettings);
-//                }
+                // TODO: Why special processing?
+                if (this.tbarItems[i] == 'customize') {
+                    action.setDisabled(this.disableGeneralAdminSettings);
+                }
 
                 buttons.push(action);
             }
@@ -696,50 +673,29 @@ Ext4.define('File.panel.Browser', {
         if (json && json.config && json.config.gridConfig) {
             var customColumns = json.fileProperties;
             json = json.config.gridConfig.columns;
-            var finalColumns = [columns[0]], i= 0, g = this.getGrid(), customCol;
-            for (; i < json.length; i++) {
-                if(columns[json[i].id])
-                    columns[json[i].id].hidden = json[i].hidden;
+            var finalColumns = [columns[0]], i= 1, g = this.getGrid(), customCol;
+            for (; i < json.length-1; i++) {
+                if(columns[json[i].id-1])
+                    columns[json[i].id-1].hidden = json[i].hidden;
                 else
                 {
-                    var index = json[i].id-9;
-                    if(customColumns[index])
-                    {
-                        customCol = {
-                            header : customColumns[index].label,
-                            flex : 1,
-                            dataIndex : customColumns[index].name,
-                            height : 20,
-                            hidden : json[i].hidden
-                        };
-                        columns.push(customCol);
-                        extraColumns.push(customCol);
+                    var index = json[i].id-10;
+                    customCol = {
+                        header : customColumns[index].label,
+                        flex : 1,
+                        dataIndex : customColumns[index].name,
+                        height : 20
                     }
+                    columns.push(customCol);
+
+                    extraColumns.push(customCol);
 
                 }
                 finalColumns[i] = columns[json[i].id-1];
             }
-            //Unmodified extra columns do not appear in the json data, and therefore need to be added manually.
-            //They are always the last items on the custom column list because they appear at the back.
-            if(9 + customColumns.length > columns.length)
-            {
-                var offset = customColumns.length - ((9 + customColumns.length ) - columns.length);
-                for(; offset < customColumns.length; offset++)
-                {
-                    customCol = {
-                        header : customColumns[offset].label,
-                        flex : 1,
-                        dataIndex : customColumns[offset].name,
-                        height : 20,
-                        hidden : false
-                    }
-                }
-                finalColumns.push(customCol);
-                extraColumns.push(customCol);
-            }
+            this.setDefaultColumns(finalColumns);
+            this.setExtraColumns(extraColumns);
         }
-        this.setDefaultColumns(finalColumns);
-        this.setExtraColumns(extraColumns);
     },
 
     setFileObjects : function(fileObjects)
@@ -785,8 +741,7 @@ Ext4.define('File.panel.Browser', {
 
     getDefaultColumns: function()
     {
-        if(this.defaultColumns)
-            return this.defaultColumns.splice(0);
+        return this.defaultColumns.splice(0);
     },
 
     getColumns: function() {
@@ -847,8 +802,8 @@ Ext4.define('File.panel.Browser', {
 
         // 'load' only works on non-buffered stores
         this.fileStore.on(this.bufferFiles ? 'prefetch' : 'load', function() {
-//            Ext4.getCmp('treeNav').getStore().fireEvent('expand');
             this.gridMask.cancel();
+            Ext4.getCmp('treeNav').getStore().reload();
             if (this.grid) {
                 this.getGrid().getEl().unmask();
             }
@@ -865,7 +820,6 @@ Ext4.define('File.panel.Browser', {
         LABKEY.Query.selectRows({
             schemaName : 'exp',
             queryName : 'Data',
-            columns : ['Name', 'Run', 'Data File URL'].concat(extraColumns),
 
             success : function(resp){
                 console.log(resp);
@@ -1087,7 +1041,6 @@ Ext4.define('File.panel.Browser', {
     {
         if (this.isPipelineRoot)
         {
-            File.panel.Browser._clearPipelineConfiguration(this.containerPath);
             var actionsReady = false;
             var pipelineReady = false;
 
@@ -1658,10 +1611,6 @@ Ext4.define('File.panel.Browser', {
 //                        this.onDownload({recs : [rec]});
 //                    }
                 },
-                afterrender : function()
-                {
-                    this.changeTestFlag(true, false);
-                },
                 scope : this
             }
         });
@@ -1709,7 +1658,6 @@ Ext4.define('File.panel.Browser', {
 
         return baseItems;
     },
-
 
     onFolderChange : function(path, model) {
         var tb = this.getDockedComponent(0), action;
@@ -2280,7 +2228,7 @@ Ext4.define('File.panel.Browser', {
             listeners : {
                 successfulsave : function()
                 {
-                    //TODO:  Improve preformance
+                    //TODO:  Make this not awful
                     this.getGrid().getStore().load();
                 },
                 scope : this
@@ -2317,7 +2265,7 @@ Ext4.define('File.panel.Browser', {
         var appliedClass = "";
         if(folderMove)
         {
-            appliedClass += 'labkey-file-grid-initialized';
+            appliedClass += 'test-grid-ready';
             if(importReady)
             {
                 appliedClass += ' test-import-ready';
