@@ -226,7 +226,7 @@ public class QueryImporter implements FolderImporter
             }
 
 
-            for (Pair<String, Throwable> warn : validator.getWarnings())
+            for (Pair<String, ? extends Throwable> warn : validator.getWarnings())
             {
                 warnings.add(new PipelineJobWarning(warn.first, warn.second));
             }

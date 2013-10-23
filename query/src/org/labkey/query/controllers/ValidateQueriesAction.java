@@ -44,7 +44,7 @@ public class ValidateQueriesAction extends ApiAction
         if (validator.getInvalidCount() > 0)
         {
             JSONArray warnings = new JSONArray();
-            for (Pair<String, Throwable> warning : validator.getWarnings())
+            for (Pair<String, ? extends Throwable> warning : validator.getWarnings())
             {
                 JSONObject json = new JSONObject();
                 json.put("message", warning.first);

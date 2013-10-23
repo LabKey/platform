@@ -18,6 +18,7 @@ package org.labkey.query;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.SchemaTreeWalker;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
 import org.labkey.query.persist.QueryManager;
 
@@ -33,7 +34,7 @@ import java.util.List;
  */
 public class ValidateQueriesVisitor extends SchemaTreeWalker<Boolean, Logger>
 {
-    private List<Pair<String, Throwable>> _warnings = new ArrayList<>();
+    private List<Pair<String, ? extends Throwable>> _warnings = new ArrayList<>();
     private int _totalCount = 0;
     private int _validCount = 0;
     private QueryManager _mgr;
@@ -45,7 +46,7 @@ public class ValidateQueriesVisitor extends SchemaTreeWalker<Boolean, Logger>
         _testAllColumns = testAllColumns;
     }
 
-    public List<Pair<String, Throwable>> getWarnings()
+    public List<Pair<String, ? extends Throwable>> getWarnings()
     {
         return _warnings;
     }
@@ -83,11 +84,22 @@ public class ValidateQueriesVisitor extends SchemaTreeWalker<Boolean, Logger>
         }
         catch (Throwable t)
         {
-            String msg = String.format("Query %s failed validation!", path.schemaPath.toDisplayString());
+            String msg = String.format("Query %s.%s failed validation!", table.getPublicSchemaName(), table.getName());
             if (logger != null)
                 logger.warn("VALIDATION ERROR: " + msg, t);
             _warnings.add(Pair.of(msg, t));
             return false;
         }
+    }
+
+    @Override
+    public Boolean visitTableError(UserSchema schema, String name, Exception e, Path path, Logger logger)
+    {
+        _totalCount++;
+        String msg = String.format("Query %s.%s failed validation!", schema.getName(), name);
+        if (logger != null)
+            logger.warn("VALIDATION ERROR: " + msg, e);
+        _warnings.add(Pair.of(msg, e));
+        return false;
     }
 }
