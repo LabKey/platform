@@ -142,13 +142,14 @@ public class ImageUtil
         return finalScale;
     }
 
-
-    // Standard thumbnail height in pixels.
-    public static final float THUMBNAIL_HEIGHT = 256.0f;
+    public static @Nullable Thumbnail renderThumbnail(BufferedImage image, ImageType imageType) throws IOException
+    {
+        return renderThumbnail(image, imageType.getHeight());
+    }
 
     public static @Nullable Thumbnail renderThumbnail(BufferedImage image) throws IOException
     {
-        return renderThumbnail(image, ImageType.Large.getHeight());
+        return renderThumbnail(image, ImageType.Large);
     }
 
     public static @Nullable Thumbnail renderThumbnail(BufferedImage image, float desiredHeight) throws IOException

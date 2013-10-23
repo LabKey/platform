@@ -85,7 +85,7 @@ public class ImageStreamThumbnailProvider implements DynamicThumbnailProvider
                 // Try-with-resources will close stream
                 try (InputStream is = _is)
                 {
-                    return ImageUtil.renderThumbnail(ImageIO.read(is));
+                    return ImageUtil.renderThumbnail(ImageIO.read(is), _type);
                 }
             }
         }
