@@ -39,6 +39,7 @@
 <%
     JspView<AdminController.ManageFoldersForm> me = (JspView<AdminController.ManageFoldersForm>) HttpView.currentView();
     AdminController.ManageFoldersForm form = me.getModelBean();
+    boolean userHasEnableRestrictedModulesPermission = getContainer().hasEnableRestrictedModules(getUser());
 
     String name = form.getName();
     String folderTypeName = form.getFolderType() != null ? form.getFolderType() : "Collaboration"; //default to Collaboration
@@ -76,13 +77,15 @@
         <%="var defaultTab = '" + form.getDefaultModule() + "';"%>
         <%="var selectedTemplateFolder = '" + form.getTemplateSourceId() + "';"%>
         <%="var selectedTemplateWriters = '" + templateWriterTypes + "';"%>
+        var userHasEnableRestrictedModulesPermission = <%=userHasEnableRestrictedModulesPermission%>;
 
         request.add(LABKEY.Security.getFolderTypes, {
             success: function(data){
                 var keys = Ext4.Object.getKeys(data);
                 folderTypes = [];
                 Ext4.each(keys, function(k){
-                    folderTypes.push(data[k]);
+                    if (userHasEnableRestrictedModulesPermission || !data[k].hasRestrictedModule)
+                        folderTypes.push(data[k]);
                 });
                 folderTypes = folderTypes.sort(function(a,b){
                     //force custom to appear at end
@@ -339,7 +342,7 @@
 
                                         //the effect of this is that by default, a new container inherits modules from the parent
                                         //if creating a project, there is nothing to inherit, so we set to Portal below
-                                        if(m.active || m.enabled)
+                                        if((m.active || m.enabled) && (userHasEnableRestrictedModulesPermission || !m.requireSitePermission))
                                             items.push({
                                                 xtype: 'checkbox',
                                                 name: 'activeModules',

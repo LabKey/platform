@@ -1001,7 +1001,7 @@ public class CoreController extends SpringActionController
 
                 if (null != folderType && Container.hasRestrictedModule(folderType) && !getContainer().hasEnableRestrictedModules(getUser()))
                 {
-                    throw new UnauthorizedException("The folder type requires a restricted module to which you do not have permission.");
+                    throw new UnauthorizedException("The folder type requires a restricted module for which you do not have permission.");
                 }
 
                 Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, (workbook ? Container.TYPE.workbook : Container.TYPE.normal), getUser());
@@ -1616,6 +1616,7 @@ public class CoreController extends SpringActionController
                 folderTypeJSON.put("defaultModule", folderType.getDefaultModule() == null ? null : folderType.getDefaultModule().getName());
                 folderTypeJSON.put("label", folderType.getLabel());
                 folderTypeJSON.put("workbookType", folderType.isWorkbookType());
+                folderTypeJSON.put("hasRestrictedModule", Container.hasRestrictedModule(folderType));
                 List<String> activeModulesJSON = new ArrayList<>();
                 for (Module module : folderType.getActiveModules())
                 {

@@ -664,6 +664,7 @@ public class AdminController extends SpringActionController
                 qinfo.put("enabled", (m.getTabDisplayMode() == Module.TabDisplayMode.DISPLAY_USER_PREFERENCE ||
                     m.getTabDisplayMode() == Module.TabDisplayMode.DISPLAY_USER_PREFERENCE_DEFAULT) && !requiredModules.contains(m));
                 qinfo.put("tabName", m.getTabName(getViewContext()));
+                qinfo.put("requireSitePermission", m.getRequireSitePermission());
                 qinfos.add(qinfo);
             }
 
@@ -4266,7 +4267,12 @@ public class AdminController extends SpringActionController
                             errors.reject(null, "User does not have administrator permissions to the source container");
                             return false;
                         }
-                            
+                        else if (!sourceContainer.hasEnableRestrictedModules(getUser()) && sourceContainer.hasRestrictedActiveModule(sourceContainer.getActiveModules()))
+                        {
+                            errors.reject(null, "The source folder has a restricted module for which you do not have permission.");
+                            return false;
+                        }
+
                         MemoryVirtualFile vf = new MemoryVirtualFile();
 
                         // export objects from the source folder
