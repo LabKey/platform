@@ -243,14 +243,21 @@ public class MothershipManager
         return new TableSelector(getTableInfoExceptionStackTrace(), filter, null).getObject(ExceptionStackTrace.class);
     }
 
-    public void deleteForContainer(Container c) throws SQLException
+    public void deleteForContainer(Container c)
     {
-        Object[] params = { c };
-        Table.execute(getSchema(), "DELETE FROM " + getTableInfoExceptionReport() + " WHERE ExceptionStackTraceId IN (SELECT ExceptionStackTraceId FROM " + getTableInfoExceptionStackTrace() + " WHERE Container = ?)", params);
-        Table.execute(getSchema(), "DELETE FROM " + getTableInfoExceptionStackTrace() + " WHERE Container = ?", params);
-        Table.execute(getSchema(), "DELETE FROM " + getTableInfoServerSession() + " WHERE Container = ?", params);
-        Table.execute(getSchema(), "DELETE FROM " + getTableInfoServerInstallation() + " WHERE Container = ?", params);
-        Table.execute(getSchema(), "DELETE FROM " + getTableInfoSoftwareRelease() + " WHERE Container = ?", params);
+        SqlExecutor sqlExecutor = new SqlExecutor(getSchema());
+        sqlExecutor.execute("DELETE FROM " + getTableInfoExceptionReport() + " WHERE ExceptionStackTraceId IN (SELECT ExceptionStackTraceId FROM " + getTableInfoExceptionStackTrace() + " WHERE Container = ?)", c);
+        sqlExecutor.execute("DELETE FROM " + getTableInfoExceptionStackTrace() + " WHERE Container = ?", c);
+        sqlExecutor.execute("DELETE FROM " + getTableInfoServerSession() + " WHERE Container = ?", c);
+        sqlExecutor.execute("DELETE FROM " + getTableInfoServerInstallation() + " WHERE Container = ?", c);
+        sqlExecutor.execute("DELETE FROM " + getTableInfoSoftwareRelease() + " WHERE Container = ?", c);
+    }
+
+    public void deleteForUser(User u)
+    {
+       SqlExecutor sqlExecutor = new SqlExecutor(getSchema());
+       sqlExecutor.execute("UPDATE " + getTableInfoExceptionStackTrace() + " SET AssignedTo = NULL WHERE AssignedTo = ?", u.getUserId());
+       sqlExecutor.execute("UPDATE " + getTableInfoExceptionStackTrace() + " SET ModifiedBy = NULL WHERE ModifiedBy = ?", u.getUserId());
     }
 
     public synchronized ServerSession updateServerSession(ServerSession session, ServerInstallation installation, Container container) throws SQLException

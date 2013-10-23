@@ -28,6 +28,7 @@ import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.Role;
@@ -39,7 +40,6 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.mothership.query.MothershipSchema;
 
 import java.beans.PropertyChangeEvent;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -140,14 +140,7 @@ public class MothershipModule extends DefaultModule
 
             public void containerDeleted(Container c, User user)
             {
-                try
-                {
-                    MothershipManager.get().deleteForContainer(c);
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeException("Delete failed", e);
-                }
+                MothershipManager.get().deleteForContainer(c);
             }
 
             @Override
@@ -155,6 +148,35 @@ public class MothershipModule extends DefaultModule
             {                
             }
 
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+            }
+        });
+
+        UserManager.addUserListener(new UserManager.UserListener()
+        {
+            @Override
+            public void userAddedToSite(User user)
+            {
+            }
+
+            @Override
+            public void userDeletedFromSite(User user)
+            {
+                MothershipManager.get().deleteForUser(user);
+            }
+
+            @Override
+            public void userAccountDisabled(User user)
+            {
+            }
+
+            @Override
+            public void userAccountEnabled(User user)
+            {
+            }
+
+            @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
             }
