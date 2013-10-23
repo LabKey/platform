@@ -307,7 +307,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
             imagesItems.push({
                 xtype      : 'displayfield',
                 fieldLabel : 'Thumbnail',
-                value      : '<div class="thumbnail"><img src="' + this.data.thumbnail + '"/></div>',
+                value      : '<div class="thumbnail"></div>',
                 readOnly   : true,
                 labelWidth : 120,
                 width      : 400
@@ -421,7 +421,24 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                     margin: '5 0 0 0',
                     border: false,
                     frame: false,
-                    items: imagesItems
+                    items: imagesItems,
+                    listeners  : {
+                        scope   : this,
+                        show    : function(panel){
+                            // Have to load the image on show and force layout after image loads because Ext assumes 0
+                            // width/height since the image has not been loaded when it calculates the layout.
+                            var thumbnail = new Image();
+                            thumbnail.src = this.data.thumbnail;
+
+                            var thumbCb = function(){
+                                var thumbnailDiv = panel.getEl().dom.querySelector('.thumbnail');
+                                thumbnailDiv.appendChild(thumbnail);
+                                panel.doLayout();
+                            };
+
+                            thumbnail.addEventListener('load', thumbCb, false);
+                        }
+                    }
                 }]
             }];
         } else {

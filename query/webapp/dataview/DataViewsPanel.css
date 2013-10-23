@@ -132,21 +132,14 @@ div.thumbnail
     margin-top: 5px;
 }
 
-div.thumbnail img
+div.thumbnail img,
+div.icon img
 {
-    height:200px;
     max-width: 300px;
     display: block;
     margin-left: auto;
     margin-right: auto;
     vertical-align: middle;
-}
-
-div.thumbnail svg
-{
-    height: 200px !important;
-    width: 300px !important;
-    display: block;
 }
 
 /* Part of Browser.js -- migrate if necessary */

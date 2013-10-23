@@ -489,7 +489,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 '<tpl if="data.thumbnail != undefined && data.thumbnail.length">' +
                 '</tpl>' +
                 '</table>' +
-                '<div class="thumbnail"><img src="{data.thumbnail}"/></div>' +
+                '<div class="thumbnail"></div>' +
                 '</div>' +
                 '</tpl>',
                 {
@@ -535,6 +535,22 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                             tip.removeCls('hide-tip');
                             tip.setTitle(rec.get('name'));
                             tip.down('panel').update(rec);
+                        }
+                    },
+                    show: function(tip){
+                        // Have to load the image on show and force layout after image loads because Ext assumes 0
+                        // width/height since the image has not been loaded when it calculates the layout.
+                        var rec = this.getRecord(tip.triggerElement.parentNode);
+
+                        if (rec) {
+                            var thumbnail = new Image();
+                            thumbnail.src = rec.get('thumbnail');
+                            var loadCb = function(){
+                                var thumbnailDiv = tip.getEl().dom.querySelector('.thumbnail');
+                                thumbnailDiv.appendChild(thumbnail);
+                                tip.doLayout();
+                            };
+                            thumbnail.addEventListener('load', loadCb, false);
                         }
                     },
                     scope : view
