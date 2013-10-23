@@ -1140,12 +1140,14 @@ public class Container implements Serializable, Comparable<Container>, Securable
         containerProps.put("isContainerTab", isContainerTab());
         containerProps.put("type", getContainerNoun());
         JSONArray activeModuleNames = new JSONArray();
-        for (Module module : getActiveModules(user))
+        Set<Module> activeModules = getActiveModules(user);
+        for (Module module : activeModules)
         {
             activeModuleNames.put(module.getName());
         }
         containerProps.put("activeModules", activeModuleNames);
         containerProps.put("folderType", getFolderType().getName());
+        containerProps.put("hasRestrictedActiveModule", hasRestrictedActiveModule(activeModules));
 
         Container parent = getParent();
         containerProps.put("parentPath", parent==null ? null : parent.getPath());
@@ -1359,6 +1361,14 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (null != user && hasPermission(user, EnableRestrictedModules.class))
             userHasEnableRestrictedModules = true;
         return userHasEnableRestrictedModules;
+    }
+
+    public boolean hasRestrictedActiveModule(Set<Module> activeModules)
+    {
+        for (Module module : activeModules)
+            if (module.getRequireSitePermission())
+                return true;
+        return false;
     }
 
     public static boolean userCanAccessModule(Module module, boolean userHasEnableRestrictedModules)
