@@ -758,7 +758,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         if (hasRestrictedModule(folderType) && !hasEnableRestrictedModules(user))
         {
-            errors.reject(SpringActionController.ERROR_MSG, "The folder type requires a restricted module to which you do not have permission.");
+            errors.reject(SpringActionController.ERROR_MSG, "The folder type requires a restricted module for which you do not have permission.");
         }
         else
         {
