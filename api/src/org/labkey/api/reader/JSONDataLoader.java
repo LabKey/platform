@@ -810,6 +810,14 @@ public class JSONDataLoader extends DataLoader
             // Read the next row or null of no more rows are present.
             return JSONDataLoader.this.parseRow();
         }
+
+        @Override
+        public boolean hasNext()
+        {
+            if (_parser == null)
+                return false;
+            return super.hasNext();    //To change body of overridden methods use File | Settings | File Templates.
+        }
     }
 
 
