@@ -200,8 +200,9 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     // TODO: Make short name admin editable, persist, and display. For now, just use the first "word" of the label.
     public String getShortName()
     {
-        String shortName = _label.split("\\s", 2)[0];
-        return shortName.isEmpty() ? _label : shortName;
+        String label = _label == null ? "Study" : _label;
+        String shortName = label.split("\\s", 2)[0];
+        return shortName.isEmpty() ? label : shortName;
     }
 
 
@@ -625,8 +626,12 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             long count = StudyManager.getInstance().getParticipantCount(this);
             String subjectNoun = (count == 1 ? this.getSubjectNounSingular() : this.getSubjectNounPlural());
             TimepointType timepointType = getTimepointType();
-            return PageFlowUtil.filter(getLabel() + " tracks data in ") + "<a href=\"" + new ActionURL(StudyController.DatasetsAction.class, getContainer()) + "\">" + getDataSets().size() + " dataset" + (getDataSets().size() == 1 ? "" : "s") + "</a>" + PageFlowUtil.filter(" over " + getVisits(Visit.Order.DISPLAY).size() + " " + (timepointType.isVisitBased() ? "visit" : "time point") + (getVisits(Visit.Order.DISPLAY).size() == 1 ? "" : "s") +
-                    ". Data is present for " + count + " " + PageFlowUtil.filter(subjectNoun) + ".");
+            return PageFlowUtil.filter((getLabel() == null ? "This study" : getLabel()) + " tracks data in ")
+                    + "<a href=\"" + new ActionURL(StudyController.DatasetsAction.class, getContainer()) + "\">"
+                    + getDataSets().size() + " dataset" + (getDataSets().size() == 1 ? "" : "s") + "</a>"
+                    + PageFlowUtil.filter(" over " + getVisits(Visit.Order.DISPLAY).size() + " "
+                    + (timepointType.isVisitBased() ? "visit" : "time point") + (getVisits(Visit.Order.DISPLAY).size() == 1 ? "" : "s")
+                    + ". Data is present for " + count + " " + PageFlowUtil.filter(subjectNoun) + ".");
         }
         else
         {
