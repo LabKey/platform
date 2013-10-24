@@ -41,7 +41,10 @@ LABKEY.vis.GenericChartHelper = new function(){
         var scales = {};
         var data = responseData.rows;
         var fields = responseData.metaData.fields;
-        var subjectColumn = LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.columnName : 'ParticipantId';
+        var subjectColumn = 'ParticipantId';
+
+        if (LABKEY.moduleContext.study && LABKEY.moduleContext.study.subject)
+            subjectColumn = LABKEY.moduleContext.study.subject.columnName;
 
         if (chartType === "box_plot") {
             scales.x = {scaleType: 'discrete'}; // Force discrete x-axis scale for box plots.
