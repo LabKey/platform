@@ -140,7 +140,7 @@ LABKEY.ActionURL = new function()
 		* Gets the current (unencoded) container path.
 		* @return {String} Current container path.
 		*/
-        getContainer : function(useWindow)
+        getContainer : function()
         {
             if (LABKEY.container && LABKEY.container.path)
                 return LABKEY.container.path;
