@@ -41,19 +41,20 @@ import java.sql.SQLException;
  * the class under the module's src/[module namespace]/assay/[assay name] directory.  This class can then be referenced
  * by name in the <saveHandler/> element in the assay's config file.  For example, a fully-qualified entry might look
  * like <saveHandler>org.labkey.icemr.assay.tracking.TrackingSaveHandler</saveHandler>.  If a non-fully-qualified name
- * is used (for example, just, TrackingSaveHandler), then LabKey will attempt to find this class under
- * org.labkey.[module name].assay.[assay name].[save handler name]
+ * is used (for example, TrackingSaveHandler) then LabKey will attempt to find this class under
+ * org.labkey.[module name].assay.[assay name].[save handler name].
  *
  * The SaveAssayBatch function will dispatch to the methods of this interface according to the format of the JSON
- * Experiment Batch (or run group) sent to it by the client.  The order of method calls will look like:
+ * Experiment Batch (or run group) sent to it by the client.  If a client chooses to implement this interface directly
+ * then the order of method calls will look like:
  *
  * beforeSave
  * handleBatch
  * afterSave
  *
- * The default implemenation of the AssaySaveHandler will do a deep walk through all the runs in a batch saving all
- * the data inputs, outputs, materials, and properties for each run.  The sequence of calls for DefaultAssaySaveHandler
- * will look something like:
+ * A client can also inherit from DefaultAssaySaveHandler class to get a default implementation.  In this case, the
+ * default handler does a deep walk through all the runs in a batch, inputs, outputs, materials, and properties.  The
+ * sequence of calls for DefaultAssaySaveHandler will look something like:
  *
  * beforeSave
  * handleBatch
