@@ -187,9 +187,10 @@ public class DataColumn extends DisplayColumn
             for (ColumnInfo col : _sortColumns)
                 keys.add(col.getFieldKey());
         }
-        if (_boundColumn.getEffectiveURL() instanceof DetailsURL)
+        StringExpression effectiveURL = _boundColumn.getEffectiveURL();
+        if (effectiveURL instanceof DetailsURL)
         {
-            keys.addAll(((DetailsURL) _boundColumn.getEffectiveURL()).getFieldKeys());
+            keys.addAll(((DetailsURL) effectiveURL).getFieldKeys());
         }
     }
 

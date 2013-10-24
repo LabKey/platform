@@ -95,6 +95,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         return table;
     }
 
+    private TableInfo _tableInfo = null;
     private TableInfo findTableInfo(Container container)
     {
         if (container == null)
@@ -103,11 +104,15 @@ public class PdLookupForeignKey extends AbstractForeignKey
         if (!container.hasPermission(_user, ReadPermission.class))
             return null;
 
+        if (null != _tableInfo)
+            return _tableInfo;
+
         UserSchema schema = QueryService.get().getUserSchema(_user, container, _pd.getLookupSchema());
         if (schema == null)
             return null;
 
-        return schema.getTable(_pd.getLookupQuery());
+        _tableInfo = schema.getTable(_pd.getLookupQuery());
+        return _tableInfo;
     }
 
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)

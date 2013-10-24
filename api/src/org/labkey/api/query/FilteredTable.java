@@ -430,7 +430,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     {
         if (null == _aliasManager)
             _aliasManager = new AliasManager(getSchema());
-        _aliasManager.ensureAlias(column, null);
+        _aliasManager.ensureAlias(column);
         return super.addColumn(column);
     }
 

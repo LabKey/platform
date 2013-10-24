@@ -68,7 +68,8 @@ public class AliasManager
 
     public static boolean isLegalName(String str)
     {
-        for (int i = 0; i < str.length(); i ++)
+        int length = str.length();
+        for (int i = 0; i < length; i ++)
         {
             if (!isLegalNameChar(str.charAt(i), i == 0))
                 return false;
@@ -81,16 +82,17 @@ public class AliasManager
         int i;
         char ch=0;
 
-        for (i = 0; i < str.length(); i ++)
+        int length = str.length();
+        for (i = 0; i < length; i ++)
         {
             ch = str.charAt(i);
             if (!isLegalNameChar(ch, i==0))
                 break;
         }
-        if (i==str.length())
+        if (i==length)
             return str;
 
-        StringBuilder sb = new StringBuilder(str.length()+20);
+        StringBuilder sb = new StringBuilder(length+20);
         if (i==0 && isLegalNameChar(ch, false))
         {
             i++;
@@ -101,7 +103,7 @@ public class AliasManager
             sb.append(str.substring(0, i));
         }
 
-        for ( ; i < str.length() ; i ++)
+        for ( ; i < length ; i ++)
         {
             ch = str.charAt(i);
             boolean isLegal = isLegalNameChar(ch, i==0);
@@ -145,11 +147,12 @@ public class AliasManager
     public static String makeLegalName(String str, @Nullable SqlDialect dialect, boolean truncate)
     {
         String ret = legalNameFromName(str);
-        if (null != dialect && dialect.isReserved(str))
+        if (null != dialect && dialect.isReserved(ret))
             ret = "_" + ret;
-        if (ret.length() == 0)
+        int length = ret.length();
+        if (0 == length)
             return "_";
-        return truncate ? truncate(ret, 40) : ret;
+        return (truncate && length > 40) ? truncate(ret, 40) : ret;
     }
 
 
@@ -179,21 +182,14 @@ public class AliasManager
     }
 
 
-    private String findUniqueName(String name)
-    {
-        name = makeLegalName(name);
-        String ret = name;
-        for (int i = 1; _aliases.containsKey(ret); i ++)
-        {
-            ret = name + i;
-        }
-        return ret;
-    }
-
-
     public String decideAlias(String name)
     {
-        String ret = findUniqueName(name);
+        String legalName = makeLegalName(name);
+        String ret = legalName;
+        for (int i = 1; _aliases.containsKey(ret); i ++)
+        {
+            ret = legalName + i;
+        }
         _aliases.put(ret, name);
         return ret;
     }
@@ -242,7 +238,7 @@ public class AliasManager
     /* assumes won't be called on same columninfo twice
      * does not assume that names are unique (e.g. might be fieldkey.toString() or just fieldKey.getname())
      */
-    public void ensureAlias(ColumnInfo column, @Nullable String extra)
+    public void ensureAlias(ColumnInfo column, @Nullable String extra)          // TODO: any external modules use this?
     {
         if (column.isAliasSet())
         {
@@ -254,6 +250,17 @@ public class AliasManager
             column.setAlias(decideAlias(column.getName() + StringUtils.defaultString(extra,"")));
     }
 
+    public void ensureAlias(ColumnInfo column)
+    {
+        if (column.isAliasSet())
+        {
+            if (_aliases.get(column.getAlias()) != null)
+                throw new IllegalStateException("alias '" + column.getAlias() + "' is already in use!  the column name and alias are: " + column.getName() + " / " + column.getAlias() + ".  The full set of aliases are: " + _aliases.toString()); // SEE BUG 13682 and 15475
+            claimAlias(column.getAlias(), column.getName());
+        }
+        else
+            column.setAlias(decideAlias(column.getName()));
+    }
 
     public void claimAliases(Collection<ColumnInfo> columns)
     {

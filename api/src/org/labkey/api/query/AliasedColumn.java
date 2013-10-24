@@ -31,8 +31,8 @@ public class AliasedColumn extends ColumnInfo
     {
         super(key, parent);
         copyAttributesFrom(column);
-        copyURLFrom(column, null, Collections.singletonMap(column.getFieldKey(),getFieldKey()));
-        if (!forceKeepLabel && !getFieldKey().getName().equalsIgnoreCase(column.getFieldKey().getName()))
+        copyURLFrom(column, null, Collections.singletonMap(column.getFieldKey(), key));
+        if (!forceKeepLabel && !key.getName().equalsIgnoreCase(column.getFieldKey().getName()))
             setLabel(null);
         _column = column;
     }
