@@ -83,11 +83,13 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
                     c.setFolderType(folderType, activeModules, ctx.getUser(), errors);
                     if (errors.hasErrors())
                     {
-                        Object error = errors.getAllErrors().get(0);
-                        if (error instanceof ObjectError)
-                            ctx.getLogger().error(((ObjectError)error).getDefaultMessage());
-                        else
-                            ctx.getLogger().error("Unknown error attempting to set folder type.");
+                        for (Object error : errors.getAllErrors())
+                        {
+                            if (error instanceof ObjectError)
+                                ctx.getLogger().error(((ObjectError)error).getDefaultMessage());
+                            else
+                                ctx.getLogger().error("Unknown error attempting to set folder type or enable modules.");
+                        }
                     }
                 }
                 else
