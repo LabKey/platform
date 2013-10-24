@@ -742,9 +742,24 @@ public class Container implements Serializable, Comparable<Container>, Securable
         setFolderType(folderType, user, errors);
         if (!errors.hasErrors())
         {
-            Set<Module> modules = new HashSet<>(folderType.getActiveModules());
-            modules.addAll(ensureModules);
-            setActiveModules(modules, user);
+            // Check modules explicitly requested (folderType's modules already checked by setFolderType
+            if (!hasEnableRestrictedModules(user))
+            {
+                for (Module module : ensureModules)
+                {
+                    if (module.getRequireSitePermission())
+                    {
+                        errors.reject(SpringActionController.ERROR_MSG, "Modules not enabled because module '" + module.getName() + "' is restricted and you do not have the necessary permission to enable it.");
+                    }
+                }
+            }
+
+            if (!errors.hasErrors())
+            {
+                Set<Module> modules = new HashSet<>(folderType.getActiveModules());
+                modules.addAll(ensureModules);
+                setActiveModules(modules, user);
+            }
         }
     }
 
@@ -758,7 +773,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         if (hasRestrictedModule(folderType) && !hasEnableRestrictedModules(user))
         {
-            errors.reject(SpringActionController.ERROR_MSG, "The folder type requires a restricted module for which you do not have permission.");
+            errors.reject(SpringActionController.ERROR_MSG, "Folder type '" + folderType.getName() + "' not set because it requires a restricted module for which you do not have permission.");
         }
         else
         {
