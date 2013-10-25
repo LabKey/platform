@@ -107,7 +107,16 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
         Map<String, List<Aggregate.Result>> results = ts.getAggregates(Arrays.asList(max));
         List<Aggregate.Result> list = results.get(_tsCol.getName());
         Aggregate.Result maxResult = list.get(0);
-        Date incrementalEndDate = ((Date)maxResult.getValue());
+
+        Date incrementalEndDate;
+        try
+        {
+            incrementalEndDate = ((Date)maxResult.getValue());
+        }
+        catch (ClassCastException e)
+        {
+            throw new IllegalArgumentException("Timestamp column '"+_tsCol.getColumnName()+"' contains value not castable to a date: " + maxResult.getValue().toString());
+        }
 
         if (null != _context.getPipelineJob() && null == incrementalEndDate)
             _context.getPipelineJob().getLogger().info("No new rows found in table: " + _table.getName());
