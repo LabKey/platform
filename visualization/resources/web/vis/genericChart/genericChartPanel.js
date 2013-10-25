@@ -1770,7 +1770,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.enableExportPdf();
             this.enableExportScript();
             this.centerPanel.getEl().unmask();
-            if(this.editMode){
+            if(this.editMode && this.supportedBrowser){
                 // Update thumbnail
                 var thumbnail = this.renderPlot(true);
                 if (thumbnail)
