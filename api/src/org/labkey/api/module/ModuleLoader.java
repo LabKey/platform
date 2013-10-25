@@ -38,6 +38,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
@@ -254,20 +255,44 @@ public class ModuleLoader implements Filter
         return getInstance() == null ? null : getInstance()._servletContext;
     }
 
-    private void doInit(ServletContext servletCtx) throws Exception
+    /** Do basic module loading, shared between the web server and remote pipeline deployments */
+    public List<Module> doInit(List<File> explodedModuleDirs)
     {
-        _servletContext = servletCtx;
-
         _log.debug("ModuleLoader init");
 
         verifyJavaVersion();
-
-        Integer tomcatVersion = verifyTomcatVersion();
-
         rollErrorLogFile(_log);
 
         // make sure ConvertHelper is initialized
         ConvertHelper.getPropertyEditorRegistrar();
+
+        //load module instances using Spring
+        _modules = loadModules(explodedModuleDirs);
+
+        for (Module module : _modules)
+        {
+            registerResourceLoaders(module.getResourceLoaders());
+        }
+
+        //sort the modules by dependencies
+        ModuleDependencySorter sorter = new ModuleDependencySorter();
+        _modules = Collections.unmodifiableList(sorter.sortModulesByDependencies(_modules, _resourceLoaders));
+
+        for (Module module : _modules)
+        {
+            moduleMap.put(module.getName(), module);
+            moduleClassMap.put(module.getClass(), module);
+        }
+
+        return _modules;
+    }
+
+    /** Full web-server initialization */
+    private void doInit(ServletContext servletCtx) throws Exception
+    {
+        _servletContext = servletCtx;
+
+        Integer tomcatVersion = verifyTomcatVersion();
 
         _webappDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(servletCtx.getRealPath(".")));
 
@@ -295,17 +320,7 @@ public class ModuleLoader implements Filter
             throw new RuntimeException(e);
         }
 
-        //load module instances using Spring
-        _modules = loadModules(explodedModuleDirs);
-
-        for (Module module : _modules)
-        {
-            registerResourceLoaders(module.getResourceLoaders());
-        }
-
-        //sort the modules by dependencies
-        ModuleDependencySorter sorter = new ModuleDependencySorter();
-        _modules = sorter.sortModulesByDependencies(_modules, _resourceLoaders);
+        doInit(explodedModuleDirs);
 
         // set the project source root before calling .initialize() on modules
         Module coreModule = _modules.get(0);
@@ -338,11 +353,7 @@ public class ModuleLoader implements Filter
                     // In dev mode, just log a one-line warning
                     _log.warn("Unable to initialize module " + module.getName() + " due to: " + dnse.getMessage());
                     iterator.remove();
-                    continue;
                 }
-
-                moduleMap.put(module.getName(), module);
-                moduleClassMap.put(module.getClass(), module);
             }
             catch(Throwable t)
             {
@@ -497,7 +508,7 @@ public class ModuleLoader implements Filter
         }
     }
 
-    public static List<Module> loadModules(List<File> explodedModuleDirs)
+    private List<Module> loadModules(List<File> explodedModuleDirs)
     {
         ApplicationContext parentContext = ServiceRegistry.get().getApplicationContext();
 
@@ -511,83 +522,11 @@ public class ModuleLoader implements Filter
             {
                 if (moduleXml.exists())
                 {
-                    ApplicationContext applicationContext;
-                    if (null != ModuleLoader.getInstance() && null != ModuleLoader.getServletContext())
-                    {
-                        XmlWebApplicationContext beanFactory = new XmlWebApplicationContext();
-                        beanFactory.setConfigLocations(new String[]{moduleXml.toURI().toString()});
-                        beanFactory.setParent(parentContext);
-                        beanFactory.setServletContext(new SpringModule.ModuleServletContextWrapper(ModuleLoader.getServletContext()));
-                        beanFactory.refresh();
-                        applicationContext = beanFactory;
-                    }
-                    else
-                    {
-                        FileSystemXmlApplicationContext beanFactory = new FileSystemXmlApplicationContext();
-                        beanFactory.setConfigLocations(new String[]{moduleXml.toURI().toString()});
-                        beanFactory.setParent(parentContext);
-                        beanFactory.refresh();
-                        applicationContext = beanFactory;
-                    }
-
-                    try
-                    {
-                        module = (Module)applicationContext.getBean("moduleBean", Module.class);
-                    }
-                    catch (NoSuchBeanDefinitionException x)
-                    {
-                        _log.error("module configuration does not specify moduleBean: " + moduleXml);
-                    }
-                    catch (RuntimeException x)
-                    {
-                        _log.error("error reading module configuration: " + moduleXml.getPath(), x);
-                    }
+                    module = loadModuleFromXML(parentContext, module, moduleXml);
                 }
                 else
                 {
-                    //check for simple .properties file
-                    File modulePropsFile = new File(moduleDir, "config/module.properties");
-                    Properties props = new Properties();
-                    if (modulePropsFile.exists())
-                    {
-                        try (FileInputStream in = new FileInputStream(modulePropsFile))
-                        {
-                            props.load(in);
-                        }
-                        catch (IOException e)
-                        {
-                            _log.error("Error reading module properties file '" + modulePropsFile.getAbsolutePath() + "'", e);
-                        }
-                    }
-
-                    //assume that module name is directory name
-                    String moduleName = moduleDir.getName();
-                    if (props.containsKey("name"))
-                        moduleName = props.getProperty("name");
-
-                    if (moduleName == null || moduleName.length() == 0)
-                        throw new ConfigurationException("Simple module must specify a name in config/module.xml or config/module.properties: " + moduleDir.getParent());
-
-                    // Create the module instance
-                    DefaultModule simpleModule;
-                    if (props.containsKey("ModuleClass"))
-                    {
-                        String moduleClassName = props.getProperty("ModuleClass");
-                        Class<DefaultModule> moduleClass = (Class<DefaultModule>)Class.forName(moduleClassName);
-                        simpleModule = moduleClass.newInstance();
-                    }
-                    else
-                    {
-                        simpleModule = new SimpleModule();
-                    }
-
-                    simpleModule.setName(moduleName);
-                    simpleModule.setSourcePath(moduleDir.getAbsolutePath());
-                    BeanUtils.populate(simpleModule, props);
-                    if (simpleModule instanceof ApplicationContextAware)
-                        simpleModule.setApplicationContext(parentContext);
-
-                    module = simpleModule;
+                    module = loadModuleFromProperties(parentContext, moduleDir);
                 }
 
                 if (null != module)
@@ -618,13 +557,98 @@ public class ModuleLoader implements Filter
         return modules;
     }
 
+    /** Load module metadata from a .properties file */
+    private Module loadModuleFromProperties(ApplicationContext parentContext, File moduleDir) throws ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException
+    {
+        //check for simple .properties file
+        File modulePropsFile = new File(moduleDir, "config/module.properties");
+        Properties props = new Properties();
+        if (modulePropsFile.exists())
+        {
+            try (FileInputStream in = new FileInputStream(modulePropsFile))
+            {
+                props.load(in);
+            }
+            catch (IOException e)
+            {
+                _log.error("Error reading module properties file '" + modulePropsFile.getAbsolutePath() + "'", e);
+            }
+        }
+
+        //assume that module name is directory name
+        String moduleName = moduleDir.getName();
+        if (props.containsKey("name"))
+            moduleName = props.getProperty("name");
+
+        if (moduleName == null || moduleName.length() == 0)
+            throw new ConfigurationException("Simple module must specify a name in config/module.xml or config/module.properties: " + moduleDir.getParent());
+
+        // Create the module instance
+        DefaultModule simpleModule;
+        if (props.containsKey("ModuleClass"))
+        {
+            String moduleClassName = props.getProperty("ModuleClass");
+            Class<DefaultModule> moduleClass = (Class<DefaultModule>)Class.forName(moduleClassName);
+            simpleModule = moduleClass.newInstance();
+        }
+        else
+        {
+            simpleModule = new SimpleModule();
+        }
+
+        simpleModule.setName(moduleName);
+        simpleModule.setSourcePath(moduleDir.getAbsolutePath());
+        BeanUtils.populate(simpleModule, props);
+        if (simpleModule instanceof ApplicationContextAware)
+            simpleModule.setApplicationContext(parentContext);
+
+        return simpleModule;
+    }
+
+    /** Read module metadata out of XML file */
+    private Module loadModuleFromXML(ApplicationContext parentContext, Module module, File moduleXml)
+    {
+        ApplicationContext applicationContext;
+        if (null != ModuleLoader.getInstance() && null != ModuleLoader.getServletContext())
+        {
+            XmlWebApplicationContext beanFactory = new XmlWebApplicationContext();
+            beanFactory.setConfigLocations(new String[]{moduleXml.toURI().toString()});
+            beanFactory.setParent(parentContext);
+            beanFactory.setServletContext(new SpringModule.ModuleServletContextWrapper(ModuleLoader.getServletContext()));
+            beanFactory.refresh();
+            applicationContext = beanFactory;
+        }
+        else
+        {
+            FileSystemXmlApplicationContext beanFactory = new FileSystemXmlApplicationContext();
+            beanFactory.setConfigLocations(new String[]{moduleXml.toURI().toString()});
+            beanFactory.setParent(parentContext);
+            beanFactory.refresh();
+            applicationContext = beanFactory;
+        }
+
+        try
+        {
+            module = (Module)applicationContext.getBean("moduleBean", Module.class);
+        }
+        catch (NoSuchBeanDefinitionException x)
+        {
+            _log.error("module configuration does not specify moduleBean: " + moduleXml);
+        }
+        catch (RuntimeException x)
+        {
+            _log.error("error reading module configuration: " + moduleXml.getPath(), x);
+        }
+        return module;
+    }
+
 
     public File getWebappDir()
     {
         return _webappDir;
     }
 
-    private void verifyJavaVersion() throws ServletException
+    private void verifyJavaVersion() throws ConfigurationException
     {
         if (!SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_1_7))
             throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ". LabKey Server requires Java 7.");
@@ -1156,7 +1180,7 @@ public class ModuleLoader implements Filter
             for (String schema : context.getSchemaList())
             {
                 _log.info("Dropping schema " + schema);
-                Table.execute(_core.getSchema(), sql, moduleName, schema + "-%");
+                new SqlExecutor(_core.getSchema()).execute(sql, moduleName, schema + "-%");
                 scope.getSqlDialect().dropSchema(_core.getSchema(), schema);
             }
 
