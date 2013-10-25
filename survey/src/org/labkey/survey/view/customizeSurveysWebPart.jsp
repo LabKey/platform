@@ -51,7 +51,6 @@ This webpart displays a list of survey instances created by the end user. Select
 
         var surveyDesignCombo = Ext4.create('Ext.form.field.ComboBox', {
             xtype: 'combo',
-            id : "SurveyDesignComboId", // for selenium testing
             width: 400,
             fieldLabel: 'Survey Design',
             emptyText: 'Select a survey design for this webpart',
@@ -71,6 +70,7 @@ This webpart displays a list of survey instances created by the end user. Select
                 listeners: {
                     load: function() {
                         surveyDesignCombo.enable();
+                        surveyDesignCombo.addCls('survey-designs-loaded-marker');// for selenium testing
                     }
                 }
             })
