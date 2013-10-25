@@ -84,6 +84,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     private GUID _id;
     private Path _path;
     private Date _created;
+    private int _createdBy;
     private int _rowId; //Unique for this installation
 
     /** Used to arbitrarily reorder siblings within a container. */
@@ -125,7 +126,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     // UNDONE: BeanFactory for Container
 
-    protected Container(Container dirParent, String name, String id, int rowId, int sortOrder, Date created, boolean searchable)
+    protected Container(Container dirParent, String name, String id, int rowId, int sortOrder, Date created, int createdBy, boolean searchable)
     {
         _path = null == dirParent && StringUtils.isEmpty(name) ? Path.rootPath : ContainerManager.makePath(dirParent, name);
         _id = new GUID(id);
@@ -133,6 +134,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         _rowId = rowId;
         _sortOrder = sortOrder;
         _created = created;
+        _createdBy = createdBy;
         _searchable = searchable;
     }
 
@@ -158,6 +160,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public Date getCreated()
     {
         return _created;
+    }
+
+    public int getCreatedBy()
+    {
+        return _createdBy;
     }
 
 

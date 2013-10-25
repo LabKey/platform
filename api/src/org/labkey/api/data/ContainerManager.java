@@ -153,7 +153,7 @@ public class ContainerManager
 
     public static Container createMockContainer()
     {
-        return new Container(null, "MockContainer", "01234567-8901-2345-6789-012345678901", 99999999, 0, new Date(), true);
+        return new Container(null, "MockContainer", "01234567-8901-2345-6789-012345678901", 99999999, 0, new Date(), User.guest.getUserId(), true);
     }
 
     private static Container createRoot()
@@ -2236,7 +2236,8 @@ public class ContainerManager
             int rowId = rs.getInt("RowId");
             int sortOrder = rs.getInt("SortOrder");
             Date created = rs.getTimestamp("Created");
-            // _ts, createdby
+            int createdBy = rs.getInt("CreatedBy");
+            // _ts
             String description = rs.getString("Description");
             String type = rs.getString("Type");
             String title = rs.getString("Title");
@@ -2246,7 +2247,7 @@ public class ContainerManager
             if (null != parentId)
                 dirParent = getForId(parentId);
 
-            d = new Container(dirParent, name, id, rowId, sortOrder, created, searchable);
+            d = new Container(dirParent, name, id, rowId, sortOrder, created, createdBy, searchable);
             d.setDescription(description);
             d.setType(type);
             d.setTitle(title);
@@ -2310,6 +2311,6 @@ public class ContainerManager
 
     public static Container createFakeContainer(@Nullable String name, @Nullable Container parent)
     {
-        return new Container(parent, name, GUID.makeGUID(), 1, 0, new Date(), false);
+        return new Container(parent, name, GUID.makeGUID(), 1, 0, new Date(), 0, false);
     }
 }
