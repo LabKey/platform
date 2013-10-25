@@ -50,7 +50,7 @@ public abstract class AbstractPipelineStartup
         PipelineJobServiceImpl.initDefaults(locationType);
 
         //load the modules and sort them by dependencies
-        List<Module> modules = ModuleLoader.loadModules(moduleFiles);
+        List<Module> modules = new ModuleLoader().doInit(moduleFiles);
         ModuleDependencySorter sorter = new ModuleDependencySorter();
         modules = sorter.sortModulesByDependencies(modules, Collections.<ModuleResourceLoader>emptySet());
 
