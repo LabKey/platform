@@ -86,15 +86,15 @@ public class StringExpressionFactory
 
 
     /**
-     * HANDLES two cases
+     * HANDLES three cases
      *
-     *  freeform
-     *  a) http://*?param=${Column}
-     *     free form
+     *  a) http[s]://*?param=${Column}
      *
      *  b) /Controller/Action.view?param=${Column}
      *     org.labkey.module.Controller$Action.class?param=${Column}\s
      *     special w/ some container support
+     *
+     *  c) freeform, whatever
      *
      * CONSIDER javascript: (permissions!)
      *
@@ -165,12 +165,15 @@ public class StringExpressionFactory
     }
 
 
-    /** somewhat stricter than createURL() to enforce doc'd syntax (above) */
     public static String validateURL(String str)
     {
         if (str.startsWith("mailto:"))
             return null;
-        
+
+        StringExpression s = StringExpressionFactory.createURL(str);
+        if (null != s)
+            return null;
+
         if (str.startsWith("http://") || str.startsWith("https://"))
         {
             try
