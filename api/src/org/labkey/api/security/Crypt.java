@@ -138,7 +138,7 @@ public enum Crypt
         }
     }
 
-    public static class _bcrypt  implements _Crypt
+    public static class _bcrypt implements _Crypt
     {
         @Override
         public boolean matches(String credentials, String digest)
@@ -232,12 +232,14 @@ public enum Crypt
 
     public static String encodeHex(byte[] bytes)
     {
-        StringBuffer sb = new StringBuffer(bytes.length * 2);
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+
         for (byte aByte : bytes)
         {
             sb.append(convertDigit(aByte >> 4));
             sb.append(convertDigit(aByte & 0x0f));
         }
+
         return sb.toString();
     }
 

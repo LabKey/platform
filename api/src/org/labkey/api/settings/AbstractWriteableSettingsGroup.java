@@ -22,6 +22,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -38,8 +39,8 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
     public final static String AUDIT_EVENT_TYPE = "AppPropsEvent";
     public final static String AUDIT_PROP_DIFF = "AppPropsDiff";
 
-    protected PropertyManager.PropertyMap _properties = null;
-    protected PropertyManager.PropertyMap _oldProps = null;
+    protected PropertyMap _properties = null;
+    protected PropertyMap _oldProps = null;
 
     protected abstract String getType();
 

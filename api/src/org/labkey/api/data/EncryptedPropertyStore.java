@@ -16,13 +16,11 @@
 package org.labkey.api.data;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.PropertyManager.PropertyMap;
-import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.Encryption;
 import org.labkey.api.util.ConfigurationException;
 
-import javax.servlet.ServletContext;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -33,39 +31,22 @@ import java.sql.SQLException;
  */
 public class EncryptedPropertyStore extends AbstractPropertyStore
 {
-    private static final String MASTER_ENCRYPTION_KEY_PARAMETER_NAME = "MasterEncryptionKey";
-
-    private final String _masterEncryptionKey;
-    private final Encryption _preferredEncryption;
+    private final PropertyEncryption _preferredPropertyEncryption;
 
     public EncryptedPropertyStore()
     {
         super("Encrypted Properties");
 
-        ServletContext context = ModuleLoader.getServletContext();
-
-        if (null != context)
-        {
-            String masterEncryptionKey = context.getInitParameter(MASTER_ENCRYPTION_KEY_PARAMETER_NAME);
-
-            // If master key is there (not null, not blank, not whitespace)
-            if (!StringUtils.isBlank(masterEncryptionKey) && !masterEncryptionKey.trim().equals("@@put master encryption key here@@"))
-            {
-                _masterEncryptionKey = masterEncryptionKey;
-                // TODO: Add strong encryption and default to it here
-                _preferredEncryption = Encryption.Test;
-                return;
-            }
-        }
-
-        _masterEncryptionKey = null;
-        _preferredEncryption = Encryption.NoKey;
+        if (Encryption.isMasterEncryptionPassPhraseSpecified())
+            _preferredPropertyEncryption = PropertyEncryption.AES128;
+        else
+            _preferredPropertyEncryption = PropertyEncryption.NoKey;
     }
 
     @Override
     protected void validateStore()
     {
-        if (null == _masterEncryptionKey)
+        if (PropertyEncryption.AES128 != _preferredPropertyEncryption)
             throw new ConfigurationException("Attempting to use the encrypted property store, but MasterEncryptionKey has not been specified in labkey.xml.",
                 "Edit labkey.xml and provide a suitable encryption key. See the server configuration documentation on labkey.org.");
     }
@@ -73,7 +54,7 @@ public class EncryptedPropertyStore extends AbstractPropertyStore
     @Override
     protected boolean isValidPropertyMap(PropertyMap props)
     {
-        return props.getEncryption() != Encryption.None;
+        return props.getEncryptionAlgorithm() != PropertyEncryption.None;
     }
 
     @Override
@@ -82,13 +63,13 @@ public class EncryptedPropertyStore extends AbstractPropertyStore
         if (null == value)
             return null;
 
-        return Base64.encodeBase64String(props.getEncryption().encrypt(value));
+        return Base64.encodeBase64String(props.getEncryptionAlgorithm().encrypt(value));
     }
 
     @Override
     protected void fillValueMap(TableSelector selector, final PropertyMap props)
     {
-        final Encryption encryption = props.getEncryption();
+        final PropertyEncryption propertyEncryption = props.getEncryptionAlgorithm();
 
         selector.forEach(new Selector.ForEachBlock<ResultSet>()
         {
@@ -96,7 +77,7 @@ public class EncryptedPropertyStore extends AbstractPropertyStore
             public void exec(ResultSet rs) throws SQLException
             {
                 String encryptedValue = rs.getString(2);
-                String value = null == encryptedValue ? null : encryption.decrypt(Base64.decodeBase64(encryptedValue));
+                String value = null == encryptedValue ? null : propertyEncryption.decrypt(Base64.decodeBase64(encryptedValue));
                 props.put(rs.getString(1), value);
             }
         });
@@ -105,8 +86,8 @@ public class EncryptedPropertyStore extends AbstractPropertyStore
     // TODO: Filter reads, writes, deletes in each store
 
     @Override
-    protected Encryption getPreferredEncryption()
+    protected PropertyEncryption getPreferredPropertyEncryption()
     {
-        return _preferredEncryption;
+        return _preferredPropertyEncryption;
     }
 }

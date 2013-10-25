@@ -22,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.data.AbstractPropertyStore.Encryption;
 import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
@@ -47,13 +46,12 @@ import java.util.Set;
  */
 public class PropertyManager
 {
+    public static final User SHARED_USER = User.guest;  // Shared properties are saved with the guest user
+
     private static final Logger _log = Logger.getLogger(PropertyManager.class);
     private static final PropertySchema prop = PropertySchema.getInstance();
     private static final NormalPropertyStore STORE = new NormalPropertyStore();
     private static final EncryptedPropertyStore ENCRYPTED_STORE = new EncryptedPropertyStore();
-
-    public static final User SHARED_USER = User.guest;  // Shared properties are saved with the guest user
-
 
     private PropertyManager()
     {
@@ -238,19 +236,19 @@ public class PropertyManager
         private final int _userId;
         private final String _objectId;
         private final String _category;
-        private final Encryption _encryption;
+        private final PropertyEncryption _propertyEncryption;
 
         private boolean _modified = false;
         Set<Object> removedKeys = null;
 
 
-        PropertyMap(int set, int userId, String objectId, String category, Encryption encryption)
+        PropertyMap(int set, int userId, String objectId, String category, PropertyEncryption propertyEncryption)
         {
             _set = set;
             _userId = userId;
             _objectId = objectId;
             _category = category;
-            _encryption = encryption;
+            _propertyEncryption = propertyEncryption;
         }
 
 
@@ -260,9 +258,9 @@ public class PropertyManager
         }
 
 
-        Encryption getEncryption()
+        PropertyEncryption getEncryptionAlgorithm()
         {
-            return _encryption;
+            return _propertyEncryption;
         }
 
         @Override
@@ -411,7 +409,7 @@ public class PropertyManager
             PropertyStore encrypted = getEncryptedStore();
 
             // Test should still pass whether MasterEncryptionKey is specified or not
-            if (ENCRYPTED_STORE.getPreferredEncryption() == Encryption.NoKey)
+            if (ENCRYPTED_STORE.getPreferredPropertyEncryption() == PropertyEncryption.NoKey)
             {
                 // Just test the normal property store
                 testPropertyStore(normal, (PropertyStore) null);
@@ -566,23 +564,6 @@ public class PropertyManager
             }
         }
 
-
-        @Test
-        public void testEncryptionAlgorithms()
-        {
-            for (Encryption encryption : Encryption.values())
-            {
-                switch (encryption)
-                {
-                    case None:
-                    case NoKey:
-                        break;
-                    default:
-                        for (String test : new String[]{"foo", "bar"})
-                            assertEquals(test, encryption.decrypt(encryption.encrypt(test)));
-                }
-            }
-        }
 
         @Test  // Note: Fairly worthless test... there's now an FK constraint in place
         public void testOrphanedPropertySets()

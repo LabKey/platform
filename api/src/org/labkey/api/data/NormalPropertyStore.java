@@ -38,14 +38,14 @@ public class NormalPropertyStore extends AbstractPropertyStore
     @Override
     protected boolean isValidPropertyMap(PropertyManager.PropertyMap props)
     {
-        return props.getEncryption() == Encryption.None;
+        return props.getEncryptionAlgorithm() == PropertyEncryption.None;
     }
 
     @Override
     protected void fillValueMap(TableSelector selector, PropertyManager.PropertyMap props)
     {
-        if (props.getEncryption() != Encryption.None)
-            throw new IllegalStateException("NormalPropertyStore should not be retrieving a PropertyMap encrypted with " + props.getEncryption());
+        if (props.getEncryptionAlgorithm() != PropertyEncryption.None)
+            throw new IllegalStateException("NormalPropertyStore should not be retrieving a PropertyMap encrypted with " + props.getEncryptionAlgorithm());
 
         selector.fillValueMap(props);
     }
@@ -53,15 +53,15 @@ public class NormalPropertyStore extends AbstractPropertyStore
     @Override
     protected String getSaveValue(PropertyManager.PropertyMap props, @Nullable String value)
     {
-        if (props.getEncryption() != Encryption.None)
-            throw new IllegalStateException("NormalPropertyStore should not be saving a PropertyMap encrypted with " + props.getEncryption());
+        if (props.getEncryptionAlgorithm() != PropertyEncryption.None)
+            throw new IllegalStateException("NormalPropertyStore should not be saving a PropertyMap encrypted with " + props.getEncryptionAlgorithm());
 
         return value;
     }
 
     @Override
-    protected Encryption getPreferredEncryption()
+    protected PropertyEncryption getPreferredPropertyEncryption()
     {
-        return Encryption.None;
+        return PropertyEncryption.None;
     }
 }

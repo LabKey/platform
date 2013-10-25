@@ -20,14 +20,11 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Compress;
-import org.labkey.api.util.ConfigurationException;
 
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.zip.DataFormatException;
 
 /**
  * User: adam
@@ -49,7 +46,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
     protected abstract boolean isValidPropertyMap(PropertyMap props);
     protected abstract String getSaveValue(PropertyMap props, @Nullable String value);
     protected abstract void fillValueMap(TableSelector selector, PropertyMap props);
-    protected abstract Encryption getPreferredEncryption();
+    protected abstract PropertyEncryption getPreferredPropertyEncryption();
 
 
     @NotNull
@@ -100,7 +97,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
 
                 Map<String, Object> map = new SqlSelector(_prop.getSchema(), sql).getMap();
                 boolean newSet = (null == map);
-                Encryption encryption;
+                PropertyEncryption propertyEncryption;
 
                 if (newSet)
                 {
@@ -109,21 +106,26 @@ public abstract class AbstractPropertyStore implements PropertyStore
                         _prop.getSchema().getScope().commitTransaction();
                         return null;
                     }
+                    propertyEncryption = getPreferredPropertyEncryption();
                     Map<String, Object> insertMap = new HashMap<>();
                     insertMap.put("UserId", user);
                     insertMap.put("ObjectId", container);
                     insertMap.put("Category", category);
-                    insertMap.put("Encryption", encryption = getPreferredEncryption());
+                    insertMap.put("Encryption", propertyEncryption.getSerializedName());
                     map = Table.insert(user, _prop.getTableInfoPropertySets(), insertMap);
                 }
                 else
                 {
-                    encryption = Encryption.valueOf((String)map.get("Encryption"));
+                    String encryptionName = (String) map.get("Encryption");
+                    propertyEncryption = PropertyEncryption.getBySerializedName(encryptionName);
+
+                    if (null == propertyEncryption)
+                        throw new IllegalStateException("Unknown encryption name: " + encryptionName);
                 }
 
                 // map should always contain the set number, whether brand new or old
                 int set = (Integer)map.get("Set");
-                PropertyMap m = new PropertyMap(set, user.getUserId(), containerId, category, encryption);
+                PropertyMap m = new PropertyMap(set, user.getUserId(), containerId, category, propertyEncryption);
 
                 if (newSet)
                 {
@@ -301,7 +303,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
 
     static
     {
-        NULL_MAP = new PropertyMap(0, 0, "NULL_MAP", PropertyManager.class.getName(), Encryption.None)
+        NULL_MAP = new PropertyMap(0, 0, "NULL_MAP", PropertyManager.class.getName(), PropertyEncryption.None)
         {
             @Override
             public String put(String key, String value)
@@ -336,84 +338,9 @@ public abstract class AbstractPropertyStore implements PropertyStore
         public Map<String, String> load(String key, Object argument)
         {
             Object[] params = (Object[])argument;
-            PropertyManager.PropertyMap map = getWritableProperties((User)params[1], (Container)params[0], (String)params[2], false);
+            PropertyMap map = getWritableProperties((User)params[1], (Container)params[0], (String)params[2], false);
 
             return null != map ? Collections.unmodifiableMap(map) : null;
         }
-    }
-
-
-    // Encrypted property sets are encrypted with the algorithms below and annotated with the algorithm name that was
-    // used to encrypt. WARNING: Do not change the names or implementations of these enum values or you will render
-    // saved properties irretrievable!
-    enum Encryption
-    {
-        // Just a marker enum for unencrypted property store
-        None
-            {
-                @NotNull
-                @Override
-                byte[] encrypt(@NotNull String value)
-                {
-                    throw new IllegalStateException("Incorrect PropertyStore for this PropertyMap");
-                }
-
-                @NotNull
-                @Override
-                String decrypt(@NotNull byte[] encrypted)
-                {
-                    throw new IllegalStateException("Incorrect PropertyStore for this PropertyMap");
-                }
-            },
-        // Not real encryption, just for testing
-        Test
-            {
-                @NotNull
-                @Override
-                byte[] encrypt(@NotNull String value)
-                {
-                    return Compress.deflate(value);
-                }
-
-                @NotNull
-                @Override
-                String decrypt(@NotNull byte[] encrypted)
-                {
-                    try
-                    {
-                        return Compress.inflate(encrypted);
-                    }
-                    catch (DataFormatException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                }
-            },
-        // No master encryption key was specified in labkey.xml, so throw ConfigurationException
-        NoKey
-            {
-                @NotNull
-                @Override
-                byte[] encrypt(@NotNull String value)
-                {
-                    throw getConfigurationException();
-                }
-
-                @NotNull
-                @Override
-                String decrypt(@NotNull byte[] encrypted)
-                {
-                    throw getConfigurationException();
-                }
-
-                private ConfigurationException getConfigurationException()
-                {
-                    return new ConfigurationException("Attempting to save encrypted properties but MasterEncryptionKey has not been specified in labkey.xml.",
-                            "Edit labkey.xml and provide a suitable encryption key. See the server configuration documentation on labkey.org.");
-                }
-            };
-
-        abstract @NotNull byte[] encrypt(@NotNull String value);
-        abstract @NotNull String decrypt(@NotNull byte[] encrypted);
     }
 }

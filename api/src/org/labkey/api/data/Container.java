@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -817,7 +818,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         if (module == null)
             return;
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(this, "defaultModules", true);
+        PropertyMap props = PropertyManager.getWritableProperties(this, "defaultModules", true);
         props.put("name", module.getName());
 
         PropertyManager.saveProperties(props);
@@ -839,7 +840,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
 
         boolean userHasEnableRestrictedModules = hasEnableRestrictedModules(user);
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(this, "activeModules", true);
+        PropertyMap props = PropertyManager.getWritableProperties(this, "activeModules", true);
         props.clear();
         for (Module module : modules)
         {
@@ -955,7 +956,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (props.isEmpty() && init && null != ContainerManager.getForId(getId()))
         {
             //initialize properties cache
-            PropertyManager.PropertyMap propsWritable = PropertyManager.getWritableProperties(this, "activeModules", true);
+            PropertyMap propsWritable = PropertyManager.getWritableProperties(this, "activeModules", true);
             props = propsWritable;
 
             if (isProject())

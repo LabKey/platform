@@ -1,0 +1,291 @@
+package org.labkey.api.security;
+
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.data.PropertyStore;
+import org.labkey.api.module.ModuleLoader;
+
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+import javax.servlet.ServletContext;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+import java.util.Map;
+
+/**
+* User: adam
+* Date: 10/19/13
+* Time: 2:25 PM
+*/
+
+/*
+    Easy to use wrappers for common encryption algorithms. Also includes related helper methods for shared operations
+    such as generating salts & keys, and for retrieving & saving the master encryption key and standard salt.
+
+    WARNING: Do not change the core algorithms or parameters of existing implementations; changes will likely
+    render existing data irrecoverable.
+ */
+
+public class Encryption
+{
+    private static final String CATEGORY = "Encryption";
+    private static final String SALT_KEY = "Salt";
+    private static final SecureRandom SR = new SecureRandom();
+
+
+    private Encryption()
+    {
+    }
+
+
+    // Generate an array of random bytes of the specified length using SecureRandom
+    private static byte[] generateRandomBytes(int byteCount)
+    {
+        byte[] bytes = new byte[byteCount];
+        SR.nextBytes(bytes);
+
+        return bytes;
+    }
+
+
+    // Generates an encryption key having the specified bit length from a pass phrase, using PCKS #5 v2.0. This algorithm
+    // uses the lower 8-bits of each character to generate the key, which is appropriate for ASCII pass phrases.
+    private static byte[] generateSecretKeyFromPassPhrase(String passPhrase, byte[] salt, int keyLength, int iterationCount) throws NoSuchAlgorithmException, InvalidKeySpecException
+    {
+        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+        KeySpec spec = new PBEKeySpec(passPhrase.toCharArray(), salt, iterationCount, keyLength);
+        SecretKey skey = factory.generateSecret(spec);
+
+        return skey.getEncoded();
+    }
+
+
+    // Generates an encryption key having the specified bit length from a pass phrase, using PCKS #5 v2.0. Uses standard salt and iteration count of 65,536.
+    private static byte[] generateSecretKeyFromPassPhrase(String passPhrase, int keyLength) throws NoSuchAlgorithmException, InvalidKeySpecException
+    {
+        return generateSecretKeyFromPassPhrase(passPhrase, getStandardSalt(), keyLength, 65536);
+    }
+
+
+    // Returns a standard 16-byte random salt, generated once and unique to this database.
+    private static byte[] getStandardSalt()
+    {
+        PropertyStore store = PropertyManager.getNormalStore();
+        Map<String, String> props = store.getProperties(CATEGORY);
+        String salt = props.get(SALT_KEY);
+
+        if (null != salt)
+            return Base64.decodeBase64(salt);
+
+        PropertyMap map = store.getWritableProperties(CATEGORY, true);
+        byte[] bytes = generateRandomBytes(16);
+        map.put(SALT_KEY, Base64.encodeBase64String(bytes));
+        store.saveProperties(map);
+
+        return bytes;
+    }
+
+
+    private static final String MASTER_ENCRYPTION_KEY_PARAMETER_NAME = "MasterEncryptionKey";
+
+    private static @Nullable String getMasterEncryptionPassPhrase()
+    {
+        ServletContext context = ModuleLoader.getServletContext();
+
+        if (null == context)
+            throw new IllegalStateException("ServletContext is null");
+
+        String masterEncryptionKey = context.getInitParameter(MASTER_ENCRYPTION_KEY_PARAMETER_NAME);
+
+        // If master key is there (not null, not blank, not whitespace)
+        if (!StringUtils.isBlank(masterEncryptionKey) && !masterEncryptionKey.trim().equals("@@put master encryption key here@@"))
+            return masterEncryptionKey;
+        else
+            return null;
+    }
+
+
+    public static boolean isMasterEncryptionPassPhraseSpecified()
+    {
+        return null != getMasterEncryptionPassPhrase();
+    }
+
+
+    public interface Algorithm
+    {
+        public @NotNull byte[] encrypt(@NotNull String plainText);
+        public @NotNull String decrypt(@NotNull byte[] cipherText);
+    }
+
+
+//  Nice idea, but I don't think it's needed. TODO: Delete
+//    public static class MisconfiguredAlgorithm implements Algorithm
+//    {
+//        private final String _message;
+//
+//        public MisconfiguredAlgorithm(String message)
+//        {
+//            _message = message;
+//        }
+//
+//        @NotNull
+//        @Override
+//        public byte[] encrypt(@NotNull String plainText)
+//        {
+//            throw new ConfigurationException(_message);
+//        }
+//
+//        @NotNull
+//        @Override
+//        public String decrypt(@NotNull byte[] cipherText)
+//        {
+//            throw new ConfigurationException(_message);
+//        }
+//    }
+
+
+    /*
+        Wrapper class that makes it easier to encrypt/decrypt using AES and a pass phrase.
+
+        Encryption: AES
+        Mode of operation: CBC
+        Padding: PKCS #5
+        Initialization vector: random 16-byte IV, generated for each encryption
+
+        Key generation: PCKS #5 v2.0
+        Salt: Standard server salt
+        Iteration count: 65,536
+        Key length: specified in constructor parameter
+     */
+    public static class AES implements Algorithm
+    {
+        private final @Nullable SecretKeySpec _keySpec;
+
+        public AES(String passPhrase, int keyLength)
+        {
+            if (null == passPhrase)
+                throw new IllegalStateException("Pass phrase cannot be null");
+
+            // Turn pass phrase into a keyLength-bit key using using PCKS #5 v2.0, a standard salt and 65,536 iterations
+            try
+            {
+                byte[] key = generateSecretKeyFromPassPhrase(passPhrase, keyLength);
+                _keySpec = new SecretKeySpec(key, "AES");
+            }
+            catch (NoSuchAlgorithmException | InvalidKeySpecException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @NotNull
+        @Override
+        public byte[] encrypt(@NotNull String plainText)
+        {
+            try
+            {
+                // Generate a random, 16-byte initialization vector (IV) for use with this one encryption
+                byte[] iv = generateRandomBytes(16);
+
+                Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                cipher.init(Cipher.ENCRYPT_MODE, _keySpec, new IvParameterSpec(iv));
+
+                // First 16 bytes is the iv, remainder is the encrypted bytes
+                return ArrayUtils.addAll(iv, cipher.doFinal(plainText.getBytes("UTF-8")));
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @NotNull
+        @Override
+        public String decrypt(@NotNull byte[] cipherText)
+        {
+            try
+            {
+                // Initialization vector (IV) is the first 16 bytes
+                byte[] iv = ArrayUtils.subarray(cipherText, 0, 16);
+                byte[] encrypted = ArrayUtils.subarray(cipherText, 16, cipherText.length);
+                Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                cipher.init(Cipher.DECRYPT_MODE, _keySpec, new IvParameterSpec(iv));
+                return new String(cipher.doFinal(encrypted), "UTF-8");
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+
+    /*
+        Return an encryption algorithm that uses AES and generates a 128-bit key from the master encryption key.
+        All other encryption parameters are documented in AES().
+     */
+    public static Algorithm getAES128()
+    {
+        if (isMasterEncryptionPassPhraseSpecified())
+            return new AES(getMasterEncryptionPassPhrase(), 128);
+        else
+            throw new IllegalStateException("MasterEncryptionKey has not been specified in labkey.xml; this method should not be called");
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testEncryptionAlgorithms() throws NoSuchAlgorithmException
+        {
+            String passPhrase = "Here's my super secret pass phrase";
+
+            Algorithm aesPassPhrase = new AES(passPhrase, 128);
+
+            test(aesPassPhrase);
+
+            if (isMasterEncryptionPassPhraseSpecified())
+            {
+                Algorithm aes = getAES128();
+                test(aes);
+
+                // Test that static factory method matches this configuration
+                Algorithm aes2 = new AES(getMasterEncryptionPassPhrase(), 128);
+
+                test(aes, aes2);
+                test(aes2, aes);
+            }
+
+            if (Cipher.getMaxAllowedKeyLength("AES") >= 1024)
+            {
+                test(new AES(passPhrase, 256));
+                test(new AES(passPhrase, 512));
+                test(new AES(passPhrase, 1024));
+            }
+        }
+
+        private void test(Algorithm algorithm)
+        {
+            test(algorithm, algorithm);
+        }
+
+        private void test(Algorithm encryptAlgorithm, Algorithm decrytAlgorithm)
+        {
+            for (String test : new String[]{"foo", "bar", "this is some text I want to encrypt"})
+                assertEquals(test, decrytAlgorithm.decrypt(encryptAlgorithm.encrypt(test)));
+        }
+    }
+}
