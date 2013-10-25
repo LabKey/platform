@@ -23,6 +23,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.util.DateUtil;
 import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
@@ -102,37 +103,50 @@ public class StoredProcedureStep extends TransformTask
     public void doWork(RecordedAction action) throws PipelineJobException
     {
         log = getJob().getLogger();
-        procSchema = _meta.getTargetSchema().toString();
-        procName = _meta.getTargetQuery();
 
         try
         {
             log.debug("StoredProcedureStep.doWork called");
-            scope = DefaultSchema.get(_context.getUser(), _context.getContainer(), procSchema).getDbSchema().getScope();
             if (!executeProcedure())
-                getJob().setStatus("ERROR");
+                getJob().setStatus("ERROR"); // TODO: Should the status be set on exception as well?
             recordWork(action);
         }
         catch (Exception x)
         {
-            log.error(x);
+            throw new PipelineJobException(x);
         }
     }
 
-
     private boolean executeProcedure() throws SQLException
     {
-        getParametersFromDbMetadata();
+        if (!validateAndSetDbScope()) return false;
+        if (!getParametersFromDbMetadata()) return false;
         seedParameterValues();
         if (!callProcedure()) return false;
 
         return true;
     }
 
+    private boolean validateAndSetDbScope()
+    {
+        procSchema = _meta.getTargetSchema().toString();
+        procName = _meta.getTargetQuery();
+        QuerySchema schema = DefaultSchema.get(_context.getUser(), _context.getContainer(), procSchema);
+        if (schema == null || schema.getDbSchema() == null)
+        {
+            log.error("Schema '" + procSchema + "' does not exist or user does not have permission.");
+            return false;
+        }
+        else scope = schema.getDbSchema().getScope();
+        return true;
+    }
+
     private boolean callProcedure() throws SQLException
     {
+        int returnValue = 1;
+        long duration = 0;
         try (Connection conn = scope.getConnection();
-             CallableStatement stmt = conn.prepareCall(buildCallString()) )
+             CallableStatement stmt = conn.prepareCall(buildCallString()); )
         {
             if (hasReturn)
                 stmt.registerOutParameter("@return_status", Types.INTEGER);
@@ -176,22 +190,25 @@ public class StoredProcedureStep extends TransformTask
                 warn = warn.getNextWarning();
             }
 
-            int returnValue = readOutputParams(stmt, savedParamVals);
-            if (returnValue > 0)
-            {
-                log.error("Error: Sproc exited with return code " + returnValue);
-                return false;
-            }
-            log.info("Stored procedure " + procSchema + "." + procName + " completed in " + DateUtil.formatDuration(finish - start));
-            return true;
+            returnValue = readOutputParams(stmt, savedParamVals);
+            duration = finish - start;
         }
         catch (SQLException e)
         {
+           scope.closeConnection();
            throw new SQLException(e);
         }
+        if (hasReturn && returnValue > 0)
+        {
+            log.error("Error: Sproc exited with return code " + returnValue);
+            return false;
+        }
+        log.info("Stored procedure " + procSchema + "." + procName + " completed in " + DateUtil.formatDuration(duration));
+        return true;
+
     }
 
-    private void getParametersFromDbMetadata() throws SQLException //TODO: Check has @runId
+    private boolean getParametersFromDbMetadata() throws SQLException
     {
         try (Connection conn = scope.getConnection();
              ResultSet rs = conn.getMetaData().getProcedureColumns(scope.getDatabaseName(),procSchema, procName, null);)
@@ -215,6 +232,16 @@ public class StoredProcedureStep extends TransformTask
         catch (SQLException e)
         {
             throw new SQLException(e);
+        }
+
+        if (metadataParameters.containsKey("@transformRunId"))
+        {
+            return true;
+        }
+        else
+        {
+            log.error("Error: sproc must have @transformRunId input parameter");
+            return false;
         }
     }
 
@@ -269,8 +296,7 @@ public class StoredProcedureStep extends TransformTask
             }
         }
         // Now process the special parameters.
-        // TODO: Bomb if no @runId param
-        savedParamVals.put("@runId", getTransformJob().getTransformRunId());
+        savedParamVals.put("@transformRunId", getTransformJob().getTransformRunId());
         if (savedParamVals.containsKey("@containerId"))
             savedParamVals.put("@containerId", _context.getContainer().getEntityId());
 
