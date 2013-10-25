@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.rules.ExpectedException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailPref;
 import org.labkey.api.notification.EmailPrefFilter;
@@ -132,7 +133,7 @@ public class EmailServiceImpl implements EmailService.I
     @Override
     public void setEmailPref(User user, Container container, EmailPref pref, String value)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(user, container, EmailService.EMAIL_PREF_CATEGORY, true);
+        PropertyMap props = PropertyManager.getWritableProperties(user, container, EmailService.EMAIL_PREF_CATEGORY, true);
         props.put(pref.getId(), value);
 
         PropertyManager.saveProperties(props);
@@ -183,7 +184,7 @@ public class EmailServiceImpl implements EmailService.I
     @Override
     public void setDefaultEmailPref(Container container, EmailPref pref, String value)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container, EmailService.EMAIL_PREF_CATEGORY, true);
+        PropertyMap props = PropertyManager.getWritableProperties(container, EmailService.EMAIL_PREF_CATEGORY, true);
         props.put(pref.getId(), value);
 
         PropertyManager.saveProperties(props);

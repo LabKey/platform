@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FilteredTable;
@@ -114,7 +115,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
 
     private class PropertyMapWrapper
     {
-        private PropertyManager.PropertyMap _typeNameIdMapWritable = null;
+        private PropertyMap _typeNameIdMapWritable = null;
         private Map<String, String> _typeNameIdMap = null;
         private Container _container = null;
 
@@ -168,7 +169,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
     {
         super(tinfo, schema);
 
-        Logger.getInstance(BaseSpecimenPivotTable.class).debug("creating specimen pivot\n" +
+        Logger.getLogger(BaseSpecimenPivotTable.class).debug("creating specimen pivot\n" +
                 "SCHEMA=" + schema.getName() + " " + schema.getClass().getSimpleName()+"@"+System.identityHashCode(schema) + "\n" +
                 "TABLE=" + tinfo.getName() + " " + this.getClass().getSimpleName() + "@" + System.identityHashCode(this),
                 new Throwable("stack trace")
@@ -217,7 +218,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
     }
     
     /**
-     * Returns a map of primary type id's to labels
+     * Returns a map of primary type ids to labels
      */
     protected Map<Integer, NameLabelPair> getPrimaryTypeMap(Container container)
     {
@@ -266,7 +267,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
     }
 
     /**
-     * Returns a map of derivative type id's to labels
+     * Returns a map of derivative type ids to labels
      */
     protected Map<Integer, NameLabelPair> getDerivativeTypeMap(Container container)
     {

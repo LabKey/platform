@@ -68,6 +68,7 @@ import org.labkey.api.script.RhinoService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.Priority;
+import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.NestedGroupsTest;
@@ -743,10 +744,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 SimpleFilter.InClauseTestCase.class,
                 AliasManager.TestCase.class,
                 AtomicDatabaseInteger.TestCase.class,
-                DbSequenceManager.TestCase.class
-                //,RateLimiter.TestCase.class
-                , StatementUtils.TestCase.class,
-                GroupConcatInstallationManager.TestCase.class
+                DbSequenceManager.TestCase.class,
+                //RateLimiter.TestCase.class,
+                StatementUtils.TestCase.class,
+                GroupConcatInstallationManager.TestCase.class,
+                Encryption.TestCase.class
         ));
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());
