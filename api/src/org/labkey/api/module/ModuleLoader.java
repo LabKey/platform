@@ -276,7 +276,7 @@ public class ModuleLoader implements Filter
 
         //sort the modules by dependencies
         ModuleDependencySorter sorter = new ModuleDependencySorter();
-        _modules = Collections.unmodifiableList(sorter.sortModulesByDependencies(_modules, _resourceLoaders));
+        _modules = sorter.sortModulesByDependencies(_modules, _resourceLoaders);
 
         for (Module module : _modules)
         {
