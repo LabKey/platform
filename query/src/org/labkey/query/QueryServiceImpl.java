@@ -1675,6 +1675,15 @@ public class QueryServiceImpl extends QueryService
         // Check incoming columns to ensure they come from table
         assert Table.checkAllColumns(table, selectColumns, "getSelectSQL() selectColumns", true);
 
+        // Create a default sort before ensuring required columns
+        if ((sort == null || sort.getSortList().size() == 0) &&
+                (maxRows > 0 || offset > 0 || Table.NO_ROWS == maxRows || forceSort) &&
+                // Don't add a sort if we're running a custom query and it has its own ORDER BY clause
+                (!(table instanceof QueryTableInfo) || !((QueryTableInfo)table).hasSort()))
+        {
+            sort = createDefaultSort(selectColumns);
+        }
+
         SqlDialect dialect = table.getSqlDialect();
         Map<String, SQLFragment> joins = new LinkedHashMap<>();
         List<ColumnInfo> allColumns = new ArrayList<>(selectColumns);
@@ -1758,14 +1767,6 @@ public class QueryServiceImpl extends QueryService
 		if (filter != null)
 		{
 			filterFrag = filter.getSQLFragment(dialect, columnMap);
-		}
-
-		if ((sort == null || sort.getSortList().size() == 0) &&
-            (maxRows > 0 || offset > 0 || Table.NO_ROWS == maxRows || forceSort) &&
-            // Don't add a sort if we're running a custom query and it has its own ORDER BY clause
-            (!(table instanceof QueryTableInfo) || !((QueryTableInfo)table).hasSort()))
-		{
-			sort = createDefaultSort(selectColumns);
 		}
 
         String orderBy = null;
