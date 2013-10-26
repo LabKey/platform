@@ -255,7 +255,7 @@ Ext4.define('File.panel.Browser', {
             actionsConfig : [],
             actionGroups: {},
             fileProps: [],
-            importDataEnabled: true ,
+            importDataEnabled: true
         });
 
         //
@@ -1631,6 +1631,7 @@ Ext4.define('File.panel.Browser', {
 
         Ext4.apply(config, {
             xtype   : 'grid',
+            cls     : 'labkey-filecontent-grid',
             store   : this.getFileStore(),
             columns : this.initGridColumns(),
             listeners : {
@@ -2242,7 +2243,8 @@ Ext4.define('File.panel.Browser', {
         Ext4.create('Ext.Window', {
             title : 'Edit File Properties',
             id : 'editFilePropsWin',
-            height : 300,
+            cls : 'data-window',
+            //height : 300,
             width : 400,
             items : Ext4.create('File.panel.EditCustomFileProps', {
                 extraColumns : this.getExtraColumnNames(),

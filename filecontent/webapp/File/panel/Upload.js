@@ -137,6 +137,7 @@ Ext4.define('File.panel.Upload', {
             deferredRender : true,
             activeItem : 0,
             border : false,
+            cls : 'single-upload-panel',
             items : [this.getSingleUpload(), this.getMultiUpload()]
         });
 
@@ -476,6 +477,7 @@ Ext4.define('File.panel.Upload', {
                     url : overwrite ? uri + '?overwrite=t' : uri, // TODO: This is not correct
                     name : name,
                     success : function() {
+                        form.reset();
                         this.getEl().unmask();
                         this.fireEvent('transfercomplete');
                     },

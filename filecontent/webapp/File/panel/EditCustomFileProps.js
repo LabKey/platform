@@ -16,6 +16,8 @@ Ext4.define('File.panel.EditCustomFileProps', {
             fileProps : [],
             formPages : [],
             displayNum : 0,
+            border : false,
+            padding : 10,
             height : 200
         });
 
@@ -161,7 +163,8 @@ Ext4.define('File.panel.EditCustomFileProps', {
                     {
                         Ext4.getCmp(this.winId).close();
                     },
-                    anchor : 'right'
+                    anchor : 'right',
+                    scope : this
                 }
         );
         return buttons;
