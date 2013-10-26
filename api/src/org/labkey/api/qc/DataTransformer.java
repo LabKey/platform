@@ -16,15 +16,19 @@
 
 package org.labkey.api.qc;
 
-import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayRunUploadContext;
 
 /**
+ * Takes assay data and runs it through the configured transform scripts. Each script may transform it into a new
+ * representation, or simply validate that it meets whatever the custom criteria are.
+ *
  * User: klum
  * Date: Sep 22, 2009
  */
-public interface DataTransformer
+public interface DataTransformer<AssayType extends AssayProvider>
 {
-    TransformResult transformAndValidate(AssayRunUploadContext context, ExpRun run) throws ValidationException;
+    TransformResult transformAndValidate(AssayRunUploadContext<AssayType> context, ExpRun run) throws ValidationException;
 }

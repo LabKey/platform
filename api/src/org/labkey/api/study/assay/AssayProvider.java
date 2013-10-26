@@ -54,9 +54,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * An AssayProvider is the main implementation point for participanting in the overall assay framework. It provides
+ * UI, data parsing, configuration, etc for distinct types of assay data. A full, custom AssayProvider implementation
+ * will rely on a variety of other implementation classes, but the AssayProvider is the coordinating point that
+ * knows what those other classes are. A typical implementation approach is mix and match with custom and standard
+ * implementations to hook in assay-specific customizations.
+ *
  * User: brittp
  * Date: Jul 11, 2007
- * Time: 9:59:49 AM
  */
 public interface AssayProvider extends Handler<ExpProtocol>
 {
@@ -73,7 +78,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     AssayProviderSchema createProviderSchema(User user, Container container, Container targetStudy);
 
-    /** Get a schema for Batch, Run, Results, and any additional tables. */
+    /** Get a schema that includes queries like Batch, Run, Results, and any additional tables. */
     AssayProtocolSchema createProtocolSchema(User user, Container container, @NotNull ExpProtocol protocol, @Nullable Container targetStudy);
 
     Domain getBatchDomain(ExpProtocol protocol);
@@ -88,7 +93,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     String getName();
 
-    /** Get the root resource name.  Usually this is the same as the AssayProvider name, but may be shorter or not contain special characters. */
+    /** Get the root resource name.  Usually this is the same as the AssayProvider name, but may be shorter
+     * or omit special characters. */
     String getResourceName();
 
     @NotNull
@@ -96,8 +102,16 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     ExpProtocol createAssayDefinition(User user, Container container, String name, String description) throws ExperimentException;
 
+    /**
+     * Creates the default set of domains for a new assay definition, pre-populated with their default
+     * sets of fields. This usually includes at least batch and run domains, and may include multiple result-
+     * level domains as well. The domains are unsaved when they are returned.
+     */
     List<Pair<Domain, Map<DomainProperty, Object>>> createDefaultDomains(Container c, User user);
 
+    /** @return a view to plug into the import UI that describes the expected data files.
+     * Reasonable things to include might be things like the file type (Excel/TSV/XML), layout (column headers/XSD), etc
+     */
     HttpView getDataDescriptionView(AssayRunUploadForm form);
 
     Pair<ExpProtocol.AssayDomainTypes, DomainProperty> findTargetStudyProperty(ExpProtocol protocol);
@@ -120,6 +134,11 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     boolean isFileLinkPropertyAllowed(ExpProtocol protocol, Domain domain);
 
+    /**
+     * Indicates whether a property is removable in the assay designers.
+     * Some assay providers require certain properties to be present in order
+     * to provide their baseline functionality
+     */
     boolean isMandatoryDomainProperty(Domain domain, String propertyName);
 
     boolean allowDefaultValues(Domain domain);
@@ -163,11 +182,17 @@ public interface AssayProvider extends Handler<ExpProtocol>
      */
     boolean hasUsefulDetailsPage();
 
+    /**
+     * Gets the provider that recognizes data files of the appropriate type on the server's file system so that the
+     * user can import files that have already been transferred to the server.
+     */
+    @Nullable
     PipelineProvider getPipelineProvider();
 
     /** Upgrade from property store to hard table */
     void upgradeAssayDefinitions(User user, ExpProtocol protocol, double targetVersion) throws SQLException;
 
+    /** @return the links to be shown in the header of standard assay views (run and result data grids, for example) */
     List<NavTree> getHeaderLinks(ViewContext viewContext, ExpProtocol protocol, ContainerFilter containerFilter);
 
     public enum Scope {
@@ -180,24 +205,28 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * File based QC and analysis scripts can be added to a protocol and invoked when the validate
      * method is called. Set to an empty list if no scripts exist.
      */
-    void setValidationAndAnalysisScripts(ExpProtocol protocol, List<File> scripts) throws ExperimentException;
+    void setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<File> scripts) throws ExperimentException;
 
+    @NotNull
     List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope);
 
     void setSaveScriptFiles(ExpProtocol protocol, boolean save) throws ExperimentException;
     boolean isSaveScriptFiles(ExpProtocol protocol);
 
+    /** Whether the provider is capable of letting users edit existing result rows */
     boolean supportsEditableResults();
     void setEditableResults(ExpProtocol protocol, boolean editable) throws ExperimentException;
     boolean isEditableResults(ExpProtocol protocol);
     void setEditableRuns(ExpProtocol protocol, boolean editable) throws ExperimentException;
     boolean isEditableRuns(ExpProtocol protocol);
 
+    /** Whether the provider is capable of doing data import in the background using a pipeline job */
     boolean supportsBackgroundUpload();
-    /** What level of re run for assay data, if any, is supported */
-    ReRunSupport getReRunSupport();
     void setBackgroundUpload(ExpProtocol protocol, boolean background) throws ExperimentException;
     boolean isBackgroundUpload(ExpProtocol protocol);
+
+    /** What level of re run for assay data, if any, is supported */
+    ReRunSupport getReRunSupport();
 
     /**
      * @return the data type that this run creates for its analyzed results
@@ -226,7 +255,11 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /**@ return the module in which this assay provider is declared */
     Module getDeclaringModule();
 
-    AssaySaveHandler getSaveHandler();
+    /**
+     * Supplies the handler that responds to API-based requests to insert or update assay data. Null if the API-based
+     * manipulation is not supported
+     */
+    @Nullable AssaySaveHandler getSaveHandler();
 
     AssayRunUploadContext createRunUploadContext(ViewContext context, int protocolId, JSONObject jsonObject, List<Map<String, Object>> uploadedData);
 }

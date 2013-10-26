@@ -41,16 +41,20 @@ import java.util.HashMap;
 import java.util.Set;
 
 /**
+ * Runs the selected data file(s) through the assay design's transform scripts. Writes the data to a standard TSV
+ * format when possible to make it easier for the scripts to consume. Loads the script's output into a TransformResult
+ * so it can be consumed/imported by other code.
+ *
  * User: klum
  * Date: Sep 22, 2009
  */
-public class DefaultDataTransformer implements DataTransformer
+public class DefaultDataTransformer implements DataTransformer<AssayProvider>
 {
     public static final String RUN_INFO_REPLACEMENT = "runInfo";
     public static final String SRC_DIR_REPLACEMENT = "srcDirectory";
     public static final String R_JESSIONID_REPLACEMENT = "rLabkeySessionId";
 
-    public TransformResult transformAndValidate(AssayRunUploadContext context, ExpRun run) throws ValidationException
+    public TransformResult transformAndValidate(AssayRunUploadContext<AssayProvider> context, ExpRun run) throws ValidationException
     {
         boolean isDefault = isDefault(context.getProtocol());
         TransformResult result = DefaultTransformResult.createEmptyResult();

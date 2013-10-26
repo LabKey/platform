@@ -24,6 +24,11 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.Pair;
 
 /**
+ * An AssayRunCreator does the actual work of constructing an assay run and saving it to the database. It gets
+ * data about the run to be created from a AssayRunUploadContext and translates it into objects in the Experiment
+ * module and its schema. The work of actually importing from a data file is typically handled by an
+ * ExperimentDataHandler.
+ *
  * User: jeckels
  * Date: Oct 12, 2011
  */

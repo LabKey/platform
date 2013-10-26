@@ -1060,7 +1060,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     private static final String SCRIPT_PATH_DELIMETER = "|";
 
     @Override
-    public void setValidationAndAnalysisScripts(ExpProtocol protocol, List<File> scripts) throws ExperimentException
+    public void setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<File> scripts) throws ExperimentException
     {
         Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
         String propertyURI = ScriptType.TRANSFORM.getPropertyURI(protocol);
@@ -1121,6 +1121,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
     }
 
+    @NotNull
     @Override
     public List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope)
     {
@@ -1224,7 +1225,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return Boolean.TRUE.equals(getBooleanProperty(protocol, SAVE_SCRIPT_FILES_PROPERTY_SUFFIX));
     }
 
-    @Override
+    @Override @Nullable
     public AssaySaveHandler getSaveHandler()
     {
         return null;

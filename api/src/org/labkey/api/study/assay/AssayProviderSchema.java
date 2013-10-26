@@ -29,7 +29,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.module.Module;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
@@ -37,7 +36,6 @@ import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +43,10 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
+ * Child schema asociated with a particular assay provider. Typical implementations will expose separate child
+ * schemas for each of their assay designs that are in scope. Shared value lists may also be directly exposed a
+ * separate queries.
+ *
  * User: kevink
  * Date: 10/13/12
  */
@@ -93,8 +95,7 @@ public class AssayProviderSchema extends AssaySchema
     }
 
     /**
-     * Get ExpProtocols for this AssayProvider.
-     * @return
+     * Get all protocols (assay designs) that are in scope for this AssayProvider.
      */
     @NotNull
     public Collection<ExpProtocol> getProtocols()
@@ -120,12 +121,14 @@ public class AssayProviderSchema extends AssaySchema
     @Override
     public TableInfo createTable(String name)
     {
+        // Default is to not provide any queries directly
         return null;
     }
 
     @Override
     public Set<String> getTableNames()
     {
+        // Default is to not provide any queries directly
         return Collections.emptySet();
     }
 
@@ -135,13 +138,7 @@ public class AssayProviderSchema extends AssaySchema
         if (_restricted)
             return Collections.emptySet();
 
-        Set<String> names = new TreeSet<>(new Comparator<String>()
-        {
-            public int compare(String o1, String o2)
-            {
-                return o1.compareToIgnoreCase(o2);
-            }
-        });
+        Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         names.addAll(super.getSchemaNames());
         for (ExpProtocol protocol : getProtocols())
             names.add(protocol.getName());

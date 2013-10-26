@@ -23,6 +23,10 @@ import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.util.Pair;
 
 /**
+ * Captures information about where assay implementations store various fields within their schema. For example,
+ * different assays might have different column names for the same conceptual value, or store values at the run level
+ * instead of the batch level.
+ *
  * User: jeckels
  * Date: May 11, 2009
  */

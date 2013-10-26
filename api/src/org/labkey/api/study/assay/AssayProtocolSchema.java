@@ -84,7 +84,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A child schema of AssayProviderSchema. Exposes tables for Runs, Batches, etc.
+ * A child schema of AssayProviderSchema. Scoped to a single assay design (AKA ExpProtocol).
+ * Exposes tables for Runs, Batches, etc.
  * User: kevink
  * Date: 9/15/12
  */
