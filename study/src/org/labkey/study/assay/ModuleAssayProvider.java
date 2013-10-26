@@ -23,14 +23,20 @@ import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocol.AssayDomainTypes;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.IAssayDomainType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.FileResource;
@@ -40,25 +46,42 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.study.assay.AssayPipelineProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssaySaveHandler;
-import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.AssayTableMetadata;
-import org.labkey.api.study.assay.AssayPipelineProvider;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
-import org.labkey.api.pipeline.PipelineProvider;
+import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileType;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
+import org.labkey.study.StudyModule;
 import org.labkey.study.assay.xml.DomainDocument;
 import org.labkey.study.assay.xml.ProviderType;
 import org.labkey.study.controllers.assay.AssayController;
-import org.labkey.study.StudyModule;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.script.ScriptEngineManager;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: kevink
@@ -187,7 +210,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
             }
             catch(Exception e)
             {
-                throw getWrappedModuleAssayException("");
+                throw getWrappedModuleAssayException("Unable to create AssaySaveHandler of type " + saveHandlerClass.getName(), e);
             }
         }
         else
@@ -272,11 +295,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 throw getWrappedModuleAssayException("Unable to parse " + domainFile + ": " + sb.toString());
             }
         }
-        catch (IOException e)
-        {
-            throw getWrappedModuleAssayException("Unable to parse " + domainFile + ": " + e.toString(), e);
-        }
-        catch (XmlException e)
+        catch (IOException | XmlException e)
         {
             throw getWrappedModuleAssayException("Unable to parse " + domainFile + ": " + e.toString(), e);
         }
@@ -572,6 +591,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return true;
     }
 
+    @NotNull
     @Override
     public List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope)
     {
@@ -648,7 +668,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return getWrappedModuleAssayException(message, null);
     }
 
-    private ModuleAssayException getWrappedModuleAssayException(String message, Throwable cause)
+    private ModuleAssayException getWrappedModuleAssayException(String message, @Nullable Throwable cause)
     {
         ModuleAssayException wrapped = (cause != null) ?
                 new ModuleAssayException(message, cause) :

@@ -54,26 +54,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.query.AliasManager;
-import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.CustomViewChangeListener;
-import org.labkey.api.query.CustomViewInfo;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.MetadataException;
-import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryChangeListener;
-import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryException;
-import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.SchemaKey;
-import org.labkey.api.query.SimpleUserSchema;
-import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -1660,7 +1641,23 @@ public class QueryServiceImpl extends QueryService
         bindNamedParameters(sql, parameters);
         validateNamedParameters(sql);
 		ResultSet rs = new SqlSelector(table.getSchema(), sql).getResultSet(cache, cache);
-        return new ResultsImpl(rs, columns);       // TODO: If ResultsImpl() throws, rs is never closed
+
+        // Keep track of whether we've successfully created the ResultSetImpl to return. If not, we should
+        // close the underlying ResultSet before returning since it won't be accessible anywhere else
+        boolean success = false;
+        try
+        {
+            ResultsImpl result = new ResultsImpl(rs, columns);
+            success = true;
+            return result;
+        }
+        finally
+        {
+            if (!success)
+            {
+                ResultSetUtil.close(rs);
+            }
+        }
     }
 
 
