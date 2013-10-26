@@ -120,6 +120,27 @@ Ext4.define('File.system.Abstract', {
             return a + b.substring(1);
     },
 
+    getDirectoryName : function(dirPath) {
+        var sep = this.separator, val = '';
+        var _dir = dirPath.split(sep);
+
+        if (_dir.length == 1) {
+            // cases:
+            // did not contain 'sep'
+            // did not contain any values == ''
+            val = _dir[0];
+        }
+        else if (_dir.length > 1) {
+            // check ending on 'sep'
+            val = _dir[_dir.length-1];
+            if (val == "") {
+                val = _dir[_dir.length-2];
+            }
+        }
+
+        return val;
+    },
+
     /**
      * @ignore
      * @param config

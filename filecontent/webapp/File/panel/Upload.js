@@ -330,7 +330,7 @@ Ext4.define('File.panel.Upload', {
 
             this.transferApplet.onReady(function(){
                 // Update applet state.
-                this.updateAppletState(this.currentDirectory);
+                this.updateAppletState(this.getWorkingDirectory());
                 this.on('cwd', this.updateAppletState);
 
             }, this);
@@ -353,7 +353,7 @@ Ext4.define('File.panel.Upload', {
 
         try {
             this.transferApplet.changeWorkingDirectory(record.data.id);
-            if(canWrite || canMkdir){
+            if (canWrite || canMkdir) {
                 this.transferApplet.setEnabled(true);
                 this.transferApplet.setAllowDirectoryUpload(canMkdir);
                 // I think setText is not used anymore. Doesnt seem to actually work on old filebrowser.
@@ -369,7 +369,7 @@ Ext4.define('File.panel.Upload', {
     },
 
     getAppletStatusBar: function(){
-        if(this.appletStatusBar){
+        if (this.appletStatusBar) {
             return this.appletStatusBar;
         }
 
@@ -452,10 +452,11 @@ Ext4.define('File.panel.Upload', {
         this.lastSummary.file = file;
     },
 
-    submitFileUploadForm : function(fb, v)
-    {
-        if (this.currentDirectory)
-        {
+    submitFileUploadForm : function(fb, v) {
+
+        var cwd = this.getWorkingDirectory();
+
+        if (cwd) {
             var form = this.singleUpload.getForm();
             var path = this.fileField.getValue();
             var i = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
@@ -464,14 +465,15 @@ Ext4.define('File.panel.Upload', {
                 Ext4.Msg.alert('Error', 'No file selected. Please choose one or more files to upload.');
                 return;
             }
-//            var target = this.concatPaths(this.currentDirectory.data.path,name);
+
             var file = false; // TODO: Check if the file already exists
+            var uri = this.fileSystem.getURI(cwd);
 
             this.doPost = function(overwrite) {
                 var options = {
                     method:'POST',
                     form : form,
-                    url :overwrite ? this.currentDirectory.data.uri + '?overwrite=t' : this.currentDirectory.data.uri, // TODO: This is not correct
+                    url : overwrite ? uri + '?overwrite=t' : uri, // TODO: This is not correct
                     name : name,
                     success : function() {
                         this.getEl().unmask();
@@ -494,21 +496,29 @@ Ext4.define('File.panel.Upload', {
                 this.getEl().mask("Uploading " + name + '...');
             };
 
-            if (file)
-            {
+            if (file) {
                 Ext4.Msg.confirm('File: ' + name + ' already exists', 'There is already a file with the same name in this location, do you want to replace it? ', function(btn){
-                    if (btn == 'yes')
+                    if (btn == 'yes') {
                         this.doPost(true);
+                    }
                 }, this);
             }
-            else
+            else {
                 this.doPost(false);
+            }
         }
     },
 
-    changeWorkingDirectory : function(path, dirModel) {
-        this.currentDirectory = dirModel;
-        this.fireEvent('cwd', this.currentDirectory);
+    changeWorkingDirectory : function(path, model, cwd) {
+        this.workingDirectory = cwd;
+        this.fireEvent('cwd', this.getWorkingDirectory());
+    },
+
+    getWorkingDirectory : function() {
+        if (this.workingDirectory) {
+            return this.workingDirectory;
+        }
+        console.error('Upload: working directory not set.');
     }
 });
 

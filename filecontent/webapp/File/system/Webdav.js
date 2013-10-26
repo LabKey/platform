@@ -10,92 +10,98 @@ Ext4.define('File.system.Webdav', {
     constructor : function(config) {
 
         Ext4.apply(this, config, {
-            baseUrl: LABKEY.contextPath + "/_webdav",
-            rootPath: "/",
-            rootName : (LABKEY.serverName || "LabKey Server"),
-            fileLink: "/@files"
+            containerPath: LABKEY.ActionURL.getContainer(),
+            rootPath: LABKEY.contextPath + '/_webdav/',
+            rootName: (LABKEY.serverName || "LabKey Server")
         });
         this.ready = false;
         this.initialConfig = config;
 
+        // '/labkey/_webdav'
+        this.contextUrl = LABKEY.contextPath + '/_webdav';
+
+        // '/home/@files' -- a stripped version of the rootPath
+        this.baseUrl = LABKEY.ActionURL.decodePath(this.rootPath.replace(this.contextUrl, ''));
+
+        this.offsetUrl = '/';
+
+        if (this.rootOffset) {
+            if (this.rootOffset.indexOf('/_webdav') == 0) {
+                this.rootOffset = this.rootOffset.replace('/_webdav', '');
+            }
+            this.offsetUrl = LABKEY.ActionURL.decodePath(this.rootOffset.replace(this.baseUrl, ''));
+        }
+//
+//        console.log('contextUrl:', this.contextUrl);
+//        console.log('baseUrl:', this.baseUrl);
+//        console.log('offsetUrl:', this.offsetUrl);
         this.callParent([config]);
 
-        // TODO Implement rest of constructor
         this.init(config);
     },
 
+    getURI : function(url) {
+        return this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.concatPaths(this.contextUrl, url));
+    },
+
     getAbsoluteBaseURL : function() {
-        return this.concatPaths(LABKEY.ActionURL.getBaseURL(), this.getBaseURL().replace(LABKEY.contextPath, ''));
+        return this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.getBaseURL().replace(LABKEY.contextPath, ''));
     },
 
     /**
-     * Returns the base relative URL which includes the context path and the _webdav controller in this case
-     * e.g. "/labkey/_webdav/"
+     * Returns the base relative URL which is after the context URL. The 'root' for this instance
+     * e.g. "/home/@files"
      */
     getBaseURL : function() {
         return this.baseUrl;
     },
 
+    getContextBaseURL : function() {
+        return this.concatPaths(this.contextUrl, this.baseUrl);
+    },
+
+    /**
+     * Returns the base relative offset URL which is after the base URL. Defaults to '/'
+     * e.g. "/" or "/firstSubFolder"
+     */
     getOffsetURL : function() {
         return this.offsetUrl;
     },
 
     getURL : function() {
-        return this.concatPaths(this.baseUrl, this.offsetUrl);
+        return this.concatPaths(this.contextUrl, this.concatPaths(this.baseUrl, this.offsetUrl));
     },
 
     init : function(config) {
 
         Ext4.applyIf(this, {
-            containerPath : LABKEY.ActionURL.getContainer(),
-            fileLink : '',
-            filePath : ''
+            containerPath : LABKEY.ActionURL.getContainer()
         });
 
-        if (!config.baseUrl) {
-            this.baseUrl = this.concatPaths(LABKEY.contextPath + "/_webdav");
-//            this.baseUrl = this.concatPaths(this.baseUrl, encodeURI(this.filePath));
-//            this.baseUrl = this.concatPaths(this.baseUrl, encodeURI(this.fileLink));
-        }
-
-        if (config.offsetUrl) {
-            this.offsetUrl = config.offsetUrl.replace('/_webdav', '');
-        }
+//        this.baseUrl = this.rootPath;
+//        this.offsetUrl = this.rootOffset ? this.rootOffset.replace('/_webdav/', '') : '/';
+//
+//        this.webdavBase = this.concatPaths(LABKEY.contextPath, '/_webdav');
+//        this.webdavOffset = this.baseUrl.replace(this.webdavBase, '');
 
         var prefix = this.concatPaths(this.baseUrl, this.rootPath);
         if (prefix.length > 0 && prefix.charAt(prefix.length-1) == this.separator)
             prefix = prefix.substring(0,prefix.length-1);
         this.prefixUrl = prefix;
-        this.pendingPropfind = {};
-
-        // TODO: Apply this to the 'path' in the model fields
-        var prefixDecode  = decodeURIComponent(prefix);
-
-//        if (config.extraPropNames && config.extraPropNames.length)
-//            this.propNames = this.propNames.concat(config.extraPropNames);
-
-        // TODO: Additonal params on model?
-//        if (config.extraDataFields && config.extraDataFields.length)
-//            recordCfg = recordCfg.concat(config.extraDataFields);
     },
 
     getModel : function(type) {
-        if (type == 'xml')
-            return 'File.data.webdav.XMLResponse';
-        return 'File.data.webdav.JSONReponse';
+        return (type == 'xml' ? 'File.data.webdav.XMLResponse' : 'File.data.webdav.JSONReponse');
     },
 
-    getProxyCfg : function(url, type) {
-        if (type == 'xml') {
-            return this.getXMLProxyCfg(url);
-        }
-        return this.getJsonProxyCfg(url);
+    getProxyCfg : function(type) {
+        return (type == 'xml' ? this.getXMLProxyCfg() : this.getJsonProxyCfg());
     },
 
-    getJsonProxyCfg : function(url) {
+    getJsonProxyCfg : function() {
         return {
             type : 'ajax',
-            url  : url,
+            url  : this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.getURL()),
             extraParams : {
                 method : 'JSON'
             },
@@ -106,10 +112,10 @@ Ext4.define('File.system.Webdav', {
         };
     },
 
-    getXMLProxyCfg : function(url) {
+    getXMLProxyCfg : function() {
         return {
             type : 'webdav',
-            url  : url,
+            url  : this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.getContextBaseURL()),
             reader : {
                 type : 'xml',
                 root : 'multistatus',
@@ -159,7 +165,7 @@ Ext4.define('File.system.Webdav', {
 
     _check : function(record, option)
     {
-        if (record.data && record.data.options)
+        if (record && record.data && record.data.options)
         {
             if (record.data.options[option])
             {
@@ -356,8 +362,8 @@ Ext4.define('File.system.Webdav', {
     {
         config.scope  = config.scope || this;
 
-        var resourcePath = this.concatPaths(this.prefixUrl, LABKEY.ActionURL.encodePath(config.source));
-        var destinationPath = this.concatPaths(this.prefixUrl, LABKEY.ActionURL.encodePath(config.destination));
+        var resourcePath = this.getURI(config.source);
+        var destinationPath = this.getURI(config.destination);
         var headers = {
             Destination: destinationPath
         };
@@ -436,11 +442,11 @@ Ext4.define('File.system.Webdav', {
     renamePath : function(config)
     {
         //allow user to submit either full path for rename, or just the new filename
-        if (config.source.indexOf(this.separator) > -1 && config.destination.indexOf(this.separator) == -1){
+        if (config.source.indexOf(this.separator) > -1 && config.destination.indexOf(this.separator) == -1) {
             config.destination = this.concatPaths(this.getParentPath(config.source), config.destination);
         }
 
-        this.movePath({
+        var _move = {
             source: config.source,
             destination: config.destination,
             isFile: config.isFile,
@@ -448,7 +454,9 @@ Ext4.define('File.system.Webdav', {
             failure: config.failure,
             scope: config.scope,
             overwrite: config.overwrite
-        });
+        };
+
+        this.movePath(_move);
     },
 
     /**

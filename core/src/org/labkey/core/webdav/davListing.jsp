@@ -48,9 +48,9 @@
         });
 
         var fileSystem = Ext4.create('File.system.Webdav', {
-            baseUrl  : <%=q(Path.parse(request.getContextPath()).append(listpage.root).encode("/",null))%>,
-            offsetUrl: <%=q(listpage.resource.getPath().toString())%>,
-            rootName : <%=q(app.getServerName())%>
+            rootPath: <%=q(Path.parse(request.getContextPath()).append(listpage.root).encode("/",null))%>,
+            rootOffset: <%=q(listpage.resource.getPath().toString())%>,
+            rootName: <%=q(app.getServerName())%>
         });
 
         Ext4.create('Ext.container.Viewport', {

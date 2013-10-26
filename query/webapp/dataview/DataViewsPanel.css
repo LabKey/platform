@@ -143,16 +143,32 @@ div.icon img
 }
 
 /* Part of Browser.js -- migrate if necessary */
-table.fb-details {
+.fbrowser .fbody {
+    background-color: #d3d3d3;
+}
+
+.fbrowser .x4-toolbar-default {
+    border-color: #b4b4b4;
+}
+
+.fbrowser .x4-grid-header-ct {
+    border-collapse: collapse;
+}
+
+.fbrowser .x4-grid-body {
+    border-collapse: collapse;
+    border-width: 0;
+}
+
+.fbrowser table.fb-details {
     margin: 5px 40px;
 }
 
-table.fb-details th {
+.fbrowser table.fb-details th {
     text-align: right;
     color: #404040;
 }
 
-table.fb-details td {
+.fbrowser table.fb-details td {
     padding-left: 5px;
 }
-
