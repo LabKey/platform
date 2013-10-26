@@ -24,10 +24,9 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
 <%!
-
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
@@ -36,38 +35,42 @@
   }
 %>
 <%
-    ViewContext context = HttpView.currentContext();
-    FilesWebPart.FilesForm bean = (FilesWebPart.FilesForm)HttpView.currentModel();
+    JspView<FilesWebPart.FilesForm> me = (JspView) HttpView.currentView();
+    FilesWebPart.FilesForm bean = me.getModelBean();
 
+    ViewContext context = me.getViewContext();
     Container c = context.getContainer();
 
     ActionURL projConfig = urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
     int height = bean.getSize();
+    if(height == 0)
+        height = 350;
+
+    if (!bean.isEnabled())
+    {
 %>
-
-<%  if (!bean.isEnabled()) { %>
-
     File sharing has been disabled for this project. Sharing can be configured from the <a href="<%=projConfig%>">project settings</a> view.
-
-<%  } else if (!bean.isRootValid()) { %>
-
+<%
+    }
+    else if (!bean.isRootValid())
+    {
+%>
     <span class="labkey-error">
         The file root for this folder is invalid. It may not exist or may have been configured incorrectly.<br>
-        <%=c.hasPermission(context.getUser(), AdminPermission.class) ? "File roots can be configured from the <a href=\"" + projConfig + "\">project settings</a> view." : "Contact your administrator to address this problem."%>
+        <%=text(c.hasPermission(context.getUser(), AdminPermission.class) ? "File roots can be configured from the <a href=\"" + projConfig + "\">project settings</a> view." : "Contact your administrator to address this problem.")%>
     </span>
-
-<%  } %>
-
-<!-- Set a fixed height for this div so that the whole page doesn't relayout when the file browser renders into it -->
-<div style="height: <%= height %>px" id="<%=h(bean.getContentId())%>"></div>
-
-<%  if (bean.isEnabled() && bean.isRootValid()) { %>
-
-<script type="text/javascript">
+<%
+    }
+    else
+    {
+%>
+    <!-- Set a fixed height for this div so that the whole page doesn't relayout when the file browser renders into it -->
+    <div style="height: <%= height %>px" id="<%=h(bean.getContentId())%>"></div>
+    <script type="text/javascript">
     Ext4.onReady(function() {
         var fileSystem = Ext4.create('File.system.Webdav', {
-            baseUrl  : <%=q(bean.getRootPath())%>,
-            offsetUrl: <%=q(bean.getRootOffset())%>,
+            rootPath  : <%=q(bean.getRootPath())%>,
+            rootOffset: <%=q(bean.getRootOffset())%>,
             rootName : 'fileset'
         });
 
@@ -103,5 +106,6 @@
         Ext4.EventManager.onWindowResize(resize);
     });
 </script>
-
-<%  } %>
+<%
+    }
+%>

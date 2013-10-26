@@ -72,9 +72,10 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     private Container container;
     private boolean _isPipelineFiles;       // viewing @pipeline files
 
-    private static final String JSP = "/org/labkey/api/files/view/fileContent.jsp";
+//    private static final String JSP = "/org/labkey/api/files/view/fileContent.jsp";
+    private static final String JSP = "/org/labkey/api/files/view/ext4FilesWebPart.jsp";
     private static final String EXT4_JSP = "/org/labkey/api/files/view/ext4FilesWebPart.jsp";
-    private static final String JSP_RIGHT = "/org/labkey/filecontent/view/files.jsp";
+    private static final String JSP_RIGHT = "/org/labkey/filecontent/view/ext4FilesWebPart.jsp";
 
 
     public FilesWebPart(Container c)
@@ -233,7 +234,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         return form;
     }
 
-    public FilesWebPart(ViewContext ctx, Portal.WebPart webPartDescriptor)
+    public FilesWebPart(ViewContext ctx, Portal.WebPart webPartDescriptor, boolean isExt4)
     {
         this(ctx.getContainer(), StringUtils.trimToNull(webPartDescriptor.getPropertyMap().get("fileSet")), JSP);
 
@@ -261,11 +262,11 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         }
     }
 
-    public FilesWebPart(ViewContext ctx, Portal.WebPart webPartDescriptor, boolean isExt4)
+    public FilesWebPart(ViewContext ctx, Portal.WebPart webPartDescriptor)
     {
         this(ctx.getContainer(), StringUtils.trimToNull(webPartDescriptor.getPropertyMap().get("fileSet")), EXT4_JSP);
 
-        setTitle(EXT4_PART_NAME);
+//        setTitle(EXT4_PART_NAME);
 
         CustomizeFilesWebPartView.CustomizeWebPartForm form = new CustomizeFilesWebPartView.CustomizeWebPartForm(webPartDescriptor);
         getModelBean().setFolderTreeCollapsed(!form.isFolderTreeVisible());
@@ -277,14 +278,11 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             path += offset;
             getModelBean().setRootPath(path);
         }
-        if(webPartDescriptor.getPropertyMap().get("size") != null)
-        {
-            getModelBean().setSize(Integer.parseInt(webPartDescriptor.getPropertyMap().get("size")));
 
-        }
-        else
+        String size = webPartDescriptor.getPropertyMap().get("size");
+        if (size != null)
         {
-            getModelBean().setSize(350);
+            getModelBean().setSize(Integer.parseInt(size));
         }
 
         getModelBean().setRootOffset(form.getRootOffset());
@@ -463,7 +461,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private File _rootDirectory;
         private boolean _expandFileUpload;
         private boolean _disableGeneralAdminSettings;
-        private int size;
+        private int size = 350;
 
         public enum actions {
             download,
