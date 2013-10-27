@@ -496,7 +496,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$tomcat.home$/bin/bootstrap.jar!/" />
+          <root url="jar://$TOMCAT_HOME$/bin/bootstrap.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
