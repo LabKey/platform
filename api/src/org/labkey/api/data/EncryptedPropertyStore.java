@@ -71,6 +71,8 @@ public class EncryptedPropertyStore extends AbstractPropertyStore
     {
         final PropertyEncryption propertyEncryption = props.getEncryptionAlgorithm();
 
+        validatePropertyMap(props);
+
         selector.forEach(new Selector.ForEachBlock<ResultSet>()
         {
             @Override
@@ -83,11 +85,16 @@ public class EncryptedPropertyStore extends AbstractPropertyStore
         });
     }
 
-    // TODO: Filter reads, writes, deletes in each store
-
     @Override
     protected PropertyEncryption getPreferredPropertyEncryption()
     {
         return _preferredPropertyEncryption;
+    }
+
+    @Override
+    protected void appendWhereFilter(SQLFragment sql)
+    {
+        sql.append("NOT Encryption = ?");
+        sql.add("None");
     }
 }

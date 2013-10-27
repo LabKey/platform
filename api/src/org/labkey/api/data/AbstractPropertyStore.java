@@ -47,6 +47,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
     protected abstract String getSaveValue(PropertyMap props, @Nullable String value);
     protected abstract void fillValueMap(TableSelector selector, PropertyMap props);
     protected abstract PropertyEncryption getPreferredPropertyEncryption();
+    protected abstract void appendWhereFilter(SQLFragment sql);
 
 
     @NotNull
@@ -127,6 +128,8 @@ public abstract class AbstractPropertyStore implements PropertyStore
                 int set = (Integer)map.get("Set");
                 PropertyMap m = new PropertyMap(set, user.getUserId(), containerId, category, propertyEncryption);
 
+                validatePropertyMap(m);
+
                 if (newSet)
                 {
                     // A brand new set, but we might have previously cached a NULL marker and/or another thread might
@@ -178,8 +181,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
 
         PropertyMap props = (PropertyMap)map;
 
-        if (!isValidPropertyMap(props))
-            throw new IllegalStateException("Invalid PropertyStore for this PropertyMap");
+        validatePropertyMap(props);
 
         // Stored procedure property_saveValue is not thread-safe, so we synchronize the saving of each property set to
         // avoid attempting to modify the same property from two threads.  Use unique key + set id to avoid locking on a
@@ -234,17 +236,21 @@ public abstract class AbstractPropertyStore implements PropertyStore
     }
 
 
-    // We allow delete even if store is not valid for get/save
-    void deleteProperties(Container c) throws SQLException  // TODO: Filter this
+    // Delete properties associated with this store
+    void deleteProperties(Container c) throws SQLException
     {
         String setSelectName = _prop.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
-
-        String deleteProps = "DELETE FROM " + _prop.getTableInfoProperties().getSelectName() +
+        SQLFragment deleteProps = new SQLFragment("DELETE FROM " + _prop.getTableInfoProperties().getSelectName() +
                 " WHERE " + setSelectName +  " IN " +
-                "(SELECT " + setSelectName + " FROM " + _prop.getTableInfoPropertySets().getSelectName() + " WHERE ObjectId = ?)";
+                "(SELECT " + setSelectName + " FROM " + _prop.getTableInfoPropertySets().getSelectName() + " WHERE ObjectId = ? AND ", c);
+        appendWhereFilter(deleteProps);
+        deleteProps.append(")");
+        new SqlExecutor(_prop.getSchema()).execute(deleteProps);
 
-        new SqlExecutor(_prop.getSchema()).execute(deleteProps, c);
-        Table.delete(_prop.getTableInfoPropertySets(), new SimpleFilter("ObjectId", c));
+        SQLFragment deleteSets = new SQLFragment("DELETE FROM " + _prop.getTableInfoPropertySets() + " WHERE ObjectId = ? AND ");
+        deleteSets.add(c);
+        appendWhereFilter(deleteSets);
+        new SqlExecutor(_prop.getSchema()).execute(deleteSets);
 
         _cache.removeAll(c);
     }
@@ -272,20 +278,29 @@ public abstract class AbstractPropertyStore implements PropertyStore
                 String setSelectName = _prop.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
 
                 SQLFragment deleteProps = new SQLFragment();
-                deleteProps.append("DELETE FROM ").append(_prop.getTableInfoProperties(), "p");
+                deleteProps.append("DELETE FROM ").append(_prop.getTableInfoProperties().getSelectName());
                 deleteProps.append(" WHERE ").append(setSelectName).append(" IN ");
                 deleteProps.append("(SELECT ").append(setSelectName).append(" FROM ").append(_prop.getTableInfoPropertySets(), "ps");
-                deleteProps.append(" WHERE userid=? AND objectid=? AND category=?)");
+                deleteProps.append(" WHERE UserId = ? AND ObjectId = ? AND Category = ? AND ");
                 deleteProps.add(user.getUserId());
                 deleteProps.add(container.getId());
                 deleteProps.add(category);
 
+                appendWhereFilter(deleteProps);
+
+                deleteProps.append(")");
+
                 SqlExecutor sqlx = new SqlExecutor(_prop.getSchema());
                 sqlx.execute(deleteProps);
 
-                new SqlExecutor(_prop.getSchema()).execute(
-                        "DELETE FROM " + _prop.getTableInfoPropertySets() + " WHERE UserId = ? AND ObjectId = ? AND Category = ?",
-                        user.getUserId(), container.getId(), category);
+                SQLFragment deleteSets = new SQLFragment("DELETE FROM " + _prop.getTableInfoPropertySets() + " WHERE UserId = ? AND ObjectId = ? AND Category = ? AND ");
+                deleteSets.add(user);
+                deleteSets.add(container);
+                deleteSets.add(category);
+
+                appendWhereFilter(deleteSets);
+
+                new SqlExecutor(_prop.getSchema()).execute(deleteSets);
 
                 _cache.remove(container, user, category);
 
@@ -296,6 +311,13 @@ public abstract class AbstractPropertyStore implements PropertyStore
         {
             _prop.getSchema().getScope().closeConnection();
         }
+    }
+
+
+    protected void validatePropertyMap(PropertyMap map)
+    {
+        if (!isValidPropertyMap(map))
+            throw new IllegalStateException("Invalid property map for this property store, " + this.getClass().getSimpleName());
     }
 
 

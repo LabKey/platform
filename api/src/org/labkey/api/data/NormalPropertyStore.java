@@ -44,8 +44,7 @@ public class NormalPropertyStore extends AbstractPropertyStore
     @Override
     protected void fillValueMap(TableSelector selector, PropertyManager.PropertyMap props)
     {
-        if (props.getEncryptionAlgorithm() != PropertyEncryption.None)
-            throw new IllegalStateException("NormalPropertyStore should not be retrieving a PropertyMap encrypted with " + props.getEncryptionAlgorithm());
+        validatePropertyMap(props);
 
         selector.fillValueMap(props);
     }
@@ -63,5 +62,12 @@ public class NormalPropertyStore extends AbstractPropertyStore
     protected PropertyEncryption getPreferredPropertyEncryption()
     {
         return PropertyEncryption.None;
+    }
+
+    @Override
+    protected void appendWhereFilter(SQLFragment sql)
+    {
+        sql.append("Encryption = ?");
+        sql.add("None");
     }
 }
