@@ -764,9 +764,12 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
             {
                 _log.info("rename failed, attempting to copy");
 
-                for (File file : prev.listFiles())
-                    FileUtil.copyBranch(file, dest);
-
+                //listFiles can return null, which could cause a NPE
+                if(prev.listFiles() != null)
+                {
+                    for (File file : prev.listFiles())
+                        FileUtil.copyBranch(file, dest);
+                }
                 FileUtil.deleteDir(prev);
             }
             fireFileMoveEvent(prev, dest, user, container);
