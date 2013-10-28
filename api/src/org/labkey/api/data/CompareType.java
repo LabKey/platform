@@ -772,7 +772,7 @@ public enum CompareType
                 }
                 catch (NumberFormatException e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to an integer for " + colInfo));
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to an integer for column '" + colInfo.getName() + "'"));
                 }
             }
 
@@ -784,7 +784,7 @@ public enum CompareType
                 }
                 catch (NumberFormatException e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to a long for " + colInfo));
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to a long for column '" + colInfo.getName() + "'"));
                 }
             }
 
@@ -804,7 +804,7 @@ public enum CompareType
                 }
                 catch (Exception e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to a boolean for " + colInfo));
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to a boolean for column '" + colInfo.getName() + "'"));
                 }
             }
 
@@ -818,7 +818,7 @@ public enum CompareType
                 }
                 catch (ConversionException e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to a date for " + colInfo));
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to a date for column '" + colInfo.getName() + "'"));
                 }
             }
 
@@ -842,7 +842,7 @@ public enum CompareType
                 }
                 catch (NumberFormatException e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to a number for " + colInfo));
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to a number for column '" + colInfo.getName() + "'"));
                 }
             }
         }

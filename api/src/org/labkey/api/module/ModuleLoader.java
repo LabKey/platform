@@ -95,6 +95,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -331,38 +332,7 @@ public class ModuleLoader implements Filter
         // Initial data sources before initializing modules; modules will fail to initialize if the appropriate data sources aren't available
         initializeDataSources();
 
-        ListIterator<Module> iterator = _modules.listIterator();
-
-        //initialize each module in turn
-        while (iterator.hasNext())
-        {
-            Module module = iterator.next();
-
-            try
-            {
-                try
-                {
-                    module.initialize();
-                }
-                catch (DatabaseNotSupportedException dnse)
-                {
-                    // In production mode, treat module that doesn't support the current database as a module initialization error
-                    if (!AppProps.getInstance().isDevMode())
-                        throw dnse;
-
-                    // In dev mode, just log a one-line warning
-                    _log.warn("Unable to initialize module " + module.getName() + " due to: " + dnse.getMessage());
-                    iterator.remove();
-                }
-            }
-            catch(Throwable t)
-            {
-                _log.error("Unable to initialize module " + module.getName(), t);
-                //noinspection ThrowableResultOfMethodCallIgnored
-                _moduleFailures.put(module.getName(), t);
-                iterator.remove();
-            }
-        }
+        initializeAndPruneModules();
 
         // Clear the map to remove schemas associated with modules that failed to load
         _schemaNameToModule.clear();
@@ -445,6 +415,65 @@ public class ModuleLoader implements Filter
         }
 
         _log.info("LabKey Server startup is complete, modules will be initialized after the first HTTP/HTTPS request");
+    }
+
+    /** Goes through all the modules, initializes them, and removes the ones that fail to start up */
+    private void initializeAndPruneModules()
+    {
+        ListIterator<Module> iterator = _modules.listIterator();
+
+        //initialize each module in turn
+        while (iterator.hasNext())
+        {
+            Module module = iterator.next();
+
+            try
+            {
+                try
+                {
+                    module.initialize();
+                }
+                catch (DatabaseNotSupportedException dnse)
+                {
+                    // In production mode, treat module that doesn't support the current database as a module initialization error
+                    if (!AppProps.getInstance().isDevMode())
+                        throw dnse;
+
+                    // In dev mode, just log a one-line warning
+                    _log.warn("Unable to initialize module " + module.getName() + " due to: " + dnse.getMessage());
+                    iterator.remove();
+                    removeMapValue(module, moduleClassMap);
+                    removeMapValue(module, moduleMap);
+                }
+            }
+            catch(Throwable t)
+            {
+                _log.error("Unable to initialize module " + module.getName(), t);
+                //noinspection ThrowableResultOfMethodCallIgnored
+                _moduleFailures.put(module.getName(), t);
+                iterator.remove();
+                removeMapValue(module, moduleClassMap);
+                removeMapValue(module, moduleMap);
+            }
+        }
+
+        // Make the collections of modules read-only since we expect no further modifications
+        _modules = Collections.unmodifiableList(_modules);
+        moduleMap = Collections.unmodifiableMap(moduleMap);
+        moduleClassMap = Collections.unmodifiableMap(moduleClassMap);
+    }
+
+    private void removeMapValue(Module module, Map<?, Module> map)
+    {
+        Iterator<? extends Map.Entry<?, Module>> iterator = map.entrySet().iterator();
+        while (iterator.hasNext())
+        {
+            Map.Entry<?, Module> entry = iterator.next();
+            if (entry.getValue() == module)
+            {
+                iterator.remove();
+            }
+        }
     }
 
     private List<String> additionalSchemasRequiringUpgrade(Module module)
