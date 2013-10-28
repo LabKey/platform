@@ -17,25 +17,25 @@ package org.labkey.pipeline;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.TableUpdaterFileListener;
-import org.labkey.api.pipeline.CancelledException;
-import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.UnexpectedException;
-import org.labkey.pipeline.analysis.CommandTaskImpl;
-import org.labkey.pipeline.importer.FolderImportProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.pipeline.CancelledException;
+import org.labkey.api.pipeline.NoSuchJobException;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.DefaultWebPartFactory;
@@ -45,6 +45,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.pipeline.analysis.AnalysisController;
+import org.labkey.pipeline.analysis.CommandTaskImpl;
 import org.labkey.pipeline.analysis.FileAnalysisPipelineProvider;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
@@ -57,6 +58,7 @@ import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesSiteSettings;
 import org.labkey.pipeline.api.properties.GlobusClientPropertiesImpl;
+import org.labkey.pipeline.importer.FolderImportProvider;
 import org.labkey.pipeline.mule.EPipelineContextListener;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.mule.GlobusJobWrapper;
@@ -65,20 +67,16 @@ import org.labkey.pipeline.mule.RemoteServerStartup;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.status.StatusController;
 import org.labkey.pipeline.xstream.PathMapperImpl;
-import org.mule.MuleManager;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -288,7 +286,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
                 {
                     PipelineJobServiceImpl.get().getJobStore().retry(sf);
                 }
-                catch (IOException e)
+                catch (IOException | NoSuchJobException e)
                 {
                     _log.error("Unable to restart job", e);
                     moveJobToError(sf);
@@ -306,7 +304,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
                 incompleteFile.beforeUpdate(null, incompleteFile);
                 PipelineStatusManager.updateStatusFile(incompleteFile);
             }
-            catch (SQLException e)
+            catch (RuntimeSQLException e)
             {
                 _log.error("Unable to move job into error - " + incompleteFile.getFilePath(), e);
             }

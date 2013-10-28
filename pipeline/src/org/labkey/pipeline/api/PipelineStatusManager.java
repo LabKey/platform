@@ -19,9 +19,28 @@ package org.labkey.pipeline.api;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.*;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.pipeline.*;
+import org.labkey.api.pipeline.CancelledException;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineProvider;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.pipeline.TaskFactory;
+import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.pipeline.TaskPipelineRegistry;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -29,10 +48,15 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.pipeline.NoSuchJobException;
 
 import java.io.File;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * <code>PipelineStatusManager</code> provides access to the StatusFiles table
@@ -44,7 +68,7 @@ import java.util.*;
 public class PipelineStatusManager
 {
     private static PipelineSchema _schema = PipelineSchema.getInstance();
-    private static Logger _log = Logger.getLogger(PipelineStatusManager.class);
+    private static final Logger LOG = Logger.getLogger(PipelineStatusManager.class);
 
     public static TableInfo getTableInfo()
     {
@@ -147,7 +171,7 @@ public class PipelineStatusManager
             if (isNotifyOnError(job) && PipelineJob.ERROR_STATUS.equals(sfSet.getStatus()) &&
                     (sfExist == null || !PipelineJob.ERROR_STATUS.equals(sfExist.getStatus())))
             {
-                _log.info("Error status has changed - considering an email notification");
+                LOG.info("Error status has changed - considering an email notification");
                 PipelineManager.sendNotificationEmail(sfSet, job.getContainer());
             }
 
@@ -185,22 +209,24 @@ public class PipelineStatusManager
      * @param sf the modified status
      * @throws SQLException database error
      */
-    public static void updateStatusFile(PipelineStatusFileImpl sf) throws SQLException
+    public static void updateStatusFile(PipelineStatusFileImpl sf)
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
         boolean active = scope.isTransactionActive();
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            beginTransaction(scope,active);
             enforceLockOrder(sf.getJob(), active);
 
-            Table.update(null, _schema.getTableInfoStatusFiles(), sf, sf.getRowId());
+            try
+            {
+                Table.update(null, _schema.getTableInfoStatusFiles(), sf, sf.getRowId());
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
 
-            commitTransaction(scope, active);
-        }
-        finally
-        {
-            closeTransaction(scope, active);
+            transaction.commit();
         }
     }
 
@@ -212,9 +238,8 @@ public class PipelineStatusManager
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
         boolean active = scope.isTransactionActive();
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            beginTransaction(scope, active);
             enforceLockOrder(jobId, active);
 
             PipelineStatusFileImpl sfExist = getStatusFile(path);
@@ -238,23 +263,15 @@ public class PipelineStatusManager
                     updateStatusFile(child);
                 }
             }
-            commitTransaction(scope, active);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            closeTransaction(scope, active);
+            transaction.commit();
         }
     }
 
-    public static void ensureError(PipelineJob job) throws Exception
+    public static void ensureError(PipelineJob job) throws NoSuchJobException
     {
         PipelineStatusFileImpl sfExist = getJobStatusFile(job.getJobGUID());
         if (sfExist == null)
-            throw new SQLException("Status for the job " + job.getJobGUID() + " was not found.");
+            throw new NoSuchJobException("Status for the job " + job.getJobGUID() + " was not found.");
 
         if (!PipelineJob.ERROR_STATUS.equals(sfExist.getStatus()))
         {
@@ -262,11 +279,11 @@ public class PipelineStatusManager
         }
     }
 
-    public static void storeJob(String jobId, String xml) throws SQLException
+    public static void storeJob(String jobId, String xml) throws NoSuchJobException
     {
         PipelineStatusFileImpl sfExist = getJobStatusFile(jobId);
         if (sfExist == null)
-            throw new SQLException("Status for the job " + jobId + " was not found.");
+            throw new NoSuchJobException("Status for the job " + jobId + " was not found.");
 
         StringBuilder sql = new StringBuilder();
         sql.append("UPDATE ").append(_schema.getTableInfoStatusFiles())
@@ -285,11 +302,12 @@ public class PipelineStatusManager
         return retrieveJob(sfExist);
     }
 
+    @Nullable
     public static String retrieveJob(String jobId)
     {
         PipelineStatusFileImpl sfExist = getJobStatusFile(jobId);
         if (sfExist == null)
-            throw new RuntimeSQLException(new SQLException("Status for the job " + jobId + " was not found."));
+            return null;
         
         return retrieveJob(sfExist);
     }
@@ -326,9 +344,8 @@ public class PipelineStatusManager
     * @param parentId the jobGUID for the joined task that created split tasks
     * @param container the container where the joined task is defined
     * @return int count of <code>PipelineStatusFiles<code> not marked COMPLETE
-    * @throws SQLException database error
     */
-    public static int getIncompleteStatusFileCount(String parentId, Container container) throws SQLException
+    public static int getIncompleteStatusFileCount(String parentId, Container container)
     {
         return new SqlSelector(_schema.getSchema(), "SELECT COUNT(*) FROM " + _schema.getTableInfoStatusFiles() +  " WHERE Container = ? AND JobParent = ? AND Status <> ?",
                 container, parentId, PipelineJob.COMPLETE_STATUS).getObject(Integer.class);
@@ -369,25 +386,18 @@ public class PipelineStatusManager
 
     public static PipelineStatusFileImpl[] getQueuedStatusFilesForActiveTaskId(String activeTaskId)
     {
-        try
-        {
-            SimpleFilter filter = createQueueFilter();
-            filter.addCondition("ActiveTaskId", activeTaskId, CompareType.EQUAL);
+        SimpleFilter filter = createQueueFilter();
+        filter.addCondition("ActiveTaskId", activeTaskId, CompareType.EQUAL);
 
-            return Table.select(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return new TableSelector(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null).getArray(PipelineStatusFileImpl.class);
     }
 
-    public static PipelineStatusFile[] getQueuedStatusFilesForContainer(Container c) throws SQLException
+    public static PipelineStatusFile[] getQueuedStatusFilesForContainer(Container c)
     {
         SimpleFilter filter = createQueueFilter();
         filter.addCondition("Container", c, CompareType.EQUAL);
 
-        return Table.select(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+        return new TableSelector(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null).getArray(PipelineStatusFileImpl.class);
     }
 
     public static PipelineStatusFile[] getJobsWaitingForFiles(Container c)
@@ -419,9 +429,8 @@ public class PipelineStatusManager
 
     public static void completeStatus(User user, int... rowIds) throws PipelineProvider.HandlerException
     {
-        try
+        try (DbScope.Transaction transaction = PipelineSchema.getInstance().getSchema().getScope().ensureTransaction() )
         {
-            PipelineSchema.getInstance().getSchema().getScope().ensureTransaction();
             for (int rowId : rowIds)
             {
                 boolean statusSet = false;
@@ -445,31 +454,21 @@ public class PipelineStatusManager
                     PipelineStatusFileImpl sf = PipelineStatusManager.getStatusFile(rowId);
                     if (sf != null)
                     {
-                        _log.info("Job " + sf.getFilePath() + " was marked as complete by " + user);
+                        LOG.info("Job " + sf.getFilePath() + " was marked as complete by " + user);
                         sf.setStatus(PipelineJob.COMPLETE_STATUS);
                         sf.setInfo(null);
                         PipelineStatusManager.updateStatusFile(sf);
                     }
                 }
             }
-            PipelineSchema.getInstance().getSchema().getScope().commitTransaction();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            PipelineSchema.getInstance().getSchema().getScope().closeConnection();
+            transaction.commit();
         }
     }
 
     public static void deleteStatus(ViewBackgroundInfo info, int... rowIds) throws PipelineProvider.HandlerException
     {
-        DbScope scope = _schema.getSchema().getScope();
-        try
+        try (DbScope.Transaction transaction = _schema.getSchema().getScope().ensureTransaction())
         {
-            scope.ensureTransaction();
             Set<Integer> ids = new HashSet<>(rowIds.length);
             for (int rowId : rowIds)
             {
@@ -480,11 +479,7 @@ public class PipelineStatusManager
             {
                 throw new PipelineProvider.HandlerException("Failed to delete " + ids.size() + " job" + (ids.size() > 1 ? "s" : ""));
             }
-            scope.commitTransaction();
-        }
-        finally
-        {
-            scope.closeConnection();
+            transaction.commit();
         }
     }
 
@@ -563,7 +558,7 @@ public class PipelineStatusManager
                 sql.append("?");
                 expSql.append("?");
 
-                _log.info("Job " + pipelineStatusFile.getFilePath() + " was deleted by " + info.getUser());
+                LOG.info("Job " + pipelineStatusFile.getFilePath() + " was deleted by " + info.getUser());
                 params.add(pipelineStatusFile.getRowId());
             }
             sql.append(")");
@@ -646,14 +641,7 @@ public class PipelineStatusManager
                 newStatus = PipelineJob.CANCELLING_STATUS;
             }
             statusFile.setStatus(newStatus);
-            try
-            {
-                PipelineStatusManager.updateStatusFile(statusFile);
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            PipelineStatusManager.updateStatusFile(statusFile);
             PipelineService.get().getPipelineQueue().cancelJob(info.getUser(), jobContainer, statusFile);
             return true;
         }
@@ -661,50 +649,6 @@ public class PipelineStatusManager
         {
             return false;
         }
-    }
-
-    /**
-    * starts a transaction for a pipeline status job.
-    *
-    * @param scope the dbScope that has the transaction context
-    * @param active a boolean the caller tests that says whether a transaction is already active/
-    * @throws SQLException database error
-    */
-    protected static void beginTransaction(DbScope scope, boolean active) throws SQLException
-    {
-        if (!active)
-        {
-            scope.beginTransaction();
-        }
-    }
-
-    /**
-    * commits a transaction for a pipeline status job.
-    *
-    * @param scope the dbScope that has the transaction context
-    * @param active a boolean the caller tests that says whether a transaction is already active/
-    * @throws SQLException database error
-    */
-    protected static void commitTransaction(DbScope scope, boolean active) throws SQLException
-    {
-        if (!active)
-            scope.commitTransaction();
-    }
-
-    /**
-    * closes a transaction for a pipeline status job.  goes in the finally block
-     * of the caller.
-    *
-    * @param scope the dbScope that has the transaction context
-    * @param active a boolean the caller tests that says whether a transaction is already active/
-    */
-    protected static void closeTransaction(DbScope scope, boolean active)
-    {
-        if (!active)
-        {
-            if(scope.isTransactionActive())
-               scope.closeConnection();
-         }
     }
 
     /**
@@ -716,10 +660,8 @@ public class PipelineStatusManager
      * readers from getting a share lock and ensuring the updater can update the index if necessary.
     *
     * @param jobId of the job that is going to be updated
-    * @throws SQLException database error
     */
     protected static void enforceLockOrder(String jobId, boolean active)
-            throws SQLException
     {
         if (active)
             return;
@@ -730,7 +672,7 @@ public class PipelineStatusManager
         if (null != jobId)
         {
             String lockCmd = "SELECT Job, JobParent, Container FROM " + _schema.getTableInfoStatusFiles() +  " WITH (TABLOCKX) WHERE Job = ?;";
-            Table.execute(_schema.getSchema(), lockCmd, jobId) ;
+            new SqlExecutor(_schema.getSchema()).execute(lockCmd, jobId);
         }
     }
 }

@@ -19,7 +19,6 @@ package org.labkey.pipeline.api;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineStatusFile;
@@ -28,7 +27,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 import java.io.Serializable;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashSet;
 
@@ -294,14 +292,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         {
             throw new IllegalStateException("Cannot be used to insert rows");
         }
-        try
-        {
-            PipelineStatusManager.updateStatusFile(this);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        PipelineStatusManager.updateStatusFile(this);
     }
 
     public String getActiveTaskId()

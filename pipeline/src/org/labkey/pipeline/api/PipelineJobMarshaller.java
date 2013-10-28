@@ -15,18 +15,18 @@
  */
 package org.labkey.pipeline.api;
 
-import org.labkey.api.pipeline.PipelineStatusFile;
-import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.security.impersonation.ImpersonateUserContextFactory;
-import org.labkey.pipeline.xstream.TaskIdXStreamConverter;
-import org.labkey.pipeline.xstream.FileXStreamConverter;
-import org.labkey.pipeline.xstream.URIXStreamConverter;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.XppDriver;
+import org.labkey.api.pipeline.NoSuchJobException;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.security.impersonation.ImpersonateUserContextFactory;
+import org.labkey.pipeline.xstream.FileXStreamConverter;
+import org.labkey.pipeline.xstream.TaskIdXStreamConverter;
+import org.labkey.pipeline.xstream.URIXStreamConverter;
 
-import java.util.concurrent.atomic.AtomicReference;
-import java.sql.SQLException;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * <code>PipelineJobMarshaller</code> handles saving a <code>PipelineJob</code> to XML,
@@ -78,7 +78,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
     }
 
     /* CONSIDER: create a separate interface? */
-    public void storeJob(PipelineJob job) throws SQLException
+    public void storeJob(PipelineJob job) throws NoSuchJobException
     {
         throw new UnsupportedOperationException("Method supported only on web server");
     }
@@ -93,22 +93,22 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
         throw new UnsupportedOperationException("Method supported only on web server");
     }
 
-    public void retry(String jobId) throws IOException, SQLException
+    public void retry(String jobId) throws IOException, NoSuchJobException
     {
         throw new UnsupportedOperationException("Method supported only on web server");
     }
 
-    public void retry(PipelineStatusFile sf) throws IOException
+    public void retry(PipelineStatusFile sf) throws IOException, NoSuchJobException
     {
         throw new UnsupportedOperationException("Method supported only on web server");        
     }
 
-    public void split(PipelineJob job) throws IOException, SQLException
+    public void split(PipelineJob job) throws IOException
     {
         throw new UnsupportedOperationException("Method supported only on web server");
     }
 
-    public void join(PipelineJob job) throws IOException, SQLException
+    public void join(PipelineJob job) throws IOException, NoSuchJobException
     {
         throw new UnsupportedOperationException("Method supported only on web server");
     }
