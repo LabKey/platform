@@ -161,6 +161,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -3225,7 +3226,7 @@ public class QueryController extends SpringActionController
         public static final String PROP_COMMAND = "command";
         private static final String PROP_ROWS = "rows";
 
-        protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws Exception
+        protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws IOException, BatchValidationException, SQLException, DuplicateKeyException, InvalidKeyException, QueryUpdateServiceException
         {
             JSONObject response = new JSONObject();
             Container container = getViewContext().getContainer();
