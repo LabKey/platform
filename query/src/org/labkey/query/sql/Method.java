@@ -543,6 +543,8 @@ public abstract class
                 {
                     JdbcType jdbcType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType;
                     String typeName = schema.getSqlDialect().sqlTypeNameFromJdbcType(jdbcType);
+                    if (null == typeName)
+                        throw new NullPointerException("no sql type name found for: " + jdbcType.name());
                     if (fragments.length > 2)
                         length = fragments[2];
                     fragments = new SQLFragment[] {fragments[0], new SQLFragment(typeName)};
