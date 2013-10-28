@@ -945,6 +945,7 @@ Ext4.define('File.panel.Browser', {
                 text : this.fileSystem.rootName,
                 id : this.fileSystem.getBaseURL(),
                 expanded : true,
+                cls : 'fileset-root-node', // for selenium testing
                 icon : LABKEY.contextPath + '/_images/labkey.png'
             }
         });
@@ -1986,7 +1987,6 @@ Ext4.define('File.panel.Browser', {
             id: Ext4.id(),
             store: Ext4.create('Ext.data.TreeStore', this.getFolderTreeStoreCfg({listeners: listeners})),
             height: 200,
-            collapsible: false,
             header: false,
             listeners : {},
             rootVisible     : true,
