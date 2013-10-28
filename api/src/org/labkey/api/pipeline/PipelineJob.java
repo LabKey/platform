@@ -66,7 +66,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Serializable;
-import java.sql.SQLException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -834,11 +833,7 @@ abstract public class PipelineJob extends Job implements Serializable
                 return true;
             }
         }
-        catch (IOException e)
-        {
-            warn("Failed to start automatic retry.", e);
-        }
-        catch (SQLException e)
+        catch (IOException | NoSuchJobException e)
         {
             warn("Failed to start automatic retry.", e);
         }
@@ -856,11 +851,7 @@ abstract public class PipelineJob extends Job implements Serializable
                 {
                     runActiveTask();
                 }
-                catch (IOException e)
-                {
-                    error(e.getMessage(), e);
-                }
-                catch (PipelineJobException e)
+                catch (IOException | PipelineJobException e)
                 {
                     error(e.getMessage(), e);
                 }
@@ -939,7 +930,7 @@ abstract public class PipelineJob extends Job implements Serializable
         _errors += job._errors;
     }
 
-    public void store() throws IOException, SQLException
+    public void store() throws IOException, NoSuchJobException
     {
         PipelineJobService.get().getJobStore().storeJob(this);
     }
@@ -954,10 +945,6 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             error(e.getMessage(), e);
         }
-        catch (SQLException e)
-        {
-            error(e.getMessage(), e);            
-        }
     }
     
     private void join()
@@ -966,11 +953,7 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             PipelineJobService.get().getJobStore().join(this);
         }
-        catch (IOException e)
-        {
-            error(e.getMessage(), e);
-        }
-        catch (SQLException e)
+        catch (IOException | NoSuchJobException e)
         {
             error(e.getMessage(), e);
         }

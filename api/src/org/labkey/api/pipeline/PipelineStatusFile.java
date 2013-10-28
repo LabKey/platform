@@ -56,19 +56,19 @@ public interface PipelineStatusFile
 
         PipelineJob fromXML(String xml);
 
-        void storeJob(PipelineJob job) throws SQLException;
+        void storeJob(PipelineJob job) throws NoSuchJobException;
 
         PipelineJob getJob(String jobId);
 
         PipelineJob getJob(int rowId);
 
-        void retry(String jobId) throws IOException, SQLException;
+        void retry(String jobId) throws IOException, NoSuchJobException;
 
-        void retry(PipelineStatusFile sf) throws IOException;
+        void retry(PipelineStatusFile sf) throws IOException, NoSuchJobException;
 
-        void split(PipelineJob job) throws IOException, SQLException;
+        void split(PipelineJob job) throws IOException;
 
-        void join(PipelineJob job) throws IOException, SQLException;
+        void join(PipelineJob job) throws IOException, NoSuchJobException;
     }
 
     Container lookupContainer();

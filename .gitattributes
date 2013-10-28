@@ -767,6 +767,7 @@ api/src/org/labkey/api/pipeline/CancelledException.java -text
 api/src/org/labkey/api/pipeline/GlobusKeyPair.java -text
 api/src/org/labkey/api/pipeline/GlobusSettings.java -text
 api/src/org/labkey/api/pipeline/GlobusSettingsImpl.java -text
+api/src/org/labkey/api/pipeline/NoSuchJobException.java -text
 api/src/org/labkey/api/pipeline/ParamParser.java -text
 api/src/org/labkey/api/pipeline/PipeRoot.java -text
 api/src/org/labkey/api/pipeline/PipelineAction.java -text

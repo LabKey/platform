@@ -286,7 +286,7 @@ abstract public class PipelineProvider
                 PipelineJobService.get().getJobStore().retry(sf);
             }
             // CONSIDER: Narrow this net further?
-            catch (IOException e)
+            catch (IOException | NoSuchJobException e)
             {
                 throw new HandlerException(e);
             }
