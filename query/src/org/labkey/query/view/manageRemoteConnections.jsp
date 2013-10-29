@@ -19,6 +19,8 @@
 <%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.data.PropertyManager" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <p>
@@ -28,24 +30,25 @@
 </p>
 <%
     Container c = getContainer();
-    boolean isAdmin = getUser().isSiteAdmin();
 %>
 
 <br>
-<labkey:errors></labkey:errors>
-
 <%
-    if (isAdmin)
+    Map<String, String> connectionMap = ((JspView<Map<String,String>>) HttpView.currentView()).getModelBean();
+    if (connectionMap == null)
+    { %>
+        <p style="color: red">MasterEncryptionKey has not been specified in labkey.xml.</p>
+<%  }
+    else
     {
-        Map<String, String> connectionMap = PropertyManager.getEncryptedStore().getProperties(c, QueryController.REMOTE_CONNECTIONS_CATEGORY);
         for (String field : connectionMap.keySet())
         {
             %> <labkey:link href="<%= QueryController.RemoteConnectionUrls.urlEditRemoteConnection(c, connectionMap.get(field))%>" text="edit"/> <%
             %> <labkey:link href="<%= QueryController.RemoteConnectionUrls.urlDeleteRemoteConnection(c, connectionMap.get(field))%>" text="delete"/> <%
             %> <labkey:link href="<%= QueryController.RemoteConnectionUrls.urlTestRemoteConnection(c, connectionMap.get(field))%>" text="test"/> <%
             %> <%= h(connectionMap.get(field)) %> <br/> <%
-        } %>
-        <p/>
+        }
+%> <p/>
 <labkey:link href="<%= QueryController.RemoteConnectionUrls.urlCreatetRemoteConnection(c) %>" text="create new connection"/> <%
     }
 %>

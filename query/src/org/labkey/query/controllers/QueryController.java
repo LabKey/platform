@@ -3658,7 +3658,16 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            return new JspView<>("/org/labkey/query/view/manageRemoteConnections.jsp", form, errors);
+            Map<String, String> connectionMap;
+            try
+            {
+                connectionMap = PropertyManager.getEncryptedStore().getProperties(getContainer(), QueryController.REMOTE_CONNECTIONS_CATEGORY);
+            }
+            catch (Exception e)
+            {
+                connectionMap = null; // render the failure page
+            }
+            return new JspView<>("/org/labkey/query/view/manageRemoteConnections.jsp", connectionMap, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
