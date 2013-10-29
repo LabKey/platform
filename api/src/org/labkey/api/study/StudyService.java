@@ -36,7 +36,6 @@ import org.labkey.api.view.DataView;
 import org.springframework.validation.BindException;
 
 import java.io.File;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -112,46 +111,6 @@ public class StudyService
          * or -1 if no such dataset by that label or name exists (i.e. also check name in the case of a dataset label change)
          */
         public int getDatasetIdByQueryName(Container c, String queryName);
-
-        /**
-         * Delete a single dataset row
-         */
-        public void deleteDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException;
-
-        /**
-         * Update a single dataset row
-         * @return the new lsid for the updated row
-         * @param u the user performing the update
-         * @param c container the dataset is in
-         * @param datasetId the dataset definition id
-         * @param lsid the lsid of the dataset row
-         * @param data the data to be updated
-         * @param errors any errors during update will be added to this list
-         */
-        public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String,Object> data, List<String> errors)
-                throws SQLException;
-
-        /**
-         * Fetches a single row from a dataset given an LSID
-         * @param u The user
-         * @param c The container
-         * @param datasetId The dataset Id
-         * @param lsid The row LSID
-         * @return A map of the dataset row columns, null if no record found
-         * @throws SQLException Thrown if there's a database error
-         */
-        public Map<String, Object> getDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException;
-
-        /**
-         * Fetches a set of rows from a dataset given a collection of LSIDs
-         * @param u The user
-         * @param c The container
-         * @param datasetId The dataset Id
-         * @param lsids The row LSIDs
-         * @return An array of maps of the dataset row columns
-         * @throws SQLException Thrown if there's a database error
-         */
-        @NotNull public Map<String, Object>[] getDatasetRows(User u, Container c, int datasetId, Collection<String> lsids) throws SQLException;
 
         /**
          * Applies the administrator-configured default QC filter for a dataset data view.

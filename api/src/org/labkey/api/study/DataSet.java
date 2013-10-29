@@ -16,6 +16,7 @@
 
 package org.labkey.api.study;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -27,7 +28,10 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -137,6 +141,40 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
     public void delete(User user);
 
     public void deleteAllRows(User user);
+
+    /**
+     * Update a single dataset row
+     * @return the new lsid for the updated row
+     * @param u user performing the update
+     * @param lsid the lsid of the dataset row
+     * @param data the data to be updated
+     * @param errors any errors during update will be added to this list
+     */
+    public String updateDatasetRow(User u, String lsid, Map<String,Object> data, List<String> errors);
+
+    /**
+     * Fetches a single row from a dataset given an LSID
+     * @param u user performing the query
+     * @param lsid The row LSID
+     * @return A map of the dataset row columns, null if no record found
+     */
+    public Map<String, Object> getDatasetRow(User u, String lsid);
+
+    /**
+     * Fetches a set of rows from a dataset given a collection of LSIDs
+     * @param u user performing the query
+     * @param lsids The row LSIDs
+     * @return An array of maps of the dataset row columns
+     */
+    @NotNull
+    public List<Map<String, Object>> getDatasetRows(User u, Collection<String> lsids);
+
+    /**
+     * Deletes the specified rows from the dataset.
+     * @param u user performing the delete
+     * @param lsids keys of the dataset rows
+     */
+    public void deleteDatasetRows(User u, Collection<String> lsids);
 
     // constants for dataset types
     public static final String TYPE_STANDARD = "Standard";
