@@ -368,7 +368,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                 ui: this.ui,
                 border: false,
                 stripeRows : true,
-                selModel : Ext4.create('Ext.selection.CheckboxModel'),
+                selModel : Ext4.create('Ext.selection.CheckboxModel', {mode: 'SIMPLE'}),
                 multiSelect: true,
                 bubbleEvents : ['viewready', 'selectionchange'],
                 columns: [
