@@ -1222,7 +1222,7 @@ public class UserController extends SpringActionController
             details.setActive(requestedUser.isActive());
             JspView<AccessDetail> accessView = new JspView<>("/org/labkey/core/user/userAccess.jsp", details);
             view.addView(accessView);
-            view.addView(createQueryView(form, errors, false, QueryView.DATAREGIONNAME_DEFAULT));
+            view.addView(createInitializedQueryView(form, errors, false, QueryView.DATAREGIONNAME_DEFAULT));
 
             if (form.getRenderInHomeTemplate())
             {
