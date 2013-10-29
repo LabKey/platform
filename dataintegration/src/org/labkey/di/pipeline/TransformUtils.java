@@ -1,11 +1,13 @@
 package org.labkey.di.pipeline;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.view.NotFoundException;
 
 import java.util.Collection;
@@ -131,11 +133,21 @@ public class TransformUtils
         return TransformManager.get().getDescriptors(c);
     }
 
+    public static void resetState(String transofrmId, String containerPath, int userId)
+    {
+        resetState(transofrmId, ContainerManager.getForPath(containerPath), UserManager.getUser(userId));
+    }
+
     public static void resetState(String transformId, Container c, User u)
     {
         TransformConfiguration config = getTransformConfiguration(transformId, c);
         config.setTransformState(null);
         saveTransformConfiguration(config, u);
+    }
+
+    public static Integer runEtl(String transofrmId, String containerPath, int userId) throws PipelineJobException
+    {
+        return runEtl(transofrmId, ContainerManager.getForPath(containerPath), UserManager.getUser(userId));
     }
 
     /**

@@ -294,7 +294,8 @@ public class DataIntegrationController extends SpringActionController
             if (null == etl)
                 throw new NotFoundException(form.getTransformId());
 
-            ActionURL pipelineURL = TransformManager.get().runNowPipelineWithRedirect(etl, getContainer(), getUser());
+            Integer jobId = TransformManager.get().runNowPipeline(etl, getContainer(), getUser());
+            ActionURL pipelineURL = jobId==null ? null : new ActionURL("pipeline-status", "details", getContainer()).addParameter("rowId", jobId);
             String status = null==pipelineURL ? "No work" : "Queued";
 
             JSONObject ret = new JSONObject();
@@ -302,6 +303,8 @@ public class DataIntegrationController extends SpringActionController
             ret.put("status", status);
             if (null != pipelineURL)
                 ret.put("pipelineURL",pipelineURL.toString());
+            if (null != jobId)
+                ret.put("jobId", jobId.toString());
             return new ApiSimpleResponse(ret);
         }
     }
