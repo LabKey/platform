@@ -229,14 +229,17 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         addOutputMaterials(context, outputMaterials, resolverType);
         addOutputDatas(context, outputDatas, resolverType);
 
-        resolveParticipantVisits(context, inputMaterials, inputDatas, outputMaterials, outputDatas, allProperties, resolverType);
-
         DbScope scope = ExperimentService.get().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             boolean saveBatchProps = forceSaveBatchProps;
 
-            // Save the batch first
+            // Add any material/data inputs related to the specimen IDs, etc in the incoming data.
+            // Some subclasses may actually create ExpMaterials or do other database changes, so do this inside the
+            // overall transaction
+            resolveParticipantVisits(context, inputMaterials, inputDatas, outputMaterials, outputDatas, allProperties, resolverType);
+
+            // Create the batch, if needed
             if (batch == null)
             {
                 // Make sure that we have a batch to associate with this run
