@@ -95,7 +95,7 @@ abstract public class AbstractDemographicsProvider implements DemographicsProvid
 
                 Map<String, Object> map = ret.get(id);
                 if (map == null)
-                    map = new HashMap<String, Object>();
+                    map = new HashMap<>();
 
                 processRow(rs, cols, map);
 

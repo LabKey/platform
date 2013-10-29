@@ -59,4 +59,6 @@ abstract public class NotificationService
 
     //returns whether the service is enabled at the site level, which lets admins globally turn it off
     abstract public boolean isServiceEnabled();
+
+    abstract public Address getReturnEmail(Container c);
 }

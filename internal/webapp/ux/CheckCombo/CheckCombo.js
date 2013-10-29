@@ -115,11 +115,6 @@ Ext4.define('Ext.ux.CheckCombo', {
         return picker;
     },
 
-    getValue: function()
-    {
-        return this.value;
-    },
-
     getSubmitValue: function()
     {
         return this.getValue();
