@@ -778,6 +778,7 @@ public class Query
             _columns = new ColumnDescriptor[COLUMNS.length];
             for (int i=0 ; i<_columns.length ; i++)
                 _columns[i] = new ColumnDescriptor(COLUMNS[i], CLASSES[i]);
+            setScrollable(true);
         }
 
         public String[][] getFirstNLines(int n) throws IOException
