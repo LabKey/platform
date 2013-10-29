@@ -195,7 +195,7 @@ if (!pipelineSet)
     function truncateTable()
     {
         Ext4.Msg.confirm("Confirm Deletion",
-                "Are you sure you wish to delete all rows for the table "+ <%=q(dataset.getName())%> + "?  This action cannot be undone.",
+                "Are you sure you wish to delete all rows for the dataset "+ <%=q(dataset.getName())%> + "?  This action cannot be undone.",
                 function(button){
                     if (button === 'yes') {
                         truncate();
