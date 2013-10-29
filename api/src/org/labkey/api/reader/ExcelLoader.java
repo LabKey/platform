@@ -96,8 +96,6 @@ public class ExcelLoader extends DataLoader
 
     private String sheetName;
 
-    private boolean deleteFileOnClose = false;
-
     public ExcelLoader(File file) throws IOException
     {
         this(file, false);
@@ -113,6 +111,7 @@ public class ExcelLoader extends DataLoader
         super(mvIndicatorContainer);
         setHasColumnHeaders(hasColumnHeaders);
         _is = is;
+        setScrollable(false);
     }
 
 
@@ -121,6 +120,7 @@ public class ExcelLoader extends DataLoader
         super(mvIndicatorContainer);
         setHasColumnHeaders(hasColumnHeaders);
         setSource(file);
+        setScrollable(true);
     }
 
 
@@ -148,11 +148,6 @@ public class ExcelLoader extends DataLoader
     }
 
 
-    public void setDeleteFileOnClose(boolean del)
-    {
-        deleteFileOnClose = del;
-    }
-    
     public List<String> getSheetNames() throws IOException
     {
         List<String> names = new ArrayList<>();
@@ -291,10 +286,6 @@ public class ExcelLoader extends DataLoader
 
     public void close()
     {
-        if (deleteFileOnClose && null != _file)
-        {
-            _file.delete();
-        }
     }
 
 

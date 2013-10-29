@@ -75,6 +75,7 @@ public class FastaDataLoader extends DataLoader
     {
         super(mvIndicatorContainer);
         setSource(inputFile);
+        setScrollable(true);
         setHasColumnHeaders(hasColumnHeaders);
 
         _loader = new GenericFastaLoader(inputFile);

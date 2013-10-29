@@ -129,6 +129,7 @@ public class HTMLDataLoader extends DataLoader
     {
         super(mvIndicatorContainer);
         setSource(inputFile);
+        setScrollable(true);
         setHasColumnHeaders(hasColumnHeaders);
 
         init(new FileInputStream(inputFile));
@@ -138,6 +139,7 @@ public class HTMLDataLoader extends DataLoader
     {
         super(mvIndicatorContainer);
         setHasColumnHeaders(hasColumnHeaders);
+        setScrollable(false);
 
         init(is);
     }

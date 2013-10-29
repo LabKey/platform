@@ -101,6 +101,8 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     private boolean _inferTypes = true;
     protected boolean _throwOnErrors = false;
     protected final Container _mvIndicatorContainer;
+    // true if the results can be scrolled by the DataIterator created in .getDataIterator()
+    protected Boolean _scrollable = null;
 
     protected DataLoader()
     {
@@ -208,6 +210,23 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             throw new FileNotFoundException(inputFile.getPath());
         if (!inputFile.canRead())
             throw new IOException("Can't read file: " + inputFile.getPath());
+    }
+
+    /** @return if the input to this DataLoader is entirely in-memory can be reset. */
+    protected boolean isScrollable()
+    {
+        if (_scrollable == null)
+        {
+            _log.warn("DataLoader scrollability not explicitly set.  Assuming DataLoader is scrollable, but the default may change in the future.");
+            _scrollable = true;
+        }
+        return _scrollable;
+    }
+
+    /** Set scrollable to true if the input to this DataLoader is entirely in-memory can be reset. */
+    protected void setScrollable(boolean scrollable)
+    {
+        _scrollable = scrollable;
     }
 
     /**
@@ -744,14 +763,13 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
      * (pre conversion, missing value) but this is a quick way to
      * get all the DataLoaders to play with the newer ETL code
      */
-
     @Override
     public DataIterator getDataIterator(final DataIteratorContext context)
     {
         setInferTypes(false);
         try
         {
-            return LoggingDataIterator.wrap(new _DataIterator(context, getColumns()));
+            return LoggingDataIterator.wrap(createDataIterator(context));
         }
         catch (IOException x)
         {
@@ -760,19 +778,26 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         }
     }
 
+    /** Actually create an instance of DataIterator to use, which might be subclass-specific */
+    protected DataIterator createDataIterator(DataIteratorContext context) throws IOException
+    {
+        return new _DataIterator(context, getColumns(), isScrollable());
+    }
 
-    private class _DataIterator implements ScrollableDataIterator, MapDataIterator
+    protected class _DataIterator implements ScrollableDataIterator, MapDataIterator
     {
         final DataIteratorContext _context;
+        private final boolean _scrollable;
         final BatchValidationException _errors;
         CloseableIterator<Map<String, Object>> _it = null;
         ArrayListMap<String,Object> _row = null;
         int _rowNumber = 0;
         ColumnDescriptor[] _columns;
 
-        _DataIterator(DataIteratorContext context, ColumnDescriptor[] columns)
+        protected _DataIterator(DataIteratorContext context, ColumnDescriptor[] columns, boolean scrollable)
         {
             _context = context;
+            _scrollable = scrollable;
             _errors = context.getErrors();
             _columns = columns;
             beforeFirst();
@@ -787,14 +812,20 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         @Override
         public boolean isScrollable()
         {
-            return true;
+            return _scrollable;
         }
 
         @Override
         public void beforeFirst()
         {
             if (null != _it)
+            {
+                if (!isScrollable())
+                {
+                    throw new UnsupportedOperationException("Unable to reset on a non-scrollable iterator");
+                }
                 IOUtils.closeQuietly(_it);
+            }
             _it = iterator();
         }
 

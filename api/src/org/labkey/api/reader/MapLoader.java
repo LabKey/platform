@@ -44,6 +44,7 @@ public class MapLoader extends DataLoader
     {
         convertToArrays(rows);
         _skipLines = rows.size() > 0 ? 1 : 0;
+        setScrollable(true);
     }
 
     // Convert the list of maps.

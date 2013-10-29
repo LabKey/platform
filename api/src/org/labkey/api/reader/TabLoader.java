@@ -80,8 +80,8 @@ public class TabLoader extends DataLoader
             return new TabLoader(file, hasColumnHeaders, mvIndicatorContainer);
         }
 
+        /** A DataLoader created with this constructor does NOT close the reader */
         @NotNull @Override
-        // A DataLoader created with this constructor does NOT close the reader
         public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
             return new TabLoader(new InputStreamReader(is), hasColumnHeaders, mvIndicatorContainer);
@@ -182,6 +182,8 @@ public class TabLoader extends DataLoader
                 return new BufferedReader(new FileReader(inputFile));
             }
         }, hasColumnHeaders, mvIndicatorContainer);
+
+        setScrollable(true);
     }
 
     // Infer whether there are headers
@@ -203,21 +205,23 @@ public class TabLoader extends DataLoader
 
         if (src == null)
             throw new IllegalArgumentException("src cannot be null");
+
+        setScrollable(true);
     }
 
-    // A TabLoader created with this constructor does NOT close the reader
+    /** A TabLoader created with this constructor does NOT close the reader */
     public TabLoader(Reader reader, Boolean hasColumnHeaders) throws IOException
     {
         this(reader, hasColumnHeaders, null);
     }
     
-    // A TabLoader created with this constructor does NOT close the reader
+    /** A TabLoader created with this constructor does NOT close the reader */
     public TabLoader(Reader reader, Boolean hasColumnHeaders, @Nullable Container mvIndicatorContainer) throws IOException
     {
         this(reader, hasColumnHeaders, mvIndicatorContainer, false);
     }
 
-    // A TabLoader created with this constructor closes the reader only if closeOnComplete is true
+    /** A TabLoader created with this constructor closes the reader only if closeOnComplete is true */
     public TabLoader(final Reader reader, Boolean hasColumnHeaders, @Nullable Container mvIndicatorContainer, final boolean closeOnComplete) throws IOException
     {
         this(new ReaderFactory()
@@ -244,6 +248,8 @@ public class TabLoader extends DataLoader
                 };
             }
         }, hasColumnHeaders, mvIndicatorContainer);
+
+        setScrollable(false);
     }
 
 

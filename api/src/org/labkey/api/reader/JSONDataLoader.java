@@ -35,6 +35,8 @@ import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.ExtendedApiQueryResponse.ColMapEntry;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.FileType;
@@ -216,6 +218,7 @@ public class JSONDataLoader extends DataLoader
     {
         super(mvIndicatorContainer);
         setSource(inputFile);
+        setScrollable(true);
         //setHasColumnHeaders(hasColumnHeaders);
         setHasColumnHeaders(false);
         setInferTypes(false);
@@ -227,6 +230,7 @@ public class JSONDataLoader extends DataLoader
     public JSONDataLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
     {
         super(mvIndicatorContainer);
+        setScrollable(false);
         //setHasColumnHeaders(hasColumnHeaders);
         setHasColumnHeaders(false);
         setInferTypes(false);
@@ -711,6 +715,10 @@ public class JSONDataLoader extends DataLoader
         return lines;
     }
 
+    /**
+     * NOTE: We don't call super.initializeColumns() which uses inferColumnInfo() from the first N lines.
+     * @throws IOException
+     */
     @Override
     protected void initializeColumns() throws IOException
     {
@@ -769,6 +777,12 @@ public class JSONDataLoader extends DataLoader
         }
     }
 
+    @Override
+    protected DataIterator createDataIterator(DataIteratorContext context) throws IOException
+    {
+        return new _DataIterator(context, getColumns(), false);
+    }
+
     private class Iter extends DataLoaderIterator
     {
         protected Iter() throws IOException
@@ -816,7 +830,7 @@ public class JSONDataLoader extends DataLoader
         {
             if (_parser == null)
                 return false;
-            return super.hasNext();    //To change body of overridden methods use File | Settings | File Templates.
+            return super.hasNext();
         }
     }
 
