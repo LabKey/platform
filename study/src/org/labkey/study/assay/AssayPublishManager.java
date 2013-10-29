@@ -329,6 +329,12 @@ public class AssayPublishManager implements AssayPublishService.Service
             // re-retrieve the datasetdefinition: this is required to pick up any new columns that may have been created
             // in 'ensurePropertyDescriptors'.
             scope.commitTransaction();
+            // Be sure to call close after this commit to keep the scope happy downstream.  Importing the data
+            // or creating a dataset below will kick off subsequent transactions which expect any commit
+            // to have a prior call to close
+            scope.closeConnection();
+            scope = null;
+
             if (schemaChanged)
                 StudyManager.getInstance().uncache(dataset);
             dataset = StudyManager.getInstance().getDataSetDefinition(targetStudy, dataset.getRowId());
@@ -373,7 +379,10 @@ public class AssayPublishManager implements AssayPublishService.Service
         }
         finally
         {
-            scope.closeConnection();
+            if (null != scope)
+            {
+                scope.closeConnection();
+            }
         }
     }
 
