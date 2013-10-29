@@ -36,6 +36,7 @@ import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformTaskFactory;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
+import org.labkey.remoteapi.RemoteConnections;
 import org.labkey.remoteapi.SelectRowsStreamHack;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 
@@ -89,7 +90,6 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
     DataIteratorBuilder selectFromSource(CopyConfig meta, Container c, User u, DataIteratorContext context, Logger log) throws SQLException
     {
         // find the category to look up in the property manager, provided by the .xml
-        final String CATEGORY = "remote-connections"; // TODO: QueryController.CATEGORY
         if (! (meta instanceof RemoteQueryTransformStepMeta) )
             throw new UnsupportedOperationException("This xml parser was expected an instance of RemoteQueryTransformStepMeta");
         String name = ((RemoteQueryTransformStepMeta)meta).getRemoteSource();
@@ -100,11 +100,11 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
         }
 
         // Extract the username, password, and container from the secure property store
-        Map<String, String> singleConnectionMap = PropertyManager.getEncryptedStore().getProperties(c, CATEGORY + ":" + name);
-        String url = singleConnectionMap.get("URL");
-        String user = singleConnectionMap.get("user");
-        String password = singleConnectionMap.get("password");
-        String container = singleConnectionMap.get("container");
+        Map<String, String> singleConnectionMap = PropertyManager.getEncryptedStore().getProperties(c, RemoteConnections.REMOTE_CONNECTIONS_CATEGORY + ":" + name);
+        String url = singleConnectionMap.get(RemoteConnections.FIELD_URL);
+        String user = singleConnectionMap.get(RemoteConnections.FIELD_USER);
+        String password = singleConnectionMap.get(RemoteConnections.FIELD_PASSWORD);
+        String container = singleConnectionMap.get(RemoteConnections.FIELD_CONTAINER);
         if (url == null || user == null || password == null || container == null)
         {
             log.error("Invalid login credentials in the secure user store");
