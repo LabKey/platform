@@ -15,7 +15,6 @@
  */
 package org.labkey.di;
 
-import org.apache.commons.lang3.time.FastDateFormat;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -26,7 +25,6 @@ import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.di.data.TransformProperty;
 
 import java.sql.Timestamp;
-import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
@@ -162,11 +160,6 @@ public class VariableMapImpl implements VariableMap
         return _outer.getDescriptor(key);
     }
 
-
-    // our default json encoding does not include MS
-    FastDateFormat dateFormat = FastDateFormat.getInstance("yyyy/MM/dd HH:mm:ss");
-    DecimalFormat millisFormat = new DecimalFormat(".000");
-    DecimalFormat nanosFormat = new DecimalFormat(".000000000");
 
     public JSONObject toJSONObject()
     {
