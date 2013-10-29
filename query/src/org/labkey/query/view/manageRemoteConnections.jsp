@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.data.PropertyManager" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<h2>Manage Remote Connections</h2>
 <p>
     Administrators can define external remote connections to alternate LabKey servers.
     This feature should be used with care since, depending
@@ -38,12 +37,13 @@
 <%
     if (isAdmin)
     {
-        Map<String, String> map = PropertyManager.getProperties(QueryController.REMOTE_CONNECTIONS_CATEGORY);
-        for (String field : map.keySet())
+        Map<String, String> connectionMap = PropertyManager.getEncryptedStore().getProperties(c, QueryController.REMOTE_CONNECTIONS_CATEGORY);
+        for (String field : connectionMap.keySet())
         {
-            %> <labkey:link href="<%= QueryController.RemoteConnectionUrls.urlEditRemoteConnection(c, map.get(field))%>" text="edit"/> <%
-            %> <labkey:link href="<%= QueryController.RemoteConnectionUrls.urlDeleteRemoteConnection(c, map.get(field))%>" text="delete"/> <%
-            %> <%= h(map.get(field)) %> <br/> <%
+            %> <labkey:link href="<%= QueryController.RemoteConnectionUrls.urlEditRemoteConnection(c, connectionMap.get(field))%>" text="edit"/> <%
+            %> <labkey:link href="<%= QueryController.RemoteConnectionUrls.urlDeleteRemoteConnection(c, connectionMap.get(field))%>" text="delete"/> <%
+            %> <labkey:link href="<%= QueryController.RemoteConnectionUrls.urlTestRemoteConnection(c, connectionMap.get(field))%>" text="test"/> <%
+            %> <%= h(connectionMap.get(field)) %> <br/> <%
         } %>
         <p/>
 <labkey:link href="<%= QueryController.RemoteConnectionUrls.urlCreatetRemoteConnection(c) %>" text="create new connection"/> <%

@@ -15,7 +15,6 @@
  */
 package org.labkey.di.steps;
 
-import org.apache.commons.httpclient.HttpMethod;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
@@ -90,11 +89,11 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
         }
 
         // Extract the username, password, and container from the secure property store
-        Map<String, String> map = PropertyManager.getWritableProperties(CATEGORY + ":" + name, true);
-        String url = map.get("URL");
-        String user = map.get("user");
-        String password = map.get("password");
-        String container = map.get("container");
+        Map<String, String> singleConnectionMap = PropertyManager.getEncryptedStore().getProperties(c, CATEGORY + ":" + name);
+        String url = singleConnectionMap.get("URL");
+        String user = singleConnectionMap.get("user");
+        String password = singleConnectionMap.get("password");
+        String container = singleConnectionMap.get("container");
         if (url == null || user == null || password == null || container == null)
         {
             log.error("Invalid login credentials in the secure user store");

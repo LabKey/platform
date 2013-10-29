@@ -890,7 +890,6 @@ dataintegration/src/org/labkey/di/view/processedETLJobs.jsp -text
 dataintegration/src/org/labkey/di/view/transformConfiguration.jsp -text
 dataintegration/src/org/labkey/di/view/transformDetails.jsp -text
 dataintegration/src/org/labkey/di/view/transformHistory.jsp -text
-dataintegration/src/org/labkey/remoteapi/SelectRowsStreamHack.java -text
 demo/module.properties -text
 demo/resources/schemas/dbscripts/postgresql/demo-0.00-1.00.sql -text
 demo/resources/schemas/dbscripts/sqlserver/demo-0.00-1.00.sql -text
@@ -2510,6 +2509,8 @@ query/src/org/labkey/query/view/multipleSchemas.jsp -text
 query/src/org/labkey/query/view/newQuery.jsp -text
 query/src/org/labkey/query/view/propertiesQuery.jsp -text
 query/src/org/labkey/query/view/sourceQuery.jsp -text
+query/src/org/labkey/query/view/testRemoteConnectionsFailure.jsp -text
+query/src/org/labkey/query/view/testRemoteConnectionsSuccess.jsp -text
 query/webapp/dataview/DataViewPropertiesPanel.js -text
 query/webapp/dataview/DataViewUtil.js -text
 query/webapp/dataview/DataViewsPanel.css -text

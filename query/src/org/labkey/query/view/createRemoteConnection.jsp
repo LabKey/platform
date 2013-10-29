@@ -17,8 +17,8 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.data.PropertyManager" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <h2>Create A Remote Connection</h2>
@@ -26,51 +26,45 @@
     Administrators can define external remote connections to alternate LabKey servers.
     This feature should be used with care since, depending
     on your configuration, any user with access to the remote site could view arbitrary data in your remote server.
+    For the server URL, please include a URL that begins with either 'http://' or 'https://'.
 </p>
+<labkey:errors></labkey:errors>
 <%
     Container c = getContainer();
-    boolean isAdmin = getUser().isSiteAdmin();
-    String name = request.getParameter("connectionName");
 
-    Map<String, String> map1 = PropertyManager.getWritableProperties(QueryController.REMOTE_CONNECTIONS_CATEGORY + ":" + name, true);
-    String url = map1.get("URL");
-    String user = map1.get("user");
-    String password = map1.get("password");
-    String container = map1.get("container");
-
+    QueryController.RemoteConnectionForm remoteConnectionForm = ((JspView<QueryController.RemoteConnectionForm>) HttpView.currentView()).getModelBean();
+    String name = remoteConnectionForm.getConnectionName();
+    String url = remoteConnectionForm.getUrl();
+    String user = remoteConnectionForm.getUser();
+    String password = remoteConnectionForm.getPassword();
+    String container = remoteConnectionForm.getContainer();
 %>
 
 <br>
 
-<%
-    if (isAdmin)
-    {
-%>
-<form name="editConnection" action="<%=QueryController.RemoteConnectionUrls.urlEditRemoteConnectionSubmit(c) %>" method="post">
+<form name="editConnection" action="<%=QueryController.RemoteConnectionUrls.urlSaveRemoteConnection(c) %>" method="post">
 <table>
     <tr>
-        <td>Connection Name:</td>
+        <td>Connection Name: </td>
         <td><input type="text" name="connectionName" size="50" value="<%=h(name)%>"><br></td>
     </tr>
     <tr>
         <td>Server URL:</td>
-        <td><input type="text" name="url" size="50" value="<%= h(url) %>"><br></td>
+        <td><input id="url" type="text" name="url" size="50" value="<%= h(url) %>"><br></td>
     </tr>
     <tr>
         <td>User: </td>
-        <td><input type="text" name="user" size="50" value="<%= h(user)%>"></td>
+        <td><input id="user" type="text" name="user" size="50" value="<%= h(user)%>"></td>
     </tr>
     <tr>
         <td>Password: </td>
-        <td><input type="text" name="password" size="50" value="<%=h(password)%>"></td>
+        <td><input id="password" type="password" name="password" size="50" value="<%=h(password)%>"></td>
     </tr>
     <tr>
         <td>Container: </td>
-        <td><input type="text" name="container" size="50" value="<%=h(container)%>"></td>
+        <td><input id="container" type="text" name="container" size="50" value="<%=h(container)%>"></td>
     </tr>
 </table>
     <%= generateSubmitButton("save")%>
+    <%= generateButton("cancel", QueryController.ManageRemoteConnectionsAction.class) %>
 </form>
-<%
-    }
-%>
