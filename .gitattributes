@@ -1679,6 +1679,7 @@ mothership/src/org/labkey/mothership/StackTraceDisplayColumn.java -text
 mothership/src/org/labkey/mothership/editUpgradeMessage.jsp -text
 mothership/src/org/labkey/mothership/query/ExceptionStackTraceQueryView.java -text
 mothership/src/org/labkey/mothership/query/MothershipSchema.java -text
+mothership/src/org/labkey/mothership/view/createIssue.jsp -text
 pipeline/build.xml -text
 pipeline/lib/activemq-core-4.1.1-sources.zip -text
 pipeline/lib/activemq-core-4.1.1.jar -text

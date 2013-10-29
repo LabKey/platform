@@ -594,6 +594,7 @@ public class IssuesController extends SpringActionController
             {
                 ActionURL url = new ActionURL(issuesForm.getCallbackURL());
                 url.addParameter("issueId", _issue.getIssueId());
+                url.addParameter("assignedTo", _issue.getAssignedTo());
                 return url;
             }
 

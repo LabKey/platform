@@ -39,6 +39,7 @@ import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
@@ -46,6 +47,7 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DetailsURL;
@@ -77,12 +79,16 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.mothership.query.MothershipSchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.awt.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -90,6 +96,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -460,6 +467,7 @@ public class MothershipController extends SpringActionController
         {
             ExceptionStackTrace stackTrace = MothershipManager.get().getExceptionStackTrace(form.getExceptionStackTraceId(), getContainer());
             stackTrace.setBugNumber(form.getIssueId());
+            stackTrace.setAssignedTo(form.getAssignedTo());
             MothershipManager.get().updateExceptionStackTrace(stackTrace, getUser());
             throw new RedirectException(new ActionURL(BeginAction.class, getContainer()));
         }
@@ -599,14 +607,75 @@ public class MothershipController extends SpringActionController
 
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = new QuerySettings(getViewContext(), "ExceptionReports", MothershipSchema.EXCEPTION_REPORT_TABLE_NAME);
-            settings.getBaseSort().insertSortColumn("-Created");
-            settings.getBaseFilter().addCondition("ExceptionStackTraceId", stackTrace.getExceptionStackTraceId());
+            settings.getBaseSort().insertSortColumn(FieldKey.fromString("Created"), Sort.SortDirection.DESC);
+            settings.getBaseFilter().addCondition(FieldKey.fromString("ExceptionStackTraceId"), stackTrace.getExceptionStackTraceId());
 
             QueryView summaryGridView = new QueryView(schema, settings, errors);
             summaryGridView.setShowBorders(true);
             summaryGridView.setShadeAlternatingRows(true);
             summaryGridView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
-            return new VBox(updateView, summaryGridView);
+            return new VBox(updateView, summaryGridView, constructCreateIssueForm(stackTrace));
+        }
+
+        private JspView constructCreateIssueForm(ExceptionStackTrace stackTrace) throws IOException
+        {
+            // Moved from CreateIssueDisplayColumn. Instead of piggybacking off the ExceptionStackTraceForm,
+            // we now have a separate hidden form on the page to have control over exactly which fields
+            // are submitted.
+            ActionURL callbackURL = getViewContext().getActionURL().clone();
+            callbackURL.setAction(MothershipController.CreateIssueFinishedAction.class);
+            Map<String, String> cifModel = new HashMap<>();
+            cifModel.put("callbackURL", callbackURL.toString());
+            String originalURL = (String)getViewContext().getRequest().getAttribute(ViewServlet.ORIGINAL_URL_STRING);
+            StringBuilder body = new StringBuilder();
+            body.append("Created from crash report: ");
+            body.append(originalURL);
+            body.append("\n\n");
+            String stackTraceString = stackTrace.getStackTrace();
+            body.append(stackTraceString);
+
+            StringBuilder title = new StringBuilder();
+            BufferedReader reader = new BufferedReader(new StringReader(stackTraceString));
+            // Grab the exception class
+            String className = reader.readLine().split("\\:")[0];
+            if (className.lastIndexOf('.') != -1)
+            {
+                // Strip off the package name to make the title a little shorter
+                className = className.substring(className.lastIndexOf('.') + 1);
+            }
+            title.append(className);
+            String firstLocation = reader.readLine();
+            String location = firstLocation;
+            String separator = " in ";
+            while (location != null &&
+                    (!location.contains("org.labkey") || location.contains(ConnectionWrapper.class.getPackage().getName())) &&
+                    !location.contains("org.fhcrc"))
+            {
+                location = reader.readLine();
+                separator = " from ";
+            }
+
+            if (location == null)
+            {
+                location = firstLocation;
+            }
+            if (location != null)
+            {
+                location = location.trim();
+                if (location.startsWith("at "))
+                {
+                    location = location.substring("at ".length());
+                }
+                title.append(separator);
+                title.append(location.split("\\(")[0]);
+                title.append("()");
+            }
+            cifModel.put("body", body.toString());
+            cifModel.put("title", title.toString());
+            cifModel.put("action", MothershipManager.get().getCreateIssueURL(getContainer()));
+            JspView createIssueForm = new JspView("/org/labkey/mothership/view/createIssue.jsp", cifModel);
+
+            return createIssueForm;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1589,6 +1658,7 @@ public class MothershipController extends SpringActionController
     {
         private int _exceptionStackTraceId;
         private int _issueId;
+        private Integer _assignedTo;
 
         public int getExceptionStackTraceId()
         {
@@ -1608,6 +1678,16 @@ public class MothershipController extends SpringActionController
         public void setIssueId(int issueId)
         {
             _issueId = issueId;
+        }
+
+        public Integer getAssignedTo()
+        {
+            return _assignedTo;
+        }
+
+        public void setAssignedTo(Integer assignedTo)
+        {
+            _assignedTo = assignedTo;
         }
     }
 
