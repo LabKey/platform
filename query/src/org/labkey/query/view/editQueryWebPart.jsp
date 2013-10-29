@@ -56,8 +56,7 @@
             initialValue : <%=q(props.get("schemaName"))%>,
             fieldLabel : 'Schema',
             name : 'schemaName',
-            labelWidth : 200,
-            width : 500,
+            labelWidth : 225,
             validateOnBlur: false
         }));
 
@@ -68,9 +67,8 @@
             typeAheadDelay : 250,
             forceSelection : true,
             initialValue : <%=q(props.get("queryName"))%>,
-            name : 'queryName',
-            labelWidth : 200,
-            width : 500
+            labelWidth : 225,
+            name : 'queryName'
         }));
 
         var allowEnable = <%=PageFlowUtil.jsString(props.get("queryName"))%>;
@@ -83,15 +81,19 @@
             typeAheadDelay : 250,
             forceSelection : true,
             initialValue : <%=q(props.get("viewName"))%> ? <%=q(props.get("viewName"))%> : '',
-            name : 'viewName',
-            labelWidth : 200,
-            width : 500
+            labelWidth: 225,
+            name : 'viewName'
         }));
 
         var queryForm = Ext4.create('Ext.form.Panel', {
-            defaults : {labelWidth: 200, width : 500},
+            defaults : {
+                labelWidth: 225,
+                width : 525,
+                labelCls : 'labkey-form-label',
+                fieldStyle : 'margin-left: 5px;',
+                margin : '2 2 2 2'
+            },
             border : false,
-            padding : '5px',
             width: 700,
             standardSubmit: true,
             bodyStyle : 'background-color: transparent;',
@@ -154,7 +156,6 @@
                     ]
                 },
                 queryMode : 'local',
-                width : 275,
                 displayField : 'answer',
                 valueField : 'value',
                 listeners : {
@@ -176,7 +177,6 @@
                     ]
                 },
                 queryMode : 'local',
-                width : 275,
                 displayField : 'answer',
                 valueField : 'value',
                 listeners : {
@@ -200,7 +200,6 @@
                     ]
                 },
                 queryMode : 'local',
-                width : 300,
                 displayField : 'answer',
                 valueField : 'value',
                 listeners : {
@@ -221,6 +220,7 @@
                 xtype : 'button',
                 text : 'Submit',
                 width : 70,
+                margin : '4 0 0 235',
                 handler : function() {
                     if (queryForm) {
                         if (validate()) {
@@ -237,7 +237,26 @@
                     }
                 }
             }],
-            renderTo: 'extDiv'
+            renderTo: 'extDiv',
+            listeners : {
+                afterrender : function(){
+                    var labels = Ext4.select('.x4-field-label-cell');
+
+                    for(var i = 0; i < labels.getCount(); i++)
+                    {
+                        labels.item(i).addCls('labkey-form-label');
+                        labels.item(i).setStyle('padding-bottom', '7px');
+                        labels.item(i).setStyle('padding-top', '7px');
+                    }
+
+                    var triggers = Ext4.select('.x4-form-trigger');
+
+                    for(i = 0; i < triggers.getCount(); i++)
+                    {
+                        triggers.item(i).setStyle('margin-left', '5px');
+                    }
+                }
+            }
         });
 
         var validate = function() {
