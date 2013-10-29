@@ -1476,6 +1476,7 @@ Ext4.define('File.panel.Browser', {
 
         var win = Ext4.create('Ext.Window', {
             title: 'Import Data',
+            cls: 'data-window',
             width: shrink ? 300 : 725,
             height: shrink ? 150 : undefined,
             autoShow: true,
