@@ -223,7 +223,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
             }
             else if (name.equalsIgnoreCase("VisitRowId")||name.equalsIgnoreCase("Dataset"))
             {
-                addWrapColumn(baseColumn);
+                addWrapColumn(baseColumn).setHidden(baseColumn.isHidden());
             }
             else if (name.equalsIgnoreCase(QCSTATE_ID_COLNAME))
             {
