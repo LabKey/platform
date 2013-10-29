@@ -1524,7 +1524,8 @@ public class StudyManager
         if (study == null)
             return false;
 
-        if (study.isManualCohortAssignment())
+        Integer cohortDatasetId = study.getParticipantCohortDataSetId();
+        if (study.isManualCohortAssignment() || null == cohortDatasetId || -1 == cohortDatasetId)
         {
             // If we're not reading from a dataset for cohort definition,
             // we use the container's permission
@@ -1532,45 +1533,18 @@ public class StudyManager
         }
 
         // Automatic cohort assignment -- can the user read the source dataset?
-        Integer cohortDatasetId = study.getParticipantCohortDataSetId();
+        DataSetDefinition def = getDataSetDefinition(study, cohortDatasetId);
 
-        if (cohortDatasetId != null)
-        {
-            DataSetDefinition def = getDataSetDefinition(study, cohortDatasetId);
-
-            if (def != null)
-                return def.canRead(user);
-        }
+        if (def != null)
+            return def.canRead(user);
 
         return false;
     }
 
     public void assertCohortsViewable(Container container, User user)
     {
-        if (!user.isSiteAdmin())
-        {
-            StudyImpl study = StudyManager.getInstance().getStudy(container);
-
-            if (study.isManualCohortAssignment())
-            {
-                if (!SecurityPolicyManager.getPolicy(container).hasPermission(user, ReadPermission.class))
-                    throw new UnauthorizedException("User does not have permission to view cohort information");
-            }
-            else
-            {
-                // Automatic cohort assignment -- check the source dataset for permissions
-                Integer cohortDatasetId = study.getParticipantCohortDataSetId();
-                if (cohortDatasetId != null)
-                {
-                    DataSetDefinition def = getDataSetDefinition(study, cohortDatasetId);
-                    if (def != null)
-                    {
-                        if (!def.canRead(user))
-                            throw new UnauthorizedException("User does not have permissions to view cohort information.");
-                    }
-                }
-            }
-        }
+        if (!showCohorts(container, user))
+            throw new UnauthorizedException("User does not have permission to view cohort information");
     }
 
     public List<CohortImpl> getCohorts(Container container, User user)
