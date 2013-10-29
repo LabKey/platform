@@ -136,6 +136,7 @@ import org.labkey.study.visitmanager.RelativeDateVisitManager;
 import org.labkey.study.visitmanager.SequenceVisitManager;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.writer.DatasetWriter;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
@@ -483,7 +484,17 @@ public class StudyManager
         }
     }
 
+    @Deprecated
     public void updateDataSetDefinition(User user, DataSetDefinition dataSetDefinition)
+    {
+        List<String> errors = new ArrayList<>();
+        updateDataSetDefinition(user, dataSetDefinition, errors);
+        if (!errors.isEmpty())
+            throw new IllegalArgumentException(errors.get(0));
+    }
+
+
+    public boolean updateDataSetDefinition(User user, DataSetDefinition dataSetDefinition, List<String> errors)
     {
         DbScope scope = StudySchema.getInstance().getScope();
 
@@ -523,7 +534,10 @@ public class StudyManager
                 {
                     ColumnInfo col = storageTableInfo.getColumn(dataSetDefinition.getKeyPropertyName());
                     if (null == col)
-                        throw new IllegalArgumentException("Cannot find 'key' column: " + dataSetDefinition.getKeyPropertyName());
+                    {
+                        errors.add("Cannot find 'key' column: " + dataSetDefinition.getKeyPropertyName());
+                        return false;
+                    }
                     SQLFragment colFrag = col.getValueSql(tableName);
                     if (col.getJdbcType() == JdbcType.TIMESTAMP)
                         colFrag = storageTableInfo.getSqlDialect().getISOFormat(colFrag);
@@ -535,9 +549,19 @@ public class StudyManager
                 SQLFragment updateLSIDSQL = new SQLFragment("UPDATE " + tableName + " SET lsid = ");
                 updateLSIDSQL.append(dataSetDefinition.generateLSIDSQL());
                 // TODO drop PK
-                new SqlExecutor(StudySchema.getInstance().getSchema()).execute(updateLSIDSQL);
-                // TODO add PK
-            }   
+                try
+                {
+                    new SqlExecutor(StudySchema.getInstance().getSchema()).execute(updateLSIDSQL);
+                }
+                catch (DataIntegrityViolationException x)
+                {
+                    if (dataSetDefinition.isDemographicData())
+                        errors.add("Can not change dataset type to demographic");
+                    else
+                        errors.add("Changing the dataset key would result in a duplicate keys");
+                    return false;
+                }
+            }
             Object[] pk = new Object[]{dataSetDefinition.getContainer().getId(), dataSetDefinition.getDataSetId()};
             ensureViewCategory(user, dataSetDefinition);
             _datasetHelper.update(user, dataSetDefinition, pk);
@@ -567,6 +591,7 @@ public class StudyManager
             uncache(dataSetDefinition);
         }
         indexDataset(null, dataSetDefinition);
+        return true;
     }
 
 
