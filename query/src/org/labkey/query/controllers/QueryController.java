@@ -43,6 +43,7 @@ import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.ListofMapsDataIterator;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -400,6 +401,8 @@ public class QueryController extends SpringActionController
             try
             {
                 DataIteratorBuilder source = SelectRowsStreamHack.go(cn, container, cmd);
+                // immediately close the source after opening it, this is a test.
+                source.getDataIterator(new DataIteratorContext()).close();
             }
             catch (Exception e)
             {
@@ -3661,6 +3664,7 @@ public class QueryController extends SpringActionController
             Map<String, String> connectionMap;
             try
             {
+                // if the encrypted property store is configured but no values have yet been set, and empty map is returned
                 connectionMap = PropertyManager.getEncryptedStore().getProperties(getContainer(), QueryController.REMOTE_CONNECTIONS_CATEGORY);
             }
             catch (Exception e)

@@ -123,6 +123,15 @@ public class SimpleQueryTransformStep extends TransformTask
         return true;
     }
 
+    // allows RemoteQueryTransformStep to override this method and selectively alter executeCopy
+    public DbScope getSourceScope(QuerySchema sourceSchema, DbScope targetScope)
+    {
+        DbScope sourceScope = sourceSchema.getDbSchema().getScope();
+        if (sourceScope.equals(targetScope))
+            return null;
+        return sourceScope;
+    }
+
     public boolean executeCopy(CopyConfig meta, Container c, User u, Logger log) throws IOException, SQLException
     {
         boolean validationResult = validate(meta, c, u, log);
@@ -133,9 +142,7 @@ public class SimpleQueryTransformStep extends TransformTask
         QuerySchema targetSchema = DefaultSchema.get(u, c, meta.getTargetSchema());
 
         DbScope targetScope = targetSchema.getDbSchema().getScope();
-        DbScope sourceScope = sourceSchema.getDbSchema().getScope();
-        if (sourceScope.equals(targetScope))
-            sourceScope = null;
+        DbScope sourceScope = getSourceScope(sourceSchema, targetScope);
 
         ResultSet rs = null;
         DataIteratorContext context = new DataIteratorContext();

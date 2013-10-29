@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.etl.DataIterator;
@@ -61,6 +62,7 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
         return true;
     }
 
+    @Override
     public boolean validate(CopyConfig meta, Container c, User u, Logger log)
     {
         // sourceSchema is remote and is not used
@@ -75,6 +77,15 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
         return true;
     }
 
+    // allows RemoteQueryTransformStep to override this method and selectively alter executeCopy
+    @Override
+    public DbScope getSourceScope(QuerySchema sourceSchema, DbScope targetScope)
+    {
+        // return null, there is no source scope for a remote query
+        return null;
+    }
+
+    @Override
     DataIteratorBuilder selectFromSource(CopyConfig meta, Container c, User u, DataIteratorContext context, Logger log) throws SQLException
     {
         // find the category to look up in the property manager, provided by the .xml
