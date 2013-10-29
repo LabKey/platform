@@ -720,8 +720,10 @@ public class QueryManager
      * Experimental.  The goal is to provide a more thorough validation of query metadata, including warnings of potentially
      * invalid conditions, like autoincrement columns set userEditable=true.
      */
-    public Set<String> validateQueryMetadata(SchemaKey schemaPath, String queryName, User user, Container container) throws SQLException, QueryParseException
+    public Set<String> validateQueryMetadata(SchemaKey schemaPath, String queryName, User user, Container container)
     {
+        Set<String> queryErrors = new HashSet<>();
+        Set<ColumnInfo> columns = new HashSet<>();
         UserSchema schema = QueryService.get().getUserSchema(user, container, schemaPath);
         if (null == schema)
             throw new IllegalArgumentException("Could not find the schema '" + schemaPath.getName() + "'!");
@@ -730,11 +732,15 @@ public class QueryManager
         if (null == table)
             throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schemaPath.getName() + "'!");
 
-        //validate foreign keys and other metadata warnings
-        Set<String> queryErrors = new HashSet<>();
-        Set<ColumnInfo> columns = new HashSet<>();
-        columns.addAll(table.getColumns());
-        columns.addAll(QueryService.get().getColumns(table, table.getDefaultVisibleColumns()).values());
+        try{
+            //validate foreign keys and other metadata warnings
+            columns.addAll(table.getColumns());
+            columns.addAll(QueryService.get().getColumns(table, table.getDefaultVisibleColumns()).values());
+        }
+        catch(QueryParseException e)
+        {
+            queryErrors.add(e.toString());
+        }
 
         for (ColumnInfo col : columns)
         {
