@@ -31,7 +31,6 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
-import org.labkey.api.study.StudyService;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.QCState;
@@ -79,7 +78,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         String lsid = keyFromMap(keys);
-        return StudyService.get().getDatasetRow(user, container, _dataset.getDataSetId(), lsid);
+        return _dataset.getDatasetRow(user, lsid);
     }
 
 
@@ -115,7 +114,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             for (Map<String, Object> row : result)
             {
                 if (!isBulkLoad())
-                    StudyServiceImpl.addDatasetAuditEvent(user, container, _dataset, null, row);
+                    StudyServiceImpl.addDatasetAuditEvent(user, _dataset, null, row);
 
                 try
                 {
@@ -264,7 +263,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         String lsid = keyFromMap(oldRow);
         // Make sure we've found the original participant before doing the update
         String oldParticipant = getParticipant(oldRow, user, container);
-        String newLsid = StudyService.get().updateDatasetRow(user, container, _dataset.getDataSetId(), lsid, row, errors);
+        String newLsid = _dataset.updateDatasetRow(user, lsid, row, errors);
         //update the lsid and return
         row.put("lsid", newLsid);
         if(errors.size() > 0)
@@ -317,7 +316,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     {
         // Make sure we've found the original participant before doing the delete
         String participant = getParticipant(oldRow, user, container);
-        StudyService.get().deleteDatasetRow(user, container, _dataset.getDataSetId(), keyFromMap(oldRow));
+        _dataset.deleteDatasetRows(user, Collections.singleton(keyFromMap(oldRow)));
         _potentiallyDeletedParticipants.add(participant);
         _participantVisitResyncRequired = true;
         return oldRow;

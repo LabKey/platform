@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.ScrollableDataIterator;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
@@ -57,6 +58,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.SimpleValidationError;
@@ -89,6 +91,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
+import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 
@@ -110,6 +113,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
@@ -577,7 +581,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return _storageTable;
     }
 
-
+    /**
+     * Deletes rows without auditing
+     */
     public int deleteRows(User user, Date cutoff)
     {
         assert StudySchema.getInstance().getSchema().getScope().isTransactionActive();
@@ -1503,42 +1509,56 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return "DataSetDefinition: " + getLabel() + " " + getDataSetId();
     }
 
-    public void deleteRows(User user, Collection<String> rowLSIDs)
+    /** Do the actual delete from the underlying table, without auditing */
+    public void deleteRows(User user, Collection<String> allLSIDs)
     {
-        Container c = getContainer();
+        List<Collection<String>> rowLSIDSlices = slice(allLSIDs);
 
         TableInfo data = getStorageTableInfo();
-        SimpleFilter filter = new SimpleFilter();
-        filter.addInClause("LSID", rowLSIDs);
 
-        DbScope scope =  StudySchema.getInstance().getSchema().getScope();
-        try
+        try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
-            scope.ensureTransaction();
-
-            char sep = ' ';
-            StringBuilder sb = new StringBuilder();
-            for (int i=0; i<rowLSIDs.size(); i++)
+            for (Collection<String> rowLSIDs : rowLSIDSlices)
             {
-                sb.append(sep);
-                sb.append('?');
-                sep = ',';
-            }
-            List<Object> paramList = new ArrayList<Object>(rowLSIDs);
-            OntologyManager.deleteOntologyObjects(StudySchema.getInstance().getSchema(), new SQLFragment(sb.toString(), paramList), c, false);
-            Table.delete(data, filter);
-            StudyManager.dataSetModified(this, user, true);
+                SimpleFilter filter = new SimpleFilter();
+                filter.addInClause(FieldKey.fromParts("LSID"), rowLSIDs);
 
-            scope.commitTransaction();
+                SQLFragment sql = new SQLFragment(StringUtils.repeat("?", ", ", rowLSIDs.size()));
+                sql.addAll(rowLSIDs);
+                OntologyManager.deleteOntologyObjects(StudySchema.getInstance().getSchema(), sql, getContainer(), false);
+                Table.delete(data, filter);
+                StudyManager.dataSetModified(this, user, true);
+            }
+            transaction.commit();
         }
         catch (SQLException s)
         {
             throw new RuntimeSQLException(s);
         }
-        finally
+    }
+
+    /** Slice the full collection into separate lists that are no longer than 1000 elements long */
+    private List<Collection<String>> slice(Collection<String> allLSIDs)
+    {
+        if (allLSIDs.size() <= 1000)
         {
-            scope.closeConnection();
+            return Collections.singletonList(allLSIDs);
         }
+        List<Collection<String>> rowLSIDSlices = new ArrayList<>();
+
+        Collection<String> rowLSIDSlice = new ArrayList<>();
+        rowLSIDSlices.add(rowLSIDSlice);
+        for (String rowLSID : allLSIDs)
+        {
+            if (rowLSIDSlice.size() > 1000)
+            {
+                rowLSIDSlice = new ArrayList<>();
+                rowLSIDSlices.add(rowLSIDSlice);
+            }
+            rowLSIDSlice.add(rowLSID);
+        }
+
+        return rowLSIDSlices;
     }
 
 
@@ -2695,12 +2715,193 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         ObjectFactory.Registry.register(DataSetDefinition.class, new DatasetDefObjectFactory());
     }
 
-
-    private String getCacheString()
+    @Override
+    public Map<String, Object> getDatasetRow(User u, String lsid)
     {
-        return "c" + getContainer().getRowId() + "_" + getName().toLowerCase();
+        if (null == lsid)
+            return null;
+        List<Map<String, Object>> rows = getDatasetRows(u, Collections.singleton(lsid));
+        assert rows.size() <= 1 : "Expected zero or one matching row, but found " + rows.size();
+        return rows.isEmpty() ? null : rows.get(0);
     }
 
+    @NotNull
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> getDatasetRows(User u, Collection<String> lsids)
+    {
+        // Unfortunately we need to use two tableinfos: one to get the column names with correct casing,
+        // and one to get the data.  We should eventually be able to convert to using Query completely.
+        StudyQuerySchema querySchema = new StudyQuerySchema(getStudy(), u, true);
+        TableInfo queryTableInfo = querySchema.createDatasetTableInternal(this);
+
+        TableInfo tInfo = getTableInfo(u, true);
+        SimpleFilter filter = new SimpleFilter();
+        filter.addInClause(FieldKey.fromParts("lsid"), lsids);
+
+        Set<String> selectColumns = new TreeSet<>();
+        List<ColumnInfo> alwaysIncludedColumns = tInfo.getColumns("created", "createdby", "lsid", "sourcelsid", "QCState");
+
+        for (ColumnInfo col : tInfo.getColumns())
+        {
+            // special handling for lsids and keys -- they're not user-editable,
+            // but we want to display them
+            if (!col.isUserEditable())
+            {
+                if (!(alwaysIncludedColumns.contains(col) ||
+                        col.isKeyField() ||
+                        col.getName().equalsIgnoreCase(getKeyPropertyName())))
+                {
+                    continue;
+                }
+            }
+            selectColumns.add(col.getName());
+        }
+
+        List<Map<String, Object>> datas = new ArrayList<>(new TableSelector(tInfo, selectColumns, filter, null).getMapCollection());
+
+        if (datas.isEmpty())
+            return datas;
+
+        if (datas.get(0) instanceof ArrayListMap)
+        {
+            ((ArrayListMap)datas.get(0)).getFindMap().remove("_key");
+        }
+
+        List<Map<String, Object>> canonicalDatas = new ArrayList<>(datas.size());
+
+        for (Map<String, Object> data : datas)
+        {
+            canonicalDatas.add(canonicalizeDatasetRow(data, queryTableInfo.getColumns()));
+        }
+
+        return canonicalDatas;
+    }
+
+    public String updateDatasetRow(User u, String lsid, Map<String, Object> data, List<String> errors)
+    {
+        boolean allowAliasesInUpdate = false; // SEE https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=12592
+
+        QCState defaultQCState = null;
+        Integer defaultQcStateId = getStudy().getDefaultDirectEntryQCState();
+        if (defaultQcStateId != null)
+             defaultQCState = StudyManager.getInstance().getQCStateForRowId(getContainer(), defaultQcStateId.intValue());
+
+        String managedKey = null;
+        if (getKeyType() == DataSet.KeyType.SUBJECT_VISIT_OTHER && getKeyManagementType() != DataSet.KeyManagementType.None)
+            managedKey = getKeyPropertyName();
+
+        try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
+        {
+            Map<String, Object> oldData = getDatasetRow(u, lsid);
+
+            if (oldData == null)
+            {
+                // No old record found, so we can't update
+                errors.add("Record not found with lsid: " + lsid);
+                return null;
+            }
+
+            Map<String,Object> mergeData = new CaseInsensitiveHashMap<>(oldData);
+            // don't default to using old qcstate
+            mergeData.remove("qcstate");
+
+            TableInfo target = getTableInfo(u);
+            Map<String,ColumnInfo> colMap = DataIteratorUtil.createTableMap(target, allowAliasesInUpdate);
+
+            // If any fields aren't included, reuse the old values
+            for (Map.Entry<String,Object> entry : data.entrySet())
+            {
+                ColumnInfo col = colMap.get(entry.getKey());
+                String name = null == col ? entry.getKey() : col.getName();
+                if (name.equalsIgnoreCase(managedKey))
+                    continue;
+                mergeData.put(name,entry.getValue());
+            }
+
+            // these columns are always recalculated
+            mergeData.remove("lsid");
+            mergeData.remove("participantsequencenum");
+
+            deleteRows(u, Collections.singletonList(lsid));
+
+            List<Map<String,Object>> dataMap = Collections.singletonList(mergeData);
+
+            List<String> result = StudyManager.getInstance().importDatasetData(
+                    u, this, dataMap, errors, true, defaultQCState, null, true);
+
+            if (errors.size() > 0)
+            {
+                // Update failed
+                return null;
+            }
+
+            // lsid is not in the updated map by default since it is not editable,
+            // however it can be changed by the update
+            String newLSID = result.get(0);
+            mergeData.put("lsid", newLSID);
+
+            // Since we do a delete and an insert, we need to manually propagate the Created/CreatedBy values to the
+            // new row. See issue 18118
+            SQLFragment resetCreatedColumnsSQL = new SQLFragment("UPDATE ");
+            resetCreatedColumnsSQL.append(getStorageTableInfo(), "");
+            resetCreatedColumnsSQL.append(" SET Created = ?, CreatedBy = ? WHERE LSID = ?");
+            resetCreatedColumnsSQL.add(oldData.get(DatasetDomainKind.CREATED));
+            resetCreatedColumnsSQL.add(oldData.get(DatasetDomainKind.CREATED_BY));
+            resetCreatedColumnsSQL.add(newLSID);
+            new SqlExecutor(getStorageTableInfo().getSchema()).execute(resetCreatedColumnsSQL);
+
+            StudyServiceImpl.addDatasetAuditEvent(u, this, oldData, mergeData);
+
+            // Successfully updated
+            transaction.commit();
+
+            return newLSID;
+        }
+    }
+
+        // change a map's keys to have proper casing just like the list of columns
+    private Map<String,Object> canonicalizeDatasetRow(Map<String,Object> source, List<ColumnInfo> columns)
+    {
+        CaseInsensitiveHashMap<String> keyNames = new CaseInsensitiveHashMap<>();
+        for (ColumnInfo col : columns)
+        {
+            keyNames.put(col.getName(), col.getName());
+        }
+
+        Map<String,Object> result = new CaseInsensitiveHashMap<>();
+
+        for (Map.Entry<String,Object> entry : source.entrySet())
+        {
+            String key = entry.getKey();
+            String newKey = keyNames.get(key);
+            if (newKey != null)
+                key = newKey;
+            else if ("_row".equals(key))
+                continue;
+            result.put(key, entry.getValue());
+        }
+
+        return result;
+    }
+
+    public void deleteDatasetRows(User u, Collection<String> lsids)
+    {
+        // Need to fetch the old item in order to log the deletion
+        List<Map<String, Object>> oldDatas = getDatasetRows(u, lsids);
+
+        try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
+        {
+            deleteRows(u, lsids);
+
+            for (Map<String, Object> oldData : oldDatas)
+            {
+                StudyServiceImpl.addDatasetAuditEvent(u, this, oldData, null);
+            }
+
+            transaction.commit();
+        }
+    }
 
     public static void cleanupOrphanedDatasetDomains() throws SQLException
     {

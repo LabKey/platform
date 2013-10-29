@@ -1361,11 +1361,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                                 AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
                                 SimpleFilter filter = new SimpleFilter(tableMetadata.getRunRowIdFieldKeyFromResults(), run.getRowId());
                                 Collection<String> lsids = new TableSelector(tableInfo, Collections.<String>singleton("LSID"), filter, null).getCollection(String.class);
-                                for (String lsid : lsids)
-                                {
-                                    // Do the actual delete on the dataset for the rows in question
-                                    StudyService.get().deleteDatasetRow(user, dataset.getContainer(), dataset.getDataSetId(), lsid);
-                                }
+
+                                // Do the actual delete on the dataset for the rows in question
+                                dataset.deleteDatasetRows(user, lsids);
+
                                 // Add an audit event to the copy to study history
                                 StudyService.get().addAssayRecallAuditEvent(dataset, lsids.size(), run.getContainer(), user);
                             }

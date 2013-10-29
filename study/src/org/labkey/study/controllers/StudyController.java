@@ -30,8 +30,8 @@ import org.apache.xmlbeans.XmlException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
-import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentFile;
@@ -51,7 +51,6 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -63,14 +62,12 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParseException;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
@@ -199,7 +196,6 @@ import org.labkey.study.query.PublishedRecordQueryView;
 import org.labkey.study.query.StudyPropertiesQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudyQueryView;
-import org.labkey.study.query.StudySchemaProvider;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.security.permissions.ManageStudyPermission;
@@ -2485,7 +2481,7 @@ public class StudyController extends BaseStudyController
             }
             else
             {
-                Map<String,Object>[] data = StudyService.get().getDatasetRows(getUser(), getContainer(), form.getDatasetId(), allLsids);
+                List<Map<String,Object>> data = def.getDatasetRows(getUser(), allLsids);
                 for (Map<String,Object> row : data)
                 {
                     Object sourceLSID = row.get("sourcelsid");

@@ -54,6 +54,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     final static String QCSTATE = "qcstate";
     final static String PARTICIPANTSEQUENCENUM = "participantsequencenum";
 
+    public static final String CREATED = "created";
+    public static final String MODIFIED = "modified";
+    public static final String CREATED_BY = "createdBy";
+    public static final String MODIFIED_BY = "modifiedBy";
+
+
     /*
      * the columns common to all datasets
      */
@@ -72,10 +78,10 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
             new PropertyStorageSpec(_KEY, JdbcType.VARCHAR, 200),
             new PropertyStorageSpec(QCSTATE, JdbcType.INTEGER),
             new PropertyStorageSpec(PARTICIPANTSEQUENCENUM, JdbcType.VARCHAR, 200),
-            new PropertyStorageSpec("created", JdbcType.TIMESTAMP),
-            new PropertyStorageSpec("modified", JdbcType.TIMESTAMP),
-            new PropertyStorageSpec("createdBy", JdbcType.INTEGER),
-            new PropertyStorageSpec("modifiedBy", JdbcType.INTEGER)
+            new PropertyStorageSpec(CREATED, JdbcType.TIMESTAMP),
+            new PropertyStorageSpec(MODIFIED, JdbcType.TIMESTAMP),
+            new PropertyStorageSpec(CREATED_BY, JdbcType.INTEGER),
+            new PropertyStorageSpec(MODIFIED_BY, JdbcType.INTEGER)
         };
 
         BASE_PROPERTIES = new HashSet<>(Arrays.asList(props));

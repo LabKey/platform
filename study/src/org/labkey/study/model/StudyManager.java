@@ -111,7 +111,6 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
@@ -1220,22 +1219,15 @@ public class StudyManager
     
     public QCState[] getQCStates(Container container)
     {
-        try
-        {
-            QCState[] states = (QCState[]) DbCache.get(StudySchema.getInstance().getTableInfoQCState(), getQCStateCacheName(container));
+        QCState[] states = (QCState[]) DbCache.get(StudySchema.getInstance().getTableInfoQCState(), getQCStateCacheName(container));
 
-            if (states == null)
-            {
-                SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-                states = Table.select(StudySchema.getInstance().getTableInfoQCState(), Table.ALL_COLUMNS, filter, new Sort("Label"), QCState.class);
-                DbCache.put(StudySchema.getInstance().getTableInfoQCState(), getQCStateCacheName(container), states, CacheManager.HOUR);
-            }
-            return states;
-        }
-        catch (SQLException x)
+        if (states == null)
         {
-            throw new RuntimeSQLException(x);
+            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+            states = new TableSelector(StudySchema.getInstance().getTableInfoQCState(), Table.ALL_COLUMNS, filter, new Sort("Label")).getArray(QCState.class);
+            DbCache.put(StudySchema.getInstance().getTableInfoQCState(), getQCStateCacheName(container), states, CacheManager.HOUR);
         }
+        return states;
     }
 
     public boolean showQCStates(Container container)
@@ -1321,13 +1313,12 @@ public class StudyManager
         return null;
     }
 
-    private Map<String, VisitImpl> getVisitsForDataRows(Container container, int datasetId, Collection<String> dataLsids)
+    private Map<String, VisitImpl> getVisitsForDataRows(DataSetDefinition def, Collection<String> dataLsids)
     {
         Map<String, VisitImpl> visits = new HashMap<>();
         if (dataLsids == null || dataLsids.isEmpty())
             return visits;
 
-        DataSetDefinition def = getDataSetDefinition(getStudy(container), datasetId);
         TableInfo ds = def.getTableInfo(null, false);
 
         SQLFragment sql = new SQLFragment();
@@ -1339,8 +1330,8 @@ public class StudyManager
                 "\tpv.VisitRowId = v.RowId AND\n" +
                 "\tpv.Container = ? AND v.Container = ?\n" +
                 "WHERE sd.lsid IN(");
-        sql.add(container.getId());
-        sql.add(container.getId());
+        sql.add(def.getContainer().getId());
+        sql.add(def.getContainer().getId());
         boolean first = true;
         for (String dataLsid : dataLsids)
         {
@@ -1352,7 +1343,7 @@ public class StudyManager
         }
         sql.append(")");
 
-        Study study = getStudy(container);
+        Study study = def.getStudy();
         ResultSet rs = null;
         try
         {
@@ -1403,7 +1394,7 @@ public class StudyManager
         return visits;
     }
 
-    public void updateDataQCState(Container container, User user, int datasetId, Collection<String> lsids, QCState newState, String comments) throws SQLException
+    public void updateDataQCState(Container container, User user, int datasetId, Collection<String> lsids, QCState newState, String comments)
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         Study study = getStudy(container);
@@ -1411,9 +1402,9 @@ public class StudyManager
 
         Map<String, VisitImpl> lsidVisits = null;
         if (!def.isDemographicData())
-            lsidVisits = getVisitsForDataRows(container, datasetId, lsids);
-        Map<String, Object>[] rows = StudyService.get().getDatasetRows(user, container, datasetId, lsids);
-        if (rows.length == 0)
+            lsidVisits = getVisitsForDataRows(def, lsids);
+        List<Map<String, Object>> rows = def.getDatasetRows(user, lsids);
+        if (rows.isEmpty())
             return;
 
         Map<String, String> oldQCStates = new HashMap<>();
@@ -1455,9 +1446,8 @@ public class StudyManager
         if (updateLsids.isEmpty())
             return;
 
-        try
+        try (DbScope.Transaction transction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
             // TODO fix updating across study data
             SQLFragment sql = new SQLFragment("UPDATE " + def.getStorageTableInfo().getSelectName() + "\n" +
                     "SET QCState = ");
@@ -1508,11 +1498,7 @@ public class StudyManager
 
             clearCaches(container, false);
 
-            scope.commitTransaction();
-        }
-        finally
-        {
-            scope.closeConnection();
+            transction.commit();
         }
     }
     
@@ -2017,22 +2003,10 @@ public class StudyManager
         }
     }
 
-    public int getNumDatasetRows(User user, DataSet dataset)
+    public long getNumDatasetRows(User user, DataSet dataset)
     {
-        DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo sdTable = dataset.getTableInfo(user, false);
-
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) AS numRows FROM ");
-        sql.append(sdTable.getFromSQL("ds"));
-
-        try
-        {
-            return Table.executeSingleton(schema, sql.toString(), null, Integer.class).intValue();
-        }
-        catch (SQLException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
+        return new TableSelector(sdTable).getRowCount();
     }
 
 
@@ -4054,10 +4028,6 @@ public class StudyManager
                 if (null != l && l.size() > 0)
                     throw l.get(0);
                 throw x;
-            }
-            catch (Throwable t)
-            {
-                throw t;
             }
             finally
             {

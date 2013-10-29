@@ -23,11 +23,17 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.DataIteratorUtil;
@@ -60,7 +66,12 @@ import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.importer.StudyImportJob;
-import org.labkey.study.model.*;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.QCState;
+import org.labkey.study.model.QCStateSet;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.UploadLog;
 import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
@@ -70,7 +81,16 @@ import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jgarms
@@ -157,211 +177,6 @@ public class StudyServiceImpl implements StudyService.Service
         return def == null ? -1 : def.getDataSetId();
     }
 
-    public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String, Object> data, List<String> errors)
-            throws SQLException
-    {
-        boolean allowAliasesInUpdate = false; // SEE https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=12592
-        
-        StudyImpl study = StudyManager.getInstance().getStudy(c);
-        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
-
-        QCState defaultQCState = null;
-        Integer defaultQcStateId = study.getDefaultDirectEntryQCState();
-        if (defaultQcStateId != null)
-             defaultQCState = StudyManager.getInstance().getQCStateForRowId(c, defaultQcStateId.intValue());
-
-        String managedKey = null;
-        if (def.getKeyType() == DataSet.KeyType.SUBJECT_VISIT_OTHER && def.getKeyManagementType() != DataSet.KeyManagementType.None)
-            managedKey = def.getKeyPropertyName();
-
-        ensureTransaction();
-        try
-        {
-            Map<String,Object> oldData = getDatasetRow(u, c, datasetId, lsid);
-
-            if (oldData == null)
-            {
-                // No old record found, so we can't update
-                errors.add("Record not found with lsid: " + lsid);
-                return null;
-            }
-
-
-            Map<String,Object> mergeData = new CaseInsensitiveHashMap<>(oldData);
-            // don't default to using old qcstate
-            mergeData.remove("qcstate");
-
-            TableInfo target = def.getTableInfo(u);
-            Map<String,ColumnInfo> colMap = DataIteratorUtil.createTableMap(target, allowAliasesInUpdate);
-
-            // If any fields aren't included, use the old values
-            for (Map.Entry<String,Object> entry : data.entrySet())
-            {
-                ColumnInfo col = colMap.get(entry.getKey());
-                String name = null==col ? entry.getKey() : col.getName();
-                if (name.equalsIgnoreCase(managedKey))
-                    continue;
-                mergeData.put(name,entry.getValue());
-            }
-
-            // these columns are always recalculated
-            mergeData.remove("lsid");
-            mergeData.remove("participantsequencenum");
-
-
-            def.deleteRows(u, Collections.singletonList(lsid));
-
-            List<Map<String,Object>> dataMap = new ArrayList<>();
-            dataMap.add(mergeData);
-
-            List<String> result = StudyManager.getInstance().importDatasetData(
-                    u, def, dataMap, errors, true, defaultQCState, null, true);
-
-            if (errors.size() > 0)
-            {
-                // Update failed
-                return null;
-            }
-
-            // lsid is not in the updated map by default since it is not editable,
-            // however it can be changed by the update
-            String newLSID = result.get(0);
-            mergeData.put("lsid", newLSID);
-
-            addDatasetAuditEvent(u, c, def, oldData, mergeData);
-
-            // Successfully updated
-            commitTransaction();
-
-            return newLSID;
-        }
-        finally
-        {
-            closeConnection();
-        }
-    }
-
-
-    // change a map's keys to have proper casing just like the list of columns
-    private static Map<String,Object> canonicalizeDatasetRow(Map<String,Object> source, List<ColumnInfo> columns)
-    {
-        CaseInsensitiveHashMap<String> keyNames = new CaseInsensitiveHashMap<>();
-        for (ColumnInfo col : columns)
-        {
-            keyNames.put(col.getName(), col.getName());
-        }
-
-        Map<String,Object> result = new CaseInsensitiveHashMap<>();
-
-        for (Map.Entry<String,Object> entry : source.entrySet())
-        {
-            String key = entry.getKey();
-            String newKey = keyNames.get(key);
-            if (newKey != null)
-                key = newKey;
-            else if ("_row".equals(key))
-                continue;
-            result.put(key, entry.getValue());
-        }
-
-        return result;
-    }
-
-    public Map<String,Object> getDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException
-    {
-        if (null == lsid)
-            return null;
-        Map<String, Object>[] rows = getDatasetRows(u, c, datasetId, Collections.singleton(lsid));
-        return rows.length > 0 ? rows[0] : null;
-    }
-
-    @SuppressWarnings("unchecked") @NotNull
-    public Map<String,Object>[] getDatasetRows(User u, Container c, int datasetId, Collection<String> lsids) throws SQLException
-    {
-        StudyImpl study = StudyManager.getInstance().getStudy(c);
-        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
-
-        if (def == null)
-        {
-            throw new RuntimeException("Dataset for id " + datasetId + " not found");
-        }
-
-        // Unfortunately we need to use two tableinfos: one to get the column names with correct casing,
-        // and one to get the data.  We should eventually be able to convert to using Query completely.
-        StudyQuerySchema querySchema = new StudyQuerySchema(study, u, true);
-        TableInfo queryTableInfo = querySchema.createDatasetTableInternal(def);
-
-        TableInfo tInfo = def.getTableInfo(u, true);
-        SimpleFilter filter = new SimpleFilter();
-        filter.addInClause("lsid", lsids);
-
-        Set<String> selectColumns = new TreeSet<>();
-        List<ColumnInfo> columns = tInfo.getColumns();
-        ColumnInfo colLSID = tInfo.getColumn("lsid");
-        ColumnInfo colSourceLSID = tInfo.getColumn("sourcelsid");
-        ColumnInfo colQCState = tInfo.getColumn("QCState");
-
-        for (ColumnInfo col : columns)
-        {
-            // special handling for lsids and keys -- they're not user-editable,
-            // but we want to display them
-            if (!col.isUserEditable())
-            {
-                if (!(col == colLSID || col == colSourceLSID || col == colQCState ||
-                        col.isKeyField() ||
-                        col.getName().equalsIgnoreCase(def.getKeyPropertyName())))
-                {
-                    continue;
-                }
-            }
-            selectColumns.add(col.getName());
-        }
-
-        Map<String, Object>[] datas = new TableSelector(tInfo, selectColumns, filter, null).getMapArray();
-
-        if (datas.length == 0)
-            return datas;
-
-        if (datas[0] instanceof ArrayListMap)
-        {
-            ((ArrayListMap)datas[0]).getFindMap().remove("_key");
-        }
-
-        Map<String, Object>[] canonicalDatas = new Map[datas.length];
-
-        for (int i = 0; i < datas.length; i++)
-        {
-            Map<String, Object> data = datas[i];
-            canonicalDatas[i] = canonicalizeDatasetRow(data, queryTableInfo.getColumns());
-        }
-
-        return canonicalDatas;
-    }
-
-    public void deleteDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException
-    {
-        Study study = StudyManager.getInstance().getStudy(c);
-        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
-
-        // Need to fetch the old item in order to log the deletion
-        Map<String, Object> oldData = getDatasetRow(u, c, datasetId, lsid);
-
-        try
-        {
-            ensureTransaction();
-
-            def.deleteRows(u, Collections.singletonList(lsid));
-
-            addDatasetAuditEvent(u, c, def, oldData, null);
-
-            commitTransaction();
-        }
-        finally
-        {
-            closeConnection();
-        }
-    }
-
     /**
      * Requests arrive as maps of name->value. The StudyManager expects arrays of maps
      * of property URI -> value. This is a convenience method to do that conversion.
@@ -438,7 +253,7 @@ public class StudyServiceImpl implements StudyService.Service
      * if oldRecord is null, it's an insert, if newRecord is null, it's delete,
      * if both are set, it's an edit
      */
-    public static void addDatasetAuditEvent(User u, Container c, DataSet def, @Nullable Map<String,Object>oldRecord, @Nullable Map<String,Object> newRecord)
+    public static void addDatasetAuditEvent(User u, DataSet def, @Nullable Map<String, Object> oldRecord, @Nullable Map<String, Object> newRecord)
     {
         String comment;
         if (oldRecord == null)
@@ -447,18 +262,19 @@ public class StudyServiceImpl implements StudyService.Service
             comment = "A dataset record was deleted";
         else
             comment = "A dataset record was modified";
-        addDatasetAuditEvent(u, c, def, oldRecord, newRecord, comment);
+        addDatasetAuditEvent(u, def, oldRecord, newRecord, comment);
     }
 
     /**
      * if oldRecord is null, it's an insert, if newRecord is null, it's delete,
      * if both are set, it's an edit
      */
-    public static void addDatasetAuditEvent(User u, Container c, DataSet def, Map<String,Object> oldRecord, Map<String,Object> newRecord, String auditComment)
+    public static void addDatasetAuditEvent(User u, DataSet def, Map<String, Object> oldRecord, Map<String, Object> newRecord, String auditComment)
     {
         AuditLogEvent event = new AuditLogEvent();
         event.setCreatedBy(u);
 
+        Container c = def.getContainer();
         event.setContainerId(c.getId());
         if (c.getProject() != null)
             event.setProjectId(c.getProject().getId());
@@ -524,24 +340,6 @@ public class StudyServiceImpl implements StudyService.Service
                 Collections.<String,Object>emptyMap(),
                 AuditLogService.get().getDomainURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT));
                 */
-    }
-
-    public void ensureTransaction() throws SQLException
-    {
-        DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        scope.ensureTransaction();
-    }
-
-    public void commitTransaction() throws SQLException
-    {
-        DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        scope.commitTransaction();
-    }
-
-    public void closeConnection()
-    {
-        DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        scope.closeConnection();
     }
 
     public void applyDefaultQCStateFilter(DataView view)

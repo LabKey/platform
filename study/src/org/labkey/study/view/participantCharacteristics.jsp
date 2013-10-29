@@ -119,7 +119,7 @@
             <a title="Click to expand/collapse"
                href="<%=new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>"
                onclick="return toggleLink(this, true);">
-                <img src="<%= context.getContextPath() %>/_images/<%= expanded ? "minus.gif" : "plus.gif" %>"
+                <img src="<%= h(context.getContextPath()) %>/_images/<%= text(expanded ? "minus.gif" : "plus.gif") %>"
                      alt="Click to expand/collapse">
                 <%=h(dataSet.getDisplayString())%>
             </a><%
@@ -136,7 +136,7 @@
             if (updateAccess)
             {
     %>
-    <tr style="<%=expanded ? "" : "display:none"%>">
+    <tr style="<%=text(expanded ? "" : "display:none")%>">
         <td>
             <a href="<%=new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString())%>">[remove]</a>
         </td>
@@ -144,7 +144,7 @@
     <%
         }
     %>
-    <tr style="<%=expanded ? "" : "display:none"%>">
+    <tr style="<%=text(expanded ? "" : "display:none")%>">
         <td><img
                 src="<%=new ActionURL(ReportsController.PlotChartAction.class, study.getContainer()).addParameter("participantId", bean.getParticipantId()).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString())%>">
         </td>
@@ -181,7 +181,7 @@
 
         if (lsid != null)
         {
-            datasetRow = StudyService.get().getDatasetRow(user, context.getContainer(), datasetId, lsid);
+            datasetRow = dataSet.getDatasetRow(user, lsid);
         }
 
         boolean editAccess = dataSet.canWrite(user);
@@ -194,7 +194,7 @@
                 addAction.addParameter("quf_ParticipantId", bean.getParticipantId());
 
     %>
-    <td colspan="2" class="labkey-alternate-row"><%=textLink("add", addAction.getLocalURIString())%>
+    <td colspan="2" class="labkey-alternate-row"><%=textLink("add", addAction)%>
     </td>
     <%
             }
@@ -205,14 +205,14 @@
         if (editAccess)
         {
     %>
-    <tr class="labkey-alternate-row" style="<%=expanded ? "" : "display:none"%>">
+    <tr class="labkey-alternate-row" style="<%=text(expanded ? "" : "display:none")%>">
         <td colspan="2"><%
 
             ActionURL editAction = new ActionURL(DatasetController.UpdateAction.class, context.getContainer());
             editAction.addParameter("datasetId", datasetId);
             editAction.addParameter("lsid", lsid);
 
-        %><%=textLink("edit data", editAction.getLocalURIString())%>
+        %><%=textLink("edit data", editAction)%>
         </td>
     </tr>
     <%
@@ -227,7 +227,7 @@
             if (StringUtils.isEmpty(labelName))
                 labelName = pd.getName();
     %>
-    <tr class="<%=className%>" style="<%=expanded ? "" : "display:none"%>">
+    <tr class="<%=text(className)%>" style="<%=text(expanded ? "" : "display:none")%>">
         <td align="left" nowrap><%=h(labelName)%>
         </td>
         <%
