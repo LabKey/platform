@@ -2022,10 +2022,12 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
 
                 var self = this;
 
-                function showPrompt()
+                function showPrompt(queryDetails)
                 {
                     var config = Ext.applyIf({
-                        canEditSharedViews: self.canEditSharedViews,
+                        allowableContainerFilters: self.allowableContainerFilters,
+                        targetContainers: queryDetails.targetContainers,
+                        canEditSharedViews: queryDetails.canEditSharedViews,
                         canEdit: LABKEY.DataRegion._getCustomViewEditableErrors(config).length == 0,
                         success: function (win, o)
                         {
@@ -2076,28 +2078,30 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     LABKEY.DataRegion.saveCustomizeViewPrompt(config);
                 }
 
-                // CONSIDER: moving into LABKEY.DataRegion constructor
-                if (this.canEditSharedViews === undefined)
-                {
-                    LABKEY.Security.getUserPermissions({
-                        userId: LABKEY.user.id,
-                        success: function (info)
+                // Get the canEditSharedViews permission and candidate targetContainers.
+                var viewName = (this.view && this.view.name) || this.viewName || "";
+                LABKEY.Query.getQueryDetails({
+                    schemaName: this.schemaName,
+                    queryName: this.queryName,
+                    viewName: viewName,
+                    initializeMissingView: false,
+                    success: function (json, response, options)
+                    {
+                        // Display an error if there was an issue error getting the query details
+                        if (json.exception)
                         {
-                            var canEditSharedViews = false;
-                            if (info && info.container && info.container.effectivePermissions)
-                                canEditSharedViews = info.container.effectivePermissions.indexOf("org.labkey.api.security.permissions.EditSharedViewPermission") != -1;
+                            var viewSourceUrl = LABKEY.ActionURL.buildURL('query', 'viewQuerySource.view', null, {schemaName: this.schemaName, "query.queryName": this.queryName});
+                            var msg = Ext.util.Format.htmlEncode(json.exception) +
+                                    " &nbsp;<a target=_blank class='labkey-button' href='" + viewSourceUrl + "'>View Source</a>";
 
-                            this.canEditSharedViews = canEditSharedViews;
-                            showPrompt();
-                        },
-                        scope: this
-                    });
-                }
-                else
-                {
-                    showPrompt();
-                }
+                            this.showErrorMessage(msg);
+                            return;
+                        }
 
+                        showPrompt(json);
+                    },
+                    scope: this
+                });
             },
 
             onViewSave: function (designer, savedViewsInfo, urlParameters)
