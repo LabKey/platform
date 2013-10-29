@@ -124,7 +124,7 @@ public class SimpleQueryTransformStep extends TransformTask
     }
 
     // allows RemoteQueryTransformStep to override this method and selectively alter executeCopy
-    public DbScope getSourceScope(QuerySchema sourceSchema, DbScope targetScope)
+    protected DbScope getSourceScope(QuerySchema sourceSchema, DbScope targetScope)
     {
         DbScope sourceScope = sourceSchema.getDbSchema().getScope();
         if (sourceScope.equals(targetScope))

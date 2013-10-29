@@ -80,7 +80,7 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
 
     // allows RemoteQueryTransformStep to override this method and selectively alter executeCopy
     @Override
-    public DbScope getSourceScope(QuerySchema sourceSchema, DbScope targetScope)
+    protected DbScope getSourceScope(QuerySchema sourceSchema, DbScope targetScope)
     {
         // return null, there is no source scope for a remote query
         return null;
