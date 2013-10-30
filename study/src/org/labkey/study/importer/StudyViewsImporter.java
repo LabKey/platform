@@ -72,9 +72,14 @@ public class StudyViewsImporter implements InternalStudyImporter
                                     if (view == null)
                                         view = new CustomParticipantView();
 
-                                    view.setBody(IOUtils.toString(is));
-                                    view.setActive(participantView.getActive());
-                                    StudyManager.getInstance().saveCustomParticipantView(study, ctx.getUser(), view);
+                                    if (!view.isModuleParticipantView())
+                                    {
+                                        view.setBody(IOUtils.toString(is));
+                                        view.setActive(participantView.getActive());
+                                        StudyManager.getInstance().saveCustomParticipantView(study, ctx.getUser(), view);
+                                    }
+                                    else
+                                        ctx.getLogger().warn("Unable to load the custom participant view, there is an active module with an existing custom participant view that cannot be overwritten.");
                                 }
                                 else
                                     ctx.getLogger().fatal("Unable to load custom participant view file specified in settings : " + participantFileName);
