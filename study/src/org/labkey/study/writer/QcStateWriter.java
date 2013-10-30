@@ -77,6 +77,19 @@ public class QcStateWriter implements InternalStudyWriter
             qcStatesXml.setFile(DEFAULT_SETTINGS_FILE);
             vf.saveXmlBean(DEFAULT_SETTINGS_FILE, doc);
         }
+        else if (!study.isShowPrivateDataByDefault() || study.isBlankQCStatePublic())
+        {
+            // else if there are no qc states, but either of these other states are not the default, then write them out
+            StudyDocument.Study.QcStates qcStatesXml = ctx.getXml().addNewQcStates();
+            StudyqcDocument doc = StudyqcDocument.Factory.newInstance();
+
+            StudyqcDocument.Studyqc qcXml = doc.addNewStudyqc();
+            qcXml.setShowPrivateDataByDefault(study.isShowPrivateDataByDefault());
+            qcXml.setBlankQCStatePublic(study.isBlankQCStatePublic());
+
+            qcStatesXml.setFile(DEFAULT_SETTINGS_FILE);
+            vf.saveXmlBean(DEFAULT_SETTINGS_FILE, doc);
+        }
     }
 
     private QCState getQCStateFromRowId(Container container, Integer rowId)
