@@ -576,12 +576,40 @@ public class AdminController extends SpringActionController
                 getViewContext().getResponse().setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             }
             getPageConfig().setTemplate(Template.Dialog);
-            WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
-            String content = "This site is currently undergoing maintenance.";
-            if (null != wikiService)
+
+            boolean upgradeRequired = ModuleLoader.getInstance().isUpgradeRequired();
+            boolean upgradeInProgress = ModuleLoader.getInstance().isUpgradeInProgress();
+            boolean startupInProgress = ModuleLoader.getInstance().isStartupInProgress();
+            boolean maintenanceMode = AppProps.getInstance().isUserRequestedAdminOnlyMode();
+
+            String title = "This site is currently undergoing maintenance.";
+            String content = title;
+            if (upgradeRequired)
             {
-                content =  wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
+                title = "Upgrade required";
+                content = "Upgrade required: site admin must log in to begin upgrade.";
             }
+            else if (upgradeInProgress)
+            {
+                title = "Upgrade in progress";
+                content = "Upgrade in progress: only site admins may login at this time. You will be redirected when startup is complete.";
+            }
+            else if (startupInProgress)
+            {
+                title = "Startup in progress";
+                content = "Startup in progress: only site admins may login at this time. You will be redirected when startup is complete.";
+            }
+            else if (maintenanceMode)
+            {
+                WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+                if (null != wikiService)
+                {
+                    content =  wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
+                }
+            }
+
+            if (content == null)
+                content = title;
 
             ActionURL loginURL = null;
             if (getUser().isGuest())
@@ -598,7 +626,7 @@ public class AdminController extends SpringActionController
             bean.loginURL = loginURL;
 
             JspView view = new JspView<>("/org/labkey/core/admin/maintenance.jsp", bean, errors);
-            view.setTitle("The site is currently undergoing maintenance");
+            view.setTitle(title);
             return view;
         }
 
