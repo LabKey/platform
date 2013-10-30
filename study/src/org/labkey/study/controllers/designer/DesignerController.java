@@ -405,7 +405,7 @@ public class DesignerController extends SpringActionController
         public void export(CreateRepositoryForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             //Search for a template in all folders up to root.
-            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(TimepointType.DATE, "Subject Id");
+            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(TimepointType.DATE, "Subject");
             List<Map<String,Object>> defaultSpecimens = StudyDesignManager.get().generateSampleList(getStudyDefinition(form), getParticipants(), form.getBeginDate());
             MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
             for (ExcelColumn col : xlWriter.getColumns())
@@ -724,17 +724,21 @@ public class DesignerController extends SpringActionController
         }
         TabLoader loader = new TabLoader(specimenTSV, true);
         Map<String, String> columnAliases = new HashMap();
+        Map<String, String> labels = new HashMap();
         //Make sure we accept the labels
         SimpleSpecimenImporter importer = new SimpleSpecimenImporter();
         for (Map.Entry<String, String> entry : importer.getColumnLabels().entrySet())
+        {
             columnAliases.put(entry.getValue(), entry.getKey());
+            labels.put(entry.getKey(), entry.getValue());
+        }
+
         //And a few more aliases
         columnAliases.put("ParticipantId", SimpleSpecimenImporter.PARTICIPANT_ID);
         columnAliases.put("Date", SimpleSpecimenImporter.DRAW_TIMESTAMP);
         columnAliases.put("Subject", SimpleSpecimenImporter.PARTICIPANT_ID);
 
         //Remember whether we used a different header so we can put up error messages that make sense
-        Map<String, String> labels = new HashMap();
         for (ColumnDescriptor c : loader.getColumns())
         {
             if (columnAliases.containsKey(c.name))
@@ -760,7 +764,7 @@ public class DesignerController extends SpringActionController
             if (null == participant)
                 errors.add("Error, Row " + rowNum + " field " + labels.get(SimpleSpecimenImporter.PARTICIPANT_ID) + " is not supplied");
             else
-                participants.add((String) row.get(SimpleSpecimenImporter.PARTICIPANT_ID));
+                participants.add(participant);
 
             for (String col : PageFlowUtil.set(SimpleSpecimenImporter.SAMPLE_ID, SimpleSpecimenImporter.DRAW_TIMESTAMP))
                 if (null == row.get(col))

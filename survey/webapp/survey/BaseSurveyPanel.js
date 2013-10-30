@@ -306,14 +306,25 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             config.readOnly = true;
 
         // make the name lowercase for consistency
-        if (config.name)
-            config.name = config.name.toLowerCase();
+        this.convertNamesToLowerCase(config);
 
         // apply lookup filter for non-admins in edit mode (currently only supports "ISBLANK" filter type)
         if (!LABKEY.user.isAdmin && this.canEdit && question.lookup && question.lookup.filterColumn)
             config.store.filterArray = [LABKEY.Filter.create(question.lookup.filterColumn, null, LABKEY.Filter.Types.ISBLANK)];
 
         return config;
+    },
+
+    convertNamesToLowerCase : function(config) {
+        if (config.items)
+        {
+            Ext4.each(config.items, function(item){
+                this.convertNamesToLowerCase(item);
+            }, this);
+        }
+
+        if (config.name)
+            config.name = config.name.toLowerCase();
     },
 
     // Anything shared between actual questions and subSections

@@ -290,7 +290,7 @@ public class JSONSerializer
     static JSONObject createSampleMeasure(GWTSampleMeasure gwtSampleMeasure)
     {
         JSONObject sm = new JSONObject();
-        sm.put("type", gwtSampleMeasure.getType().toString());
+        sm.put("type", gwtSampleMeasure.getType());
         sm.put("amount", gwtSampleMeasure.getAmount());
         sm.put("unit", gwtSampleMeasure.getUnit());
 
@@ -301,7 +301,7 @@ public class JSONSerializer
     static JSONObject createSampleMeasure(SampleMeasure sampleMeasure)
     {
         JSONObject sm = new JSONObject();
-        sm.put("type", sampleMeasure.getType().toString());
+        sm.put("type", sampleMeasure.getType());
         sm.put("amount", sampleMeasure.getAmount());
         sm.put("unit", sampleMeasure.getUnit());
 
