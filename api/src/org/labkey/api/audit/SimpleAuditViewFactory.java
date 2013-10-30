@@ -164,6 +164,9 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
         try
         {
             String data = PageFlowUtil.toQueryString(properties.entrySet());
+            if (data == null)
+                return null;
+
             int count = 0;
 
             while (validateSize && data.length() > MAX_FIELD_SIZE)
