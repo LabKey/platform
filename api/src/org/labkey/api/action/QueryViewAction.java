@@ -21,6 +21,7 @@ import org.labkey.api.data.TSVWriter;
 import org.labkey.api.query.ExportScriptModel;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
@@ -47,29 +48,38 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
 
     public ModelAndView getView(Form form, BindException errors) throws Exception
     {
+        ViewType queryView = createInitializedQueryView(form, errors, true, form.getExportRegion());
+        if (queryView == null)
+        {
+            throw new NotFoundException("Could not create a view for the requested exportRegion: '" + form.getExportRegion() + "'");
+        }
         if (QueryAction.exportRowsExcel.name().equals(form.getExportType()))
         {
-            createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToExcel(getViewContext().getResponse(), ExcelWriter.ExcelDocumentType.xls);
+            queryView.exportToExcel(getViewContext().getResponse(), ExcelWriter.ExcelDocumentType.xls);
             return null;
         }
         if (QueryAction.exportRowsXLSX.name().equals(form.getExportType()))
         {
-            createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToExcel(getViewContext().getResponse(), ExcelWriter.ExcelDocumentType.xlsx);
+            queryView.exportToExcel(getViewContext().getResponse(), ExcelWriter.ExcelDocumentType.xlsx);
             return null;
         }
         else if (QueryAction.exportRowsTsv.name().equals(form.getExportType()))
         {
-            createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToTsv(getViewContext().getResponse(), form.isExportAsWebPage(), form.getDelim(), form.getQuote());
+            queryView.exportToTsv(getViewContext().getResponse(), form.isExportAsWebPage(), form.getDelim(), form.getQuote());
             return null;
         }
         else if ("excelWebQuery".equals(form.getExportType()))
         {
-            createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToExcelWebQuery(getViewContext().getResponse());
+            queryView.exportToExcelWebQuery(getViewContext().getResponse());
             return null;
         }
         else if (QueryAction.printRows.name().equals(form.getExportType()))
         {
             ViewType result = createInitializedQueryView(form, errors, false, form.getExportRegion());
+            if (result == null)
+            {
+                throw new NotFoundException("Could not create a view for the requested exportRegion: '" + form.getExportRegion() + "'");
+            }
             _print = true;
             getPageConfig().setTemplate(PageConfig.Template.Print);
             result.setFrame(WebPartView.FrameType.NONE);
@@ -78,7 +88,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         }
         else if (QueryAction.exportScript.name().equals(form.getExportType()))
         {
-            return ExportScriptModel.getExportScriptView(createInitializedQueryView(form, errors, true, form.getExportRegion()), form.getScriptType(), getPageConfig(), getViewContext().getResponse());
+            return ExportScriptModel.getExportScriptView(queryView, form.getScriptType(), getPageConfig(), getViewContext().getResponse());
         }
         else
         {
