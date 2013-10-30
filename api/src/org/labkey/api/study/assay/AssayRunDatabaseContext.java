@@ -126,6 +126,7 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
         return _user;
     }
 
+    @NotNull
     @Override
     public Container getContainer()
     {

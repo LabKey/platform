@@ -52,6 +52,7 @@ import java.util.Set;
  */
 public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements AssayRunUploadContext<ProviderType>, Serializable
 {
+    public static final String UNIT_TESTING_PROTOCOL_NAME = "LABKEYTESTINGPROTOCOL";
     // Store the RowIds, etc of objects so that we can safely serialize and deserialize them
     private int _userId;
     private int _protocolId;
@@ -86,7 +87,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         _userId = _user.getUserId();
         _protocol = originalContext.getProtocol();
         _protocolId = _protocol.getRowId();
-        if(!_protocol.getName().equals("LABKEYTESTINGPROTOCOL"))
+        if(!_protocol.getName().equals(UNIT_TESTING_PROTOCOL_NAME))
             _provider = (ProviderType) AssayService.get().getProvider(_protocol);
         _targetStudy = originalContext.getTargetStudy();
         _runName = originalContext.getName();
@@ -283,6 +284,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         return _user;
     }
 
+    @NotNull
     @Override
     public Container getContainer()
     {

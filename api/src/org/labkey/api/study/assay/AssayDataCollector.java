@@ -22,11 +22,15 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.view.HttpView;
 
-import java.util.Map;
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 
 /**
+ * Data collectors are responsible for getting the primary data file(s) for the assay to consume. Different
+ * implementations gather the file(s) through different mechanisms - from a directory that already exists
+ * on the server's file system, via a HTML textarea that the user has copy/pasted data into, etc.
+ *
  * User: jeckels
  * Date: Jul 12, 2007
  */
@@ -34,6 +38,7 @@ public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
 {
     public static final String PRIMARY_FILE = "__primaryFile__";
 
+    /** Indicates if there are (or might be) additional files that queued up to be consumed by more runs */
     public enum AdditionalUploadType
     {
         Disallowed(null), AlreadyUploaded("Save and Import Next File"), UploadRequired("Save and Import Another Run");
@@ -51,8 +56,10 @@ public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
         }
     }
 
+    /** @return the UI to plug into the import wizard for the user to somehow select/upload the file */
     public HttpView getView(ContextType context) throws ExperimentException;
 
+    /** @return the name for this AssayDataCollector. Needs to be unique within the set of data collectors for any given import attempt */
     public String getShortName();
 
     public String getDescription(ContextType context);

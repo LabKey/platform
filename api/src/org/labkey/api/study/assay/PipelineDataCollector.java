@@ -34,10 +34,12 @@ import java.io.FileNotFoundException;
 import java.util.*;
 
 /**
+ * Data collector that supplies files the user previously selected through the pipeline/file browser.
+ *
  * User: jeckels
  * Date: Jan 2, 2008
  */
-public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AbstractAssayDataCollector<ContextType>
+    public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AbstractAssayDataCollector<ContextType>
 {
     public PipelineDataCollector()
     {

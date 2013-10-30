@@ -777,6 +777,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             return _context.getUser();
         }
 
+        @NotNull
         public Container getContainer()
         {
             return _context.getContainer();

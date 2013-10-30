@@ -17,6 +17,7 @@
 package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -29,21 +30,28 @@ import org.labkey.api.view.ActionURL;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
-import java.io.IOException;
 import java.util.Map;
 
 /**
+ * Provides information needed for assay import attempts, such as the values of batch and run fields, the container
+ * into which the run should be inserted, etc. Specific assay implementations may need to extend the basic interface
+ * to include assay-specific metadata that they require.
+ *
+ * Different implementations can get the information from different sources. Examples include HTTP POST data, a run
+ * that's already in the database, or from files that are already on the server.
+ *
  * User: brittp
-* Date: Jul 11, 2007
-* Time: 1:24:10 PM
+ * Date: Jul 11, 2007
 */
 public interface AssayRunUploadContext<ProviderType extends AssayProvider>
 {
     @NotNull
     ExpProtocol getProtocol();
 
+    /** @return values of run fields to be inserted as part of the import */
     Map<DomainProperty, String> getRunProperties() throws ExperimentException;
 
+    /** @return values of batch fields to be inserted as part of the import */
     Map<DomainProperty, String> getBatchProperties();
 
     String getComments();
@@ -52,8 +60,10 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider>
 
     User getUser();
 
+    @NotNull
     Container getContainer();
 
+    @Nullable
     HttpServletRequest getRequest();
 
     ActionURL getActionURL();

@@ -89,6 +89,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     AssayRunCreator getRunCreator();
 
+    /** @return all of the legal data collectors that the user can choose from for the current import attempt */
     List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context);
 
     String getName();
