@@ -129,9 +129,9 @@
     for (FolderWriter writer : writers)
     {
         folderText.add(writer.getSelectionText());
-        if (writer.getChildren() != null)
+        if (writer.getChildren(true) != null)
         {
-            for (Writer child : writer.getChildren())
+            for (Writer child : writer.getChildren(true))
             {
                 studyText.add(child.getSelectionText());
             }

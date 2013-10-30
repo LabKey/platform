@@ -29,6 +29,8 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
 
 
@@ -115,11 +117,30 @@ public class StudyWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public Collection<Writer> getChildren()
+        public Collection<Writer> getChildren(boolean sort)
         {
-            Collection<Writer> children = new LinkedList<>();
+            LinkedList<Writer> children = new LinkedList<>();
             Collection<InternalStudyWriter> writers = StudySerializationRegistryImpl.get().getInternalStudyWriters();
             children.addAll(writers);
+
+            if (sort)
+            {
+                Collections.sort(children, new Comparator<Writer>()
+                {
+                    @Override
+                    public int compare(Writer o1, Writer o2)
+                    {
+                        String str1 = o1.getSelectionText();
+                        String str2 = o2.getSelectionText();
+
+                        if (str1 == null && str2 == null) return 0;
+                        if (str1 == null) return 1;
+                        if (str2 == null) return -1;
+
+                        return str1.compareToIgnoreCase(str2);
+                    }
+                });
+            }
             return children;
         }
     }

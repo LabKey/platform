@@ -68,7 +68,7 @@ String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : 
                     boolean checked = writer.includeInType(form.getExportType());
                     %>formItems.push({xtype: "checkbox", hideLabel: true, boxLabel: "<%=parent%>", name: "types", itemId: "<%=parent%>", inputValue: "<%=parent%>", checked: <%=checked%>, objectType: "parent"});<%
 
-                    Collection<Writer> children = writer.getChildren();
+                    Collection<Writer> children = writer.getChildren(true);
                     if (null != children && children.size() > 0)
                     {
                         for (Writer child : children)

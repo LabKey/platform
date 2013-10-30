@@ -1304,6 +1304,8 @@ public class PipelineController extends SpringActionController
         User user = context.getUser();
         ActionURL url = context.getActionURL();
 
+        // this is called when a folder is imported through the pipeline, since there is no ui for controlling query validation
+        // (or any other import options), we just pass through a vanilla ImportOptions object.
         ImportOptions options = new ImportOptions(c.getId());
         PipelineService.get().queueJob(new FolderImportJob(c, user, url, folderXml, originalFilename, pipelineRoot, options));
 

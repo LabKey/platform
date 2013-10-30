@@ -481,7 +481,7 @@
                 {
                     %>folderTemplateWriters.push({xtype: "checkbox", hideLabel: true, boxLabel: "<%=parent%>", name: "templateWriterTypes", itemId: "<%=parent%>", inputValue: "<%=parent%>", checked: true, objectType: "parent"});<%
 
-                    Collection<Writer> children = writer.getChildren();
+                    Collection<Writer> children = writer.getChildren(true);
                     if (null != children && children.size() > 0)
                     {
                         for (Writer child : children)

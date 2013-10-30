@@ -267,7 +267,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         // delete views template
         this.deleteTpl = new Ext4.XTemplate(
-            '<div><span>Are you shure you want to delete the selected view(s)?</span></div><br/>' +
+            '<div><span>Are you sure you want to delete the selected view(s)?</span></div><br/>' +
             '<tpl for=".">' +
                 '<tpl if="data.type">' +
                 '<div><span><img src="{data.icon}" alt="{data.type}">&nbsp;&nbsp;{data.name}</span></div>' +

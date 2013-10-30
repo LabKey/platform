@@ -266,7 +266,7 @@ public class StudyUpgradeCode implements UpgradeCode
                 {
                     // for existing participant reports, upgrade the descriptor type to enable
                     // alternate participant ID handling during export.
-                    if (report.getType() == ParticipantReport.TYPE)
+                    if (ParticipantReport.TYPE.equals(report.getType()))
                     {
                         ReportDescriptor descriptor = report.getDescriptor();
 
