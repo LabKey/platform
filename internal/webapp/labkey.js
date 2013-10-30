@@ -418,25 +418,27 @@ if (typeof LABKEY == "undefined")
             }
         };
 
-        var requiresExt4ClientAPI = function(immediate)
+        var requiresExt4ClientAPI = function(immediate, callback, scope)
         {
             if (arguments.length < 1) immediate = true;
 
             //for now we assume this is only dev mode
             requiresExt4Sandbox(immediate);
 
-            requiresScript("clientapi/ext4/Util.js", immediate);
-            requiresScript("clientapi/ext4/data/Reader.js", immediate);
-            requiresScript("clientapi/ext4/data/Proxy.js", immediate);
-            requiresScript("clientapi/ext4/data/Store.js", immediate);
+            var scripts = [
+                "clientapi/ext4/Util.js",
+                "clientapi/ext4/data/Reader.js",
+                "clientapi/ext4/data/Proxy.js",
+                "clientapi/ext4/data/Store.js",
+                "extWidgets/Ext4Helper.js",
+                "extWidgets/LabkeyCombo.js",
+                "extWidgets/ExtComponents.js",
+                "extWidgets/Ext4FormPanel.js",
+                "extWidgets/Ext4GridPanel.js",
+                "extWidgets/DetailsPanel.js"
+            ];
 
-            //load individual scripts so that they get loaded from source tree
-            requiresScript("extWidgets/Ext4Helper.js", immediate);
-            requiresScript("extWidgets/LabkeyCombo.js", immediate);
-            requiresScript("extWidgets/ExtComponents.js", immediate);
-            requiresScript("extWidgets/Ext4FormPanel.js", immediate);
-            requiresScript("extWidgets/Ext4GridPanel.js", immediate);
-            requiresScript("extWidgets/DetailsPanel.js", immediate);
+            requiresScript(scripts, immediate, callback, scope, true);
         };
 
         var requiresExt4Sandbox = function(immediate)
