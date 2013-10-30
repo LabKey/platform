@@ -44,7 +44,7 @@ Ext4.define('LABKEY.vis.TimeChartScriptPanel', {
             "        }\n" +
             "    };\n" +
             "\n" +
-            "    var selectRowsCallback = function(responseData) {\n" +
+            "    var getChartDataCallback = function(responseData) {\n" +
             "        // After the data is loaded we can render the chart(s).\n" +
             "        var TCH = LABKEY.vis.TimeChartHelper;\n" +
             "        var individualColumnAliases = responseData.individual ? responseData.individual.columnAliases : null;\n" +
@@ -130,7 +130,7 @@ Ext4.define('LABKEY.vis.TimeChartScriptPanel', {
             "            chartInfo: chartConfig,\n" +
             "            dataLimit: DEFAULT_DATA_LIMIT,\n" +
             "            defaultNumberFormat: DEFAULT_NUMBER_FORMAT,\n" +
-            "            success: selectRowsCallback,\n" +
+            "            success: getChartDataCallback,\n" +
             "            failure: function(info) {\n" +
             "                renderMessages(CHART_ID, ['Error: ' + info.exception]);\n" +
             "            }\n" +
