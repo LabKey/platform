@@ -16,6 +16,9 @@
 package org.labkey.study;
 
 import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
@@ -53,8 +56,12 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.reports.CommandLineSplitter;
+import org.labkey.study.reports.DefaultCommandLineSplitter;
+import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ParticipantReportDescriptor;
+import org.labkey.study.reports.WindowsCommandLineSplitter;
 
 import javax.servlet.http.HttpServletResponse;
 import java.sql.Connection;
@@ -330,6 +337,78 @@ public class StudyUpgradeCode implements UpgradeCode
                         QueryService.get().fireQueryChanged(User.getSearchUser(), container, null, new SchemaKey(null, StudyQuerySchema.SCHEMA_NAME), QueryChangeListener.QueryProperty.Name, queryPropertyChanges);
                     }
                 }
+            }
+        }
+    }
+
+
+    public static final CommandLineSplitter COMMAND_LINE_SPLITTER = SystemUtils.IS_OS_WINDOWS ? new WindowsCommandLineSplitter() : new DefaultCommandLineSplitter();
+
+    // invoked by study-13.23-13.24.sql
+    @SuppressWarnings({"UnusedDeclaration"})
+    @DeferredUpgrade
+    public void upgradeExternalReports(final ModuleContext context)
+    {
+        if (!context.isNewInstall())
+        {
+            DbScope scope = StudySchema.getInstance().getSchema().getScope();
+
+            try
+            {
+                scope.ensureTransaction();
+
+                for (Report report : ReportService.get().getReports(new SimpleFilter()))
+                {
+                    // Find external reports and split single "commandLine" parameter into "program" and "arguments", see #18077
+                    if (report.getType().equals(ExternalReport.TYPE))
+                    {
+                        ExternalReport externalReport = (ExternalReport)report;
+                        String commandLine = externalReport.getCommandLine();
+
+                        // This report is messed up
+                        if (StringUtils.isBlank(commandLine))
+                            continue;
+
+                        String[] strings = COMMAND_LINE_SPLITTER.getCommandStrings(commandLine);
+
+                        externalReport.setProgram(strings[0]);
+
+                        if (strings.length > 1)
+                        {
+                            String arguments = StringUtils.join(ArrayUtils.subarray(strings, 1, strings.length), " ");
+                            externalReport.setArguments(arguments);
+                        }
+
+                        externalReport.setCommandLine(null);
+
+                        ReportDescriptor descriptor = externalReport.getDescriptor();
+
+                        final Container descriptorContainer = ContainerManager.getForId(descriptor.getContainerId());
+
+                        ContainerUser rptContext = new ContainerUser()
+                        {
+                            public User getUser()
+                            {
+                                return context.getUpgradeUser();
+                            }
+
+                            public Container getContainer()
+                            {
+                                return descriptorContainer;
+                            }
+                        };
+                        ReportService.get().saveReport(rptContext, descriptor.getReportKey(), externalReport);
+                    }
+                }
+                scope.commitTransaction();
+            }
+            catch (Exception e)
+            {
+                _log.error("An error occurred upgrading participant reports: ", e);
+            }
+            finally
+            {
+                scope.closeConnection();
             }
         }
     }

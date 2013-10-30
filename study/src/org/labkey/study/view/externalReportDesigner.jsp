@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.study.DataSet"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController"%>
-<%@ page import="org.labkey.study.reports.ExternalReport"%>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.reports.ExternalReport" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ReportsController.ExternalReportBean> me = (JspView<ReportsController.ExternalReportBean>) HttpView.currentView();
@@ -43,7 +43,7 @@
     <table>
         <tr>
             <td>Dataset/Query</td>
-            <td>            <select name="queryName">
+            <td colspan="3">            <select name="queryName">
                 <%
                     Map<String, DataSetDefinition> datasetMap = bean.getDatasetDefinitions();
                     for (String name : bean.getTableAndQueryNames())
@@ -63,8 +63,10 @@
 </td>
         </tr>
         <tr>
-            <td>Command Line</td>
-            <td><input name="commandLine" size="50" value="<%=h(report.getCommandLine())%>"></td>
+            <td>Program</td>
+            <td><input name="program" size="50" value="<%=h(report.getProgram())%>"></td>
+            <td>&nbsp;Arguments&nbsp;</td>
+            <td><input name="arguments" size="50" value="<%=h(report.getArguments())%>"></td>
         </tr>
         <tr>
             <td>Output File Type</td>

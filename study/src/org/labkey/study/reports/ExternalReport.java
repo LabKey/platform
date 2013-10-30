@@ -17,9 +17,9 @@ package org.labkey.study.reports;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
@@ -58,6 +58,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -79,7 +81,6 @@ public class ExternalReport extends AbstractReport
     public static final String REPORT_FILE_SUBST = "${REPORT_FILE}";
     private static final String DATA_FILE_SUFFIX = "Data.tsv";
     private static final MimeMap mimeMap = new MimeMap();
-    private static final CommandLineSplitter COMMAND_LINE_SPLITTER = SystemUtils.IS_OS_WINDOWS ? new WindowsCommandLineSplitter() : new DefaultCommandLineSplitter();
 
     public void setDescriptor(ReportDescriptor descriptor)
     {
@@ -102,6 +103,26 @@ public class ExternalReport extends AbstractReport
     public void setContainer(Container c)
     {
         _container = c;
+    }
+
+    public @Nullable String getProgram()
+    {
+        return getDescriptor().getProperty("program");
+    }
+
+    public void setProgram(String program)
+    {
+        getDescriptor().setProperty("program", program);
+    }
+
+    public @Nullable String getArguments()
+    {
+        return getDescriptor().getProperty("arguments");
+    }
+
+    public void setArguments(String arguments)
+    {
+        getDescriptor().setProperty("arguments", arguments);
     }
 
     public String getCommandLine()
@@ -176,8 +197,8 @@ public class ExternalReport extends AbstractReport
         if (ext.charAt(0) == '.')
             ext = ext.substring(1);
 
-        if (null == StringUtils.trimToNull(getCommandLine()) || ((null == getDatasetId() || 0 == getDatasetId()) && null == getQueryName()))
-            return new HtmlView("Command line and datasetId must be provided");
+        if (null == StringUtils.trimToNull(getProgram()) || ((null == getDatasetId() || 0 == getDatasetId()) && null == getQueryName()))
+            return new HtmlView("Program and datasetId must be provided");
 
         File resultFile = null;
         File outFile = null;
@@ -203,19 +224,25 @@ public class ExternalReport extends AbstractReport
             tsv.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
             tsv.write(dataFile);
 
-            String[] params = COMMAND_LINE_SPLITTER.getCommandStrings(getCommandLine());
+            List<String> params = new LinkedList<>();
+            params.add(getProgram());
 
-            for (int i = 0; i < params.length; i++)
+            String arguments = getArguments();
+
+            if (null != arguments)
+                params.addAll(Arrays.asList(StringUtils.split(arguments)));
+
+            for (int i = 0; i < params.size(); i++)
             {
-                String param = params[i];
+                String param = params.get(i);
                 if (DATA_FILE_SUBST.equalsIgnoreCase(param))
-                    params[i] = dataFile.getName();
+                    params.set(i, dataFile.getName());
                 else if (REPORT_FILE_SUBST.equalsIgnoreCase(param))
                 {
                     String resultFileName = dataFile.getName();
                     resultFileName = resultFileName.substring(0, resultFileName.length() - DATA_FILE_SUFFIX.length()) + "Result." + ext;
                     resultFile = new File(getReportDir(viewContext), resultFileName);
-                    params[i] = resultFileName;
+                    params.set(i, resultFileName);
                 }
             }
 
@@ -230,7 +257,7 @@ public class ExternalReport extends AbstractReport
             if (resultCode != 0)
             {
                 String err = "<font color='red'>Error " + resultCode + " executing command</font> " +
-                        PageFlowUtil.filter(getCommandLine()) + "<br><pre>" +
+                        PageFlowUtil.filter(getProgram()) + "&nbsp;" + PageFlowUtil.filter(getArguments()) + "<br><pre>" +
                         PageFlowUtil.filter(PageFlowUtil.getFileContentsAsString(outFile)) + "</pre>";
                 HttpView errView = new HtmlView(err);
                 return errView;
@@ -381,13 +408,15 @@ public class ExternalReport extends AbstractReport
         return new File(reportDir, getFilePrefix());
     }
 
+    // TODO: Delete... no used?
     public String getParams()
     {
         ActionURL url = new ActionURL();
         if (null != queryString)
             url.setRawQuery(queryString);
 
-        replaceOrDelete(url, "commandLine", getCommandLine());
+        replaceOrDelete(url, "program", getProgram());
+        replaceOrDelete(url, "arguments", getArguments());
         replaceOrDelete(url, "fileExtension", getFileExtension());
         replaceOrDelete(url, VisitImpl.VISITKEY, getVisitRowId());
         replaceOrDelete(url, DataSetDefinition.DATASETKEY, getDatasetId());
@@ -413,7 +442,9 @@ public class ExternalReport extends AbstractReport
         if (null == params)
         {
             queryString = null;
-            setCommandLine(null);
+            setProgram(null);
+            setArguments(null);
+            setCommandLine(null);   // TODO: Remove
             setFileExtension(null);
             setVisitId(0);
             setDatasetId(null);
@@ -423,7 +454,9 @@ public class ExternalReport extends AbstractReport
 
         Map m = PageFlowUtil.mapFromQueryString(params);
 
-        setCommandLine((String)m.get("commandLine"));
+        setProgram((String)m.get("program"));
+        setArguments((String)m.get("arguments"));
+        setCommandLine((String)m.get("commandLine"));  // TODO: Remove
         setFileExtension((String)m.get("fileExtension"));
         setQueryName((String) m.get("queryName"));
         String recomputeString = StringUtils.trimToNull((String)m.get("recomputeWhen"));
