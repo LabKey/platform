@@ -334,12 +334,18 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return false;
     }
 
-    protected void applyDilution(List<? extends WellData> wells, ExpMaterial sampleInput, Map<String, DomainProperty> sampleProperties, boolean reverseDirection)
+    protected void applyDilution(List<? extends WellData> wells, ExpMaterial sampleInput, Map<String, DomainProperty> sampleProperties, boolean reverseDirection) throws ExperimentException
     {
         boolean first = true;
         Double dilution = (Double) sampleInput.getProperty(sampleProperties.get(DilutionAssayProvider.SAMPLE_INITIAL_DILUTION_PROPERTY_NAME));
         Double factor = (Double) sampleInput.getProperty(sampleProperties.get(DilutionAssayProvider.SAMPLE_DILUTION_FACTOR_PROPERTY_NAME));
         String methodString = (String) sampleInput.getProperty(sampleProperties.get(DilutionAssayProvider.SAMPLE_METHOD_PROPERTY_NAME));
+
+        if (null == dilution || null == factor || null == methodString)
+        {
+            throw new ExperimentException("Initial Dilution, Dilution Factor and Method must all be specified.");
+        }
+
         SampleInfo.Method method = SampleInfo.Method.valueOf(methodString);
         // Single plate NAb run specimens get more dilute as you move up or left on the plate, while
         // high-throughput layouts get more dilute as you move down through the plates:
@@ -366,7 +372,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         }
     }
 
-    protected abstract void prepareWellGroups(List<WellGroup> wellgroups, ExpMaterial material, Map<String, DomainProperty> samplePropertyMap);
+    protected abstract void prepareWellGroups(List<WellGroup> wellgroups, ExpMaterial material, Map<String, DomainProperty> samplePropertyMap) throws ExperimentException;
 
     protected Map<ExpMaterial, List<WellGroup>> getMaterialWellGroupMapping(DilutionAssayProvider provider, List<Plate> plates, Collection<ExpMaterial> sampleInputs)throws ExperimentException
     {
