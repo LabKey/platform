@@ -41,7 +41,7 @@ public class BaseFolderWriter implements FolderWriter
     }
 
     @Override
-    public Collection<Writer> getChildren()
+    public Collection<Writer> getChildren(boolean sort)
     {
         return null;
     }

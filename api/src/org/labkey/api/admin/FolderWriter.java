@@ -30,7 +30,7 @@ import java.util.Set;
 public interface FolderWriter extends Writer<Container, ImportContext<FolderDocument.Folder>>
 {
     @Nullable
-    public Collection<Writer> getChildren();
+    public Collection<Writer> getChildren(boolean sort);
     public boolean show(Container c);
     public boolean includeInType(AbstractFolderContext.ExportType type);
     /* temporary setting until all importers support using VirtualFile */
