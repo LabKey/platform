@@ -3697,7 +3697,8 @@ input[type="checkbox"], input[type="radio"] {
 }
 
 .labkey-app-bar ul li.labkey-app-bar-edit-tab {
-    padding: 5px 8px 0px 8px;
+    padding: 4px 8px 3px 4px;
+    line-height: 0;
 }
 
 .labkey-app-bar ul li.labkey-app-bar-edit-tab a {
@@ -3721,7 +3722,12 @@ input[type="checkbox"], input[type="radio"] {
 
 .button-bar.tab-edit-mode-enabled ul li.labkey-app-bar-tab-hidden {
     display: inline-block;
-    background-color: #cfcfcf;
+    background: #efefef url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAYAAADgkQYQAAAAFUlEQVQYlWNgoAY4ffp0A2UKhoUVAN5jEUdaMwH1AAAAAElFTkSuQmCC) repeat;
+}
+
+.button-bar.tab-edit-mode-enabled ul li.labkey-app-bar-tab-hidden a {
+    font-weight: normal;
+    font-size: 104%;
 }
 
 .button-bar.tab-edit-mode-enabled ul li.labkey-app-bar-add-tab {

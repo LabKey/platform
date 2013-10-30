@@ -661,6 +661,10 @@ li.labkey-app-bar-tab-inactive:hover {
     background-color: #<%= primary %>;
 }
 
+li.labkey-app-bar-tab-inactive a {
+    color: #<%= link %>;
+}
+
 .labkey-main-menu
 {
     background-color: #<%= link %>;
