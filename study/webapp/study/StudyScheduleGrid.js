@@ -15,7 +15,9 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
 
         Ext4.applyIf(config, {
             layout : 'fit',
-            frame  : false, border : false
+            frame  : false,
+            border : false,
+            maxHeight : 850
         });
 
         Ext4.define('Dataset.Browser.Category', {
@@ -287,6 +289,12 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                             record.set(timepointId.toString(), timepointValue);
                         }
                     }
+                },
+                //Set the height of the panel correctly
+                afterrender : function(panel)
+                {
+                    var count = panel.getView().getSelectionModel().getStore().getCount();
+                    this.setHeight(62+(24+26*count));
                 },
                 itemclick : function(view, record, item, index, e, opts) {
                     var cls = e.target.className;
