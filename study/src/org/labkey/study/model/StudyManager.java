@@ -543,14 +543,14 @@ public class StudyManager
                         colFrag = storageTableInfo.getSqlDialect().getISOFormat(colFrag);
                     updateKeySQL.append(colFrag);
                 }
-                new SqlExecutor(StudySchema.getInstance().getSchema()).execute(updateKeySQL);
 
-                // Now update the LSID column. Note - this needs to be the same as DatasetImportHelper.getURI()
-                SQLFragment updateLSIDSQL = new SQLFragment("UPDATE " + tableName + " SET lsid = ");
-                updateLSIDSQL.append(dataSetDefinition.generateLSIDSQL());
-                // TODO drop PK
                 try
                 {
+                    new SqlExecutor(StudySchema.getInstance().getSchema()).execute(updateKeySQL);
+
+                    // Now update the LSID column. Note - this needs to be the same as DatasetImportHelper.getURI()
+                    SQLFragment updateLSIDSQL = new SQLFragment("UPDATE " + tableName + " SET lsid = ");
+                    updateLSIDSQL.append(dataSetDefinition.generateLSIDSQL());
                     new SqlExecutor(StudySchema.getInstance().getSchema()).execute(updateLSIDSQL);
                 }
                 catch (DataIntegrityViolationException x)
