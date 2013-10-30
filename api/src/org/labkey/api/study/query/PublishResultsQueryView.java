@@ -59,6 +59,7 @@ import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
+import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -370,20 +371,11 @@ public class PublishResultsQueryView extends ResultsQueryView
             Integer runId = (Integer)_runIdCol.getValue(ctx);
             if (runId != null && !_resolvers.containsKey(runId))
             {
-                ExpRun run = ExperimentService.get().getExpRun(runId.intValue());
-                AssayProvider provider = AssayService.get().getProvider(_protocol);
+                ExpRun run = ExperimentService.get().getExpRun(runId);
 
-                try
-                {
-                    ParticipantVisitResolver resolver = AssayService.get().createResolver(getUser(), run, _protocol, provider, _targetStudyContainer);
-                    if (resolver != null)
-                        _resolvers.put(runId, resolver);
-                }
-                catch (ExperimentException e)
-                {
-                    //noinspection ThrowableInstanceNeverThrown
-                    throw (IOException)new IOException().initCause(e);
-                }
+                ParticipantVisitResolver resolver = new StudyParticipantVisitResolverType().createResolver(run, _targetStudyContainer, getUser());
+                if (resolver != null)
+                    _resolvers.put(runId, resolver);
             }
             return _resolvers.get(runId);
         }
