@@ -49,10 +49,10 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
     public ModelAndView getView(Form form, BindException errors) throws Exception
     {
         ViewType queryView = createInitializedQueryView(form, errors, true, form.getExportRegion());
-        if (queryView == null)
-        {
-            throw new NotFoundException("Could not create a view for the requested exportRegion: '" + form.getExportRegion() + "'");
-        }
+//        if (queryView == null)
+//        {
+//            throw new NotFoundException("Could not create a view for the requested exportRegion: '" + form.getExportRegion() + "'");
+//        }
         if (QueryAction.exportRowsExcel.name().equals(form.getExportType()))
         {
             queryView.exportToExcel(getViewContext().getResponse(), ExcelWriter.ExcelDocumentType.xls);
