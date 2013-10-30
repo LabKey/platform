@@ -161,13 +161,27 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             if (this.userColumns)
             {
                 this.customView.columns = [];
-                var columnNames = this.userColumns.split(",");
-                for (var i = 0; i < columnNames.length; i++)
+                if (this.userColumns == '*')
                 {
-                    this.customView.columns.push({
-                        fieldKey : columnNames[i],
-                        key : columnNames[i]
-                    });
+                    // Pull in all columns from the target query - issue 17425
+                    for (var i = 0; i < this.query.columns.length; i++)
+                    {
+                        this.customView.columns.push({
+                            fieldKey : this.query.columns[i].name,
+                            key : this.query.columns[i].name
+                        });
+                    }
+                }
+                else
+                {
+                    var columnNames = this.userColumns.split(",");
+                    for (var i = 0; i < columnNames.length; i++)
+                    {
+                        this.customView.columns.push({
+                            fieldKey : columnNames[i],
+                            key : columnNames[i]
+                        });
+                    }
                 }
             }
 
