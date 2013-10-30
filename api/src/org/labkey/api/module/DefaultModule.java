@@ -267,7 +267,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return _resourcePath;
     }
 
-    // resourcePath can optionally be set in the module.properties / xml files
+    // resourcePath can optionally be set in the module.properties / xml files; called by spring
+    @SuppressWarnings("UnusedDeclaration")
     public void setResourcePath(String resourcePath)
     {
         // If the resourcePath was set in the module.properties or xml file, override the path derived from the

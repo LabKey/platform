@@ -1422,12 +1422,10 @@ public class ModuleLoader implements Filter
     public Collection<String> getModuleSummaries(Container c)
     {
         LinkedList<String> list = new LinkedList<>();
+
         for (Module m : _modules)
-        {
-            Collection<String> messages = m.getSummary(c);
-            if (null != messages)
-                list.addAll(messages);
-        }
+            list.addAll(m.getSummary(c));
+
         return list;
     }
 

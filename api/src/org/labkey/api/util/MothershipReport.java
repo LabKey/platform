@@ -16,6 +16,7 @@
 
 package org.labkey.api.util;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -29,7 +30,6 @@ import org.labkey.api.settings.AppProps;
 import javax.mail.internet.ContentType;
 import javax.net.ssl.HttpsURLConnection;
 import javax.servlet.ServletContext;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -145,32 +145,28 @@ public class MothershipReport implements Runnable
         try
         {
             HttpURLConnection connection = openConnectionWithRedirects(_url);
-            InputStream in = null;
+
             try
             {
                 _responseCode = connection.getResponseCode();
                 if (_responseCode == 200 && MOTHERSHIP_STATUS_SUCCESS.equals(connection.getHeaderField(MOTHERSHIP_STATUS_HEADER_NAME)))
                 {
                     String encoding = "UTF-8";
+
                     if (connection.getContentType() != null)
                     {
                         ContentType contentType = new ContentType(connection.getContentType());
                         encoding = contentType.getParameter("charset");
                     }
-                    in = connection.getInputStream();
-                    ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-                    byte[] b = new byte[1024];
-                    int i;
-                    while ((i = in.read(b)) != -1)
+
+                    try (InputStream in = connection.getInputStream())
                     {
-                        bOut.write(b, 0, i);
+                        _content = IOUtils.toString(in, encoding);
                     }
-                    _content = bOut.toString(encoding);
                 }
             }
             finally
             {
-                if (in != null) { try { in.close(); } catch (IOException e) {} }
                 connection.disconnect();
             }
         }

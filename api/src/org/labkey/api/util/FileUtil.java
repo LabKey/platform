@@ -307,38 +307,14 @@ public class FileUtil
     public static void copyFile(File src, File dst) throws IOException
     {
         dst.createNewFile();
-        FileInputStream is = null;
-        FileOutputStream os = null;
-        FileChannel in = null;
-        FileLock lockIn = null;
-        FileChannel out = null;
-        FileLock lockOut = null;
-        try
+
+        try (FileInputStream is = new FileInputStream(src); FileChannel in = is.getChannel();
+             FileLock lockIn = in.lock(0L, Long.MAX_VALUE, true); FileOutputStream os = new FileOutputStream(dst);
+             FileChannel out = os.getChannel(); FileLock lockOut = out.lock())
         {
-            is = new FileInputStream(src);
-            in = is.getChannel();
-            lockIn = in.lock(0L, Long.MAX_VALUE, true);
-            os = new FileOutputStream(dst);
-            out = os.getChannel();
-            lockOut = out.lock();
             in.transferTo(0, in.size(), out);
             os.getFD().sync();
             dst.setLastModified(src.lastModified());
-        }
-        finally
-        {
-            if (null != lockIn)
-                lockIn.release();
-            if (null != lockOut)
-                lockOut.release();
-            if (null != in)
-                in.close();
-            if (null != out)
-                out.close();
-            if (null != os)
-                os.close();
-            if (null != is)
-                is.close();
         }
     }
 
