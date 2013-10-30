@@ -209,7 +209,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         return null;
     }
 
-    @NotNull
+    @Override @NotNull
     public Map<String, File> getUploadedData() throws ExperimentException
     {
         if (_uploadedData == null)

@@ -16,15 +16,16 @@
  */
 %>
 <%@ page import="org.labkey.api.study.assay.AssayDataCollector" %>
+<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
+<%@ page import="org.labkey.api.study.assay.AssayRunUploadContext" %>
 <%@ page import="org.labkey.api.study.assay.FileUploadDataCollector" %>
+<%@ page import="org.labkey.api.study.assay.PreviouslyUploadedDataCollector" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.io.File" %>
+<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.study.assay.AssayRunUploadContext" %>
-<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
-<%@ page import="org.labkey.api.study.assay.PreviouslyUploadedDataCollector" %>
 
 <%
     JspView<FileUploadDataCollector> me = (JspView<FileUploadDataCollector>) HttpView.currentView();
@@ -68,8 +69,10 @@
     function initializeFileUploadInput()
     {
         // Add an entry for all files that can be reused from a previous upload
-        <% for (Map.Entry<String, File> entry : bean.getReusableFiles().entrySet()) { %>
-            addFileUploadInputRow(null, <%= PageFlowUtil.jsString(entry.getValue().getName())%>, <%= PageFlowUtil.jsString(PreviouslyUploadedDataCollector.getHiddenFormElementHTML(me.getViewContext().getContainer(), entry.getKey(), entry.getValue()))%>);
+        <%
+        PreviouslyUploadedDataCollector reuseDataCollector = new PreviouslyUploadedDataCollector(Collections.<String, File>emptyMap(), PreviouslyUploadedDataCollector.Type.ReRun);
+        for (Map.Entry<String, File> entry : bean.getReusableFiles().entrySet()) { %>
+            addFileUploadInputRow(null, <%= PageFlowUtil.jsString(entry.getValue().getName())%>, <%= PageFlowUtil.jsString(reuseDataCollector.getHiddenFormElementHTML(me.getViewContext().getContainer(), entry.getKey(), entry.getValue()))%>);
         <% } %>
 
         // Be sure that we always have at least one file in the list

@@ -27,7 +27,6 @@ import org.labkey.api.view.InsertView;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -40,18 +39,48 @@ import java.util.Map;
  */
 public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AbstractTempDirDataCollector<ContextType>
 {
-    private static final String PATH_FORM_ELEMENT_NAME = "PreviouslyUploadedFilePaths";
-    private static final String NAME_FORM_ELEMENT_NAME = "PreviouslyUploadedFileNames";
     private final Map<String, File> _uploadedFiles;
+    private final Type _type;
 
-    public PreviouslyUploadedDataCollector()
+    /**
+     * Distinguishes between the form element names for the two different ways to point to files already on the
+     * server's file system. They shouldn't be treated as a single set of files, so it's important to keep them
+     * straight. See bug 18865.
+     */
+    public enum Type
     {
-        this(Collections.<String, File>emptyMap());
+        ReRun("ReRunReuseFilePaths", "ReRunReuseFileNames"), ErrorReshow("PreviouslyUploadedFilePaths", "PreviouslyUploadedFileNames");
+
+        private final String _pathFormElementName;
+        private final String _nameFormElementName;
+
+        private Type(String pathFormElementName, String nameFormElementName)
+        {
+            _pathFormElementName = pathFormElementName;
+            _nameFormElementName = nameFormElementName;
+        }
+
+        public String getPathFormElementName()
+        {
+            return _pathFormElementName;
+        }
+
+        public String getNameFormElementName()
+        {
+            return _nameFormElementName;
+        }
     }
 
-    public PreviouslyUploadedDataCollector(Map<String, File> uploadedFiles)
+    public PreviouslyUploadedDataCollector(Map<String, File> uploadedFiles, Type type)
     {
         _uploadedFiles = uploadedFiles;
+        _type = type;
+    }
+
+    /** Default type is ErrorReshow */
+    public PreviouslyUploadedDataCollector(Map<String, File> uploadedFiles)
+    {
+        this(uploadedFiles, Type.ErrorReshow);
     }
 
     public HttpView getView(ContextType context)
@@ -68,16 +97,16 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         return new HtmlView(sb.toString());
     }
 
-    public static String getHiddenFormElementHTML(Container container, String formElementName, File file)
+    public String getHiddenFormElementHTML(Container container, String formElementName, File file)
     {
         PipeRoot pipeRoot = getPipelineRoot(container);
         StringBuilder sb = new StringBuilder();
         sb.append("<input name=\"");
-        sb.append(PATH_FORM_ELEMENT_NAME);
+        sb.append(_type.getPathFormElementName());
         sb.append("\" type=\"hidden\" value=\"");
         sb.append(PageFlowUtil.filter(pipeRoot.relativePath(file).replace('\\', '/')));
         sb.append("\"/><input type=\"hidden\" name=\"");
-        sb.append(NAME_FORM_ELEMENT_NAME);
+        sb.append(_type.getNameFormElementName());
         sb.append("\" value=\"");
         sb.append(PageFlowUtil.filter(formElementName));
         sb.append("\"/>");
@@ -91,7 +120,7 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
 
     public String getDescription(ContextType context)
     {
-        return "Use the data file that was already uploaded to the server";
+        return "Use the data file(s) already uploaded to the server";
     }
 
     @NotNull
@@ -100,8 +129,8 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         if (_uploadComplete)
             return Collections.emptyMap();
 
-        String[] paths = context.getRequest().getParameterValues(PATH_FORM_ELEMENT_NAME);
-        String[] names = context.getRequest().getParameterValues(NAME_FORM_ELEMENT_NAME);
+        String[] paths = context.getRequest().getParameterValues(_type.getPathFormElementName());
+        String[] names = context.getRequest().getParameterValues(_type.getNameFormElementName());
         if (paths == null)
         {
             paths = new String[0];
@@ -137,8 +166,8 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         view.getDataRegion().addHiddenFormField("dataCollectorName", getShortName());
         for (Map.Entry<String, File> entry : _uploadedFiles.entrySet())
         {
-            view.getDataRegion().addHiddenFormField(NAME_FORM_ELEMENT_NAME, entry.getKey());
-            view.getDataRegion().addHiddenFormField(PATH_FORM_ELEMENT_NAME, pipeRoot.relativePath(entry.getValue()));
+            view.getDataRegion().addHiddenFormField(_type.getNameFormElementName(), entry.getKey());
+            view.getDataRegion().addHiddenFormField(_type.getPathFormElementName(), pipeRoot.relativePath(entry.getValue()));
         }
     }
 }

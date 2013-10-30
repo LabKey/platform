@@ -112,7 +112,7 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
         {
             // In the case that we're allowing reuse through this codepath
             // use any previously uploaded files that are still selected
-            PreviouslyUploadedDataCollector<ContextType> previousCollector = new PreviouslyUploadedDataCollector<>();
+            PreviouslyUploadedDataCollector<ContextType> previousCollector = new PreviouslyUploadedDataCollector<>(Collections.<String, File>emptyMap(), PreviouslyUploadedDataCollector.Type.ReRun);
             Map<String, File> reusedFiles = previousCollector.createData(context);
 
             // Merge the two sets of files
