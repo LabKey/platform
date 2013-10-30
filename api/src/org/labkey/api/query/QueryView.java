@@ -95,6 +95,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class QueryView extends WebPartView<Object>
 {
     public static final String EXPERIMENTAL_GENERIC_DETAILS_URL = "generic-details-url";
+    public  static final String EXCEL_WEB_QUERY_EXPORT_TYPE = "excelWebQuery";
+
     private static Logger _log = Logger.getLogger(QueryView.class);
 
     public static final String DATAREGIONNAME_DEFAULT = "query";
@@ -518,7 +520,7 @@ public class QueryView extends WebPartView<Object>
                 if (_useQueryViewActionExportURLs)
                 {
                     ActionURL expandedURL = getViewContext().cloneActionURL();
-                    expandedURL.addParameter("exportType", "excelWebQuery");
+                    expandedURL.addParameter("exportType", EXCEL_WEB_QUERY_EXPORT_TYPE);
                     expandedURL.addParameter("exportRegion", getDataRegionName());
                     ret.addParameter("queryViewActionURL", expandedURL.getLocalURIString());
                     break;

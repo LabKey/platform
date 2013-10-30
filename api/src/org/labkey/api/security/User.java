@@ -100,17 +100,14 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     }
 
     /**
-     * Returns the display name of this user. Requires a User
-     * in order to check if the current web browser is logged in.
-     * We then filter the display name for guests, stripping out the @domain.com
+     * Returns the display name of this user.
+     * If currentUser is null or a guest, we filter the display name, stripping out the @domain.com
      * if it is an email address.
-     * @param currentUser
      * @return The display name, possibly sanitized
      */
-
     // TODO: Check that currentUser really is the current user. Add a property to User that is set only by AuthFilter,
     // and a couple other places where treating an arbitrary user as currentUser is valid (e.g., email notifications)
-    public String getDisplayName(User currentUser)
+    public String getDisplayName(@Nullable User currentUser)
     {
         if (currentUser == search)
             return StringUtils.join(new String[] {_displayName, getEmail(), _firstName, _lastName}, " ");

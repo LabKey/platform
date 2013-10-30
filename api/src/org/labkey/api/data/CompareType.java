@@ -1394,6 +1394,12 @@ public enum CompareType
                             sb.append("Is a member of the group '").append(group.getName()).append("'");
                             return;
                         }
+                        User user = UserManager.getUser(groupId.intValue());
+                        if (user != null)
+                        {
+                            sb.append("Is the user '").append(user.getDisplayName(null)).append("'");
+                            return;
+                        }
                     }
                 }
                 catch (ConversionException ignored) {}
