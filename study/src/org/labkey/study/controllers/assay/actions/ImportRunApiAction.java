@@ -375,6 +375,7 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
             return _context.getUser();
         }
 
+        @NotNull
         public Container getContainer()
         {
             return _context.getContainer();
