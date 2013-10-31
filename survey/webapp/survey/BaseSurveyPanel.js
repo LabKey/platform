@@ -4,13 +4,6 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-LABKEY.requiresExt4ClientAPI();
-LABKEY.requiresScript("/extWidgets/Ext4Helper.js");
-LABKEY.requiresScript("/survey/SurveyGridQuestion.js");
-LABKEY.requiresScript("/survey/AttachmentField.js");
-LABKEY.requiresScript("/survey/UsersCombo.js");
-LABKEY.requiresCss("/survey/Survey.css");
-
 Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
 
     extend : 'Ext.form.Panel',
