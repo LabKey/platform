@@ -280,12 +280,19 @@ if (typeof LABKEY == "undefined")
 
         var loadedScripts = function()
         {
-            // This doesn't make any sense, we ask if the first argument is in the cache and if not return false
-            // but proceed to load the cache and mark everything as true...
-//            var ret = (arguments.length > 0 && LABKEY._loadedScriptFiles[arguments[0]]) ? true : false;
             for (var i=0; i < arguments.length; i++)
             {
-                scriptCache.callbacksOnCache(arguments[i], true);
+                if (Object.prototype.toString.call(arguments[i]) == "[object Array]")
+                {
+                    for (var j=0; j < arguments[i].length; j++)
+                    {
+                        scriptCache.callbacksOnCache(arguments[i][j], true);
+                    }
+                }
+                else
+                {
+                    scriptCache.callbacksOnCache(arguments[i], true);
+                }
             }
             return true;
         };
