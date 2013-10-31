@@ -16,11 +16,8 @@
 package org.labkey.remoteapi;
 
 /**
- * Created with IntelliJ IDEA.
  * User: gktaylor
  * Date: 10/29/13
- * Time: 3:06 PM
- * To change this template use File | Settings | File Templates.
  */
 public class RemoteConnections
 {
