@@ -7,11 +7,21 @@ if(!LABKEY.vis) {
     LABKEY.vis = {};
 }
 
+/**
+ * @namespace Namespace used to encapsulate functions related to creating study Time Charts. Used in the
+ * Time Chart Wizard and when exporting Time Charts as scripts.
+ */
 LABKEY.vis.TimeChartHelper = new function() {
 
     var studyNounSingular = LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.nounSingular : 'Participant';
     var studyNounColumnName = LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.columnName : 'ParticipantId';
 
+    /**
+     * Generate the main title and axis labels for the chart based on the specified x-axis and y-axis (left and right) labels.
+     * @param {String} mainTitle The label to be used as the main chart title.
+     * @param {Array} axisArr An array of axis information including the x-axis and y-axis (left and right) labels.
+     * @returns {Object}
+     */
     var generateLabels = function(mainTitle, axisArr) {
         var xTitle = '', yLeftTitle = '', yRightTitle = '';
         for (var i = 0; i < axisArr.length; i++)
@@ -46,6 +56,13 @@ LABKEY.vis.TimeChartHelper = new function() {
         };
     };
 
+    /**
+     * Generates an object containing {@link LABKEY.vis.Scale} objects used for the chart.
+     * @param {Object} config The chart configuration object that defines the selected measures, axis info, subjects/groups, etc.
+     * @param {Object} tickMap For visit based charts, the x-axis tick mark mapping, from generateTickMap.
+     * @param {Object} numberFormats The number format functions to use for the x-axis and y-axis (left and right) tick marks.
+     * @returns {Object}
+     */
     var generateScales = function(config, tickMap, numberFormats) {
         if (config.measures.length == 0)
             throw "There must be at least one specified measure in the chartInfo config!";
@@ -117,6 +134,15 @@ LABKEY.vis.TimeChartHelper = new function() {
         };
     };
 
+    /**
+     * Generate the x-axis interval column alias key. For date based charts, this will be a time interval (i.e. Days, Weeks, etc.)
+     * and for visit based charts, this will be the column alias for the visit field.
+     * @param {Object} config The chart configuration object that defines the selected measures, axis info, subjects/groups, etc.
+     * @param {Array} individualColumnAliases The array of column aliases for the individual subject data.
+     * @param {Array} aggregateColumnAliases The array of column aliases for the group/cohort aggregate data.
+     * @param {String} nounSingular The singular name of the study subject noun (i.e. Participant).
+     * @returns {String}
+     */
     var generateIntervalKey = function(config, individualColumnAliases, aggregateColumnAliases, nounSingular) {
         if (config.measures.length == 0)
             throw "There must be at least one specified measure in the chartInfo config!";
@@ -135,6 +161,11 @@ LABKEY.vis.TimeChartHelper = new function() {
         }
     };
 
+    /**
+     * Generate that x-axis tick mark mapping for a visit based chart.
+     * @param {Object} visitMap For visit based charts, the study visit information map.
+     * @returns {Object}
+     */
     var generateTickMap = function(visitMap) {
         var tickMap = {};
         for (var rowId in visitMap)
@@ -143,6 +174,16 @@ LABKEY.vis.TimeChartHelper = new function() {
         return tickMap;
     };
 
+    /**
+     * Generates the aesthetic map object needed by the visualization API to render the chart. See {@link LABKEY.vis.Plot}
+     * and {@link LABKEY.vis.Layer}.
+     * @param {Object} config The chart configuration object that defines the selected measures, axis info, subjects/groups, etc.
+     * @param {Object} visitMap For visit based charts, the study visit information map.
+     * @param {Array} individualColumnAliases The array of column aliases for the individual subject data.
+     * @param {String} intervalKey The x-axis interval column alias key (i.e. Days, Weeks, etc.), from generateIntervalKey.
+     * @param {String} nounColumnName The name of the study subject noun column (i.e. ParticipantId).
+     * @returns {Object}
+     */
     var generateAes = function(config, visitMap, individualColumnAliases, intervalKey, nounColumnName) {
         if (config.measures.length == 0)
             throw "There must be at least one specified measure in the chartInfo config!";
@@ -163,6 +204,18 @@ LABKEY.vis.TimeChartHelper = new function() {
         };
     };
 
+    /**
+     * Generate an array of {@link LABKEY.vis.Layer} objects based on the selected chart series list.
+     * @param {Object} config The chart configuration object that defines the selected measures, axis info, subjects/groups, etc.
+     * @param {Object} visitMap For visit based charts, the study visit information map.
+     * @param {Array} individualColumnAliases The array of column aliases for the individual subject data.
+     * @param {Array} aggregateColumnAliases The array of column aliases for the group/cohort aggregate data.
+     * @param {Array} aggregateData The array of group/cohort aggregate data, from getChartData.
+     * @param {Array} seriesList The list of series that will be plotted for a given chart, from generateSeriesList.
+     * @param {String} intervalKey The x-axis interval column alias key (i.e. Days, Weeks, etc.), from generateIntervalKey.
+     * @param {String} nounColumnName The name of the study subject noun column (i.e. ParticipantId).
+     * @returns {Array}
+     */
     var generateLayers = function(config, visitMap, individualColumnAliases, aggregateColumnAliases, aggregateData, seriesList, intervalKey, nounColumnName) {
         if (config.measures.length == 0)
             throw "There must be at least one specified measure in the chartInfo config!";
@@ -367,6 +420,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         return layers;
     };
 
+    // private function
     var generatePointClickFn = function(fnString, columnMap, measureInfo){
         // the developer is expected to return a function, so we encapalate it within the anonymous function
         // (note: the function should have already be validated in a try/catch when applied via the developerOptionsPanel)
@@ -378,6 +432,12 @@ LABKEY.vis.TimeChartHelper = new function() {
         };
     };
 
+    /**
+     * Generate the list of series to be plotted in a given Time Chart. A series will be created for each measure and
+     * dimension that is selected in the chart.
+     * @param {Array} measures The array of selected measures from the chart config.
+     * @returns {Array}
+     */
     var generateSeriesList = function(measures) {
         var arr = [];
         for (var i = 0; i < measures.length; i++)
@@ -414,6 +474,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         return arr;
     };
 
+    // private function
     var generateDataSortArray = function(subject, firstMeasure, isDateBased, nounSingular) {
         return [
             subject,
@@ -430,6 +491,11 @@ LABKEY.vis.TimeChartHelper = new function() {
         ];
     };
 
+    /**
+     * Determine whether or not the chart needs to clip the plotted lines and points based on manually set axis ranges.
+     * @param {Object} config The chart configuration object that defines the selected measures, axis info, subjects/groups, etc.
+     * @returns {boolean}
+     */
     var generateApplyClipRect = function(config) {
         var xAxisIndex = getAxisIndex(config.axis, "x-axis");
         var leftAxisIndex = getAxisIndex(config.axis, "y-axis", "left");
@@ -442,6 +508,14 @@ LABKEY.vis.TimeChartHelper = new function() {
         );
     };
 
+    /**
+     * Generates axis range min and max values based on the full Time Chart data. This will be used when plotting multiple
+     * charts that are set to use the same axis ranges across all charts in the report.
+     * @param {Object} config The chart configuration object that defines the selected measures, axis info, subjects/groups, etc.
+     * @param {Object} data The data object, from getChartData.
+     * @param {Array} seriesList The list of series that will be plotted for a given chart, from generateSeriesList.
+     * @param {String} nounSingular The singular name of the study subject noun (i.e. Participant).
+     */
     var generateAcrossChartAxisRanges = function(config, data, seriesList, nounSingular) {
         if (config.measures.length == 0)
             throw "There must be at least one specified measure in the chartInfo config!";
@@ -604,6 +678,16 @@ LABKEY.vis.TimeChartHelper = new function() {
         }
     };
 
+    /**
+     * Generates plot configs to be passed to the {@link LABKEY.vis.Plot} function for each chart in the report.
+     * @param {Object} config The chart configuration object that defines the selected measures, axis info, subjects/groups, etc.
+     * @param {Object} data The data object, from getChartData.
+     * @param {Array} seriesList The list of series that will be plotted for a given chart, from generateSeriesList.
+     * @param {boolean} applyClipRect A boolean indicating whether or not to clip the plotted data region, from generateApplyClipRect.
+     * @param {int} maxCharts The maximum number of charts to display in one report.
+     * @param {String} nounColumnName The name of the study subject noun column (i.e. ParticipantId).
+     * @returns {Array}
+     */
     var generatePlotConfigs = function(config, data, seriesList, applyClipRect, maxCharts, nounColumnName) {
         var plotConfigInfoArr = [];
 
@@ -737,6 +821,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         return plotConfigInfoArr;
     };
 
+    // private function
     var getDataWithSeriesCheck = function(data, groupAccessor, seriesList, columnAliases) {
         /*
          Groups data by the groupAccessor passed in. Also, checks for the existance of any series data for that groupAccessor.
@@ -765,6 +850,13 @@ LABKEY.vis.TimeChartHelper = new function() {
         return groupedData;
     };
 
+    /**
+     * Get the index in the axes array for a given axis (ie left y-axis).
+     * @param {Array} axes The array of specified axis information for this chart.
+     * @param {String} axisName The chart axis (i.e. x-axis or y-axis).
+     * @param {String} side The y-axis side (i.e. left or right).
+     * @returns {number}
+     */
     var getAxisIndex = function(axes, axisName, side) {
         var index = -1;
         for(var i = 0; i < axes.length; i++){
@@ -782,6 +874,12 @@ LABKEY.vis.TimeChartHelper = new function() {
         return index;
     };
 
+    /**
+     * Get the data needed for the specified Time Chart based on the chart config. Makes calls to the
+     * {@link LABKEY.Query.Visualization.getData} to get the individual subject data and grouped aggregate data.
+     * Calls the success callback function in the config when it has received all of the requested data.
+     * @param {Object} config The chart configuration object that defines the selected measures, axis info, subjects/groups, etc.
+     */
     var getChartData = function(config) {
         if (!config.success)
             throw "You must specify a success callback function!";
@@ -969,6 +1067,14 @@ LABKEY.vis.TimeChartHelper = new function() {
         }
     };
 
+    /**
+     * Verifies the information in the chart config to make sure it has proper measures, axis info, subjects/groups, etc.
+     * Returns an object with a success parameter (boolean) and a message parameter (string). If the success pararameter
+     * is false there is a critical error and the chart cannot be rendered. If success is true the chart can be rendered.
+     * Message will contain an error or warning message if applicable. If message is not null and success is true, there is a warning.
+     * @param {Object} config The chart configuration object that defines the selected measures, axis info, subjects/groups, etc.
+     * @returns {Object}
+     */
     var validateChartConfig = function(config) {
         var message = "";
 
@@ -1012,6 +1118,18 @@ LABKEY.vis.TimeChartHelper = new function() {
         return {success: true, message: message};
     };
 
+    /**
+     * Verifies that the chart data contains the expected interval values and measure/dimension data. Also checks to make
+     * sure that data can be used in a log scale (if applicable). Returns an object with a success parameter (boolean)
+     * and a message parameter (string). If the success pararameter is false there is a critical error and the chart
+     * cannot be rendered. If success is true the chart can be rendered. Message will contain an error or warning
+     * message if applicable. If message is not null and success is true, there is a warning.
+     * @param {Object} data The data object, from getChartData.
+     * @param {Object} config The chart configuration object that defines the selected measures, axis info, subjects/groups, etc.
+     * @param {Array} seriesList The list of series that will be plotted for a given chart, from generateSeriesList.
+     * @param {int} limit The data limit for a single report.
+     * @returns {Object}
+     */
     var validateChartData = function(data, config, seriesList, limit) {
         var message = "";
         var sep = "";
@@ -1093,23 +1211,25 @@ LABKEY.vis.TimeChartHelper = new function() {
     };
 
     return {
-        generateLabels : generateLabels,
-        generateScales : generateScales,
-        generateIntervalKey : generateIntervalKey,
-        generateTickMap : generateTickMap,
-        generateAes : generateAes,
-        generateLayers : generateLayers,
-        generatePointClickFn : generatePointClickFn,
-        generateSeriesList : generateSeriesList,
-        generateDataSortArray : generateDataSortArray,
-        generateApplyClipRect : generateApplyClipRect,
+        /**
+         * Loads all of the required dependencies for a Time Chart.
+         * @param {Function} callback The callback to be executed when all of the visualization dependencies have been loaded.
+         * @param {Object} scope The scope to be used when executing the callback.
+         */
+        loadVisDependencies: LABKEY.requiresVisualization,
         generateAcrossChartAxisRanges : generateAcrossChartAxisRanges,
+        generateAes : generateAes,
+        generateApplyClipRect : generateApplyClipRect,
+        generateIntervalKey : generateIntervalKey,
+        generateLabels : generateLabels,
+        generateLayers : generateLayers,
         generatePlotConfigs : generatePlotConfigs,
-        getDataWithSeriesCheck : getDataWithSeriesCheck,
+        generateScales : generateScales,
+        generateSeriesList : generateSeriesList,
+        generateTickMap : generateTickMap,
         getAxisIndex : getAxisIndex,
         getChartData : getChartData,
         validateChartConfig : validateChartConfig,
-        validateChartData : validateChartData,
-        loadVisDependencies: LABKEY.requiresVisualization
+        validateChartData : validateChartData
     };
 };
