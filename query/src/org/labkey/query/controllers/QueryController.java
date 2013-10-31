@@ -2977,7 +2977,10 @@ public class QueryController extends SpringActionController
                 }
             }
 
-            filter.addUrlFilters(getViewContext().getActionURL(), "query");
+            String dataRegionName = form.getDataRegionName();
+            if (StringUtils.trimToNull(dataRegionName) == null)
+                dataRegionName = QueryView.DATAREGIONNAME_DEFAULT;
+            filter.addUrlFilters(getViewContext().getActionURL(), dataRegionName);
 
             SQLFragment selectSql = service.getSelectSQL(table, columns.values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
 
@@ -2990,6 +2993,15 @@ public class QueryController extends SpringActionController
             sql.append(") AS S ORDER BY value");
 
             sql = table.getSqlDialect().limitRows(sql, settings.getMaxRows());
+
+            // 18875: Support Parameterized queries in Select Distinct
+            Map<String, Object> _namedParameters = settings.getQueryParameters();
+
+            if (null != _namedParameters)
+            {
+                service.bindNamedParameters(sql, _namedParameters);
+                service.validateNamedParameters(sql);
+            }
 
             return sql;
         }
