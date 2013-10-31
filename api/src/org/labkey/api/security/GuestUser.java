@@ -20,10 +20,16 @@ class GuestUser extends User
 {
     private static final int[] _guestGroups = new int[]{Group.groupGuests};
 
-    GuestUser(String name)
+    GuestUser(String name, String displayName)
     {
         super(name, 0);
         _groups = _guestGroups;
+        setDisplayName(displayName);
+    }
+
+    GuestUser(String name)
+    {
+        this(name, null);
     }
 
     @Override

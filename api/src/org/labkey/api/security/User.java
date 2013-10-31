@@ -54,7 +54,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
 
     private ImpersonationContext _impersonationContext = new NotImpersonatingContext();
 
-    public static final User guest = new GuestUser("guest");
+    public static final User guest = new GuestUser("guest", "guest");
     // Search user is guest plus Reader everywhere
     private static User search;
 

@@ -246,6 +246,7 @@ abstract public class QueryService
     abstract public void clearEnvironment();
     abstract public Object cloneEnvironment();
     abstract public void copyEnvironment(Object o);
+    abstract public Object getEnvironment(QueryService.Environment e);
 
 
     public interface ParameterDecl extends ParameterDescription

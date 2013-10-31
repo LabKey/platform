@@ -22,13 +22,17 @@ import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.SimpleFilter.ColumnNameFormatter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.security.*;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.data.xml.queryCustomView.OperatorType;
 
@@ -1363,12 +1367,31 @@ public enum CompareType
             ColumnInfo colInfo = columnMap != null ? columnMap.get(_fieldKey) : null;
             String alias = colInfo != null ? colInfo.getAlias() : _fieldKey.getName();
 
-            if (getParamVals().length == 0)
+            Object id = getId();
+
+            if (id == null)
             {
                 return new SQLFragment("(1 = 2)");
             }
 
-            return getMemberOfSQL(dialect, new SQLFragment(alias), new SQLFragment("?", convertParamValue(colInfo, getParamVals()[0])));
+            return getMemberOfSQL(dialect, new SQLFragment(alias), new SQLFragment("?", convertParamValue(colInfo, id)));
+        }
+
+        @Nullable
+        private Object getId()
+        {
+            Object id = getParamVals().length == 0 ? null : getParamVals()[0];
+
+            // If we don't have a value to use, try using the current user
+            if (id == null || "".equals(id) || (id instanceof Parameter.TypedValue && ((Parameter.TypedValue)id)._value == null))
+            {
+                User user = (User)QueryService.get().getEnvironment(QueryService.Environment.USER);
+                if (user != null)
+                {
+                    id = user.getUserId();
+                }
+            }
+            return id;
         }
 
         @Override
@@ -1380,18 +1403,21 @@ public enum CompareType
         @Override
         protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
-            // Try to resolve the parameter value to a Group object
-            if (getParamVals().length > 0)
+            // Try to resolve the parameter value to a Group or User object
+
+            Object id = getId();
+
+            if (id != null)
             {
                 try
                 {
-                    Integer groupId = (Integer)ConvertUtils.convert(String.valueOf(getParamVals()[0]), Integer.class);
+                    Integer groupId = (Integer)ConvertUtils.convert(String.valueOf(id), Integer.class);
                     if (groupId != null)
                     {
                         Group group = org.labkey.api.security.SecurityManager.getGroup(groupId.intValue());
                         if (group != null)
                         {
-                            sb.append("Is a member of the group '").append(group.getName()).append("'");
+                            sb.append("Is a member of the ").append(group.isProjectGroup() ? "project" : "site").append(" group '").append(group.getName()).append("'");
                             return;
                         }
                         User user = UserManager.getUser(groupId.intValue());
