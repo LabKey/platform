@@ -56,12 +56,12 @@ LABKEY.vis.GenericChartHelper = new function(){
 
     /**
      * Generates an object containing {@link LABKEY.vis.Scale} objects used for the chart.
-     * @param chartType The chartType from getChartType.
-     * @param measures The measures from generateMeasures.
-     * @param savedScales The scales object from the saved chart config.
-     * @param aes The aesthetic map object from genereateAes.
-     * @param responseData The data from selectRows.
-     * @param defaultFormatFn used to format values for tick marks.
+     * @param {String} chartType The chartType from getChartType.
+     * @param {Object} measures The measures from generateMeasures.
+     * @param {Object} savedScales The scales object from the saved chart config.
+     * @param {Object} aes The aesthetic map object from genereateAes.
+     * @param {Object} responseData The data from selectRows.
+     * @param {Function} defaultFormatFn used to format values for tick marks.
      * @returns {Object}
      */
     var generateScales = function(chartType, measures, savedScales, aes, responseData, defaultFormatFn) {
@@ -128,12 +128,12 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     /**
-     * Generates the aesthetic map objet needed by the visualization API to render the chart. See {@link LABKEY.vis.Plot}
+     * Generates the aesthetic map object needed by the visualization API to render the chart. See {@link LABKEY.vis.Plot}
      * and {@link LABKEY.vis.Layer}.
-     * @param chartType The chartType from getChartType.
-     * @param measures The measures from getMeasures.
-     * @param schemaName The schemaName from the saved queryConfig.
-     * @param queryName The queryName from the saved queryConfig.
+     * @param {String} chartType The chartType from getChartType.
+     * @param {Object} measures The measures from getMeasures.
+     * @param {String} schemaName The schemaName from the saved queryConfig.
+     * @param {String} queryName The queryName from the saved queryConfig.
      * @returns {Object}
      */
     var generateAes = function(chartType, measures, schemaName, queryName) {
@@ -192,7 +192,7 @@ LABKEY.vis.GenericChartHelper = new function(){
 
     /**
      * Generates a function that returns the text used for point hovers.
-     * @param measures The measures object from the saved chart config.
+     * @param {Object} measures The measures object from the saved chart config.
      * @returns {Function}
      */
     var generatePointHover = function(measures){
@@ -250,8 +250,8 @@ LABKEY.vis.GenericChartHelper = new function(){
     /**
      * Generates an accessor function that returns a discrete value from a row of data for a given measure and label.
      * Used when an axis has a discrete measure (i.e. string).
-     * @param measureName {String} The name of the measure.
-     * @param measureLabel {String} The label of the measure.
+     * @param {String} measureName The name of the measure.
+     * @param {String} measureLabel The label of the measure.
      * @returns {Function}
      */
     var generateDiscreteAcc = function(measureName, measureLabel) {
@@ -274,8 +274,8 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     /**
-     * Generates an accessor function that returns a the value from a row of data for a given measure.
-     * @param measureName {String} The name of the measure.
+     * Generates an accessor function that returns a value from a row of data for a given measure.
+     * @param {String} measureName The name of the measure.
      * @returns {Function}
      */
     var generateContinuousAcc = function(measureName){
@@ -302,7 +302,7 @@ LABKEY.vis.GenericChartHelper = new function(){
 
     /**
      * Generates an accesssor function for shape and color measures.
-     * @param measureName {String} The name of the measure.
+     * @param {String} measureName The name of the measure.
      * @returns {Function}
      */
     var generateGroupingAcc = function(measureName){
@@ -325,7 +325,7 @@ LABKEY.vis.GenericChartHelper = new function(){
     /**
      * Generates an accessor for boxplots that do not have an x-axis measure. Generally the measureName passed in is the
      * queryName.
-     * @param measureName The name of the measure. In this case it is generally the query name.
+     * @param {String} measureName The name of the measure. In this case it is generally the query name.
      * @returns {Function}
      */
     var generateMeasurelessAcc = function(measureName) {
@@ -338,10 +338,10 @@ LABKEY.vis.GenericChartHelper = new function(){
 
     /**
      * Generates the function to be executed when a user clicks a point.
-     * @param measures {Object} The measures from the saved chart config.
-     * @param schemaName {String} The schema name from the saved query config.
-     * @param queryName {String} The query name from the saved query config.
-     * @param fnString {String} The string value of the user-provided function to be executed when a point is clicked.
+     * @param {Object} measures The measures from the saved chart config.
+     * @param {String} schemaName The schema name from the saved query config.
+     * @param {String} queryName The query name from the saved query config.
+     * @param {String} fnString The string value of the user-provided function to be executed when a point is clicked.
      * @returns {Function}
      */
     var generatePointClickFn = function(measures, schemaName, queryName, fnString){
@@ -369,7 +369,7 @@ LABKEY.vis.GenericChartHelper = new function(){
 
     /**
      * Generates the Point Geom used for scatter plots and box plots with all points visible.
-     * @param chartOptions {Object} The saved chartOptions object from the chart config.
+     * @param {Object} chartOptions The saved chartOptions object from the chart config.
      * @returns {LABKEY.vis.Geom.Point}
      */
     var generatePointGeom = function(chartOptions){
@@ -383,7 +383,7 @@ LABKEY.vis.GenericChartHelper = new function(){
 
     /**
      * Generates the Boxplot Geom used for box plots.
-     * @param chartOptions {Object} The saved chartOptions object from the chart config.
+     * @param {Object} chartOptions The saved chartOptions object from the chart config.
      * @returns {LABKEY.vis.Geom.Boxplot}
      */
     var generateBoxplotGeom = function(chartOptions){
@@ -401,8 +401,8 @@ LABKEY.vis.GenericChartHelper = new function(){
 
     /**
      * Generates a Geom based on the chartType.
-     * @param chartType {String} The chart type from getChartType.
-     * @param chartOptions {Object} The chartOptions object from the saved chart config.
+     * @param {String} chartType The chart type from getChartType.
+     * @param {Object} chartOptions The chartOptions object from the saved chart config.
      * @returns {LABKEY.vis.Geom}
      */
     var generateGeom = function(chartType, chartOptions) {
@@ -416,20 +416,18 @@ LABKEY.vis.GenericChartHelper = new function(){
     /**
      * Verifies that the x axis is actually present and has data. Also checks to make sure that data can be used in a log
      * scale (if applicable). Returns an object with a success parameter (boolean) and a message parameter (string). If the
-     * success pararameter is false there is a critical error and the char cannot be rendered. If success is true the chart
+     * success pararameter is false there is a critical error and the chart cannot be rendered. If success is true the chart
      * can be rendered. Message will contain an error or warning message if applicable. If message is not null and success
      * is true, there is a warning.
-     * @param chartType {String} The chartType from getChartType.
-     * @param chartConfig {Object} The saved chartConfig object.
-     * @param aes {Object} The aes object from generateAes.
-     * @param scales The scales object from generateScales.
-     * @param data The data from selectRows.
+     * @param {String} chartType The chartType from getChartType.
+     * @param {Object} chartConfig The saved chartConfig object.
+     * @param {Object} aes The aes object from generateAes.
+     * @param {Object} scales The scales object from generateScales.
+     * @param {Array} data The data from selectRows.
      * @returns {Object}
      */
     var validateXAxis = function(chartType, chartConfig, aes, scales, data){
-        // Verifies that the x axis is actually present and has data.
-        // Also checks to make sure that data can be used in a log scale (if applicable).
-        // Returns true if everything is good to go, false otherwise.
+
         var dataIsNull = true, measureUndefined = true, invalidLogValues = false, hasZeroes = false, message = null;
 
         for (var i = 0; i < data.length; i ++) {
@@ -481,20 +479,17 @@ LABKEY.vis.GenericChartHelper = new function(){
     /**
      * Verifies that the y axis is actually present and has data. Also checks to make sure that data can be used in a log
      * scale (if applicable). Returns an object with a success parameter (boolean) and a message parameter (string). If the
-     * success pararameter is false there is a critical error and the char cannot be rendered. If success is true the chart
+     * success pararameter is false there is a critical error and the chart cannot be rendered. If success is true the chart
      * can be rendered. Message will contain an error or warning message if applicable. If message is not null and success
      * is true, there is a warning.
-     * @param chartType {String} The chartType from getChartType.
-     * @param chartConfig {Object} The saved chartConfig object.
-     * @param aes {Object} The aes object from generateAes.
-     * @param scales The scales object from generateScales.
-     * @param data The data from selectRows.
+     * @param {String} chartType The chartType from getChartType.
+     * @param {Object} chartConfig The saved chartConfig object.
+     * @param {Object} aes The aes object from generateAes.
+     * @param {Object} scales The scales object from generateScales.
+     * @param {Array} data The data from selectRows.
      * @returns {Object}
      */
     var validateYAxis = function(chartType, chartConfig, aes, scales, data){
-        // Verifies that the y axis is actually present and has data.
-        // Also checks to make sure that data can be used in a log scale (if applicable).
-        // Returns true if everything is good to go, false otherwise.
 
         var dataIsNull = true, measureUndefined = true, invalidLogValues = false, hasZeroes = false, message = null;
 
@@ -564,8 +559,8 @@ LABKEY.vis.GenericChartHelper = new function(){
         validateYAxis: validateYAxis,
         /**
          * Loads all of the required dependencies for a Generic Chart.
-         * @param callback The callback to be executed when all of the visualization dependencies have been loaded.
-         * @param scope The scope to be used when executing the callback.
+         * @param {Function} callback The callback to be executed when all of the visualization dependencies have been loaded.
+         * @param {Object} scope The scope to be used when executing the callback.
          */
         loadVisDependencies: LABKEY.requiresVisualization
     };
