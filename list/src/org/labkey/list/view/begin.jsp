@@ -33,6 +33,7 @@
 <%@ page import="org.labkey.list.controllers.ListController" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeSet" %>
+<%@ page import="java.util.HashMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ViewContext> view = (JspView<ViewContext>) HttpView.currentView();
@@ -40,6 +41,7 @@
     ViewContext ctx = HttpView.currentContext();
     Container c = ctx.getContainer();
     User user = ctx.getUser();
+    Map<Integer, String> nameMap = new HashMap<Integer, String>();
     Map<String, ListDefinition> lists = ListService.get().getLists(c);
     NavTree links;
     PopupMenuView pmw;
@@ -60,6 +62,7 @@
         }
         else
         {
+            int i = 0;
             for (ListDefinition list : new TreeSet<>(lists.values()))
             {
                 links = new NavTree("");
@@ -138,7 +141,7 @@
     function truncateTable(queryName)
     {
         Ext4.Msg.confirm("Confirm Deletion",
-                "Are you sure you wish to delete all rows for the list "+queryName+"?  This action cannot be undone.",
+                "Are you sure you wish to delete all rows for the selected list?  This action cannot be undone.",
                 function(button){
                     if (button === 'yes') {
                         truncate();
