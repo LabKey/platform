@@ -254,19 +254,26 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             {
                 var results = {};
 
-                var paramValPairs = this.getParamValPairs(null, null);
-                var re = new RegExp('^' + Ext.escapeRe(this.name) + '\.param\.', 'i');
-                var name;
-                Ext.each(paramValPairs, function (pair)
+                if (this.getQWP())
                 {
-                    if (pair[0].match(re))
+                    results = this.getQWP().getParameters();
+                }
+                else
+                {
+                    var paramValPairs = this.getParamValPairs(null, null);
+                    var re = new RegExp('^' + Ext.escapeRe(this.name) + '\.param\.', 'i');
+                    var name;
+                    Ext.each(paramValPairs, function (pair)
                     {
-                        name = pair[0].replace(re, '');
-                        if (lowercase)
-                            name = name.toLowerCase();
-                        results[name] = pair[1];
-                    }
-                }, this);
+                        if (pair[0].match(re))
+                        {
+                            name = pair[0].replace(re, '');
+                            if (lowercase)
+                                name = name.toLowerCase();
+                            results[name] = pair[1];
+                        }
+                    }, this);
+                }
 
                 return results;
             },

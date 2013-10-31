@@ -499,6 +499,22 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         return params;
     },
 
+    //
+    // Returns a parameters object like DataRegion.getParameters()
+    //
+    getParameters : function() {
+        var params = {}, s;
+        for (var p in this.parameters)
+        {
+            if (this.parameters.hasOwnProperty(p))
+            {
+                s = p.split('.');
+                params[s[s.length-1]] = this.parameters[p];
+            }
+        }
+        return params;
+    },
+
     /**
      * Requests the query web part content and renders it within the element identified by the renderTo parameter.
      * Note that you do not need to call this method explicitly if you specify a renderTo property on the config object

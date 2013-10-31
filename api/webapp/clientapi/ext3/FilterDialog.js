@@ -1186,9 +1186,11 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
         var config = {
             schemaName: dr.schemaName,
             queryName: dr.queryName,
+            dataRegionName: dr.name,
             column: this.fieldKey,
             containerPath: dr.container || dr.containerPath || LABKEY.container.path,
             containerFilter: dr.containerFilter,
+            parameters: dr.getParameters(),
             maxRows: this.MAX_FILTER_CHOICES,
             success : function(d) {
                 if (d && d.values) {

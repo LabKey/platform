@@ -509,8 +509,13 @@ LABKEY.Query = new function()
                 dataObject[config.dataRegionName + '.selectionKey'] = config.selectionKey;
 
             if (config.parameters)
+            {
                 for (var propName in config.parameters)
-                    dataObject[config.dataRegionName + '.param.' + propName] = config.parameters[propName];
+                {
+                    if (config.parameters.hasOwnProperty(propName))
+                        dataObject[config.dataRegionName + '.param.' + propName] = config.parameters[propName];
+                }
+            }
 
             if (config.requiredVersion)
                 dataObject.apiVersion = config.requiredVersion;
@@ -561,6 +566,8 @@ LABKEY.Query = new function()
          * @param {String} [config.containerFilter] One of the values of {@link LABKEY.Query.containerFilter} that sets
          *       the scope of this query. Defaults to containerFilter.current, and is interpreted relative to
          *       config.containerPath.
+         * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the SQL
+         *        references underlying queries that are parameterized.
          * @param {Array} [config.filterArray] Array of objects created by {@link LABKEY.Filter.create}.
          * @param {String} [config.viewName] Name of a view to use.  This is potentially important if this view contains filters on the data.
          * @param {Function} config.success
@@ -576,22 +583,35 @@ LABKEY.Query = new function()
             if (!config.column)
                 throw "You must specify a column!";
 
+            config.dataRegionName = config.dataRegionName || "query";
+
             var dataObject = LABKEY.Query.buildQueryParams(
                     config.schemaName,
                     config.queryName,
-                    config.filterArray
+                    config.filterArray,
+                    config.sort,
+                    config.dataRegionName
             );
 
-            dataObject['query.columns'] = config.column;
+            dataObject[config.dataRegionName + '.columns'] = config.column;
 
             if (config.viewName)
-                dataObject['query.viewName'] = config.viewName;
+                dataObject[config.dataRegionName + '.viewName'] = config.viewName;
 
             if (config.maxRows && config.maxRows >= 0)
                 dataObject.maxRows = config.maxRows;
 
             if (config.containerFilter)
                 dataObject.containerFilter = config.containerFilter;
+
+            if (config.parameters)
+            {
+                for (var propName in config.parameters)
+                {
+                    if (config.parameters.hasOwnProperty(propName))
+                        dataObject[config.dataRegionName + '.param.' + propName] = config.parameters[propName];
+                }
+            }
 
             return LABKEY.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'selectDistinct', config.containerPath),
