@@ -62,7 +62,6 @@
         }
         else
         {
-            int i = 0;
             for (ListDefinition list : new TreeSet<>(lists.values()))
             {
                 links = new NavTree("");
@@ -98,7 +97,7 @@
                     }
                     if(c.hasPermission(user, AdminPermission.class))
                     {
-                        String onClick = "truncateTable("+hq(list.getName())+")";
+                        String onClick = "truncateTable("+list.getListId()+", "+hq(list.getName())+")";
                         %><td><%=textLink("Delete All Rows", "#", onClick, "")%></td><%
                     }
                 }
@@ -138,10 +137,21 @@
 </script>
 
 <script type="text/javascript">
-    function truncateTable(queryName)
+    function truncateTable(listId, listName)
     {
+        var listMap = [];
+        <%
+            for(ListDefinition list : lists.values())
+            {
+        %>
+                listMap[<%=list.getListId()%>] = '<%=h(list.getName())%>';
+        <%
+            }
+        %>
+
+        console.log(listMap[listId]);
         Ext4.Msg.confirm("Confirm Deletion",
-                "Are you sure you wish to delete all rows for the selected list?  This action cannot be undone.",
+                "Are you sure you wish to delete all rows for the list "+listMap[listId]+"?  This action cannot be undone.",
                 function(button){
                     if (button === 'yes') {
                         truncate();
@@ -166,7 +176,7 @@
                     Ext4.getBody().unmask();
                     LABKEY.Utils.displayAjaxErrorResponse(response, opts);
                 },
-                jsonData : {schemaName : 'lists', queryName : queryName},
+                jsonData : {schemaName : 'lists', queryName : listName},
                 headers : {'Content-Type' : 'application/json'},
                 scope : this
             });
