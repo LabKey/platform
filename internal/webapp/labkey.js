@@ -73,7 +73,7 @@ if (typeof LABKEY == "undefined")
                 return Object.prototype.toString.call(obj) == "[object Array]";
             };
 
-            var callbacksOnCache = function(key, silent)
+            var callbacksOnCache = function(key)
             {
                 // console.log('calling --', key);
                 var cbs = cache[key];
@@ -81,18 +81,15 @@ if (typeof LABKEY == "undefined")
                 // set the cache to hit
                 cache[key] = true;
 
-                if (!silent)
+                // call on the callbacks who have been waiting for this resource
+                if (isArray(cbs))
                 {
-                    // call on the callbacks who have been waiting for this resource
-                    if (isArray(cbs))
+                    var cb;
+                    for (var c=0; c < cbs.length; c++)
                     {
-                        var cb;
-                        for (var c=0; c < cbs.length; c++)
-                        {
-                            cb = cbs[c];
-                            if (typeof cb.fn == "function")
-                                cb.fn.call(cb.scope);
-                        }
+                        cb = cbs[c];
+                        if (typeof cb.fn == "function")
+                            cb.fn.call(cb.scope);
                     }
                 }
             };
@@ -286,12 +283,12 @@ if (typeof LABKEY == "undefined")
                 {
                     for (var j=0; j < arguments[i].length; j++)
                     {
-                        scriptCache.callbacksOnCache(arguments[i][j], true);
+                        scriptCache.callbacksOnCache(arguments[i][j]);
                     }
                 }
                 else
                 {
-                    scriptCache.callbacksOnCache(arguments[i], true);
+                    scriptCache.callbacksOnCache(arguments[i]);
                 }
             }
             return true;
