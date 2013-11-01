@@ -106,6 +106,8 @@ abstract public class LaboratoryService
 
     abstract public void registerQueryButton(ButtonConfigFactory btn, String schema, String query);
 
+    abstract public String getDefaultWorkbookFolderType(Container c);
+
     abstract public List<ButtonConfigFactory> getQueryButtons(TableInfo ti);
 
     abstract public void registerAssayButton(ButtonConfigFactory btn, String providerName, String domain);

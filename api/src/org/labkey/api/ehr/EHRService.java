@@ -15,6 +15,7 @@
  */
 package org.labkey.api.ehr;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableCustomizer;
@@ -35,6 +36,7 @@ import org.labkey.api.view.template.ClientDependency;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -123,6 +125,9 @@ abstract public class EHRService
      */
     abstract public Container getEHRStudyContainer(Container c);
 
+    @NotNull
+    abstract public Map<String, EHRQCState> getQCStates(Container c);
+
     abstract public void registerFormType(DataEntryForm form);
 
     abstract public DataEntryForm getDataEntryForm(String name, Container c, User u);
@@ -146,6 +151,36 @@ abstract public class EHRService
         Tabs()
     }
 
+    public static enum QCSTATES
+    {
+        Abnormal("Abnormal"),
+        DeleteRequested("Delete Requested"),
+        RequestApproved("Request: Approved"),
+        RequestSampleDelivered("Request: Sample Delivered"),
+        RequestDenied("Request: Denied"),
+        RequestPending("Request: Pending"),
+        InProgress("In Progress"),
+        ReviewRequired("Review Required"),
+        Scheduled("Scheduled"),
+        Completed("Completed");
+
+        private String _label;
+
+        QCSTATES(String label)
+        {
+            _label = label;
+        }
+
+        public String getLabel()
+        {
+            return _label;
+        }
+
+        public EHRQCState getQCState(Container c)
+        {
+            return EHRService.get().getQCStates(c).get(_label);
+        }
+    }
     abstract public List<FieldKey> getDefaultFieldKeys(TableInfo ti);
 
     abstract public void registerTbarButton(ButtonConfigFactory btn, String schema, String query);
@@ -163,4 +198,6 @@ abstract public class EHRService
     abstract public boolean hasPermission (TableInfo ti, Class<? extends Permission> perm);
 
     abstract public boolean hasPermission (String schemaName, String queryName, Container c, User u, Class<? extends Permission> perm);
+
+    abstract public boolean hasPermission (String schemaName, String queryName, Container c, User u, Class<? extends Permission> perm, EHRQCState qcState);
 }

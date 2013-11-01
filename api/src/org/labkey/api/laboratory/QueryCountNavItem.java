@@ -63,6 +63,12 @@ public class QueryCountNavItem extends SingleNavItem
     private TableInfo getTableInfo(Container c, User u)
     {
         UserSchema us = QueryService.get().getUserSchema(u, c, _schema);
+        if (us == null)
+        {
+            _log.error("Unable to find schema: " + _schema + " in container: " + c.getPath());
+            return null;
+        }
+
         return us.getTable(_query);
     }
 
