@@ -163,8 +163,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         {
             this.nextBtn = new Ext.Button({text: 'Next', scope: this, handler: function(){
                 this.lastStep = this.currentStep;
-                this.currentStep++;
-                this.updateStep();
+                this.validateName();
             }});
         }
 
@@ -259,7 +258,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     },
 
     updateStep : function() {
-
+        var me = this;
         var sideBarData = [];
         for(var i = 0; i < this.steps.length; i++){
             var value = this.steps[i].name;
@@ -277,15 +276,76 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             this.nextBtn.setText('Finish');
             this.nextBtn.setHandler(function(){this.onFinish();}, this);
         }
+        else if(this.currentStep == 0)
+        {
+            this.nextBtn.setText('Next');
+            this.nextBtn.setHandler(function(){
+                me.validateName();
+            });
+        }
         else
         {
             this.nextBtn.setText('Next');
             this.nextBtn.setHandler(function(){
-                this.currentStep++;
-                this.updateStep();
+                    me.currentStep++;
+                    me.updateStep();
             }, this);
         }
         this.pages.getLayout().setActiveItem(this.currentStep);
+    },
+
+    validateName : function()
+    {
+        LABKEY.Security.getContainers({
+            path : LABKEY.ActionURL.getContainer(),
+            success : function(resp)
+            {
+                var present =  false;
+                for(var i = 0; i < resp.children.length; i++)
+                {
+                    if(resp.children[i].path ==  this.info.dstPath)
+                    {
+                        present = true;
+                        break;
+                    }
+                }
+                this.checkIfStudyPresent(present);
+            },
+            scope : this
+
+        });
+
+
+    },
+
+    checkIfStudyPresent : function(present)
+    {
+        if(!present)
+        {
+            this.currentStep++;
+            this.updateStep();
+        }
+        else
+        {
+            LABKEY.Query.selectRows({
+                containerPath : this.info.dstPath,
+                schemaName : 'study',
+                queryName : 'studyProperties',
+                success : function(resp)
+                {
+                    if(resp.rows.length > 0)
+                    {
+                        Ext.Msg.alert('Study Already Present', 'There is already a study in the target folder');
+                    }
+                    else
+                    {
+                        this.currentStep++;
+                        this.updateStep();
+                    }
+                },
+                scope : this
+            });
+        }
     },
 
     getNamePanel : function() {
