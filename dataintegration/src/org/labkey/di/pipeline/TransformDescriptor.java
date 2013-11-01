@@ -257,6 +257,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             TransformRun run = new TransformRun();
             run.setContainer(context.getContainer());
             run.setTransformId(getId());
+            run.setTransformVersion(getVersion());
             run.setStartTime(new Date());
             if (null == x)
                 run.setTransformRunStatusEnum(TransformRun.TransformRunStatus.NO_WORK);
