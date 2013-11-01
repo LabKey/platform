@@ -19,16 +19,10 @@
 <%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<h2>Create A Remote Connection</h2>
-<p>
-    Administrators can define external remote connections to alternate LabKey servers.
-    This feature should be used with care since, depending
-    on your configuration, any user with access to the remote site could view arbitrary data in your remote server.
-</p>
-<labkey:errors></labkey:errors>
 <%
     Container c = getContainer();
 
@@ -38,7 +32,17 @@
     String user = remoteConnectionForm.getUser();
     String password = remoteConnectionForm.getPassword();
     String container = remoteConnectionForm.getContainer();
+    boolean editConnection = StringUtils.isNotEmpty(name);
+    String nameToShow = editConnection ? name : remoteConnectionForm.getNewConnectionName();
 %>
+
+<h2><%=text(editConnection ? "Edit Remote Connection" : "Create Remote Connection")%></h2>
+<p>
+    Administrators can define external remote connections to alternate LabKey servers.
+    This feature should be used with care since, depending
+    on your configuration, any user with access to the remote site could view arbitrary data in your remote server.
+</p>
+<labkey:errors></labkey:errors>
 
 <br>
 
@@ -46,7 +50,7 @@
 <table>
     <tr>
         <td>Connection Name: </td>
-        <td><input type="text" name="connectionName" size="50" value="<%=h(name)%>"><br></td>
+        <td><input type="text" name="newConnectionName" size="50" value="<%=h(nameToShow)%>"><br></td>
     </tr>
     <tr>
         <td>Server URL: <%= PageFlowUtil.helpPopup("Server URL", "Enter in the server URL. Include both the protocol (http:// or https://) and a context path if necessary. As an example, http://localhost:8080/labkey would be a valid name.")%></td>
@@ -67,4 +71,5 @@
 </table>
     <%= generateSubmitButton("save")%>
     <%= generateButton("cancel", QueryController.ManageRemoteConnectionsAction.class) %>
+    <input type="text" name="connectionName"  value="<%=h(name)%>" hidden><br>
 </form>

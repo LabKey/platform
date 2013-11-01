@@ -266,14 +266,16 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(RemoteConnectionForm remoteConnectionForm, boolean reshow, BindException errors) throws Exception
         {
             Container c = getContainer();
-            String name = remoteConnectionForm.getConnectionName();
-            // package the remote-connection properties into the remoteConnectionForm and pass them along
-            Map<String, String> map1 = PropertyManager.getEncryptedStore().getProperties(c, RemoteConnections.REMOTE_CONNECTIONS_CATEGORY + ":" + name);
-            remoteConnectionForm.setUrl(map1.get("URL"));
-            remoteConnectionForm.setUser(map1.get("user"));
-            remoteConnectionForm.setPassword(map1.get("password"));
-            remoteConnectionForm.setContainer(map1.get("container"));
-
+            if (!errors.hasErrors())
+            {
+                String name = remoteConnectionForm.getConnectionName();
+                // package the remote-connection properties into the remoteConnectionForm and pass them along
+                Map<String, String> map1 = PropertyManager.getEncryptedStore().getProperties(c, makeRemoteConnectionKey(name));
+                remoteConnectionForm.setUrl(map1.get("URL"));
+                remoteConnectionForm.setUser(map1.get("user"));
+                remoteConnectionForm.setPassword(map1.get("password"));
+                remoteConnectionForm.setContainer(map1.get("container"));
+            }
             return new JspView<>("/org/labkey/query/view/createRemoteConnection.jsp", remoteConnectionForm, errors);
         }
 
@@ -281,6 +283,14 @@ public class QueryController extends SpringActionController
         public boolean handlePost(RemoteConnectionForm remoteConnectionForm, BindException errors) throws Exception
         {
             String name = remoteConnectionForm.getConnectionName();
+            String newName = remoteConnectionForm.getNewConnectionName();
+            boolean editing = StringUtils.isNotEmpty(name);
+            boolean changingName = editing && !name.equals(newName);
+            if (!StringUtils.isNotBlank(newName))
+            {
+                errors.addError(new LabkeyError("Connection name may not be blank."));
+                return false;
+            }
 
             String url = remoteConnectionForm.getUrl();
             String user = remoteConnectionForm.getUser();
@@ -295,11 +305,25 @@ public class QueryController extends SpringActionController
 
             // save the connection name in connectionMap
             Map<String, String> connectionMap = PropertyManager.getEncryptedStore().getWritableProperties(getContainer(), RemoteConnections.REMOTE_CONNECTIONS_CATEGORY, true);
-            connectionMap.put(RemoteConnections.REMOTE_CONNECTIONS_CATEGORY + ":" + name, name);
+            if ((!editing || changingName) && connectionMap.containsKey(makeRemoteConnectionKey(newName)))
+            {
+                errors.addError(new LabkeyError("There is already a remote connection with the name '" + newName + "'."));
+                return false;
+            }
+
+            if (changingName)
+            {
+                String oldNameKey = makeRemoteConnectionKey(name);
+                connectionMap.remove(oldNameKey);        // Remove old name
+                PropertyManager.getEncryptedStore().deletePropertySet(getContainer(), oldNameKey);
+            }
+
+            String newNameKey = makeRemoteConnectionKey(newName);
+            connectionMap.put(newNameKey, newName);
             PropertyManager.getEncryptedStore().saveProperties(connectionMap);
 
             // save the properties for the individual connection in the encrypted property store
-            Map <String, String> singleConnectionMap = PropertyManager.getEncryptedStore().getWritableProperties(getContainer(), RemoteConnections.REMOTE_CONNECTIONS_CATEGORY + ":" + name, true);
+            Map <String, String> singleConnectionMap = PropertyManager.getEncryptedStore().getWritableProperties(getContainer(), newNameKey, true);
             singleConnectionMap.put(RemoteConnections.FIELD_URL, url);
             singleConnectionMap.put(RemoteConnections.FIELD_USER, user);
             singleConnectionMap.put(RemoteConnections.FIELD_PASSWORD, password);
@@ -345,16 +369,11 @@ public class QueryController extends SpringActionController
 
             // delete the index
             Map<String, String> connectionMap = PropertyManager.getEncryptedStore().getWritableProperties(getContainer(), RemoteConnections.REMOTE_CONNECTIONS_CATEGORY, false);
-            connectionMap.remove(RemoteConnections.REMOTE_CONNECTIONS_CATEGORY + ":" + name);
+            connectionMap.remove(makeRemoteConnectionKey(name));
             PropertyManager.getEncryptedStore().saveProperties(connectionMap);
 
-            // delete the individual entries
-            Map<String, String> singleConnectionMap = PropertyManager.getEncryptedStore().getWritableProperties(getContainer(), RemoteConnections.REMOTE_CONNECTIONS_CATEGORY + ":" + name, false);
-            singleConnectionMap.clear();
-            PropertyManager.getEncryptedStore().saveProperties(singleConnectionMap);
-
             // delete the underlying property set
-            PropertyManager.getEncryptedStore().deletePropertySet(getContainer(), RemoteConnections.REMOTE_CONNECTIONS_CATEGORY + ":" + name);
+            PropertyManager.getEncryptedStore().deletePropertySet(getContainer(), makeRemoteConnectionKey(name));
 
             return true;
         }
@@ -390,7 +409,7 @@ public class QueryController extends SpringActionController
             String queryName = "Users"; // test Query Name
 
             // Extract the username, password, and container from the secure property store
-            Map<String, String> singleConnectionMap = PropertyManager.getEncryptedStore().getProperties(getContainer(), RemoteConnections.REMOTE_CONNECTIONS_CATEGORY + ":" + name);
+            Map<String, String> singleConnectionMap = PropertyManager.getEncryptedStore().getProperties(getContainer(), makeRemoteConnectionKey(name));
             String url = singleConnectionMap.get(RemoteConnections.FIELD_URL);
             String user = singleConnectionMap.get(RemoteConnections.FIELD_USER);
             String password = singleConnectionMap.get(RemoteConnections.FIELD_PASSWORD);
@@ -435,12 +454,14 @@ public class QueryController extends SpringActionController
         }
     }
 
-    public static class RemoteConnectionForm {
+    public static class RemoteConnectionForm
+    {
         private String _connectionName;
         private String _url;
         private String _user;
         private String _password;
         private String _container;
+        private String _newConnectionName;
 
         public RemoteConnectionForm()
         {
@@ -495,6 +516,21 @@ public class QueryController extends SpringActionController
         {
             _container = container;
         }
+
+        public String getNewConnectionName()
+        {
+            return _newConnectionName;
+        }
+
+        public void setNewConnectionName(String newConnectionName)
+        {
+            _newConnectionName = newConnectionName;
+        }
+    }
+
+    private static String makeRemoteConnectionKey(String name)
+    {
+        return RemoteConnections.REMOTE_CONNECTIONS_CATEGORY + ":" + name;
     }
 
     public static class QueryUrlsImpl implements QueryUrls
