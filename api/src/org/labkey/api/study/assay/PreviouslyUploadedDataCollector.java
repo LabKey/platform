@@ -49,7 +49,12 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
      */
     public enum Type
     {
-        ReRun("ReRunReuseFilePaths", "ReRunReuseFileNames"), ErrorReshow("PreviouslyUploadedFilePaths", "PreviouslyUploadedFileNames");
+        /** The user wants to re-run an existing runs, so we offer up the original run's file for potential reuse */
+        ReRun("ReRunReuseFilePaths", "ReRunReuseFileNames"),
+        /** The user uploaded a file but there's some validation error, possibly unrelated to the file itself */
+        ErrorReshow("PreviouslyUploadedFilePaths", "PreviouslyUploadedFileNames"),
+        /** We just want to propagate whatever files the user selected through an additional wizard step, whose UI does not give the user the choice of changing files */
+        PassThrough("PassThroughUploadedFilePaths", "PassThroughUploadedFileNames");
 
         private final String _pathFormElementName;
         private final String _nameFormElementName;
@@ -129,8 +134,22 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         if (_uploadComplete)
             return Collections.emptyMap();
 
-        String[] paths = context.getRequest().getParameterValues(_type.getPathFormElementName());
-        String[] names = context.getRequest().getParameterValues(_type.getNameFormElementName());
+        Map<String, File> result = new LinkedHashMap<>();
+        // Add the files for the specific flavor we're expecting
+        result.putAll(getFilesFromRequest(context, _type));
+        if (_type != Type.PassThrough)
+        {
+            // Also include all of the files that are just being piped through a page that doesn't let the user
+            // choose which files to use
+            result.putAll(getFilesFromRequest(context, Type.PassThrough));
+        }
+        return result;
+    }
+
+    private Map<String, File> getFilesFromRequest(ContextType context, Type type) throws IOException
+    {
+        String[] paths = context.getRequest().getParameterValues(type.getPathFormElementName());
+        String[] names = context.getRequest().getParameterValues(type.getNameFormElementName());
         if (paths == null)
         {
             paths = new String[0];
@@ -141,7 +160,7 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         }
         if (paths.length != names.length)
         {
-            throw new IOException("The number of paths did not match the number of names");
+            throw new IOException("The number of paths did not match the number of names for form elements " + _type.getPathFormElementName() + " and " + _type.getNameFormElementName());
         }
         Map<String, File> result = new LinkedHashMap<>();
 

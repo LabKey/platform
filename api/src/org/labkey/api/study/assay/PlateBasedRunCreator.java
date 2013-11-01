@@ -215,7 +215,7 @@ public class PlateBasedRunCreator extends DefaultAssayRunCreator<AbstractPlateBa
                 String baseObjectId = derivedLsid.getObjectId();
                 while(ExperimentService.get().getExpMaterial(derivedLsid.toString()) != null)
                     derivedLsid.setObjectId(baseObjectId + "-" + ++index);
-                ExpMaterial derivedMaterial = ExperimentService.get().createExpMaterial(context.getContainer(), derivedLsid.toString(), key.toString());
+                ExpMaterial derivedMaterial = ExperimentService.get().createExpMaterial(context.getContainer(), derivedLsid.toString(), key);
                 derivedMaterial.setCpasType(sampleSet.getLSID());
                 Map<ExpMaterial, String> originalMaterialSet = Collections.singletonMap(originalMaterial, null);
                 Map<ExpMaterial, String> derivedMaterialSet = Collections.singletonMap(derivedMaterial, "PreparedMaterial");

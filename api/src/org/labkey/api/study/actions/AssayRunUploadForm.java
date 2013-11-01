@@ -97,8 +97,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
     public DomainProperty[] getRunDataProperties()
     {
-        AssayProvider provider = AssayService.get().getProvider(getProtocol());
-        Domain domain = provider.getResultsDomain(getProtocol());
+        Domain domain = getProvider().getResultsDomain(getProtocol());
         return domain.getProperties();
     }
 
@@ -106,8 +105,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     {
         if (_runProperties == null)
         {
-            AssayProvider provider = AssayService.get().getProvider(getProtocol());
-            Domain domain = provider.getRunDomain(getProtocol());
+            Domain domain = getProvider().getRunDomain(getProtocol());
             DomainProperty[] properties = domain.getProperties();
             _runProperties = getPropertyMapFromRequest(Arrays.asList(properties));
         }
@@ -119,8 +117,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     {
         if (_uploadSetProperties == null)
         {
-            AssayProvider provider = AssayService.get().getProvider(getProtocol());
-            Domain domain = provider.getBatchDomain(getProtocol());
+            Domain domain = getProvider().getBatchDomain(getProtocol());
             DomainProperty[] properties = domain.getProperties();
             _uploadSetProperties = getPropertyMapFromRequest(Arrays.asList(properties));
         }
@@ -253,11 +250,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                     for (Map.Entry<String, File> entry : postedFiles.entrySet())
                         _additionalFiles.put(fileParameters.get(entry.getKey()), entry.getValue());
                 }
-                catch (ExperimentException e)
-                {
-                    throw new RuntimeException(e);
-                }
-                catch (IOException e)
+                catch (ExperimentException | IOException e)
                 {
                     throw new RuntimeException(e);
                 }
@@ -350,7 +343,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                     try
                     {
                         Object filterValue = ConvertUtils.convert(value, pk.getJavaClass());
-                        SimpleFilter filter = new SimpleFilter(pk.getName(), filterValue);
+                        SimpleFilter filter = new SimpleFilter(pk.getFieldKey(), filterValue);
                         Set<String> cols = new HashSet<>();
                         cols.add(lookupTable.getTitleColumn());
                         cols.add(pks.get(0).getName());

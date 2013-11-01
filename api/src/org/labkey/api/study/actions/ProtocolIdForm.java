@@ -140,12 +140,14 @@ public class ProtocolIdForm extends ViewForm
         return _protocol;
     }
 
+    /** @throws NotFoundException if we can't resolve the protocol */
     @NotNull
     public ExpProtocol getProtocol()
     {
         return getProtocol(true);
     }
 
+    /** @throws NotFoundException if we can't resolve the provider */
     @NotNull
     public AssayProvider getProvider()
     {
