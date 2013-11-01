@@ -2281,7 +2281,7 @@ public class SpecimenController extends BaseStudyController
                 throw new NotFoundException();
 
             return new JspView<>("/org/labkey/study/view/samples/manageRequirement.jsp",
-                    new ManageRequirementBean(getViewContext(), _sampleRequest, requirement));
+                    new ManageRequirementBean(getViewContext(), _sampleRequest, requirement), errors);
         }
 
         public boolean handlePost(final ManageRequirementForm form, BindException errors) throws Exception
