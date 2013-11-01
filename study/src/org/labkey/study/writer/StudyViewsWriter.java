@@ -60,7 +60,7 @@ public class StudyViewsWriter implements InternalStudyWriter
 
         // export a custom participant page if present
         CustomParticipantView customParticipantView = StudyManager.getInstance().getCustomParticipantView(study);
-        if (customParticipantView != null)
+        if (customParticipantView != null && !customParticipantView.isModuleParticipantView())
         {
             ViewsDocument.Views.ParticipantView participantView = views.addNewParticipantView();
 
