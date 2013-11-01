@@ -102,7 +102,7 @@ public class ModuleHtmlView extends HtmlView
         String webpartContext = config.toString();
 
         String ret = replaceTokens(html, context);
-        ret = ret.replaceAll("<%=\\s*webpartContext\\s*%>", webpartContext);
+        ret = ret.replaceAll("<%=\\s*webpartContext\\s*%>", Matcher.quoteReplacement(webpartContext));
         return "<div id=\"" + wrapperDivId + "\">" + ret + "</div>";
     }
 
