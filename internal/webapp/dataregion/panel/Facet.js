@@ -65,6 +65,9 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
 
         this.items = [];
 
+        // issue 18708: multiple facet filter changes may fire while QWP is loading
+        this.filterChangeCounter = 0;
+
         this.callParent(arguments);
 
         var task = new Ext4.util.DelayedTask(function(){
@@ -166,14 +169,15 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
             this._resizeTask(this, box.width, box.height);
 
             // Filters might have been updated outside of facet
-            if (!this.filterChange && this.filterPanel) {
+            if (this.filterChangeCounter == 0 && this.filterPanel) {
                 var fp = this.filterPanel.getFilterPanel();
                 if (fp) {
                     fp.initSelection();
                 }
             }
-            else { this.filterChange = false; }
-
+            else {
+                this.filterChangeCounter--;
+            }
         }
     },
 
@@ -274,8 +278,8 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         // Have a QWP, Ajax as a normal filter
         if (dr) {
             var valueArray = this.constructFilter(filterMap, dr, qwp.userFilters);
-            this.filterChange = true;
-            dr.changeFilter(valueArray, LABKEY.DataRegion.buildQueryString(valueArray));
+            this.filterChangeCounter++;
+            dr.fireEvent("beforefilterchange", dr, valueArray);
         }
     },
 
