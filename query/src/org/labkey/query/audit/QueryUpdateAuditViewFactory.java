@@ -72,13 +72,6 @@ public class QueryUpdateAuditViewFactory extends SimpleAuditViewFactory
 
     private QueryUpdateAuditViewFactory()
     {
-        AuditLogEvent event = new AuditLogEvent();
-
-        event.setContainerId(ContainerManager.getRoot().getId());
-        event.setEventType(QUERY_UPDATE_AUDIT_EVENT);
-        event.setComment("Service startup");
-
-        AuditLogService.get().addEvent(event);
     }
 
     public static QueryUpdateAuditViewFactory getInstance()
