@@ -13,5 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-EXEC core.executeJavaUpgradeCode 'upgradeExternalReports';
+/* mothership-13.21-13.22.sql */
 
+-- Add DESCRIPTION column to unique constraint on tble SoftwareRelease. Support for enhancment 18609
+
+ALTER TABLE mothership.SoftwareRelease DROP CONSTRAINT UQ_SoftwareRelease
+GO
+
+ALTER TABLE mothership.SoftwareRelease ADD CONSTRAINT UQ_SoftwareRelease UNIQUE
+(
+	Container,
+	SVNRevision,
+	SVNURL,
+	Description
+)
+
+/* mothership-13.22-13.23.sql */
+
+ALTER TABLE mothership.ServerInstallation ALTER COLUMN Note varchar(500) NULL

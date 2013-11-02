@@ -13,5 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-EXEC core.executeJavaUpgradeCode 'upgradeExternalReports';
 
+/* core-13.20-13.21.sql */
+
+-- Support longer lists of module schemas (which now may include data source prefixes)
+ALTER TABLE core.Modules
+    ALTER COLUMN Schemas NVARCHAR(4000) NULL;
+
+/* core-13.22-13.23.sql */
+
+-- Install/upgrade new version (1.00.23696) of GROUP_CONCAT aggregate function on SQL Server
+-- This version fixes concurrency and performance issues, see #18600
+EXEC core.executeJavaUpgradeCode 'installGroupConcat';

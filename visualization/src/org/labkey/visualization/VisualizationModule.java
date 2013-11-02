@@ -43,7 +43,7 @@ public class VisualizationModule extends DefaultModule
 
     public double getVersion()
     {
-        return 13.21;
+        return 13.30;
     }
 
     public boolean hasScripts()

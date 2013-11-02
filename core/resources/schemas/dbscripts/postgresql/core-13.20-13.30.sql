@@ -13,5 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-EXEC core.executeJavaUpgradeCode 'upgradeExternalReports';
 
+-- Support longer lists of module schemas (which now may include data source prefixes)
+ALTER TABLE core.Modules
+    ALTER COLUMN Schemas TYPE VARCHAR(4000);

@@ -13,5 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-EXEC core.executeJavaUpgradeCode 'upgradeExternalReports';
 
+-- Add a column that specifies algorithm used to encrypt all values in this property set
+ALTER TABLE prop.PropertySets
+    ADD Encryption VARCHAR(100) NOT NULL DEFAULT 'None';

@@ -473,8 +473,8 @@ public class SqlScriptController extends SpringActionController
     {
         private String _module;
         private String _schema;
-        private double _fromVersion = Math.floor(ModuleLoader.getInstance().getCoreModule().getVersion() * 10) / 10;
-        private double _toVersion = _fromVersion + 0.1;
+        private double _fromVersion = Math.floor(ModuleLoader.getInstance().getCoreModule().getVersion() * 10.0) / 10.0;
+        private double _toVersion = (_fromVersion * 10.0 + 1.0) / 10.0;
         private boolean _includeSingleScripts = false;
 
         public String getModule()

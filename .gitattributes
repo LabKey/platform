@@ -275,6 +275,7 @@ core/resources/schemas/dbscripts/postgresql/core-13.10-13.20.sql -text
 core/resources/schemas/dbscripts/postgresql/core-13.13-13.14.sql -text
 core/resources/schemas/dbscripts/postgresql/core-13.14-13.15.sql -text
 core/resources/schemas/dbscripts/postgresql/core-13.20-13.21.sql -text
+core/resources/schemas/dbscripts/postgresql/core-13.20-13.30.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/labkey-0.00-13.21.sql -text
@@ -414,6 +415,7 @@ core/resources/schemas/dbscripts/postgresql/obsolete/test-11.30-11.32.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/test-11.31-11.32.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-0.00-10.30.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-12.10-12.20.sql -text
+core/resources/schemas/dbscripts/postgresql/prop-13.20-13.30.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-13.21-13.22.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-create.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-drop.sql -text
@@ -432,6 +434,7 @@ core/resources/schemas/dbscripts/sqlserver/core-13.12-13.13.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-13.13-13.14.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-13.14-13.15.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-13.20-13.21.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-13.20-13.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-13.22-13.23.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
@@ -577,6 +580,7 @@ core/resources/schemas/dbscripts/sqlserver/obsolete/test-11.30-11.32.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/test-11.31-11.32.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-0.00-10.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-12.10-12.20.sql -text
+core/resources/schemas/dbscripts/sqlserver/prop-13.20-13.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-13.21-13.22.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-drop.sql -text
@@ -826,6 +830,7 @@ dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-13.10-13.
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-13.13-13.14.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-13.15-13.16.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-13.20-13.21.sql -text
+dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-13.20-13.30.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/obsolete/dataintegration-0.01-0.02.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/obsolete/dataintegration-0.02-0.03.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/obsolete/dataintegration-0.03-0.04.sql -text
@@ -837,6 +842,7 @@ dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.13-13.1
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.14-13.15.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.15-13.16.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.20-13.21.sql -text
+dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.20-13.30.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/obsolete/dataintegration-0.01-0.02.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/obsolete/dataintegration-0.02-0.03.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/obsolete/dataintegration-0.03-0.04.sql -text
@@ -1593,6 +1599,7 @@ mothership/resources/schemas/dbscripts/postgresql/mothership-11.20-11.30.sql -te
 mothership/resources/schemas/dbscripts/postgresql/mothership-11.30-12.10.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-13.10-13.20.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-13.11-13.12.sql -text
+mothership/resources/schemas/dbscripts/postgresql/mothership-13.20-13.30.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-13.21-13.22.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-13.22-13.23.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-create.sql -text
@@ -1631,6 +1638,7 @@ mothership/resources/schemas/dbscripts/sqlserver/mothership-11.20-11.30.sql -tex
 mothership/resources/schemas/dbscripts/sqlserver/mothership-11.30-12.10.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-13.10-13.20.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-13.11-13.12.sql -text
+mothership/resources/schemas/dbscripts/sqlserver/mothership-13.20-13.30.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-13.21-13.22.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-13.22-13.23.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-create.sql -text
@@ -2913,6 +2921,7 @@ study/resources/schemas/dbscripts/postgresql/study-13.10-13.20.sql -text
 study/resources/schemas/dbscripts/postgresql/study-13.11-13.12.sql -text
 study/resources/schemas/dbscripts/postgresql/study-13.12-13.13.sql -text
 study/resources/schemas/dbscripts/postgresql/study-13.20-13.21.sql -text
+study/resources/schemas/dbscripts/postgresql/study-13.20-13.30.sql -text
 study/resources/schemas/dbscripts/postgresql/study-13.21-13.22.sql -text
 study/resources/schemas/dbscripts/postgresql/study-13.22-13.23.sql -text
 study/resources/schemas/dbscripts/postgresql/study-13.23-13.24.sql -text
@@ -3122,6 +3131,7 @@ study/resources/schemas/dbscripts/sqlserver/study-13.10-13.20.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-13.11-13.12.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-13.12-13.13.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-13.20-13.21.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-13.20-13.30.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-13.21-13.22.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-13.22-13.23.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-13.23-13.24.sql -text
