@@ -357,7 +357,7 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
 
     optimizeFilter: function(op, values, field){
         if(field && field.store){
-            if(values.length > (field.store.getCount() / 2)){
+            if(values.length > (field.getStore().getTotalCount() / 2)){
                 op = LABKEY.Filter.getFilterTypeForURLSuffix(op).getOpposite().getURLSuffix();
 
                 var newValues = [];
