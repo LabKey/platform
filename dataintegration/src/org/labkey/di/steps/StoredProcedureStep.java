@@ -306,11 +306,11 @@ public class StoredProcedureStep extends TransformTask
             SimpleFilter f = filterStrategy.getFilter(getVariableMap());
 
             if (savedParamVals.containsKey("@filterRunId"))
-                savedParamVals.put("@filterRunId", savedParamVals.get(TransformProperty.IncrementalRunId.getPropertyDescriptor().getName()));
+                savedParamVals.put("@filterRunId", getVariableMap().get(TransformProperty.IncrementalRunId.getPropertyDescriptor().getName()));
             if (savedParamVals.containsKey("@filterStartTimestamp"))
-                savedParamVals.put("@filterStartTimestamp", savedParamVals.get(TransformProperty.IncrementalStartTimestamp.getPropertyDescriptor().getName()));
+                savedParamVals.put("@filterStartTimestamp", getVariableMap().get(TransformProperty.IncrementalStartTimestamp.getPropertyDescriptor().getName()));
             if (savedParamVals.containsKey("@filterEndTimestamp"))
-                savedParamVals.put("@filterEndTimestamp", savedParamVals.get(TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor().getName()));
+                savedParamVals.put("@filterEndTimestamp", getVariableMap().get(TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor().getName()));
 
             try
             {
