@@ -27,12 +27,14 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.MultiPhaseCPUTimer;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
@@ -53,10 +55,12 @@ class SecurityFilter extends Filter
     private final User user;
     private final HashMap<String, Container> containerIds;
     private final HashMap<String, Boolean> securableResourceIds = new HashMap<>();
+    private MultiPhaseCPUTimer.InvocationTimer<SearchService.SEARCH_PHASE> _iTimer;
 
-    SecurityFilter(User user, Container searchRoot, Container currentContainer, boolean recursive)
+    SecurityFilter(User user, Container searchRoot, Container currentContainer, boolean recursive, MultiPhaseCPUTimer.InvocationTimer<SearchService.SEARCH_PHASE> iTimer)
     {
         this.user = user;
+        _iTimer = iTimer;
 
         if (recursive)
         {
@@ -84,42 +88,51 @@ class SecurityFilter extends Filter
         int max = reader.maxDoc();
         BitSet bits = new BitSet(max);
 
-        for (int i = 0; i < max; i++)
+        SearchService.SEARCH_PHASE currentPhase = _iTimer.getCurrentPhase();
+        _iTimer.setPhase(SearchService.SEARCH_PHASE.filterHits);
+
+        try
         {
-            // Must check acceptDocs to filter out documents that are deleted or previously filtered.
-            // This is not really documented, but it looks like null == acceptDocs means accept everything (no deleted/filtered docs).
-            if (null != acceptDocs && !acceptDocs.get(i))
-                continue;
-
-            Document doc = reader.document(i, SECURITY_FIELDS);
-
-            String id = doc.get(LuceneSearchServiceImpl.FIELD_NAME.container.name());
-            String resourceId = doc.get(LuceneSearchServiceImpl.FIELD_NAME.resourceId.name());
-
-            if (null == id || !containerIds.containsKey(id))
-                continue;
-            
-            if (null != resourceId && !resourceId.equals(id))
+            for (int i = 0; i < max; i++)
             {
-                if (!containerIds.containsKey(resourceId))
-                {
-                    Boolean canRead = securableResourceIds.get(resourceId);
-                    if (null == canRead)
-                    {
-                        SecurableResource sr = new _SecurableResource(resourceId, containerIds.get(id));
-                        SecurityPolicy p = SecurityPolicyManager.getPolicy(sr);
-                        canRead = p.hasPermission(user, ReadPermission.class);
-                        securableResourceIds.put(resourceId, canRead);
-                    }
-                    if (!canRead.booleanValue())
-                        continue;
-                }
-            }
-            
-            bits.set(i);
-        }
+                // Must check acceptDocs to filter out documents that are deleted or previously filtered.
+                // This is not really documented, but it looks like null == acceptDocs means accept everything (no deleted/filtered docs).
+                if (null != acceptDocs && !acceptDocs.get(i))
+                    continue;
 
-        return new DocIdBitSet(bits);
+                Document doc = reader.document(i, SECURITY_FIELDS);
+
+                String id = doc.get(LuceneSearchServiceImpl.FIELD_NAME.container.name());
+                String resourceId = doc.get(LuceneSearchServiceImpl.FIELD_NAME.resourceId.name());
+
+                if (null == id || !containerIds.containsKey(id))
+                    continue;
+
+                if (null != resourceId && !resourceId.equals(id))
+                {
+                    if (!containerIds.containsKey(resourceId))
+                    {
+                        Boolean canRead = securableResourceIds.get(resourceId);
+                        if (null == canRead)
+                        {
+                            SecurableResource sr = new _SecurableResource(resourceId, containerIds.get(id));
+                            SecurityPolicy p = SecurityPolicyManager.getPolicy(sr);
+                            canRead = p.hasPermission(user, ReadPermission.class);
+                            securableResourceIds.put(resourceId, canRead);
+                        }
+                        if (!canRead.booleanValue())
+                            continue;
+                    }
+                }
+
+                bits.set(i);
+            }
+            return new DocIdBitSet(bits);
+        }
+        finally
+        {
+            _iTimer.setPhase(currentPhase);
+        }
     }
 
 

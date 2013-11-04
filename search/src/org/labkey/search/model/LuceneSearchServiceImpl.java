@@ -144,8 +144,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         navtrail
     }
 
-    private static enum SEARCH_PHASE {createQuery, buildSecurityFilter, search, processHits}
-
     private void initializeIndex()
     {
         try
@@ -1191,7 +1189,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             try
             {
                 iTimer.setPhase(SEARCH_PHASE.buildSecurityFilter);
-                Filter securityFilter = user.isSearchUser() ? null : new SecurityFilter(user, scope.getRoot(current), current, scope.isRecursive());
+                Filter securityFilter = user.isSearchUser() ? null : new SecurityFilter(user, scope.getRoot(current), current, scope.isRecursive(), iTimer);
 
                 iTimer.setPhase(SEARCH_PHASE.search);
 
