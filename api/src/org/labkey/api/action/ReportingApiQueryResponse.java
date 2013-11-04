@@ -15,13 +15,8 @@
  */
 package org.labkey.api.action;
 
-import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.MVDisplayColumn;
-import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ReportingWriter;
-import org.labkey.api.data.Results;
 import org.labkey.api.data.UrlColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
@@ -39,57 +34,35 @@ import java.util.Map;
  */
 public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
 {
-    private SchemaKey _schemaName = null;
+    private SchemaKey _schemaPath = null;
 
     public ReportingApiQueryResponse(QueryView view, boolean schemaEditable, boolean includeLookupInfo, String queryName, long offset, List<FieldKey> fieldKeys, boolean metaDataOnly, boolean includeDetailsColumn, boolean includeUpdateColumn)
     {
         // Mostly piggybacking on ApiQueryResponse constructor
         super(view, schemaEditable, includeLookupInfo, "", queryName, offset, fieldKeys, metaDataOnly, includeDetailsColumn, includeUpdateColumn);
-        _schemaName = view.getTable().getUserSchema().getSchemaPath();
+        _schemaPath = view.getTable().getUserSchema().getSchemaPath();
+    }
+
+    @Override
+    protected double getFormatVersion()
+    {
+        return 13.2;
     }
 
     @Override
     public void render(ApiResponseWriter writer) throws Exception
     {
         writer.setSerializeViaJacksonAnnotations(true);
-
-        writer.startResponse();
-
-        //write the metaData section
-        writer.writeProperty("schemaName", _schemaName);
-        writer.writeProperty("queryName", _queryName);
-
-        if (_metaDataOnly)
-        {
-            writeMetaData(writer);
-        }
-        else
-        {
-            // First run the query, so on potential SQLException we only serialize the exception instead of outputting all the metadata before the exception
-            try (Results results = getResults())
-            {
-                writeMetaData(writer);
-
-                boolean complete = writeRowset(writer, results);
-
-                // Figure out if we need to make a separate request to get the total row count (via the aggregates)
-                if (!complete && _rowCount == 0)
-                {
-                    // Load the aggregates
-                    _dataRegion.getAggregateResults(_ctx);
-                    if (_dataRegion.getTotalRows() != null)
-                    {
-                        _rowCount = _dataRegion.getTotalRows();
-                        _rowCount = _dataRegion.getTotalRows();
-                    }
-                }
-                writer.writeProperty("rowCount", _rowCount > 0 ? _rowCount : _offset + _numRespRows);
-            }
-        }
-        writer.endResponse();
+        super.render(writer);
     }
 
-    private void writeMetaData(ApiResponseWriter writer) throws Exception
+    protected void writeInitialMetaData(ApiResponseWriter writer) throws Exception
+    {
+        writer.writeProperty("schemaName", _schemaPath);
+        writer.writeProperty("queryName", _queryName);
+    }
+
+    protected void writeMetaData(ApiResponseWriter writer) throws Exception
     {
         // see Ext.data.JsonReader
         writer.writeProperty("metaData", getMetaData());
@@ -109,11 +82,6 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
             for (Map.Entry<String, Object> entry : _extraReturnProperties.entrySet())
                 writer.writeProperty(entry.getKey(), entry.getValue());
         }
-    }
-
-    private Results getResults() throws Exception
-    {
-        return _dataRegion.getResultSet(_ctx);
     }
 
     @Override
@@ -190,26 +158,4 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
         }
     }
 
-    private boolean writeRowset(ApiResponseWriter writer, Results results) throws Exception
-    {
-        boolean complete = true;
-        writer.startList("rows");
-        // We're going to be writing JSON back, which is tolerant of extra spaces, so allow async so we
-        // can monitor if the client has stopped listening
-        _dataRegion.setAllowAsync(true);
-
-        _ctx.setResults(results);
-        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
-        factory.setConvertBigDecimalToDouble(false);
-
-        while(results.next())
-        {
-            _ctx.setRow(factory.getRowMap(results));
-            writer.writeListEntry(getRow());
-            ++_numRespRows;
-        }
-        complete = results.isComplete();
-        writer.endList();
-        return complete;
-    }
 }

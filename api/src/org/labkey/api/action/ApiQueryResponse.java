@@ -112,10 +112,53 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     {
         writer.startResponse();
 
-        //write the metaData section
+        //write the initial metaData section
+        writeInitialMetaData(writer);
+
+        if (_metaDataOnly)
+        {
+            writeMetaData(writer);
+        }
+        else
+        {
+            // First run the query, so on potential SQLException we only serialize the exception instead of outputting all the metadata before the exception
+            try (Results results = getResults())
+            {
+                writeMetaData(writer);
+
+                boolean complete = writeRowset(writer, results);
+
+                // Figure out if we need to make a separate request to get the total row count (via the aggregates)
+                if (!complete && _rowCount == 0)
+                {
+                    // Load the aggregates
+                    _dataRegion.getAggregateResults(_ctx);
+                    if (_dataRegion.getTotalRows() != null)
+                    {
+                        _rowCount = _dataRegion.getTotalRows();
+                    }
+                }
+                writer.writeProperty("rowCount", _rowCount > 0 ? _rowCount : _offset + _numRespRows);
+            }
+        }
+
+        writer.endResponse();
+    }
+
+    /**
+     * This initial set of metaData will always be serialized even if a SQLException is thrown when executing the query.
+     * @param writer
+     * @throws Exception
+     */
+    protected void writeInitialMetaData(ApiResponseWriter writer) throws Exception
+    {
         writer.writeProperty("schemaName", _schemaName);
         writer.writeProperty("queryName", _queryName);
         writer.writeProperty("formatVersion", getFormatVersion());
+    }
+
+    protected void writeMetaData(ApiResponseWriter writer) throws Exception
+    {
         // see Ext.data.JsonReader
         writer.writeProperty("metaData", getMetaData());
         // see Ext.data.ColumnModel
@@ -133,25 +176,11 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
             for (Map.Entry<String, Object> entry : _extraReturnProperties.entrySet())
                 writer.writeProperty(entry.getKey(), entry.getValue());
         }
+    }
 
-        boolean complete = writeRowset(writer);
-
-        if (!_metaDataOnly)
-        {
-            // Figure out if we need to make a separate request to get the total row count (via the aggregates)
-            if (!complete && _rowCount == 0)
-            {
-                // Load the aggregates
-                _dataRegion.getAggregateResults(_ctx);
-                if (_dataRegion.getTotalRows() != null)
-                {
-                    _rowCount = _dataRegion.getTotalRows();
-                }
-            }
-            writer.writeProperty("rowCount", _rowCount > 0 ? _rowCount : _offset + _numRespRows);
-        }
-
-        writer.endResponse();
+    protected Results getResults() throws Exception
+    {
+        return _dataRegion.getResultSet(_ctx);
     }
 
     public List<FieldKey> getFieldKeys()
@@ -373,31 +402,25 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     }
 
 
-    protected boolean writeRowset(ApiResponseWriter writer) throws Exception
+    protected boolean writeRowset(ApiResponseWriter writer, Results results) throws Exception
     {
         boolean complete = true;
         writer.startList("rows");
-        if (!_metaDataOnly)
+        // We're going to be writing JSON back, which is tolerant of extra spaces, so allow async so we
+        // can monitor if the client has stopped listening
+        _dataRegion.setAllowAsync(true);
+
+        _ctx.setResults(results);
+        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
+        factory.setConvertBigDecimalToDouble(false);
+
+        while(results.next())
         {
-            // We're going to be writing JSON back, which is tolerant of extra spaces, so allow async so we
-            // can monitor if the client has stopped listening
-            _dataRegion.setAllowAsync(true);
-
-            try (Results results = _dataRegion.getResultSet(_ctx))
-            {
-                _ctx.setResults(results);
-                ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
-                factory.setConvertBigDecimalToDouble(false);
-
-                while(results.next())
-                {
-                    _ctx.setRow(factory.getRowMap(results));
-                    writer.writeListEntry(getRow());
-                    ++_numRespRows;
-                }
-                complete = results.isComplete();
-            }
+            _ctx.setRow(factory.getRowMap(results));
+            writer.writeListEntry(getRow());
+            ++_numRespRows;
         }
+        complete = results.isComplete();
         writer.endList();
         return complete;
     }
