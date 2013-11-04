@@ -107,6 +107,11 @@ public class MultiPhaseCPUTimer<K extends Enum<K>>
             _map = getEnumMap(clazz, values);
         }
 
+        public K2 getCurrentPhase()
+        {
+            return _currentPhase;
+        }
+
         public void setPhase(@Nullable K2 phase)
         {
             long prevBeginning = _beginningNanos;

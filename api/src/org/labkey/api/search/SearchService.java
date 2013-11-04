@@ -108,6 +108,7 @@ public interface SearchService
         }
     }
 
+    static enum SEARCH_PHASE {createQuery, buildSecurityFilter, search, filterHits, processHits}
 
     public interface TaskListener
     {
