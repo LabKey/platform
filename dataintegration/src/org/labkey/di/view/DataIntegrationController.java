@@ -230,7 +230,7 @@ public class DataIntegrationController extends SpringActionController
             if (StringUtils.isEmpty(form.getTransformId()))
                 errors.rejectValue("transformId", SpringActionController.ERROR_REQUIRED);
             if (null == getDescriptor(form))
-                throw new NotFoundException();
+                throw new NotFoundException(form.getTransformId());
         }
 
         @Override
