@@ -1443,9 +1443,9 @@ public class OntologyManager
                 "? as shownindetailsview, " +
                 "? as dimension, " +
                 "? as measure, " +
-                "? as createdby, " +
+                "cast(? as int)  as createdby, " +
                 "{fn now()} as created, " +
-                "? as modifiedby, " +
+                "cast(? as int) as modifiedby, " +
                 "{fn now()} as modified, " +
                 "? as facetingbehaviortype, " +
                 "? as protected, " +
