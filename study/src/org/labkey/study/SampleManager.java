@@ -1853,12 +1853,17 @@ public class SampleManager implements ContainerManager.ContainerListener
             sort.insertSortColumn(FieldKey.fromString("SequenceNum"), Sort.SortDirection.ASC);
             ArrayList<Double> visitValues = new TableSelector(columnInfo, filter, sort).getArrayList(Double.class);
             if (0 == visitValues.size())
-                throw new IllegalStateException("Expected values from Select");
-
-            sql.append(tinfoSpec + ".VisitValue >= ? AND " + tinfoSpec + ".VisitValue <= ? AND " + tinfoSpec + ".Container = ?");
-            sql.add(visitValues.get(0));
-            sql.add(visitValues.get(visitValues.size() - 1));
-            sql.add(visit.getContainer());
+            {
+                // No participant visits for this timepoint; return False
+                sql.append(tinfoSpec.getSqlDialect().getBooleanFALSE());
+            }
+            else
+            {
+                sql.append(tinfoSpec + ".VisitValue >= ? AND " + tinfoSpec + ".VisitValue <= ? AND " + tinfoSpec + ".Container = ?");
+                sql.add(visitValues.get(0));
+                sql.add(visitValues.get(visitValues.size() - 1));
+                sql.add(visit.getContainer());
+            }
         }
         return sql;
     }
