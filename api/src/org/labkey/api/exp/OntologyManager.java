@@ -1332,15 +1332,23 @@ public class OntologyManager
             try
             {
                 assert pdIn.getPropertyId() == 0;
-                pd = Table.insert(null, getTinfoPropertyDescriptor(), pdIn);
-                propDescCache.put(getCacheKey(pd), pd);
+                /* return 1 if inserted 0 if not inserted, uses OUT parameter for new PropertyDescriptor */
+                PropertyDescriptor[] out = new PropertyDescriptor[1];
+                int rowcount = insertPropertyIfNotExists(null, pdIn, out);
+                pd = out[0];
+                if (1 == rowcount && null != pd)
+                {
+                    propDescCache.put(getCacheKey(pd), pd);
+                    return pd;
+                }
+                if (null == pd)
+                {
+                    throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
+                }
             }
             catch (SQLException e)
             {
-                if (SqlDialect.isConstraintException(e))
-                    pd = getPropertyDescriptor(pdIn.getPropertyURI(), pdIn.getContainer());
-                if (null == pd)
-                    throw new RuntimeSQLException(e);
+                throw new RuntimeSQLException(e);
             }
         }
 
@@ -1398,6 +1406,94 @@ public class OntologyManager
         }
         return pd;
 	}
+
+
+    private static int insertPropertyIfNotExists(User user, PropertyDescriptor pd, PropertyDescriptor[] out) throws SQLException
+    {
+        TableInfo t = getTinfoPropertyDescriptor();
+        SQLFragment sql = new SQLFragment();
+        sql.append("INSERT INTO exp.propertydescriptor (" +
+                "propertyuri, ontologyuri, name, description, rangeuri, concepturi, label, searchterms, semantictype, " +
+                "format, container, project, lookupcontainer, lookupschema, lookupquery, defaultvaluetype, hidden, " +
+                "mvenabled, importaliases, url, shownininsertview, showninupdateview, shownindetailsview, dimension, " +
+                "measure, createdby, created, modifiedby, modified, facetingbehaviortype, protected, excludefromshifting)\n");
+        sql.append("SELECT " +
+                "? as propertyuri, " +
+                "? as ontolotyuri, " +
+                "? as name, " +
+                "? as description, " +
+                "? as rangeuri, " +
+                "? as concepturi, " +
+                "? as label, " +
+                "? as searchterms, " +
+                "? as semantictype, " +
+                "? as format, " +
+                "? as container, " +
+                "? as project, " +
+                "? as lookupcontainer, " +
+                "? as lookupschema, " +
+                "? as lookupquery, " +
+                "? as defaultvaluetype, " +
+                "? as hidden, " +
+                "? as mvenabled, " +
+                "? as importaliases, " +
+                "? as url, " +
+                "? as shownininsertview, " +
+                "? as showninupdateview, " +
+                "? as shownindetailsview, " +
+                "? as dimension, " +
+                "? as measure, " +
+                "? as createdby, " +
+                "{fn now()} as created, " +
+                "? as modifiedby, " +
+                "{fn now()} as modified, " +
+                "? as facetingbehaviortype, " +
+                "? as protected, " +
+                "? as excludefromshifting\n");
+        sql.append("WHERE NOT EXISTS (SELECT propertyid FROM exp.propertydescriptor WHERE propertyuri=? AND container=?);\n");
+
+        sql.add(pd.getPropertyURI());
+        sql.add(pd.getOntologyURI());
+        sql.add(pd.getName());
+        sql.add(pd.getDescription());
+        sql.add(pd.getRangeURI());
+        sql.add(pd.getConceptURI());
+        sql.add(pd.getLabel());
+        sql.add(pd.getSearchTerms());
+        sql.add(pd.getSemanticType());
+        sql.add(pd.getFormat());
+        sql.add(pd.getContainer());
+        sql.add(pd.getProject());
+        sql.add(pd.getLookupContainer());
+        sql.add(pd.getLookupSchema());
+        sql.add(pd.getLookupQuery());
+        sql.add(pd.getDefaultValueType());
+        sql.add(pd.isHidden());
+        sql.add(pd.isMvEnabled());
+        sql.add(pd.getImportAliases());
+        sql.add(pd.getURL());
+        sql.add(pd.isShownInInsertView());
+        sql.add(pd.isShownInUpdateView());
+        sql.add(pd.isShownInDetailsView());
+        sql.add(pd.isDimension());
+        sql.add(pd.isMeasure());
+        sql.add(user); // createdby
+        // created
+        sql.add(user); // modifiedby
+        // modified
+        sql.add(pd.getFacetingBehaviorType());
+        sql.add(pd.isProtected());
+        sql.add(pd.isExcludeFromShifting());
+        // WHERE
+        sql.add(pd.getPropertyURI());
+        sql.add(pd.getContainer());
+
+        int rowcount = (new SqlExecutor(t.getSchema())).execute(sql);
+
+        SQLFragment reselect = new SQLFragment("SELECT * FROM exp.propertydescriptor WHERE propertyuri=? AND container=?",pd.getPropertyURI(),pd.getContainer());
+        out[0] = (new SqlSelector(t.getSchema(), reselect).getObject(PropertyDescriptor.class));
+        return rowcount;
+    }
 
 
     private static List<String> comparePropertyDescriptors(PropertyDescriptor pdIn, PropertyDescriptor pd)
