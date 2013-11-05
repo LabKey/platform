@@ -4557,6 +4557,7 @@ public class QueryController extends SpringActionController
         private String newName;
         private boolean inherit;
         private boolean shared;
+        private String containerPath;
 
         public String getNewName()
         {
@@ -4587,6 +4588,16 @@ public class QueryController extends SpringActionController
         {
             this.shared = shared;
         }
+
+        public String getContainerPath()
+        {
+            return containerPath;
+        }
+
+        public void setContainerPath(String containerPath)
+        {
+            this.containerPath = containerPath;
+        }
     }
 
     // Moves a session view into the database.
@@ -4604,14 +4615,31 @@ public class QueryController extends SpringActionController
             if (!view.isSession())
                 throw new IllegalArgumentException("This action only supports saving session views.");
 
-            if (!getContainer().getId().equals(view.getContainer().getId()))
-                throw new IllegalArgumentException("View may only be saved from container it was created in.");
+            //if (!getContainer().getId().equals(view.getContainer().getId()))
+            //    throw new IllegalArgumentException("View may only be saved from container it was created in.");
 
             assert !view.canInherit() && !view.isShared() && view.isEditable(): "Session view should never be inheritable or shared and always be editable";
 
+            // Users may save views to a location other than the current container
+            String containerPath = form.getContainerPath();
+            Container container;
+            if (form.isInherit() && containerPath != null)
+            {
+                // Only respect this request if it's a view that is inheritable in subfolders
+                container = ContainerManager.getForPath(containerPath);
+            }
+            else
+            {
+                // Otherwise, save it in the current container
+                container = getViewContext().getContainer();
+            }
+
+            if (container == null)
+                throw new NotFoundException("No such container: " + containerPath);
+
             if (form.isShared() || form.isInherit())
             {
-                if (!getViewContext().getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
+                if (!container.hasPermission(getUser(), EditSharedViewPermission.class))
                     throw new UnauthorizedException();
             }
 
@@ -4643,6 +4671,8 @@ public class QueryController extends SpringActionController
                     viewCopy.setFilterAndSort(view.getFilterAndSort());
                     viewCopy.setColumnProperties(view.getColumnProperties());
                     viewCopy.setIsHidden(view.isHidden());
+                    if (form.isInherit())
+                        viewCopy.setContainer(container);
 
                     viewCopy.save(getUser(), getViewContext().getRequest());
                 }
@@ -4652,10 +4682,13 @@ public class QueryController extends SpringActionController
                 }
                 else
                 {
-                    // UNDONE: changing shared and inherit properties is unimplemented.  Not sure if it makes sense from a usability point of view.
+                    // UNDONE: changing shared property of an existing view is unimplemented.  Not sure if it makes sense from a usability point of view.
                     existingView.setColumns(view.getColumns());
                     existingView.setFilterAndSort(view.getFilterAndSort());
                     existingView.setColumnProperties(view.getColumnProperties());
+                    existingView.setCanInherit(form.isInherit());
+                    if (form.isInherit())
+                        ((CustomViewImpl)existingView).setContainer(container);
 
                     existingView.save(getUser(), getViewContext().getRequest());
                 }
