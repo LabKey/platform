@@ -2053,6 +2053,9 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                                 shared: o.shared
                             };
 
+                            if (o.inherit)
+                                jsonData.containerPath = o.containerPath;
+
                             Ext.Ajax.request({
                                 url: LABKEY.ActionURL.buildURL("query", "saveSessionView"),
                                 method: "POST",
@@ -2741,7 +2744,7 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
                 mode: 'local',
                 editable: false,
                 hidden: !containerFilterable,
-                disabled: disableSharedAndInherit || !containerFilterable,
+                disabled: disableSharedAndInherit || !containerFilterable || !inherit,
                 listeners: {
                     select: function (combobox)
                     {
