@@ -125,8 +125,8 @@ public class Encryption
 
         String masterEncryptionKey = context.getInitParameter(MASTER_ENCRYPTION_KEY_PARAMETER_NAME);
 
-        // If master key is there (not null, not blank, not whitespace)
-        if (!StringUtils.isBlank(masterEncryptionKey) && !masterEncryptionKey.trim().equals("@@put master encryption key here@@"))
+        // Return the master key if it's there (not null, not blank, not whitespace, not default value), otherwise return null
+        if (!StringUtils.isBlank(masterEncryptionKey) && !masterEncryptionKey.trim().equals("@@masterEncryptionKey@@"))
             return masterEncryptionKey;
         else
             return null;
