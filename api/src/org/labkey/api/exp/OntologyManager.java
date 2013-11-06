@@ -1262,19 +1262,33 @@ public class OntologyManager
                     PropertyDescriptor pd = getPropertyDescriptor(propUri,oldProject );
                     if (null != pd)
                     {
-                        pd.setContainer(c);
-                        pd.setProject(newProject);
-                        pd.setPropertyId(0);
+                        // To prevent iterating over a property descriptor update more than once
+                        // we check to make sure both the container and project are equivalent to the updated
+                        // location
+                        if (!pd.getContainer().equals(c) || !pd.getProject().equals(newProject))
+                        {
+                            pd.setContainer(c);
+                            pd.setProject(newProject);
+                            pd.setPropertyId(0);
+                        }
+
                         pd = ensurePropertyDescriptor(pd);
                     }
                     if (null != domUri)
                     {
                         DomainDescriptor dd = getDomainDescriptor(domUri, oldProject);
-                        dd.setContainer(c);
-                        dd.setProject(newProject);
-                        dd.setDomainId(0);
-                        ensureDomainDescriptor(dd);
 
+                        // To prevent iterating over a domain descriptor update more than once
+                        // we check to make sure both the container and project are equivalent to the updated
+                        // location
+                        if (!dd.getContainer().equals(c) || !dd.getProject().equals(newProject))
+                        {
+                            dd.setContainer(c);
+                            dd.setProject(newProject);
+                            dd.setDomainId(0);
+                        }
+
+                        ensureDomainDescriptor(dd);
                         ensurePropertyDomain(pd, dd);
                     }
                 }
@@ -1657,6 +1671,9 @@ public class OntologyManager
             throw new IllegalArgumentException("Must supply a PropertyDescriptor");
         if (null == dd)
             throw new IllegalArgumentException("Must supply a DomainDescriptor");
+
+        // Consider: We should check that the pd and dd have been persisted (aka have a non-zero id)
+
         if (!pd.getContainer().equals(dd.getContainer())
                     &&  !pd.getProject().equals(_sharedContainer))
             throw new IllegalStateException("ensurePropertyDomain:  property " + pd.getPropertyURI() + " not in same container as domain " + dd.getDomainURI());
