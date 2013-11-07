@@ -77,10 +77,6 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         defaultCols.add(FieldKey.fromParts("Name"));
         defaultCols.add(FieldKey.fromParts("Description"));
         defaultCols.add(FieldKey.fromParts("Type"));
-        defaultCols.add(FieldKey.fromParts("Created"));
-        defaultCols.add(FieldKey.fromParts("CreatedBy"));
-        defaultCols.add(FieldKey.fromParts("Modified"));
-        defaultCols.add(FieldKey.fromParts("ModifiedBy"));
         setDefaultVisibleColumns(defaultCols);
 
         // TODO - this is a horrible way to filter out non-assay protocols

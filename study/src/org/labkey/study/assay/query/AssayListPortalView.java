@@ -16,17 +16,16 @@
 
 package org.labkey.study.assay.query;
 
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.DataView;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.data.*;
 import org.labkey.api.study.permissions.DesignAssayPermission;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.assay.AssayController;
 import org.springframework.validation.BindException;
-
-import java.util.List;
-import java.util.ArrayList;
 
 /**
  * User: ulberge
@@ -43,22 +42,6 @@ public class AssayListPortalView extends AssayListQueryView
     {
         DataRegion rgn = super.createDataRegion();
         rgn.setShowRecordSelectors(false);
-        List<DisplayColumn> displayCols = new ArrayList<>();
-        String[] displayColNames = { "name", "description", "type", "created", "modified"};
-
-        for (DisplayColumn col : rgn.getDisplayColumns())
-        {
-            String colName = col.getName();
-            for (String displayColName : displayColNames)
-            {
-                if (displayColName.equalsIgnoreCase(colName) || !(col instanceof DataColumn))
-                {
-                    displayCols.add(col);
-                    break;
-                }
-            }
-        }
-        rgn.setDisplayColumns(displayCols);
         return rgn;
     }
 
