@@ -357,4 +357,11 @@ abstract public class QueryService
     abstract public void fireQueryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
     abstract public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes);
     abstract public void fireQueryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
+
+
+
+    /** OLAP **/
+    // could make this a separate service
+    abstract public void registerOlapDescriptors(Module module);
+    abstract public void cubeDataChanged(Container c);    // TODO could be more specific than "something in this container"
 }

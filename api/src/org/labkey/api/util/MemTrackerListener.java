@@ -25,6 +25,6 @@ import java.util.Set;
 public interface MemTrackerListener
 {
     // Called before GC and tallying of held objects. Implementors should purge held objects and (optionally) add
-    // objects to the passed in setthat should be ignored .
+    // objects to the passed in set that should be ignored .
     public void beforeReport(Set<Object> set);
 }
