@@ -15,13 +15,13 @@
  */
 package org.labkey.api.module;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.AdminUrls;
+import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.security.User;
@@ -40,9 +40,6 @@ import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.PageConfig;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -368,29 +365,36 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
     private NavTree getTabMenu(ViewContext ctx, FolderTab folderTab, Portal.PortalPage portalPage, String folderLabel)
     {
-        NavTree menu = new NavTree("Tab Administration");
-        ActionURL hideURL = PageFlowUtil.urlProvider(ProjectUrls.class).getHidePortalPageURL(ctx.getContainer(), portalPage.getPageId(), ctx.getActionURL());
-        ActionURL deleteURL = PageFlowUtil.urlProvider(ProjectUrls.class).getDeletePortalPageURL(ctx.getContainer(), portalPage.getPageId(), ctx.getActionURL());
-        NavTree moveMenu = new NavTree("Move");
-        String moveConfig = "{pageId: \"" + portalPage.getPageId() + "\", folderLabel:\"" + folderLabel +"\"}";
+        String portalPageId = portalPage.getPageId();
+        Container container = ctx.getContainer();
+        User user = ctx.getUser();
+        ProjectUrls projectURLProvider = PageFlowUtil.urlProvider(ProjectUrls.class);
 
-        moveMenu.addChild(new NavTree("Left", "javascript:LABKEY.Portal.moveTabLeft(" + moveConfig + ");"));
-        moveMenu.addChild(new NavTree("Right", "javascript:LABKEY.Portal.moveTabRight(" + moveConfig + ");"));
+        JSONObject config = new JSONObject();
+        config.put("pageId", portalPageId);
+        config.put("folderLabel", folderLabel);
+        String moveConfig = config.toString();
+
+        NavTree menu = new NavTree("Tab Administration");
 
         if(portalPage.isHidden())
         {
-            menu.addChild(new NavTree("Show", "javascript:LABKEY.Portal.showTab('" + portalPage.getPageId() + "')"));
+            menu.addChild(new NavTree("Show", "javascript:LABKEY.Portal.showTab(" + PageFlowUtil.jsString(portalPageId) + ")"));
         }
         else
-            menu.addChild(new NavTree("Hide", hideURL));
+            menu.addChild(new NavTree("Hide", projectURLProvider.getHidePortalPageURL(container, portalPageId, ctx.getActionURL())));
 
         if (portalPage.isCustomTab())
         {
-            menu.addChild(new NavTree("Delete", deleteURL));
+            menu.addChild(new NavTree("Delete", projectURLProvider.getDeletePortalPageURL(container, portalPageId, ctx.getActionURL())));
         }
 
+        NavTree moveMenu = new NavTree("Move");
+        moveMenu.addChild(new NavTree("Left", "javascript:LABKEY.Portal.moveTabLeft(" + moveConfig + ");"));
+        moveMenu.addChild(new NavTree("Right", "javascript:LABKEY.Portal.moveTabRight(" + moveConfig + ");"));
         menu.addChild(moveMenu);
-        menu.addChild(new NavTree("Rename", "javascript:LABKEY.Portal.renameTab('" + portalPage.getPageId() + "', '" + folderLabel + "Tab');"));
+
+        menu.addChild(new NavTree("Rename", "javascript:LABKEY.Portal.renameTab(" + PageFlowUtil.jsString(portalPageId) + ", " + PageFlowUtil.jsString(folderLabel + "Tab") + ");"));
 
         // TODO: Determing permissions and settings links.
 //        menu.addChild(new NavTree("Permissions"));
@@ -398,7 +402,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
         if (folderTab.getTabType() == FolderTab.TAB_TYPE.Container)
         {
-            Container tabContainer = ContainerManager.getChild(ctx.getContainer(), folderTab.getName());
+            Container tabContainer = ContainerManager.getChild(container, folderTab.getName());
 
             if (null != tabContainer)
             {
@@ -410,7 +414,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                     folderAdmin.addChildren(FolderAdminMenu.getFolderElements(tabContainer));
                     menu.addChild(folderAdmin);
                 }
-                if (ctx.getUser().isDeveloper())
+                if (user.isDeveloper())
                 {
                     menu.addChild(new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(tabContainer)));
                 }
@@ -422,12 +426,12 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
                 NavTree moduleMenu = new NavTree("Go To Module");
 
-                for (Module module : tabContainer.getActiveModules(ctx.getUser()))
+                for (Module module : tabContainer.getActiveModules(user))
                 {
-                    if (null == module || module.equals(tabContainer.getDefaultModule(ctx.getUser())))
+                    if (null == module || module.equals(tabContainer.getDefaultModule(user)))
                         continue;
 
-                    ActionURL tabUrl = module.getTabURL(tabContainer, ctx.getUser());
+                    ActionURL tabUrl = module.getTabURL(tabContainer, user);
 
                     if(null != tabUrl)
                         moduleMenu.addChild(new NavTree(module.getTabName(ctx), tabUrl));
