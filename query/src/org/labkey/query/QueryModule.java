@@ -63,6 +63,7 @@ import org.labkey.query.audit.QueryAuditProvider;
 import org.labkey.query.audit.QueryAuditViewFactory;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditViewFactory;
+import org.labkey.query.controllers.OlapController;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.reports.AttachmentReport;
@@ -109,6 +110,7 @@ public class QueryModule extends DefaultModule
     {
         addController("query", QueryController.class);
         addController("reports", ReportsController.class);
+        addController("olap", OlapController.class);
 
         QueryServiceImpl i = new QueryServiceImpl();
         QueryService.set(i);

@@ -68,6 +68,8 @@ import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.query.audit.QueryAuditViewFactory;
 import org.labkey.query.audit.QueryUpdateAuditViewFactory;
 import org.labkey.query.controllers.QueryController;
+import org.labkey.query.olap.OlapSchemaCache;
+import org.labkey.query.olap.ServerManager;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.LinkedSchemaDef;
@@ -2141,6 +2143,18 @@ public class QueryServiceImpl extends QueryService
         QueryManager.get().fireQueryDeleted(user, container, scope, schema, queries);
     }
 
+    @Override
+    public void registerOlapDescriptors(Module module)
+    {
+        OlapSchemaCache.get().registerModule(module);
+    }
+
+    @Override
+    public void cubeDataChanged(Container c)
+    {
+        ServerManager.cubeDataChanged(c);
+    }
+
     public static class TestCase extends Assert
     {
         ResultSet rs = null;
@@ -2288,8 +2302,5 @@ public class QueryServiceImpl extends QueryService
             assertEquals(JdbcType.VARCHAR.sqlType, rsmd.getColumnType(rs.findColumn("s")));
             }
         }
-
     }
-
-
 }

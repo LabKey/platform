@@ -1,0 +1,52 @@
+<Schema name="Study" description="HIV Collaborative Dataspace">
+
+    <Cube name="SpecimenCube" visible="true" defaultMeasure="ParticipantCount" cache="true" enabled="true">
+        <Table schema="study" name="SpecimenSummary" >
+        </Table>
+
+        <Dimension name="Participant" visible="true" highCardinality="false" foreignKey="participantid">
+            <Hierarchy visible="true" hasAll="true" uniqueKeyLevelName="Name">
+                <Table schema="study" name="Participant" primaryKey="participantid" />
+                <Level name="Cohort" visible="true" column="cohort"
+                       type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never"></Level>
+                <Level name="Participant" visible="true" column="participantid" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never"></Level>
+            </Hierarchy>
+        </Dimension>
+
+
+        <Dimension name="PrimaryType"  visible="true" highCardinality="false" foreignKey="PrimaryType">
+            <Hierarchy visible="true" hasAll="true" primaryKey="rowid" >
+                <Table schema="study" name="SpecimenPrimaryType" />
+                <Level name="PrimaryType" visible="true" column="Description" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+                </Level>
+            </Hierarchy>
+        </Dimension>
+
+
+        <Dimension name="DerivativeType"  visible="true" highCardinality="false" foreignKey="DerivativeType">
+            <Hierarchy visible="true" hasAll="true" primaryKey="rowid" >
+                <Table schema="study" name="SpecimenDerivative"/>
+                <Level name="DerivativeType" visible="true" column="Description" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+                </Level>
+            </Hierarchy>
+        </Dimension>
+
+
+        <Dimension name="Location"  visible="true" highCardinality="false" foreignKey="Clinic">
+            <Hierarchy visible="true" hasAll="true">
+                <Table schema="study" name="Location" />
+                <Level name="Location" visible="true" column="Label" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+                </Level>
+            </Hierarchy>
+        </Dimension>
+
+
+        <Measure name="VialCount" column="VialCount" aggregator="sum" visible="true">
+        </Measure>
+
+        <Measure name="SpecimenCount" column="Container" aggregator="count" visible="true">
+        </Measure>
+
+    </Cube>
+
+</Schema>

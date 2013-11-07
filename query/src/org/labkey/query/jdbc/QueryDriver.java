@@ -16,11 +16,13 @@
 package org.labkey.query.jdbc;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
@@ -41,10 +43,7 @@ import java.util.logging.Logger;
  */
 public class QueryDriver implements Driver
 {
-    /* wrap derby so we can log database commands */
     static QueryDriver _instanceLabKeyMemoryDriver = new QueryDriver();
-
-    static AtomicInteger _spid = new AtomicInteger();
 
     private QueryDriver()
     {
@@ -64,25 +63,54 @@ public class QueryDriver implements Driver
 
 
     @Override
-    public Connection connect(String s, Properties properties) throws SQLException
+    public Connection connect(String connectString, Properties properties) throws SQLException
     {
-        if (!s.startsWith("jdbc:labkey:query:"))
+        if (!acceptsURL(connectString))
             return null;
 
-        String[] a = s.split(":");
+        String[] a = connectString.split(":");
         for (String part : a)
         {
             int equals = part.indexOf("=");
             if (-1==equals) continue;
             properties.put(part.substring(0,equals),part.substring(equals+1));
         }
-        Integer userId = (Integer)JdbcType.INTEGER.convert(properties.get("user"));
-        Integer containerId = (Integer)JdbcType.INTEGER.convert(properties.get("container"));
-        String schemaName = (String)properties.get("schema");
-        if (null == userId || null==containerId || null==schemaName)
+
+        if (null == properties.get("user") || null==properties.get("container") || null==properties.get("schema"))
             throw new SQLException("connection must specify user, container, and schema");
 
-        User user = UserManager.getUser(userId);
+        // USER
+        Integer userId = null;
+        ValidEmail userName = null;
+        try
+        {
+            String u = String.valueOf(properties.get("user"));
+            if (u.equalsIgnoreCase("guest"))
+                userId = 0;
+            if (u.contains("@"))
+                userName = new ValidEmail(u);
+            else
+                userId = (Integer)JdbcType.INTEGER.convert(u);
+        }
+        catch (Exception x)
+        {
+        }
+
+        // CONTAINER
+        Integer containerId = (Integer)JdbcType.INTEGER.convert(properties.get("container"));
+
+        // SCHEMA
+        String schemaName = null == properties.get("schema") ? null : String.valueOf(properties.get("schema"));
+        if (StringUtils.isEmpty(schemaName))
+            schemaName = "core";
+
+        if ((null == userId && null==userName)|| null==containerId || null==schemaName)
+            throw new SQLException("connection must specify user, container, and schema");
+
+        User user = null!=userId ? UserManager.getUser(userId) : UserManager.getUser(userName);
+        if (null == user)
+            throw new SQLException("unknown user: " + properties.get("user"));
+
         Container c = ContainerManager.getForRowId(containerId);
         return new QueryConnection(user, c, schemaName);
     }
@@ -91,9 +119,7 @@ public class QueryDriver implements Driver
     @Override
     public boolean acceptsURL(String s) throws SQLException
     {
-        if (!s.startsWith("jdbc:labkey:query:"))
-            return false;
-        return true;
+        return s.startsWith("jdbc:labkey:query:");
     }
 
     @Override

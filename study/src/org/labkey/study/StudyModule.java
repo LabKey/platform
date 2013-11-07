@@ -46,6 +46,7 @@ import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -273,6 +274,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
         DataViewService.get().registerProvider(DatasetViewProvider.TYPE, new DatasetViewProvider());
         DataViewService.get().registerProvider(ReportViewProvider.TYPE, new ReportViewProvider());
+
+        QueryService.get().registerOlapDescriptors(this);
     }
 
     @NotNull

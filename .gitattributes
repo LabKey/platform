@@ -2191,6 +2191,13 @@ query/gwtsrc/org/labkey/query/metadata/client/WrappedColumnItem.java -text
 query/gwtsrc/org/labkey/reports/designer/ChartDesigner.gwt.xml -text
 query/gwtsrc/org/labkey/reports/designer/client/ChartDesigner.java -text
 query/lib/antlr-3.3.jar -text
+query/lib/commons-vfs-1.0.jar -text
+query/lib/eigenbase-properties.jar -text
+query/lib/eigenbase-resgen.jar -text
+query/lib/eigenbase-xom.jar -text
+query/lib/mondrian.jar -text
+query/lib/olap4j-xmla.jar -text
+query/lib/olap4j.jar -text
 query/module.properties -text
 query/resources/credits/jars.txt -text
 query/resources/schemas/dbscripts/postgresql/obsolete/query-0.00-2.00.sql -text
@@ -2351,6 +2358,7 @@ query/src/org/labkey/query/controllers/InternalSourceViewForm.java -text
 query/src/org/labkey/query/controllers/InternalViewForm.java -text
 query/src/org/labkey/query/controllers/LinkedSchemaForm.java -text
 query/src/org/labkey/query/controllers/NewQueryForm.java -text
+query/src/org/labkey/query/controllers/OlapController.java -text
 query/src/org/labkey/query/controllers/Page.java -text
 query/src/org/labkey/query/controllers/PropertiesForm.java -text
 query/src/org/labkey/query/controllers/QueryController.java -text
@@ -2367,6 +2375,14 @@ query/src/org/labkey/query/jdbc/QueryDatabaseMetaData.java -text
 query/src/org/labkey/query/jdbc/QueryDriver.java -text
 query/src/org/labkey/query/jdbc/QueryStatement.java -text
 query/src/org/labkey/query/metadata/MetadataServiceImpl.java -text
+query/src/org/labkey/query/olap/MemberSet.java -text
+query/src/org/labkey/query/olap/Olap4Js.java -text
+query/src/org/labkey/query/olap/OlapSchemaCache.java -text
+query/src/org/labkey/query/olap/OlapSchemaDescriptor.java -text
+query/src/org/labkey/query/olap/OlapSchemaLoader.java -text
+query/src/org/labkey/query/olap/Qube.java -text
+query/src/org/labkey/query/olap/QubeExpr.java -text
+query/src/org/labkey/query/olap/ServerManager.java -text
 query/src/org/labkey/query/persist/AbstractExternalSchemaDef.java -text
 query/src/org/labkey/query/persist/CstmView.java -text
 query/src/org/labkey/query/persist/ExternalSchemaDef.java -text
@@ -2505,6 +2521,7 @@ query/src/org/labkey/query/view/apitest.jsp -text
 query/src/org/labkey/query/view/browse.jsp -text
 query/src/org/labkey/query/view/confirmDeleteConnection.jsp -text
 query/src/org/labkey/query/view/createRemoteConnection.jsp -text
+query/src/org/labkey/query/view/cube.jsp -text
 query/src/org/labkey/query/view/deleteQuery.jsp -text
 query/src/org/labkey/query/view/editQueryWebPart.jsp -text
 query/src/org/labkey/query/view/exportTables.jsp -text
@@ -2515,6 +2532,7 @@ query/src/org/labkey/query/view/internalSourceView.jsp -text
 query/src/org/labkey/query/view/linkedSchema.jsp -text
 query/src/org/labkey/query/view/manageRemoteConnections.jsp -text
 query/src/org/labkey/query/view/manageViews.jsp -text
+query/src/org/labkey/query/view/mdx.jsp -text
 query/src/org/labkey/query/view/multipleSchemas.jsp -text
 query/src/org/labkey/query/view/newQuery.jsp -text
 query/src/org/labkey/query/view/propertiesQuery.jsp -text
@@ -2533,6 +2551,7 @@ query/webapp/query/columnProperties.gif -text
 query/webapp/query/delete.gif -text
 query/webapp/query/movedown.gif -text
 query/webapp/query/moveup.gif -text
+query/webapp/query/olap.js -text
 query/webapp/query/queryDesigner.js -text
 query/webapp/query/sql.gif -text
 query/webapp/query/validateQueries.js -text
@@ -2719,6 +2738,7 @@ study/gwtsrc/gwt/client/org/labkey/study/designer/client/model/XMLUtils.java -te
 study/gwtsrc/gwt/public/org/labkey/plate/designer/TemplateDesigner.html -text
 study/gwtsrc/gwt/public/org/labkey/study/designer/Designer.html -text
 study/module.properties -text
+study/resources/olap/specimens.xml -text
 study/resources/schemas/dbscripts/postgresql/obsolete/study-0.00-1.11.sql -text
 study/resources/schemas/dbscripts/postgresql/obsolete/study-0.00-1.25.sql -text
 study/resources/schemas/dbscripts/postgresql/obsolete/study-0.00-1.26.sql -text
