@@ -42,7 +42,7 @@ public class ContextListener implements ServletContextListener
 
     public void contextDestroyed(ServletContextEvent servletContextEvent)
     {
-        ViewServlet.setShuttingDown(0);
+        ViewServlet.setShuttingDown();
 
         // Want exact same list for shutdownPre() and shutdownStarted()
         List<ShutdownListener> shutdownListeners = _shutdownListeners;
@@ -69,7 +69,7 @@ public class ContextListener implements ServletContextListener
                 _log.error("Exception during shutdownStarted(): ", t);
             }
         }
-        ViewServlet.setShuttingDown(1000);
+        ViewServlet.setShuttingDown();
         getSpringContextListener().contextDestroyed(servletContextEvent);
         CacheManager.shutdown();   // Don't use a listener... we want this shutdown late
         org.apache.log4j.LogManager.shutdown();
