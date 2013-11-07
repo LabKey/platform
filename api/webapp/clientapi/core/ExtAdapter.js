@@ -3,14 +3,37 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-LABKEY.initExtAdapter = function(LABKEY, Ext){
+(function() {
 
-    if (!Ext) {
+    //
+    // Determine working version
+    //
+    var ExtConfig;
+    if (window.Ext4) {
+        ExtConfig = {
+            version: window.Ext4.getVersion().version,
+            lib: window.Ext4
+        }
+    }
+    else if (window.Ext) {
+        ExtConfig = {
+            version: window.Ext.version,
+            lib: window.Ext
+        }
+    }
+
+    if (!ExtConfig) {
+        console.warn('A known version of ExtJS cannot be found. Some features of this page may not work correctly.');
         return;
     }
 
+    //
+    // Declare ExtAdapter
+    //
+    var Ext = ExtConfig.lib;
+
     Ext.ns('LABKEY.ExtAdapter');
-    //console.log('using Ext version: ' + Ext.version);
+//    console.log('using Ext version: ' + ExtConfig.version);
 
     Ext.apply(LABKEY.ExtAdapter, {
         Ajax: Ext.Ajax,
@@ -78,16 +101,9 @@ LABKEY.initExtAdapter = function(LABKEY, Ext){
         // TODO: Remove
         onReady: Ext.onReady,
 
-        query: Ext.query
+        query: Ext.query,
+
+        version: ExtConfig.version
     });
-};
 
-LABKEY.inferHighestExtVersion = function(){
-    if (window.Ext4)
-        return Ext4;
-    else if (window.Ext)
-        return Ext;
-    console.warn('A known version of ExtJS cannot be found. Some features of this page may not work correctly.');
-};
-
-LABKEY.initExtAdapter(LABKEY, LABKEY.inferHighestExtVersion());
+})();

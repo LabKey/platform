@@ -16,7 +16,7 @@
         <script path="clientapi/core/MultiRequest.js"/> <!-- Clear of Ext -->
         <script path="clientapi/core/NavTrail.js"/> <!-- Clear of Ext -->
         <script path="clientapi/core/Pipeline.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.DomHelper.markup, Ext.isString, and Ext.encode -->
-        <script path="clientapi/core/Portal.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.Msg -->
+        <script path="clientapi/core/Portal.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.Msg, Ext4.form.field.Text, and Ext4.window.Window -->
         <script path="clientapi/core/Query.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.DomHelper -->
         <script path="clientapi/core/Report.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.decode -->
         <script path="clientapi/core/Security.js"/> <!-- Clear of Ext -->
