@@ -70,8 +70,8 @@ public class FileContentModule extends DefaultModule
     {
         return new ArrayList<WebPartFactory>(Arrays.asList(
                 new FilesWebPart.Factory(WebPartFactory.LOCATION_RIGHT),
-                new FilesWebPart.Factory(WebPartFactory.LOCATION_BODY),
-                new FilesWebPart.Ext4Factory(WebPartFactory.LOCATION_BODY) // Disable web part for 13.1 release
+                new FilesWebPart.Factory(WebPartFactory.LOCATION_BODY)
+//                new FilesWebPart.Ext4Factory(WebPartFactory.LOCATION_BODY)
         ));
     }
 
