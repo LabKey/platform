@@ -37,7 +37,8 @@ Ext4.define('LABKEY.ext4.SurveyDisplayPanel', {
             isSubmitted     : this.isSubmitted,
             canEdit         : this.canEdit,
             returnURL       : this.returnURL,
-            autosaveInterval: this.autosaveInterval
+            autosaveInterval: this.autosaveInterval,
+            disableAutoSave : false
         });
         this.items = [this.surveyFormPanel];
 
@@ -147,22 +148,26 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         // add listener for when to enable/disable the save button based on the form dirty state
         this.addListener('dirtychange', function(cmp, isDirty){
             // only toggle the save button if the survey label field is valid
-            if (this.down('.textfield[itemId=surveyLabel]').isValid())
+            var surveyLabelCmp = this.down('.textfield[itemId=surveyLabel]');
+            if (surveyLabelCmp && surveyLabelCmp.isValid())
                 this.toggleSaveBtn(isDirty, false);
         }, this);
 
         // add a delayed task for automatically saving the survey responses
         if (this.canEdit)
         {
-            var autoSaveFn = function(count){
-                // without btn/event arguments so we don't show the success msg
-                this.saveSurvey(null, null, false, null, null);
-            };
-            this.autoSaveTask = Ext4.TaskManager.start({
-                run: autoSaveFn,
-                interval: this.autosaveInterval || 60000, // default is 1 min
-                scope: this
-            });
+            if (!this.disableAutoSave)
+            {
+                var autoSaveFn = function(count){
+                    // without btn/event arguments so we don't show the success msg
+                    this.saveSurvey(null, null, false, null, null);
+                };
+                this.autoSaveTask = Ext4.TaskManager.start({
+                    run: autoSaveFn,
+                    interval: this.autosaveInterval || 60000, // default is 1 min
+                    scope: this
+                });
+            }
 
             // check dirty state on page navigation
             window.onbeforeunload = LABKEY.beforeunload(this.isSurveyDirty, this);
@@ -330,7 +335,9 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                     this.saveSurveyAttachments();
 
                     // reset the values so that the form's dirty state is cleared, with one special case for the survey label field
-                    this.submitValues[this.down('.textfield[itemId=surveyLabel]').getName()] = this.down('.textfield[itemId=surveyLabel]').getValue();
+                    var surveyLabelCmp = this.down('.textfield[itemId=surveyLabel]');
+                    if (surveyLabelCmp)
+                        this.submitValues[surveyLabelCmp.getName()] = surveyLabelCmp.getValue();
                     this.setValues(this.getForm(), this.submitValues);
 
                     var msgBox = Ext4.create('Ext.window.Window', {
@@ -411,7 +418,8 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
     onFailure : function(resp, message, hidePanel) {
         this.callParent([resp, message, hidePanel]);
 
-        if (this.isSurveyDirty() && this.down('.textfield[itemId=surveyLabel]').isValid())
+        var surveyLabelCmp = this.down('.textfield[itemId=surveyLabel]');
+        if (this.isSurveyDirty() && surveyLabelCmp && surveyLabelCmp.isValid())
             this.toggleSaveBtn(true, false);
     },
 
