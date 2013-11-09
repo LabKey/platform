@@ -23,15 +23,28 @@ import java.util.List;
 */
 public interface ExpProtocolOutput extends ExpObject
 {
+    /** Convenience and NPE-avoiding method for getSourceApplication().getProtocol() */
     ExpProtocol getSourceProtocol();
 
+    /** @return the ExpRun that claims this object as an output. That is, the one that created it. */
     ExpRun getRun();
+    /**
+     * @return the id of the run that claims this object as an output.
+     * That is, the one that created it. In most cases, use getRun() instead - this method avoids the creation of the
+     * ExpRun and therefore is faster for performance-critical scenarios
+     */
     Integer getRunId();
 
+    /** @return all of the protocol applications that reference this data/material as input */
     ExpProtocolApplication[] getTargetApplications();
+    /** @return all of the protocol applications that reference this data/material as input */
     ExpRun[] getTargetRuns();
 
     void setSourceApplication(ExpProtocolApplication sourceApplication);
+    /**
+     * @return the ExpProtocolApplication that claims this object as an output.
+     * That is, the one that created it, and part of the ExpRun identified by getRun()
+     */
     ExpProtocolApplication getSourceApplication();
 
     void setRun(ExpRun run);
