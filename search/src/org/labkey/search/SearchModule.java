@@ -70,7 +70,7 @@ public class SearchModule extends DefaultModule
 
     public double getVersion()
     {
-        return 13.30;
+        return 13.31;
     }
 
     public boolean hasScripts()
@@ -138,8 +138,9 @@ public class SearchModule extends DefaultModule
             ss.addSearchCategory(UmlsController.umlsCategory);
             AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "full-text search", new ActionURL(SearchController.AdminAction.class, null));
 
-            // 13.2 moved to Lucene 4.3, so rebuild the index. For future upgrades, just update the version number below.
-            final boolean clearIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 13.11);
+            // 13.3 moved to storing security fields in DocValues instead of stored fields, so must rebuild the index.
+            // For future upgrades of Lucene or changes to indexing, update the version number below to rebuild the index.
+            final boolean clearIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 13.31);
 
             // don't start the crawler until all the modules are done startuping
             ContextListener.addStartupListener("Search Service: start", new StartupListener(){

@@ -22,6 +22,7 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
+import org.apache.lucene.document.SortedDocValuesField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
@@ -42,6 +43,7 @@ import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.WildcardQuery;
+import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
 import org.apache.poi.hpsf.NoPropertySetStreamException;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -138,7 +140,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         summary,
         url,
-        container,
+        container,        // Used in two places: stored field in documents (used for low volume purposes, delete and results display) and field in doc values (for high volume security filtering)
         resourceId,
         uniqueId,
         navtrail
@@ -458,6 +460,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             doc.add(new Field(FIELD_NAME.uniqueId.toString(), r.getDocumentId(), StringField.TYPE_STORED));
             doc.add(new Field(FIELD_NAME.container.toString(), r.getContainerId(), StringField.TYPE_STORED));
 
+            doc.add(new SortedDocValuesField(FIELD_NAME.container.toString(), new BytesRef(r.getContainerId())));
+
             // === Index without analyzing, don't store ===
 
             // TODO: We're implementing a ghetto analyzer here... we really should create a PerFieldAnalyzerWrapper
@@ -490,7 +494,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 doc.add(new StoredField(FIELD_NAME.navtrail.toString(), (String)props.get(PROPERTY.navtrail.toString())));
             String resourceId = (String)props.get(PROPERTY.securableResourceId.toString());
             if (null != resourceId && !resourceId.equals(r.getContainerId()))
+            {
                 doc.add(new StoredField(FIELD_NAME.resourceId.toString(), resourceId));
+                doc.add(new SortedDocValuesField(FIELD_NAME.resourceId.toString(), new BytesRef(resourceId)));
+            }
 
             // === Custom properties: Index and analyze, but don't store
             for (Map.Entry<String, ?> entry : props.entrySet())

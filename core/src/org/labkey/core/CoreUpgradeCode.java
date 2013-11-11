@@ -85,6 +85,7 @@ public class CoreUpgradeCode implements UpgradeCode
 
     // invoked by core-13.22-13.23.sql
     @SuppressWarnings({"UnusedDeclaration"})
+    @DeferredUpgrade
     public void installGroupConcat(ModuleContext context)
     {
         SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();

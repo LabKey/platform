@@ -17,15 +17,18 @@
 package org.labkey.search.model;
 
 import org.apache.lucene.document.Document;
+import org.apache.lucene.index.AtomicReader;
 import org.apache.lucene.index.AtomicReaderContext;
-import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.SortedDocValues;
 import org.apache.lucene.search.DocIdSet;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.util.Bits;
+import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.DocIdBitSet;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.module.Module;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurableResource;
@@ -36,6 +39,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.MultiPhaseCPUTimer;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.search.model.LuceneSearchServiceImpl.FIELD_NAME;
 
 import java.io.IOException;
 import java.util.BitSet;
@@ -50,33 +54,33 @@ import java.util.Set;
 */
 class SecurityFilter extends Filter
 {
-    private static final Set<String> SECURITY_FIELDS = PageFlowUtil.set(LuceneSearchServiceImpl.FIELD_NAME.container.name(), LuceneSearchServiceImpl.FIELD_NAME.resourceId.name());
+    private static final Set<String> SECURITY_FIELDS = PageFlowUtil.set(FIELD_NAME.container.name(), FIELD_NAME.resourceId.name());
 
-    private final User user;
-    private final HashMap<String, Container> containerIds;
-    private final HashMap<String, Boolean> securableResourceIds = new HashMap<>();
+    private final User _user;
+    private final HashMap<String, Container> _containerIds;
+    private final HashMap<String, Boolean> _securableResourceIds = new HashMap<>();
     private MultiPhaseCPUTimer.InvocationTimer<SearchService.SEARCH_PHASE> _iTimer;
 
     SecurityFilter(User user, Container searchRoot, Container currentContainer, boolean recursive, MultiPhaseCPUTimer.InvocationTimer<SearchService.SEARCH_PHASE> iTimer)
     {
-        this.user = user;
+        _user = user;
         _iTimer = iTimer;
 
         if (recursive)
         {
             List<Container> containers = ContainerManager.getAllChildren(searchRoot, user);
-            containerIds = new HashMap<>(containers.size());
+            _containerIds = new HashMap<>(containers.size());
 
             for (Container c : containers)
             {
                 if ((c.isSearchable() || (c.equals(currentContainer)) && (c.shouldDisplay(user) || c.isWorkbook())))
-                    containerIds.put(c.getId(), c);
+                    _containerIds.put(c.getId(), c);
             }
         }
         else
         {
-            containerIds = new HashMap<>();
-            containerIds.put(searchRoot.getId(), searchRoot);
+            _containerIds = new HashMap<>();
+            _containerIds.put(searchRoot.getId(), searchRoot);
         }
     }
 
@@ -84,12 +88,16 @@ class SecurityFilter extends Filter
     @Override
     public DocIdSet getDocIdSet(AtomicReaderContext context, Bits acceptDocs) throws IOException
     {
-        IndexReader reader = context.reader();
+        SearchService.SEARCH_PHASE currentPhase = _iTimer.getCurrentPhase();
+        _iTimer.setPhase(SearchService.SEARCH_PHASE.applySecurityFilter);
+
+        AtomicReader reader = context.reader();
         int max = reader.maxDoc();
         BitSet bits = new BitSet(max);
 
-        SearchService.SEARCH_PHASE currentPhase = _iTimer.getCurrentPhase();
-        _iTimer.setPhase(SearchService.SEARCH_PHASE.filterHits);
+        SortedDocValues containerDocValues = reader.getSortedDocValues(FIELD_NAME.container.name());
+        SortedDocValues resourceDocValues = reader.getSortedDocValues(FIELD_NAME.resourceId.name());
+        BytesRef bytesRef = new BytesRef();
 
         try
         {
@@ -100,27 +108,54 @@ class SecurityFilter extends Filter
                 if (null != acceptDocs && !acceptDocs.get(i))
                     continue;
 
+                _iTimer.setPhase(SearchService.SEARCH_PHASE.retrieveSecurityFields);
+
+                containerDocValues.get(i, bytesRef);
+                String containerId = StringUtils.trimToNull(bytesRef.utf8ToString());
+
+                assert null != containerId; // Shouldn't happen... should remove null check below
+
+                // TODO: Remove this... only used to verify new docValues approach vs. old stored field approach to saving security fields
                 Document doc = reader.document(i, SECURITY_FIELDS);
+                String oldConntainerId = doc.get(FIELD_NAME.container.name());
+                if (!oldConntainerId.equals(containerId))
+                    throw new IllegalStateException("Container IDs did not match!");
 
-                String id = doc.get(LuceneSearchServiceImpl.FIELD_NAME.container.name());
-                String resourceId = doc.get(LuceneSearchServiceImpl.FIELD_NAME.resourceId.name());
-
-                if (null == id || !containerIds.containsKey(id))
+                if (null == containerId || !_containerIds.containsKey(containerId))
                     continue;
 
-                if (null != resourceId && !resourceId.equals(id))
+                String resourceId;
+
+                if (null != resourceDocValues)
                 {
-                    if (!containerIds.containsKey(resourceId))
+                    resourceDocValues.get(i, bytesRef);
+                    resourceId = StringUtils.trimToNull(bytesRef.utf8ToString());
+                }
+                else
+                {
+                    resourceId = null;
+                }
+
+                // TODO: Remove this... only used to verify new docValues approach vs. old stored field approach to saving security fields
+                String oldResourceId = doc.get(FIELD_NAME.resourceId.name());
+                if (!StringUtils.equals(oldResourceId, resourceId))
+                   throw new IllegalStateException("Resource IDs did not match!");
+
+                _iTimer.setPhase(SearchService.SEARCH_PHASE.applySecurityFilter);
+
+                if (null != resourceId && !resourceId.equals(containerId))
+                {
+                    if (!_containerIds.containsKey(resourceId))
                     {
-                        Boolean canRead = securableResourceIds.get(resourceId);
+                        Boolean canRead = _securableResourceIds.get(resourceId);
                         if (null == canRead)
                         {
-                            SecurableResource sr = new _SecurableResource(resourceId, containerIds.get(id));
+                            SecurableResource sr = new _SecurableResource(resourceId, _containerIds.get(containerId));
                             SecurityPolicy p = SecurityPolicyManager.getPolicy(sr);
-                            canRead = p.hasPermission(user, ReadPermission.class);
-                            securableResourceIds.put(resourceId, canRead);
+                            canRead = p.hasPermission(_user, ReadPermission.class);
+                            _securableResourceIds.put(resourceId, canRead);
                         }
-                        if (!canRead.booleanValue())
+                        if (!canRead)
                             continue;
                     }
                 }
