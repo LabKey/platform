@@ -215,6 +215,24 @@ Ext.override(Ext.Element, (function(){
     };
 })());
 
+// 18985: Adding NaN check for width adjustments in IE8
+// http://www.sencha.com/forum/archive/index.php/t-94121.html
+if (Ext.isIE7 || Ext.isIE8) {
+    Ext.override(Ext.Element, (function(){
+        return {
+            setWidth : function(width, animate) {
+                var me = this;
+                width = me.adjustWidth(width);
+                if (isNaN(width)) { width = 'auto'; }
+                !animate || !me.anim ?
+                        me.dom.style.width = me.addUnits(width) :
+                        me.anim({width : {to : width}}, me.preanim(arguments, 1));
+                return me;
+            }
+        };
+    })());
+}
+
 // Fix for improper ZIndex calculation
 // Ext.dd.DragDropMgr.getZIndex in ext-all-debug.js line #21689
 // added in ext-all.js as well.

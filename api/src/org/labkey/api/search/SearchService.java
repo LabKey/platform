@@ -32,7 +32,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
@@ -108,7 +107,7 @@ public interface SearchService
         }
     }
 
-    static enum SEARCH_PHASE {createQuery, buildSecurityFilter, search, filterHits, processHits}
+    static enum SEARCH_PHASE {createQuery, buildSecurityFilter, search, retrieveSecurityFields, applySecurityFilter, processHits}
 
     public interface TaskListener
     {
