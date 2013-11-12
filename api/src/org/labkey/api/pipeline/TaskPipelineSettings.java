@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.SpringModule;
 
 /**
@@ -40,6 +41,8 @@ public class TaskPipelineSettings
      * Name to show in the UI for the generated Experiment protocol
      */
     private String _protocolShortDescription;
+
+    /** Module in which the task pipeline is declared. */
     private SpringModule _declaringModule;
 
 
@@ -121,8 +124,14 @@ public class TaskPipelineSettings
         _protocolShortDescription = protocolShortDescription;
     }
 
-    public void setDeclaringModule(SpringModule declaringModule)
+    public void setDeclaringModule(@NotNull SpringModule declaringModule)
     {
+        if (declaringModule == null)
+            throw new IllegalArgumentException("Declaring module must not be null");
+
+        if (_declaringModule != null)
+            throw new IllegalStateException("Declaring module already set");
+
         _declaringModule = declaringModule;
     }
 

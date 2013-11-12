@@ -16,6 +16,7 @@
 package org.labkey.api.pipeline;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.apache.log4j.Logger;
 
@@ -36,6 +37,8 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
     private String _groupParameterName;
     private int _autoRetry = -1;
     private GlobusSettings _globusSettings;
+
+    private SpringModule _declaringModule;
 
     public AbstractTaskFactory(Class namespaceClass)
     {
@@ -98,6 +101,8 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
             _groupParameterName = settings.getGroupParameterName();
         if (settings.getGlobusSettings() != null)
             _globusSettings = settings.getGlobusSettings();
+        if (settings.getDeclaringModule() != null)
+            _declaringModule = settings.getDeclaringModule();
     }
 
     /**
@@ -280,5 +285,23 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
     public void setAutoRetry(int autoRetry)
     {
         _autoRetry = autoRetry;
+    }
+
+    @Override
+    public void setDeclaringModule(@NotNull SpringModule declaringModule)
+    {
+        if (declaringModule == null)
+            throw new IllegalArgumentException("Declaring module must not be null");
+
+        if (_declaringModule != null)
+            throw new IllegalStateException("Declaring module already set");
+
+        _declaringModule = declaringModule;
+    }
+
+    @Override
+    public SpringModule getDeclaringModule()
+    {
+        return _declaringModule;
     }
 }

@@ -15,12 +15,12 @@
  */
 package org.labkey.api.pipeline;
 
+import org.labkey.api.module.SpringModule;
 import org.labkey.api.util.FileType;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -75,8 +75,12 @@ public interface TaskFactory<SettingsType extends TaskFactorySettings>
     GlobusSettings getGlobusSettings();
 
     int getAutoRetry();
-    
+
     public WorkDirectory createWorkDirectory(String jobGUID, FileAnalysisJobSupport jobSupport, Logger logger) throws IOException;
+
+    void setDeclaringModule(SpringModule declaringModule);
+
+    SpringModule getDeclaringModule();
 
     /**
      * Task is run on the LabKey Server.

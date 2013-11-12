@@ -146,12 +146,18 @@ public class TaskPipelineRegistrar implements InitializingBean, ApplicationConte
 
         // Register and release the factories
         for (TaskFactory factory : _factoryImpls)
+        {
+            factory.setDeclaringModule(_declaringModule);
             service.addTaskFactory(factory);
+        }
         _factoryImpls = null;
 
         // Register and release the factories settings objects
         for (TaskFactorySettings settings : _factories)
+        {
+            settings.setDeclaringModule(_declaringModule);
             service.addTaskFactory(settings);
+        }
         _factories = null;
 
         // Register and release base pipeline implementations

@@ -15,34 +15,106 @@
  */
 package org.labkey.api.pipeline;
 
+import org.labkey.api.util.PageFlowUtil;
+
 import java.io.Serializable;
 
 /**
  * <code>TaskId</code>
  *
+ * <dl>
+ *     <dt>namespaceClass</dt>
+ *     <dt>Java Class of the task</dt>
+ *
+ *     <dt>namespaceClass:name</dt>
+ *     <dd>Java Class of the task with specific name</dd>
+ *
+ *     <dt>module:type:name[:version]?</dt>
+ *     <dd>Declaring module name, task type (task or job), friendly name, and optional version id.</dd>
+ * </dl>
+ *
  * @author brendanx
  */
 public class TaskId implements Serializable
 {
-    private Class _namespaceClass;
-    private String _name;
+    public enum Type { task, pipeline }
+
+    final private String _moduleName;
+    final private Type _type;
+    final private Class _namespaceClass;
+    final private String _name;
+    final private double _version;
 
     public TaskId(Class namespaceClass)
     {
+        _moduleName = null;
+        _type = null;
         _namespaceClass = namespaceClass;
+        _name = null;
+        _version = 0;
     }
 
     public TaskId(Class namespaceClass, String name)
     {
+        _moduleName = null;
+        _type = null;
         _namespaceClass = namespaceClass;
         _name = name;
+        _version = 0;
+    }
+
+    public TaskId(String moduleName, Type type, String name, double version)
+    {
+        _moduleName = moduleName;
+        _type = type;
+        _namespaceClass = null;
+        _name = name;
+        _version = version;
     }
 
     public TaskId(String s) throws ClassNotFoundException
     {
         String[] parts = s.split(":");
-        _namespaceClass = Class.forName(parts[0]);
-        _name = (parts.length > 1 ? parts[1] : null);        
+
+        if (parts.length == 1)
+        {
+            // Parse as "namespaceClass"
+            _moduleName = null;
+            _type = null;
+            _namespaceClass = Class.forName(parts[0]);
+            _name = null;
+            _version = 0;
+        }
+        else if (parts.length == 2)
+        {
+            // Parse as "namespaceClass:name"
+            _moduleName = null;
+            _type = null;
+            _namespaceClass = Class.forName(parts[0]);
+            _name = parts[1];
+            _version = 0;
+        }
+        else if (parts.length == 3 || parts.length == 4)
+        {
+            // Parse as either "module:type:name" or "module:type:name:version"
+            _moduleName = parts[0];
+            _type = Type.valueOf(parts[1]);
+            _namespaceClass = null;
+            _name = parts[2];
+            _version = parts.length == 4 ? Double.valueOf(parts[3]) : 0;
+        }
+        else
+            throw new IllegalArgumentException("unsupported taskid format");
+    }
+
+    public String getModuleName()
+    {
+        return _moduleName;
+    }
+
+    public Type getType()
+    {
+        return _type;
     }
 
     public Class getNamespaceClass()
@@ -55,32 +127,69 @@ public class TaskId implements Serializable
         return _name;
     }
 
+    public double getVersion()
+    {
+        return _version;
+    }
+
+    @Override
     public boolean equals(Object o)
     {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        TaskId that = (TaskId) o;
+        TaskId taskId = (TaskId) o;
 
-        if (_name != null ? !_name.equals(that._name) : that._name != null) return false;
-        if (!_namespaceClass.equals(that._namespaceClass)) return false;
+        if (Double.compare(taskId._version, _version) != 0) return false;
+        if (_moduleName != null ? !_moduleName.equals(taskId._moduleName) : taskId._moduleName != null) return false;
+        if (_name != null ? !_name.equals(taskId._name) : taskId._name != null) return false;
+        if (_namespaceClass != null ? !_namespaceClass.equals(taskId._namespaceClass) : taskId._namespaceClass != null)
+            return false;
+        if (_type != taskId._type) return false;
 
         return true;
     }
 
+    @Override
     public int hashCode()
     {
         int result;
-        result = _namespaceClass.hashCode();
+        long temp;
+        result = _moduleName != null ? _moduleName.hashCode() : 0;
+        result = 31 * result + (_type != null ? _type.hashCode() : 0);
+        result = 31 * result + (_namespaceClass != null ? _namespaceClass.hashCode() : 0);
         result = 31 * result + (_name != null ? _name.hashCode() : 0);
+        temp = Double.doubleToLongBits(_version);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
         return result;
     }
 
+    /**
+     * Generate canonical task/pipeline name parsable by {@link #valueOf(String)}.
+     */
     public String toString()
     {
-        StringBuffer s = new StringBuffer(_namespaceClass.getName());
-        if (_name != null)
-            s.append(':').append(_name);
+        StringBuilder s = new StringBuilder();
+        if (_moduleName != null)
+        {
+            s.append(PageFlowUtil.encode(_moduleName));
+            s.append(":");
+            s.append(PageFlowUtil.encode(_type.name()));
+            s.append(":");
+            s.append(PageFlowUtil.encode(_name));
+            if (_version > 0)
+            {
+                s.append(":");
+                s.append(_version);
+            }
+        }
+        else
+        {
+            // Classname can't contain ':' so no encoding is needed.
+            s.append(_namespaceClass.getName());
+            if (_name != null)
+                s.append(':').append(PageFlowUtil.encode(_name));
+        }
         return s.toString();
     }
 

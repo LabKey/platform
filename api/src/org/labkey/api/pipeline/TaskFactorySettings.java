@@ -15,6 +15,8 @@
  */
 package org.labkey.api.pipeline;
 
+import org.labkey.api.module.SpringModule;
+
 /**
  * <code>TaskFactorySettings</code>
  */
@@ -23,6 +25,10 @@ public interface TaskFactorySettings
     TaskId getCloneId();
 
     TaskId getId();
+
+    void setDeclaringModule(SpringModule declaringModule);
+
+    SpringModule getDeclaringModule();
 
     public interface Provider
     {
