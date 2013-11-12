@@ -76,7 +76,7 @@ public class Encryption
     }
 
 
-    // Generates an encryption key having the specified bit length from a pass phrase, using PCKS #5 v2.0. This algorithm
+    // Generates an encryption key having the specified bit length from a pass phrase, using PKCS #5 v2.0. This algorithm
     // uses the lower 8-bits of each character to generate the key, which is appropriate for ASCII pass phrases.
     private static byte[] generateSecretKeyFromPassPhrase(String passPhrase, byte[] salt, int keyLength, int iterationCount) throws NoSuchAlgorithmException, InvalidKeySpecException
     {
@@ -88,7 +88,7 @@ public class Encryption
     }
 
 
-    // Generates an encryption key having the specified bit length from a pass phrase, using PCKS #5 v2.0. Uses standard salt and iteration count of 65,536.
+    // Generates an encryption key having the specified bit length from a pass phrase, using PKCS #5 v2.0. Uses standard salt and iteration count of 65,536.
     private static byte[] generateSecretKeyFromPassPhrase(String passPhrase, int keyLength) throws NoSuchAlgorithmException, InvalidKeySpecException
     {
         return generateSecretKeyFromPassPhrase(passPhrase, getStandardSalt(), keyLength, 65536);
@@ -146,32 +146,6 @@ public class Encryption
     }
 
 
-//  Nice idea, but I don't think it's needed. TODO: Delete
-//    public static class MisconfiguredAlgorithm implements Algorithm
-//    {
-//        private final String _message;
-//
-//        public MisconfiguredAlgorithm(String message)
-//        {
-//            _message = message;
-//        }
-//
-//        @NotNull
-//        @Override
-//        public byte[] encrypt(@NotNull String plainText)
-//        {
-//            throw new ConfigurationException(_message);
-//        }
-//
-//        @NotNull
-//        @Override
-//        public String decrypt(@NotNull byte[] cipherText)
-//        {
-//            throw new ConfigurationException(_message);
-//        }
-//    }
-
-
     /*
         Wrapper class that makes it easier to encrypt/decrypt using AES and a pass phrase.
 
@@ -180,7 +154,7 @@ public class Encryption
         Padding: PKCS #5
         Initialization vector: random 16-byte IV, generated for each encryption
 
-        Key generation: PCKS #5 v2.0
+        Key generation: PKCS #5 v2.0
         Salt: Standard server salt
         Iteration count: 65,536
         Key length: specified in constructor parameter
@@ -194,7 +168,7 @@ public class Encryption
             if (null == passPhrase)
                 throw new IllegalStateException("Pass phrase cannot be null");
 
-            // Turn pass phrase into a keyLength-bit key using using PCKS #5 v2.0, a standard salt and 65,536 iterations
+            // Turn pass phrase into a keyLength-bit key using using PKCS #5 v2.0, a standard salt and 65,536 iterations
             try
             {
                 byte[] key = generateSecretKeyFromPassPhrase(passPhrase, keyLength);
