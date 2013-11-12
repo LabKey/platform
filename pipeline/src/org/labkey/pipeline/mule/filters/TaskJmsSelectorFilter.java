@@ -78,7 +78,7 @@ public class TaskJmsSelectorFilter extends JmsSelectorFilter
             first = false;
             JobRunJmsSelectorFilter.appendSelector(expr);
         }
-        for (TaskFactory factory : PipelineJobServiceImpl.get().getTaskFactories())
+        for (TaskFactory factory : PipelineJobServiceImpl.get().getTaskFactories(null))
         {
             if (!getLocations().contains(factory.getExecutionLocation()))
                 continue;

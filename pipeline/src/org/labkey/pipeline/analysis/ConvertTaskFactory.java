@@ -133,10 +133,13 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
     public List<String> getProtocolActionNames()
     {
         List<String> result = new ArrayList<>();
-        for (TaskId tid : _commands)
+        if (_commands != null)
         {
-            TaskFactory<?> factory = PipelineJobService.get().getTaskFactory(tid);
-            result.addAll(factory.getProtocolActionNames());
+            for (TaskId tid : _commands)
+            {
+                TaskFactory<?> factory = PipelineJobService.get().getTaskFactory(tid);
+                result.addAll(factory.getProtocolActionNames());
+            }
         }
         return result;
     }

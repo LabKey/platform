@@ -15,14 +15,29 @@
  */
 package org.labkey.pipeline.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.Container;
+import org.labkey.api.files.FileSystemDirectoryListener;
+import org.labkey.api.files.FileSystemWatcher;
+import org.labkey.api.files.FileSystemWatchers;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.file.PathMapper;
+import org.labkey.api.resource.MergedDirectoryResource;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.URIUtil;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesImpl;
 import org.labkey.pipeline.api.properties.ConfigPropertiesImpl;
@@ -33,14 +48,18 @@ import org.labkey.pipeline.xstream.PathMapperImpl;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.lang.reflect.Array;
+import java.nio.file.StandardWatchEventKinds;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.net.URI;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * <code>PipelineJobServiceImpl</code>
@@ -49,6 +68,13 @@ import java.util.Map;
  */
 public class PipelineJobServiceImpl extends PipelineJobService
 {
+    private static final String PIPELINE_DIR = "pipeline";
+    private static final String TASKS_DIR = "tasks";
+    private static final String PIPELINES_DIR = "pipelines";
+
+    private static final String TASK_CONFIG_EXTENSION = ".task.xml";
+    private static final String PIPELINE_CONFIG_EXTENSION = ".pipeline.xml";
+
     public static PipelineJobServiceImpl get()
     {
         return (PipelineJobServiceImpl) PipelineJobService.get();
@@ -92,6 +118,9 @@ public class PipelineJobServiceImpl extends PipelineJobService
             new HashMap<>();
     private HashMap<TaskId, TaskFactory> _taskFactoryStore =
             new HashMap<>();
+
+    private final Set<Module> _pipelineModules = new CopyOnWriteArraySet<>();
+    private final FileSystemWatcher WATCHER = FileSystemWatchers.get("Module task and pipeline watcher");
 
     private String _defaultExecutionLocation = TaskFactory.WEBSERVER;
     private int _defaultAutoRetry = 0;
@@ -145,6 +174,95 @@ public class PipelineJobServiceImpl extends PipelineJobService
         }
     }
 
+    // At startup, we record all modules with "pipeline/tasks" or "pipeline/pipelines" directories and register a file listener to monitor for changes.
+    // Loading the list of configurations in each module and the descriptors themselves happens lazily.
+    public void registerModule(Module module)
+    {
+        Path tasksDirPath = new Path(PIPELINE_DIR, TASKS_DIR);
+        Resource tasksDir = module.getModuleResolver().lookup(tasksDirPath);
+
+        Path pipelinesDirPath = new Path(PIPELINE_DIR, PIPELINES_DIR);
+        Resource pipelinesDir = module.getModuleResolver().lookup(pipelinesDirPath);
+
+        // UNDONE: Register listeners for 'pipeline/tasks/<name>' and 'pipeline/pipelines/<name>' as well
+        if ((null != tasksDir && tasksDir.isCollection()) || (null != pipelinesDir && pipelinesDir.isCollection()))
+        {
+            _pipelineModules.add(module);
+
+            // TODO: Integrate this better with Resource
+            if (tasksDir != null)
+            {
+                ((MergedDirectoryResource)tasksDir).registerListener(WATCHER,
+                        new PipelineResourceDirectoryListener(module, TaskId.Type.task, TASK_FACTORY_CACHE),
+                        StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
+            }
+
+            // TODO: Integrate this better with Resource
+            if (pipelinesDir != null)
+            {
+                ((MergedDirectoryResource)pipelinesDir).registerListener(WATCHER,
+                        new PipelineResourceDirectoryListener(module, TaskId.Type.pipeline, TASK_PIPELINE_CACHE),
+                        StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
+            }
+        }
+    }
+
+    /**
+     * Listens for file changes in the module's 'pipeline/tasks' and 'pipeline/pipelines' directories.
+     */
+    private class PipelineResourceDirectoryListener implements FileSystemDirectoryListener
+    {
+        final Module _module;
+        final TaskId.Type _type;
+        final Cache<String, ?> _cache;
+
+        PipelineResourceDirectoryListener(Module module, TaskId.Type type, Cache<String, ?> cache)
+        {
+            _module = module;
+            _type = type;
+            _cache = cache;
+        }
+
+        @Override
+        public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
+        {
+            removeConfigNames(_module);
+        }
+
+        @Override
+        public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
+        {
+            removeConfigNames(_module);
+            TaskId taskId = createTaskId(_module, _type, entry);
+            removeTaskId(taskId);
+        }
+
+        @Override
+        public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
+        {
+            TaskId taskId = createTaskId(_module, _type, entry);
+            removeTaskId(taskId);
+        }
+
+        @Override
+        public void overflow()
+        {
+            // I guess we should just clear the entire cache
+            _cache.clear();
+        }
+
+        private void removeConfigNames(Module module)
+        {
+            _cache.remove(module.getName());
+        }
+
+        private void removeTaskId(TaskId taskId)
+        {
+            if (taskId != null)
+                _cache.remove(taskId.toString());
+        }
+    }
+
     /**
      * Used to getInternal a TaskPipeline by name.  If the pipeline has been registered using
      * Mule's Spring configuration, than that version will be used.  Otherwise, the default
@@ -155,10 +273,15 @@ public class PipelineJobServiceImpl extends PipelineJobService
      */
     public TaskPipeline getTaskPipeline(TaskId id)
     {
-        synchronized (_taskPipelineStore)
-        {
-            return _taskPipelineStore.get(id);
-        }
+        //noinspection unchecked
+        return (TaskPipeline)TASK_PIPELINE_CACHE.get(id.toString(), null, TASK_PIPELINE_LOADER);
+    }
+
+    @NotNull
+    private Collection<TaskId> getTaskPipelineIds(@NotNull Module module)
+    {
+        //noinspection unchecked
+        return (Collection<TaskId>)TASK_PIPELINE_CACHE.get(module.getName(), null, TASK_PIPELINE_IDS_LOADER);
     }
 
     public void addTaskPipeline(TaskPipelineSettings settings) throws CloneNotSupportedException
@@ -176,6 +299,9 @@ public class PipelineJobServiceImpl extends PipelineJobService
         synchronized (_taskPipelineStore)
         {
             _taskPipelineStore.put(pipeline.getId(), pipeline);
+            Module module = pipeline.getDeclaringModule();
+            assert module != null; // TODO: is this true?
+            _pipelineModules.add(module);
         }
     }
 
@@ -206,23 +332,49 @@ public class PipelineJobServiceImpl extends PipelineJobService
         return id;
     }
 
-    public <T extends TaskPipeline> T[] getTaskPipelines(Class<T> inter)
+    @NotNull
+    @Override
+    public Collection<TaskPipeline> getTaskPipelines(@Nullable Container container)
     {
-        ArrayList<T> pipelineList = new ArrayList<>();
-        for (TaskPipeline tp : _taskPipelineStore.values())
-        {
-            if (inter.isInstance(tp))
-                pipelineList.add((T) tp);
-        }
-        return pipelineList.toArray((T[]) Array.newInstance(inter, 0));
+        return getTaskPipelines(container, null);
     }
 
+    @NotNull
+    @Override
+    public <T extends TaskPipeline> Collection<T> getTaskPipelines(@Nullable Container container, @Nullable Class<T> inter)
+    {
+        Collection<Module> activeModules = container == null ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
+        ArrayList<T> pipelineList = new ArrayList<>();
+
+        for (Module module : _pipelineModules)
+        {
+            if (activeModules.contains(module))
+            {
+                Collection<TaskId> taskIds = getTaskPipelineIds(module);
+                for (TaskId taskId : taskIds)
+                {
+                    TaskPipeline tp = getTaskPipeline(taskId);
+                    if (tp != null && (inter == null || inter.isInstance(tp)))
+                        pipelineList.add((T) tp);
+                }
+            }
+        }
+
+        return Collections.unmodifiableList(pipelineList);
+    }
+
+    @Nullable
     public TaskFactory getTaskFactory(TaskId id)
     {
-        synchronized (_taskFactoryStore)
-        {
-            return _taskFactoryStore.get(id);
-        }
+        //noinspection unchecked
+        return (TaskFactory)TASK_FACTORY_CACHE.get(id.toString(), null, TASK_FACTORY_LOADER);
+    }
+
+    @NotNull
+    private Collection<TaskId> getTaskFactoryIds(@NotNull Module module)
+    {
+        //noinspection unchecked
+        return (Collection<TaskId>)TASK_FACTORY_CACHE.get(module.getName(), null, TASK_FACTORY_IDS_LOADER);
     }
 
     public void addTaskFactory(TaskFactorySettings settings) throws CloneNotSupportedException
@@ -239,15 +391,32 @@ public class PipelineJobServiceImpl extends PipelineJobService
         synchronized (_taskFactoryStore)
         {
             _taskFactoryStore.put(factory.getId(), factory);
+            Module module = factory.getDeclaringModule();
+            assert module != null; // TODO: is this true?
+            _pipelineModules.add(module);
         }
     }
 
-    public TaskFactory[] getTaskFactories()
+    public Collection<TaskFactory> getTaskFactories(Container container)
     {
-        synchronized (_taskFactoryStore)
+        Collection<Module> activeModules = container == null ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
+        ArrayList<TaskFactory> pipelineList = new ArrayList<>();
+
+        for (Module module : _pipelineModules)
         {
-            return _taskFactoryStore.values().toArray(new TaskFactory[_taskFactoryStore.values().size()]);
+            if (activeModules.contains(module))
+            {
+                Collection<TaskId> taskIds = getTaskFactoryIds(module);
+                for (TaskId taskId : taskIds)
+                {
+                    TaskFactory tf = getTaskFactory(taskId);
+                    if (tf != null)
+                        pipelineList.add(tf);
+                }
+            }
         }
+
+        return Collections.unmodifiableList(pipelineList);
     }
 
     public ParamParser createParamParser()
@@ -566,6 +735,238 @@ public class PipelineJobServiceImpl extends PipelineJobService
     {
         _prependVersionWithDot = prependVersionWithDot;
     }
+
+    private boolean isTaskConfigFile(String filename)
+    {
+        return filename.endsWith(TASK_CONFIG_EXTENSION) && filename.length() > TASK_CONFIG_EXTENSION.length();
+    }
+
+    private boolean isPipelineConfigFile(String filename)
+    {
+        return filename.endsWith(PIPELINE_CONFIG_EXTENSION) && filename.length() > PIPELINE_CONFIG_EXTENSION.length();
+    }
+
+    // Parses a filename '<name>.task.xml' or '<name>.pipeline.xml' into a TaskId
+    // TODO: Check that the Path is in the module and under the 'tasks' or 'pipelines' directory.
+    private TaskId createTaskId(Module module, TaskId.Type type, java.nio.file.Path path)
+    {
+        String filename = path.getFileName().toString();
+        String taskName = getTaskNameFromFileName(filename);
+        if (taskName == null)
+            return null;
+
+        // TODO: Version information
+        TaskId taskId = new TaskId(module.getName(), type, taskName, 0);
+        return taskId;
+    }
+
+    // Checks for "<name>.task.xml" or "<name>.pipeline.xml" and removes the extension.
+    private String getTaskNameFromFileName(String filename)
+    {
+        String taskName = null;
+        if (isTaskConfigFile(filename))
+        {
+            taskName = filename.substring(0, filename.length() - TASK_CONFIG_EXTENSION.length());
+        }
+        else if (isPipelineConfigFile(filename))
+        {
+            taskName = filename.substring(0, filename.length() - PIPELINE_CONFIG_EXTENSION.length());
+        }
+
+        return taskName;
+    }
+
+    private final CacheLoader TASK_FACTORY_IDS_LOADER = new CacheLoader<String, Collection<TaskId>>()
+    {
+        @Override
+        public Collection<TaskId> load(String moduleName, @Nullable Object argument)
+        {
+            Module module = ModuleLoader.getInstance().getModule(moduleName);
+
+            Collection<TaskId> ids = new LinkedHashSet<>();
+
+            // First, get ids registered via Spring xml configs filtered by module
+            synchronized (PipelineJobServiceImpl.this._taskFactoryStore)
+            {
+                for (TaskFactory factory : PipelineJobServiceImpl.this._taskFactoryStore.values())
+                {
+                    if (factory.getDeclaringModule() != null && module == factory.getDeclaringModule())
+                        ids.add(factory.getId());
+                }
+            }
+
+            // Next, look for module task configs
+            Path tasksDirPath = new Path(PIPELINE_DIR, TASKS_DIR);
+            Resource tasksDir = module.getModuleResolver().lookup(tasksDirPath);
+            if (tasksDir != null && tasksDir.isCollection())
+            {
+                // Create a list of all files in this directory that conform to the configuration file format (ends in .task.xml or is a directory that contains a .task.xml)
+                for (Resource r : tasksDir.list())
+                {
+                    String fileName = r.getName();
+                    if (r.isFile())
+                    {
+                        if (isTaskConfigFile(fileName))
+                        {
+                            // TODO: version information
+                            String taskName = getTaskNameFromFileName(fileName);
+                            TaskId taskId = new TaskId(module.getName(), TaskId.Type.task, taskName, 0);
+                            ids.add(taskId);
+                        }
+                    }
+                    else if (r.isCollection())
+                    {
+                        Resource child = r.find(fileName + TASK_CONFIG_EXTENSION);
+                        if (child != null)
+                        {
+                            // TODO: version information
+                            String taskName = getTaskNameFromFileName(fileName);
+                            TaskId taskId = new TaskId(module.getName(), TaskId.Type.task, taskName, 0);
+                            ids.add(taskId);
+                        }
+                    }
+                }
+            }
+
+            return Collections.unmodifiableCollection(ids);
+        }
+    };
+
+    private final CacheLoader TASK_FACTORY_LOADER = new CacheLoader<String, TaskFactory>()
+    {
+        @Override
+        public TaskFactory load(String key, @Nullable Object argument)
+        {
+            TaskId taskId;
+            try
+            {
+                taskId = TaskId.valueOf(key);
+            }
+            catch (ClassNotFoundException e)
+            {
+                return null;
+            }
+
+            // First, look for tasks registered via Spring xml configs
+            synchronized (PipelineJobServiceImpl.this._taskFactoryStore)
+            {
+                TaskFactory factory = PipelineJobServiceImpl.this._taskFactoryStore.get(taskId);
+                if (factory != null)
+                    return factory;
+            }
+
+            // Next, look for a module task config file
+            if (taskId.getName() != null && taskId.getModuleName() != null)
+            {
+                Module module = ModuleLoader.getInstance().getModule(taskId.getModuleName());
+                String configFileName = taskId.getName() + TASK_CONFIG_EXTENSION;
+
+                Path tasksDirPath = new Path(PIPELINE_DIR, TASKS_DIR);
+
+                // Look for a "pipeline/tasks/<name>.task.xml" file
+                Path taskConfigPath = tasksDirPath.append(configFileName);
+                Resource taskConfig = module.getModuleResource(taskConfigPath);
+                if (taskConfig != null && taskConfig.isFile())
+                    return TaskFactoryResource.create(taskId, taskConfig);
+
+                // Look for a "pipeline/tasks/<name>/<name>.task.xml" file
+                taskConfigPath = tasksDirPath.append(taskId.getName()).append(configFileName);
+                taskConfig = ModuleLoader.getInstance().getResource(taskConfigPath);
+                if (taskConfig != null && taskConfig.isFile())
+                    return TaskFactoryResource.create(taskId, taskConfig);
+            }
+
+            return null;
+        }
+    };
+
+    private final CacheLoader TASK_PIPELINE_IDS_LOADER = new CacheLoader<String, Collection<TaskId>>()
+    {
+        @Override
+        public Collection<TaskId> load(String moduleName, @Nullable Object argument)
+        {
+            Module module = ModuleLoader.getInstance().getModule(moduleName);
+
+            Collection<TaskId> ids = new LinkedHashSet<>();
+
+            // First, get ids registered via Spring xml configs filtered by module
+            synchronized (PipelineJobServiceImpl.this._taskPipelineStore)
+            {
+                for (TaskPipeline factory : PipelineJobServiceImpl.this._taskPipelineStore.values())
+                {
+                    if (factory.getDeclaringModule() != null && module == factory.getDeclaringModule())
+                        ids.add(factory.getId());
+                }
+            }
+
+            // Next, look for module pipeline configs
+            Path pipelinesDirPath = new Path(PIPELINE_DIR, PIPELINES_DIR);
+            Resource pipelinesDir = module.getModuleResolver().lookup(pipelinesDirPath);
+            if (pipelinesDir != null && pipelinesDir.isCollection())
+            {
+                // Create a list of all files in this directory that conform to the configuration file format (ends in .pipeline.xml)
+                for (Resource r : pipelinesDir.list())
+                {
+                    if (r.isFile())
+                    {
+                        String fileName = r.getName();
+                        if (isPipelineConfigFile(fileName))
+                        {
+                            // TODO: version information
+                            String pipelineName = getTaskNameFromFileName(fileName);
+                            TaskId taskId = new TaskId(module.getName(), TaskId.Type.pipeline, pipelineName, 0);
+                            ids.add(taskId);
+                        }
+                    }
+                }
+            }
+
+            return Collections.unmodifiableCollection(ids);
+        }
+    };
+
+    private final CacheLoader TASK_PIPELINE_LOADER = new CacheLoader<String, TaskPipeline>()
+    {
+        @Override
+        public TaskPipeline load(String key, @Nullable Object argument)
+        {
+            TaskId taskId;
+            try
+            {
+                taskId = TaskId.valueOf(key);
+            }
+            catch (ClassNotFoundException e)
+            {
+                return null;
+            }
+
+            // First, look for pipeline registered via Spring xml configs
+            synchronized (PipelineJobServiceImpl.this._taskPipelineStore)
+            {
+                TaskPipeline pipeline = PipelineJobServiceImpl.this._taskPipelineStore.get(taskId);
+                if (pipeline != null)
+                    return pipeline;
+            }
+
+            // Next, look for a module pipeline config file
+            if (taskId.getName() != null && taskId.getModuleName() != null)
+            {
+                Module module = ModuleLoader.getInstance().getModule(taskId.getModuleName());
+                String configFileName = taskId.getName() + PIPELINE_CONFIG_EXTENSION;
+
+                // Look for a "pipeline/pipeline/<name>.pipeline.xml" file
+                Path pipelineConfigPath = new Path(PIPELINE_DIR, PIPELINE_DIR, configFileName);
+                Resource pipelineConfig = module.getModuleResource(pipelineConfigPath);
+                if (pipelineConfig != null && pipelineConfig.isFile())
+                    return TaskPipelineResource.create(taskId, pipelineConfig);
+            }
+
+            return null;
+        }
+    };
+
+    private final BlockingStringKeyCache<Object> TASK_FACTORY_CACHE = CacheManager.getBlockingStringKeyCache(1000, CacheManager.DAY, "TaskFactory Cache", null);
+    private final BlockingStringKeyCache<Object> TASK_PIPELINE_CACHE = CacheManager.getBlockingStringKeyCache(1000, CacheManager.DAY, "TaskPipeline Cache", null);
 
     public static class TestCase extends Assert
     {

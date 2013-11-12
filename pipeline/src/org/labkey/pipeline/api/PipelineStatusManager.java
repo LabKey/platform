@@ -366,7 +366,7 @@ public class PipelineStatusManager
 
         List<PipelineStatusFileImpl> result = new ArrayList<>();
         TaskPipelineRegistry registry = PipelineJobService.get();
-        for (TaskFactory taskFactory : registry.getTaskFactories())
+        for (TaskFactory taskFactory : registry.getTaskFactories(null))
         {
             if (taskFactory.getExecutionLocation().equals(location))
             {

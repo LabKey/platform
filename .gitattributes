@@ -1825,12 +1825,14 @@ pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-9.21-9.22.sql -
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-9.30-10.10.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-9.30-9.31.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-0.00-10.30.sql -text
+pipeline/schemas/pipeline.xsd -text
 pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
 pipeline/src/org/labkey/pipeline/PipelineCommandTestCase.java -text
 pipeline/src/org/labkey/pipeline/PipelineController.java -text
 pipeline/src/org/labkey/pipeline/PipelineDirectoryImpl.java -text
 pipeline/src/org/labkey/pipeline/PipelineGWTServiceImpl.java -text
 pipeline/src/org/labkey/pipeline/PipelineModule.java -text
+pipeline/src/org/labkey/pipeline/PipelineModuleResourceLoader.java -text
 pipeline/src/org/labkey/pipeline/PipelineWebPart.java -text
 pipeline/src/org/labkey/pipeline/PipelineWebdavProvider.java -text
 pipeline/src/org/labkey/pipeline/analysis/AnalysisController.java -text
@@ -1842,6 +1844,8 @@ pipeline/src/org/labkey/pipeline/analysis/FileAnalysisProtocol.java -text
 pipeline/src/org/labkey/pipeline/analysis/FileAnalysisProtocolFactory.java -text
 pipeline/src/org/labkey/pipeline/analysis/FileAnalysisTaskPipelineImpl.java -text
 pipeline/src/org/labkey/pipeline/analysis/analyze.jsp -text
+pipeline/src/org/labkey/pipeline/analysis/internalListPipelines.jsp -text
+pipeline/src/org/labkey/pipeline/analysis/internalListTasks.jsp -text
 pipeline/src/org/labkey/pipeline/api/AbstractWorkDirectory.java -text
 pipeline/src/org/labkey/pipeline/api/GlobusKeyPairImpl.java -text
 pipeline/src/org/labkey/pipeline/api/ParamParserImpl.java -text
@@ -1858,7 +1862,9 @@ pipeline/src/org/labkey/pipeline/api/PipelineSchema.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineServiceImpl.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineStatusFileImpl.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineStatusManager.java -text
+pipeline/src/org/labkey/pipeline/api/TaskFactoryResource.java -text
 pipeline/src/org/labkey/pipeline/api/TaskPipelineImpl.java -text
+pipeline/src/org/labkey/pipeline/api/TaskPipelineResource.java -text
 pipeline/src/org/labkey/pipeline/api/WorkDirectoryLocal.java -text
 pipeline/src/org/labkey/pipeline/api/WorkDirectoryRemote.java -text
 pipeline/src/org/labkey/pipeline/api/properties/ApplicationPropertiesImpl.java -text

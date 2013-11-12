@@ -28,6 +28,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -52,8 +53,8 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
     {
         // Check all possible FileAnalysisProtocolFactory types.
         PipelineJobService service = PipelineJobService.get();
-        FileAnalysisTaskPipeline[] pipelines =
-                service.getTaskPipelines(FileAnalysisTaskPipeline.class);
+        Collection<FileAnalysisTaskPipeline> pipelines =
+                service.getTaskPipelines(null, FileAnalysisTaskPipeline.class);
         for (FileAnalysisTaskPipeline tp : pipelines)
         {
             FileAnalysisProtocolFactory factory = getProtocolFactory(tp);
@@ -73,7 +74,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
 
         Container c = context.getContainer();
 
-        FileAnalysisTaskPipeline[] pipelines = PipelineJobService.get().getTaskPipelines(FileAnalysisTaskPipeline.class);
+        Collection<FileAnalysisTaskPipeline> pipelines = PipelineJobService.get().getTaskPipelines(null, FileAnalysisTaskPipeline.class);
         for (final FileAnalysisTaskPipeline tp : pipelines)
         {            
             String path = directory.cloneHref().getParameter(Params.path.toString());
@@ -87,10 +88,10 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
     public List<PipelineActionConfig> getDefaultActionConfig(Container container)
     {
         List<PipelineActionConfig> result = new ArrayList<>();
-        FileAnalysisTaskPipeline[] pipelines = PipelineJobService.get().getTaskPipelines(FileAnalysisTaskPipeline.class);
+        Collection<FileAnalysisTaskPipeline> pipelines = PipelineJobService.get().getTaskPipelines(container, FileAnalysisTaskPipeline.class);
         for (final FileAnalysisTaskPipeline tp : pipelines)
         {
-            if (tp.getDefaultDisplayState() != null && container.getActiveModules().contains(tp.getDeclaringModule()))
+            if (tp.getDefaultDisplayState() != null)
             {
                 String actionId = createActionId(this.getClass(), tp.getDescription());
                 result.add(new PipelineActionConfig(actionId, tp.getDefaultDisplayState(), tp.getDescription(), true));

@@ -41,6 +41,7 @@ import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.FileType;
@@ -89,7 +90,13 @@ public class AnalysisController extends SpringActionController
         {
             try
             {
+                if (analyzeForm.getTaskId() == null || "".equals(analyzeForm.getTaskId()))
+                    throw new NotFoundException("taskId required");
+
                 _taskPipeline = PipelineJobService.get().getTaskPipeline(new TaskId(analyzeForm.getTaskId()));
+                if (_taskPipeline == null)
+                    throw new NotFoundException("Task pipeline not found: " + analyzeForm.getTaskId());
+
                 return new JspView<>("/org/labkey/pipeline/analysis/analyze.jsp", PageFlowUtil.urlProvider(PipelineUrls.class).urlReferer(getContainer()));
             }
             catch (ClassNotFoundException e)
@@ -155,6 +162,9 @@ public class AnalysisController extends SpringActionController
         return provider.getProtocolFactory(taskPipeline);
     }
 
+    /**
+     * Called from LABKEY.Pipeline.startAnalysis()
+     */
     @RequiresPermissionClass(InsertPermission.class)
     public class StartAnalysisAction extends AbstractAnalysisApiAction
     {
@@ -256,6 +266,9 @@ public class AnalysisController extends SpringActionController
         }
     }
 
+    /**
+     * Called from LABKEY.Pipeline.getFileStatus().
+     */
     @RequiresPermissionClass(ReadPermission.class)
     public class GetFileStatusAction extends AbstractAnalysisApiAction
     {
@@ -314,6 +327,9 @@ public class AnalysisController extends SpringActionController
         }
     }
 
+    /**
+     * Called from LABKEY.Pipeline.getProtocols().
+     */
     @RequiresPermissionClass(ReadPermission.class)
     public class GetSavedProtocolsAction extends AbstractAnalysisApiAction
     {
@@ -525,4 +541,43 @@ public class AnalysisController extends SpringActionController
             return new ApiSimpleResponse();
         }
     }
+
+    /**
+     * Used for debugging task registration.
+     */
+    @RequiresPermissionClass(AdminPermission.class)
+    public class InternalListTasksAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView("/org/labkey/pipeline/analysis/internalListTasks.jsp", null, errors);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Internal List Tasks");
+        }
+    }
+
+    /**
+     * Used for debugging pipeline registration.
+     */
+    @RequiresPermissionClass(AdminPermission.class)
+    public class InternalListPipelinesAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView("/org/labkey/pipeline/analysis/internalListPipelines.jsp", null, errors);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Internal List Tasks");
+        }
+    }
+
 }

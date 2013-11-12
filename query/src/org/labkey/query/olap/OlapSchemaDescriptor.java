@@ -21,10 +21,8 @@ import java.io.InputStream;
 import java.sql.SQLException;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthew
  * Date: 10/30/13
- * Time: 11:20 AM
  *
  * This maps to a mondrian schema definition file.  It can be used to get an OlapConnection that makes this schema available.
  */

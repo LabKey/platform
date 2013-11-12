@@ -24,6 +24,7 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.NoSuchJobException;
@@ -76,6 +77,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -125,6 +127,14 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
         PipelineQuerySchema.register(this);
     }
+
+    @NotNull
+    @Override
+    public Set<ModuleResourceLoader> getResourceLoaders()
+    {
+        return Collections.<ModuleResourceLoader>singleton(new PipelineModuleResourceLoader());
+    }
+
 
     @Override
     public void destroy()

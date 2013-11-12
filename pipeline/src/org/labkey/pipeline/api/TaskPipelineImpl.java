@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
@@ -31,6 +32,7 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
      */
     private TaskId _id;
 
+    /** Module in which the task pipeline is declared. */
     private SpringModule _declaringModule;
 
     /**
@@ -126,8 +128,14 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
         return _declaringModule;
     }
 
-    public void setDeclaringModule(SpringModule declaringModule)
+    public void setDeclaringModule(@NotNull SpringModule declaringModule)
     {
+        if (declaringModule == null)
+            throw new IllegalArgumentException("Declaring module must not be null");
+
+        if (_declaringModule != null)
+            throw new IllegalStateException("Declaring module already set");
+
         _declaringModule = declaringModule;
     }
 }

@@ -178,7 +178,7 @@ public class StatusController extends SpringActionController
             {
                 Set<String> locations = new TreeSet<>();
                 TaskPipelineRegistry registry = PipelineJobService.get();
-                for (TaskFactory taskFactory : registry.getTaskFactories())
+                for (TaskFactory taskFactory : registry.getTaskFactories(null))
                 {
                     locations.add(taskFactory.getExecutionLocation());
                 }
