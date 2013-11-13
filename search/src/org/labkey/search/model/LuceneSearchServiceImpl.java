@@ -494,10 +494,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 doc.add(new StoredField(FIELD_NAME.navtrail.toString(), (String)props.get(PROPERTY.navtrail.toString())));
             String resourceId = (String)props.get(PROPERTY.securableResourceId.toString());
             if (null != resourceId && !resourceId.equals(r.getContainerId()))
-            {
-                doc.add(new StoredField(FIELD_NAME.resourceId.toString(), resourceId));
                 doc.add(new SortedDocValuesField(FIELD_NAME.resourceId.toString(), new BytesRef(resourceId)));
-            }
 
             // === Custom properties: Index and analyze, but don't store
             for (Map.Entry<String, ?> entry : props.entrySet())

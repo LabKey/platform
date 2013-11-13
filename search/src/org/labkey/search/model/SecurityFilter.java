@@ -16,7 +16,6 @@
 
 package org.labkey.search.model;
 
-import org.apache.lucene.document.Document;
 import org.apache.lucene.index.AtomicReader;
 import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.SortedDocValues;
@@ -38,7 +37,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.MultiPhaseCPUTimer;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.search.model.LuceneSearchServiceImpl.FIELD_NAME;
 
 import java.io.IOException;
@@ -54,8 +52,6 @@ import java.util.Set;
 */
 class SecurityFilter extends Filter
 {
-    private static final Set<String> SECURITY_FIELDS = PageFlowUtil.set(FIELD_NAME.container.name(), FIELD_NAME.resourceId.name());
-
     private final User _user;
     private final HashMap<String, Container> _containerIds;
     private final HashMap<String, Boolean> _securableResourceIds = new HashMap<>();
@@ -108,55 +104,35 @@ class SecurityFilter extends Filter
                 if (null != acceptDocs && !acceptDocs.get(i))
                     continue;
 
-                _iTimer.setPhase(SearchService.SEARCH_PHASE.retrieveSecurityFields);
-
                 containerDocValues.get(i, bytesRef);
                 String containerId = StringUtils.trimToNull(bytesRef.utf8ToString());
 
-                assert null != containerId; // Shouldn't happen... should remove null check below
-
-                // TODO: Remove this... only used to verify new docValues approach vs. old stored field approach to saving security fields
-                Document doc = reader.document(i, SECURITY_FIELDS);
-                String oldConntainerId = doc.get(FIELD_NAME.container.name());
-                if (!oldConntainerId.equals(containerId))
-                    throw new IllegalStateException("Container IDs did not match!");
+                assert null != containerId; // Shouldn't happen... TODO: remove null check below in 14.1
 
                 if (null == containerId || !_containerIds.containsKey(containerId))
                     continue;
 
-                String resourceId;
-
+                // Can be null, if no documents have a resource ID (e.g., shortly after bootstrap)
                 if (null != resourceDocValues)
                 {
                     resourceDocValues.get(i, bytesRef);
-                    resourceId = StringUtils.trimToNull(bytesRef.utf8ToString());
-                }
-                else
-                {
-                    resourceId = null;
-                }
+                    String resourceId = StringUtils.trimToNull(bytesRef.utf8ToString());
 
-                // TODO: Remove this... only used to verify new docValues approach vs. old stored field approach to saving security fields
-                String oldResourceId = doc.get(FIELD_NAME.resourceId.name());
-                if (!StringUtils.equals(oldResourceId, resourceId))
-                   throw new IllegalStateException("Resource IDs did not match!");
-
-                _iTimer.setPhase(SearchService.SEARCH_PHASE.applySecurityFilter);
-
-                if (null != resourceId && !resourceId.equals(containerId))
-                {
-                    if (!_containerIds.containsKey(resourceId))
+                    if (null != resourceId && !resourceId.equals(containerId))
                     {
-                        Boolean canRead = _securableResourceIds.get(resourceId);
-                        if (null == canRead)
+                        if (!_containerIds.containsKey(resourceId))
                         {
-                            SecurableResource sr = new _SecurableResource(resourceId, _containerIds.get(containerId));
-                            SecurityPolicy p = SecurityPolicyManager.getPolicy(sr);
-                            canRead = p.hasPermission(_user, ReadPermission.class);
-                            _securableResourceIds.put(resourceId, canRead);
+                            Boolean canRead = _securableResourceIds.get(resourceId);
+                            if (null == canRead)
+                            {
+                                SecurableResource sr = new _SecurableResource(resourceId, _containerIds.get(containerId));
+                                SecurityPolicy p = SecurityPolicyManager.getPolicy(sr);
+                                canRead = p.hasPermission(_user, ReadPermission.class);
+                                _securableResourceIds.put(resourceId, canRead);
+                            }
+                            if (!canRead)
+                                continue;
                         }
-                        if (!canRead)
-                            continue;
                     }
                 }
 
