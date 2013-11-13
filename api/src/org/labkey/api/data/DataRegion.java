@@ -643,13 +643,9 @@ public class DataRegion extends AbstractDataRegion
 
     public Map<String, List<Aggregate.Result>> getAggregateResults(RenderContext ctx) throws SQLException, IOException
     {
-        ResultSet rs = ctx.getResults();
+        Results rs = ctx.getResults();
         assert rs != null;
-        if (rs instanceof Table.TableResultSet)
-        {
-            Table.TableResultSet tableRS = (Table.TableResultSet) rs;
-            _complete = tableRS.isComplete();
-        }
+        _complete = rs.isComplete();
 
         boolean countAggregate = getMaxRows() > 0 && !_complete && _showPagination && _showPaginationCount;
 

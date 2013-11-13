@@ -282,8 +282,10 @@ public class SpecimenForeignKey extends LookupForeignKey
             else
                 targetStudy = _schema.getTargetStudy();
 
+            ColumnInfo specimenColumnInfo = columns.get(specimenFK);
+
             // Do a complicated join if we can identify a target study so that we choose the right specimen
-            if (targetStudyCol != null || targetStudy != null)
+            if ((targetStudyCol != null || targetStudy != null) && specimenColumnInfo != null)
             {
                 // Select all the assay-side specimen columns that we'll need to do the comparison
                 SQLFragment targetStudySQL = QueryService.get().getSelectSQL(getParentTable(), columns.values(), null, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
@@ -294,11 +296,10 @@ public class SpecimenForeignKey extends LookupForeignKey
                 String specimenSubqueryAlias = parentAlias + SPECIMEN_SUBQUERY_SUFFIX;
                 String vialSubqueryAlias = parentAlias + VIAL_SUBQUERY_SUFFIX;
                 String studySubqueryAlias = parentAlias + STUDY_SUBQUERY_SUFFIX;
-                ColumnInfo specimenColumnInfo = columns.get(specimenFK);
 
                 sql.append(") AS " + assaySubqueryAlias + " ON ");
                 List<ColumnInfo> pks = getParentTable().getPkColumns();
-                assert pks.size() > 0;
+
                 String sep = "";
                 for (ColumnInfo pk : pks)
                 {

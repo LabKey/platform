@@ -79,10 +79,9 @@ public class MimeMap implements FileNameMap
         mimeTypeMap.put("image/png", new MimeType("image/png", true));
         mimeTypeMap.put("image/svg+xml", new MimeType("image/svg+xml", true));
 
-        try
+        try (InputStream is = MimeMap.class.getResourceAsStream("mime.txt"))
         {
             // tab delimited file is easier to edit in a spreadsheet
-            InputStream is = MimeMap.class.getResourceAsStream("mime.txt");
             List<String> lines = IOUtils.readLines(is);
             for (String line : lines)
             {
@@ -98,7 +97,6 @@ public class MimeMap implements FileNameMap
                     extensionMap.put(extn, mt);
                 }
             }
-            is.close();
         }
         catch (Exception e)
         {

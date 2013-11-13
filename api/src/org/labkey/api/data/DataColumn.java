@@ -32,7 +32,6 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UniqueID;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
@@ -385,6 +384,11 @@ public class DataColumn extends DisplayColumn
 
     private ConditionalFormat findApplicableFormat(RenderContext ctx)
     {
+        if (getBoundColumn() == null)
+        {
+            return null;
+        }
+
         for (ConditionalFormat format : getBoundColumn().getConditionalFormats())
         {
             Object value = ctx.get(_displayColumn.getFieldKey());
