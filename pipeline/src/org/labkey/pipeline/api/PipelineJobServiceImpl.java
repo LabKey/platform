@@ -298,6 +298,9 @@ public class PipelineJobServiceImpl extends PipelineJobService
     {
         synchronized (_taskPipelineStore)
         {
+            assert !_taskPipelineStore.containsKey(pipeline.getId());
+            // Remove a cached 'miss' entry if it is present
+            TASK_PIPELINE_CACHE.remove(pipeline.getId().toString());
             _taskPipelineStore.put(pipeline.getId(), pipeline);
             Module module = pipeline.getDeclaringModule();
             assert module != null; // TODO: is this true?
@@ -390,6 +393,9 @@ public class PipelineJobServiceImpl extends PipelineJobService
     {
         synchronized (_taskFactoryStore)
         {
+            assert !_taskFactoryStore.containsKey(factory.getId());
+            // Remove a cached 'miss' entry if present
+            TASK_FACTORY_CACHE.remove(factory.getId().toString());
             _taskFactoryStore.put(factory.getId(), factory);
             Module module = factory.getDeclaringModule();
             assert module != null; // TODO: is this true?
@@ -949,7 +955,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
             }
 
             // Next, look for a module pipeline config file
-            if (taskId.getName() != null && taskId.getModuleName() != null)
+            if (taskId.getNamespaceClass() == null && taskId.getName() != null && taskId.getModuleName() != null)
             {
                 Module module = ModuleLoader.getInstance().getModule(taskId.getModuleName());
                 String configFileName = taskId.getName() + PIPELINE_CONFIG_EXTENSION;

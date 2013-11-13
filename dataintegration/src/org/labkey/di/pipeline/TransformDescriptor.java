@@ -394,6 +394,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             {
                 registerTaskPipeline(pipelineId);
                 pipeline = PipelineJobService.get().getTaskPipeline(pipelineId);
+                assert pipeline != null;
             }
             catch(CloneNotSupportedException ignore) {}
         }
@@ -403,8 +404,10 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
     private void registerTaskPipeline(TaskId pipelineId) throws CloneNotSupportedException
     {
+        Module declaringModule = ModuleLoader.getInstance().getModule(getModuleName());
         ArrayList<Object> progressionSpec = new ArrayList<>();
         TaskPipelineSettings settings = new TaskPipelineSettings(pipelineId);
+        settings.setDeclaringModule(declaringModule);
 
         // Register all the tasks that are associated with this transform and
         // associate the correct stepMetaData with the task via the index
@@ -415,7 +418,9 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             // check to see if this class is part of our known transform tasks
             if (TransformTask.class.isAssignableFrom(taskClass))
             {
-                PipelineJobService.get().addTaskFactory(new TransformTaskFactory(taskClass, taskName));
+                TransformTaskFactory factory = new TransformTaskFactory(taskClass, taskName);
+                factory.setDeclaringModule(declaringModule);
+                PipelineJobService.get().addTaskFactory(factory);
             }
             else
             {
@@ -506,10 +511,10 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             TransformDescriptor d;
 
             d = checkValidSyntax(getFile(ONE_TASK));
-            assert d._stepMetaDatas.size() == 1;
+            assertEquals(1, d._stepMetaDatas.size());
 
             d = checkValidSyntax(getFile(FOUR_TASKS));
-            assert d._stepMetaDatas.size() == 4;
+            assertEquals(4, d._stepMetaDatas.size());
 
             d = checkValidSyntax(getFile("interval1sec.xml"));
             assertEquals("1s", d.getScheduleDescription());
@@ -543,16 +548,17 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
             TransformDescriptor d1 = TransformManager.get().parseETLThrow(new EtlResource(getFile(ONE_TASK)), module);
             TaskPipeline p1 = d1.getTaskPipeline();
-            assert null != p1;
+            assertNotNull(p1);
 
             // calling twice should be just fine
-            p1 = d1.getTaskPipeline();
-            assert null != p1;
-            verifyTaskPipeline(p1, d1);
+            TaskPipeline p2 = d1.getTaskPipeline();
+            assertNotNull(p2);
+            assertEquals(p1, p2);
+            verifyTaskPipeline(p2, d1);
 
             TransformDescriptor d4 =  TransformManager.get().parseETLThrow(new EtlResource(getFile(FOUR_TASKS)), module);
             TaskPipeline p4 = d4.getTaskPipeline();
-            assert null != p4;
+            assertNotNull(p4);
             verifyTaskPipeline(p4, d4);
         }
 
@@ -612,7 +618,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             TransformPipelineJob job = (TransformPipelineJob) d.getPipelineJob(context);
 
             VariableMap map = job.getVariableMap();
-            assert map.keySet().size() == 1; // The transient "RunStep1" flag added at initialization.
+            assertEquals("Expected The transient 'RunStep1' flag added at initialization.", 1, map.keySet().size());
 
             // add a transient variable (non-persisted) to the variable map
             // and ensure it doesn't show up in the protocol application properties
@@ -649,10 +655,11 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             Integer expId = run.getExpRunId();
             Integer jobId = run.getJobId();
 
-            assert null != run.getStartTime();
-            assert null != run.getEndTime();
-            assert null != jobId;
-            assert StringUtils.equalsIgnoreCase(run.getTransformId(), d.getId());
+            assertNotNull(run.getStartTime());
+            assertNotNull(run.getEndTime());
+            assertNotNull(jobId);
+            assertTrue(String.format("Expected transform ids to match: expected '%s', got '%s'", run.getTransformId(), d.getId()),
+                    StringUtils.equalsIgnoreCase(run.getTransformId(), d.getId()));
 
             if (isSuccess)
             {
@@ -660,14 +667,15 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
                 int numSteps = d._stepMetaDatas.size();
                 int totalRecordCount = numSteps * (TestTask.recordsDeleted + TestTask.recordsInserted + TestTask.recordsModified);
 
-                assert run.getRecordCount() == totalRecordCount;
-                assert StringUtils.equalsIgnoreCase(status, PipelineJob.COMPLETE_STATUS);
-                assert null != expId;
+                assertNotNull(run.getRecordCount());
+                assertEquals(totalRecordCount, run.getRecordCount().intValue());
+                assertTrue(StringUtils.equalsIgnoreCase(status, PipelineJob.COMPLETE_STATUS));
+                assertNotNull(expId);
             }
             else
             {
-                assert StringUtils.equalsIgnoreCase(status, PipelineJob.ERROR_STATUS);
-                assert null == expId;
+                assertTrue(StringUtils.equalsIgnoreCase(status, PipelineJob.ERROR_STATUS));
+                assertNull(expId);
             }
 
             return run;
@@ -682,14 +690,16 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             //
             // verify run standard properties
             //
-            assert expRun.getJobId().intValue() == transformRun.getJobId().intValue();
-            assert expRun.getName().equalsIgnoreCase(TransformPipelineJob.ETL_PREFIX + d.getDescription());
+            assertEquals(transformRun.getJobId().intValue(), expRun.getJobId().intValue());
+            String expectedRunName = TransformPipelineJob.ETL_PREFIX + d.getDescription();
+            assertTrue(String.format("Expected run name didn't match: expected '%s', got '%s'", expectedRunName, expRun.getName()),
+                    expRun.getName().equalsIgnoreCase(expectedRunName));
 
             //
             // verify custom propeties
             //
             Map<String, ObjectProperty> mapProps = expRun.getObjectProperties();
-            assert mapProps.size() == 1;
+            assertEquals(1, mapProps.size());
             ObjectProperty prop = mapProps.get(TransformProperty.RecordsInserted.getPropertyDescriptor().getPropertyURI());
             assert TestTask.recordsInsertedJob ==  prop.getFloatValue();
 
@@ -712,16 +722,19 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             //  verify protocol for this job
             //
             ExpProtocol protocol = expRun.getProtocol();
-            assert protocol.getName().equalsIgnoreCase(TransformPipelineJob.class.getName() + ":" + d.getId());
+            String expectedProtocol = TransformPipelineJob.class.getName() + ":" + d.getId();
+            Assert.assertTrue(String.format("Expected protocols to match: expected '%s', got '%s'", expectedProtocol, protocol.getName()),
+                    protocol.getName().equalsIgnoreCase(expectedProtocol));
+
             List<ExpProtocolAction> actions = protocol.getSteps();
             // ignore input and output actions in count
-            assert (actions.size() - 2) == d._stepMetaDatas.size();
+            assertEquals(d._stepMetaDatas.size(), actions.size() - 2);
 
             //
             // verify protocol applications:  we have two steps that map to this
             //
             ExpProtocolApplication[] apps = expRun.getProtocolApplications();
-            assert (apps.length - 2) == d._stepMetaDatas.size();
+            assertEquals(d._stepMetaDatas.size(), apps.length - 2);
 
             for (ExpProtocolApplication app : apps)
             {
@@ -738,7 +751,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             //
             // verify inputs, outputs, standard props, custom properties
             //
-            assert isValidStep(d, app.getName());
+            assertTrue(isValidStep(d, app.getName()));
 
             List<ExpData> datas = app.getInputDatas();
             verifyDatas(d, datas.toArray(new ExpData[datas.size()]), 1, true);
@@ -747,21 +760,21 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             verifyDatas(d, datas.toArray(new ExpData[datas.size()]), 1, false);
 
             // verify our step start/end times are within the bounds of the entire run start/end times
-            assert(transformRun.getStartTime().getTime() <= app.getStartTime().getTime());
-            assert(transformRun.getEndTime().getTime() >= app.getEndTime().getTime());
+            assertTrue(transformRun.getStartTime().getTime() <= app.getStartTime().getTime());
+            assertTrue(transformRun.getEndTime().getTime() >= app.getEndTime().getTime());
             // verify step recordcount is one step's worth of work
-            assert(app.getRecordCount() == TestTask.recordsDeleted + TestTask.recordsInserted + TestTask.recordsModified);
+            assertEquals(TestTask.recordsDeleted + TestTask.recordsInserted + TestTask.recordsModified, app.getRecordCount().intValue());
             // verify we have object properties and they are found in the variable map
             Map<String, ObjectProperty> mapProps = app.getObjectProperties();
 
             // we should only have 3 custom properties for the test task
-            assert mapProps.size() == 3;
+            assertEquals(3, mapProps.size());
             ObjectProperty prop = mapProps.get(TransformProperty.RecordsDeleted.getPropertyDescriptor().getPropertyURI());
-            assert TestTask.recordsDeleted == prop.getFloatValue();
+            assertEquals(TestTask.recordsDeleted, prop.getFloatValue().intValue());
             prop = mapProps.get(TransformProperty.RecordsInserted.getPropertyDescriptor().getPropertyURI());
-            assert TestTask.recordsInserted == prop.getFloatValue();
+            assertEquals(TestTask.recordsInserted, prop.getFloatValue().intValue());
             prop = mapProps.get(TransformProperty.RecordsModified.getPropertyDescriptor().getPropertyURI());
-            assert TestTask.recordsModified == prop.getFloatValue();
+            assertEquals(TestTask.recordsModified, prop.getFloatValue().intValue());
 
             // finally, verify that the VariableMap we build out of the protocol application properties is correct
             verifyVariableMap(TransformManager.get().getVariableMapForTransformStep(transformRun.getExpRunId(), app.getName()), mapProps);
@@ -769,11 +782,12 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
         private void verifyVariableMap(VariableMap varMap, Map<String, ObjectProperty> propMap)
         {
-            assert varMap.keySet().size() == propMap.keySet().size();
+            assertEquals(varMap.keySet().size(), propMap.keySet().size());
             for (String key : propMap.keySet())
             {
                 ObjectProperty p = propMap.get(key);
-                assert p.getFloatValue() == ((Integer)varMap.get(p.getName())).doubleValue();
+                Integer var = (Integer)varMap.get(p.getName());
+                assertEquals(var.intValue(), p.getFloatValue().intValue());
             }
         }
 
@@ -790,7 +804,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
         private void verifyDatas(TransformDescriptor d, ExpData[] datas, int expectedCount, boolean isInput)
         {
-            assert datas.length == expectedCount;
+            assertEquals(expectedCount, datas.length);
 
             for (ExpData data : datas)
             {
@@ -818,7 +832,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
                 }
             }
 
-            assert found;
+            assertTrue(found);
         }
 
 
@@ -842,7 +856,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
                 }
             }
 
-            assert(job.isDone()) : "Job did not finish";
+            assertTrue("Job did not finish", job.isDone());
         }
 
 
@@ -852,10 +866,10 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
             // we should always have one more task than steps to account for the
             // ExpGenerator task
-            assert steps.length == d._stepMetaDatas.size() + 1;
+            assertEquals(d._stepMetaDatas.size() + 1, steps.length);
 
             TaskId expStep = steps[steps.length - 1];
-            assert expStep.getNamespaceClass() == ExpGeneratorId.class;
+            assertEquals(ExpGeneratorId.class, expStep.getNamespaceClass());
         }
 
         private TransformDescriptor checkValidSyntax(File file) throws XmlException, IOException
@@ -870,10 +884,11 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             try
             {
                 TransformManager.get().parseETLThrow(etl, module);
+                fail("Expected error: " + expected);
             }
             catch (XmlException x)
             {
-                assert StringUtils.equalsIgnoreCase(x.getMessage(), expected);
+                assertEquals(expected, x.getMessage());
             }
         }
     }
