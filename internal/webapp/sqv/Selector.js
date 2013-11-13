@@ -131,6 +131,7 @@ Ext4.define('LABKEY.sqv.Model', {
         config.listeners['afterrender'] = {
             fn : function (cb) {
                 this.containerCombo = cb;
+                cb.addCls('containers-loaded-marker');
             },
             scope : this
         };
