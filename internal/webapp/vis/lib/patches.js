@@ -135,3 +135,16 @@ if (!Array.prototype.every)
     return true;
   };
 }
+// Taken from MDN on 10-23-2013
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach
+if (!Array.prototype.forEach) {
+    Array.prototype.forEach = function (fn, scope) {
+        'use strict';
+        var i, len;
+        for (i = 0, len = this.length; i < len; ++i) {
+            if (i in this) {
+                fn.call(scope, this[i], i, this);
+            }
+        }
+    };
+}

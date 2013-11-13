@@ -445,12 +445,16 @@ if (typeof LABKEY == "undefined")
             requiresScript(scripts, immediate, callback, scope, true);
         };
 
-        var requiresExt4Sandbox = function(immediate)
+        var requiresExt4Sandbox = function(immediate, callback, scope)
         {
             if (arguments.length < 1) immediate = true;
 
-            requiresScript(configs.extJsRoot_42 + "/ext-all-sandbox" + (configs.devMode ?  "-debug.js" : ".js"), immediate);
-            requiresScript(configs.extJsRoot_42 + "/ext-patches.js", immediate);
+            var scripts = [
+                configs.extJsRoot_42 + "/ext-all-sandbox" + (configs.devMode ?  "-debug.js" : ".js"),
+                configs.extJsRoot_42 + "/ext-patches.js"
+            ];
+
+            requiresScript(scripts, immediate, callback, scope);
         };
 
         var requiresScript = function(file, immediate, callback, scope, inOrder)
@@ -592,31 +596,30 @@ if (typeof LABKEY == "undefined")
                 LABKEY.vis = {};
             }
 
-            var scripts;
+            var scripts = [
+                '/vis/lib/patches.js',
+                '/vis/lib/d3-3.3.9.min.js',
+                '/vis/lib/raphael-min-2.1.0.js'
+            ];
 
             if (configs.devMode)
             {
-                scripts = [
-                    '/vis/lib/d3-2.0.4.min.js',
-                    '/vis/lib/raphael-min-2.1.0.js',
-                    '/vis/lib/patches.js',
+                scripts = scripts.concat([
                     '/vis/src/utils.js',
                     '/vis/src/geom.js',
                     '/vis/src/stat.js',
                     '/vis/src/scale.js',
                     '/vis/src/layer.js',
                     '/vis/src/plot.js'
-                ];
+                ]);
 
                 // NOTE: If adding a required file you must add to vis.lib.xml for proper packaging
             }
             else
             {
-                scripts = [
-                    '/vis/lib/d3-2.0.4.min.js',
-                    '/vis/lib/raphael-min-2.1.0.js',
+                scripts = scripts.concat([
                     '/vis/vis.min.js'
-                ];
+                ]);
             }
 
             requiresScript(scripts, true, callback, scope, true);

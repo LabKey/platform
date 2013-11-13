@@ -8859,8 +8859,8 @@ internal/webapp/ux/CheckCombo/CheckCombo.js -text
 internal/webapp/viewPicker.js -text
 internal/webapp/vis/demo/demo_script.js -text
 internal/webapp/vis/demo/index.html -text
-internal/webapp/vis/lib/d3-2.0.4.js -text
-internal/webapp/vis/lib/d3-2.0.4.min.js -text
+internal/webapp/vis/lib/d3-3.3.9.js -text
+internal/webapp/vis/lib/d3-3.3.9.min.js -text
 internal/webapp/vis/lib/patches.js -text
 internal/webapp/vis/lib/raphael-2.1.0.js -text
 internal/webapp/vis/lib/raphael-min-2.1.0.js -text
