@@ -142,7 +142,7 @@ public class SearchModule extends DefaultModule
             // For future upgrades of Lucene or changes to indexing, update the version number below to rebuild the index.
             final boolean clearIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 13.31);
 
-            // don't start the crawler until all the modules are done startuping
+            // don't start the crawler until all the modules are done starting up
             ContextListener.addStartupListener("Search Service: start", new StartupListener(){
                 public void moduleStartupComplete(ServletContext servletContext)
                 {

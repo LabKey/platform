@@ -82,11 +82,7 @@ public class GlobusListener implements GramJobListener
                 }
                 PipelineJobRunnerGlobus.updateStatus(_job, newStatus);
             }
-            catch (UMOException e)
-            {
-                _job.error("Failed up update job status to " + newStatus, e);
-            }
-            catch (IOException e)
+            catch (UMOException | IOException e)
             {
                 _job.error("Failed up update job status to " + newStatus, e);
             }

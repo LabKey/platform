@@ -454,6 +454,11 @@ td.labkey-ms1-filter
     background-color: #<%= grid %>;
 }
 
+.gwt-TabBar .gwt-TabBarItem-selected
+{
+    background-color: #<%= second %>;
+}
+
 /* ExtJS */
 .x-panel-header
 {
