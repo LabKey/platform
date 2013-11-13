@@ -33,8 +33,6 @@ import org.labkey.study.samples.settings.RequestNotificationSettings;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -109,11 +107,7 @@ public class DefaultRequestNotification
 
     public @NotNull List<Attachment> getAttachments()
     {
-        final List<Attachment> attachments = AttachmentService.get().getAttachments(_event);
-        if (null != attachments)
-            return attachments;
-        else
-            return Collections.emptyList();
+        return AttachmentService.get().getAttachments(_event);
     }
 
     public String getComments()

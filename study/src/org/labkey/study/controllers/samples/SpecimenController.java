@@ -57,11 +57,9 @@ import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryView;
@@ -128,7 +126,6 @@ import org.labkey.study.query.SpecimenEventQueryView;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.query.SpecimenRequestQueryView;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.query.StudySchemaProvider;
 import org.labkey.study.requirements.RequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementType;
 import org.labkey.study.samples.SampleSearchWebPart;
@@ -1012,22 +1009,17 @@ public class SpecimenController extends BaseStudyController
             return _missingSpecimens;
         }
 
-        public SampleRequestStatus getStatus() throws SQLException
+        public SampleRequestStatus getStatus()
         {
             return SampleManager.getInstance().getRequestStatus(_sampleRequest.getContainer(), _sampleRequest.getStatusId());
         }
 
-        public Location getDestinationSite() throws SQLException
+        public Location getDestinationSite()
         {
             Integer destinationSiteId = _sampleRequest.getDestinationSiteId();
             if (destinationSiteId != null)
             {
-                List<LocationImpl> locations = StudyManager.getInstance().getSites(_sampleRequest.getContainer());
-                for (LocationImpl location : locations)
-                {
-                    if (destinationSiteId.intValue() == location.getRowId())
-                        return location;
-                }
+                return StudyManager.getInstance().getLocation(_sampleRequest.getContainer(), destinationSiteId.intValue());
             }
             return null;
         }

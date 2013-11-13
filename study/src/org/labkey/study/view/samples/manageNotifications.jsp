@@ -24,7 +24,10 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.samples.settings.RequestNotificationSettings" %>
 <%@ page import="org.labkey.study.samples.settings.RequestNotificationSettings.*" %>
-<%@ page import="org.labkey.api.view.WebThemeManager" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.study.view.samples.SpecimenRequestNotificationEmailTemplate" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
@@ -112,8 +115,15 @@ function setElementDisplayByCheckbox(checkbox, element)
         </tr>
 
         <tr>
-            <td colspan="2"  class="local-text-block">All specimen request emails have the same subject line.  <b>%requestId%</b> may be used
-                to insert the specimen request's study-specific ID number.  The format for the subject line is:
+            <td colspan="2" class="local-text-block">Specimen request emails have a configurable template, which controls
+                the subject line and body of the email.
+                <% if (getContainer().hasPermission(getUser(), AdminPermission.class)) { %><%= textLink("Edit Email Template", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), SpecimenRequestNotificationEmailTemplate.class, getActionURL()))%><% }
+                else { %>You must have administrator permissions to edit the template.<% } %>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2"  class="local-text-block">All specimen request emails have the same subject line format. <b>%requestId%</b> may be used
+                to insert the specimen request's study-specific ID number.  The default format for the subject line is:
                 <b><%= h(StudyManager.getInstance().getStudy(container).getLabel()) %>: [Subject Suffix]</b>
             </td>
         </tr>

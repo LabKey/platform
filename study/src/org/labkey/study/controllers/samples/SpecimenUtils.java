@@ -22,24 +22,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ButtonBarLineBreak;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.MenuButton;
-import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.Results;
-import org.labkey.api.data.SimpleDisplayColumn;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.TSVGridWriter;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
@@ -55,7 +37,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.GridView;
-import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
@@ -86,6 +67,7 @@ import org.labkey.study.samples.settings.RequestNotificationSettings;
 import org.labkey.study.security.permissions.ManageRequestsPermission;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.security.permissions.SetSpecimenCommentsPermission;
+import org.labkey.study.view.samples.SpecimenRequestNotificationEmailTemplate;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -496,12 +478,14 @@ public class SpecimenUtils
             specimenList = notification.getSpecimenListHTML(getViewContext());
         }
 
-        MailHelper.ViewMessage message = MailHelper.createMessage(settings.getReplyToEmailAddress(getUser()), null);
-        String subject = settings.getSubjectSuffix().replaceAll("%requestId%", "" + sampleRequest.getRowId());
-        message.setSubject(getStudy().getLabel() + ": " + subject);
-        JspView<NotificationBean> notifyView = new JspView<>("/org/labkey/study/view/samples/notification.jsp",
-                new NotificationBean(getViewContext(), notification, specimenList, getStudy().getLabel()));
-        message.setTemplateContent(getViewContext().getRequest(), notifyView, "text/html");
+        NotificationBean notificationBean = new NotificationBean(getViewContext(), notification, specimenList, getStudy().getLabel());
+        SpecimenRequestNotificationEmailTemplate template = new SpecimenRequestNotificationEmailTemplate();
+        template.init(notificationBean);
+
+        MailHelper.MultipartMessage message = MailHelper.createMultipartMessage();
+        message.setFrom(new InternetAddress(settings.getReplyToEmailAddress(getUser())));
+        message.setBodyContent(template.renderBody(getContainer()), "text/html");
+        message.setSubject(template.renderSubject(getContainer()));
 
         boolean first = true;
         for (NotificationRecipientSet recipient : notification.getRecipients())
@@ -525,7 +509,7 @@ public class SpecimenUtils
                 }
                 catch (javax.mail.internet.AddressException | NullPointerException e)
                 {
-                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());      // Bad address; also InternetAddress constructor can throw null
+                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());      // Bad address; also InternetAddress constructor can throw null
                 }
             }
             if (notification.getRequirement() != null)

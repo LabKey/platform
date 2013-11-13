@@ -74,6 +74,7 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.DefaultWebPartFactory;
@@ -170,6 +171,7 @@ import org.labkey.study.view.StudyToolsWebPartFactory;
 import org.labkey.study.view.StudyViewLoader;
 import org.labkey.study.view.SubjectDetailsWebPartFactory;
 import org.labkey.study.view.SubjectsWebPart;
+import org.labkey.study.view.samples.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.study.writer.DatasetWriter;
 import org.labkey.study.writer.MissingValueWriterFactory;
 import org.labkey.study.writer.SpecimenWriter;
@@ -274,6 +276,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
         DataViewService.get().registerProvider(DatasetViewProvider.TYPE, new DatasetViewProvider());
         DataViewService.get().registerProvider(ReportViewProvider.TYPE, new ReportViewProvider());
+
+        EmailTemplateService.get().registerTemplate(SpecimenRequestNotificationEmailTemplate.class);
 
         QueryService.get().registerOlapDescriptors(this);
     }

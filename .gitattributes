@@ -3644,6 +3644,7 @@ study/src/org/labkey/study/view/participantReport.jsp -text
 study/src/org/labkey/study/view/pipelineSetup.jsp -text
 study/src/org/labkey/study/view/reportPermission.jsp -text
 study/src/org/labkey/study/view/requirePipeline.jsp -text
+study/src/org/labkey/study/view/samples/SpecimenRequestNotificationEmailTemplate.java -text
 study/src/org/labkey/study/view/samples/addSamplesToRequest.jsp -text
 study/src/org/labkey/study/view/samples/advancedSearch.jsp -text
 study/src/org/labkey/study/view/samples/autoReportList.jsp -text
@@ -3665,7 +3666,7 @@ study/src/org/labkey/study/view/samples/manageRequirement.jsp -text
 study/src/org/labkey/study/view/samples/manageSpecimenWebPart.jsp -text
 study/src/org/labkey/study/view/samples/manageStatusOrder.jsp -text
 study/src/org/labkey/study/view/samples/manageStatuses.jsp -text
-study/src/org/labkey/study/view/samples/notification.jsp -text
+study/src/org/labkey/study/view/samples/notification.txt -text
 study/src/org/labkey/study/view/samples/relevantRequests.jsp -text
 study/src/org/labkey/study/view/samples/requestSamples.jsp -text
 study/src/org/labkey/study/view/samples/sample.jsp -text
