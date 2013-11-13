@@ -455,7 +455,7 @@ if (typeof LABKEY == "undefined")
 
         var requiresScript = function(file, immediate, callback, scope, inOrder)
         {
-            if (arguments.length < 2)
+            if (arguments.length < 2 || (typeof immediate === "undefined"))
                 immediate = true;
 
             var onScriptLoad = function(cb, s)

@@ -69,6 +69,9 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     protected long _numRespRows = 0;              //number of response rows
     private List<FieldKey> _fieldKeys = null;
     protected boolean _metaDataOnly = false;
+    // Include an empty "rows" array when serializing metadata only (maxRows=0)
+    // CONSIDER: We could remove this option if we want to include empty "rows" array in the ReportingApiQueryResponse to be similar to the other response formats.
+    protected boolean _metaDataOnlyIncludesEmptyRowset = true;
     protected Map<String, Object> _extraReturnProperties;
     protected DataRegion _dataRegion;
     private boolean _includeDetailsColumn;
@@ -118,6 +121,8 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         if (_metaDataOnly)
         {
             writeMetaData(writer);
+            if (_metaDataOnlyIncludesEmptyRowset)
+                writeEmptyRowsset(writer);
         }
         else
         {
@@ -180,6 +185,9 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
     protected Results getResults() throws Exception
     {
+        // We're going to be writing JSON back, which is tolerant of extra spaces, so allow async so we
+        // can monitor if the client has stopped listening
+        _dataRegion.setAllowAsync(true);
         return _dataRegion.getResultSet(_ctx);
     }
 
@@ -402,13 +410,16 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     }
 
 
+    protected void writeEmptyRowsset(ApiResponseWriter writer) throws Exception
+    {
+        writer.startList("rows");
+        writer.endList();
+    }
+
     protected boolean writeRowset(ApiResponseWriter writer, Results results) throws Exception
     {
         boolean complete = true;
         writer.startList("rows");
-        // We're going to be writing JSON back, which is tolerant of extra spaces, so allow async so we
-        // can monitor if the client has stopped listening
-        _dataRegion.setAllowAsync(true);
 
         _ctx.setResults(results);
         ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
