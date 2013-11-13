@@ -15,7 +15,7 @@
  */
 package org.labkey.api.pipeline;
 
-import org.labkey.api.module.SpringModule;
+import org.labkey.api.module.Module;
 import org.labkey.api.util.FileType;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.apache.log4j.Logger;
@@ -78,9 +78,9 @@ public interface TaskFactory<SettingsType extends TaskFactorySettings>
 
     public WorkDirectory createWorkDirectory(String jobGUID, FileAnalysisJobSupport jobSupport, Logger logger) throws IOException;
 
-    void setDeclaringModule(SpringModule declaringModule);
+    void setDeclaringModule(Module declaringModule);
 
-    SpringModule getDeclaringModule();
+    Module getDeclaringModule();
 
     /**
      * Task is run on the LabKey Server.

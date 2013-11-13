@@ -91,16 +91,16 @@ public class TaskId implements Serializable
             _moduleName = null;
             _type = null;
             _namespaceClass = Class.forName(parts[0]);
-            _name = parts[1];
+            _name = decode(parts[1]);
             _version = 0;
         }
         else if (parts.length == 3 || parts.length == 4)
         {
             // Parse as either "module:type:name" or "module:type:name:version"
-            _moduleName = parts[0];
-            _type = Type.valueOf(parts[1]);
+            _moduleName = decode(parts[0]);
+            _type = Type.valueOf(decode(parts[1]));
             _namespaceClass = null;
-            _name = parts[2];
+            _name = decode(parts[2]);
             _version = parts.length == 4 ? Double.valueOf(parts[3]) : 0;
         }
         else
@@ -170,13 +170,13 @@ public class TaskId implements Serializable
     public String toString()
     {
         StringBuilder s = new StringBuilder();
-        if (_moduleName != null)
+        if (_moduleName != null && _type != null && _name != null)
         {
-            s.append(PageFlowUtil.encode(_moduleName));
+            s.append(encode(_moduleName));
             s.append(":");
-            s.append(PageFlowUtil.encode(_type.name()));
+            s.append(encode(_type.name()));
             s.append(":");
-            s.append(PageFlowUtil.encode(_name));
+            s.append(encode(_name));
             if (_version > 0)
             {
                 s.append(":");
@@ -188,7 +188,7 @@ public class TaskId implements Serializable
             // Classname can't contain ':' so no encoding is needed.
             s.append(_namespaceClass.getName());
             if (_name != null)
-                s.append(':').append(PageFlowUtil.encode(_name));
+                s.append(':').append(encode(_name));
         }
         return s.toString();
     }
@@ -196,5 +196,20 @@ public class TaskId implements Serializable
     public static TaskId valueOf(String value) throws ClassNotFoundException
     {
         return new TaskId(value);
+    }
+
+    // TODO: Will replace with PageFlowUtil.encodeURIComponent(), but DataItegration currently
+    // TODO: generates task ids of the form: org.labkey.di.pipeline.TransformPipelineJob:{DataIntegration}/unit
+    // TODO: which will be encoded but then won't match the expected ExpRun protocol name of "{DataIntegration}/unit"
+    // TODO: Fix TransformManager.get().createConfigId() to use TaskId or encode or something
+    // TODO: and make sure it's backwards compatible with existing ids that may be stored in the database.
+    private static String encode(String s)
+    {
+        return s.replaceAll(":", "%3A");
+    }
+
+    private static String decode(String s)
+    {
+        return s.replaceAll("%3A", ":");
     }
 }

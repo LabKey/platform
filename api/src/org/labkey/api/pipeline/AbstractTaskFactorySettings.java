@@ -16,7 +16,7 @@
 package org.labkey.api.pipeline;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.module.SpringModule;
+import org.labkey.api.module.Module;
 
 /**
  * <code>AbstractTaskFactorySettings</code> is used for Spring configuration of a
@@ -37,7 +37,7 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
     private Integer _autoRetry;
     private String _groupParameterName;
     private GlobusSettings _globusSettings;
-    private SpringModule _declaringModule;
+    private Module _declaringModule;
 
     public AbstractTaskFactorySettings(TaskId id)
     {
@@ -156,7 +156,7 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
     }
 
     @Override
-    public void setDeclaringModule(@NotNull SpringModule declaringModule)
+    public void setDeclaringModule(@NotNull Module declaringModule)
     {
         if (declaringModule == null)
             throw new IllegalArgumentException("Declaring module must not be null");
@@ -168,7 +168,7 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
     }
 
     @Override
-    public SpringModule getDeclaringModule()
+    public Module getDeclaringModule()
     {
         return _declaringModule;
     }

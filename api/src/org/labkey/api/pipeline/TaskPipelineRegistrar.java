@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline;
 
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.springframework.beans.BeansException;
@@ -43,7 +44,7 @@ public class TaskPipelineRegistrar implements InitializingBean, ApplicationConte
             new ArrayList<>();
     private List<TaskPipeline> _pipelineImpls =
             new ArrayList<>();
-    private SpringModule _declaringModule;
+    private Module _declaringModule;
 
     public List<TaskFactorySettings> getFactories()
     {
@@ -190,7 +191,7 @@ public class TaskPipelineRegistrar implements InitializingBean, ApplicationConte
             {
                 String name = applicationContext.getDisplayName();
                 name = name.substring(0,name.indexOf(" "));
-                _declaringModule = (SpringModule)ModuleLoader.getInstance().getModule(name);
+                _declaringModule = ModuleLoader.getInstance().getModule(name);
             }
         }
     }

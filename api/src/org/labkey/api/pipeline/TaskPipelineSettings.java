@@ -16,7 +16,7 @@
 package org.labkey.api.pipeline;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.module.SpringModule;
+import org.labkey.api.module.Module;
 
 /**
  * <code>TaskPipelineSpec</code> is used for Spring configuration of a
@@ -43,7 +43,7 @@ public class TaskPipelineSettings
     private String _protocolShortDescription;
 
     /** Module in which the task pipeline is declared. */
-    private SpringModule _declaringModule;
+    private Module _declaringModule;
 
 
     public TaskPipelineSettings(TaskId id)
@@ -124,7 +124,7 @@ public class TaskPipelineSettings
         _protocolShortDescription = protocolShortDescription;
     }
 
-    public void setDeclaringModule(@NotNull SpringModule declaringModule)
+    public void setDeclaringModule(@NotNull Module declaringModule)
     {
         if (declaringModule == null)
             throw new IllegalArgumentException("Declaring module must not be null");
@@ -135,7 +135,7 @@ public class TaskPipelineSettings
         _declaringModule = declaringModule;
     }
 
-    public SpringModule getDeclaringModule()
+    public Module getDeclaringModule()
     {
         return _declaringModule;
     }

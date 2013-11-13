@@ -16,6 +16,7 @@
 package org.labkey.api.pipeline;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.apache.log4j.Logger;
@@ -38,7 +39,7 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
     private int _autoRetry = -1;
     private GlobusSettings _globusSettings;
 
-    private SpringModule _declaringModule;
+    private Module _declaringModule;
 
     public AbstractTaskFactory(Class namespaceClass)
     {
@@ -288,7 +289,7 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
     }
 
     @Override
-    public void setDeclaringModule(@NotNull SpringModule declaringModule)
+    public void setDeclaringModule(@NotNull Module declaringModule)
     {
         if (declaringModule == null)
             throw new IllegalArgumentException("Declaring module must not be null");
@@ -300,7 +301,7 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
     }
 
     @Override
-    public SpringModule getDeclaringModule()
+    public Module getDeclaringModule()
     {
         return _declaringModule;
     }
