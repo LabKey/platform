@@ -61,6 +61,8 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.writer.ContainerUser;
@@ -137,7 +139,7 @@ public class TransformManager implements DataIntegrationService
         {
             return parseETLThrow(resource, module);
         }
-        catch (XmlException|IOException e)
+        catch (XmlValidationException|XmlException|IOException e)
         {
             LOG.warn("Unable to parse " + resource, e);
         }
@@ -145,7 +147,7 @@ public class TransformManager implements DataIntegrationService
     }
 
 
-    TransformDescriptor parseETLThrow(Resource resource, Module module) throws IOException, XmlException
+    TransformDescriptor parseETLThrow(Resource resource, Module module) throws IOException, XmlException, XmlValidationException
     {
         FilterStrategy.Factory defaultFactory = null;
         Long interval = null;
@@ -165,7 +167,7 @@ public class TransformManager implements DataIntegrationService
                 throw new IOException("Unable to get InputStream from " + resource);
             }
 
-            XmlOptions options = new XmlOptions();
+            XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
             options.setValidateStrict();
             EtlDocument document = EtlDocument.Factory.parse(inputStream, options);
             EtlType etlXML = document.getEtl();
@@ -211,6 +213,9 @@ public class TransformManager implements DataIntegrationService
                     stepMetaDatas.add(meta);
                 }
             }
+
+            // XmlSchema validate the document after we've attempted to parse it since we can provide better error messages.
+            XmlBeansUtil.validateXmlDocument(document, "ETL '" + resource.getPath() + "'");
 
             return new TransformDescriptor(configId, etlXML.getName(), etlXML.getDescription(), module.getName(), interval, cron, defaultFactory, stepMetaDatas);
         }
@@ -291,24 +296,20 @@ public class TransformManager implements DataIntegrationService
         if (stepIds.contains(transformXML.getId()))
             throw new XmlException(DUPLICATE_ID);
 
+        if (null == transformXML.getType())
+            throw new XmlException(TYPE_REQUIRED);
+
         StepProvider provider = getStepProvider(transformXML.getType());
         if (null == provider)
-        {
             throw new XmlException(INVALID_TYPE);
-        }
 
         Class taskClass = provider.getStepClass();
         StepMeta meta;
-        if (isValidTaskClass(taskClass))
-        {
-            meta = provider.createMetaInstance();
-            meta.setProvider(provider);
-        }
-        else
-        {
+        if (!isValidTaskClass(taskClass))
             throw new XmlException(INVALID_TYPE);
-        }
 
+        meta = provider.createMetaInstance();
+        meta.setProvider(provider);
         meta.parseConfig(transformXML); // will throw XmlException on validation error
 
         // Only add to the list of steps after passing validation, including whatever extra validation was in StepMeta

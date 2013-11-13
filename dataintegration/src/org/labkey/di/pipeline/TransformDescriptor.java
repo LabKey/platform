@@ -58,6 +58,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.di.DataIntegrationQuerySchema;
 import org.labkey.di.VariableMap;
@@ -501,7 +502,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         }
 
         @Test
-        public void descriptorSyntax() throws XmlException, IOException
+        public void descriptorSyntax() throws Exception
         {
             //
             // does a sanity check on ETL config file parsing and verifies that invalid ETL configuration options are
@@ -540,7 +541,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         }
 
         @Test
-        public void registerTaskPipeline() throws XmlException, IOException, CloneNotSupportedException
+        public void registerTaskPipeline() throws Exception
         {
             //
             // verifies that the correct task pipeline is setup for ONE_TASK and FOUR_TASK ETL configurations
@@ -872,7 +873,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             assertEquals(ExpGeneratorId.class, expStep.getNamespaceClass());
         }
 
-        private TransformDescriptor checkValidSyntax(File file) throws XmlException, IOException
+        private TransformDescriptor checkValidSyntax(File file) throws XmlException, XmlValidationException, IOException
         {
             EtlResource etl = new EtlResource(file);
             return TransformManager.get().parseETLThrow(etl, module);
@@ -886,7 +887,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
                 TransformManager.get().parseETLThrow(etl, module);
                 fail("Expected error: " + expected);
             }
-            catch (XmlException x)
+            catch (XmlValidationException | XmlException x)
             {
                 assertEquals(expected, x.getMessage());
             }

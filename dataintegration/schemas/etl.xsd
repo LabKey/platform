@@ -12,7 +12,7 @@
     <complexType name="EtlType">
         <all>
             <element name="name" type="string" maxOccurs="1"/>
-            <element name="description" type="string" maxOccurs="1"/>
+            <element name="description" type="string" maxOccurs="1" minOccurs="0"/>
             <element name="transforms" type="etl:TransformsType" maxOccurs="1"/>
             <element name="schedule" type="etl:ScheduleType" maxOccurs="1" minOccurs="0"/>
             <element name="incrementalFilter" type="etl:FilterType" minOccurs="0" maxOccurs="1"/>
@@ -74,7 +74,7 @@
             <element name="procedure" type="etl:SchemaProcedureType" maxOccurs="1" minOccurs="0"/>
         </all>
         <attribute name="id" type="string" use="required"/>
-        <attribute name="type" type="string"/>
+        <attribute name="type" type="string" use="required"/>
         <attribute name="file" type="string"/>
         <attribute name="streaming" type="boolean" default="true"/>
     </complexType>
