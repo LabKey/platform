@@ -16,12 +16,15 @@
 
 package org.labkey.api.util.emailTemplate;
 
+import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
+import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.data.Container;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -39,6 +42,42 @@ public abstract class EmailTemplate
     private static Pattern scriptPattern = Pattern.compile("\\^(.*?)\\^");
     private static List<ReplacementParam> _replacements = new ArrayList<>();
     private static final String FORMAT_DELIMITER = "|";
+
+    /**
+     * Distinguishes between the types of email that might be sent. Additionally, used to ensure correct encoding
+     * of substitutions when generating the full email.
+     */
+    public enum ContentType
+    {
+        Plain
+        {
+            @Override
+            public String format(String sourceValue, ContentType sourceType)
+            {
+                if (sourceType != Plain)
+                {
+                    // We don't support converting from HTML to plain
+                    throw new IllegalArgumentException("Unable to convert from " + sourceType + " to Plain");
+                }
+                return sourceValue;
+            }
+        },
+        HTML
+        {
+            @Override
+            public String format(String sourceValue, ContentType sourceType)
+            {
+                if (sourceType == HTML)
+                {
+                    return sourceValue;
+                }
+                return PageFlowUtil.filter(sourceValue, true, true);
+            }
+        };
+
+        /** Render the given sourceValue into the target (this) type, based on the sourceType */
+        public abstract String format(String sourceValue, ContentType sourceType);
+    }
 
     public enum Scope
     {
@@ -61,7 +100,9 @@ public abstract class EmailTemplate
         public abstract boolean isEditableIn(Container c);
     }
 
-    private String _name;
+    /** The format of the email to be generated */
+    @NotNull private final ContentType _contentType;
+    @NotNull private final String _name;
     private String _body;
     private String _subject;
     private String _description;
@@ -99,13 +140,13 @@ public abstract class EmailTemplate
             public Object getValue(Container c) {return new Date();}
         });
         _replacements.add(new ReplacementParam("folderName", "Name of the folder that generated the email, if it is scoped to a folder"){
-            public Object getValue(Container c) {return c.isRoot() ? null : c.getName();}
+            public String getValue(Container c) {return c.isRoot() ? null : c.getName();}
         });
-        _replacements.add(new ReplacementParam("folderPath", "Path of the folder that generated the email, if it is scoped to a folder"){
-            public Object getValue(Container c) {return c.isRoot() ? null : c.getPath();}
+        _replacements.add(new ReplacementParam("folderPath", "Full path of the folder that generated the email, if it is scoped to a folder"){
+            public String getValue(Container c) {return c.isRoot() ? null : c.getPath();}
         });
         _replacements.add(new ReplacementParam("folderURL", "URL to the folder that generated the email, if it is scoped to a folder"){
-            public Object getValue(Container c) {return c.isRoot() ? null : PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c).getURIString();}
+            public String getValue(Container c) {return c.isRoot() ? null : PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c).getURIString();}
         });
         _replacements.add(new ReplacementParam("homePageURL", "The home page of this installation"){
             public String getValue(Container c) {
@@ -114,21 +155,26 @@ public abstract class EmailTemplate
         });
     }
 
-    public EmailTemplate(String name)
+    public EmailTemplate(@NotNull String name)
     {
-        this(name, "", "", "");
+        this(name, "", "", "", ContentType.Plain);
     }
 
-    public EmailTemplate(String name, String subject, String body, String description)
+    public EmailTemplate(@NotNull String name, String subject, String body, String description)
+    {
+        this(name, subject, body, description, ContentType.Plain);
+    }
+
+    public EmailTemplate(@NotNull String name, String subject, String body, String description, @NotNull ContentType contentType)
     {
         _name = name;
         _subject = subject;
         _body = body;
         _description = description;
+        _contentType = contentType;
     }
 
-    public String getName(){return _name;}
-    public void setName(String name){_name = name;}
+    @NotNull public String getName(){return _name;}
     public String getSubject(){return _subject;}
     public void setSubject(String subject){_subject = subject;}
     public String getBody(){return _body;}
@@ -210,19 +256,36 @@ public abstract class EmailTemplate
         {
             if (param.getName().equalsIgnoreCase(paramName))
             {
+                String formattedValue;
                 Object value = param.getValue(c);
                 if (value == null || "".equals(value))
                 {
-                    return "";
+                    formattedValue = "";
                 }
-                String format = getFormat(paramNameAndFormat);
-                if (format != null)
+                else
                 {
-                    Formatter formatter = new Formatter();
-                    formatter.format(format, value);
-                    return formatter.toString();
+                    if (value instanceof String)
+                    {
+                        // This may not be quite right, but seems OK given all of our current parameters
+                        // We format just the value itself, not any surrounding text, but we can only safely do
+                        // this for String values. That is the overwhelming majority of values, and the non-strings
+                        // are Dates which are unlikely to be rendered using a format that needs encoding.
+                        value = _contentType.format((String) value, param.getContentType());
+                    }
+
+                    String format = getFormat(paramNameAndFormat);
+                    if (format != null)
+                    {
+                        Formatter formatter = new Formatter();
+                        formatter.format(format, value);
+                        formattedValue = formatter.toString();
+                    }
+                    else
+                    {
+                        formattedValue = value.toString();
+                    }
                 }
-                return value.toString();
+                return formattedValue;
             }
         }
         return null;
@@ -240,7 +303,7 @@ public abstract class EmailTemplate
 
     protected String render(Container c, String text)
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         Matcher m = scriptPattern.matcher(text);
         int start;
         int end = 0;
@@ -261,18 +324,67 @@ public abstract class EmailTemplate
         return _replacements;
     }
 
-    public static abstract class ReplacementParam
+    public static abstract class ReplacementParam implements Comparable<ReplacementParam>
     {
-        private String _name;
-        private String _description;
+        @NotNull
+        private final String _name;
+        private final String _description;
+        private final ContentType _contentType;
 
-        public ReplacementParam(String name, String description)
+        public ReplacementParam(@NotNull String name, String description)
+        {
+            this(name, description, ContentType.Plain);
+        }
+
+        public ReplacementParam(@NotNull String name, String description, ContentType contentType)
         {
             _name = name;
             _description = description;
+            _contentType = contentType;
         }
-        public String getName(){return _name;}
+
+        @NotNull public String getName(){return _name;}
         public String getDescription(){return _description;}
         public abstract Object getValue(Container c);
+
+        /** Sort alphabetically by parameter name */
+        @Override
+        public int compareTo(ReplacementParam o)
+        {
+            return _name.compareToIgnoreCase(o._name);
+        }
+
+        /** @return the formatting of the content - HTML, plaintext, etc */
+        public ContentType getContentType()
+        {
+            return _contentType;
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testPlainToPlain()
+        {
+            assertEquals("plain \n<>\"", ContentType.Plain.format("plain \n<>\"", ContentType.Plain));
+        }
+
+        @Test
+        public void testPlainToHTML()
+        {
+            assertEquals("plain <br>\n&lt;&gt;&quot;", ContentType.HTML.format("plain \n<>\"", ContentType.Plain));
+        }
+
+        @Test(expected = IllegalArgumentException.class)
+        public void testHMLToPlain()
+        {
+            ContentType.Plain.format("plain <>\"", ContentType.HTML);
+        }
+
+        @Test
+        public void testHMLToHTML()
+        {
+            assertEquals("plain <br/>&lt;&gt;&quot;", ContentType.HTML.format("plain <br/>&lt;&gt;&quot;", ContentType.HTML));
+        }
     }
 }

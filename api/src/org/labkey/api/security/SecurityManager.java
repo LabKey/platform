@@ -2771,9 +2771,15 @@ public class SecurityManager
                 "links to visit your projects.\n\n" +
                 "If you have any questions don't hesitate to contact the ^siteShortName^ team at ^systemEmail^.";
 
+        @SuppressWarnings("UnusedDeclaration") // Constructor called via reflection
         public RegistrationEmailTemplate()
         {
-            super("Register new user");
+            this("Register new user");
+        }
+
+        public RegistrationEmailTemplate(String name)
+        {
+            super(name);
             setSubject(DEFAULT_SUBJECT);
             setBody(DEFAULT_BODY);
             setDescription("Sent to the new user and administrator when a user is added to the site.");
@@ -2789,8 +2795,7 @@ public class SecurityManager
     {
         public RegistrationAdminEmailTemplate()
         {
-            super();
-            setName("Register new user (bcc to admin)");
+            super("Register new user (bcc to admin)");
             setSubject("^recipient^ : " + DEFAULT_SUBJECT);
             setBody("The following message was sent to ^recipient^ :\n\n" + DEFAULT_BODY);
             setPriority(2);
@@ -2814,7 +2819,12 @@ public class SecurityManager
 
         public PasswordResetEmailTemplate()
         {
-            super("Reset password");
+            this("Reset password");
+        }
+
+        public PasswordResetEmailTemplate(String name)
+        {
+            super(name);
             setSubject(DEFAULT_SUBJECT);
             setBody(DEFAULT_BODY);
             setDescription("Sent to the user and administrator when the password of a user is reset.");
@@ -2826,8 +2836,7 @@ public class SecurityManager
     {
         public PasswordResetAdminEmailTemplate()
         {
-            super();
-            setName("Reset password (bcc to admin)");
+            super("Reset password (bcc to admin)");
             setSubject("^recipient^ : " + DEFAULT_SUBJECT);
             setBody("The following message was sent to ^recipient^ :\n\n" + DEFAULT_BODY);
             setPriority(4);
