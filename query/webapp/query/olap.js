@@ -502,6 +502,13 @@ Ext4.define('LABKEY.query.olap.metadata.Cube', {
             this.dimensions.push(dimension);
         }
 
+        if (Ext4.isFunction(this.applyContext)) {
+            this.mdx = this.applyContext.call(this, this.mdx);
+            if (!this.mdx) {
+                console.error('Failed to apply application context.');
+            }
+        }
+
         this.fireEvent('onready', this.getMDX());
     },
 
