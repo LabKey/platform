@@ -842,8 +842,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             if (null != getSourcePath())
             {
-                dirs.add(0, new File(getSourcePath(),"../../internal/webapp"));
-                dirs.add(0, new File(getSourcePath(),"../../api/webapp"));
+                dirs.add(0, new File(getSourcePath(), "../../internal/webapp"));
+                dirs.add(0, new File(getSourcePath(), "../../api/webapp"));
             }
         }
         return dirs;
