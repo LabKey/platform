@@ -591,7 +591,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     @Override
     public String getCreateDatabaseSql(String dbName)
     {
-        return "CREATE DATABASE " + dbName;
+        return "CREATE DATABASE " + makeLegalIdentifier(dbName);
     }
 
     @Override

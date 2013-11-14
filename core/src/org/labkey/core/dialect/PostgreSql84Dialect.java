@@ -602,8 +602,9 @@ class PostgreSql84Dialect extends SqlDialect
     @Override
     public String getCreateDatabaseSql(String dbName)
     {
-        return "CREATE DATABASE \"" + dbName + "\" WITH ENCODING 'UTF8';\n" +
-                "ALTER DATABASE \"" + dbName + "\" SET default_with_oids TO OFF";
+        String legal = makeLegalIdentifier(dbName);
+        return "CREATE DATABASE " + legal + " WITH ENCODING 'UTF8';\n" +
+                "ALTER DATABASE " + legal + " SET default_with_oids TO OFF";
     }
 
     @Override
