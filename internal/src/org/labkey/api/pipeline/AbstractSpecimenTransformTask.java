@@ -220,6 +220,7 @@ public abstract class AbstractSpecimenTransformTask
         }
     }
 
+    @Nullable
     protected Date parseDateTime(String keyDate, @Nullable String keyTime, Map<String,Object> row)
     {
         Object d = row.get(keyDate);
