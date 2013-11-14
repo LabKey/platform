@@ -17,8 +17,11 @@ package org.labkey.di.steps;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
@@ -60,7 +63,7 @@ public class StoredProcedureStep extends TransformTask
     private int paramCount;
     private boolean hasReturn = false;
     private Map<String, Object> savedParamVals = new HashMap<>();
-    private Map<String, Map<ParamTraits, Integer>> metadataParameters = new HashMap<>();
+    private Map<String, Map<ParamTraits, Integer>> metadataParameters = new CaseInsensitiveHashMap<>();
 
     Logger log;
 
@@ -208,7 +211,70 @@ public class StoredProcedureStep extends TransformTask
 
     }
 
+
     private boolean getParametersFromDbMetadata() throws SQLException
+    {
+        if (scope.getSqlDialect().isPostgreSQL())
+            return getParametersFromDbMetadataPSQL();
+        else
+            return getParametersFromDbMetadataMSSQL();
+    }
+
+
+    // TODO move to dialect
+    private boolean getParametersFromDbMetadataPSQL() throws SQLException
+    {
+        SQLFragment sqlf = new SQLFragment(
+                "SELECT NULL AS PROCEDURE_CAT,\n" +
+                "        n.nspname AS \"PROCEDURE_SCHEM\",\n" +
+                "            p.proname AS \"PROCEDURE_NAME\",\n" +
+                "            d.description AS \"REMARKS\",\n" +
+                "            array_to_string(p.proargtypes, ';') as \"DATA_TYPES\",\n" +
+                "            array_to_string(p.proargnames, ';') AS \"COLUMN_NAMES\"\n" +
+                "        FROM pg_catalog.pg_namespace n\n" +
+                "        JOIN pg_catalog.pg_proc p ON p.pronamespace=n.oid\n" +
+                "        LEFT JOIN pg_catalog.pg_description d ON (p.oid=d.objoid)\n" +
+                "        LEFT JOIN pg_catalog.pg_class c ON d.classoid=c.oid\n" +
+                "        LEFT JOIN pg_catalog.pg_namespace pn ON c.relnamespace=pn.oid\n" +
+                "        WHERE n.nspname ILIKE ? AND p.proname ILIKE ? AND NOT p.proisagg");
+        sqlf.add(procSchema);
+        sqlf.add(procName);
+
+        /* DOES NOT HANDLE OVERLOADED FUNCTIONS! */
+        try (ResultSet rs = (new SqlSelector(scope,sqlf)).getResultSet())
+        {
+            if (rs.next())
+            {
+                String data_types = StringUtils.defaultString(rs.getString("DATA_TYPES"),"");
+                String column_names = StringUtils.defaultString(rs.getString("COLUMN_NAMES"),"");
+                String[] types = data_types.split(";");
+                String[] names = column_names.split(";");
+                for (int i=0 ; i<Math.min(types.length,names.length) ; i++)
+                {
+                    if (StringUtils.isNotEmpty(types[i]) && StringUtils.isNotEmpty(names[i]))
+                    {
+                        Map<ParamTraits, Integer> traitMap = new HashMap<>();
+                        traitMap.put(ParamTraits.direction, DatabaseMetaData.procedureColumnIn);
+                        traitMap.put(ParamTraits.datatype, Integer.parseInt(types[i]));
+                        metadataParameters.put(names[i], traitMap);
+                    }
+                }
+            }
+        }
+        if (metadataParameters.containsKey("transformRunId"))
+        {
+            return true;
+        }
+        else
+        {
+            log.error("Error: sproc must have transformRunId input parameter");
+            return false;
+        }
+    }
+
+
+    // TODO move to dialect
+    private boolean getParametersFromDbMetadataMSSQL() throws SQLException
     {
         try (Connection conn = scope.getConnection();
              ResultSet rs = conn.getMetaData().getProcedureColumns(scope.getDatabaseName(),procSchema, procName, null);)
@@ -229,10 +295,6 @@ public class StoredProcedureStep extends TransformTask
                 }
             }
         }
-        catch (SQLException e)
-        {
-            throw new SQLException(e);
-        }
 
         if (metadataParameters.containsKey("@transformRunId"))
         {
@@ -244,6 +306,7 @@ public class StoredProcedureStep extends TransformTask
             return false;
         }
     }
+
 
     private void seedParameterValues()
     {
