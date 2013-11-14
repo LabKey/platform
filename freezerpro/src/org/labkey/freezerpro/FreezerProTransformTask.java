@@ -1,6 +1,14 @@
 package org.labkey.freezerpro;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.jmock.Expectations;
+import org.jmock.Mockery;
+import org.jmock.lib.legacy.ClassImposteriser;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.pipeline.AbstractSpecimenTransformTask;
@@ -15,6 +23,7 @@ import org.labkey.api.util.PageFlowUtil;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -84,6 +93,7 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
                 throw new PipelineJobException("Unable to create a data loader factory for the file: " + input.getName());
 
             DataLoader loader = df.createLoader(input, true, _job.getContainer());
+            loader.setInferTypes(false);
             List<Map<String, Object>> inputRows = loader.load();
             List<Map<String, Object>> outputRows = transformRows(inputRows);
 
@@ -110,6 +120,7 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
     }
 
     @Override
+    @Nullable
     protected Map<String, Object> transformRow(Map<String, Object> inputRow, int rowIndex, Map<String, Integer> labIds, Map<String, Integer> primaryIds, Map<String, Integer> derivativeIds)
     {
         Map<String, Object> outputRow = new CaseInsensitiveHashMap<>(inputRow);
@@ -142,14 +153,31 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
         }
 
         outputRow.put("record_id", rowIndex);
-        String ptid = removeNonNullValue(outputRow, "patient id");
+        String ptid = getSubjectID(outputRow);
+        if (ptid == null)
+        {
+            warn("Skipping data row could not find 'patient id' value, row number " + rowIndex);
+            return null;
+        }
         outputRow.put("ptid", ptid);
+
         String barcode = removeNonNullValue(outputRow, "barcode");
+        if (StringUtils.isEmpty(barcode))
+        {
+            warn("Skipping data row could not find 'barcode' value, row number " + rowIndex);
+            return null;
+        }
         outputRow.put("global_unique_specimen_id", barcode);
+
         String uid = removeNonNullValue(outputRow, "uid");
+        if (StringUtils.isEmpty(uid))
+        {
+            warn("Skipping data row could not find 'uid' value, row number " + rowIndex);
+            return null;
+        }
         outputRow.put("unique_specimen_id", uid);
 
-        Date collectionDate = parseDateTime("date of draw", "time of draw", outputRow);
+        Date collectionDate = getDrawDate(outputRow);
         outputRow.put("draw_timestamp", collectionDate);
         outputRow.put("visit_value", "-1");
 
@@ -185,9 +213,30 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
 
         String comments = removeNonNullValue(outputRow, "comments");
         outputRow.put("comments", comments);
-        outputRow.put("quality_comments", comments);
 
         return outputRow;
+    }
+
+    @Nullable
+    private String getSubjectID(Map<String, Object> row)
+    {
+        if (row.containsKey("patient id"))
+            return removeNonNullValue(row, "patient id");
+        else if (row.containsKey("name"))
+            return removeNonNullValue(row, "name");
+
+        return null;
+    }
+
+    @Nullable
+    private Date getDrawDate(Map<String, Object> row)
+    {
+        if (row.containsKey("date of draw") && row.containsKey("time of draw"))
+            return parseDateTime("date of draw", "time of draw", row);
+        else if (row.containsKey("created at"))
+            return parseDate("created at", row);
+
+        return null;
     }
 
     @Override
@@ -218,5 +267,89 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
     protected Map<String, Integer> getAdditiveIds()
     {
         return Collections.emptyMap();
+    }
+
+    public static class TestCase extends Assert
+    {
+        private Mockery _context;
+        private PipelineJob _job;
+        private FreezerProTransformTask _task;
+
+        @Before
+        public void setUp()
+        {
+            _context = new Mockery();
+            _context.setImposteriser(ClassImposteriser.INSTANCE);
+            _job = _context.mock(PipelineJob.class);
+            _task = new FreezerProTransformTask(_job);
+        }
+
+        @Test
+        public void testDeduplication() throws IOException
+        {
+            ArrayListMap<String,Object> template = new ArrayListMap<>();
+
+            List<Map<String, Object>> inputRows = new ArrayList<>();
+            ArrayListMap<String, Object> row1 = new ArrayListMap(template.getFindMap());
+            row1.put("patient id", "ptid1");
+            row1.put("uid", "1111");
+            row1.put("barcode", "barcode-1");
+            row1.put("sample type", "PBMC");
+            inputRows.add(row1);
+            ArrayListMap<String, Object> row2 = new ArrayListMap(template.getFindMap());
+            row2.putAll(row1);
+            inputRows.add(row2);
+            ArrayListMap<String, Object> row3 = new ArrayListMap(template.getFindMap());
+            row3.putAll(row1);
+            row3.put("patient id", "ptid2");
+            inputRows.add(row3);
+
+            List<Map<String, Object>> outputRows = _task.transformRows(inputRows);
+            assertEquals(2, outputRows.size());
+        }
+
+        @Test
+        public void testPrimaryAndDerivatives() throws IOException
+        {
+            ArrayListMap<String,Object> template = new ArrayListMap<>();
+            List<Map<String, Object>> inputRows = new ArrayList<>();
+
+            ArrayListMap<String,Object> row1 = new ArrayListMap<>(template.getFindMap());
+            row1.put("patient id", "ptid1");
+            row1.put("uid", "1111");
+            row1.put("barcode", "barcode-1");
+            row1.put("sample type", "PBMC");
+            inputRows.add(row1);
+
+            ArrayListMap<String,Object> row2 = new ArrayListMap<>(template.getFindMap());
+            row2.putAll(row1);
+            row2.put("sample type", "H-PBMC");
+            inputRows.add(row2);
+
+            ArrayListMap<String,Object> row3 = new ArrayListMap<>(template.getFindMap());
+            row3.putAll(row1);
+            row3.put("sample type", "Urine");
+            inputRows.add(row3);
+
+            ArrayListMap<String,Object> row4 = new ArrayListMap<>(template.getFindMap());
+            row4.putAll(row3);
+            row4.put("sample type", "Serum");
+            inputRows.add(row4);
+
+            List<Map<String, Object>> outputRows = _task.transformRows(inputRows);
+
+            Map<String, Integer> primaryIds = _task.getPrimaryIds();
+            Map<String, Integer> derivativeIds = _task.getDerivativeIds();
+
+            assertEquals(4, outputRows.size());
+            assertEquals(primaryIds.get("Blood"), outputRows.get(0).get("primary_specimen_type_id"));
+            assertEquals(derivativeIds.get("PBMC"), outputRows.get(0).get("derivative_type_id"));
+            assertEquals(primaryIds.get("Blood"), outputRows.get(1).get("primary_specimen_type_id"));
+            assertEquals(derivativeIds.get("H-PBMC"), outputRows.get(1).get("derivative_type_id"));
+            assertEquals(primaryIds.get("Urine"), outputRows.get(2).get("primary_specimen_type_id"));
+            assertEquals(derivativeIds.get("Urine"), outputRows.get(2).get("derivative_type_id"));
+            assertEquals(primaryIds.get("Serum"), outputRows.get(3).get("primary_specimen_type_id"));
+            assertEquals(derivativeIds.get("Serum"), outputRows.get(3).get("derivative_type_id"));
+        }
     }
 }

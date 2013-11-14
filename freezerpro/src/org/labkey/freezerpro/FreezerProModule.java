@@ -25,6 +25,8 @@ import org.labkey.api.view.WebPartFactory;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class FreezerProModule extends DefaultModule
 {
@@ -70,5 +72,15 @@ public class FreezerProModule extends DefaultModule
     public Collection<String> getSummary(Container c)
     {
         return Collections.emptyList();
+    }
+
+    @NotNull
+    @Override
+    public Set<Class> getUnitTests()
+    {
+        Set<Class> set = new HashSet<>();
+        set.add(FreezerProTransformTask.TestCase.class);
+
+        return set;
     }
 }
