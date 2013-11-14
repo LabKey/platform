@@ -912,7 +912,6 @@ public class DbSchema
     public static String checkAllContainerCols(User user, boolean bfix) throws SQLException
     {
         List<Module> modules = ModuleLoader.getInstance().getModules();
-        ResultSet rs1 = null;
         Integer lastRowId = 0;
         DbSchema coreSchema = CoreSchema.getInstance().getSchema();
 
@@ -934,89 +933,88 @@ public class DbSchema
                         "\tModuleName VARCHAR(50) NOT NULL,\n" +
                         "\tOrphanedContainer VARCHAR(60) NULL) ;\n\n";
 
-        StringBuilder sbOut = new StringBuilder();
+        final StringBuilder sbOut = new StringBuilder();
 
-        try
+        SQLFragment sbCheck = new SQLFragment();
+
+        for (Module module : modules)
         {
-            SQLFragment sbCheck = new SQLFragment();
+            Set<DbSchema> schemas = module.getSchemasToTest();
 
-            for (Module module : modules)
+            for (DbSchema schema : schemas)
+                lastRowId = checkContainerColumns(schema.getDisplayName(), sbCheck, tempTableName, module.getName(), lastRowId);
+        }
+
+        tTemplate.track();
+        final SqlExecutor executor = new SqlExecutor(coreSchema);
+        executor.execute(createTempTableSql);
+        executor.execute(sbCheck);
+
+        if (bfix)
+        {
+            // create a recovered objects project
+            Random random = new Random();
+            int r = random.nextInt();
+            String cName = "/_RecoveredObjects" +  String.valueOf(r).substring(1,5);
+
+            final Container recovered = ContainerManager.ensureContainer(cName);
+            final Set<Module> modulesOfOrphans = new HashSet<>();
+
+            new SqlSelector(coreSchema, "SELECT TableName, OrphanedContainer, ModuleName FROM " + tempTableName
+                    + " WHERE OrphanedContainer IS NOT NULL GROUP BY TableName, OrphanedContainer, ModuleName").forEach(new Selector.ForEachBlock<ResultSet>()
             {
-                Set<DbSchema> schemas = module.getSchemasToTest();
-
-                for (DbSchema schema : schemas)
-                    lastRowId = checkContainerColumns(schema.getDisplayName(), sbCheck, tempTableName, module.getName(), lastRowId);
-            }
-
-            tTemplate.track();
-            new SqlExecutor(coreSchema).execute(createTempTableSql);
-            new SqlExecutor(coreSchema).execute(sbCheck);
-
-            if (bfix)
-            {
-                // create a recovered objects project
-                Random random = new Random();
-                int r = random.nextInt();
-                String cName = "/_RecoveredObjects" +  String.valueOf(r).substring(1,5);
-                Container recovered = ContainerManager.ensureContainer(cName);
-
-                Set<Module> modulesOfOrphans = new HashSet<>();
-
-                rs1 = Table.executeQuery(coreSchema, "SELECT TableName, OrphanedContainer, ModuleName FROM " + tempTableName
-                        + " WHERE OrphanedContainer IS NOT NULL GROUP BY TableName, OrphanedContainer, ModuleName", new Object[]{});
-
-                while (rs1.next())
+                @Override
+                public void exec(ResultSet rs) throws SQLException
                 {
-                    modulesOfOrphans.add(ModuleLoader.getInstance().getModule(rs1.getString(3)));
-                    String sql = "UPDATE " + rs1.getString(1) + " SET Container = ? WHERE Container = ?";
+                    modulesOfOrphans.add(ModuleLoader.getInstance().getModule(rs.getString(3)));
+                    String sql = "UPDATE " + rs.getString(1) + " SET Container = ? WHERE Container = ?";
 
                     try
                     {
-                        Table.execute(coreSchema, sql, recovered.getId(), rs1.getString(2));
+                        executor.execute(sql, recovered.getId(), rs.getString(2));
+
                         //remove the ACLs that were there
                         SecurityPolicyManager.removeAll(recovered);
                         sbOut.append("<br> Recovered objects from table ");
-                        sbOut.append(rs1.getString(1));
+                        sbOut.append(rs.getString(1));
                         sbOut.append(" to project ");
                         sbOut.append(recovered.getName());
                     }
-                    catch (SQLException se)
+                    catch (Exception se)
                     {
                         sbOut.append("<br> Failed attempt to recover some objects from table ");
-                        sbOut.append(rs1.getString(1));
+                        sbOut.append(rs.getString(1));
                         sbOut.append(" due to error ").append(se.getMessage());
                         sbOut.append(". Retrying recovery may work.  ");
                     }
                 }
+            });
 
-                recovered.setActiveModules(modulesOfOrphans, user);
+            recovered.setActiveModules(modulesOfOrphans, user);
 
-                return sbOut.toString();
-            }
-            else
+            return sbOut.toString();
+        }
+        else
+        {
+            new SqlSelector(coreSchema, " SELECT * FROM " + tempTableName
+                    + " WHERE OrphanedContainer IS NOT NULL ORDER BY 1,3 ;").forEach(new Selector.ForEachBlock<ResultSet>()
             {
-                rs1 = Table.executeQuery(coreSchema, " SELECT * FROM " + tempTableName
-                        + " WHERE OrphanedContainer IS NOT NULL ORDER BY 1,3 ;", new Object[]{});
-
-                while (rs1.next())
+                @Override
+                public void exec(ResultSet rs) throws SQLException
                 {
                     sbOut.append("<br/>&nbsp;&nbsp;&nbsp;ERROR:  ");
-                    sbOut.append(rs1.getString(1));
+                    sbOut.append(rs.getString(1));
                     sbOut.append(" &nbsp;&nbsp;&nbsp;&nbsp; ");
-                    sbOut.append(rs1.getString(2));
+                    sbOut.append(rs.getString(2));
                     sbOut.append(" = ");
-                    sbOut.append(rs1.getString(3));
+                    sbOut.append(rs.getString(3));
                     sbOut.append("&nbsp;&nbsp;&nbsp;Container:  ");
-                    sbOut.append(rs1.getString(5));
+                    sbOut.append(rs.getString(5));
                     sbOut.append("\n");
                 }
+            });
 
-                return sbOut.toString();
-            }
-        }
-        finally
-        {
-            ResultSetUtil.close(rs1);
+            return sbOut.toString();
         }
     }
 }

@@ -321,32 +321,21 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
         String titleColumn = getTitleColumn();
 
-        ResultSet rs = null;
-        list = new NamedObjectList();
-        String sql = null;
+        final NamedObjectList newList = new NamedObjectList();
+        String sql = "SELECT " + pkColumnSelect + " AS VALUE, " + titleColumn + " AS TITLE FROM " + _selectName.getSQL() + " ORDER BY " + titleColumn;
 
-        try
+        new SqlSelector(_parentSchema, sql).forEach(new Selector.ForEachBlock<ResultSet>()
         {
-            sql = "SELECT " + pkColumnSelect + " AS VALUE, " + titleColumn + " AS TITLE FROM " + _selectName.getSQL() + " ORDER BY " + titleColumn;
-
-            rs = Table.executeQuery(_parentSchema, sql, null);
-
-            while (rs.next())
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
-                list.put(new SimpleNamedObject(rs.getString(1), rs.getString(2)));
+                newList.put(new SimpleNamedObject(rs.getString(1), rs.getString(2)));
             }
-        }
-        catch (SQLException e)
-        {
-            _log.error(this + "\n" + sql, e);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        });
 
-        DbCache.put(this, cacheKey, list, getSelectListTimeout());
-        return list;
+        DbCache.put(this, cacheKey, newList, getSelectListTimeout());
+
+        return newList;
     }
 
 

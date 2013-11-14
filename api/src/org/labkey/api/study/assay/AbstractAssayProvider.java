@@ -33,6 +33,7 @@ import org.labkey.api.data.Filter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -190,14 +191,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
             List<Map<String, Object>> dataMaps = new ArrayList<>();
             Container sourceContainer = null;
-            ResultSet rs = null;
-
             Map<Container, Set<Integer>> rowIdsByTargetContainer = new HashMap<>();
 
-            try
+            try (ResultSet rs = new SqlSelector(dataTable.getSchema(), sql).getResultSet())
             {
-                rs = Table.executeQuery(dataTable.getSchema(), sql);
-
                 while (rs.next())
                 {
                     AssayPublishKey publishKey = dataKeys.get(((Number)rowIdColumn.getValue(rs)).intValue());
@@ -257,10 +254,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 
                 return AssayPublishService.get().publishAssayData(user, sourceContainer, study, protocol.getName(), protocol,
                         dataMaps, getTableMetadata(protocol).getDatasetRowIdPropertyName(), errors);
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
             }
         }
         catch (SQLException e)

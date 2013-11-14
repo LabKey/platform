@@ -288,6 +288,18 @@ public class Table
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(clss);
     }
 
+    @Deprecated /** Use SqlSelector */
+    public static TableResultSet executeQuery(DbSchema schema, SQLFragment sql) throws SQLException
+    {
+        return new LegacySqlSelector(schema, sql).getResultSet();
+    }
+
+    @Deprecated /** Use SqlSelector */
+    public static TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters) throws SQLException
+    {
+        return new LegacySqlSelector(schema, fragment(sql, parameters)).getResultSet();
+    }
+
     // ================== These methods have been converted to Selector/Executor, but still have callers ==================
 
     // ===== TableSelector methods below =====
@@ -334,7 +346,7 @@ public class Table
 
     // ===== SqlExecutor methods below =====
 
-    // 136 usages
+    // 110 usages
     @Deprecated /** Use SqlExecutor */
     public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
     {
@@ -349,20 +361,6 @@ public class Table
     public static <K> K executeSingleton(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> c) throws SQLException
     {
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getObject(c);
-    }
-
-    // 48 usages
-    @Deprecated /** Use SqlSelector */
-    public static TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters) throws SQLException
-    {
-        return new LegacySqlSelector(schema, fragment(sql, parameters)).getResultSet();
-    }
-
-    // 29 usages
-    @Deprecated /** Use SqlSelector */
-    public static TableResultSet executeQuery(DbSchema schema, SQLFragment sql) throws SQLException
-    {
-        return new LegacySqlSelector(schema, sql).getResultSet();
     }
 
     // ================== These methods have not been converted to Selector/Executor ==================

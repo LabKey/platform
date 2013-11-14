@@ -21,9 +21,9 @@ import org.junit.Test;
 import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.util.ResultSetUtil;
 
@@ -152,12 +152,11 @@ public class ResultSetDataIterator extends AbstractDataIterator implements Scrol
         @Test
         public void test() throws Exception
         {
-            ResultSet rs = null;
-            try
+            DataIteratorContext context = new DataIteratorContext();
+            ResultSet rs = new SqlSelector(CoreSchema.getInstance().getSchema(), _testSql).getResultSet();
+
+            try (DataIterator it = ResultSetDataIterator.wrap(rs, context))
             {
-                DataIteratorContext context = new DataIteratorContext();
-                rs = Table.executeQuery(DbSchema.get("core"), _testSql, null);
-                DataIterator it = ResultSetDataIterator.wrap(rs, context);
                 assertEquals("a", it.getColumnInfo(1).getName());
                 assertEquals(JdbcType.INTEGER, it.getColumnInfo(1).getJdbcType());
                 assertEquals("b", it.getColumnInfo(2).getName());
@@ -175,14 +174,11 @@ public class ResultSetDataIterator extends AbstractDataIterator implements Scrol
                 assertEquals(2, it.get(1));
                 assertEquals("two", it.get(2));
                 assertFalse(it.next());
-                it.close();
-                assert(rs.isClosed());
             }
             finally
             {
-                ResultSetUtil.close(rs);
+                assert(rs.isClosed());  // DataIterator auto-close should close ResultSet
             }
         }
     }
-
 }

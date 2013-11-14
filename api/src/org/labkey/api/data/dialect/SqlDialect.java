@@ -881,9 +881,8 @@ public abstract class SqlDialect
      */
     public void dropSchema(DbSchema schema, String schemaName) throws SQLException
     {
-        Object[] parameters = new Object[]{"*", schemaName, "SCHEMA", null};
         String sql = schema.getSqlDialect().execute(CoreSchema.getInstance().getSchema(), "fn_dropifexists", "?, ?, ?, ?");
-        Table.execute(schema, sql, parameters);
+        new SqlExecutor(schema).execute(sql, "*", schemaName, "SCHEMA", null);
     }
 
     /**
@@ -896,9 +895,8 @@ public abstract class SqlDialect
      */
     public void dropIfExists(DbSchema schema, String objectName, String objectType, @Nullable String subObjectName) throws SQLException
     {
-        Object[] parameters = new Object[]{objectName, schema.getName(), objectType, subObjectName};
         String sql = schema.getSqlDialect().execute(CoreSchema.getInstance().getSchema(), "fn_dropifexists", "?, ?, ?, ?");
-        Table.execute(schema, sql, parameters);
+        new SqlExecutor(schema).execute(sql, objectName, schema.getName(), objectType, subObjectName);
     }
 
     /**

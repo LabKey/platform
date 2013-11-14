@@ -35,7 +35,8 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.Selector;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -663,14 +664,14 @@ public class StorageProvisioner
         }
     }
 
-    public static ProvisioningReport getProvisioningReport() throws SQLException
+    public static ProvisioningReport getProvisioningReport()
     {
         return getProvisioningReport(null);
     }
 
-    public static ProvisioningReport getProvisioningReport(@Nullable String domainuri) throws SQLException
+    public static ProvisioningReport getProvisioningReport(@Nullable String domainuri)
     {
-        ProvisioningReport report = new ProvisioningReport();
+        final ProvisioningReport report = new ProvisioningReport();
         SQLFragment sql = new SQLFragment("SELECT domainid, name, storageschemaname, storagetablename FROM " +
                 OntologyManager.getTinfoDomainDescriptor().getFromSQL("dd"));
         if (null != domainuri)
@@ -681,7 +682,7 @@ public class StorageProvisioner
 
         TreeSet<Path> schemaNames = new TreeSet<>();
         Map<Path, Set<String>> nonProvisionedTableMap = new TreeMap<>();
-        TreeSet<Path> provisionedTables = new TreeSet<>();
+        final TreeSet<Path> provisionedTables = new TreeSet<>();
         if (null == domainuri)
         {
             for (DomainKind dk : PropertyService.get().getDomainKinds())
@@ -707,9 +708,10 @@ public class StorageProvisioner
             }
         }
 
-        try (ResultSet rs = Table.executeQuery(OntologyManager.getExpSchema(), sql))
+        new SqlSelector(OntologyManager.getExpSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
         {
-            while (rs.next())
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 ProvisioningReport.DomainReport domain = new ProvisioningReport.DomainReport();
                 domain.setId(rs.getInt("domainid"));
@@ -727,8 +729,8 @@ public class StorageProvisioner
                     provisionedTables.remove(new Path(domain.getSchemaName(), domain.getTableName()));
                 }
             }
-        }
-        
+        });
+
         // TODO: Switch to normal schema/table cache (now that we actually use a cache for them)
         Map<String,DbSchema> schemas = new HashMap<>();
 

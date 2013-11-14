@@ -41,6 +41,7 @@ import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
@@ -118,7 +119,7 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
     }
 
     @Override
-    public void renderImage(ViewContext context) throws Exception
+    public void renderImage(ViewContext context) throws IOException
     {
         List<String> errors = new ArrayList<>();
         JFreeChart chart = _createChart(context, errors, null);
