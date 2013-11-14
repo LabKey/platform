@@ -148,8 +148,7 @@ public class TempTableTracker extends WeakReference<Object>
         boolean success = false;
         try
         {
-            // if we use Table.execute() it will log errors (HMMM, need to fix that...)
-            //Table.execute(schema, "DROP TABLE " + tableName, null);
+            // Using direct JDBC to avoid logging errors. However, SqlExecutor provides a way to suppress logging.
             conn = schema.getScope().getConnection();
             assert MemTracker.remove(conn);         // we're a bg thread, so we can cause memTracker.view to fail
             stmt = conn.createStatement();

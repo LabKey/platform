@@ -264,7 +264,7 @@ public class DbSequenceManager
         sql.add(sequence.getRowId());
 
         // We don't care about the ResultSet(s) that are returned from the statement, which means we execute single- and
-        // multi-line statemnets the same way, which means we can ignore the return value
+        // multi-line statements the same way, which means we can ignore the return value
         addValueSql(sql, tinfo, sequence);
 
         sql.append(" < ?");

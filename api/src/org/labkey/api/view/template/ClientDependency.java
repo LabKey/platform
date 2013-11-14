@@ -28,6 +28,8 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.clientLibrary.xml.DependenciesType;
@@ -123,8 +125,8 @@ public class ClientDependency
             _mode = mode;
 
         _filePath = filePath;
-
         _primaryType = TYPE.fromPath(_filePath);
+
         if (_primaryType == null)
         {
             _log.warn("Client dependency type not recognized: " + filePath);
@@ -138,7 +140,7 @@ public class ClientDependency
             if (m == null)
             {
                 //TODO: throw exception??
-                _log.error("Module not found, skipping: " + moduleName);
+                logError("Module \"" + moduleName + "\" not found, skipping script file \"" + filePath + "\".");
             }
             else
                 _module = m;
@@ -148,11 +150,13 @@ public class ClientDependency
             WebdavResource r = WebdavService.get().getRootResolver().lookup(_filePath);
             //TODO: can we connect this resource back to a module, and load that module's context by default?--
 
-            if(r == null || !r.exists())
+            if (r == null || !r.exists())
             {
                 // Allows you to run in dev mode without having the concatenated scripts built
                 if (!AppProps.getInstance().isDevMode() || !_mode.equals(ModeTypeEnum.PRODUCTION))
-                    _log.error("Script file not found, skipping: " + filePath);
+                {
+                    logError("Script file \"" + filePath + "\" not found, skipping.");
+                }
             }
             else
             {
@@ -161,6 +165,13 @@ public class ClientDependency
                 processScript(_filePath);
             }
         }
+    }
+
+    private void logError(String message)
+    {
+        URLHelper url = HttpView.getContextURLHelper();
+
+        _log.error(message + (null != url ? " URL: " + url.getLocalURIString() : ""));
     }
 
     private ClientDependency(Module m)

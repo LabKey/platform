@@ -70,7 +70,7 @@ public class MultiPhaseCPUTimer<K extends Enum<K>>
             // Return stats for the phases we've seen, but in order of enum values
             for (K value : _values)
             {
-                MutableLong nanos =  _accumulationMap.get(value);
+                MutableLong nanos = _accumulationMap.get(value);
 
                 if (null != nanos)
                 {
