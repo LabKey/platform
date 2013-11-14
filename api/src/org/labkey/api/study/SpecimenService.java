@@ -76,6 +76,10 @@ public class SpecimenService
         void registerSpecimenImportStrategyFactory(SpecimenImportStrategyFactory factory);
 
         Collection<SpecimenImportStrategyFactory> getSpecimenImportStrategyFactories();
+
+        void registerSpecimenTransform(SpecimenTransform transform);
+
+        Collection<SpecimenTransform> getSpecimenTransforms(Container container);
     }
 
     public static void register(Service serviceImpl)
