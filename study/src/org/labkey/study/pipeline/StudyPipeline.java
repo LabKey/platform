@@ -22,6 +22,8 @@ import org.labkey.api.pipeline.PipelineAction;
 import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
@@ -52,7 +54,7 @@ public class StudyPipeline extends PipelineProvider
     }
 
 
-    public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory, boolean includeAll)
+    public void updateFileProperties(final ViewContext context, PipeRoot pr, PipelineDirectory directory, boolean includeAll)
     {
         if (!context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
             return;
@@ -77,7 +79,17 @@ public class StudyPipeline extends PipelineProvider
             {
                 public boolean accept(File f)
                 {
-                    return SpecimenBatch.ARCHIVE_FILE_TYPE.isType(f) || SampleMindedTransformTask.SAMPLE_MINDED_FILE_TYPE.isType(f);
+                    if (SpecimenBatch.ARCHIVE_FILE_TYPE.isType(f))
+                        return true;
+                    else
+                    {
+                        for (SpecimenTransform transform : SpecimenService.get().getSpecimenTransforms(context.getContainer()))
+                        {
+                            if (transform.getFileType().isType(f))
+                                return true;
+                        }
+                    }
+                    return false;
                 }
             });
 

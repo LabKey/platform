@@ -16,6 +16,10 @@
 
 package org.labkey.study.pipeline;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.SpecimenTransform;
+
 import java.util.Date;
 import java.util.List;
 import java.util.ArrayList;
@@ -45,32 +49,35 @@ public class SpecimenArchive
     }
 
     // Move to ZipUtil?
-    public List<EntryDescription> getEntryDescriptions() throws IOException
+    public List<EntryDescription> getEntryDescriptions(Container container) throws IOException
     {
         List<SpecimenArchive.EntryDescription> entryList = new ArrayList<>();
-        if (SampleMindedTransformTask.SAMPLE_MINDED_FILE_TYPE.isType(_definitionFile))
+        for (SpecimenTransform transform : SpecimenService.get().getSpecimenTransforms(container))
         {
-            entryList.add(new EntryDescription(_definitionFile.getName(), _definitionFile.length(), new Date(_definitionFile.lastModified())));
+            if (transform.getFileType().isType(_definitionFile))
+            {
+                entryList.add(new EntryDescription(_definitionFile.getName(), _definitionFile.length(), new Date(_definitionFile.lastModified())));
+                return entryList;
+            }
         }
-        else
+
+        // standard non-transformed specimen archive
+        ZipFile zip = null;
+        try
         {
-            ZipFile zip = null;
-            try
+            zip = new ZipFile(_definitionFile);
+            Enumeration<? extends ZipEntry> entries = zip.entries();
+            while (entries.hasMoreElements())
             {
-                zip = new ZipFile(_definitionFile);
-                Enumeration<? extends ZipEntry> entries = zip.entries();
-                while (entries.hasMoreElements())
-                {
-                    ZipEntry entry = entries.nextElement();
-                    if (entry.isDirectory())
-                        continue;
-                    entryList.add(new EntryDescription(entry.getName(), entry.getSize(), new Date(entry.getTime())));
-                }
+                ZipEntry entry = entries.nextElement();
+                if (entry.isDirectory())
+                    continue;
+                entryList.add(new EntryDescription(entry.getName(), entry.getSize(), new Date(entry.getTime())));
             }
-            finally
-            {
-                if (zip != null) try { zip.close(); } catch (IOException e) {}
-            }
+        }
+        finally
+        {
+            if (zip != null) try { zip.close(); } catch (IOException e) {}
         }
         return entryList;
     }

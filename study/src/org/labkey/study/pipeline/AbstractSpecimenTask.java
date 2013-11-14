@@ -35,6 +35,8 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
+import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DateUtil;
@@ -103,19 +105,18 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
             if (inputFile != null)
             {
                 // Might need to transform to a file type that we know how to import
-                File specimenArchive;
-                isSampleMinded = SampleMindedTransformTask.SAMPLE_MINDED_FILE_TYPE.isType(inputFile);
-                if (isSampleMinded)
+
+                File specimenArchive = inputFile;
+                for (SpecimenTransform transformer : SpecimenService.get().getSpecimenTransforms(ctx.getContainer()))
                 {
-                    if (job != null)
-                        job.setStatus("TRANSFORMING SAMPLEMINDED DATA");
-                    specimenArchive = SpecimenBatch.ARCHIVE_FILE_TYPE.getFile(inputFile.getParentFile(), SampleMindedTransformTask.SAMPLE_MINDED_FILE_TYPE.getBaseName(inputFile));
-                    SampleMindedTransformTask transformer = new SampleMindedTransformTask(job);
-                    transformer.transform(inputFile, specimenArchive);
-                }
-                else
-                {
-                    specimenArchive = inputFile;
+                    if (transformer.getFileType().isType(inputFile))
+                    {
+                        if (job != null)
+                            job.setStatus("TRANSFORMING " + transformer.getName() + " DATA");
+                        specimenArchive = SpecimenBatch.ARCHIVE_FILE_TYPE.getFile(inputFile.getParentFile(), transformer.getFileType().getBaseName(inputFile));
+                        transformer.transform(job, inputFile, specimenArchive);
+                        break;
+                    }
                 }
 
                 if (null == specimenArchive)

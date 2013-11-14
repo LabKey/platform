@@ -29,6 +29,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenImportStrategyFactory;
 import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -39,6 +40,7 @@ import org.labkey.study.model.Specimen;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -56,6 +58,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class SpecimenServiceImpl implements SpecimenService.Service
 {
     private final List<SpecimenImportStrategyFactory> _importStrategyFactories = new CopyOnWriteArrayList<>();
+    private final List<SpecimenTransform> _specimenTransforms = new CopyOnWriteArrayList<>();
 
     private class StudyParticipantVisit implements ParticipantVisit
     {
@@ -264,5 +267,24 @@ public class SpecimenServiceImpl implements SpecimenService.Service
     public Collection<SpecimenImportStrategyFactory> getSpecimenImportStrategyFactories()
     {
         return _importStrategyFactories;
+    }
+
+    @Override
+    public void registerSpecimenTransform(SpecimenTransform transform)
+    {
+        _specimenTransforms.add(transform);
+    }
+
+    @Override
+    public Collection<SpecimenTransform> getSpecimenTransforms(Container container)
+    {
+        List<SpecimenTransform> transforms = new ArrayList<>();
+
+        for (SpecimenTransform transform : _specimenTransforms)
+        {
+            if (transform.isEnabled(container))
+                transforms.add(transform);
+        }
+        return transforms;
     }
 }

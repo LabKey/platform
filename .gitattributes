@@ -1447,6 +1447,12 @@ filecontent/webapp/PipelineAction.js -text
 filecontent/webapp/Reorderer.js -text
 filecontent/webapp/ToolbarDroppable.js -text
 filecontent/webapp/ToolbarReorderer.js -text
+freezerpro/FreezerPro.iml -text
+freezerpro/module.properties -text
+freezerpro/src/org/labkey/freezerpro/FreezerProController.java -text
+freezerpro/src/org/labkey/freezerpro/FreezerProModule.java -text
+freezerpro/src/org/labkey/freezerpro/FreezerProTransform.java -text
+freezerpro/src/org/labkey/freezerpro/FreezerProTransformTask.java -text
 issues/module.properties -text
 issues/resources/schemas/dbscripts/postgresql/issues-0.00-10.30.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-11.20-11.30.sql -text
@@ -3381,6 +3387,7 @@ study/src/org/labkey/study/pipeline/DatasetFileReader.java -text
 study/src/org/labkey/study/pipeline/DatasetImportRunnable.java -text
 study/src/org/labkey/study/pipeline/DatasetJobSupport.java -text
 study/src/org/labkey/study/pipeline/ParticipantImportRunnable.java -text
+study/src/org/labkey/study/pipeline/SampleMindedTransform.java -text
 study/src/org/labkey/study/pipeline/SampleMindedTransformTask.java -text
 study/src/org/labkey/study/pipeline/SpecimenArchive.java -text
 study/src/org/labkey/study/pipeline/SpecimenBatch.java -text

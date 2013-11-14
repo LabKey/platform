@@ -44,7 +44,7 @@
         <tr><th>File</th><th>Size</th><th>Modified</th></tr>
         <%
             int row = 0;
-            for (SpecimenArchive.EntryDescription entry : archive.getEntryDescriptions())
+            for (SpecimenArchive.EntryDescription entry : archive.getEntryDescriptions(getContainer()))
             {
         %>
             <tr class="<%= h(row++ % 2 == 1 ? "labkey-row" : "labkey-alternate-row") %>">

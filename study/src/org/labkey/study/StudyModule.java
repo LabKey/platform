@@ -132,6 +132,7 @@ import org.labkey.study.model.StudyLsidHandler;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.TestDatasetDomainKind;
 import org.labkey.study.model.VisitDatasetDomainKind;
+import org.labkey.study.pipeline.SampleMindedTransform;
 import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.plate.PlateManager;
@@ -349,6 +350,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         AssayPublishService.register(new AssayPublishManager());
         SpecimenService.register(new SpecimenServiceImpl());
         SpecimenService.get().registerSpecimenImportStrategyFactory(new DefaultSpecimenImportStrategyFactory());
+        SpecimenService.get().registerSpecimenTransform(new SampleMindedTransform());
+
         LsidManager.get().registerHandler("Study", new StudyLsidHandler());
         WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
         if(null != wikiService)

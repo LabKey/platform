@@ -16,7 +16,6 @@
 
 package org.labkey.study.pipeline;
 
-import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.jmock.Expectations;
@@ -33,7 +32,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
@@ -42,6 +40,7 @@ import org.labkey.api.etl.DataIteratorUtil;
 import org.labkey.api.etl.ListofMapsDataIterator;
 import org.labkey.api.etl.LoggingDataIterator;
 import org.labkey.api.etl.MapDataIterator;
+import org.labkey.api.pipeline.AbstractSpecimenTransformTask;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.query.BatchValidationException;
@@ -49,9 +48,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileType;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.model.SequenceNumImportHelper;
@@ -63,7 +60,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.io.StringReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -71,13 +67,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /*
@@ -86,7 +79,7 @@ import java.util.zip.ZipOutputStream;
 * User: jeckels
 */
 
-public class SampleMindedTransformTask
+public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
 {
     public static final FileType SAMPLE_MINDED_FILE_TYPE = new FileType(".xlsx");
     private static final String INVALID_SUFFIX = "-invalid";
@@ -140,8 +133,6 @@ public class SampleMindedTransformTask
         STANDARD_DERIVATIVE_TYPE_IDS = Collections.unmodifiableMap(derivativeTypes);
     }
 
-
-    private final PipelineJob _job;
     private final Map<String, Integer> _labIds = new LinkedHashMap<>();
     private final Map<String, Integer> _primaryIds = new LinkedHashMap<>(STANDARD_PRIMARY_TYPE_IDS);
     private final Map<String, Integer> _derivativeIds = new LinkedHashMap<>(STANDARD_DERIVATIVE_TYPE_IDS);
@@ -150,7 +141,7 @@ public class SampleMindedTransformTask
 
     public SampleMindedTransformTask(@Nullable PipelineJob job)
     {
-        _job = job;
+        super(job);
     }
 
 
@@ -159,52 +150,39 @@ public class SampleMindedTransformTask
         _validate = b;
     }
 
-    public Map<String,Integer> getLabIds()
+    @Override
+    protected Map<String,Integer> getLabIds()
     {
         return _labIds;
     }
 
 
-    public Map<String,Integer> getPrimaryIds()
+    @Override
+    protected Map<String,Integer> getPrimaryIds()
     {
         return _primaryIds;
     }
 
 
-    public Map<String,Integer> getDerivativeIds()
+    @Override
+    protected Map<String,Integer> getDerivativeIds()
     {
         return _derivativeIds;
     }
 
-
-    private void debug(String msg)
+    @Override
+    protected Map<String,Integer> getAdditiveIds()
     {
-        if (null != _job)
-            _job.debug(msg);
+        return Collections.emptyMap();
     }
 
-
-    private void info(String msg)
+    @Override
+    protected Set<String> getIgnoredHashColumns()
     {
-        if (null != _job)
-            _job.info(msg);
+        return IGNORED_HASH_COLUMNS;
     }
 
-
-    private void warn(String msg)
-    {
-        if (null != _job)
-            _job.warn(msg);
-    }
-
-    private void error(String msg)
-    {
-        if (null != _job)
-            _job.error(msg);
-    }
-
-
-
+    @Override
     public void transform(File input, File output) throws PipelineJobException
     {
         info("Starting to transform input file " + input + " to output file " + output);
@@ -252,78 +230,8 @@ public class SampleMindedTransformTask
     }
 
 
-    private List<Map<String, Object>> transformRows
-    (
-            List<Map<String, Object>> inputRows
-    )
-            throws IOException
-    {
-        List<Map<String, Object>> outputRows = new ArrayList<>(inputRows.size());
-        Set<String> hashes = new HashSet<>();
-        int rowIndex = 0;
-        
-        // Crank through all of the input rows
-        for (Iterator<Map<String, Object>> iter = inputRows.iterator(); iter.hasNext(); )
-        {
-            Map<String, Object> inputRow = iter.next();
-            // Remove it from the input list immediately to make it eligible for garbage collection
-            // once we're done processing it
-            iter.remove();
-            rowIndex++;
-            
-            // Check if it's a duplicate row
-            if (hashes.add(hashRow(inputRow)))
-            {
-                Map<String, Object> outputRow = transformRow(inputRow, rowIndex, _labIds, _primaryIds, _derivativeIds);
-                if (outputRow != null)
-                {
-                    outputRows.add(outputRow);
-                }
-            }
-        }
-
-        return outputRows;
-    }
-
-
-    private void toDate(String key, Map<String,Object> row)
-    {
-        Object d = row.get(key);
-        if (null == d || d instanceof Date)
-            return;
-        try
-        {
-            Date date = new Date(DateUtil.parseDateTime(String.valueOf(d)));
-            row.put(key,date);
-        }
-        catch (ConversionException x)
-        {
-            /* */
-        }
-    }
-
-
-    private void toInt(String key, Map<String,Object> row)
-    {
-        Object i = row.get(key);
-        if (null == i || i instanceof Integer)
-            return;
-        try
-        {
-            if (i instanceof Number)
-                i = ((Number)i).intValue();
-            else
-                i = Integer.parseInt(String.valueOf(i));
-            row.put(key,i);
-        }
-        catch (NumberFormatException x)
-        {
-            /* */
-        }
-    }
-
-
-    private Map<String, Object> transformRow(Map<String, Object> inputRow, int rowIndex, Map<String, Integer> labIds, Map<String, Integer> primaryIds, Map<String, Integer> derivativeIds)
+    @Override
+    protected Map<String, Object> transformRow(Map<String, Object> inputRow, int rowIndex, Map<String, Integer> labIds, Map<String, Integer> primaryIds, Map<String, Integer> derivativeIds)
     {
         Map<String, Object> outputRow = new CaseInsensitiveHashMap<>(inputRow);
         inputRow = null;
@@ -634,18 +542,6 @@ public class SampleMindedTransformTask
     }
 
 
-    private String getNonNullValue(Map<String, Object> inputRow, String name)
-    {
-        return inputRow.get(name) == null ? "" : inputRow.get(name).toString();
-    }
-
-    private String removeNonNullValue(Map<String, Object> inputRow, String name)
-    {
-        Object o = inputRow.remove(name);
-        return o == null ? "" : o.toString();
-    }
-
-
     /**
      * Parse a TSV file with lab names and IDs. First column is assumed to be lab ID. Second column is the name.
      * Assume no other columns. 
@@ -672,126 +568,6 @@ public class SampleMindedTransformTask
                 catch (NumberFormatException ignored) {}
             }
         }
-    }
-
-
-    private void writeTSV(ZipOutputStream zOut, List<Map<String, Object>> outputRows, String baseName) throws IOException
-    {
-        // Add a new file to the ZIP
-        zOut.putNextEntry(new ZipEntry(baseName + ".tsv"));
-        PrintWriter writer = new PrintWriter(zOut);
-        try
-        {
-            TSVMapWriter tsvWriter = new TSVMapWriter(outputRows);
-            // Write a comment into the header
-            tsvWriter.setFileHeader(Collections.singletonList("# " + baseName));
-            // Set the writer separately from the call to write() so that the underlying stream doesn't get closed
-            // when it's finished writing the TSV - we need to keep writing to the ZIP
-            if (!outputRows.isEmpty())
-            {
-                tsvWriter.setPrintWriter(writer);
-                tsvWriter.write();
-            }
-        }
-        finally
-        {
-            writer.flush();
-            zOut.closeEntry();
-        }
-    }
-
-
-    private String hashRow(Map<String, Object> inputRow) throws IOException
-    {
-        // Check that Map is a type that has consistent key ordering
-        if (!(inputRow instanceof ArrayListMap))
-            throw new IllegalStateException();
-
-        StringBuilder sb = new StringBuilder();
-        for (String key : inputRow.keySet())
-        {
-            if (!IGNORED_HASH_COLUMNS.contains(key))
-            {
-                sb.append(key);
-                sb.append(": ");
-                sb.append(String.valueOf(inputRow.get(key)));
-                sb.append(";");
-            }
-        }
-
-        // Hash the row to reduce the size in memory
-        return FileUtil.sha1sum(sb.toString().getBytes());
-    }
-
-
-    /** Write out an empty additives.tsv, since we aren't using them */
-    private void writeAdditives(ZipOutputStream file) throws IOException
-    {
-        file.putNextEntry(new ZipEntry("additives.tsv"));
-
-        try (PrintWriter writer = new PrintWriter(file))
-        {
-            writer.write("# additives\n");
-            writer.write("additive_id\tldms_additive_code\tlabware_additive_code\tadditive\n");
-        }
-    }
-
-    private void writePrimaries(Map<String, Integer> primaryIds, ZipOutputStream file) throws IOException
-    {
-        List<Map<String, Object>> rows = new ArrayList<>();
-        for (Map.Entry<String, Integer> entry : primaryIds.entrySet())
-        {
-            Map<String, Object> row = new HashMap<>();
-            // We know the id and the type name
-            row.put("primary_type_id", entry.getValue());
-            row.put("primary_type", entry.getKey());
-            // All the other columns are blank
-            row.put("primary_type_ldms_code", null);
-            row.put("primary_type_labware_code", null);
-            rows.add(row);
-        }
-
-        writeTSV(file, rows, "primary_types");
-    }
-
-    private void writeDerivatives(Map<String, Integer> derivatives, ZipOutputStream file) throws IOException
-    {
-        List<Map<String, Object>> rows = new ArrayList<>();
-        for (Map.Entry<String, Integer> entry : derivatives.entrySet())
-        {
-            Map<String, Object> row = new HashMap<>();
-            // We know the id and the name
-            row.put("derivative_id", entry.getValue());
-            row.put("derivative", entry.getKey());
-            // Everything else is left blank
-            row.put("ldms_derivative_code", null);
-            row.put("labware_derivative_code", null);
-            rows.add(row);
-        }
-
-        writeTSV(file, rows, "derivatives");
-    }
-
-    private void writeLabs(Map<String, Integer> labIds, ZipOutputStream file) throws IOException
-    {
-        List<Map<String, Object>> rows = new ArrayList<>();
-        for (Map.Entry<String, Integer> entry : labIds.entrySet())
-        {
-            Map<String, Object> row = new HashMap<>();
-            // We know the id and the name
-            row.put("lab_id", entry.getValue());
-            row.put("lab_name", entry.getKey());
-            // Everything else is left blank
-            row.put("ldms_lab_code", null);
-            row.put("lab_upload_code", null);
-            row.put("is_sal", null);
-            row.put("is_repository", null);
-            row.put("is_clinic", null);
-            row.put("is_endpoint", null);
-            rows.add(row);
-        }
-
-        writeTSV(file, rows, "labs");
     }
 
     public static class TestCase extends Assert
