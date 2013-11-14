@@ -650,6 +650,25 @@ Ext4.define('LABKEY.query.olap.MDX', {
         this._filter = {};
     },
 
+    // this is for testing
+    translateQuery : function(config)
+    {
+        var c = Ext4.apply({}, config, {filter:[], useNamedFilters:[]});
+        for (var f=0 ; f<c.useNamedFilters.length ; f++)
+        {
+            var filter = this._filter[c.useNamedFilters[f]];
+            if (!filter)
+                continue;
+            if (!Ext4.isArray(filter))
+                filter = [filter];
+            c.filter = c.filter.concat(filter);
+        }
+
+        var mdx = this;
+        var query = this._generateMdx(c);
+        return query;
+    },
+
     query : function(config)
     {
         var c = Ext4.apply({}, config, {filter:[], useNamedFilters:[]});
@@ -662,8 +681,16 @@ Ext4.define('LABKEY.query.olap.MDX', {
                 filter = [filter];
             c.filter = c.filter.concat(filter);
         }
+
         var mdx = this;
         var query = this._generateMdx(c);
+
+        if (false)
+        {
+            console.debug(JSON.stringify({showEmpty:c.showEmpty, onRows:c.onRows, onCols:c.onCols, filter:c.filter}));
+            console.debug(query.replace('\n',' '));
+        }
+
         var queryConfig =
         {
             configId : config.configId || this._cube.configId,

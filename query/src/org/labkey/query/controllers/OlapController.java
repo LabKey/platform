@@ -14,12 +14,15 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.QueryProfiler;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -28,6 +31,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.query.olap.Olap4Js;
 import org.labkey.query.olap.OlapSchemaCache;
 import org.labkey.query.olap.OlapSchemaDescriptor;
+import org.labkey.query.olap.QubeQuery;
 import org.labkey.query.olap.ServerManager;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
@@ -524,4 +528,42 @@ public class OlapController extends SpringActionController
         }
         return _server;
     }
+
+
+
+
+
+
+    /*
+     * TESTS
+     */
+
+    @RequiresSiteAdmin
+    public class TestCDS extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            String m = null;
+            try
+            {
+                new QubeQuery.TestCase().parseTest(getContainer(), getUser());
+                m = "FINISHED";
+            }
+            catch (Exception x)
+            {
+                m = StringUtils.defaultString(x.getMessage(),x.toString());
+                _log.error("test failed", x);
+            }
+
+            return new HtmlView(PageFlowUtil.filter(m));
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+    }
+
 }

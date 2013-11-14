@@ -92,7 +92,7 @@ public class Qube
     }
 
 
-    public CellSet executeQuery(QubeExpr expr)
+    public CellSet executeQuery(QubeQuery expr)
     {
         return new _CellSet();
     }

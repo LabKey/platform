@@ -2394,7 +2394,7 @@ query/src/org/labkey/query/olap/OlapSchemaCache.java -text
 query/src/org/labkey/query/olap/OlapSchemaDescriptor.java -text
 query/src/org/labkey/query/olap/OlapSchemaLoader.java -text
 query/src/org/labkey/query/olap/Qube.java -text
-query/src/org/labkey/query/olap/QubeExpr.java -text
+query/src/org/labkey/query/olap/QubeQuery.java -text
 query/src/org/labkey/query/olap/ServerManager.java -text
 query/src/org/labkey/query/persist/AbstractExternalSchemaDef.java -text
 query/src/org/labkey/query/persist/CstmView.java -text
@@ -2565,6 +2565,7 @@ query/webapp/query/delete.gif -text
 query/webapp/query/movedown.gif -text
 query/webapp/query/moveup.gif -text
 query/webapp/query/olap.js -text
+query/webapp/query/olap_junit.js -text
 query/webapp/query/queryDesigner.js -text
 query/webapp/query/sql.gif -text
 query/webapp/query/validateQueries.js -text
