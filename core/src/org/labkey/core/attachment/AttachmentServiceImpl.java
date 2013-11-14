@@ -654,7 +654,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 filter.addCondition("Modified", modifiedSince, CompareType.GTE);
             SimpleFilter.FilterClause since = new SearchService.LastIndexedClause(coreTables().getTableInfoDocuments(), modifiedSince, null);
             filter.addClause(since);
-            
+
+            // TODO: Looks dangerous... column order will be random!
             rs = Table.select(coreTables().getTableInfoDocuments(),
                     PageFlowUtil.set("Parent","DocumentName","LastIndexed"),
                     filter,

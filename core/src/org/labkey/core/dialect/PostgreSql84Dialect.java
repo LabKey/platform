@@ -53,7 +53,6 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.Closure;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 
 import javax.servlet.ServletException;
@@ -1158,32 +1157,42 @@ class PostgreSql84Dialect extends SqlDialect
         try
         {
             DbSchema coreSchema = CoreSchema.getInstance().getSchema();
+            SqlExecutor executor = new SqlExecutor(coreSchema);
             DbScope scope = coreSchema.getScope();
             String tempSchemaName = getGlobalTempTablePrefix();
             if (tempSchemaName.endsWith("."))
                 tempSchemaName = tempSchemaName.substring(0, tempSchemaName.length() - 1);
             String dbName = getDatabaseName(scope.getDataSourceName(), scope.getDataSource());
 
-            Connection conn = null;
-            ResultSet rs = null;
             Object noref = new Object();
+            Connection conn = null;
+
             try
             {
                 conn = scope.getConnection();
-                rs = conn.getMetaData().getTables(dbName, tempSchemaName, "%", new String[]{"TABLE"});
-                while (rs.next())
+
+                try (ResultSet rs = conn.getMetaData().getTables(dbName, tempSchemaName, "%", new String[]{"TABLE"}))
                 {
-                    String table = rs.getString("TABLE_NAME");
-                    String tempName = getGlobalTempTablePrefix() + table;
-                    if (!createdTableNames.containsKey(tempName))
-                        TempTableTracker.track(coreSchema, tempName, noref);
+                    while (rs.next())
+                    {
+                        String table = rs.getString("TABLE_NAME");
+                        String tempName = getGlobalTempTablePrefix() + table;
+                        if (!createdTableNames.containsKey(tempName))
+                            TempTableTracker.track(coreSchema, tempName, noref);
+                    }
                 }
-                rs.close(); rs = null;
+            }
+            finally
+            {
+                if (null != conn)
+                    scope.releaseConnection(conn);
+            }
 
-                //rs = conn.getMetaData().getFunctions(dbName, tempSchemaName, "%");
-                Map<String, String> types = null;
-                rs = Table.executeQuery(coreSchema, "SELECT proname AS SPECIFIC_NAME, CAST(proargtypes AS VARCHAR) FROM pg_proc WHERE pronamespace=(select oid from pg_namespace where nspname = ?)", new Object[]{tempSchemaName});
+            //rs = conn.getMetaData().getFunctions(dbName, tempSchemaName, "%");
+            Map<String, String> types = null;
 
+            try (ResultSet rs = new SqlSelector(coreSchema, "SELECT proname AS SPECIFIC_NAME, CAST(proargtypes AS VARCHAR) FROM pg_proc WHERE pronamespace=(select oid from pg_namespace where nspname = ?)", tempSchemaName).getResultSet())
+            {
                 while (rs.next())
                 {
                     if (null == types)
@@ -1200,22 +1209,12 @@ class PostgreSql84Dialect extends SqlDialect
                         comma = ",";
                     }
                     drop.append(")");
-                    new SqlExecutor(coreSchema).execute(drop);
+
+                    executor.execute(drop);
                 }
-                rs.close(); rs = null;
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
-                if (null != conn)
-                    scope.releaseConnection(conn);
             }
         }
-        catch (SQLException x)
-        {
-            _log.warn("error cleaning up temp schema", x);
-        }
-        catch (ServletException x)
+        catch (SQLException | ServletException x)
         {
             _log.warn("error cleaning up temp schema", x);
         }

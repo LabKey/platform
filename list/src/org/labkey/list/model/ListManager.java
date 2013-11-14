@@ -424,11 +424,8 @@ public class ListManager implements SearchService.DocumentProvider
 
         try
         {
-            Results results = null;
-
-            try
+            try (Results results = Table.selectForDisplay(listTable, Table.ALL_COLUMNS, null, filter, null, Table.ALL_ROWS, Table.NO_OFFSET))
             {
-                results = Table.selectForDisplay(listTable, Table.ALL_COLUMNS, null, filter, null, Table.ALL_ROWS, Table.NO_OFFSET);
                 results.getFieldMap().keySet();
                 FieldKey keyKey = new FieldKey(null, list.getKeyName());
                 FieldKey entityIdKey = new FieldKey(null, "EntityId");
@@ -477,11 +474,6 @@ public class ListManager implements SearchService.DocumentProvider
                 }
 
                 return count;
-            }
-            finally
-            {
-                if (null != results)
-                    results.close();
             }
         }
         catch (SQLException e)
@@ -551,24 +543,12 @@ public class ListManager implements SearchService.DocumentProvider
                 FieldKeyStringExpression template = createBodyTemplate(list.getEntireListBodySetting(), list.getEntireListBodyTemplate(), ti);
                 StringBuilder data = new StringBuilder();
 
-                try
+                try (Results results = Table.selectForDisplay(ti, Table.ALL_COLUMNS, null, null, null, Table.ALL_ROWS, Table.NO_OFFSET))
                 {
-                    Results results = null;
-
-                    try
+                    while (results.next())
                     {
-                        results = Table.selectForDisplay(ti, Table.ALL_COLUMNS, null, null, null, Table.ALL_ROWS, Table.NO_OFFSET);
-
-                        while (results.next())
-                        {
-                            Map<FieldKey, Object> map = results.getFieldKeyRowMap();
-                            data.append(template.eval(map)).append("\n");
-                        }
-                    }
-                    finally
-                    {
-                        if (null != results)
-                            results.close();
+                        Map<FieldKey, Object> map = results.getFieldKeyRowMap();
+                        data.append(template.eval(map)).append("\n");
                     }
                 }
                 catch (SQLException e)

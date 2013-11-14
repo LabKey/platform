@@ -27,8 +27,10 @@ import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -489,19 +491,19 @@ public class PlateManager implements PlateService.Service
             {
                 DbSchema schema = StudySchema.getInstance().getSchema();
                 TableInfo plateTable = StudySchema.getInstance().getTableInfoPlate();
-                ResultSet rs = null;
-                try
+                _distinctTemplateNames = new HashSet<>();
+
+                new SqlSelector(schema, "SELECT DISTINCT Name FROM " + schema.getName() + "." + plateTable.getName()).forEach(new Selector.ForEachBlock<ResultSet>()
                 {
-                    rs = Table.executeQuery(schema, "SELECT DISTINCT Name FROM " + schema.getName() + "." + plateTable.getName(), null);
-                    _distinctTemplateNames = new HashSet<>();
-                    while (rs.next())
-                        _distinctTemplateNames.add(rs.getString("Name"));
-                }
-                finally
-                {
-                    if (rs != null) try { rs.close(); } catch (SQLException e) {}
-                }
+                    @Override
+                    public void exec(ResultSet rs) throws SQLException
+                    {
+                        while (rs.next())
+                            _distinctTemplateNames.add(rs.getString("Name"));
+                    }
+                });
             }
+
             return _distinctTemplateNames;
         }
     }

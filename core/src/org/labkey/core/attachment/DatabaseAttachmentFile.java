@@ -16,20 +16,20 @@
 
 package org.labkey.core.attachment;
 
+import org.apache.commons.io.IOUtils;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.util.ResultSetUtil;
-import org.apache.commons.io.IOUtils;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
 
 /**
  * User: adam
@@ -51,29 +51,17 @@ public class DatabaseAttachmentFile implements AttachmentFile
     public DatabaseAttachmentFile(Attachment attachment) throws IOException
     {
         _attachment = attachment;
-        ResultSet rs = null;
 
-        try
-        {
-            rs = Table.executeQuery(core.getSchema(), _sqlDocumentTypeAndSize, new Object[]{attachment.getParent(), attachment.getName()});
+        Map<String, Object> map = new SqlSelector(core.getSchema(), _sqlDocumentTypeAndSize, attachment.getParent(), attachment.getName()).getMap();
 
-            if (!rs.next())
-                throw new FileNotFoundException("Attachment could not be retrieved from database: " + attachment.getName());
+        if (null == map)
+            throw new FileNotFoundException("Attachment could not be retrieved from database: " + attachment.getName());
 
-            setContentType(rs.getString("DocumentType"));
+        setContentType((String) map.get("DocumentType"));
 
-            int size = rs.getInt("DocumentSize");
-            if (size > 0)
-                setSize(size);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        int size = (Integer)map.get("DocumentSize");
+        if (size > 0)
+            setSize(size);
     }
 
     public String getContentType()

@@ -37,7 +37,7 @@ import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
@@ -46,7 +46,6 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.data.xml.ColumnType;
 
@@ -253,72 +252,62 @@ public class QueryPivot extends QueryRelation
         if (null != _pivotValues)
             return _pivotValues;
 
-        ResultSet rs = null;
-        try
-        {
-            _pivotValues = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String,IConstant>());
-            SQLFragment sqlPivotValues = null;
+        _pivotValues = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String,IConstant>());
+        SQLFragment sqlPivotValues = null;
 
-            if (null != _inQuery)
+        if (null != _inQuery)
+        {
+            // explicit subquery case
+            sqlPivotValues = _inQuery.getSql();
+        }
+        else
+        {
+            SQLFragment fromSql;
+            if (1==1)   // optimized version
             {
-                // explicit subquery case
-                sqlPivotValues = _inQuery.getSql();
+                // if our optimizations get more clever, we may need to implement deepClone()
+                QuerySelect fromForPivotValues = _from.shallowClone();
+                fromForPivotValues.releaseAllSelected(this);
+                if (null != fromForPivotValues._distinct)
+                {
+                    fromForPivotValues.releaseAllSelected(this);
+                    fromForPivotValues._distinct = null;
+                }
+                _pivotColumn.addRef(this);
+                if (null == fromForPivotValues._having)
+                {
+                    fromForPivotValues._groupBy.releaseFieldRefs(fromForPivotValues._groupBy);
+                    fromForPivotValues._groupBy = null;
+                }
+                fromForPivotValues._allowStructuralOptimization = false;
+                fromSql = fromForPivotValues.getFromSql();
+                // the fields and columns are shared, to be safe fix up reference counts
+                _from._groupBy.addFieldRefs(_from._groupBy);
+                if (null != _from._distinct)
+                    _from.markAllSelected(_from._distinct);
+                _from.markAllSelected(this);
             }
             else
             {
-                SQLFragment fromSql;
-                if (1==1)   // optimized version
-                {
-                    // if our optimizations get more clever, we may need to implement deepClone()
-                    QuerySelect fromForPivotValues = _from.shallowClone();
-                    fromForPivotValues.releaseAllSelected(this);
-                    if (null != fromForPivotValues._distinct)
-                    {
-                        fromForPivotValues.releaseAllSelected(this);
-                        fromForPivotValues._distinct = null;
-                    }
-                    _pivotColumn.addRef(this);
-                    if (null == fromForPivotValues._having)
-                    {
-                        fromForPivotValues._groupBy.releaseFieldRefs(fromForPivotValues._groupBy);
-                        fromForPivotValues._groupBy = null;
-                    }
-                    fromForPivotValues._allowStructuralOptimization = false;
-                    fromSql = fromForPivotValues.getFromSql();
-                    // the fields and columns are shared, to be safe fix up reference counts
-                    _from._groupBy.addFieldRefs(_from._groupBy);
-                    if (null != _from._distinct)
-                        _from.markAllSelected(_from._distinct);
-                    _from.markAllSelected(this);
-                }
-                else
-                {
-                    fromSql = _from.getFromSql();
-                }
-                if (null != fromSql)
-                {
-                    sqlPivotValues = new SQLFragment();
-                    sqlPivotValues.append("SELECT DISTINCT ").append(_pivotColumn.getValueSql());
-                    sqlPivotValues.append("\nFROM ").append(fromSql);
-                    sqlPivotValues.append("\nORDER BY 1 ASC");
-                }
+                fromSql = _from.getFromSql();
             }
-            if (null == sqlPivotValues)
+            if (null != fromSql)
             {
-                // If there are errors, it will get handled later
-                assert !getParseErrors().isEmpty();
-                return _pivotValues;
+                sqlPivotValues = new SQLFragment();
+                sqlPivotValues.append("SELECT DISTINCT ").append(_pivotColumn.getValueSql());
+                sqlPivotValues.append("\nFROM ").append(fromSql);
+                sqlPivotValues.append("\nORDER BY 1 ASC");
             }
-            try
-            {
-                rs = Table.executeQuery(getSchema().getDbSchema(), sqlPivotValues);
-            }
-            catch (QueryService.NamedParameterNotProvided npnp)
-            {
-                parseError("When used with parameterized query, PIVOT requires an explicit values list", null);
-                parseError(npnp.getMessage(), null);
-                return _pivotValues;
-            }
+        }
+        if (null == sqlPivotValues)
+        {
+            // If there are errors, it will get handled later
+            assert !getParseErrors().isEmpty();
+            return _pivotValues;
+        }
+
+        try (ResultSet rs = new SqlSelector(getSchema().getDbSchema(), sqlPivotValues).getResultSet())
+        {
             JdbcType type = JdbcType.valueOf(rs.getMetaData().getColumnType(1));
             int columnCount = rs.getMetaData().getColumnCount();
             while (rs.next())
@@ -330,9 +319,10 @@ public class QueryPivot extends QueryRelation
                 _pivotValues.put(name, wrap);
             }
         }
-        finally
+        catch (QueryService.NamedParameterNotProvided npnp)
         {
-            ResultSetUtil.close(rs);
+            parseError("When used with parameterized query, PIVOT requires an explicit values list", null);
+            parseError(npnp.getMessage(), null);
         }
 
         return _pivotValues;

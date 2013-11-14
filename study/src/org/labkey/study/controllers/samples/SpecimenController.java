@@ -677,23 +677,25 @@ public class SpecimenController extends BaseStudyController
             SpecimenEventQueryView vialHistoryView = SpecimenEventQueryView.createView(getViewContext(), specimen);
             vialHistoryView.setTitle("Vial History");
 
-            VBox vbox = null;
+            VBox vbox;
+
             if (getStudyRedirectIfNull().getRepositorySettings().isEnableRequests())
             {
-                Integer[] requestIds = SampleManager.getInstance().getRequestIdsForSpecimen(specimen);
+                List<Integer> requestIds = SampleManager.getInstance().getRequestIdsForSpecimen(specimen);
                 SimpleFilter requestFilter;
                 WebPartView relevantRequests;
-                if (requestIds != null && requestIds.length > 0)
+
+                if (!requestIds.isEmpty())
                 {
                     requestFilter = new SimpleFilter();
                     StringBuilder whereClause = new StringBuilder();
-                    for (int i = 0; i < requestIds.length; i++)
+                    for (int i = 0; i < requestIds.size(); i++)
                     {
                         if (i > 0)
                             whereClause.append(" OR ");
                         whereClause.append("RequestId = ?");
                     }
-                    requestFilter.addWhereClause(whereClause.toString(), requestIds);
+                    requestFilter.addWhereClause(whereClause.toString(), requestIds.toArray());
                     SpecimenRequestQueryView queryView = SpecimenRequestQueryView.createView(getViewContext(), requestFilter);
                     queryView.setExtraLinks(true);
                     relevantRequests = queryView;
@@ -707,6 +709,7 @@ public class SpecimenController extends BaseStudyController
             {
                 vbox = new VBox(summaryView, vialHistoryView);
             }
+
             return vbox;
         }
 

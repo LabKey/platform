@@ -1399,15 +1399,16 @@ public class SampleManager implements ContainerManager.ContainerListener
         }
     }
 
-    public Integer[] getRequestIdsForSpecimen(Specimen specimen) throws SQLException
+    public @NotNull List<Integer> getRequestIdsForSpecimen(Specimen specimen) throws SQLException
     {
         return getRequestIdsForSpecimen(specimen, false);
     }
 
-    public Integer[] getRequestIdsForSpecimen(Specimen specimen, boolean lockingRequestsOnly) throws SQLException
+    public @NotNull List<Integer> getRequestIdsForSpecimen(Specimen specimen, boolean lockingRequestsOnly) throws SQLException
     {
         if (specimen == null)
-            return new Integer[0];
+            return Collections.emptyList();
+
         SQLFragment sql = new SQLFragment("SELECT SampleRequestId FROM " + StudySchema.getInstance().getTableInfoSampleRequestSpecimen() +
                 " Map, " + StudySchema.getInstance().getTableInfoSampleRequest() + " Request, " +
                 StudySchema.getInstance().getTableInfoSampleRequestStatus() + " Status WHERE SpecimenGlobalUniqueId = ? " +
@@ -1415,17 +1416,14 @@ public class SampleManager implements ContainerManager.ContainerListener
                 "AND Map.SampleRequestId = Request.RowId AND Request.StatusId = Status.RowId");
         sql.add(specimen.getGlobalUniqueId());
         sql.add(specimen.getContainer().getId());
+
         if (lockingRequestsOnly)
         {
             sql.append(" AND Status.SpecimensLocked = ?");
             sql.add(Boolean.TRUE);
         }
-        Table.TableResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql);
-        List<Integer> rowIdList = new ArrayList<>();
-        while (rs.next())
-            rowIdList.add(rs.getInt(1));
-        rs.close();
-        return rowIdList.toArray(new Integer[rowIdList.size()]);
+
+        return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArrayList(Integer.class);
     }
 
     public SpecimenTypeSummary getSpecimenTypeSummary(Container container)
@@ -1518,9 +1516,10 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     private class DistinctValueList extends ArrayList<String> implements StudyCachable
     {
-        private Container _container;
-        private String _cacheKey;
-        public DistinctValueList(Container container, String cacheKey)
+        private final Container _container;
+        private final String _cacheKey;
+
+        private DistinctValueList(Container container, String cacheKey)
         {
             super();
             _container = container;
@@ -1555,61 +1554,68 @@ public class SampleManager implements ContainerManager.ContainerListener
         if (tinfo == null)
             tinfo = isLookup ? col.getFk().getLookupTableInfo() : col.getParentTable();
         TableInfo cachedTinfo = tinfo instanceof FilteredTable ? ((FilteredTable) tinfo).getRealTable() : tinfo;
+
+        // TODO: Convert this to use a CacheLoader
         DistinctValueList distinctValues = (DistinctValueList) StudyCache.getCached(cachedTinfo, container, cacheKey);
-        if (distinctValues == null)
+
+        if (null != distinctValues)
+            return distinctValues;
+
+        final DistinctValueList newDistinctValues = new DistinctValueList(container, cacheKey);
+
+        if (col.isBooleanType())
         {
-            distinctValues = new DistinctValueList(container, cacheKey);
-            if (col.isBooleanType())
+            newDistinctValues.add("True");
+            newDistinctValues.add("False");
+        }
+        else
+        {
+            Selector selector;
+
+            if (isLookup)
             {
-                distinctValues.add("True");
-                distinctValues.add("False");
+                if (tinfo.supportsContainerFilter())
+                {
+                    Set<Container> containers = new HashSet<>();
+                    containers.add(container);
+                    Study study = StudyManager.getInstance().getStudy(container);
+                    if (study != null && study.isAncillaryStudy())
+                    {
+                        Container sourceStudy = study.getSourceStudy().getContainer();
+                        if (sourceStudy != null && sourceStudy.hasPermission(user, ReadPermission.class))
+                            containers.add(sourceStudy);
+                    }
+                    ((ContainerFilterable)tinfo).setContainerFilter(new ContainerFilter.SimpleContainerFilter(containers));
+                }
+
+                selector = new TableSelector(tinfo.getColumn(tinfo.getTitleColumn()), null,
+                        new Sort(orderBy != null ? orderBy : tinfo.getTitleColumn()));
             }
             else
             {
-                ResultSet rs = null;
-                try
-                {
-                    if (isLookup)
-                    {
-                        if (tinfo.supportsContainerFilter())
-                        {
-                            Set<Container> containers = new HashSet<>();
-                            containers.add(container);
-                            Study study = StudyManager.getInstance().getStudy(container);
-                            if (study != null && study.isAncillaryStudy())
-                            {
-                                Container sourceStudy = study.getSourceStudy().getContainer();
-                                if (sourceStudy != null && sourceStudy.hasPermission(user, ReadPermission.class))
-                                    containers.add(sourceStudy);
-                            }
-                            ((ContainerFilterable)tinfo).setContainerFilter(new ContainerFilter.SimpleContainerFilter(containers));
-                        }
-                        rs = new TableSelector(tinfo.getColumn(tinfo.getTitleColumn()), null,
-                                new Sort(orderBy != null ? orderBy : tinfo.getTitleColumn())).getResultSet();
-                    }
-                    else
-                    {
-                        SQLFragment sql = new SQLFragment("SELECT DISTINCT " + col.getValueSql("_distinct").getSQL() + " FROM ");
-                        sql.append(tinfo.getFromSQL("_distinct"));
-                        if (orderBy != null)
-                            sql.append(" ORDER BY " + orderBy);
-                        rs = Table.executeQuery(tinfo.getSchema(), sql);
-                    }
-                    while (rs.next())
-                    {
-                        Object value = rs.getObject(1);
-                        if (value != null && value.toString().length() > 0)
-                            distinctValues.add(value.toString());
-                    }
-                }
-                finally
-                {
-                    if (rs != null) try { rs.close(); } catch (SQLException e) {}
-                }
+                SQLFragment sql = new SQLFragment("SELECT DISTINCT " + col.getValueSql("_distinct").getSQL() + " FROM ");
+                sql.append(tinfo.getFromSQL("_distinct"));
+                if (orderBy != null)
+                    sql.append(" ORDER BY ").append(orderBy);
+
+                selector = new SqlSelector(tinfo.getSchema(), sql);
             }
-            StudyCache.cache(cachedTinfo, container, cacheKey, distinctValues);
+
+            selector.forEach(new Selector.ForEachBlock<ResultSet>()
+            {
+                @Override
+                public void exec(ResultSet rs) throws SQLException
+                {
+                    Object value = rs.getObject(1);
+                    if (value != null && value.toString().length() > 0)
+                        newDistinctValues.add(value.toString());
+                }
+            });
         }
-        return distinctValues;
+
+        StudyCache.cache(cachedTinfo, container, cacheKey, newDistinctValues);
+
+        return newDistinctValues;
     }
 
     public void deleteMissingSpecimens(SampleRequest sampleRequest) throws SQLException
@@ -1647,20 +1653,8 @@ public class SampleManager implements ContainerManager.ContainerListener
     {
         String sql = "SELECT SpecimenGlobalUniqueId FROM study.SampleRequestSpecimen WHERE SampleRequestId = ? and Container = ? and \n" +
                 "SpecimenGlobalUniqueId NOT IN (SELECT GlobalUniqueId FROM study.Vial WHERE Container = ?);";
-        ResultSet rs = null;
-        List<String> missingSpecimens = new ArrayList<>();
-        try
-        {
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql, new Object[] {
-                sampleRequest.getRowId(), sampleRequest.getContainer().getId(), sampleRequest.getContainer().getId() });
-            while (rs.next())
-                missingSpecimens.add(rs.getString("SpecimenGlobalUniqueId"));
-        }
-        finally
-        {
-            if (rs != null) try { rs.close(); } catch (SQLException e) {}
-        }
-        return missingSpecimens;
+
+        return new SqlSelector(StudySchema.getInstance().getSchema(), sql, sampleRequest.getRowId(), sampleRequest.getContainer(), sampleRequest.getContainer()).getArrayList(String.class);
     }
 
     public Map<Specimen, SpecimenComment> getSpecimensWithComments(Container container) throws SQLException
@@ -1957,48 +1951,30 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public List<VisitImpl> getVisitsWithSpecimens(Container container, User user, CohortImpl cohort)
     {
-        try
-        {
-            StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), user, true);
-            TableInfo tinfo = schema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
+        StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), user, true);
+        TableInfo tinfo = schema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
 
-            FieldKey visitKey = FieldKey.fromParts("Visit");
-            Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(tinfo, Collections.singleton(visitKey));
-            Collection<ColumnInfo> cols = new ArrayList<>();
-            cols.add(colMap.get(visitKey));
-            Set<FieldKey> unresolvedColumns = new HashSet<>();
-            cols = QueryService.get().ensureRequiredColumns(tinfo, cols, null, null, unresolvedColumns);
-            if (!unresolvedColumns.isEmpty())
-                throw new IllegalStateException("Unable to resolve column(s): " + unresolvedColumns.toString());
-            // generate our select SQL:
-            SQLFragment specimenSql = Table.getSelectSQL(tinfo, cols, null, null);
+        FieldKey visitKey = FieldKey.fromParts("Visit");
+        Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(tinfo, Collections.singleton(visitKey));
+        Collection<ColumnInfo> cols = new ArrayList<>();
+        cols.add(colMap.get(visitKey));
+        Set<FieldKey> unresolvedColumns = new HashSet<>();
+        cols = QueryService.get().ensureRequiredColumns(tinfo, cols, null, null, unresolvedColumns);
+        if (!unresolvedColumns.isEmpty())
+            throw new IllegalStateException("Unable to resolve column(s): " + unresolvedColumns.toString());
+        // generate our select SQL:
+        SQLFragment specimenSql = Table.getSelectSQL(tinfo, cols, null, null);
 
-            SQLFragment visitIdSQL = new SQLFragment("SELECT DISTINCT Visit FROM (" + specimenSql.getSQL() + ") SimpleSpecimenQuery");
-            visitIdSQL.addAll(specimenSql.getParamsArray());
+        SQLFragment visitIdSQL = new SQLFragment("SELECT DISTINCT Visit FROM (" + specimenSql.getSQL() + ") SimpleSpecimenQuery");
+        visitIdSQL.addAll(specimenSql.getParamsArray());
 
-            List<Integer> visitIds = new ArrayList<>();
-            ResultSet rs = null;
-            try
-            {
-                rs = Table.executeQuery(StudySchema.getInstance().getSchema(), visitIdSQL);
-                while (rs.next())
-                    visitIds.add(rs.getInt(1));
-            }
-            finally
-            {
-                if (rs != null) try { rs.close(); } catch (SQLException e) { /* fall through */ }
-            }
+        List<Integer> visitIds = new SqlSelector(StudySchema.getInstance().getSchema(), visitIdSQL).getArrayList(Integer.class);
 
-            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-            filter.addInClause("RowId", visitIds);
-            if (cohort != null)
-                filter.addWhereClause("CohortId IS NULL OR CohortId = ?", new Object[] { cohort.getRowId() });
-            return new TableSelector(StudySchema.getInstance().getTableInfoVisit(), filter, new Sort("DisplayOrder,SequenceNumMin")).getArrayList(VisitImpl.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addInClause("RowId", visitIds);
+        if (cohort != null)
+            filter.addWhereClause("CohortId IS NULL OR CohortId = ?", new Object[] { cohort.getRowId() });
+        return new TableSelector(StudySchema.getInstance().getTableInfoVisit(), filter, new Sort("DisplayOrder,SequenceNumMin")).getArrayList(VisitImpl.class);
     }
 
     public static class SummaryByVisitType extends SpecimenCountSummary
@@ -2295,7 +2271,7 @@ public class SampleManager implements ContainerManager.ContainerListener
             specimenDetailFilter = clone;
         }
 
-        SpecimenDetailQueryHelper viewSqlHelper = getSpecimenDetailQueryHelper(container, user, baseView, specimenDetailFilter, level);
+        final SpecimenDetailQueryHelper viewSqlHelper = getSpecimenDetailQueryHelper(container, user, baseView, specimenDetailFilter, level);
 
         String perPtidSpecimenSQL = "\t-- Inner SELECT gets the number of vials per participant/visit/type:\n" +
             "\tSELECT InnerView.Container, InnerView.Visit, " + viewSqlHelper.getTypeGroupingColumns() + ",\n" +
@@ -2304,20 +2280,20 @@ public class SampleManager implements ContainerManager.ContainerListener
             "\tGROUP BY InnerView.Container, InnerView." + StudyService.get().getSubjectColumnName(container) +
                 ", InnerView.Visit, " + viewSqlHelper.getTypeGroupingColumns() + "\n";
 
-        StringBuilder sql = new StringBuilder("-- Outer grouping allows us to count participants AND sum vial counts:\n" +
+        SQLFragment sql = new SQLFragment("-- Outer grouping allows us to count participants AND sum vial counts:\n" +
             "SELECT VialData.Visit AS Visit, " + viewSqlHelper.getTypeGroupingColumns() + ", COUNT(*) as ParticipantCount, \n" +
             "SUM(VialData.VialCount) AS VialCount, SUM(VialData.PtidVolume) AS TotalVolume FROM \n" +
             "(\n" + perPtidSpecimenSQL + ") AS VialData\n" +
             "GROUP BY Visit, " + viewSqlHelper.getTypeGroupingColumns() + "\n" +
             "ORDER BY " + viewSqlHelper.getTypeGroupingColumns() + ", Visit");
+        sql.addAll(viewSqlHelper.getViewSql().getParamsArray());
 
-        ResultSet rs = null;
-        List<SummaryByVisitType> ret;
-        try
+        final List<SummaryByVisitType> ret = new ArrayList<>();
+
+        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
         {
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.toString(), viewSqlHelper.getViewSql().getParamsArray());
-            ret = new ArrayList<>();
-            while (rs.next())
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 SummaryByVisitType summary = new SummaryByVisitType();
                 if (rs.getObject("Visit") != null)
@@ -2327,36 +2303,29 @@ public class SampleManager implements ContainerManager.ContainerListener
                 summary.setVialCount(vialCount.longValue());
                 Double participantCount = rs.getDouble("ParticipantCount");
                 summary.setParticipantCount(participantCount.longValue());
+
                 for (Map.Entry<String, SpecimenTypeBeanProperty> typeProperty : viewSqlHelper.getAliasToTypePropertyMap().entrySet())
                 {
                     String value = rs.getString(typeProperty.getKey());
-                    PropertyUtils.setProperty(summary, typeProperty.getValue().getBeanProperty(), value);
+                    try
+                    {
+                        PropertyUtils.setProperty(summary, typeProperty.getValue().getBeanProperty(), value);
+                    }
+                    catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
                 }
                 ret.add(summary);
             }
-        }
-        catch (InvocationTargetException e)
-        {
-            throw new RuntimeException(e);
-        }
-        catch (NoSuchMethodException e)
-        {
-            throw new RuntimeException(e);
-        }
-        catch (IllegalAccessException e)
-        {
-            throw new RuntimeException(e);
-        }
-        finally
-        {
-            if (rs != null)
-                try { rs.close(); } catch (SQLException e) { /* fall through */ }
-        }
+        });
+
         SummaryByVisitType[] summaries = ret.toArray(new SummaryByVisitType[ret.size()]);
 
         if (includeParticipantGroups)
             setSummaryParticipantGroups(perPtidSpecimenSQL, viewSqlHelper.getViewSql().getParamsArray(),
                     viewSqlHelper.getAliasToTypePropertyMap(), summaries, StudyService.get().getSubjectColumnName(container), "Visit");
+
         return summaries;
     }
 
@@ -2416,27 +2385,26 @@ public class SampleManager implements ContainerManager.ContainerListener
         return getSitesWithIdSql(container, "EnrollmentSiteId", sql);
     }
 
-    private Set<LocationImpl> getSitesWithIdSql(Container container, String idColumnName, SQLFragment sql)
+    private Set<LocationImpl> getSitesWithIdSql(final Container container, final String idColumnName, SQLFragment sql)
     {
-        ResultSet rs = null;
-        try
+        final Set<LocationImpl> locations = new TreeSet<>(new Comparator<LocationImpl>()
         {
-            Set<LocationImpl> locations = new TreeSet<>(new Comparator<LocationImpl>()
+            public int compare(LocationImpl s1, LocationImpl s2)
             {
-                public int compare(LocationImpl s1, LocationImpl s2)
-                {
-                    if (s1 == null && s2 == null)
-                        return 0;
-                    if (s1 == null)
-                        return -1;
-                    if (s2 == null)
-                        return 1;
-                    return s1.getLabel().compareTo(s2.getLabel());
-                }
-            });
+                if (s1 == null && s2 == null)
+                    return 0;
+                if (s1 == null)
+                    return -1;
+                if (s2 == null)
+                    return 1;
+                return s1.getLabel().compareTo(s2.getLabel());
+            }
+        });
 
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql);
-            while (rs.next())
+        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
+        {
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 // try getObject first to see if we have a value for our row; getInt will coerce the null to
                 // zero, which could (theoretically) be a valid site ID.
@@ -2445,16 +2413,9 @@ public class SampleManager implements ContainerManager.ContainerListener
                 else
                     locations.add(StudyManager.getInstance().getLocation(container, rs.getInt(idColumnName)));
             }
-            return locations;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            if (rs != null) try { rs.close(); } catch (SQLException e) { /* fall through */ }
-        }
+        });
+
+        return locations;
     }
 
 
@@ -2540,14 +2501,17 @@ public class SampleManager implements ContainerManager.ContainerListener
     public RequestSummaryByVisitType[] getRequestSummaryBySite(Container container, User user, SimpleFilter specimenDetailFilter, boolean includeParticipantGroups, SpecimenTypeLevel level, CustomView baseView, boolean completeRequestsOnly) throws SQLException
     {
         if (specimenDetailFilter == null)
+        {
             specimenDetailFilter = new SimpleFilter();
+        }
         else
         {
             SimpleFilter clone = new SimpleFilter();
             clone.addAllClauses(specimenDetailFilter);
             specimenDetailFilter = clone;
         }
-        SpecimenDetailQueryHelper sqlHelper = getSpecimenDetailQueryHelper(container, user, baseView, specimenDetailFilter, level);
+
+        final SpecimenDetailQueryHelper sqlHelper = getSpecimenDetailQueryHelper(container, user, baseView, specimenDetailFilter, level);
 
         String subjectCol = StudyService.get().getSubjectColumnName(container);
         String sql = "SELECT Specimen.Container,\n" +
@@ -2578,13 +2542,16 @@ public class SampleManager implements ContainerManager.ContainerListener
         params[params.length - 1] = Boolean.TRUE;
         if (completeRequestsOnly)
             params[params.length - 2] = Boolean.TRUE;
-        ResultSet rs = null;
-        List<SummaryByVisitType> ret;
-        try
+
+        SQLFragment fragment = new SQLFragment(sql);
+        fragment.addAll(params);
+
+        final List<RequestSummaryByVisitType> ret = new ArrayList<>();
+
+        new SqlSelector(StudySchema.getInstance().getSchema(), fragment).forEach(new Selector.ForEachBlock<ResultSet>()
         {
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql, params);
-            ret = new ArrayList<>();
-            while (rs.next())
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 RequestSummaryByVisitType summary = new RequestSummaryByVisitType();
                 summary.setDestinationSiteId(rs.getInt("DestinationSiteId"));
@@ -2593,39 +2560,34 @@ public class SampleManager implements ContainerManager.ContainerListener
                 summary.setTotalVolume(rs.getDouble("TotalVolume"));
                 Double vialCount = rs.getDouble("VialCount");
                 summary.setVialCount(vialCount.longValue());
+
                 for (Map.Entry<String, SpecimenTypeBeanProperty> typeProperty : sqlHelper.getAliasToTypePropertyMap().entrySet())
                 {
                     String value = rs.getString(typeProperty.getKey());
-                    PropertyUtils.setProperty(summary, typeProperty.getValue().getBeanProperty(), value);
+
+                    try
+                    {
+                        PropertyUtils.setProperty(summary, typeProperty.getValue().getBeanProperty(), value);
+                    }
+                    catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
+                    {
+                        e.printStackTrace();
+                    }
                 }
                 ret.add(summary);
             }
-        }
-        catch (InvocationTargetException e)
-        {
-            throw new RuntimeException(e);
-        }
-        catch (NoSuchMethodException e)
-        {
-            throw new RuntimeException(e);
-        }
-        catch (IllegalAccessException e)
-        {
-            throw new RuntimeException(e);
-        }
-        finally
-        {
-            if (rs != null)
-                try { rs.close(); } catch (SQLException e) { /* fall through */ }
-        }
+        });
+
         RequestSummaryByVisitType[] summaries = ret.toArray(new RequestSummaryByVisitType[ret.size()]);
 
         if (includeParticipantGroups)
             setSummaryParticipantGroups(sql, params, null, summaries, subjectCol, "Visit");
+
         return summaries;
     }
 
     private static final int GET_COMMENT_BATCH_SIZE = 1000;
+
     public Map<Specimen, SpecimenComment> getSpecimenComments(List<Specimen> vials) throws SQLException
     {
         if (vials == null || vials.size() == 0)
@@ -2780,21 +2742,25 @@ public class SampleManager implements ContainerManager.ContainerListener
         }
     }
 
-    private void setSummaryParticipantGroups(String sql, Object[] paramArray, Map<String, SpecimenTypeBeanProperty> aliasToTypeProperty,
-                                           SummaryByVisitType[] summaries, String ptidColumnName, String visitValueColumnName) throws SQLException
+    private void setSummaryParticipantGroups(String sql, Object[] paramArray, final Map<String, SpecimenTypeBeanProperty> aliasToTypeProperty,
+                                           SummaryByVisitType[] summaries, final String ptidColumnName, final String visitValueColumnName) throws SQLException
     {
-        Table.TableResultSet rs = null;
-        try
+        SQLFragment fragment = new SQLFragment(sql);
+        fragment.addAll(paramArray);
+
+        final Map<String, Set<String>> cellToPtidSet = new HashMap<>();
+
+        new SqlSelector(StudySchema.getInstance().getSchema(), fragment).forEach(new Selector.ForEachBlock<ResultSet>()
         {
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql, paramArray);
-            Map<String, Set<String>> cellToPtidSet = new HashMap<>();
-            while (rs.next())
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 String ptid = rs.getString(ptidColumnName);
                 Integer visit = rs.getInt(visitValueColumnName);
                 String primaryType = null;
                 String derivative = null;
                 String additive = null;
+
                 for (Map.Entry<String, SpecimenTypeBeanProperty> entry : aliasToTypeProperty.entrySet())
                 {
                     switch (entry.getValue().getLevel())
@@ -2810,6 +2776,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                             break;
                     }
                 }
+
                 String key = getPtidListKey(visit, primaryType, derivative, additive);
 
                 Set<String> ptids = cellToPtidSet.get(key);
@@ -2820,20 +2787,15 @@ public class SampleManager implements ContainerManager.ContainerListener
                 }
                 ptids.add(ptid != null ? ptid : "[unknown]");
             }
+        });
 
-            for (SummaryByVisitType summary : summaries)
-            {
-                Integer visit = summary.getVisit();
-                String key = getPtidListKey(visit, summary.getPrimaryType(), summary.getDerivative(), summary.getAdditive());
-                Set<String> ptids = cellToPtidSet.get(key);
-                summary.setParticipantIds(ptids);
-            }
-        }
-        finally
+        for (SummaryByVisitType summary : summaries)
         {
-            if (rs != null) try { rs.close(); } catch (SQLException e) { /* fall through */ }
+            Integer visit = summary.getVisit();
+            String key = getPtidListKey(visit, summary.getPrimaryType(), summary.getDerivative(), summary.getAdditive());
+            Set<String> ptids = cellToPtidSet.get(key);
+            summary.setParticipantIds(ptids);
         }
-
     }
 
     private class GroupedValueColumnHelper

@@ -15,7 +15,6 @@
  */
 package org.labkey.core.admin;
 
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -26,7 +25,6 @@ import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 
 /**
  * User: jeckels
@@ -64,32 +62,25 @@ public class ValidateDomainsPipelineJob extends PipelineJob
     @Override
     public void run()
     {
-        try
+        setStatus("RUNNING");
+        getLogger().info("Starting to check domains");
+        StorageProvisioner.ProvisioningReport pr = StorageProvisioner.getProvisioningReport();
+        getLogger().info(String.format("%d domains use Storage Provisioner", pr.getProvisionedDomains().size()));
+        int errorCount = 0;
+        for (StorageProvisioner.ProvisioningReport.DomainReport dr : pr.getProvisionedDomains())
         {
-            setStatus("RUNNING");
-            getLogger().info("Starting to check domains");
-            StorageProvisioner.ProvisioningReport pr = StorageProvisioner.getProvisioningReport();
-            getLogger().info(String.format("%d domains use Storage Provisioner", pr.getProvisionedDomains().size()));
-            int errorCount = 0;
-            for (StorageProvisioner.ProvisioningReport.DomainReport dr : pr.getProvisionedDomains())
-            {
-                for (String error : dr.getErrors())
-                {
-                    errorCount++;
-                    getLogger().error(error);
-                }
-            }
-            for (String error : pr.getGlobalErrors())
+            for (String error : dr.getErrors())
             {
                 errorCount++;
                 getLogger().error(error);
             }
-            getLogger().info("Check complete, " + errorCount + " errors found");
-            setStatus(PipelineJob.COMPLETE_STATUS, "Job finished at: " + DateUtil.nowISO());
         }
-        catch (SQLException e)
+        for (String error : pr.getGlobalErrors())
         {
-            throw new RuntimeSQLException(e);
+            errorCount++;
+            getLogger().error(error);
         }
+        getLogger().info("Check complete, " + errorCount + " errors found");
+        setStatus(PipelineJob.COMPLETE_STATUS, "Job finished at: " + DateUtil.nowISO());
     }
 }

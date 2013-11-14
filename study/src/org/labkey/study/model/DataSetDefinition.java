@@ -88,7 +88,6 @@ import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
@@ -2909,31 +2908,26 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (null == s)
             return;
 
-        s.getScope().ensureTransaction();
-
-        ResultSet rs = null;
-        try
+        try (DbScope.Transaction transaction = s.getScope().ensureTransaction())
         {
-            rs = Table.executeQuery(s, "SELECT domainid FROM exp.domaindescriptor WHERE domainuri like '%:StudyDataset%Folder-%' and domainuri not in (SELECT typeuri from study.dataset)", new Object[0]);
-            while (rs.next())
+            new SqlSelector(s, "SELECT domainid FROM exp.domaindescriptor WHERE domainuri like '%:StudyDataset%Folder-%' and domainuri not in (SELECT typeuri from study.dataset)").forEach(new Selector.ForEachBlock<ResultSet>()
             {
-                int domainid = rs.getInt(1);
-                Domain domain = PropertyService.get().getDomain(domainid);
-                try
+                @Override
+                public void exec(ResultSet rs) throws SQLException
                 {
-                    domain.delete(null);
+                    int domainid = rs.getInt(1);
+                    Domain domain = PropertyService.get().getDomain(domainid);
+                    try
+                    {
+                        domain.delete(null);
+                    }
+                    catch (DomainNotFoundException x)
+                    {
+                        //
+                    }
                 }
-                catch (DomainNotFoundException x)
-                {
-                    //
-                }
-            }
-            s.getScope().commitTransaction();
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-            s.getScope().closeConnection();
+            });
+            transaction.commit();
         }
     }
 

@@ -27,6 +27,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -47,6 +48,7 @@ import javax.servlet.ServletException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -159,7 +161,7 @@ public class CohortManager
         {
             Integer newCohortId = p2c.get(p.getParticipantId());
 
-            if (newCohortId != null && newCohortId.intValue() >= 0)
+            if (newCohortId != null && newCohortId >= 0)
             {
                 p.setInitialCohortId(newCohortId);
                 p.setCurrentCohortId(newCohortId);
@@ -347,6 +349,7 @@ public class CohortManager
 
                 //TODO: Use Property URI & Make sure this is set properly
                 ColumnInfo cohortLabelCol = cohortDatasetTinfo.getColumn(study.getParticipantCohortProperty());
+
                 if (null != cohortLabelCol && cohortLabelCol.getJdbcType().isText())
                 {
                     clearParticipantCohorts(study);
@@ -355,23 +358,12 @@ public class CohortManager
                     SQLFragment sqlFragment = new SQLFragment();
                     sqlFragment.append("SELECT DISTINCT ").append(cohortLabelCol.getValueSql("CO")).append("\nFROM ");
                     sqlFragment.append(cohortDatasetTinfo.getFromSQL("CO")).append("\n" +
-                            "WHERE ").append(cohortLabelCol.getValueSql("CO")).append(" IS NOT NULL AND ").append(cohortLabelCol.getValueSql("CO")).append(" NOT IN\n" +
-                            "  (SELECT Label FROM " + StudySchema.getInstance().getTableInfoCohort() + " WHERE Container = ?)");
+                            "WHERE ").append(cohortLabelCol.getValueSql("CO")).append(" IS NOT NULL AND ").append(cohortLabelCol.getValueSql("CO"))
+                            .append(" NOT IN\n" + "  (SELECT Label FROM ").append(StudySchema.getInstance().getTableInfoCohort()).append(" WHERE Container = ?)");
                     sqlFragment.add(study.getContainer().getId());
 
-                    Set<String> newCohortLabels = new HashSet<>();
-                    Table.TableResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sqlFragment);
-                    try
-                    {
-                        while (rs.next())
-                        {
-                            newCohortLabels.add(rs.getString(1));
-                        }
-                    }
-                    finally
-                    {
-                        rs.close();
-                    }
+                    Collection<String> labels = new SqlSelector(StudySchema.getInstance().getSchema(), sqlFragment).getCollection(String.class);
+                    Set<String> newCohortLabels = new HashSet<>(labels);
 
                     for (String cohortLabel : newCohortLabels)
                     {
@@ -465,18 +457,16 @@ public class CohortManager
 
         Set<List<Object>> participantVisitParams = new HashSet<>();
 
-        ResultSet rs = null;
-        try
+        String prevParticipantId = null;
+        Integer prevCohortId = null;
+
+        Map<String, Integer> cohortNameToId = new HashMap<>();
+        List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), user);
+        for (CohortImpl cohort : cohorts)
+            cohortNameToId.put(cohort.getLabel(), cohort.getRowId());
+
+        try (ResultSet rs = new SqlSelector(StudySchema.getInstance().getSchema(), cohortSql).getResultSet())
         {
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), cohortSql);
-            String prevParticipantId = null;
-            Integer prevCohortId = null;
-
-            Map<String, Integer> cohortNameToId = new HashMap<>();
-            List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), user);
-            for (CohortImpl cohort : cohorts)
-                cohortNameToId.put(cohort.getLabel(), cohort.getRowId());
-
             while (rs.next())
             {
                 String participantId = rs.getString("ParticipantId");
@@ -527,11 +517,6 @@ public class CohortManager
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            if (rs != null)
-                try { rs.close(); } catch (SQLException e) { /* fall through */ }
         }
 
         Set<List<Object>> participantParams = new HashSet<>();

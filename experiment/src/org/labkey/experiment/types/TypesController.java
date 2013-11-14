@@ -25,9 +25,8 @@ import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -43,7 +42,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -553,7 +551,7 @@ public class TypesController extends SpringActionController
                 }
                 else
                 {
-                    pd.setPropertyId(propertyId.intValue());
+                    pd.setPropertyId(propertyId);
                     updates.add(pd);
                 }
             }
@@ -578,19 +576,20 @@ public class TypesController extends SpringActionController
 
     public static String[] getSemanticTypes()
     {
-        ResultSet rs = null;
-        try
+        String[] semanticTypes = SEMANTIC_TYPES_CACHE.get("Experiment-TypesController.getSemanticTypes");
+
+        if (semanticTypes == null)
         {
-            String[] semanticTypes = SEMANTIC_TYPES_CACHE.get("Experiment-TypesController.getSemanticTypes");
-            if (semanticTypes == null)
+            final TreeMap<String,String> set = new TreeMap<>();
+
+            new SqlSelector(ExperimentService.get().getSchema(), "SELECT DISTINCT SemanticType FROM exp.PropertyDescriptor").forEach(new Selector.ForEachBlock<ResultSet>()
             {
-                TreeMap<String,String> set = new TreeMap<>();
-                rs = Table.executeQuery(ExperimentService.get().getSchema(), "SELECT DISTINCT SemanticType FROM exp.PropertyDescriptor" , null);
-                while (rs.next())
+                @Override
+                public void exec(ResultSet rs) throws SQLException
                 {
                     String value = rs.getString(1);
                     if (null == value || 0 == value.length())
-                        continue;
+                        return;
                     String[] types = value.split("\\|");
                     for (String type : types)
                     {
@@ -599,19 +598,13 @@ public class TypesController extends SpringActionController
                         set.put(type.toLowerCase(), type);
                     }
                 }
-                semanticTypes = set.values().toArray(new String[set.size()]);
-                SEMANTIC_TYPES_CACHE.put("Experiment-TypesController.getSemanticTypes", semanticTypes, CacheManager.HOUR);
-            }
-            return semanticTypes;
+            });
+
+            semanticTypes = set.values().toArray(new String[set.size()]);
+            SEMANTIC_TYPES_CACHE.put("Experiment-TypesController.getSemanticTypes", semanticTypes, CacheManager.HOUR);
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);    
-        }
+
+        return semanticTypes;
     }
 
 

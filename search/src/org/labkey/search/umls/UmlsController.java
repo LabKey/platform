@@ -16,29 +16,33 @@
 package org.labkey.search.umls;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.action.FormViewAction;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.util.*;
+import org.labkey.api.util.JobRunner;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.PollingUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NavTree;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.io.Writer;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * User: matthewb
@@ -265,32 +269,18 @@ public class UmlsController extends SpringActionController
     {
         if (null == cuis || cuis.isEmpty())
             return Collections.emptyMap();
-        ResultSet rs = null;
-        try
+
+        SQLFragment sqlf = new SQLFragment("SELECT CUI, MIN(STR) FROM umls.MRCONSO WHERE LAT='ENG' AND CUI IN(");
+        String comma="";
+        for (String cui:cuis)
         {
-            SQLFragment sqlf = new SQLFragment("SELECT CUI, MIN(STR) FROM umls.MRCONSO WHERE LAT='ENG' AND CUI IN(");
-            String comma="";
-            for (String cui:cuis)
-            {
-                sqlf.append(comma).append("?");
-                sqlf.add(cui);
-                comma=",";
-            }
-            sqlf.append(") GROUP BY CUI");
-            rs = Table.executeQuery(umls, sqlf);
-            Map<String,String> map = new HashMap<>();
-            while (rs.next())
-                map.put(rs.getString(1), rs.getString(2));
-            return map;
+            sqlf.append(comma).append("?");
+            sqlf.add(cui);
+            comma=",";
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeException(x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        sqlf.append(") GROUP BY CUI");
+
+        return new SqlSelector(umls, sqlf).getValueMap();
     }
 
     

@@ -23,7 +23,7 @@ import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
@@ -171,12 +171,11 @@ public class ExportExcelReport extends RedirectReport
             //
             // PARTICIPANTS
             //
-            ResultSet rs = Table.executeQuery(studySchema.getSchema(),
+            ResultSet rs = new SqlSelector(studySchema.getSchema(),
                     "SELECT ParticipantId, COALESCE(Label,CAST(RowId AS VARCHAR(10))) AS Site FROM study.Participant LEFT OUTER JOIN study.Site ON study.Participant.CurrentSiteId = study.Site.RowId\n" +
                     "WHERE study.Participant.container='" + study.getContainer().getId() + "'\n" +
                     (locationId == 0 ? "" : "AND study.Participant.CurrentSiteId=" + locationId + "\n") +
-                    "ORDER BY 1",
-                    null);
+                    "ORDER BY 1").getResultSet();
 
             writer.createColumns(rs.getMetaData());
 

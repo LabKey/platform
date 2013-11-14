@@ -20,23 +20,19 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.Selector;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.SpecimenService;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.AjaxCompletion;
-import org.labkey.api.view.NavTree;
 import org.labkey.study.StudySchema;
 import org.springframework.validation.BindException;
-import org.springframework.web.servlet.ModelAndView;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -79,35 +75,35 @@ public class AutoCompleteAction extends ApiAction<AutoCompleteAction.AutoComplet
         else
             throw new IllegalArgumentException("Completion type " + form.getType() + " not recognized.");
 
-        List<AjaxCompletion> completions = new ArrayList<>();
-        ResultSet rs = null;
-        try
+        final List<AjaxCompletion> completions = new ArrayList<>();
+
+        SQLFragment sql = new SQLFragment();
+        sql.append("SELECT DISTINCT ");
+        sql.append(column);
+        sql.append(" FROM ");
+        sql.append(tinfo.getSchema().getName()).append(".").append(tinfo.getName());
+        sql.append(" WHERE Container = ?");
+        sql.add(getViewContext().getContainer().getId());
+        sql.append(" ORDER BY ").append(column);
+        tinfo.getSqlDialect().limitRows(sql, 50);
+
+        new SqlSelector(tinfo.getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
         {
-            SQLFragment sql = new SQLFragment();
-            sql.append("SELECT DISTINCT ");
-            sql.append(column);
-            sql.append(" FROM ");
-            sql.append(tinfo.getSchema().getName()).append(".").append(tinfo.getName());
-            sql.append(" WHERE Container = ?");
-            sql.add(getViewContext().getContainer().getId());
-            sql.append(" ORDER BY ").append(column);
-            tinfo.getSqlDialect().limitRows(sql, 50);
-            rs = Table.executeQuery(tinfo.getSchema(), sql);
-            while (rs.next())
+            @Override
+            public void exec(ResultSet rs) throws SQLException
+            {
                 completions.add(new AjaxCompletion(rs.getObject(1).toString()));
+            }
+        });
 
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            List<JSONObject> jsonCompletions = new ArrayList<>();
-            for (AjaxCompletion completion : completions)
-                jsonCompletions.add(completion.toJSON());
+        ApiSimpleResponse response = new ApiSimpleResponse();
+        List<JSONObject> jsonCompletions = new ArrayList<>();
+        for (AjaxCompletion completion : completions)
+            jsonCompletions.add(completion.toJSON());
 
-            response.put("completions", jsonCompletions);
-            return response;
-        }
-        finally
-        {
-            if (rs != null) try { rs.close(); } catch (SQLException e) {}
-        }
+        response.put("completions", jsonCompletions);
+
+        return response;
     }
 
     public static class AutoCompletionForm

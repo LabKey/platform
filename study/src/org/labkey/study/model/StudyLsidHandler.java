@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpObject;
@@ -67,9 +67,9 @@ public class StudyLsidHandler implements LsidManager.LsidHandler
         {
             try
             {
-                ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(),
+                ResultSet rs = new SqlSelector(StudySchema.getInstance().getSchema(),
                         "SELECT Container, DatasetId, SequenceNum, ParticipantId FROM " + /*StudySchema.getInstance().getTableInfoStudyData(null) +*/ " WHERE LSID=?",
-                        new Object[]{lsid.toString()});
+                        lsid.toString()).getResultSet();
                 if (!rs.next())
                     return null;
                 String containerId = rs.getString(1);

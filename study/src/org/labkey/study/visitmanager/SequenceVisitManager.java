@@ -217,7 +217,7 @@ public class SequenceVisitManager extends VisitManager
         if (schema.getSqlDialect() instanceof SqlDialectMicrosoftSQLServer) // for SQL Server 2000
             sqlCopyVisitDates += "FROM " + tableParticipantVisit + " ParticipantVisit\n";
         sqlCopyVisitDates += "WHERE Container=? AND VisitDate IS NULL";
-        Table.execute(schema, sqlCopyVisitDates,
+        new SqlExecutor(schema).execute(sqlCopyVisitDates,
                 new Object[]{study.getContainer(), study.getContainer()});
         */
     }

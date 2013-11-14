@@ -2919,11 +2919,8 @@ public class QueryController extends SpringActionController
             writer.writeProperty("queryName", form.getQueryName());
             writer.startList("values");
 
-            ResultSet rs = null;
-            try
+            try (ResultSet rs = new SqlSelector(form.getSchema().getDbSchema(), sql).getResultSet())
             {
-                rs = Table.executeQuery(form.getSchema().getDbSchema(), sql);
-
                 while (rs.next())
                 {
                     writer.writeListEntry(rs.getObject("value"));
@@ -2932,10 +2929,6 @@ public class QueryController extends SpringActionController
             catch (SQLException x)
             {
                 throw new RuntimeSQLException(x);
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
             }
             writer.endList();
             writer.endResponse();

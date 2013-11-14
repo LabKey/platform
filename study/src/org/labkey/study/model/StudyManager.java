@@ -602,7 +602,7 @@ public class StudyManager
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT max(n) FROM (SELECT COUNT(*) AS n FROM ").append(t.getFromSQL("DS")).append(" GROUP BY participantid) x");
         Integer maxCount = Table.executeSingleton(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), Integer.class);
-        return maxCount == null || maxCount.intValue() <= 1;
+        return maxCount == null || maxCount <= 1;
     }
 
 
@@ -1340,7 +1340,8 @@ public class StudyManager
 
     private Map<String, VisitImpl> getVisitsForDataRows(DataSetDefinition def, Collection<String> dataLsids)
     {
-        Map<String, VisitImpl> visits = new HashMap<>();
+        final Map<String, VisitImpl> visits = new HashMap<>();
+
         if (dataLsids == null || dataLsids.isEmpty())
             return visits;
 
@@ -1368,28 +1369,20 @@ public class StudyManager
         }
         sql.append(")");
 
-        Study study = def.getStudy();
-        ResultSet rs = null;
-        try
+        final Study study = def.getStudy();
+
+        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
         {
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql);
-            while (rs.next())
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 String lsid = rs.getString("LSID");
                 int visitId = rs.getInt("RowId");
                 visits.put(lsid, getVisitForRowId(study, visitId));
             }
-            return visits;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            if (rs != null)
-                try { rs.close(); } catch (SQLException e) { /* fall through */ }
-        }
+        });
+
+        return visits;
     }
 
     public List<VisitImpl> getVisitsForDataset(Container container, int datasetId)
@@ -1443,7 +1436,7 @@ public class StudyManager
             Integer oldStateId = (Integer) row.get(DataSetTableImpl.QCSTATE_ID_COLNAME);
             QCState oldState = null;
             if (oldStateId != null)
-                oldState = getQCStateForRowId(container, oldStateId.intValue());
+                oldState = getQCStateForRowId(container, oldStateId);
 
             // check to see if we're actually changing state.  If not, no-op:
             if (safeIntegersEqual(newState != null ? newState.getRowId() : null, oldStateId))
@@ -1813,25 +1806,15 @@ public class StudyManager
         public Pair<String, Integer> load(String domainURI, Object argument)
         {
             SQLFragment sql = new SQLFragment();
-            sql.append("SELECT container, datasetid FROM study.Dataset WHERE TypeURI=?");
+            sql.append("SELECT Container, DatasetId FROM study.Dataset WHERE TypeURI=?");
             sql.add(domainURI);
-            ResultSet rs = null;
-            try
-            {
-                rs = Table.executeQuery(StudySchema.getInstance().getSchema(),sql);
-                if (!rs.next())
-                    return null;
-                else
-                    return new Pair<>(rs.getString(1), rs.getInt(2));
-            }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
-            }
+
+            Map<String, Object> map = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getMap();
+
+            if (null == map)
+                return null;
+            else
+                return new Pair<>((String)map.get("Container"), (Integer)map.get("DatasetId"));
         }
     };
 
@@ -1894,20 +1877,19 @@ public class StudyManager
     public Map<VisitMapKey,Boolean> getRequiredMap(Study study)
     {
         TableInfo tableVisitMap = StudySchema.getInstance().getTableInfoVisitMap();
-        try
+        final HashMap<VisitMapKey,Boolean> map = new HashMap<>();
+
+        new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT DatasetId, VisitRowId, Required FROM " + tableVisitMap + " WHERE Container = ?",
+                study.getContainer()).forEach(new Selector.ForEachBlock<ResultSet>()
         {
-        ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), "SELECT DatasetId, VisitRowId, Required FROM " + tableVisitMap + " WHERE Container=?",
-                new Object[] { study.getContainer() });
-        HashMap<VisitMapKey,Boolean> map = new HashMap<>();
-        while (rs.next())
-            map.put(new VisitMapKey(rs.getInt(1), rs.getInt(2)), rs.getBoolean(3));
-        rs.close();
+            @Override
+            public void exec(ResultSet rs) throws SQLException
+            {
+                map.put(new VisitMapKey(rs.getInt(1), rs.getInt(2)), rs.getBoolean(3));
+            }
+        });
+
         return map;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
     }
 
 
@@ -1924,52 +1906,47 @@ public class StudyManager
             "WHERE vm.Container = ? AND vm.DataSetId = ?\n" +
             "ORDER BY v.DisplayOrder, v.RowId;";
 
-    List<VisitDataSet> getMapping(VisitImpl visit)
+    List<VisitDataSet> getMapping(final VisitImpl visit)
     {
         if (visit.getContainer() == null)
             throw new IllegalStateException("Visit has no container");
 
-        try
+        final List<VisitDataSet> visitDataSets = new ArrayList<>();
+
+        new SqlSelector(StudySchema.getInstance().getSchema(), VISITMAP_JOIN_BY_VISIT,
+                visit.getContainer(), visit.getRowId()).forEach(new Selector.ForEachBlock<ResultSet>()
         {
-            ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), VISITMAP_JOIN_BY_VISIT,
-                    new Object[] { visit.getContainer().getId(), visit.getRowId() });
-            List<VisitDataSet> visitDataSets = new ArrayList<>();
-            while (rs.next())
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 int dataSetId = rs.getInt("DataSetId");
                 boolean isRequired = rs.getBoolean("Required");
                 visitDataSets.add(new VisitDataSet(visit.getContainer(), dataSetId, visit.getRowId(), isRequired));
             }
-            rs.close();
-            return visitDataSets;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        });
+
+        return visitDataSets;
     }
 
 
-    public List<VisitDataSet> getMapping(DataSet dataSet)
+    public List<VisitDataSet> getMapping(final DataSet dataSet)
     {
-        try
+        final List<VisitDataSet> visitDataSets = new ArrayList<>();
+
+        new SqlSelector(StudySchema.getInstance().getSchema(), VISITMAP_JOIN_BY_DATASET,
+                dataSet.getContainer(), dataSet.getDataSetId()).forEach(new Selector.ForEachBlock<ResultSet>()
         {
-            ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), VISITMAP_JOIN_BY_DATASET,
-                    new Object[]{dataSet.getContainer().getId(), dataSet.getDataSetId()});
-            List<VisitDataSet> visitDataSets = new ArrayList<>();
-            while (rs.next())
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 int visitRowId = rs.getInt("VisitRowId");
                 boolean isRequired = rs.getBoolean("Required");
                 visitDataSets.add(new VisitDataSet(dataSet.getContainer(), dataSet.getDataSetId(), visitRowId, isRequired));
+
             }
-            rs.close();
-            return visitDataSets;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        });
+
+        return visitDataSets;
     }
 
 

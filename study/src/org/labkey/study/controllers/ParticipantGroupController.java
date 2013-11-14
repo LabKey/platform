@@ -27,7 +27,6 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
@@ -56,7 +55,6 @@ import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
-import javax.servlet.ServletException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;

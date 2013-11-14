@@ -18,10 +18,10 @@ package org.labkey.search.model;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -32,7 +32,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.ResultSetUtil;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -105,18 +104,9 @@ public class SavePaths implements DavCrawler.SavePaths
         String pathStr = toPathString(path);
         SQLFragment find = new SQLFragment("SELECT id FROM search.CrawlCollections WHERE ");
         find.append(pathFilter(getSearchSchema().getTable("CrawlCollections"), pathStr));
-        ResultSet rs = null;
-        try
-        {
-            rs = Table.executeQuery(getSearchSchema(), find);
-            if (rs.next())
-                return rs.getInt(1);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
-        return -1;
+        Integer id = new SqlSelector(getSearchSchema(), find).getObject(Integer.class);
+
+        return null != id ? id : -1;
     }
 
 
@@ -303,32 +293,28 @@ public class SavePaths implements DavCrawler.SavePaths
         SQLFragment f = new SQLFragment(
                 "SELECT Path, LastCrawled, NextCrawl\n" +
                 "FROM search.CrawlCollections\n");
-        if (dialect.isSqlServer() && !dialect.supportsOffset()) // SQL Server 2000 test
-            f.append("WITH (NOLOCK)\n");
         f.append("WHERE NextCrawl < ? AND (LastCrawled IS NULL OR LastCrawled < ?) " +
                 "ORDER BY NextCrawl");
         f.add(now);
         f.add(awhileago);
         SQLFragment sel = dialect.limitRows(f, limit);
 
-        ResultSet rs = null;
         try
         {
             Map<Path,Pair<Date,Date>> map = new LinkedHashMap<>();
             ArrayList<String> paths = new ArrayList<>(limit);
 
-            rs = Table.executeQuery(getSearchSchema(), sel);
-
-            while (rs.next())
+            try (ResultSet rs = new SqlSelector(getSearchSchema(), sel).getResultSet())
             {
-                String path = rs.getString(1);
-                java.sql.Timestamp lastCrawl = rs.getTimestamp(2);
-                java.sql.Timestamp nextCrawl = rs.getTimestamp(3);
-                map.put(Path.parse(path), new Pair<Date, Date>(lastCrawl, nextCrawl));
-                paths.add(path);
+                while (rs.next())
+                {
+                    String path = rs.getString(1);
+                    java.sql.Timestamp lastCrawl = rs.getTimestamp(2);
+                    java.sql.Timestamp nextCrawl = rs.getTimestamp(3);
+                    map.put(Path.parse(path), new Pair<Date, Date>(lastCrawl, nextCrawl));
+                    paths.add(path);
+                }
             }
-            rs.close();
-            rs = null;
 
             // UPDATE LastCrawled so we won't try to crawl for a while
             if (!paths.isEmpty())
@@ -355,10 +341,6 @@ public class SavePaths implements DavCrawler.SavePaths
                 throw new RuntimeSQLException(x);
             return Collections.emptyMap();
         }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
     }
 
 
@@ -374,34 +356,23 @@ public class SavePaths implements DavCrawler.SavePaths
                 "WHERE D.path = ?");
         s.add(toPathString(path));
 
-        Map<String,DavCrawler.ResourceInfo> map = new HashMap<>();
-        CachedResultSet rs = null;
-        try
-        {
-            rs = (CachedResultSet)Table.executeQuery(getSearchSchema(), s);
+        final Map<String,DavCrawler.ResourceInfo> map = new HashMap<>();
 
-            while (rs.next())
+        new SqlSelector(getSearchSchema(), s).forEach(new Selector.ForEachBlock<ResultSet>()
+        {
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 String name = rs.getString("Name");
                 if (null == name)
-                    continue;
+                    return;
                 Date modified = rs.getTimestamp("Modified");
                 Date lastIndex = rs.getTimestamp("LastIndexed");
                 map.put(name, new DavCrawler.ResourceInfo(lastIndex, modified));
             }
+        });
 
-            rs.close();
-            rs = null;
-            return map;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        return map;
     }
 
     String datetime = null;

@@ -273,34 +273,25 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
 
     public Set<Container> getExpRunContainers()
     {
-        ResultSet rs = null;
-        try
+        SQLFragment sql = new SQLFragment(" SELECT DISTINCT Container "
+                    + " FROM exp.ExperimentRun ER "
+                    + " WHERE ER.ProtocolLSID = ?");
+        sql.add(getLSID());
+
+        final Set<Container> containers = new TreeSet<>();
+
+        new SqlSelector(ExperimentService.get().getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
         {
-            SQLFragment sql = new SQLFragment(" SELECT DISTINCT Container "
-                        + " FROM exp.ExperimentRun ER "
-                        + " WHERE ER.ProtocolLSID = ?");
-            sql.add(getLSID());
-
-            rs = Table.executeQuery(ExperimentService.get().getSchema(), sql);
-
-            Set<Container> containers = new TreeSet<>();
-            while (rs.next())
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 String containerId = rs.getString("Container");
                 Container container = ContainerManager.getForId(containerId);
                 assert container != null : "All runs should have a valid container.  Couldn't find container for ID " + containerId;
                 containers.add(container);
             }
-            return containers;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            if (rs != null)
-                try { rs.close(); } catch (SQLException e) {}
-        }
+        });
+
+        return containers;
     }
 }

@@ -17,6 +17,7 @@
 package org.labkey.study.reports;
 
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.data.time.TimeSeries;
@@ -24,7 +25,8 @@ import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.time.Week;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.Selector;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -35,7 +37,11 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
@@ -43,7 +49,6 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 
 import javax.imageio.ImageIO;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -90,86 +95,76 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
     }
 
     @Override
-    public void renderImage(ViewContext viewContext) throws Exception
+    public void renderImage(ViewContext viewContext) throws IOException
     {
         String errorMessage = null;
         ReportDescriptor reportDescriptor = getDescriptor();
+
         if (reportDescriptor instanceof ChartReportDescriptor)
         {
-            try
+            ChartReportDescriptor descriptor = (ChartReportDescriptor)reportDescriptor;
+            HttpServletResponse response = viewContext.getResponse();
+
+            final Study study = StudyManager.getInstance().getStudy(viewContext.getContainer());
+            int datasetId = NumberUtils.createInteger(descriptor.getProperty(DataSetDefinition.DATASETKEY));
+            double sequenceNum = VisitImpl.parseSequenceNum(descriptor.getProperty(VisitImpl.SEQUENCEKEY));
+
+            if (ReportManager.get().canReadReport(viewContext.getUser(), viewContext.getContainer(), this))
             {
-                ChartReportDescriptor descriptor = (ChartReportDescriptor)reportDescriptor;
-                HttpServletResponse response = viewContext.getResponse();
+                final ArrayList<Date> dates = new ArrayList<>();
+                final int indexX = 1;
+                final Date tomorrow = new Date(System.currentTimeMillis() + CacheManager.DAY);
 
-                final Study study = StudyManager.getInstance().getStudy(viewContext.getContainer());
-                int datasetId = NumberUtils.createInteger(descriptor.getProperty(DataSetDefinition.DATASETKEY));
-                double sequenceNum = VisitImpl.parseSequenceNum(descriptor.getProperty(VisitImpl.SEQUENCEKEY));
-
-                if (ReportManager.get().canReadReport(viewContext.getUser(), viewContext.getContainer(), this))
+                getVisitDateSelector(study, datasetId, sequenceNum, viewContext.getUser()).forEach(new Selector.ForEachBlock<ResultSet>()
                 {
-                    ResultSet rs = getVisitDateResultSet(study, datasetId, sequenceNum, viewContext.getUser());
-                    try
+                    @Override
+                    public void exec(ResultSet rs) throws SQLException
                     {
-                        int indexX = 1;
-
-                        //
-                        // Chart
-                        //
-                        ArrayList<Date> dates = new ArrayList<>();
-                        Date tomorrow = new Date(System.currentTimeMillis() + CacheManager.DAY);
-                        while (rs.next())
-                        {
-                            Timestamp t = rs.getTimestamp(indexX);
-                            if (t == null)
-                                dates.add(tomorrow);
-                            else
-                                dates.add(t);
-                        }
-                        Collections.sort(dates);
-                        Week lastWeek = dates.isEmpty() ? new Week(new Date()) : new Week(dates.get(dates.size()-1));
-                        Week firstWeek = (Week)(dates.isEmpty() ? lastWeek : (new Week(dates.get(0))).previous());
-                        // add a sentinal date (after last)
-                        dates.add((lastWeek.next()).getStart());
-
-                        TimeSeries seriesTotal = new TimeSeries("Enrollment", Week.class);
-                        TimeSeries seriesPeriod = new TimeSeries("Weekly", Week.class);
-                        double runningCount = 0;
-                        double periodCount = 0;
-                        Week curr = firstWeek;
-                        for (Date d : dates)
-                        {
-                            Week w = new Week(d);
-                            for ( ; curr.compareTo(w) < 0 ; curr = (Week)curr.next())
-                            {
-                                seriesTotal.add(curr, runningCount);
-                                seriesPeriod.add(curr, periodCount);
-                                periodCount = 0;
-                            }
-                            ++runningCount;
-                            ++periodCount;
-                        }
-
-                        TimeSeriesCollection col = new TimeSeriesCollection();
-                        col.addSeries(seriesTotal);
-                        col.addSeries(seriesPeriod);
-
-                        DataSet ds = study.getDataSet(datasetId);
-                        byte[] bytes = generateTimeChart("Dataset: " + ds.getLabel(), col, "Visit Date", "", null);
-                        response.setContentType("image/png");
-                        response.setContentLength(bytes.length);
-                        response.getOutputStream().write(bytes);
+                        Timestamp t = rs.getTimestamp(indexX);
+                        if (t == null)
+                            dates.add(tomorrow);
+                        else
+                            dates.add(t);
                     }
-                    finally
+                });
+
+                Collections.sort(dates);
+                Week lastWeek = dates.isEmpty() ? new Week(new Date()) : new Week(dates.get(dates.size() - 1));
+                Week firstWeek = (Week) (dates.isEmpty() ? lastWeek : (new Week(dates.get(0))).previous());
+                // add a sentinal date (after last)
+                dates.add((lastWeek.next()).getStart());
+
+                TimeSeries seriesTotal = new TimeSeries("Enrollment", Week.class);
+                TimeSeries seriesPeriod = new TimeSeries("Weekly", Week.class);
+                double runningCount = 0;
+                double periodCount = 0;
+                Week curr = firstWeek;
+                for (Date d : dates)
+                {
+                    Week w = new Week(d);
+                    for (; curr.compareTo(w) < 0; curr = (Week) curr.next())
                     {
-                        rs.close();
+                        seriesTotal.add(curr, runningCount);
+                        seriesPeriod.add(curr, periodCount);
+                        periodCount = 0;
                     }
+                    ++runningCount;
+                    ++periodCount;
                 }
-                else
-                    errorMessage = "No permission to view this chart";
+
+                TimeSeriesCollection col = new TimeSeriesCollection();
+                col.addSeries(seriesTotal);
+                col.addSeries(seriesPeriod);
+
+                DataSet ds = study.getDataSet(datasetId);
+                byte[] bytes = generateTimeChart("Dataset: " + ds.getLabel(), col, "Visit Date", "", null);
+                response.setContentType("image/png");
+                response.setContentLength(bytes.length);
+                response.getOutputStream().write(bytes);
             }
-            catch (Exception e)
+            else
             {
-                errorMessage = e.getMessage();
+                errorMessage = "No permission to view this chart";
             }
         }
         else
@@ -208,7 +203,7 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
         return out.toByteArray();
     }
 
-    private static ResultSet getVisitDateResultSet(Study study, int datasetId, double sequenceNum, User user) throws ServletException, SQLException
+    private static Selector getVisitDateSelector(Study study, int datasetId, double sequenceNum, User user)
     {
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
         TableInfo ti = def.getTableInfo(user);
@@ -220,8 +215,8 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
         sql.add(study.getContainer());
         sql.add(sequenceNum);
         sql.add(sequenceNum);
-        ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql);
-        return rs;
+
+        return new SqlSelector(StudySchema.getInstance().getSchema(), sql);
     }
 
     public static class EnrollmentView extends WebPartView
@@ -236,7 +231,7 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
         }
 
         @Override
-        protected void renderView(Object model, PrintWriter out) throws Exception
+        protected void renderView(Object model, PrintWriter out)
         {
             if (_report != null)
             {
@@ -249,33 +244,29 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
 
                 final Study study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
                 int datasetId = NumberUtils.toInt(descriptor.getProperty(DataSetDefinition.DATASETKEY));
+
                 if (descriptor.getProperty(VisitImpl.SEQUENCEKEY) != null)
                 {
                     double sequenceNum = VisitImpl.parseSequenceNum(descriptor.getProperty(VisitImpl.SEQUENCEKEY));
-                    ResultSet rs = getVisitDateResultSet(study, datasetId, sequenceNum, getViewContext().getUser());
+                    final int indexX = 1;
+                    final MutableInt countAll = new MutableInt(0);
+                    final MutableInt countNull = new MutableInt(0);
 
-                    try
+                    getVisitDateSelector(study, datasetId, sequenceNum, getViewContext().getUser()).forEach(new Selector.ForEachBlock<ResultSet>()
                     {
-                        int indexX = 1;
-                        int countAll = 0;
-                        int countNull = 0;
-
-                        while (rs.next())
+                        @Override
+                        public void exec(ResultSet rs) throws SQLException
                         {
-                            countAll++;
+                            countAll.increment();
                             Timestamp t = rs.getTimestamp(indexX);
                             if (t == null)
-                                countNull++;
+                                countNull.increment();
                         }
+                    });
 
-                        if (countNull != 0)
-                        {
-                            out.println("<br><font class=labkey-error>" + countNull + " participants (out of " + countAll + ") do not have VisitDate properly recorded.</font>");
-                        }
-                    }
-                    finally
+                    if (countNull.intValue() != 0)
                     {
-                        rs.close();
+                        out.println("<br><font class=labkey-error>" + countNull.intValue() + " participants (out of " + countAll.intValue() + ") do not have VisitDate properly recorded.</font>");
                     }
                 }
                 out.println("<br>[&nbsp;<a href=\"" + configure + "\">configure</a>&nbsp;]");

@@ -33,6 +33,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -885,10 +886,10 @@ public class AssayPublishManager implements AssayPublishService.Service
             String targetStudyContainerId = protocol.getObjectProperties().get(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI).getStringValue();
             if (targetStudyContainerId != null)
             {
-                Container targetStudyContainer = ContainerManager.getForId(targetStudyContainerId);
+                final Container targetStudyContainer = ContainerManager.getForId(targetStudyContainerId);
                 if (targetStudyContainer != null)
                 {
-                    StudyImpl study = StudyManager.getInstance().getStudy(targetStudyContainer);
+                    final StudyImpl study = StudyManager.getInstance().getStudy(targetStudyContainer);
                     if (study != null)
                     {
                         boolean hasPermission = false;
@@ -917,18 +918,18 @@ public class AssayPublishManager implements AssayPublishService.Service
                         // Do a query to get all the info we need to do the copy
                         TableInfo resultTable = schema.createDataTable(false);
                         Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(resultTable, Arrays.asList(ptidFK, visitFK, objectIdFK, runFK));
-                        ColumnInfo ptidColumn = cols.get(ptidFK);
-                        ColumnInfo visitColumn = cols.get(visitFK);
-                        ColumnInfo objectIdColumn = cols.get(objectIdFK);
+                        final ColumnInfo ptidColumn = cols.get(ptidFK);
+                        final ColumnInfo visitColumn = cols.get(visitFK);
+                        final ColumnInfo objectIdColumn = cols.get(objectIdFK);
+                        final Map<Integer, AssayPublishKey> keys = new HashMap<>();
                         assert cols.get(runFK) != null : "Could not find object id column: " + objectIdFK;
 
                         SQLFragment sql = QueryService.get().getSelectSQL(resultTable, cols.values(), new SimpleFilter(runFK.encode(), run.getRowId()), null, Table.ALL_ROWS, Table.NO_OFFSET, false);
-                        ResultSet rs = null;
-                        try
+
+                        new SqlSelector(resultTable.getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
                         {
-                            rs = Table.executeQuery(resultTable.getSchema(), sql);
-                            Map<Integer, AssayPublishKey> keys = new HashMap<>();
-                            while (rs.next())
+                            @Override
+                            public void exec(ResultSet rs) throws SQLException
                             {
                                 // Be careful to not assume that we have participant or visit columns in our data domain
                                 Object ptidObject = ptidColumn == null ? null : ptidColumn.getValue(rs);
@@ -951,31 +952,16 @@ public class AssayPublishManager implements AssayPublishService.Service
                                     keys.put(objectId, key);
                                 }
                             }
-                            List<String> copyErrors = new ArrayList<>();
-                            provider.copyToStudy(user, container, protocol, targetStudyContainer, keys, copyErrors);
-                            return copyErrors;
-                        }
-                        catch (SQLException e)
-                        {
-                            throw new RuntimeSQLException(e);
-                        }
-                        finally
-                        {
-                            if (rs != null)
-                            {
-                                try
-                                {
-                                    rs.close();
-                                }
-                                catch (SQLException e)
-                                {
-                                }
-                            }
-                        }
+                        });
+
+                        List<String> copyErrors = new ArrayList<>();
+                        provider.copyToStudy(user, container, protocol, targetStudyContainer, keys, copyErrors);
+                        return copyErrors;
                     }
                 }
             }
         }
+
         return Collections.emptyList();
     }
 }

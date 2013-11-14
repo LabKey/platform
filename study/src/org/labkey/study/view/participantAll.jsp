@@ -23,10 +23,12 @@
 <%@ page import="org.labkey.api.data.DbSchema" %>
 <%@ page import="org.labkey.api.data.Results" %>
 <%@ page import="org.labkey.api.data.SQLFragment" %>
+<%@ page import="org.labkey.api.data.Selector" %>
 <%@ page import="org.labkey.api.data.SimpleFilter" %>
 <%@ page import="org.labkey.api.data.Sort" %>
-<%@ page import="org.labkey.api.data.Table" %>
+<%@ page import="org.labkey.api.data.SqlSelector" %>
 <%@ page import="org.labkey.api.data.TableInfo" %>
+<%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.exp.LsidManager" %>
 <%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
@@ -49,6 +51,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.study.StudySchema" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
@@ -59,19 +62,18 @@
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.reports.StudyChartQueryReport" %>
 <%@ page import="java.sql.ResultSet" %>
+<%@ page import="java.sql.SQLException" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.HashSet" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
-<%@ page import="org.labkey.api.data.TableSelector" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 
@@ -88,7 +90,7 @@
     DbSchema dbSchema = querySchema.getDbSchema();
     String contextPath = request.getContextPath();
     JspView<StudyManager.ParticipantViewConfig> me = (JspView<StudyManager.ParticipantViewConfig>) HttpView.currentView();
-    StudyManager.ParticipantViewConfig bean = me.getModelBean();
+    final StudyManager.ParticipantViewConfig bean = me.getModelBean();
     Map<String, String> aliasMap = bean.getAliases();
 
     ChartDesignerBean chartBean = new ChartDesignerBean();
@@ -126,30 +128,31 @@
     // populate a VisitMultiMap while we're at it
     //
 
-    ResultSet rs;
+    final Map<Pair<String, Double>, Integer> visitRowIdMap = new HashMap<>();
+    final Map<Double, Date> ptidVisitDates = new TreeMap<>();
 
-    Map<Pair<String, Double>, Integer> visitRowIdMap = new HashMap<>();
-    Map<Double, Date> ptidVisitDates = new TreeMap<>();
-    rs = Table.executeQuery(dbSchema,
+    new SqlSelector(dbSchema,
             "SELECT VisitRowId, ParticipantId, SequenceNum, VisitDate\n" +
                     "FROM " + StudySchema.getInstance().getTableInfoParticipantVisit() + "\n" +
                     "WHERE Container = ? AND ParticipantId = ?",
-            new Object[]{study.getContainer(), bean.getParticipantId()});
-    while (rs.next())
+            study.getContainer(), bean.getParticipantId()).forEach(new Selector.ForEachBlock<ResultSet>()
     {
-        int visitRowId = rs.getInt(1);
-        String ptid = rs.getString(2);
-        double sequenceNum = rs.getDouble(3);
-        Date visitDate = rs.getDate(4);
-        visitRowIdMap.put(new Pair(ptid, sequenceNum), visitRowId);
-        if (bean.getParticipantId().equals(ptid))
-            ptidVisitDates.put(sequenceNum, visitDate);
-    }
-    rs.close();
+        @Override
+        public void exec(ResultSet rs) throws SQLException
+        {
+            int visitRowId = rs.getInt(1);
+            String ptid = rs.getString(2);
+            double sequenceNum = rs.getDouble(3);
+            Date visitDate = rs.getDate(4);
+            visitRowIdMap.put(new Pair<>(ptid, sequenceNum), visitRowId);
+            if (bean.getParticipantId().equals(ptid))
+                ptidVisitDates.put(sequenceNum, visitDate);
+        }
+    });
 
-    VisitMultiMap visitSequenceMap = new VisitMultiMap();
-    Map<Double, Integer> countKeysForSequence = new HashMap<>();
-    Set<Integer> datasetSet = new HashSet<>();
+    final VisitMultiMap visitSequenceMap = new VisitMultiMap();
+    final Map<Double, Integer> countKeysForSequence = new HashMap<>();
+    final Set<Integer> datasetSet = new HashSet<>();
     SimpleFilter filter = new SimpleFilter(study.getSubjectColumnName(), bean.getParticipantId());
     Sort sort = new Sort("SequenceNum");
     SQLFragment f = new SQLFragment();
@@ -158,24 +161,26 @@
     f.append("\nWHERE ParticipantId = ?");
     f.append("GROUP BY ParticipantId, SequenceNum, DatasetId");
     f.add(bean.getParticipantId());
-    rs = Table.executeQuery(dbSchema, f);
-    while (rs.next())
-    {
-        String ptid = rs.getString(1);
-        double s = rs.getDouble(2);
-        Double sequenceNum = rs.wasNull() ? null : s;
-        int datasetId = rs.getInt(3);
-        int rowCount = ((Number) rs.getObject(4)).intValue();
-        Integer visitRowId = visitRowIdMap.get(new Pair(ptid, sequenceNum));
-        if (null != visitRowId && null != sequenceNum)
-            visitSequenceMap.put(visitRowId, sequenceNum);
-        datasetSet.add(datasetId);
-        Integer count = countKeysForSequence.get(sequenceNum);
-        if (null == count || count < rowCount)
-            countKeysForSequence.put(sequenceNum, rowCount);
-    }
-    rs.close();
 
+    new SqlSelector(dbSchema, f).forEach(new Selector.ForEachBlock<ResultSet>()
+    {
+        @Override
+        public void exec(ResultSet rs) throws SQLException
+        {
+            String ptid = rs.getString(1);
+            double s = rs.getDouble(2);
+            Double sequenceNum = rs.wasNull() ? null : s;
+            int datasetId = rs.getInt(3);
+            int rowCount = ((Number) rs.getObject(4)).intValue();
+            Integer visitRowId = visitRowIdMap.get(new Pair<>(ptid, sequenceNum));
+            if (null != visitRowId && null != sequenceNum)
+                visitSequenceMap.put(visitRowId, sequenceNum);
+            datasetSet.add(datasetId);
+            Integer count = countKeysForSequence.get(sequenceNum);
+            if (null == count || count < rowCount)
+                countKeysForSequence.put(sequenceNum, rowCount);
+        }
+    });
 
     // Now we have a list of datasets with 1 or more rows and
     // a visitMap to help with layout

@@ -30,6 +30,7 @@ import org.labkey.api.data.LegacySqlExecutor;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -45,7 +46,6 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
@@ -189,17 +189,14 @@ public abstract class VisitManager
 
         boolean useVisitId = true;
 
+        Map<VisitMapKey, VisitStatistics> visitSummary = new HashMap<>();
+        VisitMapKey key = null;
+        VisitStatistics statistics = new VisitStatistics();
+
         SQLFragment sql = getVisitSummarySql(cohortFilter, qcStates, statsSql.toString(), alias, showAll, useVisitId);
-        ResultSet rows = null;
 
-        try
+        try (ResultSet rows = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false, false))
         {
-            rows = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false, false);
-
-            Map<VisitMapKey, VisitStatistics> visitSummary = new HashMap<>();
-            VisitMapKey key = null;
-            VisitStatistics statistics = new VisitStatistics();
-
             while (rows.next())
             {
                 int datasetId = rows.getInt(1);
@@ -234,17 +231,13 @@ public abstract class VisitManager
                 for (VisitStatistic stat : stats)
                     statistics.add(stat, rows.getInt(column++));
             }
+        }
 
-            if (key != null)
-                visitSummary.put(key, statistics);
+        if (key != null)
+            visitSummary.put(key, statistics);
 
 //            assert dump(visitSummary, stats);
-            return visitSummary;
-        }
-        finally
-        {
-            ResultSetUtil.close(rows);
-        }
+        return visitSummary;
     }
 
 
@@ -342,15 +335,14 @@ public abstract class VisitManager
     public Map<Integer, List<Double>> getDatasetSequenceNums()
     {
         SQLFragment sql = getDatasetSequenceNumsSQL(getStudy());
-        ResultSet rs = null;
-        Map<Integer, List<Double>> ret = new HashMap<>();
+        final Map<Integer, List<Double>> ret = new HashMap<>();
 
-        try
+        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(new ForEachBlock<ResultSet>()
         {
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql);
-            while (rs.next())
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
-                Integer datasetId  = rs.getInt(1);
+                Integer datasetId = rs.getInt(1);
                 Double sequenceNum = rs.getDouble(2);
                 List<Double> l = ret.get(datasetId);
                 if (null == l)
@@ -360,15 +352,7 @@ public abstract class VisitManager
                 }
                 l.add(sequenceNum);
             }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        });
 
         return ret;
     }
@@ -441,79 +425,72 @@ public abstract class VisitManager
         final Set<String> potentiallyInsertedParticipants, 
         Set<String> potentiallyDeletedParticipants)
     {
-        try
+        String c = getStudy().getContainer().getId();
+
+        DbSchema schema = StudySchema.getInstance().getSchema();
+        TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
+
+        SQLFragment studyPtidsFragment = studyDataPtids(changedDatasets); // 17167
+
+        // Don't bother if we explicitly know that no participants were added, or that no datasets were edited
+        if (null != studyPtidsFragment && !changedDatasets.isEmpty() && (potentiallyInsertedParticipants == null || !potentiallyInsertedParticipants.isEmpty()))
         {
-            String c = getStudy().getContainer().getId();
+            SQLFragment datasetParticipantsSQL = new SQLFragment("INSERT INTO " + tableParticipant + " (container, participantid)\n" +
+                    "SELECT DISTINCT ?, participantid\n" +
+                    "FROM (").append(studyPtidsFragment).append("\n" +
+                    ") x WHERE participantid NOT IN (SELECT participantid FROM " + tableParticipant + " WHERE container = ?)");
+            datasetParticipantsSQL.add(c);
+            datasetParticipantsSQL.add(c);
 
-            DbSchema schema = StudySchema.getInstance().getSchema();
-            TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
-
-            SQLFragment studyPtidsFragment = studyDataPtids(changedDatasets); // 17167
-
-            // Don't bother if we explicitly know that no participants were added, or that no datasets were edited
-            if (null != studyPtidsFragment && !changedDatasets.isEmpty() && (potentiallyInsertedParticipants == null || !potentiallyInsertedParticipants.isEmpty()))
+            // Databases limit the size of IN clauses, so check that we won't blow the cap
+            if (potentiallyInsertedParticipants != null && potentiallyInsertedParticipants.size() < 450)
             {
-                SQLFragment datasetParticipantsSQL = new SQLFragment("INSERT INTO " + tableParticipant + " (container, participantid)\n" +
-                        "SELECT DISTINCT ?, participantid\n" +
-                        "FROM (").append(studyPtidsFragment).append("\n" +
-                        ") x WHERE participantid NOT IN (SELECT participantid FROM " + tableParticipant + " WHERE container = ?)");
-                datasetParticipantsSQL.add(c);
-                datasetParticipantsSQL.add(c);
-
-                // Databases limit the size of IN clauses, so check that we won't blow the cap
-                if (potentiallyInsertedParticipants != null && potentiallyInsertedParticipants.size() < 450)
-                {
-                    // We have an explicit list of potentially added participants, so filter to only look at them
-                    datasetParticipantsSQL.append(" AND participantid IN (");
-                    datasetParticipantsSQL.append(StringUtils.repeat("?", ", ", potentiallyInsertedParticipants.size()));
-                    datasetParticipantsSQL.addAll(potentiallyInsertedParticipants);
-                    datasetParticipantsSQL.append(")");
-                }
-
-                new SqlExecutor(schema).execute(datasetParticipantsSQL);
-            }
-            
-            // If we don't know which participants might have been deleted, or we know and there are some,
-            // keep the participant list up to date
-            if (potentiallyDeletedParticipants == null || !potentiallyDeletedParticipants.isEmpty())
-            {
-                scheduleParticipantPurge(potentiallyDeletedParticipants);
+                // We have an explicit list of potentially added participants, so filter to only look at them
+                datasetParticipantsSQL.append(" AND participantid IN (");
+                datasetParticipantsSQL.append(StringUtils.repeat("?", ", ", potentiallyInsertedParticipants.size()));
+                datasetParticipantsSQL.addAll(potentiallyInsertedParticipants);
+                datasetParticipantsSQL.append(")");
             }
 
-            updateStartDates(user);
-
-
-            //
-            // tell the search service about potential new ptids
-            //
-            final SearchService ss = ServiceRegistry.get(SearchService.class);
-            final String cid = _study.getContainer().getId();
-            if (null != ss)
-            {
-                if (null != potentiallyInsertedParticipants)
-                {
-                    final ArrayList<String> ptids = new ArrayList<>(potentiallyInsertedParticipants);
-                    Runnable r = new Runnable(){ public void run(){
-                        StudyManager.indexParticipants(ss.defaultTask(), _study.getContainer(), ptids);
-                    }};
-                    ss.defaultTask().addRunnable(r, SearchService.PRIORITY.group);
-                }
-                else
-                {
-                    Runnable r = new Runnable() { public void run()
-                    {
-                        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), cid);
-                        filter.addCondition(FieldKey.fromParts("LastIndexed"), null, CompareType.ISBLANK);
-                        List<String> ptids = new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), Collections.singleton("ParticipantId"), filter, null).getArrayList(String.class);
-                        StudyManager.indexParticipants(ss.defaultTask(), _study.getContainer(), ptids);
-                    } };
-                    ss.defaultTask().addRunnable(r, SearchService.PRIORITY.group);
-                }
-            }
+            new SqlExecutor(schema).execute(datasetParticipantsSQL);
         }
-        catch (SQLException x)
+
+        // If we don't know which participants might have been deleted, or we know and there are some,
+        // keep the participant list up to date
+        if (potentiallyDeletedParticipants == null || !potentiallyDeletedParticipants.isEmpty())
         {
-            throw new RuntimeSQLException(x);
+            scheduleParticipantPurge(potentiallyDeletedParticipants);
+        }
+
+        updateStartDates(user);
+
+
+        //
+        // tell the search service about potential new ptids
+        //
+        final SearchService ss = ServiceRegistry.get(SearchService.class);
+        final String cid = _study.getContainer().getId();
+        if (null != ss)
+        {
+            if (null != potentiallyInsertedParticipants)
+            {
+                final ArrayList<String> ptids = new ArrayList<>(potentiallyInsertedParticipants);
+                Runnable r = new Runnable(){ public void run(){
+                    StudyManager.indexParticipants(ss.defaultTask(), _study.getContainer(), ptids);
+                }};
+                ss.defaultTask().addRunnable(r, SearchService.PRIORITY.group);
+            }
+            else
+            {
+                Runnable r = new Runnable() { public void run()
+                {
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), cid);
+                    filter.addCondition(FieldKey.fromParts("LastIndexed"), null, CompareType.ISBLANK);
+                    List<String> ptids = new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), Collections.singleton("ParticipantId"), filter, null).getArrayList(String.class);
+                    StudyManager.indexParticipants(ss.defaultTask(), _study.getContainer(), ptids);
+                } };
+                ss.defaultTask().addRunnable(r, SearchService.PRIORITY.group);
+            }
         }
     }
 
@@ -599,7 +576,7 @@ public abstract class VisitManager
     }
 
 
-    protected void updateStartDates(User user) throws SQLException
+    protected void updateStartDates(User user)
     {
         TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
         //See if there are any demographic datasets that contain a start date
@@ -621,7 +598,7 @@ public abstract class VisitManager
                     String sql = "UPDATE " + tableParticipant + " SET StartDate = " + subselect + " WHERE (" +
                             tableParticipant + ".StartDate IS NULL OR NOT " + tableParticipant + ".StartDate = " + subselect +
                             ") AND Container = ?";
-                    Table.execute(schema, sql, dataset.getContainer().getId(), dataset.getContainer().getId(), dataset.getContainer().getId());
+                    new SqlExecutor(schema).execute(sql, dataset.getContainer().getId(), dataset.getContainer().getId(), dataset.getContainer().getId());
                     break;
                 }
             }
@@ -629,7 +606,8 @@ public abstract class VisitManager
         //No demographic data, so just set to study start date.
         String sqlUpdateStartDates = "UPDATE " + tableParticipant + " SET StartDate = ? WHERE Container = ? AND StartDate IS NULL";
         Parameter.TypedValue startDateParam = new Parameter.TypedValue(getStudy().getStartDate(), JdbcType.TIMESTAMP);
-        Table.execute(schema, sqlUpdateStartDates, startDateParam, getStudy().getContainer());
+
+        new SqlExecutor(schema).execute(sqlUpdateStartDates, startDateParam, getStudy().getContainer());
     }
 
     protected static TableInfo getSpecimenTable(StudyImpl study)
