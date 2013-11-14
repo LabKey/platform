@@ -385,7 +385,7 @@ public class Parameter
     }
 
 
-    public static class ParameterMap
+    public static class ParameterMap implements AutoCloseable
     {
         SQLFragment _sqlf;
         PreparedStatement _stmt;
@@ -658,6 +658,7 @@ public class Parameter
         }
 
 
+        @Override
         public void close() throws SQLException
         {
             _stmt.clearParameters();
