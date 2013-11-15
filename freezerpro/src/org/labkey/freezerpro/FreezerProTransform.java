@@ -5,9 +5,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.util.FileType;
+import org.labkey.api.view.ActionURL;
 
 import java.io.File;
 
@@ -40,5 +43,15 @@ public class FreezerProTransform implements SpecimenTransform
     {
         FreezerProTransformTask task = new FreezerProTransformTask(job);
         task.transform(input, outputArchive);
+    }
+
+    @Override
+    public ActionURL getManageAction(Container c, User user)
+    {
+/*
+        if (c.hasPermission(user, AdminPermission.class))
+            return new ActionURL(FreezerProController.ConfigureAction.class, c);
+*/
+        return null;
     }
 }

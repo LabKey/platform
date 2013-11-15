@@ -58,6 +58,8 @@
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.study.SpecimenTransform" %>
+<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
 
@@ -277,6 +279,23 @@
         <td><%= textLink("Configure Specimen Groupings",
                 new ActionURL(SpecimenController.ManageSpecimenWebPartAction.class, c)) %></td>
     </tr>
+<%
+    for (SpecimenTransform transform : SpecimenService.get().getSpecimenTransforms(getContainer()))
+    {
+        ActionURL manageAction = transform.getManageAction(getContainer(), getUser());
+        if (manageAction != null)
+        {
+%>
+        <tr>
+            <th align="left">External Specimen Repository</th>
+            <td>Configure settings for a <%=h(transform.getName())%> repository.</td>
+            <td><%=textLink("Configure " + transform.getName(), manageAction)%></td>
+        </tr>
+<%
+        }
+    }
+%>
+
 <%
         }
         else
