@@ -4,7 +4,9 @@ import com.drew.lang.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
+import org.labkey.api.view.ActionURL;
 
 import java.io.File;
 
@@ -31,4 +33,7 @@ public interface SpecimenTransform
      * process.
      */
     void transform(@Nullable PipelineJob job, File input, File outputArchive) throws PipelineJobException;
+
+    @Nullable
+    ActionURL getManageAction(Container c, User user);
 }
