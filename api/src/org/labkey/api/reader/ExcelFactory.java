@@ -164,6 +164,8 @@ public class ExcelFactory
                         value = metadataObject.get("value");
                     }
 
+                    boolean forceString = metadataObject != null && metadataObject.has("forceString") && Boolean.TRUE.equals(metadataObject.get("forceString"));
+
                     Cell cell = row.createCell(colIndex);
                     if (value instanceof java.lang.Number)
                     {
@@ -178,7 +180,7 @@ public class ExcelFactory
                     {
                         cell.setCellValue(((Boolean) value).booleanValue());
                     }
-                    else if (value instanceof String)
+                    else if (value instanceof String && !forceString)
                     {
                         try
                         {

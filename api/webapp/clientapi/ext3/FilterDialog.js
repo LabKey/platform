@@ -769,8 +769,7 @@ Ext.reg('filter-view-default', LABKEY.FilterDialog.View.Default);
 
 LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
-    MAX_DISPLAY_CHOICES: 250,
-    MAX_FILTER_CHOICES: 250,
+    MAX_FILTER_CHOICES: 250, // This is the maximum number of filters that will be requested / shown
 
     applyContextFilters: true,
 
@@ -1161,6 +1160,10 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                     var div = Ext.fly(grid.getView().getHeaderCell(1)).first('div');
                     div.on('click', grid.onHeaderCellClick, grid);
                 }
+
+                if (numFacets > this.MAX_FILTER_CHOICES) {
+                    this.fireEvent('invalidfilter');
+                }
             }
         }
 
@@ -1191,7 +1194,7 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             containerPath: dr.container || dr.containerPath || LABKEY.container.path,
             containerFilter: dr.containerFilter,
             parameters: dr.getParameters(),
-            maxRows: this.MAX_FILTER_CHOICES,
+            maxRows: this.MAX_FILTER_CHOICES+1,
             success : function(d) {
                 if (d && d.values) {
                     var recs = [], v, i=0, hasBlank = false, isString, formattedValue;

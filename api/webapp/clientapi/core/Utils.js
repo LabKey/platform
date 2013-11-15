@@ -242,6 +242,7 @@ LABKEY.Utils = new function()
          * <li><b>formatString:</b> for dates and numbers, the Java format string used with SimpleDateFormat
          * or DecimalFormat to control how the value is formatted</li>
          * <li><b>timeOnly:</b> for dates, whether the date part should be ignored and only the time value is important</li>
+         * <li><b>forceString:</b> force the value to be treated as a string (i.e. prevent attempt to convert it to a date)</li>
          * </ul>
          * @example &lt;script type="text/javascript"&gt;
 LABKEY.Utils.convertToExcel(
