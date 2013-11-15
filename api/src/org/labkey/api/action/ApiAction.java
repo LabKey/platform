@@ -294,7 +294,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         }
     }
 
-    private class JsonPropertyValues extends MutablePropertyValues
+    public static class JsonPropertyValues extends MutablePropertyValues
     {
         public JsonPropertyValues(JSONObject jsonObj) throws JSONException
         {

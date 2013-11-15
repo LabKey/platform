@@ -384,8 +384,17 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @NotNull
     protected File[] getWebPartFiles()
     {
-        File viewsDir = new File(getExplodedPath(), SimpleController.VIEWS_DIRECTORY);
-        return viewsDir.exists() && viewsDir.isDirectory() ? viewsDir.listFiles(org.labkey.api.module.SimpleWebPartFactory.webPartFileFilter) : new File[0];
+        // TODO use module resources
+        File viewsDir = null;
+        if (AppProps.getInstance().isDevMode() && null != getSourcePath())
+        {
+            viewsDir = new File(getSourcePath(), "resources/" + SimpleController.VIEWS_DIRECTORY);
+            if (!viewsDir.exists())
+                viewsDir = new File(getSourcePath(), SimpleController.VIEWS_DIRECTORY);
+        }
+        if (null == viewsDir || !viewsDir.isDirectory())
+            viewsDir = new File(getExplodedPath(), SimpleController.VIEWS_DIRECTORY);
+        return viewsDir.isDirectory() ? viewsDir.listFiles(org.labkey.api.module.SimpleWebPartFactory.webPartFileFilter) : new File[0];
     }
 
     @Override
