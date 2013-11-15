@@ -417,7 +417,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             this.schema = schema;
             for (DbScope scope : DbScope.getDbScopes())
             {
-                dataSources.put(StringUtils.substringBefore(scope.getDataSourceName(), "DataSource"), scope.getDatabaseName());
+                dataSources.put(StringUtils.substringBefore(scope.getDataSourceName(), "DataSource"), scope.getSqlDialect().makeLegalIdentifier(scope.getDatabaseName()));
             }
 
         }
