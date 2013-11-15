@@ -123,15 +123,23 @@ public interface AssaySaveHandler
 
     /*
      * The JSON object sent to beforeSave is the JSON sent directly from the client.  As long as the client provides a
-     * "batch" id in the JSON, this object can contain whatever JSON format the client and AssaySaveHandler agree upon
+     * "batch" or "batches" id in the JSON, this object can contain whatever JSON format the client and AssaySaveHandler agree upon
      * Always called by SaveAssayBatchAction.
      */
     void beforeSave(ViewContext context, JSONObject rootJson, ExpProtocol protocol)throws Exception;
 
     /*
      * The batch object here will contain all the updates that have been processed including values that are refreshed
-     * from the database if needed.  The DefaultAssaySaveHandler does this, for example.
-     * Always called by SaveAssayBatchAction.
+     * from the database if needed.  Either afterSave with a single batch or afterSave with an array of batches
+     * will be called by the SaveAssayBatchAction.
      */
     void afterSave(ViewContext context, ExpExperiment batch, ExpProtocol protocol) throws Exception;
+
+    /*
+     * The batches will contain all the updates that have been processed including values that are refreshed
+     * from the database if needed.  Either afterSave with a single batch or afterSave with an array of batches
+     * will be called by the SaveAssayBatchAction.
+     */
+    void afterSave(ViewContext context, ExpExperiment[] batches, ExpProtocol protocol) throws Exception;
+
 }

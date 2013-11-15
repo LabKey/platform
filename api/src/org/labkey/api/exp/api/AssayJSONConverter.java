@@ -49,6 +49,7 @@ public class AssayJSONConverter
     public static final String ASSAY_ID = "assayId";
     public static final String BATCH_ID = "batchId";
     public static final String BATCH = "batch";
+    public static final String BATCHES = "batches";
     public static final String RUNS = "runs";
 
     // Run properties
@@ -146,6 +147,23 @@ public class AssayJSONConverter
         }
 
         result.put(BATCH, batchObject);
+        return new ApiSimpleResponse(result);
+    }
+
+    public static ApiResponse serializeResult(AssayProvider provider, ExpProtocol protocol, ExpExperiment[] batches, User user) throws SQLException
+    {
+        JSONObject result = new JSONObject();
+        result.put(ASSAY_ID, protocol.getRowId());
+
+        JSONArray batchesArray = new JSONArray();
+
+        for (int i = 0; i < batches.length; i++)
+        {
+            ExpExperiment batch = batches[i];
+            batchesArray.put(serializeBatch(batch, provider, protocol, user));
+        }
+
+        result.put(BATCHES, batchesArray);
         return new ApiSimpleResponse(result);
     }
 }

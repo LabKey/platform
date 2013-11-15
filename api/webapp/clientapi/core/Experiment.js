@@ -197,6 +197,61 @@ LABKEY.Experiment = new function()
         },
 
         /**
+         * Saves an array of modified batches.
+         * Runs within the batches may refer to existing data and material objects, either inputs or outputs, by ID or LSID.
+         * Runs may also define new data and materials objects by not specifying an ID or LSID in their properties.
+         * @param config An object that contains the following configuration parameters
+         * @param {Number} config.assayId The assay protocol id.
+         * @param {LABKEY.Exp.RunGroup[]} config.batches The modified batch objects.
+         * @param {function} config.success The function to call when the function finishes successfully.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>batches</b> An array of new {@link LABKEY.Exp.RunGroup} objects.  Some values (such as IDs and LSIDs) will be filled in by the server.
+         * <li><b>response</b> The original response
+         * </ul>
+         * @param {function} [config.failure] The function to call if this function encounters an error.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>response</b> The original response
+         * </ul>
+         * @see The <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>Module Assay</a> documentation for more information.
+         * @static
+         */
+        saveBatches : function (config)
+        {
+            if (!LABKEY.Utils.getOnSuccess(config)) {
+                console.error("You must specify a callback function in config.success when calling LABKEY.Exp.saveBatch()!");
+                return;
+            }
+
+            function createExps(json)
+            {
+                var batches = [];
+                if (json.batches) {
+                    for (var i = 0; i < json.batches.length; i++) {
+                        batches.push(new LABKEY.Exp.RunGroup(json.batches[i]));
+                    }
+                }
+                return batches;
+            }
+
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("assay", "saveAssayBatch", LABKEY.ActionURL.getContainer()),
+                method: 'POST',
+                jsonData: {
+                    assayId: config.assayId,
+                    batches: config.batches
+                },
+                success: getSuccessCallbackWrapper(createExps, LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+                scope: config.scope,
+                headers: {
+                    'Content-Type' : 'application/json'
+                }
+            });
+        },
+
+        /**
          * Saves materials.
          * @deprecated Use LABKEY.Query.insertRows({schemaName: 'Samples', queryName: '&lt;sample set name>', ...});
          *

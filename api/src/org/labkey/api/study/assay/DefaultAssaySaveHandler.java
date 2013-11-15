@@ -84,6 +84,11 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
     {
     }
 
+    @Override
+    public void afterSave(ViewContext context, ExpExperiment[] batches, ExpProtocol protocol) throws Exception
+    {
+    }
+
     public static ExpExperiment lookupBatch(Container c, int batchId)
     {
         ExpExperiment batch = ExperimentService.get().getExpExperiment(batchId);
