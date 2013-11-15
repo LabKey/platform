@@ -159,7 +159,7 @@ The request has produced no records.
                 var listDiv = Ext.get('<%=tableContainerId%>');
                 if (!listDiv) return;
                 var rightAreaWidth = 15;
-                try {rightAreaWidth = Ext.fly(X.select(".labkey-side-panel").elements[0]).getWidth();} catch (x){}
+                try {rightAreaWidth = Ext.fly(Ext.select(".labkey-side-panel").elements[0]).getWidth();} catch (x){}
                 var padding = 60;
                 var viewWidth = Ext.getBody().getViewSize().width;
                 var right = viewWidth - padding - rightAreaWidth;
