@@ -6,6 +6,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
+import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
@@ -17,8 +19,8 @@ import org.olap4j.metadata.Level;
 import org.olap4j.metadata.Measure;
 import org.olap4j.metadata.Member;
 import org.olap4j.metadata.MetadataElement;
-import org.olap4j.metadata.NamedList;
 import org.olap4j.metadata.Schema;
+import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,6 +51,7 @@ public class QubeQuery
         MEMBERS
     }
 
+    // TODO explicitly separate the count distinct measure filters and the regular slice filters
 
     Cube cube;
     // pretty standard MDX query specification
@@ -58,14 +61,29 @@ public class QubeQuery
     QubeExpr filters;               // for regular slices, e.g. [Species].[Homo Sapiens]
     // for magic count(distinct) handling
 //    QubeExpr distinctMeasureFilters;       // for filtering the count distinct measure
-    Level countDistinctLevel;       // [Participant].[Participant]
+//    Level countDistinctLevel;       // [Participant].[Participant]
     Member countDistinctMember;     // [Measures].[ParticipantCount]
     Member countRowsMember;         // [Measures].[RowCount]
+
+    // CONSIDER using List<QueryParseException>, but BindException is fine for now
+    BindException errors = null;
 
 
     public QubeQuery(Cube cube)
     {
         this.cube = cube;
+
+        // infer likely measures... Should be declared somewhere, or annotated
+        Measure rows=null, distinct=null;
+        for (Measure m : cube.getMeasures())
+        {
+            if (m.getUniqueName().contains("Row"))
+                rows = m;
+            else if (m.getUniqueName().contains("Participant") || m.getUniqueName().contains("Subject") || m.getUniqueName().contains("Distinct"))
+                distinct = m;
+        }
+        countRowsMember = rows;
+        countDistinctMember = distinct;
     }
 
 
@@ -90,16 +108,20 @@ public class QubeQuery
         ArrayList<QubeExpr> arguments;
     }
 
-    public static class QubeMembersExpr extends QubeExpr
+
+    public class QubeMembersExpr extends QubeExpr
     {
-        QubeMembersExpr(Hierarchy h, Level l)
+        QubeMembersExpr(Hierarchy h, Level l) throws BindException
         {
             super(OP.MEMBERS);
 
             if (null != h && null != l)
             {
-                if (h.getUniqueName() != l.getHierarchy().getUniqueName())
-                    throw new IllegalArgumentException("Level is not in hierarchy: level=" + l.getUniqueName() + " hierarchy=" + h.getUniqueName());
+                if (!h.getUniqueName().equals(l.getHierarchy().getUniqueName()))
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Level is not in hierarchy: level=" + l.getUniqueName() + " hierarchy=" + h.getUniqueName());
+                    throw errors;
+                }
             }
             else if (null == h && null != l)
             {
@@ -113,8 +135,8 @@ public class QubeQuery
         Level level;
 
         // one of these should be non-null/true
-        boolean allLevelMembers;
-        boolean allHierarchyChildren;
+        boolean membersMember;
+        boolean childrenMember;
         Set<Member> membersSet;
         QubeExpr membersQuery;       // subset the memberlist based on intersection with this orthoganal query
     }
@@ -166,7 +188,6 @@ public class QubeQuery
         }
 
         FN  fn;
-        TYPE type;
         Level level;
         List<Object> arguments;     // String,Member,_MDX
     }
@@ -188,19 +209,17 @@ public class QubeQuery
     }
 
 
-    _MDX _toMembersExpr(QubeExpr e)
+    _MDX _toMembersExpr(QubeExpr e) throws BindException
     {
         QubeMembersExpr membersDef = (QubeMembersExpr)e;
-        if (membersDef.allHierarchyChildren)
+        if (membersDef.childrenMember || membersDef.membersMember)
         {
-            return new _MDX(FN.MemberSet, (Level)null, new Object[] {membersDef.hierarchy.getUniqueName() + ".members"});
-        }
-        else if (membersDef.allLevelMembers)
-        {
-            if (null != membersDef.level)
+            if (null != membersDef.level && membersDef.membersMember)
                 return new _MDX(FN.MemberSet, membersDef.level, new Object[] {membersDef.level.getUniqueName() + ".members"});
-            else
-                return new _MDX(FN.MemberSet, membersDef.level, new Object[] {membersDef.hierarchy.getUniqueName() + ".members"});
+            else if (null != membersDef.hierarchy)
+                return new _MDX(FN.MemberSet, null, new Object[] {membersDef.hierarchy.getUniqueName() + ".members"});
+            errors.reject(SpringActionController.ERROR_MSG, "unexpected members expression");
+            throw errors;
         }
         else if (null != membersDef.membersSet && !membersDef.membersSet.isEmpty())
         {
@@ -208,13 +227,13 @@ public class QubeQuery
         }
         else
         {
-            Level l = membersDef.level;
-            if (membersDef.level==null && membersDef.hierarchy!=null)
+            if (null == membersDef.level && null == membersDef.hierarchy)
             {
-                NamedList<Level> levels = membersDef.hierarchy.getLevels();
-                l = levels.get(levels.size()-1);
+                errors.reject(SpringActionController.ERROR_MSG, "level or hiearchy must be specified");
+                throw errors;
             }
-            _MDX levelExpr = new _MDX(FN.MemberSet, membersDef.level, new Object[] {l.getUniqueName() + ".members"});
+            Level l = null != membersDef.level ? membersDef.level : membersDef.hierarchy.getLevels().get(membersDef.hierarchy.getLevels().size()-1);
+            _MDX levelExpr = new _MDX(FN.MemberSet, l, new Object[] {l.getUniqueName() + ".members"});
             if (null == membersDef.membersQuery)
                 return levelExpr;
             _MDX membersExpr = this._processExpr(membersDef.membersQuery);
@@ -222,7 +241,7 @@ public class QubeQuery
         }
     }
 
-    _MDX _toIntersectExpr(QubeExpr expr)
+    _MDX _toIntersectExpr(QubeExpr expr) throws BindException
     {
         List<Object> sets = new ArrayList<>();
         for (int e=0 ; e<expr.arguments.size() ; e++)
@@ -244,7 +263,7 @@ public class QubeQuery
 
 
     // smart cross-join: intersect within level, crossjoin across levels
-    _MDX _toSmartCrossJoinExpr(QubeExpr expr)
+    _MDX _toSmartCrossJoinExpr(QubeExpr expr) throws BindException
     {
         Map<String,List<Object>> setsByLevel = new TreeMap<>();
         for (int e=0 ; e<expr.arguments.size() ; e++)
@@ -271,7 +290,7 @@ public class QubeQuery
     }
 
 
-    _MDX _toCrossJoinExpr(QubeExpr expr)
+    _MDX _toCrossJoinExpr(QubeExpr expr) throws BindException
     {
         List<Object> sets = new ArrayList<>();
         for (int e=0 ; e<expr.arguments.size() ; e++)
@@ -286,7 +305,7 @@ public class QubeQuery
     }
 
 
-    _MDX _toUnionExpr(QubeExpr expr)
+    _MDX _toUnionExpr(QubeExpr expr) throws BindException
     {
         List<Object> sets = new ArrayList<>();
         for (int e=0 ; e<expr.arguments.size() ; e++)
@@ -312,14 +331,12 @@ public class QubeQuery
             for (int s=1 ; s<sets.size() ; s++)
                 if (level != ((_MDX)sets.get(s)).level)
                     level = null;
-            _MDX ret = new _MDX(FN.Union, level, sets);
-            // ret.type = "set"
-            return ret;
+            return new _MDX(FN.Union, level, sets);
         }
     }
 
 
-    _MDX  _processExpr(QubeExpr expr)
+    _MDX  _processExpr(QubeExpr expr) throws BindException
     {
 
 //        if (Ext4.isArray(expr))
@@ -340,7 +357,8 @@ public class QubeQuery
             case CROSSJOIN: return this._toCrossJoinExpr(expr);
             case XINTERSECT:return this._toSmartCrossJoinExpr(expr);
             default:
-                throw new IllegalStateException("unexpected operator: " + expr.op);
+                errors.reject(SpringActionController.ERROR_MSG, "unexpected operator: " + expr.op);
+                throw errors;
         }
     }
 
@@ -411,8 +429,9 @@ public class QubeQuery
     }
 
 
-    String generateMDX()
+    public String generateMDX(BindException errors) throws BindException
     {
+        this.errors = errors;
         String rowset=null, columnset = null, filterset = null;
         if (null != onColumns)
             columnset = this._toSetString(this._processExpr(onColumns));
@@ -493,6 +512,7 @@ public class QubeQuery
         return scope.getLevels().get(levelName);
     }
 
+
     Member _getMember(String memberName, Hierarchy h, Level l) throws OlapException
     {
         /* TODO caching (maybe on Qube object) */
@@ -511,14 +531,15 @@ public class QubeQuery
         return null;
     }
 
+
     /* NAME Helpers */
 
-    Path uniqueNametoPath(MetadataElement m)
+    Path uniqueNametoPath(MetadataElement m) throws BindException
     {
         return uniqueNametoPath(m.getUniqueName());
     }
 
-    Path uniqueNametoPath(String uniqueName)
+    Path uniqueNametoPath(String uniqueName) throws BindException
     {
         Path p = new Path();
         int start=0;
@@ -529,10 +550,16 @@ public class QubeQuery
             {
                 int end = uniqueName.indexOf(']');
                 if (-1 == end)
-                    throw new IllegalArgumentException(uniqueName);
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Illegal name: " + uniqueName);
+                    throw errors;
+                }
                 part = uniqueName.substring(start+1,end-1);
                 if (end < uniqueName.length()-1 && uniqueName.charAt(end+1) != '.')
-                    throw new IllegalArgumentException(uniqueName);
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Illegal name: " + uniqueName);
+                    throw errors;
+                }
                 start = end+2;
             }
             else
@@ -544,8 +571,8 @@ public class QubeQuery
                 start = end+1;
             }
             p = p.append(part);
-            return p;
         }
+        return p;
     }
 
     String pathToUniqueName(Path path)
@@ -566,8 +593,9 @@ public class QubeQuery
      * JSON
      */
 
-    public void fromJson(JSONObject json) throws OlapException
+    public void fromJson(JSONObject json, BindException errors) throws OlapException, BindException
     {
+        this.errors = errors;
         Object v = json.get("showEmpty");
         showEmpty = null==v ? false : (Boolean)ConvertUtils.convert(v.toString(), Boolean.class);
         onRows = parseJsonExpr(json.get("onRows"), OP.XINTERSECT, OP.XINTERSECT);
@@ -577,7 +605,8 @@ public class QubeQuery
 //        distinctMeasureFilters = parseJsonExpr(json.get("distinctMeasureFilters"), OP.XINTERSECT, OP.XINTERSECT);
     }
 
-    private QubeExpr parseJsonExpr(Object o, OP defaultOp, OP defaultArrayOperator) throws OlapException
+
+    private QubeExpr parseJsonExpr(Object o, OP defaultOp, OP defaultArrayOperator) throws OlapException, BindException
     {
         if (null == o)
             return null;
@@ -605,12 +634,13 @@ public class QubeQuery
     }
 
 
-    private QubeExpr parseJsonObject(Object o, OP defaultOp) throws OlapException
+    private QubeExpr parseJsonObject(Object o, OP defaultOp) throws OlapException, BindException
     {
         if (null == o)
             return null;
         if (!(o instanceof Map))
             throw new IllegalArgumentException();
+
         Map json = (Map)o;
         Object v = json.get("operator");
         OP operator = null==v ? defaultOp : OP.valueOf(v.toString());
@@ -620,7 +650,10 @@ public class QubeQuery
             ArrayList<QubeExpr> arguments = new ArrayList<>();
             v = json.get("arguments");
             if (null == v)
-                throw new IllegalArgumentException("Operator with no arguments: " + operator);
+            {
+                errors.reject(SpringActionController.ERROR_MSG, ("Operator with no arguments: " + operator));
+                throw errors;
+            }
             if (!(v instanceof JSONArray))
                 array = new JSONArray(Collections.singletonList(v));
             else
@@ -633,56 +666,61 @@ public class QubeQuery
         {
             Hierarchy h = _getHierarchy(json);
             Level l = _getLevel(json, h);
+
             QubeMembersExpr e = new QubeMembersExpr(h,l);
-            Set<Member> set = null;
             if (null != json.get("members"))
             {
                 if ("members".equals(json.get("members")))
-                    e.allLevelMembers = true;
+                    e.membersMember = true;
                 else if ("children".equals(json.get("children")))
-                    e.allHierarchyChildren = true;
+                    e.childrenMember = true;
                 else if (json.get("members") instanceof JSONArray)
                 {
-                    set = new TreeSet<>(new CompareMetaDataElement());
+                    TreeSet<Member> set = new TreeSet<>(new CompareMetaDataElement());
                     JSONArray arr = (JSONArray)json.get("members");
                     for (int i=0 ; i<arr.length() ; i++)
                     {
                         Member m = _getMember(arr.get(i), h, l);
+                        if (null == m)
+                        {
+                            errors.reject(SpringActionController.ERROR_MSG, "Member not found: " + arr.get(i));
+                            throw errors;
+                        }
                         set.add(m);
                     }
                     e.membersSet = set;
                 }
                 else
-                    throw new IllegalArgumentException("Could not parse members property");
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Could not parse members property");
+                    throw errors;
+                }
             }
             else if (json.get("membersQuery") instanceof JSONObject)
             {
                 e.membersQuery = parseJsonExpr(json.get("membersQuery"), OP.MEMBERS, OP.XINTERSECT);
-            }
-            if (null == e.membersSet && null == e.membersQuery && !e.allLevelMembers && !e.allHierarchyChildren)
-            {
-                if (null != e.level)
-                    e.allLevelMembers = true;
-                else if (null != e.hierarchy)
-                    e.allHierarchyChildren = true;
             }
             return e;
         }
     }
 
 
-    Hierarchy _getHierarchy(Map json)
+    Hierarchy _getHierarchy(Map json) throws BindException
     {
         String hierarchyName = (String)json.get("hierarchy");
         if (null == hierarchyName)
             return null;
         Hierarchy h = _getHierarchy(hierarchyName);
         if (null == h)
-            throw new IllegalArgumentException("Hierarchy not found: " + hierarchyName);
+        {
+            errors.reject(SpringActionController.ERROR_MSG, "Hierarchy not found: " + hierarchyName);
+            throw errors;
+        }
         return h;
     }
 
-    Level _getLevel(Map json, Hierarchy scope)
+
+    Level _getLevel(Map json, Hierarchy scope) throws BindException
     {
         String levelName = (String)json.get("level");
         if (null != levelName)
@@ -690,11 +728,15 @@ public class QubeQuery
             Level l = _getLevel(levelName,scope);
             if (null != l)
                 return l;
+
             Hierarchy h = _getHierarchy(levelName);
+            String msg;
             if (null == h)
-                throw new IllegalArgumentException("Level not found: " + levelName);
+                msg = "Level not found: " + levelName;
             else
-                throw new IllegalArgumentException("Level not found: " + levelName + ".  This looks like a hierarchyName.");
+                msg = ("Level not found: " + levelName + ".  This looks like a hierarchyName.");
+            errors.reject(SpringActionController.ERROR_MSG, msg);
+            throw errors;
         }
         Object lnumO = json.get("lnum");
         if (null != lnumO)
@@ -705,7 +747,9 @@ public class QubeQuery
         return null;
     }
 
-    Member _getMember(Object memberSpec, Hierarchy h, Level l) throws OlapException
+
+    // String or Member
+    Member _getMember(Object memberSpec, Hierarchy h, Level l) throws OlapException, BindException
     {
         if (memberSpec instanceof String)
             return _getMember((String)memberSpec, h, l);
@@ -719,7 +763,8 @@ public class QubeQuery
             String uniqueName = pathToUniqueName(path);
             return _getMember(uniqueName, h, l);
         }
-        throw new IllegalArgumentException("member not found: " + String.valueOf(memberSpec));
+        errors.reject(SpringActionController.ERROR_MSG, "member not found: " + String.valueOf(memberSpec));
+        throw errors;
     }
 
 
@@ -748,9 +793,12 @@ public class QubeQuery
             _tests.add(this);
         }
 
-        public void run(Cube cube) throws OlapException
+        public void run(Cube cube) throws OlapException, BindException
         {
-            if (null == cube) throw new IllegalStateException("set cube first");
+            if (null == cube)
+                throw new IllegalStateException("cube not provided");
+
+            BindException errors = new NullSafeBindException(new Object(), "command");
             JSONObject o = new JSONObject(jsonString);
             Measure rows=null, distinct=null;
             for (Measure m : cube.getMeasures())
@@ -763,9 +811,9 @@ public class QubeQuery
             QubeQuery qq = new QubeQuery(cube);
             qq.countRowsMember = rows;
             qq.countDistinctMember = distinct;
-            qq.countDistinctLevel = cube.getHierarchies().get("Participant").getLevels().get("Participant");
-            qq.fromJson(o);
-            String mdx = qq.generateMDX();
+//            qq.countDistinctLevel = cube.getHierarchies().get("Participant").getLevels().get("Participant");
+            qq.fromJson(o, errors);
+            String mdx = qq.generateMDX(errors);
             compare(this.mdxExpected, mdx);
         }
         void compare(String a, String b)

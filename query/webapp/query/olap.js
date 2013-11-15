@@ -45,8 +45,6 @@ LABKEY.query.olap._private = new function() {
 
     var executeMdx = function(config)
     {
-        if (config.log)
-            console.log(config.query);
         if (!config.configId)
             console.error("no configId specified");
 
@@ -74,6 +72,39 @@ LABKEY.query.olap._private = new function() {
                     headers : { 'Content-Type' : 'application/json' }
                 });
     };
+
+
+    var executeJson = function(config)
+    {
+        if (!config.configId)
+            console.error("no configId specified");
+
+        var container = config.container || LABKEY.ActionURL.getContainer();
+        var str = JSON.stringify(config.query);
+        config._cacheKey = container + ":" + str;
+
+        var cacheObj = _cache.removeAtKey(config._cacheKey);
+        if (cacheObj)
+        {
+            cacheObj.time = new Date().getTime();
+            _cache.add(config._cacheKey, cacheObj);   // lru
+            if (Ext4.isFunction(config.success))
+                config.success.apply(config.scope||window, [cacheObj.cellset, config]);
+            removeStale();
+            return;
+        }
+
+        return LABKEY.Ajax.request(
+        {
+            url : LABKEY.ActionURL.buildURL("olap", "jsonQuery.api", config.containerPath),
+            method : 'POST',
+            success: function(r){postProcessExecuteMdx(r,config);},
+            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+            jsonData : { query:config.query, configId:config.configId, schemaName:config.schemaName, cubeName:config.cubeName },
+            headers : { 'Content-Type' : 'application/json' }
+        });
+    };
+
 
     var flattenCellSet = function(cs)
     {
@@ -202,6 +233,7 @@ LABKEY.query.olap._private = new function() {
         parseUniqueName:parseUniqueName,
         getCubeDefinition:getCubeDefinition,
         executeMdx:executeMdx,
+        executeJson:executeJson,
         flattenCellSet:flattenCellSet
     }
 };
@@ -669,27 +701,11 @@ Ext4.define('LABKEY.query.olap.MDX', {
         return query;
     },
 
-    query : function(config)
+
+    _queryJS : function(config)
     {
-        var c = Ext4.apply({}, config, {filter:[], useNamedFilters:[]});
-        for (var f=0 ; f<c.useNamedFilters.length ; f++)
-        {
-            var filter = this._filter[c.useNamedFilters[f]];
-            if (!filter)
-                continue;
-            if (!Ext4.isArray(filter))
-                filter = [filter];
-            c.filter = c.filter.concat(filter);
-        }
-
         var mdx = this;
-        var query = this._generateMdx(c);
-
-        if (false)
-        {
-            console.debug(JSON.stringify({showEmpty:c.showEmpty, onRows:c.onRows, onCols:c.onCols, filter:c.filter}));
-            console.debug(query.replace('\n',' '));
-        }
+        var query = this._generateMdx(config);
 
         var queryConfig =
         {
@@ -707,6 +723,48 @@ Ext4.define('LABKEY.query.olap.MDX', {
         };
         LABKEY.query.olap._private.executeMdx(queryConfig);
     },
+
+
+    _queryJava : function(config)
+    {
+        var queryConfig =
+        {
+            configId : config.configId || this._cube.configId,
+            schemaName : config.schemaName || this._cube.schemaName,
+            cubeName : config.cubeName || this._cube.name,
+            query : {showEmpty:config.showEmpty, onRows:config.onRows, onCols:config.onCols, filter:config.filter},
+            log : config.log,
+            originalConfig : config,
+            scope : this,
+            success : function(cellset,queryConfig)
+            {
+                var config = queryConfig.originalConfig;
+                if (Ext4.isFunction(config.success))
+                    config.success.apply(config.scope||window, [cellset, this, config]);
+            }
+        };
+        LABKEY.query.olap._private.executeJson(queryConfig);
+    },
+
+
+    query : function(config)
+    {
+        var copy = Ext4.apply({},config);
+        copy.filter = copy.filter ? copy.filter.slice() : [];
+        var namedFilters = copy.useNamedFilters || [];
+        for (var f=0 ; f<namedFilters.length ; f++)
+        {
+            var filter = this._filter[namedFilters[f]];
+            if (!filter)
+                continue;
+            if (!Ext4.isArray(filter))
+                filter = [filter];
+            copy.filter = copy.filter.concat(filter);
+        }
+        console.debug(JSON.stringify({showEmpty:copy.showEmpty, onRows:copy.onRows, onCols:copy.onCols, filter:copy.filter}));
+        return this._queryJava(copy);
+    },
+
 
     queryParticipantList : function(config)
     {
@@ -1063,6 +1121,7 @@ Ext4.define('LABKEY.query.olap.MDX', {
             query += ", " + (config.showEmpty ? "" : " NON EMPTY ") + rowset + " ON ROWS\n";
         query += "FROM [" + this._cube.getName() + "]\n";
 
+        console.debug(query);
         return query;
     },
 

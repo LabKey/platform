@@ -100,8 +100,8 @@ public class OlapSchemaDescriptor
     }
 
 
-    /** UNDONE: get file from resource! */
-    Object _fileLock = new Object();
+    /* TODO: get file directly from resource! */
+    final Object _fileLock = new Object();
     File tmpFile = null;
 
     File getFile() throws IOException
@@ -121,6 +121,21 @@ public class OlapSchemaDescriptor
             }
         }
         return tmpFile;
+    }
+
+
+    @Override
+    protected void finalize() throws Throwable
+    {
+        try
+        {
+            if (null != tmpFile)
+                tmpFile.delete();
+        }
+        finally
+        {
+            super.finalize();
+        }
     }
 }
 

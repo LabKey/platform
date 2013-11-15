@@ -6,9 +6,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.BaseViewAction;
+import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.cache.CacheLoader;
@@ -52,6 +55,7 @@ import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -61,6 +65,10 @@ import java.util.List;
  * Time: 11:12 AM
  *
  * API's for querying olap (mondrian) cubes
+ *
+ *
+ * TODO consider whether to re-enable server side cache
+ *
  */
 public class OlapController extends SpringActionController
 {
@@ -259,56 +267,75 @@ public class OlapController extends SpringActionController
     }
 
 
-
-/*
-    @RequiresPermissionClass(ReadPermission.class)
-    public class MdxAction extends SimpleViewAction<OlapForm>
+    public static class JsonQueryForm extends OlapForm implements CustomApiForm
     {
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
+        JSONObject json;
 
         @Override
-        public ModelAndView getView(OlapForm olapForm, BindException errors) throws Exception
+        public void bindProperties(Map<String, Object> props)
         {
-            getPageConfig().setTemplate(PageConfig.Template.None);
-            final Dictionary<String,String> parameters = new Hashtable<>();
-            ServletConfig config = new ServletConfig(){
-                @Override
-                public String getServletName()
-                {
-                    return "xmla";
-                }
+            if (props instanceof JSONObject)
+                json = (JSONObject)props;
+            else
+                json = new JSONObject(props);
 
-                @Override
-                public ServletContext getServletContext()
-                {
-                    return ViewServlet.getViewServletContext();
-                }
+            // TODO do regular binding for schemaName, cubeName, etc.
+            //ApiAction.JsonPropertyValues values = new ApiAction.JsonPropertyValues(json);
+            //BaseViewAction.defaultBindParameters(this, "json", values);
 
-                @Override
-                public String getInitParameter(String s)
-                {
-                    return parameters.get(s);
-                }
-
-                @Override
-                public Enumeration getInitParameterNames()
-                {
-                    return parameters.elements();
-                }
-            };
-
-            MdxQueryServlet servlet = new MdxQueryServlet();
-            servlet.init(config);
-            servlet.service(getViewContext().getRequest(), getViewContext().getResponse());
-            return null;
+            if (null != json.get("schemaName"))
+                setSchemaName(String.valueOf(json.get("schemaName" )));
+            if (null != json.get("configId"))
+                setConfigId(String.valueOf(json.get("configId" )));
+            if (null != json.get("cubeName"))
+                setCubeName(String.valueOf(json.get("cubeName" )));
         }
     }
-*/
 
+
+    /**
+     * NOT PART OF OFFICIAL CLIENT API
+     * the particulars of the JSON format may change, and is very tied to the dataspace implementation
+     */
+    @RequiresPermissionClass(ReadPermission.class)
+    public class JsonQueryAction extends ApiAction<JsonQueryForm>
+    {
+        @Override
+        public ApiResponse execute(JsonQueryForm form, BindException errors) throws Exception
+        {
+            if (errors.hasErrors())
+                return null;
+
+            Cube cube = getCube(form, errors);
+            if (errors.hasErrors())
+                return null;
+
+            JSONObject q = (JSONObject)form.json.get("query");
+            if (null == q)
+            {
+                errors.reject(ERROR_MSG, "query not specified");
+                return null;
+            }
+
+            QubeQuery qquery = new QubeQuery(cube);
+            qquery.fromJson(q, errors);
+            if (errors.hasErrors())
+                return null;
+            String mdx = qquery.generateMDX(errors);
+            if (errors.hasErrors())
+                return null;
+
+            ExecuteMdxForm mdxForm = new ExecuteMdxForm();
+            mdxForm.setQuery(mdx);
+            mdxForm.setConfigId(form.getConfigId());
+            mdxForm.setSchemaName(form.getSchemaName());
+            mdxForm.setCubeName(form.getCubeName());
+
+            ExecuteMdxAction action = new ExecuteMdxAction();
+            action.setViewContext(getViewContext());
+            return action.execute(mdxForm, errors);
+        }
+    }
 
 
     @RequiresPermissionClass(ReadPermission.class)

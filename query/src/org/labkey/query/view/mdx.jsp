@@ -111,7 +111,7 @@
             {
                 var cell = cs.cells[row][col];
                 var value = Ext4.isObject(cell) ? cell.value : cell;
-                html.push("<td align=right>" + value + "</td>");
+                html.push("<td align=right>" + (null==value?"&nbsp;":value) + "</td>");
             }
             html.push('</tr>');
         }
