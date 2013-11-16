@@ -514,6 +514,7 @@ ALTER TABLE exp.ProtocolApplicationParameter ADD
     );
 
 
+-- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidA', NULL)
 CREATE OR REPLACE FUNCTION exp.ensureObject(ENTITYID, LSIDType, INTEGER) RETURNS INTEGER AS $$
 DECLARE
     _container ALIAS FOR $1;
@@ -532,10 +533,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidA', NULL)
--- SELECT * FROM exp.ObjectPropertiesView
-
-
+-- SELECT exp.deleteObject('00000000-0000-0000-0000-000000000000', 'lsidA')
 CREATE OR REPLACE FUNCTION exp.deleteObject(ENTITYID, LSIDType) RETURNS void AS '
 DECLARE
     _container ALIAS FOR $1;
@@ -558,15 +556,8 @@ END;
 ' LANGUAGE plpgsql;
 
 
--- SELECT exp.deleteObject('00000000-0000-0000-0000-000000000000', 'lsidA')
--- SELECT * FROM exp.ObjectPropertiesView
-
-
---
 -- This is the most general set property method
---
-
-
+-- SELECT exp.setProperty(13, 'lsidPROP', 'lsidTYPE', 'f', 1.0, NULL, NULL, NULL)
 CREATE OR REPLACE FUNCTION exp.setProperty(INTEGER, LSIDType, LSIDType, CHAR(1), FLOAT, VARCHAR(400), TIMESTAMP, TEXT) RETURNS void AS $$
 DECLARE
     _objectid ALIAS FOR $1;
@@ -594,12 +585,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 
--- SELECT exp.setProperty(13, 'lsidPROP', 'lsidTYPE', 'f', 1.0, NULL, NULL, NULL)
--- SELECT * FROM exp.ObjectPropertiesView
-
 -- internal methods
 
-
+-- SELECT exp._insertFloatProperty(13, 5, 101.0)
 CREATE OR REPLACE FUNCTION exp._insertFloatProperty(INTEGER, INTEGER, FLOAT) RETURNS void AS $$
 DECLARE
     _objectid ALIAS FOR $1;
@@ -614,8 +602,6 @@ BEGIN
     RETURN;
 END;
 $$ LANGUAGE plpgsql;
-
--- SELECT exp._insertFloatProperty(13, 5, 101.0)
 
 
 CREATE OR REPLACE FUNCTION exp._insertDateTimeProperty(INTEGER, INTEGER, TIMESTAMP) RETURNS void AS $$
@@ -634,7 +620,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-
 CREATE OR REPLACE FUNCTION exp._insertStringProperty(INTEGER, INTEGER, VARCHAR(400)) RETURNS void AS $$
 DECLARE
     _objectid ALIAS FOR $1;
@@ -651,14 +636,19 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-
 --
 -- Set the same property on multiple objects (e.g. impoirt a column of datea)
 --
 -- fast method for importing ObjectProperties (need to wrap with datalayer code)
 --
-
-
+-- SELECT exp.setFloatProperties(4, 13, 100.0, 14, 101.0, 15, 102.0, 16, 104.0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
+-- SELECT * FROM exp.Object
+-- SELECT * FROM exp.PropertyDescriptor
+-- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidA', NULL)
+-- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidB', NULL)
+-- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidC', NULL)
+-- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidD', NULL)
+-- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidE', NULL)
 CREATE OR REPLACE FUNCTION exp.setFloatProperties(_propertyid INTEGER,
     _objectid1 INTEGER, _float1 FLOAT,
     _objectid2 INTEGER, _float2 FLOAT,
@@ -688,16 +678,6 @@ BEGIN
     RETURN;
 END;
 ' LANGUAGE plpgsql;
-
-
--- SELECT exp.setFloatProperties(4, 13, 100.0, 14, 101.0, 15, 102.0, 16, 104.0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
--- SELECT * FROM exp.Object
--- SELECT * FROM exp.PropertyDescriptor
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidA', NULL)
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidB', NULL)
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidC', NULL)
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidD', NULL)
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidE', NULL)
 
 
 CREATE OR REPLACE FUNCTION exp.setStringProperties
@@ -869,31 +849,6 @@ CREATE INDEX IDX_ObjectProperty_FloatValue ON exp.ObjectProperty (PropertyId, Fl
 CREATE INDEX IDX_ObjectProperty_StringValue ON exp.ObjectProperty (PropertyId, StringValue);
 
 -- add fk constraints to Data, Material and Object container
-
-CREATE VIEW exp._noContainerMaterialView AS
-SELECT * FROM exp.Material WHERE
-    (runid IS NULL AND container NOT IN (SELECT entityid FROM core.containers)) OR
-    (container IS NULL);
-
-CREATE VIEW exp._noContainerDataView AS
-SELECT * FROM exp.Data WHERE
-    (runid IS NULL AND container NOT IN (SELECT entityid FROM core.containers)) OR
-    (container IS NULL);
-
-CREATE VIEW exp._noContainerObjectView AS
-SELECT * FROM exp.Object WHERE ObjectURI IN
-    (SELECT LSID FROM exp._noContainerMaterialView UNION SELECT LSID FROM exp._noContainerDataView) OR
-    container NOT IN (SELECT entityid FROM core.containers);
-
-DELETE FROM exp.ObjectProperty WHERE
-    (objectid IN (SELECT objectid FROM exp._noContainerObjectView));
-DELETE FROM exp.Object WHERE objectid IN (SELECT objectid FROM exp._noContainerObjectView);
-DELETE FROM exp.Data WHERE rowid IN (SELECT rowid FROM exp._noContainerDataView);
-DELETE FROM exp.Material WHERE rowid IN (SELECT rowid FROM exp._noContainerMaterialView);
-
-DROP VIEW exp._noContainerObjectView;
-DROP VIEW exp._noContainerDataView;
-DROP VIEW exp._noContainerMaterialView;
 
 ALTER TABLE exp.Data ADD CONSTRAINT FK_Data_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
 ALTER TABLE exp.Material ADD CONSTRAINT FK_Material_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
