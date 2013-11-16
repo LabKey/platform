@@ -787,23 +787,18 @@ GO
 
 /* exp-1.10-1.20.sql */
 
-IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'[exp].[FK_BioSource_Material]') AND OBJECTPROPERTY(id, N'IsForeignKey') = 1)
-ALTER TABLE [exp].[BioSource] DROP CONSTRAINT FK_BioSource_Material
+ALTER TABLE exp.BioSource DROP CONSTRAINT FK_BioSource_Material
 GO
 
-IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'[exp].[FK_Fraction_Material]') AND OBJECTPROPERTY(id, N'IsForeignKey') = 1)
-ALTER TABLE [exp].[Fraction] DROP CONSTRAINT FK_Fraction_Material
+ALTER TABLE exp.Fraction DROP CONSTRAINT FK_Fraction_Material
 GO
 
-IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'[exp].[BioSource]') AND OBJECTPROPERTY(id, N'IsUserTable') = 1)
-DROP TABLE [exp].[BioSource]
+DROP TABLE exp.BioSource
 GO
 
-IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'[exp].[Fraction]') AND OBJECTPROPERTY(id, N'IsUserTable') = 1)
-DROP TABLE [exp].[Fraction]
+DROP TABLE exp.Fraction
 GO
 
-IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'[exp].[setProperty]') AND OBJECTPROPERTY(id, N'IsProcedure') = 1)
 DROP PROCEDURE exp.setProperty
 GO
 
@@ -871,31 +866,6 @@ CREATE TABLE exp.PropertyDescriptor
 )
 GO
 
-SET IDENTITY_INSERT exp.PropertyDescriptor ON
-
-INSERT INTO exp.PropertyDescriptor(PropertyId, PropertyURI, OntologyURI, DomainURI, Name,
-    Description, RangeURI, Container)
-SELECT rowid, PropertyURI, OntologyURI, TypeURI, Name,
-    Description, DatatypeURI,
-    (SELECT  MAX(CAST (O.Container AS VARCHAR(100)))
-            FROM exp.PropertyDescriptorOld PD
-                INNER JOIN exp.ObjectProperty OP ON (PD.rowid = OP.PropertyID)
-                INNER JOIN exp.Object O ON (O.ObjectId = OP.ObjectID)
-            WHERE PDU.rowid = PD.rowid
-            GROUP BY PD.rowid
-        )
-FROM exp.PropertyDescriptorOld PDU
-    WHERE PDU.rowid IN
-        (SELECT PD.rowid
-        FROM exp.PropertyDescriptorOld PD
-            INNER JOIN exp.ObjectProperty OP ON (PD.rowid = OP.PropertyID)
-            INNER JOIN exp.Object O ON (O.ObjectId = OP.ObjectID)
-        GROUP BY PD.rowid
-        )
-
-SET IDENTITY_INSERT exp.PropertyDescriptor OFF
-GO
-
 DROP TABLE exp.PropertyDescriptorOld
 GO
 
@@ -936,37 +906,8 @@ GO
 CREATE INDEX IDX_ObjectProperty_FloatValue ON exp.ObjectProperty (PropertyId, FloatValue)
 CREATE INDEX IDX_ObjectProperty_StringValue ON exp.ObjectProperty (PropertyId, StringValue)
 GO
+
 -- put in constraints to catch orphaned data and materials
-
-CREATE VIEW exp._noContainerMaterialView AS
-SELECT * FROM exp.Material WHERE
-    (runid IS NULL AND container NOT IN (SELECT entityid FROM core.containers)) OR
-    (container IS NULL)
-GO
-CREATE VIEW exp._noContainerDataView AS
-SELECT * FROM exp.Data WHERE
-    (runid IS NULL AND container NOT IN (SELECT entityid FROM core.containers)) OR
-    (container IS NULL)
-GO
-CREATE VIEW exp._noContainerObjectView AS
-SELECT * FROM exp.Object WHERE ObjectURI IN
-    (SELECT LSID FROM exp._noContainerMaterialView UNION SELECT LSID FROM exp._noContainerDataView) OR
-    container NOT IN (SELECT entityid FROM core.containers)
-GO
-
-DELETE FROM exp.ObjectProperty WHERE
-    (objectid IN (SELECT objectid FROM exp._noContainerObjectView))
-DELETE FROM exp.Object WHERE objectid IN (SELECT objectid FROM exp._noContainerObjectView)
-DELETE FROM exp.Data WHERE rowid IN (SELECT rowid FROM exp._noContainerDataView)
-DELETE FROM exp.Material WHERE rowid IN (SELECT rowid FROM exp._noContainerMaterialView)
-GO
-DROP VIEW exp._noContainerObjectView
-GO
-DROP VIEW exp._noContainerDataView
-GO
-DROP VIEW exp._noContainerMaterialView
-GO
-
 ALTER TABLE exp.Data ADD CONSTRAINT FK_Data_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId)
 GO
 ALTER TABLE exp.Material ADD CONSTRAINT FK_Material_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId)
@@ -1343,44 +1284,6 @@ GO
 CREATE INDEX IDX_Material_LSID ON exp.Material(LSID)
 GO
 
--- Clean up duplicate PropertyDescriptor and DomainDescriptors. Two cases:
--- 1. Assay definitions that were deleted before we correctly deleted the domains for the batch, run, and data sets.
--- 2. Duplicate input role domains, cause unknown. At least after the UNIQUE constraints are in place we'll find out if we try to insert dupes again
-
-CREATE TABLE ##PropertyIdsToDelete (PropertyId INT)
-GO
-
--- Grab the PropertyIds for properties that belong to assay domains where the assay has been deleted and we have a dupe
-INSERT INTO ##PropertyIdsToDelete SELECT p.propertyid FROM exp.propertydescriptor p, exp.propertydomain pd WHERE p.propertyid = pd.propertyid AND pd.domainid IN
-        (SELECT domainid FROM exp.domaindescriptor WHERE domainuri LIKE '%:AssayDomain-%'
-            AND domainid IN (SELECT DomainId FROM exp.DomainDescriptor WHERE DomainURI IN (SELECT DomainURI FROM (SELECT Count(DomainURI) AS c, DomainURI FROM exp.DomainDescriptor GROUP BY DomainURI) X WHERE c > 1))
-            AND domainuri NOT IN
-            (SELECT StringValue FROM exp.ObjectProperty op, exp.object o, exp.protocol p WHERE p.lsid = o.objecturi AND op.objectid = o.objectid AND StringValue LIKE '%:AssayDomain-%'))
-GO
-
--- Grab the PropertyIds for duplicate input role domains. We want all the DomainIds except the MAX ones for each DomainURI
-INSERT INTO ##PropertyIdsToDelete SELECT p.propertyid FROM exp.propertydescriptor p, exp.propertydomain pd WHERE p.propertyid = pd.propertyid AND pd.DomainId IN
-    (SELECT DomainId FROM
-        exp.DomainDescriptor dd,
-        (SELECT COUNT(DomainURI) AS c, MAX(DomainId) AS m, DomainURI FROM exp.DomainDescriptor WHERE DomainURI LIKE '%:DataInputRole' OR DomainURI LIKE '%:MaterialInputRole' GROUP BY DomainURI) x
-    WHERE dd.DomainURI = x.DomainURI AND x.c > 1)
-AND pd.DomainId NOT IN
-    (SELECT MAX(DomainId) AS m FROM exp.DomainDescriptor WHERE DomainURI LIKE '%:DataInputRole' OR DomainURI LIKE '%:MaterialInputRole' GROUP BY DomainURI)
-GO
-
--- Get rid of lingering uses of these orphaned PropertyDescriptors
-DELETE FROM exp.ObjectProperty WHERE PropertyId IN (SELECT PropertyId FROM ##PropertyIdsToDelete)
-GO
-
--- Get rid of the duplicate PropertyDescriptors
-DELETE FROM exp.PropertyDomain WHERE PropertyId IN (SELECT PropertyId FROM ##PropertyIdsToDelete)
-GO
-DELETE FROM exp.PropertyDescriptor WHERE PropertyId IN (SELECT PropertyId FROM ##PropertyIdsToDelete)
-GO
-
-DROP TABLE ##PropertyIdsToDelete
-GO
-
 -- Get rid of the orphaned assay domains
 DELETE FROM exp.DomainDescriptor WHERE DomainId IN (SELECT domainid FROM exp.domaindescriptor WHERE domainuri LIKE '%:AssayDomain-%'
     AND domainid IN (SELECT DomainId FROM exp.DomainDescriptor WHERE DomainURI IN (SELECT DomainURI FROM (SELECT Count(DomainURI) AS c, DomainURI FROM exp.DomainDescriptor GROUP BY DomainURI) X WHERE c > 1))
@@ -1508,8 +1411,6 @@ ALTER TABLE exp.Experiment ADD Hidden BIT NOT NULL DEFAULT 0;
 
 ALTER TABLE exp.ObjectProperty ADD QcValue NVARCHAR(50) NULL;
 
-ALTER TABLE exp.PropertyDescriptor ADD QcEnabled BIT NOT NULL DEFAULT 0;
-
 ALTER TABLE exp.materialsource ADD
     ParentCol NVARCHAR(200) NULL
 GO
@@ -1582,27 +1483,6 @@ EXEC sp_rename 'exp.ObjectProperty.QcValue', 'MvIndicator', 'COLUMN';
 GO
 
 ALTER TABLE exp.PropertyDescriptor ADD MvEnabled BIT NOT NULL DEFAULT 0
-GO
-
-UPDATE exp.PropertyDescriptor SET MvEnabled = QcEnabled
-GO
-
-declare @constname sysname
-select @constname= so.name
-from
-sysobjects so inner join sysconstraints sc on (sc.constid = so.id)
-inner join sysobjects soc on (sc.id = soc.id)
-where so.xtype='D'
-and soc.id=object_id('exp.PropertyDescriptor')
-and col_name(soc.id, sc.colid) = 'QcEnabled'
-
-declare @cmd VARCHAR(500)
-select @cmd='Alter Table exp.PropertyDescriptor DROP CONSTRAINT ' + @constname
-select @cmd
-
-exec(@cmd)
-
-ALTER TABLE exp.PropertyDescriptor DROP COLUMN QcEnabled
 GO
 
 /* exp-9.20-9.30.sql */
