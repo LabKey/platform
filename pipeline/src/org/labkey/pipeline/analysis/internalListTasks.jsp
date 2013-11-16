@@ -19,6 +19,9 @@
 <%@ page import="org.labkey.api.pipeline.PipelineJobService" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.pipeline.analysis.AnalysisController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -31,6 +34,7 @@
 
 <table>
     <tr>
+        <td>&nbsp;</td>
         <td><b>Task Id</b></td>
         <td><b>Status Name</b></td>
         <td><b>Execution Location</b></td>
@@ -43,6 +47,7 @@
 
 <% for (TaskFactory factory : factories) { %>
     <tr>
+        <td><%=PageFlowUtil.textLink("details", new ActionURL(AnalysisController.InternalDetailsAction.class, getContainer()).addParameter("taskId", factory.getId().toString()))%></td>
         <td><%=h(factory.getId())%></td>
         <td><%=h(factory.getStatusName())%></td>
         <td><%=h(factory.getExecutionLocation())%></td>

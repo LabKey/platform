@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.analysis;
 
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -33,6 +34,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
@@ -40,6 +42,7 @@ import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;
+import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -48,6 +51,7 @@ import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -159,7 +163,12 @@ public class AnalysisController extends SpringActionController
         if (provider == null)
             throw new NotFoundException("No pipeline provider found for task pipeline: " + taskPipeline);
 
-        return provider.getProtocolFactory(taskPipeline);
+        if (!(taskPipeline instanceof FileAnalysisTaskPipeline))
+            throw new NotFoundException("Task pipeline is not a FileAnalysisTaskPipeline: " + taskPipeline);
+
+        FileAnalysisTaskPipeline fatp = (FileAnalysisTaskPipeline)taskPipeline;
+        //noinspection unchecked
+        return provider.getProtocolFactory(fatp);
     }
 
     /**
@@ -234,7 +243,7 @@ public class AnalysisController extends SpringActionController
 
                 File fileParameters = protocol.getParametersFile(dirData, root);
                 // Make sure configure.xml file exists for the job when it runs.
-                if (!fileParameters.exists())
+                if (fileParameters != null && !fileParameters.exists())
                 {
                     protocol.setEmail(getUser().getEmail());
                     protocol.saveInstance(fileParameters, getContainer());
@@ -576,8 +585,76 @@ public class AnalysisController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Internal List Tasks");
+            return root.addChild("Internal List Pipelines");
         }
     }
+
+    public static class TaskForm
+    {
+        private String _taskId;
+
+        public String getTaskId()
+        {
+            return _taskId;
+        }
+
+        public void setTaskId(String taskId)
+        {
+            _taskId = taskId;
+        }
+    }
+
+    /**
+     * Used for debugging task registration.
+     */
+    @RequiresPermissionClass(AdminPermission.class)
+    public class InternalDetailsAction extends SimpleViewAction<TaskForm>
+    {
+        @Override
+        public ModelAndView getView(TaskForm form, BindException errors) throws Exception
+        {
+            String id = form.getTaskId();
+            if (id == null)
+                throw new NotFoundException("taskId required");
+
+            TaskFactory factory = null;
+            TaskPipeline pipeline = null;
+
+            Map<String, Object> map;
+            TaskId taskId = TaskId.valueOf(id);
+            if (taskId.getType() == TaskId.Type.task)
+            {
+                factory = PipelineJobService.get().getTaskFactory(taskId);
+                map = BeanUtils.describe(factory);
+            }
+            else
+            {
+                pipeline = PipelineJobService.get().getTaskPipeline(taskId);
+                map = BeanUtils.describe(pipeline);
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("<table>");
+            for (Map.Entry<String, Object> entry : map.entrySet())
+            {
+                sb.append("<tr>");
+                sb.append("<td>").append(PageFlowUtil.filter(entry.getKey())).append("</td>");
+                sb.append("<td>").append(PageFlowUtil.filter(entry.getValue())).append("</td>");
+                sb.append("</tr>");
+            }
+            sb.append("</table>");
+
+            return new HtmlView(sb.toString());
+
+            //return new JspView("/org/labkey/pipeline/analysis/internalDetails.jsp", null, errors);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Internal Details");
+        }
+    }
+
 
 }

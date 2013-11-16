@@ -15,19 +15,30 @@
  */
 package org.labkey.pipeline.analysis;
 
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlOptions;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings;
-import org.labkey.api.query.DetailsURL;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.util.*;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.ViewContext;
 import org.labkey.pipeline.api.TaskPipelineImpl;
+import org.labkey.pipeline.xml.LocalOrRefTaskType;
+import org.labkey.pipeline.xml.PipelineDocument;
+import org.labkey.pipeline.xml.TaskPipelineType;
+import org.labkey.pipeline.xml.TasksType;
 
 import java.io.FileFilter;
+import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +61,11 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     public FileAnalysisTaskPipelineImpl()
     {
         super(new TaskId(FileAnalysisTaskPipeline.class));
+    }
+
+    public FileAnalysisTaskPipelineImpl(TaskId taskId)
+    {
+        super(taskId);
     }
 
     public TaskPipeline cloneAndConfigure(FileAnalysisTaskPipelineSettings settings, TaskId[] taskProgression) throws CloneNotSupportedException
@@ -132,16 +148,19 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         return _protocolFactoryName;
     }
 
+    @NotNull
     public List<FileType> getInitialFileTypes()
     {
         return _initialFileTypes;
     }
 
+    @NotNull
     public FileFilter getInitialFileTypeFilter()
     {
         return new PipelineProvider.FileTypesEntryFilter(_initialFileTypes);
     }
 
+    @NotNull
     public URLHelper getAnalyzeURL(Container c, String path)
     {
         if (_analyzeURL != null)
@@ -167,6 +186,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         return AnalysisController.urlAnalyze(c, getId(), path);
     }
 
+    @NotNull
     public Map<FileType, FileType[]> getTypeHierarchy()
     {
         return _typeHierarchy;
@@ -176,5 +196,110 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     public String toString()
     {
         return getDescription();
+    }
+
+    /**
+     * Creates TaskPipeline from a file-based module <code>&lt;name>.pipeline.xml</code> config file.
+     *
+     * @param pipelineTaskId The taskid of the TaskPipeline
+     * @param pipelineConfig The task pipeline definition.
+     */
+    public static FileAnalysisTaskPipeline create(TaskId pipelineTaskId, Resource pipelineConfig)
+    {
+        if (pipelineTaskId.getName() == null)
+            throw new IllegalArgumentException("Task pipeline must by named");
+
+        if (pipelineTaskId.getType() != TaskId.Type.pipeline)
+            throw new IllegalArgumentException("Task pipeline must by of type 'pipeline'");
+
+        if (pipelineTaskId.getModuleName() == null)
+            throw new IllegalArgumentException("Task pipeline must be defined by a module");
+
+        Module module = ModuleLoader.getInstance().getModule(pipelineTaskId.getModuleName());
+
+        PipelineDocument doc;
+        try
+        {
+            XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
+            doc = PipelineDocument.Factory.parse(pipelineConfig.getInputStream(), options);
+            XmlBeansUtil.validateXmlDocument(doc, "Task pipeline config '" + pipelineConfig.getPath() + "'");
+        }
+        catch (XmlException |XmlValidationException |IOException e)
+        {
+            throw new IllegalArgumentException(e);
+        }
+
+        FileAnalysisTaskPipelineImpl pipeline = new FileAnalysisTaskPipelineImpl(pipelineTaskId);
+        pipeline.setDeclaringModule(module);
+
+        TaskPipelineType xpipeline = doc.getPipeline();
+        if (xpipeline == null)
+            throw new IllegalArgumentException("<pipeline> element required");
+
+        if (!pipelineTaskId.getName().equals(xpipeline.getName()))
+            throw new IllegalArgumentException(String.format("Task pipeline must have the name '%s'", pipelineTaskId.getName()));
+
+        if (xpipeline.isSetDescription())
+            pipeline._description = xpipeline.getDescription();
+
+        if (xpipeline.isSetAnalyzeURL())
+            pipeline._analyzeURL = xpipeline.getAnalyzeURL();
+
+        // Resolve all the steps in the pipeline
+        TaskFactory initialTaskFactory = null;
+        List<TaskId> progression = new ArrayList<>();
+        TasksType xtasks = xpipeline.getTasks();
+        for (LocalOrRefTaskType task : xtasks.getTaskArray())
+        {
+            if (task.isSetRef())
+            {
+                try
+                {
+                    TaskId taskId = TaskId.valueOf(task.getRef());
+                    TaskFactory factory = PipelineJobService.get().getTaskFactory(taskId);
+                    if (factory == null)
+                        throw new IllegalArgumentException("Task factory ref not found: " + task.getRef());
+
+                    if (initialTaskFactory == null)
+                        initialTaskFactory = factory;
+
+                    progression.add(taskId);
+                }
+                catch (ClassNotFoundException cnfe)
+                {
+                    throw new IllegalArgumentException("Task factory class not found: " + task.getRef());
+                }
+            }
+            else
+            {
+                // UNDONE: local task definition
+                // UNDONE: provide task parameters
+            }
+        }
+
+        if (initialTaskFactory == null)
+            throw new IllegalArgumentException("Expected at least one task factory in the task pipeline");
+
+        pipeline.setTaskProgression(progression.toArray(new TaskId[progression.size()]));
+
+        // Initial file types
+        pipeline._initialFileTypesFromTask = true;
+        pipeline._initialFileTypes = initialTaskFactory.getInputTypes();
+
+        // Misconfiguration: the user will never be able to start this pipeline
+        if (pipeline._initialFileTypes == null || pipeline._initialFileTypes.isEmpty())
+            throw new IllegalArgumentException("File analysis pipelines require at least one initial file type.");
+
+        // UNDONE: I don't understand the typeHierarchy
+        // Add the initial types to the hierarchy
+        pipeline._typeHierarchy = new HashMap<>();
+        for (FileType ft : pipeline._initialFileTypes)
+            pipeline._typeHierarchy.put(ft, new FileType[0]);
+
+//        // UNDONE: Default display state
+//        if (xpipeline.isSetDefaultDisplay())
+//            pipeline._defaultDisplayState = PipelineActionConfig.displayState.valueOf(xpipeline.getDefaultDisplayState());
+
+        return pipeline;
     }
 }

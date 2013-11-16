@@ -20,7 +20,6 @@ import org.junit.Assert;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
-import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
@@ -39,6 +38,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URIUtil;
+import org.labkey.pipeline.analysis.FileAnalysisTaskPipelineImpl;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesImpl;
 import org.labkey.pipeline.api.properties.ConfigPropertiesImpl;
 import org.labkey.pipeline.api.properties.GlobusClientPropertiesImpl;
@@ -873,13 +873,13 @@ public class PipelineJobServiceImpl extends PipelineJobService
                 Path taskConfigPath = tasksDirPath.append(configFileName);
                 Resource taskConfig = module.getModuleResource(taskConfigPath);
                 if (taskConfig != null && taskConfig.isFile())
-                    return TaskFactoryResource.create(taskId, taskConfig);
+                    return ScriptTask.Factory.create(taskId, taskConfig);
 
                 // Look for a "pipeline/tasks/<name>/<name>.task.xml" file
                 taskConfigPath = tasksDirPath.append(taskId.getName()).append(configFileName);
                 taskConfig = ModuleLoader.getInstance().getResource(taskConfigPath);
                 if (taskConfig != null && taskConfig.isFile())
-                    return TaskFactoryResource.create(taskId, taskConfig);
+                    return ScriptTask.Factory.create(taskId, taskConfig);
             }
 
             return null;
@@ -960,11 +960,11 @@ public class PipelineJobServiceImpl extends PipelineJobService
                 Module module = ModuleLoader.getInstance().getModule(taskId.getModuleName());
                 String configFileName = taskId.getName() + PIPELINE_CONFIG_EXTENSION;
 
-                // Look for a "pipeline/pipeline/<name>.pipeline.xml" file
-                Path pipelineConfigPath = new Path(PIPELINE_DIR, PIPELINE_DIR, configFileName);
+                // Look for a "pipeline/pipelines/<name>.pipeline.xml" file
+                Path pipelineConfigPath = new Path(PIPELINE_DIR, PIPELINES_DIR, configFileName);
                 Resource pipelineConfig = module.getModuleResource(pipelineConfigPath);
                 if (pipelineConfig != null && pipelineConfig.isFile())
-                    return TaskPipelineResource.create(taskId, pipelineConfig);
+                    return FileAnalysisTaskPipelineImpl.create(taskId, pipelineConfig);
             }
 
             return null;

@@ -206,7 +206,8 @@
     <tr>
         <td/>
         <td>
-            <input type="checkbox" class="protocol-input" disabled="true" id="saveProtocolInput" name="saveProtocol" checked/> Save protocol for future use
+            <input type="checkbox" class="protocol-input" disabled="true" id="saveProtocolInput" name="saveProtocol" checked/>
+            <label for="saveProtocolInput">Save protocol for future use</label>
         </td>
     </tr>
     <tr>

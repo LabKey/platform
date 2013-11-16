@@ -43,7 +43,9 @@
     <table>
         <%=formatMissedErrors("form", "<tr><td>", "</td></tr>")%>
         <tr><td>Rename <%=h(containerType)%> <b><%=h(name)%></b> to:&nbsp;<input id="name" name="name" value="<%=h(name)%>"/></td></tr>
-        <tr><td><input type="checkbox" name="addAlias" checked> Add a folder alias for the folder's current name. This will make links that still target the old folder name continue to work.</td></tr>
+        <tr><td><input type="checkbox" id="addAlias" name="addAlias" checked>
+            <label for="addAlias">Add a folder alias for the folder's current name. This will make links that still target the old folder name continue to work.</label>
+        </td></tr>
     </table>
     <table>
         <tr>

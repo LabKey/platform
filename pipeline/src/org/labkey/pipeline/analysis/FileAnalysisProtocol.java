@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.analysis;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
@@ -38,6 +39,7 @@ public class FileAnalysisProtocol extends AbstractFileAnalysisProtocol<AbstractF
         super(name, description, xml);
     }
 
+    @NotNull
     public List<FileType> getInputTypes()
     {
         return _factory.getPipeline().getInitialFileTypes();

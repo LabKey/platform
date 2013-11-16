@@ -30,11 +30,13 @@ import org.labkey.api.pipeline.cmd.TaskToCommandArgs;
 import org.labkey.api.pipeline.cmd.UnixCompactSwitchFormat;
 import org.labkey.api.pipeline.cmd.UnixNewSwitchFormat;
 import org.labkey.api.pipeline.cmd.UnixSwitchFormat;
+import org.labkey.api.pipeline.cmd.ValueInLine;
 import org.labkey.api.pipeline.cmd.ValueToMultiCommandArgs;
 import org.labkey.api.pipeline.cmd.ValueToSwitch;
 import org.labkey.api.pipeline.cmd.ValueWithSwitch;
 import org.labkey.pipeline.analysis.CommandTaskImpl;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -100,6 +102,15 @@ public class PipelineCommandTestCase extends Assert
         args1 = test1.toArgs(null);
         assertEquals("Unexpected length for ValueWithSwitch args", 0, args1.length);
 
+        test1.setParameter("test1");
+        test1.setDefault("default1");
+        assertEquals("Expected default value", "default1", test1.getValue(Collections.<String, String>singletonMap("test1", null)));
+        args1 = test1.toArgs(test1.getValue(Collections.<String, String>singletonMap("test1", null)));
+        assertEquals("Unexpected length for ValueWithSwitch args", 2, args1.length);
+        assertEquals("Unexpected arg for ValueWithSwitch", "-a", args1[0]);
+        assertEquals("Unexpected arg for ValueWithSwitch", "default1", args1[1]);
+
+
         BooleanToSwitch test2 = new BooleanToSwitch();
         test2.setSwitchFormat(new UnixSwitchFormat());
         test2.setSwitchName("b");
@@ -110,8 +121,11 @@ public class PipelineCommandTestCase extends Assert
         assertEquals("Unexpected length for BooleanToSwitch args", 0, args2.length);
         args2 = test2.toArgs("somethingNotYesOrNo");
         assertEquals("Unexpected length for BooleanToSwitch args", 0, args2.length);
+
+        test2.setParameter("test2");
         test2.setDefault("yes");
-        args2 = test2.toArgs(null);
+        assertEquals("Expected default value", "yes", test2.getValue(Collections.<String, String>singletonMap("test2", null)));
+        args2 = test2.toArgs(test2.getValue(Collections.<String, String>singletonMap("test2", null)));
         assertEquals("Unexpected length for BooleanToSwitch args", 1, args2.length);
 
         RequiredSwitch test3 = new RequiredSwitch();
@@ -178,12 +192,17 @@ public class PipelineCommandTestCase extends Assert
         test5.setParameter("test, value to switch with multi args");
         test5.setDelimiter(" ");
 
+        ValueInLine test6 = new ValueInLine();
+        test6.setParameter("test, inline value with default");
+        test6.setDefault("e");
+
         ListToCommandArgs commandList = new ListToCommandArgs();
         commandList.addConverter(test1);
         commandList.addConverter(test2);
         commandList.addConverter(test3);
         commandList.addConverter(test4);
         commandList.addConverter(test5);
+        commandList.addConverter(test6);
 
         // expected param args to be : -a 100 -b -c testing -d testing2 100 -999
         final PipelineJob j = _context.mock(PipelineJob.class);
@@ -193,11 +212,12 @@ public class PipelineCommandTestCase extends Assert
             params.put("test, boolean to switch", "yes");
             params.put("test, value with switch", "testing");
             params.put("test, value to switch with multi args", "testing2 100 -999");
+            params.put("test, inline value with default", "f");
             will(returnValue(params));
         }});
         
         String[] args = commandList.toArgs(new CommandTaskImpl(j, new CommandTaskImpl.Factory()), new HashSet<TaskToCommandArgs>());
-        assertEquals("Unexpected length for args", 9, args.length);
+        assertEquals("Unexpected length for args", 10, args.length);
         assertEquals("Unexpected arg for RequiredSwitch", "-a", args[0]);
         assertEquals("Unexpected arg for RequiredSwitch", "100", args[1]);
         assertEquals("Unexpected arg for BooleanToSwitch", "-b", args[2]);
@@ -207,6 +227,7 @@ public class PipelineCommandTestCase extends Assert
         assertEquals("Unexpected arg for ValueToMultiCommandArgs", "testing2", args[6]);
         assertEquals("Unexpected arg for ValueToMultiCommandArgs", "100", args[7]);
         assertEquals("Unexpected arg for ValueToMultiCommandArgs", "-999", args[8]);
+        assertEquals("Unexpected arg for ValueInLine", "f", args[9]);
 
         // expected param args to be : -a 100
         final PipelineJob j2 = _context.mock(PipelineJob.class, "job2");
@@ -216,11 +237,14 @@ public class PipelineCommandTestCase extends Assert
             params.put("test, boolean to switch", "no");
             params.put("test, value with switch", null);
             params.put("test, value to switch with multi args", "");
+            params.put("test, inline value with default", null);
             will(returnValue(params));
         }});
         String[] args2 = commandList.toArgs(new CommandTaskImpl(j2, new CommandTaskImpl.Factory()), new HashSet<TaskToCommandArgs>());
-        assertEquals("Unexpected length for args2", 2, args2.length);
+        assertEquals("Unexpected length for args2", 3, args2.length);
         assertEquals("Unexpected arg for RequiredSwitch", "-a", args2[0]);
         assertEquals("Unexpected arg for RequiredSwitch", "100", args2[1]);
+        assertEquals("Unexpected arg for ValueInLine", "e", args2[2]);
     }
+
 }

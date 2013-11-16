@@ -199,7 +199,6 @@ public class WindowsCommandLineSplitter implements CommandLineSplitter
         {
             CommandLineSplitter parser = new WindowsCommandLineSplitter();
             String[] commands = parser.getCommandStrings(commandLine);
-            System.out.println(Arrays.toString(commands));
             assertArrayEquals(expected, commands);
         }
     }

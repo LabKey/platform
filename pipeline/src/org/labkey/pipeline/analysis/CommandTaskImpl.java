@@ -67,6 +67,11 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             super(new TaskId(CommandTask.class, name));
         }
 
+        public Factory(TaskId taskId)
+        {
+            super(taskId);
+        }
+
         protected void configure(CommandTaskFactorySettings settings)
         {
             super.configure(settings);
@@ -136,6 +141,11 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         public String getStatusName()
         {
             return _statusName;
+        }
+
+        protected void setStatusName(String statusName)
+        {
+            _statusName = statusName;
         }
 
         public String getInstallPath()
@@ -248,14 +258,29 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             return _inputPaths;
         }
 
+        protected void setInputPaths(Map<String, TaskPath> inputPaths)
+        {
+            _inputPaths = inputPaths;
+        }
+
         public Map<String, TaskPath> getOutputPaths()
         {
             return _outputPaths;
         }
 
+        protected void setOututPaths(Map<String, TaskPath> outputPaths)
+        {
+            _outputPaths = outputPaths;
+        }
+
         public List<TaskToCommandArgs> getConverters()
         {
             return _converter.getConverters();
+        }
+
+        protected void setConverter(ListToCommandArgs converter)
+        {
+            _converter = converter;
         }
 
         public String[] toArgs(CommandTask task) throws IOException
