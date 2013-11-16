@@ -66,6 +66,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -76,7 +77,7 @@ import java.util.concurrent.TimeoutException;
 
 abstract public class PipelineJob extends Job implements Serializable
 {
-    public static final FileType FT_LOG = new FileType(".log");
+    public static final FileType FT_LOG = new FileType(Arrays.asList(".log"), ".log", "text/plain");
 
     private static Logger _log = Logger.getLogger(PipelineJob.class);
     // Send start/stop messages to a separate logger because the default logger for this class is set to

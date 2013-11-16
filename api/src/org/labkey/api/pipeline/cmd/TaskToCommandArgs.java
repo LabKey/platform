@@ -49,7 +49,7 @@ abstract public class TaskToCommandArgs
         _switchFormat = switchFormat;
     }
 
-    public String[] toArgs(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    public final String[] toArgs(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
     {
         if (visited.contains(this))
             throw new IllegalStateException("Circular logic in job to command args logic.");

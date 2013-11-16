@@ -15,6 +15,8 @@
  */
 package org.labkey.api.pipeline.file;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.TaskPipeline;
@@ -45,6 +47,7 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
      *
      * @return list containing acceptable initial file types
      */
+    @NotNull
     List<FileType> getInitialFileTypes();
 
     /**
@@ -52,11 +55,15 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
      *
      * @return filter for input files
      */
+    @NotNull
     FileFilter getInitialFileTypeFilter();
 
+    @NotNull
     URLHelper getAnalyzeURL(Container c, String path);
 
+    @NotNull
     public Map<FileType, FileType[]> getTypeHierarchy();
 
+    @Nullable
     PipelineActionConfig.displayState getDefaultDisplayState();
 }

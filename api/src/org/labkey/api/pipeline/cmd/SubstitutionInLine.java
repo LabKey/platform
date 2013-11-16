@@ -46,9 +46,12 @@ public class SubstitutionInLine extends ValueToCommandArgs
 
     public String[] toArgs(String value)
     {
-        String valueSubst = _converter.makeSubstitution(value);
-        if (valueSubst != null)
-            return new String[] { valueSubst };
+        if (value != null)
+        {
+            String valueSubst = _converter.makeSubstitution(value);
+            if (valueSubst != null)
+                return new String[] { valueSubst };
+        }
 
         return new String[0];
     }

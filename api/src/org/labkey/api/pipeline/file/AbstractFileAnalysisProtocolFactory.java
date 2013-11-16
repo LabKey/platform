@@ -18,6 +18,7 @@ package org.labkey.api.pipeline.file;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -26,7 +27,7 @@ import java.io.*;
 import java.util.List;
 
 /**
- * <code>AbstractMS2SearchProtocolFactory</code>
+ * <code>AbstractFileAnalysisProtocolFactory</code>
  */
 abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFileAnalysisProtocol> extends PipelineProtocolFactory<T>
 {
@@ -98,7 +99,8 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
      * @param root pipeline root under which the files are stored
      * @return parameters file
      */
-    public File getParametersFile(File dirData, String protocolName, PipeRoot root)
+    @Nullable
+    public File getParametersFile(@Nullable File dirData, String protocolName, PipeRoot root)
     {
         if (dirData == null)
         {

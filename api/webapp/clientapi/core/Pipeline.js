@@ -78,8 +78,10 @@ LABKEY.Pipeline = new function(){
          * @param {Object} [config.scope] The scope to use when calling the callbacks (defaults to this).
          */
         getProtocols : function(config) {
-            var params = new Object();
-            params.taskId = config.taskId;
+            var params = {
+                taskId: config.taskId
+            };
+
             var containerPath = config.containerPath ? config.containerPath : LABKEY.ActionURL.getContainer();
             var url = LABKEY.ActionURL.buildURL("pipeline-analysis", "getSavedProtocols.api", containerPath);
             var onSuccess = LABKEY.Utils.getOnSuccess(config);
@@ -120,11 +122,13 @@ LABKEY.Pipeline = new function(){
          */
         getFileStatus : function(config)
         {
-            var params = new Object();
-            params.taskId = config.taskId;
-            params.path = config.path;
-            params.file = config.files;
-            params.protocolName = config.protocolName;
+            var params = {
+                taskId: config.taskId,
+                path: config.path,
+                file: config.files,
+                protocolName: config.protocolName
+            };
+
             var containerPath = config.containerPath ? config.containerPath : LABKEY.ActionURL.getContainer();
             var url = LABKEY.ActionURL.buildURL("pipeline-analysis", "getFileStatus.api", containerPath);
             var onSuccess = LABKEY.Utils.getOnSuccess(config);
@@ -169,18 +173,20 @@ LABKEY.Pipeline = new function(){
          * @param {Object} [config.scope] The scope to use when calling the callbacks (defaults to this).
          */
         startAnalysis : function(config) {
-            var params = new Object();
-            params.taskId = config.taskId;
-            params.path = config.path;
             if (!config.protocolName)
             {
                 throw "Invalid config, must include protocolName property";
             }
-            params.protocolName = config.protocolName;
-            params.protocolDescription = config.protocolDescription;
-            params.file = config.files;
-            params.fileIds = config.fileIds;
-            params.saveProtocol = config.saveProtocol == undefined || config.saveProtocol;
+
+            var params = {
+                taskId: config.taskId,
+                path: config.path,
+                protocolName: config.protocolName,
+                protocolDescription: config.protocolDescription,
+                file: config.files,
+                fileIds: config.fileIds,
+                saveProtocol: config.saveProtocol == undefined || config.saveProtocol
+            };
             if (config.xmlParameters)
             {
                 // Convert from an Element to a string if needed
@@ -199,6 +205,7 @@ LABKEY.Pipeline = new function(){
                     params.configureJson = LABKEY.ExtAdapter.encode(config.jsonParameters);
                 }
             }
+
             var containerPath = config.containerPath ? config.containerPath : LABKEY.ActionURL.getContainer();
             var url = LABKEY.ActionURL.buildURL("pipeline-analysis", "startAnalysis.api", containerPath);
             LABKEY.Ajax.request({

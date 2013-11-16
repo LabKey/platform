@@ -22,18 +22,7 @@ import java.util.Map;
 */
 public class EnumValueToSwitch extends ValueToCommandArgs
 {
-    private String _default;
     private Map<String, String> _switches;
-
-    public String getDefault()
-    {
-        return _default;
-    }
-
-    public void setDefault(String def)
-    {
-        _default = def;
-    }
 
     public String getSwitchName(String value)
     {
@@ -52,9 +41,6 @@ public class EnumValueToSwitch extends ValueToCommandArgs
 
     public String[] toArgs(String value)
     {
-        if (value == null)
-            value = getDefault();
-
         if (value != null)
             return getSwitchFormat().format(getSwitchName(value));
 

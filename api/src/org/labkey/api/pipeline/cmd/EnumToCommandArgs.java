@@ -24,18 +24,7 @@ import java.io.IOException;
 */
 public class EnumToCommandArgs extends JobParamToCommandArgs
 {
-    private String _default;
     private Map<String, TaskToCommandArgs> _converters;
-
-    public String getDefault()
-    {
-        return _default;
-    }
-
-    public void setDefault(String aDefault)
-    {
-        _default = aDefault;
-    }
 
     public Map<String, TaskToCommandArgs> getConverters()
     {
@@ -57,9 +46,6 @@ public class EnumToCommandArgs extends JobParamToCommandArgs
     public String[] toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
     {
         String keyConverter = getValue(task.getJob());
-        if (keyConverter == null)
-            keyConverter = getDefault();
-
         if (keyConverter != null)
         {
             TaskToCommandArgs converter = getConverter(keyConverter);

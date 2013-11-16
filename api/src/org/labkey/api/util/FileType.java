@@ -561,7 +561,8 @@ public class FileType implements Serializable
         return (_dir == null || !_dir.booleanValue() ? _suffixes.toString() : _suffixes + "/");
     }
 
-    public static List<FileType> findTypes(List<FileType> types, List<File> files)
+    @NotNull
+    public static List<FileType> findTypes(@NotNull List<FileType> types, @NotNull List<File> files)
     {
         ArrayList<FileType> foundTypes = new ArrayList<>();
         // This O(n*m), but these are usually very short lists.

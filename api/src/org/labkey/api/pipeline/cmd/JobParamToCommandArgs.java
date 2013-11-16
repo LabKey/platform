@@ -15,6 +15,8 @@
  */
 package org.labkey.api.pipeline.cmd;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipelineJob;
 
@@ -28,6 +30,7 @@ abstract public class JobParamToCommandArgs extends TaskToCommandArgs
     private String _parameter;
     private ParamParser.ParamValidator _paramValidator;
     private String _help;
+    private String _default;
 
     public String getParameter()
     {
@@ -49,6 +52,16 @@ abstract public class JobParamToCommandArgs extends TaskToCommandArgs
         _paramValidator = paramValidator;
     }
 
+    public String getDefault()
+    {
+        return _default;
+    }
+
+    public void setDefault(String value)
+    {
+        _default = value;
+    }
+
     public String getHelp()
     {
         return _help;
@@ -59,10 +72,18 @@ abstract public class JobParamToCommandArgs extends TaskToCommandArgs
         _help = help;
     }
 
-    public String getValue(PipelineJob job)
+    @Nullable
+    public String getValue(@NotNull PipelineJob job)
     {
         Map<String, String> jobParams = job.getParameters();
-
-        return (jobParams == null ? null : jobParams.get(getParameter()));
+        return getValue(jobParams);
     }
+
+    @Nullable
+    public String getValue(@Nullable Map<String, String> jobParams)
+    {
+        String value = jobParams == null ? null : jobParams.get(getParameter());
+        return value == null ? getDefault() : value;
+    }
+
 }

@@ -20,22 +20,11 @@ package org.labkey.api.pipeline.cmd;
 */
 public class BooleanToSwitch extends AbstractValueToNamedSwitch
 {
-    private String _default;
     private boolean _negative;
 
     public BooleanToSwitch()
     {
         setParamValidator(new ValidateBoolean());
-    }
-
-    public String getDefault()
-    {
-        return _default;
-    }
-
-    public void setDefault(String def)
-    {
-        _default = def;
     }
 
     public boolean isNegative()
@@ -51,8 +40,6 @@ public class BooleanToSwitch extends AbstractValueToNamedSwitch
     public String[] toArgs(String value)
     {
         String[] params = getSwitchFormat().format(getSwitchName());
-        if (value == null)
-            value = _default;
 
         if ((!_negative && "yes".equalsIgnoreCase(value)) ||
                 (_negative && "no".equalsIgnoreCase(value)))
