@@ -117,7 +117,7 @@ class ScriptReorderer
             // Can't prefix index names with table name on PostgreSQL... find table name based on our naming conventions.
             patterns.add(new SqlPattern("(?:DROP|ALTER) INDEX " + SCHEMA_NAME_REGEX + "(?:IX_|IDX_)" + TABLE_NAME_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
 
-            patterns.add(new SqlPattern("CREATE FUNCTION .+? RETURNS \\w+ AS (.+?) (?:.+?) \\1 LANGUAGE plpgsql" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
+            patterns.add(new SqlPattern("CREATE (?:OR REPLACE )?FUNCTION .+? RETURNS \\w+ AS (.+?) (?:.+?) \\1 LANGUAGE plpgsql" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
         }
 
         // Put this at the end to catch all other ALTER TABLE statements (i.e., not RENAMEs)
