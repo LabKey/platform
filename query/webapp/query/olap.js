@@ -761,7 +761,7 @@ Ext4.define('LABKEY.query.olap.MDX', {
                 filter = [filter];
             copy.filter = copy.filter.concat(filter);
         }
-        console.debug(JSON.stringify({showEmpty:copy.showEmpty, onRows:copy.onRows, onCols:copy.onCols, filter:copy.filter}));
+//        console.debug(JSON.stringify({showEmpty:copy.showEmpty, onRows:copy.onRows, onCols:copy.onCols, filter:copy.filter}));
         return this._queryJava(copy);
     },
 
