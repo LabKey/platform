@@ -17,6 +17,7 @@
 package org.labkey.study.pipeline;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
@@ -30,9 +31,13 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Selector;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -44,13 +49,19 @@ import org.labkey.api.pipeline.AbstractSpecimenTransformTask;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.SequenceNumImportHelper;
 import org.labkey.study.model.StudyManager;
 
@@ -421,8 +432,94 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
         });
     }
 
+    static void importNotDone(File source, PipelineJob job)
+    {
+        job.setStatus("Importing missing specimens");
+        QuerySchema schema = DefaultSchema.get(job.getUser(), job.getContainer()).getSchema("rho");
+        if (null == schema)
+        {
+            job.warn("Rho module is not installed in this folder.");
+            return;
+        }
+        TableInfo target = schema.getTable("MissingSpecimen");
+        if (null == target)
+        {
+            job.warn("Table not found: rho.MissingSpecimen");
+            return;
+        }
+        importXls(target, source, job);
+    }
 
+    static void importSkipVisit(File source, PipelineJob job)
+    {
+        job.setStatus("Importing missing visits");
+        QuerySchema schema = DefaultSchema.get(job.getUser(), job.getContainer()).getSchema("rho");
+        if (null == schema)
+        {
+            job.warn("Rho module is not installed in this folder.");
+            return;
+        }
+        TableInfo target = schema.getTable("MissingVisit");
+        if (null == target)
+        {
+            job.warn("Table not found: rho.MissingVisit");
+            return;
+        }
+        importXls(target, source, job);
+    }
 
+    static void importXls(@NotNull TableInfo target, @NotNull File source, PipelineJob job)
+    {
+        Study study = StudyManager.getInstance().getStudy(job.getContainer());
+        if (null == study)
+            return;
+        DbScope scope = target.getSchema().getScope();
+        DataIteratorContext context = new DataIteratorContext();
+
+        try
+        {
+            scope.beginTransaction();
+
+            DataLoaderFactory df = DataLoader.get().findFactory(source, null);
+            if (null == df)
+                return;
+            DataLoader dl = df.createLoader(source, true, study.getContainer());
+            DataIteratorBuilder sampleminded = StudyService.get().wrapSampleMindedTransform(dl, context, study, target);
+            Map<String,Object> empty = new HashMap<>();
+
+            // would be nice to have deleteAll() in QueryUpdateService
+            new SqlExecutor(scope).execute("DELETE FROM rho." + target.getName() + " WHERE container=?", study.getContainer());
+            int count = target.getUpdateService().importRows(job.getUser(), study.getContainer(), sampleminded, context.getErrors(), empty);
+            if (!context.getErrors().hasErrors())
+            {
+                scope.commitTransaction();
+                return;
+            }
+            {
+                // TODO write errors to log
+                return;
+            }
+        }
+        catch (SQLException x)
+        {
+            boolean isConstraint = SqlDialect.isConstraintException(x);
+            if (isConstraint)
+                context.getErrors().addRowError(new ValidationException(x.getMessage()));
+            else
+                throw new RuntimeSQLException(x);
+        }
+        catch (IOException x)
+        {
+            context.getErrors().addRowError(new ValidationException(x.getMessage()));
+        }
+        finally
+        {
+            // write errors to log
+            for (ValidationException error : context.getErrors().getRowErrors())
+                job.error(error.getMessage());
+            scope.closeConnection();
+        }
+    }
 
     /**
      * This lets us re-use a lot of the column mapping stuff we do for sample minded specimen import.  In particular

@@ -17,30 +17,14 @@
 package org.labkey.study.pipeline;
 
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskFactory;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.ValidationException;
-import org.labkey.api.reader.DataLoader;
-import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.ZipUtil;
@@ -52,13 +36,9 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.io.File;
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /*
 * User: adam
@@ -95,9 +75,6 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
     {
         VirtualFile specimenDir;
         File unzipDir = null;
-
-        // CONSIDER: use subclass or something to isolate sample-mined code.
-        boolean isSampleMinded = false;
 
         try
         {
@@ -153,25 +130,16 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                 importer.process(ctx.getUser(), ctx.getContainer(), specimenDir, merge, ctx.getLogger());
             }
 
-            if (isSampleMinded)
+            // perform any tasks after the transform and import has been completed
+            for (SpecimenTransform transformer : SpecimenService.get().getSpecimenTransforms(ctx.getContainer()))
             {
-                // TODO this really doesn't belong in study module.
-                // This should be some sort of plug-in
-                String filename = inputFile.getName();
-                String base = FileUtil.getBaseName(filename);
-                String ext = FileUtil.getExtension(filename);
-                if (base.endsWith("_data"))
-                    base = base.substring(0,base.length()-"_data".length());
-                File notdone = new File(inputFile.getParentFile(), base + "_notdone." + ext);
-                File skipvis = new File(inputFile.getParentFile(), base + "_skipvis." + ext);
-
-                if (notdone.exists())
+                if (transformer.getFileType().isType(inputFile))
                 {
-                    importNotDone(notdone, job, ctx);
-                }
-                if (skipvis.exists())
-                {
-                    importSkipVisit(skipvis, job, ctx);
+                    if (job != null)
+                        job.setStatus("OPTIONAL POST TRANSFORMING STEP " + transformer.getName() + " DATA");
+                    File specimenArchive = SpecimenBatch.ARCHIVE_FILE_TYPE.getFile(inputFile.getParentFile(), transformer.getFileType().getBaseName(inputFile));
+                    transformer.postTransform(job, inputFile, specimenArchive);
+                    break;
                 }
             }
         }
@@ -207,97 +175,5 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         log.info("Deleting " + file.getPath());
         if (!file.delete())
             log.error("Unable to delete file: " + file.getPath());
-    }
-
-
-    static void importNotDone(File source, PipelineJob job, StudyImportContext ctx)
-    {
-        job.setStatus("Importing missing specimens");
-        QuerySchema schema = DefaultSchema.get(job.getUser(), job.getContainer()).getSchema("rho");
-        if (null == schema)
-        {
-            job.warn("Rho module is not installed in this folder.");
-            return;
-        }
-        TableInfo target = schema.getTable("MissingSpecimen");
-        if (null == target)
-        {
-            job.warn("Table not found: rho.MissingSpecimen");
-            return;
-        }
-        importXls(target, source, job, ctx);
-    }
-
-
-    static void importSkipVisit(File source, PipelineJob job, StudyImportContext ctx)
-    {
-        job.setStatus("Importing missing visits");
-        QuerySchema schema = DefaultSchema.get(job.getUser(), job.getContainer()).getSchema("rho");
-        if (null == schema)
-        {
-            job.warn("Rho module is not installed in this folder.");
-            return;
-        }
-        TableInfo target = schema.getTable("MissingVisit");
-        if (null == target)
-        {
-            job.warn("Table not found: rho.MissingVisit");
-            return;
-        }
-        importXls(target, source, job, ctx);
-    }
-
-
-    static void importXls(@NotNull TableInfo target, @NotNull File source, PipelineJob job, StudyImportContext ctx)
-    {
-        Study study = StudyManager.getInstance().getStudy(ctx.getContainer());
-        if (null == study)
-            return;
-        DbScope scope = target.getSchema().getScope();
-        DataIteratorContext context = new DataIteratorContext();
-
-        try
-        {
-            scope.beginTransaction();
-
-            DataLoaderFactory df = DataLoader.get().findFactory(source, null);
-            if (null == df)
-                return;
-            DataLoader dl = df.createLoader(source, true, study.getContainer());
-            DataIteratorBuilder sampleminded = StudyService.get().wrapSampleMindedTransform(dl, context, study, target);
-            Map<String,Object> empty = new HashMap<>();
-
-            // would be nice to have deleteAll() in QueryUpdateService
-            new SqlExecutor(scope).execute("DELETE FROM rho." + target.getName() + " WHERE container=?", study.getContainer());
-            int count = target.getUpdateService().importRows(job.getUser(), study.getContainer(), sampleminded, context.getErrors(), empty);
-            if (!context.getErrors().hasErrors())
-            {
-                scope.commitTransaction();
-                return;
-            }
-            {
-                // TODO write errors to log
-                return;
-            }
-        }
-        catch (SQLException x)
-        {
-            boolean isConstraint = SqlDialect.isConstraintException(x);
-            if (isConstraint)
-                context.getErrors().addRowError(new ValidationException(x.getMessage()));
-            else
-                throw new RuntimeSQLException(x);
-        }
-        catch (IOException x)
-        {
-            context.getErrors().addRowError(new ValidationException(x.getMessage()));
-        }
-        finally
-        {
-            // write errors to log
-            for (ValidationException error : context.getErrors().getRowErrors())
-                job.error(error.getMessage());
-            scope.closeConnection();
-        }
     }
 }

@@ -46,12 +46,16 @@ public class FreezerProTransform implements SpecimenTransform
     }
 
     @Override
+    public void postTransform(@Nullable PipelineJob job, File input, File outputArchive) throws PipelineJobException
+    {
+        // noop
+    }
+
+    @Override
     public ActionURL getManageAction(Container c, User user)
     {
-/*
         if (c.hasPermission(user, AdminPermission.class))
             return new ActionURL(FreezerProController.ConfigureAction.class, c);
-*/
         return null;
     }
 }

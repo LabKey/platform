@@ -8,6 +8,7 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudyModule;
 
@@ -42,6 +43,27 @@ public class SampleMindedTransform implements SpecimenTransform
     {
         SampleMindedTransformTask task = new SampleMindedTransformTask(job);
         task.transform(input, outputArchive);
+    }
+
+    @Override
+    public void postTransform(@Nullable PipelineJob job, File input, File outputArchive) throws PipelineJobException
+    {
+        String filename = input.getName();
+        String base = FileUtil.getBaseName(filename);
+        String ext = FileUtil.getExtension(filename);
+        if (base.endsWith("_data"))
+            base = base.substring(0,base.length()-"_data".length());
+        File notdone = new File(input.getParentFile(), base + "_notdone." + ext);
+        File skipvis = new File(input.getParentFile(), base + "_skipvis." + ext);
+
+        if (notdone.exists())
+        {
+            SampleMindedTransformTask.importNotDone(notdone, job);
+        }
+        if (skipvis.exists())
+        {
+            SampleMindedTransformTask.importSkipVisit(skipvis, job);
+        }
     }
 
     @Override

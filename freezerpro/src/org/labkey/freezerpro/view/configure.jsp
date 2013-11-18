@@ -47,7 +47,7 @@
 <labkey:errors/>
 <script type="text/javascript">
 
-    Ext.onReady(function() {
+    Ext4.onReady(function() {
 
         var bean = <%=text(jsonMapper.writeValueAsString(bean))%>;
         var formPanel = Ext4.create('Ext.form.Panel', {
