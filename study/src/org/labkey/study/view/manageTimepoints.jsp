@@ -89,15 +89,18 @@
     </table>
 </form>
 <%WebPartView.endTitleFrame(out);%>
-<%WebPartView.startTitleFrame(out, "Timepoints", null, "600", null);%>
-NOTE: If you edit the day range of timepoints, use <%= textLink("Recompute Timepoints", UpdateParticipantVisitsAction.class)%> to
-assign dataset data to the correct timepoints.
+<%WebPartView.startTitleFrame(out, "Timepoints", null, "900", null);%>
+<p>NOTE: If you edit the day range of timepoints, use <%= textLink("Recompute Timepoints", UpdateParticipantVisitsAction.class)%> to
+assign dataset data to the correct timepoints.</p>
 <table>
     <tr>
         <th>&nbsp;</th>
         <th>Label</th>
         <th>Start Day</th>
         <th>End Day</th>
+        <th>Cohort</th>
+        <th>Type</th>
+        <th>Show By Default</th>
     </tr>
 <%
     Study study = getStudy();
@@ -110,6 +113,9 @@ assign dataset data to the correct timepoints.
         <td><%=h(timepoint.getLabel())%></td>
         <td><%=h(""+timepoint.getSequenceNumMin())%></td>
         <td><%=h(""+timepoint.getSequenceNumMax())%></td>
+        <td><%= h(timepoint.getCohort() != null ? h(timepoint.getCohort().getLabel()) : "All") %></td>
+        <td><%= h(timepoint.getType() != null ? timepoint.getType().getMeaning() : "[Not defined]") %></td>
+        <td><%= timepoint.isShowByDefault()%></td>
     </tr>
 <%  }
 %>

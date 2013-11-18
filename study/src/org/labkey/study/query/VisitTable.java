@@ -35,6 +35,7 @@ public class VisitTable extends BaseStudyTable
         addColumn(new AliasedColumn(this, "SequenceNumMin", _rootTable.getColumn("SequenceNumMin")));
         addColumn(new AliasedColumn(this, "SequenceNumMax", _rootTable.getColumn("SequenceNumMax")));
         addColumn(new AliasedColumn(this, "Label", _rootTable.getColumn("Label")));
+        addColumn(new AliasedColumn(this, "Description", _rootTable.getColumn("Description")));
         addColumn(new AliasedColumn(this, "Folder", _rootTable.getColumn("Container"))).setFk(new ContainerForeignKey(schema));
         addColumn(new AliasedColumn(this, "ShowByDefault", _rootTable.getColumn("ShowByDefault")));
         addWrapColumn(_rootTable.getColumn("DisplayOrder"));

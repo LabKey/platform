@@ -72,7 +72,6 @@
         <th>Cohort</th>
         <th>Type</th>
         <th>Show By Default</th>
-        <th>&nbsp;</th>
     </tr>
     <%
         for (VisitImpl visit : getVisits(Visit.Order.DISPLAY))

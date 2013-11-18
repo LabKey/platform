@@ -48,9 +48,15 @@ is uploaded along with the data. This form allows you to define a range of seque
             </td>
         </tr>
         <tr>
-            <td class=labkey-form-label>Sequence Range</td>
+            <td class=labkey-form-label>VisitId/Sequence Range</td>
             <td>
-                <input type="text" size="20" name="sequenceNumMin" value="<%=v.getSequenceNumMin()>0?v.getSequenceNumMin():""%>">--<input type="text" size="20" name="sequenceNumMax" value="<%=v.getSequenceNumMin()==v.getSequenceNumMax()?"":v.getSequenceNumMax()%>">
+                <input type="text" size="26" name="sequenceNumMin" value="<%=v.getSequenceNumMin()>0?v.getSequenceNumMin():""%>">--<input type="text" size="26" name="sequenceNumMax" value="<%=v.getSequenceNumMin()==v.getSequenceNumMax()?"":v.getSequenceNumMax()%>">
+            </td>
+        </tr>
+        <tr>
+            <td class="labkey-form-label">Description&nbsp;<%=helpPopup("Description", "A short description of the visit.")%></td>
+            <td>
+                <textarea name="description" cols="50" rows="3"><%= h(v.getDescription()) %></textarea>
             </td>
         </tr>
         <tr>
@@ -89,7 +95,7 @@ is uploaded along with the data. This form allows you to define a range of seque
         <tr>
             <td class=labkey-form-label>Show By Default</td>
             <td>
-                <input type="checkbox" name="showByDefault"<%=checked(v.isShowByDefault())%>>
+                <input type="checkbox" name="showByDefault" <%=checked(v.isShowByDefault())%>>
             </td>
         </tr>
         <tr>

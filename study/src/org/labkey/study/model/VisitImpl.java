@@ -54,6 +54,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     private Integer _cohortId;
     private int _chronologicalOrder;
     private SequenceHandling _sequenceHandling = SequenceHandling.normal;
+    private String _description;
     
     public VisitImpl()
     {
@@ -290,6 +291,17 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     static
     {
         ObjectFactory.Registry.register(VisitImpl.class, _f);
+    }
+
+    public String getDescription()
+    {
+        return _description;
+    }
+
+    public void setDescription(String description)
+    {
+        verifyMutability();
+        _description = description;
     }
 
     private static class _BeanObjectFactory extends BeanObjectFactory<VisitImpl>

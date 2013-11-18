@@ -56,9 +56,15 @@
             </td>
         </tr>
         <tr>
-            <td class=labkey-form-label>VisitId/Sequence Number</td>
+            <td class=labkey-form-label>VisitId/Sequence Range</td>
             <td>
-                <input type="text" size="50" name="sequenceNumMin" value="<%= visit.getSequenceNumMin() %>">-<input type="text" size="50" name="sequenceNumMax" value="<%= visit.getSequenceNumMax() %>">
+                <input type="text" size="26" name="sequenceNumMin" value="<%= visit.getSequenceNumMin() %>">-<input type="text" size="26" name="sequenceNumMax" value="<%= visit.getSequenceNumMax() %>">
+            </td>
+        </tr>
+        <tr>
+            <td class="labkey-form-label">Description&nbsp;<%=helpPopup("Description", "A short description of the visit.")%></td>
+            <td>
+                <textarea name="description" cols="50" rows="3"><%= h(visit.getDescription()) %></textarea>
             </td>
         </tr>
         <tr>
@@ -156,7 +162,7 @@
         <tr>
             <td class=labkey-form-label>Show By Default</td>
             <td>
-                <input type="checkbox" name="showByDefault"<%=checked(visit.isShowByDefault())%>>
+                <input type="checkbox" name="showByDefault" <%=checked(visit.isShowByDefault())%>>
             </td>
         </tr>
         <tr>

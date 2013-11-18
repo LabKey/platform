@@ -2979,6 +2979,7 @@ public class StudyController extends BaseStudyController
         private boolean _showByDefault;
         private Integer _cohortId;
         private String _label;
+        private String _description;
         private VisitImpl _visit;
         private int _visitDateDatasetId;
         private String _sequenceNumHandling;
@@ -3039,6 +3040,7 @@ public class StudyController extends BaseStudyController
                 _visit.setTypeCode(getTypeCode());
 
             _visit.setLabel(getLabel());
+            _visit.setDescription(getDescription());
 
             if (null != getSequenceNumMax())
                 _visit.setSequenceNumMax(getSequenceNumMax());
@@ -3049,6 +3051,8 @@ public class StudyController extends BaseStudyController
             _visit.setVisitDateDatasetId(getVisitDateDatasetId());
 
             _visit.setSequenceNumHandling(getSequenceNumHandling());
+            _visit.setShowByDefault(isShowByDefault());
+
             return _visit;
         }
 
@@ -3133,6 +3137,16 @@ public class StudyController extends BaseStudyController
         public void setLabel(String label)
         {
             this._label = label;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void setDescription(String description)
+        {
+            this._description = description;
         }
 
         public Integer getCohortId()

@@ -36,25 +36,31 @@ field in the uploaded data and that subject's StartDate.
 <form action="<%=h(buildURL(StudyController.CreateVisitAction.class))%>" method="POST">
     <table>
 <%--        <tr>
-            <th align="right">Name&nbsp;<%=helpPopup("Name", "Short unique name, e.g. 'Enroll'")%></th>
+            <td class="labkey-form-label">Name&nbsp;<%=helpPopup("Name", "Short unique name, e.g. 'Enroll'")%></td>
             <td>
                 <input type="text" size="50" name="name" value="<%=h(v.getName())%>">
             </td> 
         </tr> --%>
         <tr>
-            <th align="right">Label&nbsp;<%=helpPopup("Label", "Descriptive label, e.g. '2 Weeks'")%></th>
+            <td class="labkey-form-label">Label&nbsp;<%=helpPopup("Label", "Descriptive label, e.g. '2 Weeks'")%></td>
             <td>
                 <input type="text" size="50" name="label" value="<%=h(v.getLabel())%>">
             </td>
         </tr>
         <tr>
-            <th align="right">Day Range</th>
+            <td class="labkey-form-label">Day Range</td>
             <td>
-                <input type="text" size="20" name="sequenceNumMin" value="<%=v.getSequenceNumMin()>0?v.getSequenceNumMin():""%>">--<input type="text" size="20" name="sequenceNumMax" value="<%=v.getSequenceNumMin()==v.getSequenceNumMax()?"":v.getSequenceNumMax()%>">
+                <input type="text" size="26" name="sequenceNumMin" value="<%=v.getSequenceNumMin()>0?v.getSequenceNumMin():""%>">--<input type="text" size="26" name="sequenceNumMax" value="<%=v.getSequenceNumMin()==v.getSequenceNumMax()?"":v.getSequenceNumMax()%>">
             </td>
         </tr>
         <tr>
-            <th align="right">Type</th>
+            <td class="labkey-form-label">Description&nbsp;<%=helpPopup("Description", "A short description of the visit.")%></td>
+            <td>
+                <textarea name="description" cols="50" rows="3"><%= h(v.getDescription()) %></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td class="labkey-form-label">Type</td>
             <td>
                 <select name="typeCode">
                     <option value="">[None]</option>
@@ -71,7 +77,7 @@ field in the uploaded data and that subject's StartDate.
             </td>
         </tr>
         <tr>
-            <th align="right">Show In Study Overview</th>
+            <td class="labkey-form-label">Show By Default</td>
             <td>
                 <input type="checkbox" name="showByDefault"<%=checked(v.isShowByDefault())%>>
             </td>

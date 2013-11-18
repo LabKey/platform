@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.study.Visit" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
@@ -42,25 +43,48 @@
 <input type="hidden" name="id" value="<%=visit.getRowId()%>">
     <table>
 <%--        <tr>
-            <th align="right">Name&nbsp;<%=helpPopup("Name", "Short unique name, e.g. 'Enroll'")%></th>
+            <td class="labkey-form-label">Name&nbsp;<%=helpPopup("Name", "Short unique name, e.g. 'Enroll'")%></td>
             <td>
                 <input type="text" size="50" name="name" value="<%= h(visit.getName()) %>">
             </td>
         </tr> --%>
         <tr>
-            <th align="right">Label&nbsp;<%=helpPopup("Label", "Descriptive Label e.g. Week 2'")%></th>
+            <td class="labkey-form-label">Label&nbsp;<%=helpPopup("Label", "Descriptive Label e.g. 'Week 2'")%></td>
             <td>
                 <input type="text" size="50" name="label" value="<%= h(visit.getLabel()) %>">
             </td>
         </tr>
         <tr>
-            <th align="right">Day Range&nbsp;<%=helpPopup("Day Range", "Days from start date encompassing this visit. E.g. 11-17 for Week 2")%></th>
+            <td class="labkey-form-label">Day Range&nbsp;<%=helpPopup("Day Range", "Days from start date encompassing this visit. E.g. 11-17 for Week 2")%></td>
             <td>
-                <input type="text" size="50" name="sequenceNumMin" value="<%= (int) visit.getSequenceNumMin() %>">-<input type="text" size="50" name="sequenceNumMax" value="<%= (int) visit.getSequenceNumMax() %>">
+                <input type="text" size="26" name="sequenceNumMin" value="<%= (int) visit.getSequenceNumMin() %>">-<input type="text" size="26" name="sequenceNumMax" value="<%= (int) visit.getSequenceNumMax() %>">
             </td>
         </tr>
         <tr>
-            <th align="right">Cohort</th>
+            <td class="labkey-form-label">Description&nbsp;<%=helpPopup("Description", "A short description of the visit.")%></td>
+            <td>
+                <textarea name="description" cols="50" rows="3"><%= h(visit.getDescription()) %></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td class=labkey-form-label>Type</td>
+            <td>
+                <select name="typeCode">
+                    <option value="">[None]</option>
+                    <%
+                        for (Visit.Type type : Visit.Type.values())
+                        {
+                            boolean selected = (visit.getType() == type);
+                    %>
+                    <option value="<%= type.getCode() %>"<%=selected(selected)%>><%=h(type.getMeaning())%></option>
+                    <%
+                        }
+                    %>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td class="labkey-form-label">Cohort</td>
             <td>
                 <%
                     if (cohorts == null || cohorts.size() == 0)
@@ -92,13 +116,13 @@
             </td>
         </tr>
         <tr>
-            <th align="right">Show By Default</th>
+            <td class="labkey-form-label">Show By Default</td>
             <td>
                 <input type="checkbox" name="showByDefault"<%=checked((visit.isShowByDefault()))%>>
             </td>
         </tr>
         <tr>
-            <th valign="top">Associated Datasets</th>
+            <td class="labkey-form-label" valign="top">Associated Datasets</td>
             <td>
                 <table>
                 <%
