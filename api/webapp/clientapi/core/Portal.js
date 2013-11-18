@@ -508,20 +508,13 @@ LABKEY.Portal = new function()
             LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('admin', 'moveTab', LABKEY.container.path),
                 method: 'GET',
-                success: LABKEY.Utils.getCallbackWrapper(function(response, options){
-                    if(config.folderLabel && response.pageIdToSwap && response.pageIdToSwap !== response.pageId){
-                        var tabs = LABKEY.ExtAdapter.query('.labkey-app-bar ul li');
-                        for(var i = 0; i < tabs.length; i++){
-                            var tabEl = LABKEY.ExtAdapter.get(tabs[i]);
-                            var anchors = tabEl.query('a');
-                            var anchorText = anchors[0].textContent;
-
-                            if(anchorText === config.folderLabel){
-                                // Found the tab, swap it with the previous tab.
-                                if(tabs[i - 1]){
-                                    tabEl.insertBefore(tabs[i -1]);
-                                }
-                            }
+                success: LABKEY.Utils.getCallbackWrapper(function(response, options) {
+                    if(config.domId && response.pageIdToSwap && response.pageIdToSwap !== response.pageId) {
+                        var tabAnchor = LABKEY.ExtAdapter.query('#' + config.domId)[0];
+                        if (tabAnchor) {
+                            var tabEl = LABKEY.ExtAdapter.get(tabAnchor.parentElement);
+                            var prev = tabAnchor.parentNode.previousElementSibling;
+                            tabEl.insertBefore(prev);
                         }
                     }
                 }, this, false),
@@ -545,20 +538,13 @@ LABKEY.Portal = new function()
             LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('admin', 'moveTab', LABKEY.container.path),
                 method: 'GET',
-                success: LABKEY.Utils.getCallbackWrapper(function(response, options){
-                    if(config.folderLabel && response.pageIdToSwap && response.pageIdToSwap !== response.pageId){
-                        var tabs = LABKEY.ExtAdapter.query('.labkey-app-bar ul li');
-                        for(var i = 0; i < tabs.length; i++){
-                            var tabEl = LABKEY.ExtAdapter.get(tabs[i]);
-                            var anchors = tabEl.query('a');
-                            var anchorText = anchors[0].textContent;
-
-                            if(anchorText === config.folderLabel){
-                                // Found the tab, swap it with the previous tab.
-                                if(tabs[i + 1] && tabs[i + 1].getAttribute('id') !== 'addTab'){
-                                    tabEl.insertAfter(tabs[i + 1]);
-                                }
-                            }
+                success: LABKEY.Utils.getCallbackWrapper(function(response, options) {
+                    if(config.domId && response.pageIdToSwap && response.pageIdToSwap !== response.pageId) {
+                        var tabAnchor = LABKEY.ExtAdapter.query('#' + config.domId)[0];
+                        if (tabAnchor) {
+                            var tabEl = LABKEY.ExtAdapter.get(tabAnchor.parentElement);
+                            var next = tabAnchor.parentNode.nextElementSibling;
+                            tabEl.insertAfter(next);
                         }
                     }
                 }, this, false),

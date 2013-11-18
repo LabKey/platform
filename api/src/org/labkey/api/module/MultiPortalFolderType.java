@@ -372,7 +372,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
         JSONObject config = new JSONObject();
         config.put("pageId", portalPageId);
-        config.put("folderLabel", folderLabel);
+        config.put("domId", folderLabel.replace(" ", "") + "Tab");
         String moveConfig = config.toString();
 
         NavTree menu = new NavTree("Tab Administration");
@@ -394,7 +394,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         moveMenu.addChild(new NavTree("Right", "javascript:LABKEY.Portal.moveTabRight(" + moveConfig + ");"));
         menu.addChild(moveMenu);
 
-        menu.addChild(new NavTree("Rename", "javascript:LABKEY.Portal.renameTab(" + PageFlowUtil.jsString(portalPageId) + ", " + PageFlowUtil.jsString(folderLabel + "Tab") + ");"));
+        menu.addChild(new NavTree("Rename", "javascript:LABKEY.Portal.renameTab(" + PageFlowUtil.jsString(portalPageId) + ", " + PageFlowUtil.jsString(folderLabel.replace(" ", "") + "Tab") + ");"));
 
         // TODO: Determing permissions and settings links.
 //        menu.addChild(new NavTree("Permissions"));
