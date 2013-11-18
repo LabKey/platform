@@ -34,6 +34,11 @@ public interface SpecimenTransform
      */
     void transform(@Nullable PipelineJob job, File input, File outputArchive) throws PipelineJobException;
 
+    /**
+     * An optional post transform step.
+     */
+    void postTransform(@Nullable PipelineJob job, File input, File outputArchive) throws PipelineJobException;
+
     @Nullable
     ActionURL getManageAction(Container c, User user);
 }
