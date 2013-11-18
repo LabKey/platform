@@ -602,7 +602,8 @@ class PostgreSql84Dialect extends SqlDialect
     @Override
     public String getCreateDatabaseSql(String dbName)
     {
-        String legal = makeLegalIdentifier(dbName);
+        // This will handle both mixed case and special characters on PostgreSQL
+        String legal = getSelectNameFromMetaDataName(dbName);
         return "CREATE DATABASE " + legal + " WITH ENCODING 'UTF8';\n" +
                 "ALTER DATABASE " + legal + " SET default_with_oids TO OFF";
     }
