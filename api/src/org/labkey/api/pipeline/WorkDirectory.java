@@ -16,6 +16,7 @@
 package org.labkey.api.pipeline;
 
 import org.labkey.api.pipeline.cmd.TaskPath;
+import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.util.FileType;
 
 import java.io.File;
@@ -30,7 +31,14 @@ import java.util.Map;
  */
 public interface WorkDirectory
 {
-    enum Function { input, output }
+    enum Function {
+        /** File is an input into the job. */
+        input,
+        /** File is an output of the job. */
+        output,
+        /** File is a relative path from the root of the {@link TaskPipeline#getDeclaringModule()}. */
+        module
+    }
 
     /**
      * @return the directory where the input files live and where the output files will end up
