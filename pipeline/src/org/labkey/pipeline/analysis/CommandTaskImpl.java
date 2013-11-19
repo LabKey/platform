@@ -20,16 +20,19 @@ import org.apache.commons.lang3.StringUtils;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Test;
+import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.cmd.CommandTask;
 import org.labkey.api.pipeline.cmd.*;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.api.resource.FileResource;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.Path;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -56,6 +59,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         private boolean _preview;
         private String _actionableInput;
         private String _installPath;
+        private Path _moduleTaskPath;
 
         public Factory()
         {
@@ -312,6 +316,20 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         {
             return _preview;
         }
+
+        /**
+         * Directory containing the module task.xml file used to create this TaskFactory.
+         * @return The module relative path (e.g, "pipeline/tasks" for a task declared in "pipeline/tasks/foo.task.xml".)
+         */
+        public Path getModuleTaskPath()
+        {
+            return _moduleTaskPath;
+        }
+
+        protected void setModuleTaskPath(Path moduleTaskPath)
+        {
+            _moduleTaskPath = moduleTaskPath;
+        }
     }
 
     public CommandTaskImpl(PipelineJob job, Factory factory)
@@ -330,15 +348,40 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         return _factory.getInstallPath();
     }
 
+    /**
+     * Returns a file path to a resource from the declaring module.
+     */
+    protected String getModuleResourcePath(String path)
+    {
+        Module module = _factory.getDeclaringModule();
+        if (module == null)
+            return null;
+
+        Resource dir = module.getModuleResource(path);
+        if (dir == null || !(dir instanceof FileResource))
+            return null;
+
+        File f = ((FileResource)dir).getFile();
+        return f.getPath();
+    }
+
     public String[] getProcessPaths(WorkDirectory.Function f, String key) throws IOException
     {
-        TaskPath tp = (WorkDirectory.Function.input.equals(f) ?
-                _factory.getInputPaths().get(key) : _factory.getOutputPaths().get(key));
+        if (f == WorkDirectory.Function.module)
+        {
+            String path = getModuleResourcePath(key);
+            return path == null ? new String[0] : new String[] { path };
+        }
+        else
+        {
+            TaskPath tp = (WorkDirectory.Function.input.equals(f) ?
+                    _factory.getInputPaths().get(key) : _factory.getOutputPaths().get(key));
 
-        ArrayList<String> paths = new ArrayList<>();
-        for (File file : _wd.getWorkFiles(f, tp))
-            paths.add(_wd.getRelativePath(file));
-        return paths.toArray(new String[paths.size()]);
+            ArrayList<String> paths = new ArrayList<>();
+            for (File file : _wd.getWorkFiles(f, tp))
+                paths.add(_wd.getRelativePath(file));
+            return paths.toArray(new String[paths.size()]);
+        }
     }
 
     private void inputFile(TaskPath tp, String role, RecordedAction action) throws IOException
@@ -384,39 +427,8 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             // Always copy in the parameters file. It's small and in some cases is useful to the process we're launching
             _wd.inputFile(getJobSupport().getParametersFile(), true);
 
-            ProcessBuilder pb = new ProcessBuilder(_factory.toArgs(this));
-            applyEnvironment(pb);
-
-            List<String> args = pb.command();
-
-            if (args.size() == 0)
+            if (!runCommand(action))
                 return new RecordedActionSet();
-
-            String commandLine = StringUtils.join(args, " ");
-            
-            // Just output the command line, if debug mode is set.
-            if (_factory.isPreview())
-            {
-                getJob().header(args.get(0) + " output");
-                getJob().info(commandLine);
-
-                return new RecordedActionSet();
-            }
-
-            // Check if output file is to be generated from the stdout
-            // stream of the process.
-            File fileOutput = null;
-            int lineInterval = 0;
-            if (_factory.isPipeToOutput())
-            {
-                TaskPath tpOut = _factory.getOutputPaths().get(WorkDirectory.Function.output.toString());
-                assert !tpOut.isSplitFiles() : "Invalid attempt to pipe output to split files.";
-                fileOutput = _wd.newWorkFile(WorkDirectory.Function.output,
-                        tpOut, getJobSupport().getBaseName());
-                lineInterval = _factory.getPipeOutputLineInterval();
-            }
-
-            getJob().runSubProcess(pb, _wd.getDir(), fileOutput, lineInterval, false);
 
             // Get rid of any copied input files.
             _wd.discardCopiedInputs();
@@ -433,7 +445,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                 for (File fileInput : _wd.getWorkFiles(WorkDirectory.Function.input, tpInput))
                     fileInput.delete();
             }
-            action.addParameter(RecordedAction.COMMAND_LINE_PARAM, commandLine);
+
             return new RecordedActionSet(action);
         }
         catch (IOException e)
@@ -444,6 +456,53 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         {
             _wd = null;
         }
+    }
+
+    /**
+     * Run the command line task.
+     * @param action The recorded action.
+     * @return true if the task was run, false otherwise.
+     * @throws IOException
+     * @throws PipelineJobException
+     */
+    // TODO: Add task and job version information to the recorded action.
+    protected boolean runCommand(RecordedAction action) throws IOException, PipelineJobException
+    {
+        ProcessBuilder pb = new ProcessBuilder(_factory.toArgs(this));
+        applyEnvironment(pb);
+
+        List<String> args = pb.command();
+
+        if (args.size() == 0)
+            return false;
+
+        String commandLine = StringUtils.join(args, " ");
+
+        // Just output the command line, if debug mode is set.
+        if (_factory.isPreview())
+        {
+            getJob().header(args.get(0) + " output");
+            getJob().info(commandLine);
+
+            return false;
+        }
+
+        // Check if output file is to be generated from the stdout
+        // stream of the process.
+        File fileOutput = null;
+        int lineInterval = 0;
+        if (_factory.isPipeToOutput())
+        {
+            TaskPath tpOut = _factory.getOutputPaths().get(WorkDirectory.Function.output.toString());
+            assert !tpOut.isSplitFiles() : "Invalid attempt to pipe output to split files.";
+            fileOutput = _wd.newWorkFile(WorkDirectory.Function.output,
+                    tpOut, getJobSupport().getBaseName());
+            lineInterval = _factory.getPipeOutputLineInterval();
+        }
+
+        action.addParameter(RecordedAction.COMMAND_LINE_PARAM, commandLine);
+        getJob().runSubProcess(pb, _wd.getDir(), fileOutput, lineInterval, false);
+        return true;
     }
 
     private static final Pattern pat = Pattern.compile("\\$\\{[^}]*}");

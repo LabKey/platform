@@ -68,9 +68,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 public class PipelineJobServiceImpl extends PipelineJobService
 {
-    private static final String PIPELINE_DIR = "pipeline";
-    private static final String TASKS_DIR = "tasks";
-    private static final String PIPELINES_DIR = "pipelines";
+    /* package */ static final String MODULE_PIPELINE_DIR = "pipeline";
+    private static final String MODULE_TASKS_DIR = "tasks";
+    private static final String MODULE_PIPELINES_DIR = "pipelines";
 
     private static final String TASK_CONFIG_EXTENSION = ".task.xml";
     private static final String PIPELINE_CONFIG_EXTENSION = ".pipeline.xml";
@@ -178,10 +178,10 @@ public class PipelineJobServiceImpl extends PipelineJobService
     // Loading the list of configurations in each module and the descriptors themselves happens lazily.
     public void registerModule(Module module)
     {
-        Path tasksDirPath = new Path(PIPELINE_DIR, TASKS_DIR);
+        Path tasksDirPath = new Path(MODULE_PIPELINE_DIR, MODULE_TASKS_DIR);
         Resource tasksDir = module.getModuleResolver().lookup(tasksDirPath);
 
-        Path pipelinesDirPath = new Path(PIPELINE_DIR, PIPELINES_DIR);
+        Path pipelinesDirPath = new Path(MODULE_PIPELINE_DIR, MODULE_PIPELINES_DIR);
         Resource pipelinesDir = module.getModuleResolver().lookup(pipelinesDirPath);
 
         // UNDONE: Register listeners for 'pipeline/tasks/<name>' and 'pipeline/pipelines/<name>' as well
@@ -802,7 +802,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
             }
 
             // Next, look for module task configs
-            Path tasksDirPath = new Path(PIPELINE_DIR, TASKS_DIR);
+            Path tasksDirPath = new Path(MODULE_PIPELINE_DIR, MODULE_TASKS_DIR);
             Resource tasksDir = module.getModuleResolver().lookup(tasksDirPath);
             if (tasksDir != null && tasksDir.isCollection())
             {
@@ -867,19 +867,19 @@ public class PipelineJobServiceImpl extends PipelineJobService
                 Module module = ModuleLoader.getInstance().getModule(taskId.getModuleName());
                 String configFileName = taskId.getName() + TASK_CONFIG_EXTENSION;
 
-                Path tasksDirPath = new Path(PIPELINE_DIR, TASKS_DIR);
+                Path tasksDirPath = new Path(MODULE_PIPELINE_DIR, MODULE_TASKS_DIR);
 
                 // Look for a "pipeline/tasks/<name>.task.xml" file
                 Path taskConfigPath = tasksDirPath.append(configFileName);
                 Resource taskConfig = module.getModuleResource(taskConfigPath);
                 if (taskConfig != null && taskConfig.isFile())
-                    return ScriptTask.Factory.create(taskId, taskConfig);
+                    return SimpleTaskFactory.create(taskId, taskConfig);
 
                 // Look for a "pipeline/tasks/<name>/<name>.task.xml" file
                 taskConfigPath = tasksDirPath.append(taskId.getName()).append(configFileName);
                 taskConfig = ModuleLoader.getInstance().getResource(taskConfigPath);
                 if (taskConfig != null && taskConfig.isFile())
-                    return ScriptTask.Factory.create(taskId, taskConfig);
+                    return SimpleTaskFactory.create(taskId, taskConfig);
             }
 
             return null;
@@ -906,7 +906,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
             }
 
             // Next, look for module pipeline configs
-            Path pipelinesDirPath = new Path(PIPELINE_DIR, PIPELINES_DIR);
+            Path pipelinesDirPath = new Path(MODULE_PIPELINE_DIR, MODULE_PIPELINES_DIR);
             Resource pipelinesDir = module.getModuleResolver().lookup(pipelinesDirPath);
             if (pipelinesDir != null && pipelinesDir.isCollection())
             {
@@ -961,7 +961,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
                 String configFileName = taskId.getName() + PIPELINE_CONFIG_EXTENSION;
 
                 // Look for a "pipeline/pipelines/<name>.pipeline.xml" file
-                Path pipelineConfigPath = new Path(PIPELINE_DIR, PIPELINES_DIR, configFileName);
+                Path pipelineConfigPath = new Path(MODULE_PIPELINE_DIR, MODULE_PIPELINES_DIR, configFileName);
                 Resource pipelineConfig = module.getModuleResource(pipelineConfigPath);
                 if (pipelineConfig != null && pipelineConfig.isFile())
                     return FileAnalysisTaskPipelineImpl.create(taskId, pipelineConfig);
