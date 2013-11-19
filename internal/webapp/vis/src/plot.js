@@ -267,6 +267,7 @@ LABKEY.vis.Plot = function(config){
             scales[newScaleName].scaleType = origScales[scale].scaleType ? origScales[scale].scaleType : 'continuous';
             scales[newScaleName].trans = origScales[scale].trans ? origScales[scale].trans : 'linear';
             scales[newScaleName].tickFormat = origScales[scale].tickFormat ? origScales[scale].tickFormat : null;
+            scales[newScaleName].tickHoverText = origScales[scale].tickHoverText ? origScales[scale].tickHoverText : null;
             scales[newScaleName].range = origScales[scale].range ? origScales[scale].range : null;
         }
         return scales;
@@ -543,7 +544,7 @@ LABKEY.vis.Plot = function(config){
 	};
 
 	var initGrid = function(){
-        var i, x1, y1, x2, y2, tick, tickText, text, gridLine;
+        var i, x1, y1, x2, y2, tick, tickText, tickHoverText, text, gridLine;
         if(this.bgColor){
             this.paper.rect(0, 0, this.grid.width, this.grid.height).attr('fill', this.bgColor).attr('stroke', 'none');
         }
@@ -576,6 +577,12 @@ LABKEY.vis.Plot = function(config){
             tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + this.grid.height);
             tickText = this.scales.x.tickFormat ? this.scales.x.tickFormat(xTicks[i]) : xTicks[i];
             text = this.paper.text(this.scales.x.scale(xTicks[i])+.5, -this.grid.bottomEdge + 15, tickText).transform("t0," + this.grid.height);
+
+            // add hover for x-axis tick mark descriptions
+            tickHoverText = this.scales.x.tickHoverText ? this.scales.x.tickHoverText(xTicks[i]) : null;
+            if (tickHoverText)
+                text.attr("title", tickHoverText);
+
             xTicksSet.push(text);
 
             if(x1 - .5 == this.grid.leftEdge || x1 - .5 == this.grid.rightEdge) continue;

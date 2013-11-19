@@ -46,6 +46,8 @@ public interface Visit extends StudyEntity
 
     SequenceHandling getSequenceNumHandlingEnum();
 
+    String getDescription();
+
     public enum Type
     {
         SCREENING('X', "Screening"),
