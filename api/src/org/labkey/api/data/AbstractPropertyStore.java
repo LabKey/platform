@@ -81,10 +81,8 @@ public abstract class AbstractPropertyStore implements PropertyStore
         validateStore();
         String containerId = container.getId().intern();
 
-        try
+        try (DbScope.Transaction transaction = _prop.getSchema().getScope().ensureTransaction())
         {
-            _prop.getSchema().getScope().ensureTransaction();
-
             synchronized (containerId)
             {
                 ColumnInfo setColumn = _prop.getTableInfoProperties().getColumn("Set");
@@ -104,7 +102,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
                 {
                     if (!create)
                     {
-                        _prop.getSchema().getScope().commitTransaction();
+                        transaction.commit();
                         return null;
                     }
                     propertyEncryption = getPreferredPropertyEncryption();
@@ -145,17 +143,13 @@ public abstract class AbstractPropertyStore implements PropertyStore
                     fillValueMap(selector, m);
                 }
 
-                _prop.getSchema().getScope().commitTransaction();
+                transaction.commit();
                 return m;
             }
         }
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            _prop.getSchema().getScope().closeConnection();
         }
     }
 

@@ -127,14 +127,6 @@ public class WebPartCache
         return CACHE.get(c.getId(), c, _webpartLoader);
     }
 
-
-    // TODO: Why are we passing in pageId?  Should just remove the param...
-    static void remove(Container c, String pageId)
-    {
-        CACHE.remove(c.getId());
-    }
-
-
     static void remove(Container c)
     {
         CACHE.remove(c.getId());

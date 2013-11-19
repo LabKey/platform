@@ -1265,6 +1265,7 @@ public class ContainerManager
             if (sel.exists())
             {
                 _removeFromCache(c);
+                t.commit();
                 return false;
             }
 

@@ -27,6 +27,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.reader.DataLoader;
@@ -360,15 +361,13 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     {
         if (_target != null)
         {
-            DbScope scope = _target.getSchema().getScope();
-            try
+            try (DbScope.Transaction transction = _target.getSchema().getScope().ensureTransaction())
             {
-                scope.beginTransaction();
 //                List res = _updateService.insertRows(getViewContext().getUser(), getViewContext().getContainer(), dl.load(), errors, new HashMap<String, Object>());
                 int count = _updateService.importRows(getViewContext().getUser(), getViewContext().getContainer(), dl, errors, new HashMap<String, Object>());
                 if (errors.hasErrors())
                     return 0;
-                scope.commitTransaction();
+                transction.commit();
                 return count;
             }
             /* catch (BatchValidationException x)
@@ -390,15 +389,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             } */
             catch (SQLException x)
             {
-                boolean isConstraint = scope.getSqlDialect().isConstraintException(x);
+                boolean isConstraint = SqlDialect.isConstraintException(x);
                 if (isConstraint)
                     errors.addRowError(new ValidationException(x.getMessage()));
                 else
                     throw new RuntimeSQLException(x);
-            }
-            finally
-            {
-                scope.closeConnection();
             }
         }
         else

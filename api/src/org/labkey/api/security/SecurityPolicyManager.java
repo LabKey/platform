@@ -154,26 +154,19 @@ public class SecurityPolicyManager
 
     public static void deletePolicy(@NotNull SecurableResource resource)
     {
-        DbScope scope = core.getSchema().getScope();
-        try
+        try (DbScope.Transaction transaction = core.getSchema().getScope().ensureTransaction())
         {
-            scope.ensureTransaction();
-
             //delete all rows where resourceid = resource.getResourceId()
             SimpleFilter filter = new SimpleFilter("ResourceId", resource.getResourceId());
             Table.delete(core.getTableInfoRoleAssignments(), filter);
             Table.delete(core.getTableInfoPolicies(), filter);
 
             //commit transaction
-            scope.commitTransaction();
+            transaction.commit();
         }
         catch(SQLException e)
         {
             throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            scope.closeConnection();
         }
 
         //remove the resource-oriented policy from cache

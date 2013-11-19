@@ -511,7 +511,7 @@ public class Portal
     public static void updatePart(User u, WebPart part) throws SQLException
     {
         Table.update(u, getTableInfoPortalWebParts(), part, new Object[]{part.getRowId()});
-        WebPartCache.remove(part.getContainer(), part.getPageId());
+        WebPartCache.remove(part.getContainer());
     }
 
     // Add a web part to the container at the end of the list
@@ -830,10 +830,8 @@ public class Portal
             part.container = c;
         }
 
-        try
+        try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
         {
-            getSchema().getScope().ensureTransaction();
-
             ensurePage(c, pageId);
 
             List<WebPart> oldParts = getParts(c, pageId);
@@ -870,7 +868,7 @@ public class Portal
                     // ignore
                 }
             }
-            getSchema().getScope().commitTransaction();
+            transaction.commit();
         }
         catch (SQLException x)
         {
@@ -879,8 +877,7 @@ public class Portal
         }
         finally
         {
-            getSchema().getScope().closeConnection();
-            WebPartCache.remove(c, pageId);
+            WebPartCache.remove(c);
         }
     }
 
@@ -1257,7 +1254,7 @@ public class Portal
         }
         finally
         {
-            WebPartCache.remove(ContainerManager.getForId(page.getContainer()),  page.getPageId());
+            WebPartCache.remove(ContainerManager.getForId(page.getContainer()));
         }
     }
 
@@ -1295,7 +1292,7 @@ public class Portal
         }
         finally
         {
-            WebPartCache.remove(ContainerManager.getForId(page.getContainer()),  page.getPageId());
+            WebPartCache.remove(ContainerManager.getForId(page.getContainer()));
         }
     }
 
@@ -1343,7 +1340,7 @@ public class Portal
             }
             finally
             {
-                WebPartCache.remove(ContainerManager.getForId(page.getContainer()),  page.getPageId());
+                WebPartCache.remove(ContainerManager.getForId(page.getContainer()));
             }
         }
     }
@@ -1402,7 +1399,7 @@ public class Portal
         }
         finally
         {
-            WebPartCache.remove(ContainerManager.getForId(page.getContainer()),  page.getPageId());
+            WebPartCache.remove(ContainerManager.getForId(page.getContainer()));
         }
     }
 
