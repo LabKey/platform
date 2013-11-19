@@ -15,10 +15,10 @@
  */
 package org.labkey.pipeline.api;
 
-import org.jetbrains.annotations.Nullable;
-import org.junit.Assert;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.Cache;
@@ -30,7 +30,15 @@ import org.labkey.api.files.FileSystemWatcher;
 import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.pipeline.*;
+import org.labkey.api.pipeline.ParamParser;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.pipeline.TaskFactory;
+import org.labkey.api.pipeline.TaskFactorySettings;
+import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.pipeline.TaskPipeline;
+import org.labkey.api.pipeline.TaskPipelineSettings;
+import org.labkey.api.pipeline.WorkDirFactory;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.resource.MergedDirectoryResource;
 import org.labkey.api.resource.Resource;
@@ -48,12 +56,12 @@ import org.labkey.pipeline.xstream.PathMapperImpl;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.net.URI;
 import java.nio.file.StandardWatchEventKinds;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -299,7 +307,6 @@ public class PipelineJobServiceImpl extends PipelineJobService
         TASK_PIPELINE_CACHE.remove(pipeline.getId().toString());
         synchronized (_taskPipelineStore)
         {
-            assert !_taskPipelineStore.containsKey(pipeline.getId());
             // Remove a cached 'miss' entry if it is present
             _taskPipelineStore.put(pipeline.getId(), pipeline);
             Module module = pipeline.getDeclaringModule();
@@ -394,7 +401,6 @@ public class PipelineJobServiceImpl extends PipelineJobService
         TASK_FACTORY_CACHE.remove(factory.getId().toString());
         synchronized (_taskFactoryStore)
         {
-            assert !_taskFactoryStore.containsKey(factory.getId());
             // Remove a cached 'miss' entry if present
             _taskFactoryStore.put(factory.getId(), factory);
             Module module = factory.getDeclaringModule();
@@ -403,6 +409,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
         }
     }
 
+    @NotNull
     public Collection<TaskFactory> getTaskFactories(Container container)
     {
         Collection<Module> activeModules = container == null ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
