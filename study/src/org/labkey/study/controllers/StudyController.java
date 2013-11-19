@@ -2007,6 +2007,7 @@ public class StudyController extends BaseStudyController
             if (study.getTimepointType() == TimepointType.CONTINUOUS)
                 errors.reject(null, "Unsupported operation for continuous date study");
 
+            form.setReshow(reshow);
             return new StudyJspView<>(study, getVisitJsp("create", study), form, errors);
         }
 
@@ -2983,6 +2984,7 @@ public class StudyController extends BaseStudyController
         private VisitImpl _visit;
         private int _visitDateDatasetId;
         private String _sequenceNumHandling;
+        private boolean _reshow;
 
         public VisitForm()
         {
@@ -3177,6 +3179,16 @@ public class StudyController extends BaseStudyController
         public void setSequenceNumHandling(String sequenceNumHandling)
         {
             _sequenceNumHandling = sequenceNumHandling;
+        }
+
+        public boolean isReshow()
+        {
+            return _reshow;
+        }
+
+        public void setReshow(boolean reshow)
+        {
+            _reshow = reshow;
         }
     }
 

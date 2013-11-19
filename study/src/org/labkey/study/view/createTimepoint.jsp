@@ -79,7 +79,7 @@ field in the uploaded data and that subject's StartDate.
         <tr>
             <td class="labkey-form-label">Show By Default</td>
             <td>
-                <input type="checkbox" name="showByDefault"<%=checked(v.isShowByDefault())%>>
+                <input type="checkbox" name="showByDefault"<%=checked(!form.isReshow() || v.isShowByDefault())%>>
             </td>
         </tr>
         <tr>

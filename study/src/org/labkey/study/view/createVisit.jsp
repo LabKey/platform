@@ -95,7 +95,7 @@ is uploaded along with the data. This form allows you to define a range of seque
         <tr>
             <td class=labkey-form-label>Show By Default</td>
             <td>
-                <input type="checkbox" name="showByDefault" <%=checked(v.isShowByDefault())%>>
+                <input type="checkbox" name="showByDefault" <%=checked(!form.isReshow() || v.isShowByDefault())%>>
             </td>
         </tr>
         <tr>
