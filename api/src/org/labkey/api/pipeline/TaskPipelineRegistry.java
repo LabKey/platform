@@ -42,9 +42,19 @@ public interface TaskPipelineRegistry
     @Nullable
     TaskPipeline getTaskPipeline(TaskId id);
 
+    /**
+     * Add or replace an existing TaskPipeline definition. Server-specific configuration overrides (usually specified
+     * in a Spring Config.xml file) may replace a TaskPipeline that's built-in to a module with one that adds
+     * or remove steps.
+     */
     void addTaskPipeline(TaskPipelineSettings settings)
             throws CloneNotSupportedException;
 
+    /**
+     * Add or replace an existing TaskPipeline definition. Server-specific configuration overrides (usually specified
+     * in a Spring Config.xml file) may replace a TaskPipeline that's built-in to a module with one that adds
+     * or remove steps.
+     */
     void addTaskPipeline(TaskPipeline pipeline);
 
     @NotNull
@@ -62,9 +72,21 @@ public interface TaskPipelineRegistry
     @Nullable
     TaskFactory getTaskFactory(TaskId id);
 
+    /**
+     * Add or replace an existing TaskFactory definition. Server-specific configuration overrides (usually specified
+     * in a Spring Config.xml file) may replace a TaskFactory that's built-in to a module with one that customizes
+     * it for the local installation. Examples might include setting server-specific paths to files, setting timeouts
+     * or memory limits, etc.
+     */
     void addTaskFactory(TaskFactorySettings settings)
             throws CloneNotSupportedException;
 
+    /**
+     * Add or replace an existing TaskFactory definition. Server-specific configuration overrides (usually specified
+     * in a Spring Config.xml file) may replace a TaskFactory that's built-in to a module with one that customizes
+     * it for the local installation. Examples might include setting server-specific paths to files, setting timeouts
+     * or memory limits, etc.
+     */
     void addTaskFactory(TaskFactory factory);
 
     /**
