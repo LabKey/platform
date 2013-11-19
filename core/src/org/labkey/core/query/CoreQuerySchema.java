@@ -27,7 +27,6 @@ import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.module.Module;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
@@ -465,7 +464,7 @@ public class CoreQuerySchema extends UserSchema
                 {
                     public String renderURL(RenderContext ctx)
                     {
-                        Object type = ctx.get(new FieldKey(null, "Type"));
+                        Object type = ctx.get(FieldKey.fromParts("Type"));
                         if (!"u".equals(type))
                             return null;
                         return super.renderURL(ctx);

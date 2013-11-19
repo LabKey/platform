@@ -1364,16 +1364,12 @@ class PostgreSql84Dialect extends SqlDialect
     @Override
     public void executeWithoutJdbcCaching(DbScope scope, Closure closure) throws Exception
     {
-        try
+        try (DbScope.Transaction transction = scope.ensureTransaction())
         {
-            Connection connection = scope.ensureTransaction().getConnection();
+            Connection connection = transction.getConnection();
             scope.getSqlDialect().configureToDisableJdbcCaching(connection);
             closure.execute();
-            scope.commitTransaction();
-        }
-        finally
-        {
-            scope.closeConnection();
+            transction.commit();
         }
     }
 

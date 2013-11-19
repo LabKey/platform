@@ -35,6 +35,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -542,10 +543,8 @@ public class AnnouncementManager
 
         AnnouncementModel ann = null;
 
-        try
+        try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
         {
-            schema.getScope().ensureTransaction();
-
             ann = getAnnouncement(c, rowId, INCLUDE_RESPONSES);
             if (ann != null)
             {
@@ -556,18 +555,17 @@ public class AnnouncementManager
 
                 Collection<AnnouncementModel> responses = ann.getResponses();
                 if (null == responses)
+                {
+                    transaction.commit();
                     return;
+                }
                 for (AnnouncementModel response : responses)
                 {
                     deleteAnnouncement(response);
                 }
             }
 
-            schema.getScope().commitTransaction();
-        }
-        finally
-        {
-            schema.getScope().closeConnection();
+            transaction.commit();
         }
 
        unindexThread(ann);

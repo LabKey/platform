@@ -179,9 +179,8 @@ public class UsersDomainKind extends SimpleTableDomainKind
     public static void ensureDomainProperties(Domain domain, User user, boolean isNewInstallation)
     {
         DbScope scope = CoreSchema.getInstance().getSchema().getScope();
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
             Map<String, DomainProperty> existingProps = new HashMap<>();
             Map<String, Boolean> requiredMap = new HashMap<>();
             boolean dirty = false;
@@ -216,15 +215,11 @@ public class UsersDomainKind extends SimpleTableDomainKind
             if (dirty)
                 domain.save(user);
 
-            scope.commitTransaction();
+            transaction.commit();
         }
         catch (Exception e)
         {
             throw new RuntimeException(e);
-        }
-        finally
-        {
-            scope.closeConnection();
         }
     }
 

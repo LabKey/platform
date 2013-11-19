@@ -24,6 +24,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
@@ -102,33 +103,31 @@ public class UploadSamplesHelper
     // TODO: This function is way to long and difficult to read. Break it out.
     public Pair<MaterialSource, List<ExpMaterial>> uploadMaterials() throws ExperimentException, ValidationException, IOException
     {
-        List<ExpMaterial> materials = Collections.emptyList();
-        try
+        List<ExpMaterial> materials;
+        DataLoader loader = _form.getLoader();
+        // Look at more rows than normal when inferring types for sample set columns
+        // This isn't a big perf hit because the full TSV is already in memory
+        loader.setScanAheadLineCount(1000);
+        String materialSourceLsid;
+        if (_materialSource == null)
         {
-            DataLoader loader = _form.getLoader();
-            // Look at more rows than normal when inferring types for sample set columns
-            // This isn't a big perf hit because the full TSV is already in memory
-            loader.setScanAheadLineCount(1000);
-            String materialSourceLsid;
-            if (_materialSource == null)
-            {
-                materialSourceLsid = ExperimentService.get().getSampleSetLsid(_form.getName(), _form.getContainer()).toString();
-                _materialSource = ExperimentServiceImpl.get().getMaterialSource(materialSourceLsid);
-                if (_materialSource == null && !_form.isCreateNewSampleSet())
-                    throw new ExperimentException("Can't create new Sample Set '" + _form.getName() + "'");
-            }
-            else
-            {
-                materialSourceLsid = _materialSource.getLSID();
-            }
+            materialSourceLsid = ExperimentService.get().getSampleSetLsid(_form.getName(), _form.getContainer()).toString();
+            _materialSource = ExperimentServiceImpl.get().getMaterialSource(materialSourceLsid);
+            if (_materialSource == null && !_form.isCreateNewSampleSet())
+                throw new ExperimentException("Can't create new Sample Set '" + _form.getName() + "'");
+        }
+        else
+        {
+            materialSourceLsid = _materialSource.getLSID();
+        }
 
-            if (_form.isCreateNewSampleSet() && _form.getName().length() > ExperimentServiceImpl.get().getTinfoMaterialSource().getColumn("Name").getScale())
-            {
-                throw new ExperimentException("Sample set names are limited to " + ExperimentServiceImpl.get().getTinfoMaterialSource().getColumn("Name").getScale() + " characters");
-            }
+        if (_form.isCreateNewSampleSet() && _form.getName().length() > ExperimentServiceImpl.get().getTinfoMaterialSource().getColumn("Name").getScale())
+        {
+            throw new ExperimentException("Sample set names are limited to " + ExperimentServiceImpl.get().getTinfoMaterialSource().getColumn("Name").getScale() + " characters");
+        }
 
-            ExperimentService.get().getSchema().getScope().ensureTransaction();
-
+        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
+        {
             ColumnDescriptor[] columns = loader.getColumns();
 
             Domain domain = PropertyService.get().getDomain(getContainer(), materialSourceLsid);
@@ -401,7 +400,7 @@ public class UploadSamplesHelper
             materials = insertTabDelimitedMaterial(maps, descriptors.toArray(new PropertyDescriptor[descriptors.size()]), _materialSource, reusedMaterialLSIDs);
             new ExpSampleSetImpl(_materialSource).onSamplesChanged(_form.getUser(), null);
 
-            ExperimentService.get().getSchema().getScope().commitTransaction();
+            transaction.commit();
         }
         catch (SQLException e)
         {
@@ -410,10 +409,6 @@ public class UploadSamplesHelper
         catch (ConversionException e)
         {
             throw new ExperimentException(e.getMessage(), e);
-        }
-        finally
-        {
-            ExperimentService.get().getSchema().getScope().closeConnection();
         }
 
         return new Pair<>(_materialSource, materials);

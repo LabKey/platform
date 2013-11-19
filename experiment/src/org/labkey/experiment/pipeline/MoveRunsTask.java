@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.pipeline;
 
+import org.labkey.api.data.DbScope;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
@@ -100,8 +101,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         exporter.dumpXML(bOut);
 
-        ExperimentServiceImpl.get().getSchema().getScope().ensureTransaction();
-        try
+        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
         {
             Map<String,Integer> dataFiles = new HashMap<>();
 
@@ -136,11 +136,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
                     handler.runMoved(newData, experimentRun.getContainer(), job.getContainer(), experimentRun.getLSID(), runLSIDs.get(0), job.getUser(), dataFiles.get(dataURL));
                 }
             }
-            ExperimentServiceImpl.get().getSchema().getScope().commitTransaction();
-        }
-        finally
-        {
-            ExperimentServiceImpl.get().getSchema().getScope().closeConnection();
+            transaction.commit();
         }
     }
 

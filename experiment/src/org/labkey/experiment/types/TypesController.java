@@ -25,6 +25,7 @@ import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.exp.DomainDescriptor;
@@ -527,17 +528,16 @@ public class TypesController extends SpringActionController
         DbSchema expSchema = ExperimentService.get().getSchema();
         String like = expSchema.getSqlDialect().getCaseInsensitiveLikeOperator();
 
-        try
-        {
-            expSchema.getScope().ensureTransaction();
+        int conceptCount = 0;
 
+        try (DbScope.Transaction transaction = expSchema.getScope().ensureTransaction())
+        {
             Map<String, Integer> propertyMap = new SqlSelector(ExperimentService.get().getSchema(),
                     "SELECT PropertyURI, PropertyId FROM exp.PropertyDescriptor WHERE PropertyURI " + like + " "
                     + expSchema.getSqlDialect().concatenate("?", "'#%'"), prefix).getValueMap();
 
             List<PropertyDescriptor> inserts = new ArrayList<>();
             List<PropertyDescriptor> updates = new ArrayList<>();
-            int conceptCount = 0;
 
             while (concepts.hasNext())
             {
@@ -558,18 +558,15 @@ public class TypesController extends SpringActionController
 
             OntologyManager.insertPropertyDescriptors(inserts);
             OntologyManager.updatePropertyDescriptors(updates);
-            expSchema.getScope().commitTransaction();
-
-            return conceptCount;
+            transaction.commit();
         }
-        finally
-        {
-            expSchema.getScope().closeConnection();
-            SEMANTIC_TYPES_CACHE.remove("Experiment-TypesController.getSemanticTypes");
-            concepts.close();
 
-            OntologyManager.indexConcepts(null);
-        }
+        SEMANTIC_TYPES_CACHE.remove("Experiment-TypesController.getSemanticTypes");
+        concepts.close();
+
+        OntologyManager.indexConcepts(null);
+
+        return conceptCount;
     }
 
     private static final StringKeyCache<String[]> SEMANTIC_TYPES_CACHE = CacheManager.getSharedCache();

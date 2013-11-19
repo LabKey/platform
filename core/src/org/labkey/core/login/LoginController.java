@@ -1096,12 +1096,10 @@ public class LoginController extends SpringActionController
             boolean success = false;
             DbScope scope = CoreSchema.getInstance().getSchema().getScope();
 
-            try
+           // All initial user creation steps need to be transacted
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
                 ValidEmail email = new ValidEmail(form.getEmail());
-
-                // All initial user creation steps need to be transacted
-                scope.beginTransaction();
 
                 // Add the initial user
                 SecurityManager.NewUserStatus newUserBean = SecurityManager.addUser(email);
@@ -1132,7 +1130,7 @@ public class LoginController extends SpringActionController
                         appProps.save();
                     }
 
-                    scope.commitTransaction();
+                    transaction.commit();
                 }
             }
             catch (SecurityManager.UserManagementException e)
@@ -1142,10 +1140,6 @@ public class LoginController extends SpringActionController
             catch (ValidEmail.InvalidEmailException e)
             {
                 errors.rejectValue("email", ERROR_MSG, "The string '" + PageFlowUtil.filter(form.getEmail()) + "' is not a valid email address.  Please enter an email address in this form: user@domain.tld");
-            }
-            finally
-            {
-                scope.closeConnection();
             }
 
             return success;

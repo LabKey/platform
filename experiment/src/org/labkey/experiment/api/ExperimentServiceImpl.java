@@ -1569,9 +1569,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (selectedMaterialIds.length == 0)
             return;
 
-        try
+        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
-            getExpSchema().getScope().ensureTransaction();
             SqlExecutor executor = new SqlExecutor(getExpSchema());
 
             for (int from = 0, to; from < selectedMaterialIds.length; from = to)
@@ -1621,11 +1620,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 }
             }
 
-            getExpSchema().getScope().commitTransaction();
-        }
-        finally
-        {
-            getExpSchema().getScope().closeConnection();
+            transaction.commit();
         }
     }
 
@@ -1682,19 +1677,17 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (null == c)
             return;
 
-        try
+        String sql = "SELECT RowId FROM " + getTinfoExperimentRun() + " WHERE Container = ? ;";
+        int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
+
+        ExpExperimentImpl[] exps = getExperiments(c, user, false, true, true);
+        List<ExpSampleSetImpl> sampleSets = getSampleSets(c, user, false);
+
+        sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ? ;";
+        int[] protIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
+
+        try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
         {
-            String sql = "SELECT RowId FROM " + getTinfoExperimentRun() + " WHERE Container = ? ;";
-            int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
-
-            ExpExperimentImpl[] exps = getExperiments(c, user, false, true, true);
-            List<ExpSampleSetImpl> sampleSets = getSampleSets(c, user, false);
-
-            sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ? ;";
-            int[] protIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
-
-            getExpSchema().getScope().ensureTransaction();
-            
             // first delete the runs in the container, as that should be fast.  Deletes all Materials, Data,
             // and protocol applications and associated properties and parameters that belong to the run
             for (int runId : runIds)
@@ -1739,15 +1732,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             int[] dataIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
             deleteDataByRowIds(c, dataIds);
 
-            getExpSchema().getScope().commitTransaction();
+            transaction.commit();
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            getExpSchema().getScope().closeConnection();
         }
     }
 
@@ -1756,10 +1745,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (null == c)
             return;
 
-        try
+        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
-            getExpSchema().getScope().ensureTransaction();
-
             OntologyManager.moveContainer(c, oldParent, newParent);
 
             // do the same for all of its children
@@ -1768,15 +1755,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 OntologyManager.moveContainer(ctemp, oldParent, newParent);
             }
 
-            getExpSchema().getScope().commitTransaction();
+            transaction.commit();
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            getExpSchema().getScope().closeConnection();
         }
     }
 
@@ -1956,10 +1939,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             throw new ExperimentException("Trying to delete a SampleSet from a different container");
         }
 
-        try
+        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
-            getExpSchema().getScope().ensureTransaction();
-
             // Delete all Materials from the SampleSet
             SimpleFilter materialFilter = new SimpleFilter("CpasType", source.getLSID());
             int[] materialIds = ArrayUtils.toPrimitive(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), Collections.singleton("RowId"), materialFilter, null).getArray(Integer.class));
@@ -1984,11 +1965,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             executor.execute("DELETE FROM " + getTinfoActiveMaterialSource() + " WHERE MaterialSourceLSID = ?", source.getLSID());
             executor.execute("DELETE FROM " + getTinfoMaterialSource() + " WHERE RowId = ?", rowId);
 
-            getExpSchema().getScope().commitTransaction();
-        }
-        finally
-        {
-            getExpSchema().getScope().closeConnection();
+            transaction.commit();
         }
     }
 
@@ -2493,9 +2470,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             try
             {
-                getSchema().getScope().ensureTransaction();
-
-                try
+                try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
                 {
                     if (run.getContainer() == null)
                     {
@@ -2651,11 +2626,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     addDataInputs(outputDatas, protApp3._object, user);
                     addMaterialInputs(outputMaterials, protApp3._object, user);
 
-                    getSchema().getScope().commitTransaction();
-                }
-                finally
-                {
-                    getSchema().getScope().closeConnection();
+                    transaction.commit();
                 }
 
                 if (loadDataFiles)
@@ -3042,115 +3013,106 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         synchronized (ExperimentService.get().getImportLock())
         {
-            try
+            try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
             {
-                getSchema().getScope().ensureTransaction();
-
                 if (ExperimentService.get().getExpProtocol(wrappedProtocol.getLSID()) != null)
                 {
                     throw new ExperimentException("An assay with that name already exists");
                 }
 
                 Protocol baseProtocol = ((ExpProtocolImpl)wrappedProtocol).getDataObject();
-                try
-                {
-                    wrappedProtocol.setApplicationType(ExpProtocol.ApplicationType.ExperimentRun);
-                    baseProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
-                    baseProtocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
-                    baseProtocol.setContainer(baseProtocol.getContainer());
+                wrappedProtocol.setApplicationType(ExpProtocol.ApplicationType.ExperimentRun);
+                baseProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
+                baseProtocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
+                baseProtocol.setContainer(baseProtocol.getContainer());
 
-                    Map<String, ProtocolParameter> baseParams = new HashMap<>(wrappedProtocol.getProtocolParameters());
-                    ProtocolParameter baseLSIDTemplate = new ProtocolParameter();
-                    baseLSIDTemplate.setName(XarConstants.APPLICATION_LSID_TEMPLATE_NAME);
-                    baseLSIDTemplate.setOntologyEntryURI(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
-                    baseLSIDTemplate.setValue(SimpleTypeNames.STRING, "${RunLSIDBase}:SimpleProtocol.InputStep");
-                    baseParams.put(XarConstants.APPLICATION_LSID_TEMPLATE_URI, baseLSIDTemplate);
-                    ProtocolParameter baseNameTemplate = new ProtocolParameter();
-                    baseNameTemplate.setName(XarConstants.APPLICATION_NAME_TEMPLATE_NAME);
-                    baseNameTemplate.setOntologyEntryURI(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
-                    baseNameTemplate.setValue(SimpleTypeNames.STRING, baseProtocol.getName() + " Protocol");
-                    baseParams.put(XarConstants.APPLICATION_NAME_TEMPLATE_URI, baseNameTemplate);
-                    baseProtocol.storeProtocolParameters(baseParams.values());
+                Map<String, ProtocolParameter> baseParams = new HashMap<>(wrappedProtocol.getProtocolParameters());
+                ProtocolParameter baseLSIDTemplate = new ProtocolParameter();
+                baseLSIDTemplate.setName(XarConstants.APPLICATION_LSID_TEMPLATE_NAME);
+                baseLSIDTemplate.setOntologyEntryURI(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
+                baseLSIDTemplate.setValue(SimpleTypeNames.STRING, "${RunLSIDBase}:SimpleProtocol.InputStep");
+                baseParams.put(XarConstants.APPLICATION_LSID_TEMPLATE_URI, baseLSIDTemplate);
+                ProtocolParameter baseNameTemplate = new ProtocolParameter();
+                baseNameTemplate.setName(XarConstants.APPLICATION_NAME_TEMPLATE_NAME);
+                baseNameTemplate.setOntologyEntryURI(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
+                baseNameTemplate.setValue(SimpleTypeNames.STRING, baseProtocol.getName() + " Protocol");
+                baseParams.put(XarConstants.APPLICATION_NAME_TEMPLATE_URI, baseNameTemplate);
+                baseProtocol.storeProtocolParameters(baseParams.values());
 
-                    baseProtocol = saveProtocol(user, baseProtocol);
+                baseProtocol = saveProtocol(user, baseProtocol);
 
-                    Protocol coreProtocol = new Protocol();
-                    coreProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
-                    coreProtocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
-                    coreProtocol.setContainer(baseProtocol.getContainer());
-                    coreProtocol.setApplicationType(ExpProtocol.ApplicationType.ProtocolApplication.name());
-                    coreProtocol.setName(baseProtocol.getName() + " - Core");
-                    coreProtocol.setLSID(baseProtocol.getLSID() + ".Core");
+                Protocol coreProtocol = new Protocol();
+                coreProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
+                coreProtocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
+                coreProtocol.setContainer(baseProtocol.getContainer());
+                coreProtocol.setApplicationType(ExpProtocol.ApplicationType.ProtocolApplication.name());
+                coreProtocol.setName(baseProtocol.getName() + " - Core");
+                coreProtocol.setLSID(baseProtocol.getLSID() + ".Core");
 
-                    List<ProtocolParameter> coreParams = new ArrayList<>();
-                    ProtocolParameter coreLSIDTemplate = new ProtocolParameter();
-                    coreLSIDTemplate.setName(XarConstants.APPLICATION_LSID_TEMPLATE_NAME);
-                    coreLSIDTemplate.setOntologyEntryURI(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
-                    coreLSIDTemplate.setValue(SimpleTypeNames.STRING, "${RunLSIDBase}:SimpleProtocol.CoreStep");
-                    coreParams.add(coreLSIDTemplate);
-                    ProtocolParameter coreNameTemplate = new ProtocolParameter();
-                    coreNameTemplate.setName(XarConstants.APPLICATION_NAME_TEMPLATE_NAME);
-                    coreNameTemplate.setOntologyEntryURI(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
-                    coreNameTemplate.setValue(SimpleTypeNames.STRING, baseProtocol.getName());
-                    coreParams.add(coreNameTemplate);
-                    coreProtocol.storeProtocolParameters(coreParams);
+                List<ProtocolParameter> coreParams = new ArrayList<>();
+                ProtocolParameter coreLSIDTemplate = new ProtocolParameter();
+                coreLSIDTemplate.setName(XarConstants.APPLICATION_LSID_TEMPLATE_NAME);
+                coreLSIDTemplate.setOntologyEntryURI(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
+                coreLSIDTemplate.setValue(SimpleTypeNames.STRING, "${RunLSIDBase}:SimpleProtocol.CoreStep");
+                coreParams.add(coreLSIDTemplate);
+                ProtocolParameter coreNameTemplate = new ProtocolParameter();
+                coreNameTemplate.setName(XarConstants.APPLICATION_NAME_TEMPLATE_NAME);
+                coreNameTemplate.setOntologyEntryURI(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
+                coreNameTemplate.setValue(SimpleTypeNames.STRING, baseProtocol.getName());
+                coreParams.add(coreNameTemplate);
+                coreProtocol.storeProtocolParameters(coreParams);
 
-                    coreProtocol = saveProtocol(user, coreProtocol);
+                coreProtocol = saveProtocol(user, coreProtocol);
 
-                    Protocol outputProtocol = new Protocol();
-                    outputProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
-                    outputProtocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
-                    outputProtocol.setName(baseProtocol.getName() + " - Output");
-                    outputProtocol.setLSID(baseProtocol.getLSID() + ".Output");
-                    outputProtocol.setApplicationType(ExpProtocol.ApplicationType.ExperimentRunOutput.name());
-                    outputProtocol.setContainer(baseProtocol.getContainer());
+                Protocol outputProtocol = new Protocol();
+                outputProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
+                outputProtocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
+                outputProtocol.setName(baseProtocol.getName() + " - Output");
+                outputProtocol.setLSID(baseProtocol.getLSID() + ".Output");
+                outputProtocol.setApplicationType(ExpProtocol.ApplicationType.ExperimentRunOutput.name());
+                outputProtocol.setContainer(baseProtocol.getContainer());
 
-                    List<ProtocolParameter> outputParams = new ArrayList<>();
-                    ProtocolParameter outputLSIDTemplate = new ProtocolParameter();
-                    outputLSIDTemplate.setName(XarConstants.APPLICATION_LSID_TEMPLATE_NAME);
-                    outputLSIDTemplate.setOntologyEntryURI(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
-                    outputLSIDTemplate.setValue(SimpleTypeNames.STRING, "${RunLSIDBase}:SimpleProtocol.OutputStep");
-                    outputParams.add(outputLSIDTemplate);
-                    ProtocolParameter outputNameTemplate = new ProtocolParameter();
-                    outputNameTemplate.setName(XarConstants.APPLICATION_NAME_TEMPLATE_NAME);
-                    outputNameTemplate.setOntologyEntryURI(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
-                    outputNameTemplate.setValue(SimpleTypeNames.STRING, baseProtocol.getName() + " output");
-                    outputParams.add(outputNameTemplate);
-                    outputProtocol.storeProtocolParameters(outputParams);
+                List<ProtocolParameter> outputParams = new ArrayList<>();
+                ProtocolParameter outputLSIDTemplate = new ProtocolParameter();
+                outputLSIDTemplate.setName(XarConstants.APPLICATION_LSID_TEMPLATE_NAME);
+                outputLSIDTemplate.setOntologyEntryURI(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
+                outputLSIDTemplate.setValue(SimpleTypeNames.STRING, "${RunLSIDBase}:SimpleProtocol.OutputStep");
+                outputParams.add(outputLSIDTemplate);
+                ProtocolParameter outputNameTemplate = new ProtocolParameter();
+                outputNameTemplate.setName(XarConstants.APPLICATION_NAME_TEMPLATE_NAME);
+                outputNameTemplate.setOntologyEntryURI(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
+                outputNameTemplate.setValue(SimpleTypeNames.STRING, baseProtocol.getName() + " output");
+                outputParams.add(outputNameTemplate);
+                outputProtocol.storeProtocolParameters(outputParams);
 
-                    outputProtocol = saveProtocol(user, outputProtocol);
+                outputProtocol = saveProtocol(user, outputProtocol);
 
-                    ProtocolAction action1 = new ProtocolAction();
-                    action1.setParentProtocolId(baseProtocol.getRowId());
-                    action1.setChildProtocolId(baseProtocol.getRowId());
-                    action1.setSequence(SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE);
-                    action1 = Table.insert(user, getTinfoProtocolAction(), action1);
+                ProtocolAction action1 = new ProtocolAction();
+                action1.setParentProtocolId(baseProtocol.getRowId());
+                action1.setChildProtocolId(baseProtocol.getRowId());
+                action1.setSequence(SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE);
+                action1 = Table.insert(user, getTinfoProtocolAction(), action1);
 
-                    insertProtocolPredecessor(user, action1.getRowId(), action1.getRowId());
+                insertProtocolPredecessor(user, action1.getRowId(), action1.getRowId());
 
-                    ProtocolAction action2 = new ProtocolAction();
-                    action2.setParentProtocolId(baseProtocol.getRowId());
-                    action2.setChildProtocolId(coreProtocol.getRowId());
-                    action2.setSequence(SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE);
-                    action2 = Table.insert(user, getTinfoProtocolAction(), action2);
+                ProtocolAction action2 = new ProtocolAction();
+                action2.setParentProtocolId(baseProtocol.getRowId());
+                action2.setChildProtocolId(coreProtocol.getRowId());
+                action2.setSequence(SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE);
+                action2 = Table.insert(user, getTinfoProtocolAction(), action2);
 
-                    insertProtocolPredecessor(user, action2.getRowId(), action1.getRowId());
+                insertProtocolPredecessor(user, action2.getRowId(), action1.getRowId());
 
-                    ProtocolAction action3 = new ProtocolAction();
-                    action3.setParentProtocolId(baseProtocol.getRowId());
-                    action3.setChildProtocolId(outputProtocol.getRowId());
-                    action3.setSequence(SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE);
-                    action3 = Table.insert(user, getTinfoProtocolAction(), action3);
+                ProtocolAction action3 = new ProtocolAction();
+                action3.setParentProtocolId(baseProtocol.getRowId());
+                action3.setChildProtocolId(outputProtocol.getRowId());
+                action3.setSequence(SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE);
+                action3 = Table.insert(user, getTinfoProtocolAction(), action3);
 
-                    insertProtocolPredecessor(user, action3.getRowId(), action2.getRowId());
+                insertProtocolPredecessor(user, action3.getRowId(), action2.getRowId());
 
-                    getSchema().getScope().commitTransaction();
-                    return wrappedProtocol;
-                }
-                finally
-                {
-                    getSchema().getScope().closeConnection();
-                }
+                transaction.commit();
+                return wrappedProtocol;
             }
             catch (SQLException e)
             {
