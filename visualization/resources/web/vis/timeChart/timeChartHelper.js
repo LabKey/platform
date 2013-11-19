@@ -67,7 +67,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         if (config.measures.length == 0)
             throw "There must be at least one specified measure in the chartInfo config!";
 
-        var xMin = null, xMax = null, xTrans = null, xTickFormat;
+        var xMin = null, xMax = null, xTrans = null, xTickFormat, xTickHoverText;
         var yLeftMin = null, yLeftMax = null, yLeftTrans = null, yLeftTickFormat;
         var yRightMin = null, yRightMax = null, yRightTrans = null, yRightTickFormat;
 
@@ -102,8 +102,12 @@ LABKEY.vis.TimeChartHelper = new function() {
         if (config.measures[0].time != "date")
         {
             xTickFormat = function(value) {
-                return tickMap[value] ? tickMap[value] : "";
+                return tickMap[value] ? tickMap[value].label : "";
             };
+
+            xTickHoverText = function(value) {
+                return tickMap[value] ? tickMap[value].description : "";
+            }
         }
 
         return {
@@ -112,7 +116,8 @@ LABKEY.vis.TimeChartHelper = new function() {
                 trans : xTrans,
                 min : xMin,
                 max : xMax,
-                tickFormat : xTickFormat ? xTickFormat : null
+                tickFormat : xTickFormat ? xTickFormat : null,
+                tickHoverText : xTickHoverText ? xTickHoverText : null
             },
             yLeft: {
                 scaleType : 'continuous',
@@ -169,7 +174,12 @@ LABKEY.vis.TimeChartHelper = new function() {
     var generateTickMap = function(visitMap) {
         var tickMap = {};
         for (var rowId in visitMap)
-            tickMap[visitMap[rowId].displayOrder] = visitMap[rowId].displayName;
+        {
+            tickMap[visitMap[rowId].displayOrder] = {
+                label: visitMap[rowId].displayName,
+                description: visitMap[rowId].description || visitMap[rowId].displayName
+            };
+        }
 
         return tickMap;
     };

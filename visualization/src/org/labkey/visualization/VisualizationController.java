@@ -806,6 +806,7 @@ public class VisualizationController extends SpringActionController
                 visitInfo.put("displayName", visit.getDisplayString());
                 visitInfo.put("sequenceNumMin", visit.getSequenceNumMin());
                 visitInfo.put("sequenceNumMax", visit.getSequenceNumMax());
+                visitInfo.put("description", visit.getDescription());
 
                 metaData.put(visit.getId().toString(), visitInfo);
             }
