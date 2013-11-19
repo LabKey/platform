@@ -54,7 +54,7 @@ is uploaded along with the data. This form allows you to define a range of seque
             </td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Description&nbsp;<%=helpPopup("Description", "A short description of the visit.")%></td>
+            <td class="labkey-form-label">Description&nbsp;<%=helpPopup("Description", "A short description of the visit, appears as hovertext on visit headers in study navigator and visit column in datasets.")%></td>
             <td>
                 <textarea name="description" cols="50" rows="3"><%= h(v.getDescription()) %></textarea>
             </td>

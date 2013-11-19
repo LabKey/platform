@@ -182,7 +182,9 @@
                     continue;
                 String label = visit.getDisplayString();
         %>
-        <td class="labkey-column-header" align="center" valign="top"><%= h(label) %>
+        <td class="labkey-column-header" align="center" valign="top">
+            <%= h(label) %>
+            <%= visit.getDescription() != null ? PageFlowUtil.helpPopup(label, visit.getDescription()) : "" %>
         </td>
         <%
             }

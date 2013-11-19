@@ -241,7 +241,7 @@
       </ns:column>
       <ns:column columnName="sequencenumhandling"/>
       <ns:column columnName="Description">
-        <ns:description>A short description of the visit.</ns:description>
+        <ns:description>A short description of the visit, appears as hovertext on visit headers in study navigator and visit column in datasets.</ns:description>
       </ns:column>
     </ns:columns>
   </ns:table>

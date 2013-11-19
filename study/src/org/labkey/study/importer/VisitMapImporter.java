@@ -19,6 +19,7 @@ package org.labkey.study.importer;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
@@ -235,6 +236,7 @@ public class VisitMapImporter
             if (visit == null)
             {
                 visit = new VisitImpl(study.getContainer(), record.getSequenceNumMin(), record.getSequenceNumMax(), record.getVisitLabel(), record.getVisitType());
+                visit.setDescription(record.getVisitDescription());
                 visit.setVisitDateDatasetId(record.getVisitDatePlate());
                 visit.setShowByDefault(record.isShowByDefault());
                 visit.setChronologicalOrder(record.getChronologicalOrder());
@@ -246,6 +248,11 @@ public class VisitMapImporter
             }
             else
             {
+                if (!StringUtils.equals(visit.getDescription(), record.getVisitDescription()))
+                {
+                    visit = _ensureMutable(visit);
+                    visit.setDescription(record.getVisitDescription());
+                }
                 if (visit.getVisitDateDatasetId() <= 0 && record.getVisitDatePlate() > 0)
                 {
                     visit = _ensureMutable(visit);

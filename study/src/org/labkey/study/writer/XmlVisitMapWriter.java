@@ -71,6 +71,9 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
                 if (null != visit.getLabel())
                     visitXml.setLabel(visit.getLabel());
 
+                if (null != visit.getDescription())
+                    visitXml.setDescription(visit.getDescription());
+
                 if (null != visit.getTypeCode())
                     visitXml.setTypeCode(String.valueOf(visit.getTypeCode()));
 

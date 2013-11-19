@@ -42,6 +42,7 @@ class VisitMapRecord
     private final boolean _showByDefault;
     private final Visit.Type _visitType;
     private final String _visitLabel;
+    private final String _visitDescription;
     private final int _visitDatePlate;
     private final String _visitDateField;
     private final int _visitDueDay;
@@ -55,7 +56,7 @@ class VisitMapRecord
     private final int _chronologicalOrder;
     private final String _sequenceNumHandling;
 
-    public VisitMapRecord(double sequenceNumberMin, double sequenceNumberMax, String visitType, String visitLabel,
+    public VisitMapRecord(double sequenceNumberMin, double sequenceNumberMax, String visitType, String visitLabel, String visitDescription,
                           String cohort, int visitDatePlate, int[] requiredPlates, int[] optionalPlates, boolean showByDefault,
                           int displayOrder, int chronologicalOrder, String sequenceNumHandling)
     {
@@ -63,6 +64,7 @@ class VisitMapRecord
         _sequenceNumberMax = sequenceNumberMax;
         _visitType = getType(visitType);
         _visitLabel = visitLabel;
+        _visitDescription = visitDescription;
         _cohort = cohort;
         _visitDatePlate = visitDatePlate;
         _requiredPlates = requiredPlates;
@@ -95,6 +97,7 @@ class VisitMapRecord
 
         _visitType = getType((String)record.get("visitType"));
         _visitLabel = (String)record.get("visitLabel");
+        _visitDescription = (String)record.get("visitDescription");
         _cohort = (String)record.get("cohort");
         _visitDatePlate = defaultInt((Integer)record.get("visitDatePlate"), -1);
         _visitDateField = (String)record.get("visitDateField");
@@ -127,6 +130,7 @@ class VisitMapRecord
     public int getVisitDatePlate()          { return _visitDatePlate; }
     public int getVisitDueDay()             { return _visitDueDay; }
     public String getVisitLabel()           { return _visitLabel; }
+    public String getVisitDescription()     { return _visitDescription; }
     public int getVisitOverdueAllowance()   { return _visitOverdueAllowance; }
     public Visit.Type getVisitType()        { return _visitType; }
     public String getCohort()               { return _cohort; }
