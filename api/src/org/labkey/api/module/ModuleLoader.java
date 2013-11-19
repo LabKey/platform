@@ -114,7 +114,7 @@ import java.util.TreeSet;
  */
 public class ModuleLoader implements Filter
 {
-    private static final double EARLIEST_UPGRADE_VERSION = 11.2;
+    private static final double EARLIEST_UPGRADE_VERSION = 11.3;
     private static final Logger _log = Logger.getLogger(ModuleLoader.class);
     private static final Map<String, Throwable> _moduleFailures = new HashMap<>();
     private static final Map<String, Module> _controllerNameToModule = new HashMap<>();
@@ -820,8 +820,8 @@ public class ModuleLoader implements Filter
     }
 
 
-    // Update the CoreModule "manually", outside the normal page flow-based process.  We want to be able to change the core tables
-    // before we display pages, require login, check permissions, etc.
+    // Update the CoreModule "manually", outside the normal UI-based process. We want to change the core tables before
+    // we display pages, require login, check permissions, etc.
     // Returns true if core module required upgrading, otherwise false
     private boolean upgradeCoreModule() throws ServletException
     {
