@@ -1,33 +1,33 @@
 <%
-    /*
-     * Copyright (c) 2013 LabKey Corporation
-     *
-     * Licensed under the Apache License, Version 2.0 (the "License");
-     * you may not use this file except in compliance with the License.
-     * You may obtain a copy of the License at
-     *
-     *     http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing, software
-     * distributed under the License is distributed on an "AS IS" BASIS,
-     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     * See the License for the specific language governing permissions and
-     * limitations under the License.
-     */
+/*
+ * Copyright (c) 2013 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.query.controllers.OlapController" %>
+<%@ page import="org.labkey.query.olap.OlapSchemaCache" %>
+<%@ page import="org.labkey.query.olap.OlapSchemaDescriptor" %>
+<%@ page import="org.olap4j.OlapConnection" %>
 <%@ page import="org.olap4j.metadata.Cube" %>
 <%@ page import="org.olap4j.metadata.Dimension" %>
 <%@ page import="org.olap4j.metadata.Hierarchy" %>
 <%@ page import="org.olap4j.metadata.Level" %>
 <%@ page import="org.olap4j.metadata.Member" %>
-<%@ page import="org.labkey.query.olap.OlapSchemaDescriptor" %>
-<%@ page import="java.util.Collection" %>
-<%@ page import="org.labkey.query.olap.OlapSchemaCache" %>
 <%@ page import="org.olap4j.metadata.Schema" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.query.controllers.OlapController" %>
-<%@ page import="org.olap4j.OlapConnection" %>
+<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
