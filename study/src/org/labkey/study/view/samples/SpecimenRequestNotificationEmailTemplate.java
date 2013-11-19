@@ -139,7 +139,7 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
                 if (_notification.getSpecimenList() != null)
                 {
                     StringBuilder sb = new StringBuilder("<p>");
-                    sb.append("<b> Specimen &nbsp;List</b> (<a href=\"");
+                    sb.append("<b>Specimen&nbsp;List</b> (<a href=\"");
                     sb.append(PageFlowUtil.filter(_notification.getRequestURI()));
                     sb.append("id=");
                     sb.append(_notification.getRequestId());
@@ -168,14 +168,6 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
             protected String getStringValue(Container c)
             {
                 return _notification.getComments();
-            }
-        });
-        _replacements.add(new NotificationReplacement("specimenList", "List of specimens in table form including details")
-        {
-            @Override
-            protected String getStringValue(Container c)
-            {
-                return _notification.getSpecimenList();
             }
         });
 
