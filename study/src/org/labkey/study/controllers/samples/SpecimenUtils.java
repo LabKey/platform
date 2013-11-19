@@ -34,6 +34,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.GridView;
@@ -479,7 +480,7 @@ public class SpecimenUtils
         }
 
         NotificationBean notificationBean = new NotificationBean(getViewContext(), notification, specimenList, getStudy().getLabel());
-        SpecimenRequestNotificationEmailTemplate template = new SpecimenRequestNotificationEmailTemplate();
+        SpecimenRequestNotificationEmailTemplate template = EmailTemplateService.get().getEmailTemplate(SpecimenRequestNotificationEmailTemplate.class, getContainer());
         template.init(notificationBean);
 
         MailHelper.MultipartMessage message = MailHelper.createMultipartMessage();
