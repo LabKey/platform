@@ -420,6 +420,7 @@ core/resources/schemas/dbscripts/postgresql/prop-0.00-10.30.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-12.10-12.20.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-13.20-13.30.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-13.21-13.22.sql -text
+core/resources/schemas/dbscripts/postgresql/prop-13.30-13.31.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-create.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/test-0.00-1.00.sql -text
@@ -586,6 +587,7 @@ core/resources/schemas/dbscripts/sqlserver/prop-0.00-10.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-12.10-12.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-13.20-13.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-13.21-13.22.sql -text
+core/resources/schemas/dbscripts/sqlserver/prop-13.30-13.31.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/test-0.00-1.00.sql -text
