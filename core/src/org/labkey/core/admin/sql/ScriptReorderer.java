@@ -19,6 +19,7 @@ package org.labkey.core.admin.sql;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Collection;
@@ -59,9 +60,9 @@ class ScriptReorderer
     private String _contents;
     private int _row = 0;
 
-    ScriptReorderer(String schemaName, String contents)
+    ScriptReorderer(DbSchema schema, String contents)
     {
-        _schemaName = schemaName;
+        _schemaName = schema.getName();
         _contents = contents;
         newStatementList();
     }

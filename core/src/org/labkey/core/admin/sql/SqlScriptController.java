@@ -28,6 +28,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SqlScriptManager;
@@ -35,6 +36,7 @@ import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
@@ -52,6 +54,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -88,6 +91,7 @@ public class SqlScriptController extends SpringActionController
 
             String currentlyUpgradingModule = SqlScriptRunner.getCurrentModuleName();
             result.put("currentlyUpgradingModule", currentlyUpgradingModule);
+
             for (Module module : ModuleLoader.getInstance().getModules())
             {
                 JSONObject moduleJSON = new JSONObject();
@@ -464,7 +468,7 @@ public class SqlScriptController extends SpringActionController
 
         public void saveScript() throws IOException
         {
-            _provider.saveScript(getFilename(), getConsolidatedScript());
+            _provider.saveScript(_schema, getFilename(), getConsolidatedScript());
         }
     }
 
@@ -609,14 +613,37 @@ public class SqlScriptController extends SpringActionController
         public ModelAndView getView(ConsolidateForm form, BindException errors) throws Exception
         {
             Set<SqlScript> orphanedScripts = new TreeSet<>();
+            Set<String> unclaimedFiles = new TreeSet<>();
             Map<SqlScript, SqlScript> successors = new HashMap<>();
             List<Module> modules = ModuleLoader.getInstance().getModules();
 
             for (Module module : modules)
             {
-                module.clearResourceCache();
                 FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
                 Collection<DbSchema> schemas = provider.getSchemas();
+                Set<String> allFiles = new HashSet<>();
+
+                // If module advertises no schemas then still look in the labkey dialect directory for spurious scripts
+                if (schemas.isEmpty())
+                {
+                    addFiles(allFiles, CoreSchema.getInstance().getSqlDialect(), provider);
+                }
+                else
+                {
+                    Set<String> dialectNames = new HashSet<>();
+
+                    for (DbSchema schema : schemas)
+                    {
+                        SqlDialect dialect = schema.getSqlDialect();
+                        String dialectName = dialect.getProductName();
+
+                        if (!dialectNames.contains(dialectName))
+                        {
+                            dialectNames.add(dialectName);
+                            addFiles(allFiles, dialect, provider);
+                        }
+                    }
+                }
 
                 for (DbSchema schema : schemas)
                 {
@@ -625,6 +652,8 @@ public class SqlScriptController extends SpringActionController
 
                     for (SqlScript script : scripts)
                     {
+                        allFiles.remove(script.getDescription());
+
                         if (null != previous && (previous.getSchemaName().equals(script.getSchemaName()) && previous.getFromVersion() == script.getFromVersion()))
                         {
                             // Save the script so we can render them in order
@@ -635,12 +664,25 @@ public class SqlScriptController extends SpringActionController
 
                         previous = script;
                     }
+
+                    SqlScript create = provider.getCreateScript(schema);
+
+                    if (null != create)
+                        allFiles.remove(create.getDescription());
+
+                    SqlScript drop = provider.getDropScript(schema);
+
+                    if (null != drop)
+                        allFiles.remove(drop.getDescription());
                 }
+
+                if (!allFiles.isEmpty())
+                    unclaimedFiles.addAll(allFiles);
             }
 
             StringBuilder html = new StringBuilder();
             html.append("  <table>\n");
-            html.append("    <tr><td>The following SQL scripts will never execute, because another script has the same" +
+            html.append("    <tr><td>These SQL scripts will never execute, because another script has the same" +
                     " \"from\" version and a later \"to\" version.  These scripts can be \"obsoleted\" safely.</td></tr>\n");
             html.append("    <tr><td>&nbsp;</td></tr>\n");
             html.append("  </table>\n");
@@ -659,7 +701,55 @@ public class SqlScriptController extends SpringActionController
 
             html.append("  </table>\n");
 
+            html.append("  <br><br><table>\n");
+            html.append("    <tr><td>The standard LabKey script runner will never execute these files; either their names don't match the required format or" +
+                    " the specified schema isn't claimed by their module.</td></tr>\n");
+            html.append("    <tr><td>&nbsp;</td></tr>\n");
+            html.append("  </table>\n");
+
+            html.append("  <table>\n");
+            html.append("    <tr><th align=\"left\">File</th></tr>\n");
+
+            for (String filename : unclaimedFiles)
+            {
+                html.append("    <tr><td>");
+                html.append(filename);
+                html.append("</td></tr>\n");
+            }
+
+            html.append("  </table>\n");
+
+            unclaimedFiles.remove("labkey-0.00-13.30.sql");
+
+            if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
+            {
+                unclaimedFiles.remove("group_concat_install.sql");
+                unclaimedFiles.remove("group_concat_install_1.00.23696.sql");
+                unclaimedFiles.remove("group_concat_uninstall.sql");
+            }
+
+            if (!unclaimedFiles.isEmpty())
+            {
+                html.append("<br><b>WARNING: Unrecognized files ").append(unclaimedFiles.toString()).append("</b>");
+            }
+
             return new HtmlView(html.toString());
+        }
+
+        private void addFiles(Set<String> allFiles, SqlDialect dialect, FileSqlScriptProvider provider)
+        {
+            File dir = provider.getScriptDirectory(dialect);
+
+            if (dir.exists())
+            {
+                File[] files = dir.listFiles();
+
+                assert null != files;
+
+                for (File file : files)
+                    if (file.isFile())
+                        allFiles.add(file.getName());
+            }
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -770,9 +860,9 @@ public class SqlScriptController extends SpringActionController
         @Override
         protected ModelAndView getScriptView(SqlScript script) throws RedirectException, IOException
         {
-            ScriptReorderer reorderer = new ScriptReorderer(script.getSchemaName(), script.getContents());
+            ScriptReorderer reorderer = new ScriptReorderer(script.getSchema(), script.getContents());
             String reorderedScript = reorderer.getReorderedScript(false);
-            ((FileSqlScriptProvider)script.getProvider()).saveScript(script.getDescription(), reorderedScript, true);
+            ((FileSqlScriptProvider)script.getProvider()).saveScript(script.getSchema(), script.getDescription(), reorderedScript, true);
             
             final ActionURL url = new ActionURL(ScriptAction.class, getViewContext().getContainer());
             url.addParameter("moduleName", script.getProvider().getProviderName());
@@ -794,7 +884,7 @@ public class SqlScriptController extends SpringActionController
         protected void renderScript(SqlScript script, PrintWriter out)
         {
             out.println("<table>");
-            ScriptReorderer reorderer = new ScriptReorderer(script.getSchemaName(), script.getContents());
+            ScriptReorderer reorderer = new ScriptReorderer(script.getSchema(), script.getContents());
             out.println(reorderer.getReorderedScript(true));
             out.println("</table>");
         }
