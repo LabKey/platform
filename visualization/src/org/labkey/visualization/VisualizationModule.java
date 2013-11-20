@@ -21,6 +21,8 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.TimeChartReportDescriptor;
@@ -28,6 +30,7 @@ import org.labkey.visualization.report.GenericChartReportImpl;
 import org.labkey.visualization.report.TimeChartReportImpl;
 import org.labkey.visualization.report.VisualizationUIProvider;
 
+import javax.servlet.ServletContext;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -43,7 +46,7 @@ public class VisualizationModule extends DefaultModule
 
     public double getVersion()
     {
-        return 13.30;
+        return 13.31;
     }
 
     public boolean hasScripts()
@@ -77,5 +80,20 @@ public class VisualizationModule extends DefaultModule
     public UpgradeCode getUpgradeCode()
     {
         return new VisualizationUpgradeCode();
+    }
+
+    @Override
+    public void afterUpdate(final ModuleContext moduleContext) {
+        if (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 13.31)
+        {
+            ContextListener.addStartupListener("Visualization: upgrade saved json for Generic Charts", new StartupListener()
+            {
+                @Override
+                public void moduleStartupComplete(ServletContext servletContext)
+                {
+                    VisualizationUpgradeCode.upgradeGenericChartSaveConfig(moduleContext);
+                }
+            });
+        }
     }
 }
