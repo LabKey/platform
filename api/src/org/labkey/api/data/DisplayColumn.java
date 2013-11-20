@@ -742,7 +742,7 @@ public abstract class DisplayColumn extends RenderColumn
         String hoverContent = getHoverContent(ctx);
         if (hoverContent != null)
         {
-            StringBuilder showHelpDivArgs = new StringBuilder("this, 'Formatting Details',");
+            StringBuilder showHelpDivArgs = new StringBuilder("this, '" + getHoverTitle(ctx) + "',");
             // The value of the javascript string literal is used to set the innerHTML of an element.  For this reason, if
             // it is text, we escape it to make it HTML.  Then, we have to escape it to turn it into a javascript string.
             // Finally, since this is script inside of an attribute, it must be HTML escaped again.
@@ -757,6 +757,11 @@ public abstract class DisplayColumn extends RenderColumn
     }
 
     protected String getHoverContent(RenderContext ctx)
+    {
+        return null;
+    }
+
+    protected String getHoverTitle(RenderContext ctx)
     {
         return null;
     }

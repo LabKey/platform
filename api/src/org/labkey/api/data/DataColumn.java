@@ -382,6 +382,12 @@ public class DataColumn extends DisplayColumn
         return sb.toString();
     }
 
+    @Override
+    protected String getHoverTitle(RenderContext ctx)
+    {
+        return "Formatting Details";
+    }
+
     private ConditionalFormat findApplicableFormat(RenderContext ctx)
     {
         if (getBoundColumn() == null)

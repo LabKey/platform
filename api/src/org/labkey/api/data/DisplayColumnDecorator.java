@@ -329,6 +329,12 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
+    protected String getHoverTitle(RenderContext ctx)
+    {
+        return _column.getHoverTitle(ctx);
+    }
+
+    @Override
     public String getDefaultHeaderStyle()
     {
         return _column.getDefaultHeaderStyle();
