@@ -50,6 +50,7 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitImpl;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -300,6 +301,26 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         {
             super.addQueryFieldKeys(keys);
             keys.add(_seqNumMinFieldKey);
+        }
+
+        @Override
+        protected String getHoverContent(RenderContext ctx)
+        {
+            Study study = StudyManager.getInstance().getStudy(ctx.getContainer());
+            if (study != null)
+            {
+                VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, Integer.parseInt(ctx.get(getColumnInfo().getAlias()).toString()));
+                if (visit != null)
+                    return PageFlowUtil.filter(visit.getDescription() != null ? visit.getDescription() : visit.getLabel());
+            }
+
+            return null;
+        }
+
+        @Override
+        protected String getHoverTitle(RenderContext ctx)
+        {
+            return "Visit Description";
         }
     }
 

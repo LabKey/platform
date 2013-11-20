@@ -253,7 +253,7 @@
     %>
     <td class="labkey-participant-view-header" colspan="<%=seqKeyCount%>">
         <%= h(visit.getDisplayString()) %>
-        <%= visit.getDescription() != null ? PageFlowUtil.helpPopup(visit.getDisplayString(), visit.getDescription()) : "" %>
+        <%= visit.getDescription() != null ? PageFlowUtil.helpPopup("Visit Description", visit.getDescription()) : "" %>
     </td>
     <%
         }

@@ -184,7 +184,7 @@
         %>
         <td class="labkey-column-header" align="center" valign="top">
             <%= h(label) %>
-            <%= visit.getDescription() != null ? PageFlowUtil.helpPopup(label, visit.getDescription()) : "" %>
+            <%= visit.getDescription() != null ? PageFlowUtil.helpPopup("Visit Description", visit.getDescription()) : "" %>
         </td>
         <%
             }
