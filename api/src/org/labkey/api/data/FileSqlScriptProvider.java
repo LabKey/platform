@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -184,22 +185,17 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         return _module.getName();
     }
 
-    public void saveScript(String description, String contents) throws IOException
+    public void saveScript(DbSchema schema, String description, String contents) throws IOException
     {
-        saveScript(description, contents, false);
+        saveScript(schema, description, contents, false);
     }
 
-    public void saveScript(String description, String contents, boolean overwrite) throws IOException
+    public void saveScript(DbSchema schema, String description, String contents, boolean overwrite) throws IOException
     {
         if (!AppProps.getInstance().isDevMode())
             throw new IllegalStateException("Can't save scripts while in production mode");
 
-        String scriptsPath = _module.getSqlScriptsPath(CoreSchema.getInstance().getSqlDialect());
-        File scriptsDir = new File(new File(_module.getSourcePath(), "resources"), scriptsPath);
-
-        // Handle file structure of old file-based modules, e.g., reagent
-        if (!scriptsDir.exists())
-            scriptsDir = new File(_module.getSourcePath(), scriptsPath);
+        File scriptsDir = getScriptDirectory(schema.getSqlDialect());
 
         if (!scriptsDir.exists())
             throw new IllegalStateException("SQL scripts directory not found");
@@ -214,10 +210,18 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             fw.write(contents);
             fw.flush();
         }
-        finally
-        {
-            _module.clearResourceCache();
-        }
+    }
+
+    public File getScriptDirectory(SqlDialect dialect)
+    {
+        String scriptsPath = _module.getSqlScriptsPath(dialect);
+        File scriptsDir = new File(new File(_module.getSourcePath(), "resources"), scriptsPath);
+
+        // Handle file structure of old file-based modules, e.g., reagent
+        if (!scriptsDir.exists())
+            scriptsDir = new File(_module.getSourcePath(), scriptsPath);
+
+        return scriptsDir;
     }
 
     public UpgradeCode getUpgradeCode()
@@ -389,7 +393,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             return schema + "-" + ModuleContext.formatVersion(fromVersion) + "-" + ModuleContext.formatVersion(toVersion) + ".sql"; 
         }
 
-        public int compareTo(SqlScript script)
+        public int compareTo(@NotNull SqlScript script)
         {
             int schemaCompare = getSchemaName().compareToIgnoreCase(script.getSchemaName());
 

@@ -323,6 +323,7 @@ public interface Module extends Comparable<Module>
 
     public @Nullable UpgradeCode getUpgradeCode();
 
+    @Deprecated  // TODO: No usages, don't need this, thanks to file listeners
     void clearResourceCache();
 
     @Nullable
