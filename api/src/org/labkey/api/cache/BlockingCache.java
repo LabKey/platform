@@ -122,16 +122,23 @@ public class BlockingCache<K, V> implements Cache<K, V>
             w.setLoading();
         }
 
-        if (null == loader)
-            loader = _loader;
-        V value = loader.load(key, argument);
-        w.setValue(value);
-        //noinspection SynchronizationOnLocalVariableOrMethodParameter
-        synchronized (w)
+        try
         {
-            w.notifyAll();
+            if (null == loader)
+                loader = _loader;
+            V value = loader.load(key, argument);
+            w.setValue(value);
+            return value;
         }
-        return value;
+        finally
+        {
+            //noinspection SynchronizationOnLocalVariableOrMethodParameter
+            synchronized (w)
+            {
+                w.doneLoading();
+                w.notifyAll();
+            }
+        }
     }
 
 

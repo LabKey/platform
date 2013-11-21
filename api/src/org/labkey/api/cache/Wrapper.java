@@ -31,6 +31,18 @@ public class Wrapper<V>
         loading = true;
     }
 
+    // call in finally
+    void doneLoading()
+    {
+        loading = false;
+    }
+
+    void loadFailed()
+    {
+        value =  (V) BlockingCache.UNINITIALIZED;
+        doneLoading();
+    }
+
     boolean isLoading()
     {
         return loading;
@@ -39,7 +51,7 @@ public class Wrapper<V>
     void setValue(V v)
     {
         value = v;
-        this.loading = false;
+        doneLoading();
     }
 
     public V getValue()
