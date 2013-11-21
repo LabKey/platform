@@ -2719,13 +2719,13 @@ public class SecurityManager
         {
             super(name);
 
-            _replacements.add(new ReplacementParam("verificationURL", "Link for a user to set a password"){
+            _replacements.add(new ReplacementParam<String>("verificationURL", String.class, "Link for a user to set a password"){
                 public String getValue(Container c) {return _verificationUrl;}
             });
-            _replacements.add(new ReplacementParam("emailAddress", "The email address of the user performing the operation"){
+            _replacements.add(new ReplacementParam<String>("emailAddress", String.class, "The email address of the user performing the operation"){
                 public String getValue(Container c) {return _emailAddress;}
             });
-            _replacements.add(new ReplacementParam("recipient", "The email address on the 'to:' line"){
+            _replacements.add(new ReplacementParam<String>("recipient", String.class, "The email address on the 'to:' line"){
                 public String getValue(Container c) {return _recipient;}
             });
             _replacements.addAll(super.getValidReplacements());
@@ -2785,7 +2785,7 @@ public class SecurityManager
             setDescription("Sent to the new user and administrator when a user is added to the site.");
             setPriority(1);
 
-            _replacements.add(new ReplacementParam("optionalMessage", "An optional message to include with the new user email"){
+            _replacements.add(new ReplacementParam<String>("optionalMessage", String.class, "An optional message to include with the new user email"){
                 public String getValue(Container c) {return _optionalPrefix;}
             });
         }

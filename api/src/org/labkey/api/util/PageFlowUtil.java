@@ -766,10 +766,16 @@ public class PageFlowUtil
     }
 
 
-    private static MimeMap _mimeMap = new MimeMap();
+    private static MimeMap _mimeMap;
 
     public static String getContentTypeFor(String filename)
     {
+        // Lazy initialization
+        if (_mimeMap == null)
+        {
+            _mimeMap = new MimeMap();
+        }
+
         String contentType = _mimeMap.getContentTypeFor(filename);
         if (null == contentType)
         {
