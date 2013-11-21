@@ -1,17 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://labkey.org/pipeline/xml" targetNamespace="http://labkey.org/pipeline/xml" elementFormDefault="qualified" attributeFormDefault="unqualified">
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://labkey.org/pipeline/xml"
+           xmlns:p="http://labkey.org/pipeline/xml"
+           targetNamespace="http://labkey.org/pipeline/xml"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
 
     <xs:annotation>
         <xs:documentation>Task Factory and Task Pipeline definitions</xs:documentation>
     </xs:annotation>
 
-    <xs:element name="task" type="NamedTaskType"/>
+    <xs:element name="task" type="NamedTaskType">
+        <xs:unique name="namedTask_uniqueInputOutputName">
+            <xs:selector xpath="./p:inputs/*|./p:outputs/*"/>
+            <xs:field xpath="@name"/>
+        </xs:unique>
+    </xs:element>
 
     <xs:element name="pipeline" type="TaskPipelineType"/>
 
+    <xs:group name="InfoGroup">
+        <xs:sequence>
+            <xs:element name="description" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>Short, one line description.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="help" type="xs:string" minOccurs="0"/>
+        </xs:sequence>
+    </xs:group>
+
     <xs:complexType name="TaskPipelineType">
-        <xs:all>
-            <xs:element name="description" type="xs:string" minOccurs="0"/>
+        <xs:sequence>
+            <xs:group ref="InfoGroup"/>
             <xs:element name="author" type="xs:string" minOccurs="0"/>
             <xs:element name="analyzeURL" type="xs:string" minOccurs="0"/>
             <xs:element name="defaultDisplay" minOccurs="0">
@@ -25,7 +46,7 @@
                 </xs:simpleType>
             </xs:element>
             <xs:element name="tasks" type="TasksType"/>
-        </xs:all>
+        </xs:sequence>
         <xs:attribute name="name" type="xs:string" use="required"/>
         <xs:attribute name="version" type="xs:double" use="required"/>
     </xs:complexType>
@@ -37,13 +58,18 @@
     -->
     <xs:complexType name="TasksType">
         <xs:choice minOccurs="1" maxOccurs="unbounded">
-            <xs:element name="task" type="LocalOrRefTaskType"/>
+            <xs:element name="task" type="LocalOrRefTaskType">
+                <xs:unique name="localTask_uniqueInputOutputName">
+                    <xs:selector xpath="inputs|outputs"/>
+                    <xs:field xpath="@name"/>
+                </xs:unique>
+            </xs:element>
         </xs:choice>
     </xs:complexType>
 
     <xs:group name="TaskGroup">
-        <xs:all>
-            <xs:element name="description" type="xs:string" minOccurs="0"/>
+        <xs:sequence>
+            <xs:group ref="InfoGroup"/>
             <xs:element name="author" type="xs:string" minOccurs="0"/>
             <xs:element name="location" type="xs:string" minOccurs="0"/>
             <xs:element name="inputs" type="InputsType" minOccurs="0"/>
@@ -51,7 +77,7 @@
             <!-- only one of exec or script is allowed, but this is difficult to represent in XMLSchema -->
             <xs:element name="exec" type="ExecType" minOccurs="0"/>
             <xs:element name="script" type="ScriptType" minOccurs="0"/>
-        </xs:all>
+        </xs:sequence>
     </xs:group>
 
     <xs:complexType name="NamedTaskType">
@@ -122,26 +148,12 @@
         </xs:sequence>
     </xs:complexType>
 
-    <xs:complexType name="InputType" abstract="true">
+    <xs:complexType name="InputOutputType" abstract="true">
         <xs:sequence>
-            <xs:element name="description" type="xs:string" minOccurs="0"/>
-            <xs:element name="help" type="xs:string" minOccurs="0"/>
-            <!--
-            <xs:element name="validator" type="ValidatorType" minOccurs="0"/>
-            -->
+            <xs:group ref="InfoGroup"/>
         </xs:sequence>
         <xs:attribute name="name" type="xs:string" use="required"/>
-        <xs:attribute name="label" type="xs:string"/>
-        <xs:attribute name="switch" type="xs:string"/>
         <xs:attribute name="required" type="xs:boolean"/>
-    </xs:complexType>
-
-    <xs:complexType name="PropertyInputType">
-        <xs:complexContent>
-            <xs:extension base="InputType">
-                <xs:attribute name="uri" type="xs:string" use="required"/>
-            </xs:extension>
-        </xs:complexContent>
     </xs:complexType>
 
     <xs:simpleType name="strings">
@@ -161,25 +173,60 @@
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
+        <!-- TODO: other TaskPath settings: splitFiles, copyInput, forceToAnalysisDir ? -->
+    </xs:attributeGroup>
+
+    <xs:complexType name="FileInputOutputType" abstract="true">
+        <xs:complexContent>
+            <xs:extension base="InputOutputType">
+                <!-- TODO: the ExpData lsid ?? -->
+                <!--<xs:element name="dataType" type="xs:string" minOccurs="0"/>-->
+                <xs:attributeGroup ref="FileTypeAttrGroup"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:attributeGroup name="InputAttrGroup">
+        <xs:attribute name="label" type="xs:string"/>
+        <xs:attribute name="switch" type="xs:string"/>
     </xs:attributeGroup>
 
     <xs:complexType name="FileInputType">
         <xs:complexContent>
-            <xs:extension base="InputType">
-                <xs:sequence>
-                    <!-- TODO: the ExpData lsid ?? -->
-                    <!--<xs:element name="dataType" type="xs:string" minOccurs="0"/>-->
-                </xs:sequence>
-                <xs:attributeGroup ref="FileTypeAttrGroup"/>
+            <xs:extension base="FileInputOutputType">
+                <xs:attributeGroup ref="InputAttrGroup"/>
                 <xs:attribute name="ref" type="xs:IDREF"/>
-                <!-- TODO: other TaskPath settings: splitFiles, copyInput, optional, forceToAnalysisDir ? -->
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="FileOutputType">
+        <xs:complexContent>
+            <xs:extension base="FileInputOutputType">
+                <xs:attribute name="ref" type="xs:IDREF"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="SimpleInputType" abstract="true">
+        <xs:complexContent>
+            <xs:extension base="InputOutputType">
+                <xs:attributeGroup ref="InputAttrGroup"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="PropertyInputType">
+        <xs:complexContent>
+            <xs:extension base="SimpleInputType">
+                <xs:attribute name="uri" type="xs:string" use="required"/>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
 
     <xs:complexType name="TextInputType">
         <xs:complexContent>
-            <xs:extension base="InputType">
+            <xs:extension base="SimpleInputType">
                 <xs:attribute name="default" type="xs:string"/>
                 <xs:attribute name="minLength" type="xs:int"/>
                 <xs:attribute name="maxLength" type="xs:int"/>
@@ -189,7 +236,7 @@
 
     <xs:complexType name="IntInputType">
         <xs:complexContent>
-            <xs:extension base="InputType">
+            <xs:extension base="SimpleInputType">
                 <xs:attribute name="default" type="xs:int"/>
                 <xs:attribute name="min" type="xs:int"/>
                 <xs:attribute name="max" type="xs:int"/>
@@ -199,7 +246,7 @@
 
     <xs:complexType name="DoubleInputType">
         <xs:complexContent>
-            <xs:extension base="InputType">
+            <xs:extension base="SimpleInputType">
                 <xs:attribute name="default" type="xs:double"/>
                 <xs:attribute name="min" type="xs:double"/>
                 <xs:attribute name="max" type="xs:double"/>
@@ -208,8 +255,41 @@
     </xs:complexType>
 
     <xs:complexType name="OutputsType">
-
+        <xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="file" type="FileOutputType"/>
+                <!--
+                <xs:element name="query" type="QueryOutputType"/>
+                -->
+            </xs:choice>
+        </xs:sequence>
     </xs:complexType>
+
+    <!--
+    <xs:complexType name="QueryInputOutputType">
+        <xs:complexContent>
+            <xs:extension base="InputOutputType">
+                <xs:attribute name="schemaName" type="xs:string" use="required"/>
+                <xs:attribute name="queryName" type="xs:string" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="QueryInputType">
+        <xs:complexContent>
+            <xs:extension base="QueryInputOutputType">
+                <xs:attributeGroup ref="InputAttrGroup"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="QueryOutputType">
+        <xs:complexContent>
+            <xs:extension base="QueryInputOutputType">
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    -->
 
 </xs:schema>
 

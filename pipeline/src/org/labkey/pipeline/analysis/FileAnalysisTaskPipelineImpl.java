@@ -251,6 +251,8 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         TasksType xtasks = xpipeline.getTasks();
         for (LocalOrRefTaskType task : xtasks.getTaskArray())
         {
+            // UNDONE: provide task parameters
+
             if (task.isSetRef())
             {
                 try
@@ -273,7 +275,6 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
             else
             {
                 // UNDONE: local task definition
-                // UNDONE: provide task parameters
             }
         }
 
@@ -289,6 +290,8 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         // Misconfiguration: the user will never be able to start this pipeline
         if (pipeline._initialFileTypes == null || pipeline._initialFileTypes.isEmpty())
             throw new IllegalArgumentException("File analysis pipelines require at least one initial file type.");
+
+        // CONSIDER: Attempt to map outputs from previous task to inputs of the next task
 
         // UNDONE: I don't understand the typeHierarchy
         // Add the initial types to the hierarchy

@@ -857,6 +857,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
             }
             catch (ClassNotFoundException e)
             {
+                Logger.getLogger(PipelineJobServiceImpl.class).warn(e);
                 return null;
             }
 
@@ -880,17 +881,31 @@ public class PipelineJobServiceImpl extends PipelineJobService
                 Path taskConfigPath = tasksDirPath.append(configFileName);
                 Resource taskConfig = module.getModuleResource(taskConfigPath);
                 if (taskConfig != null && taskConfig.isFile())
-                    return SimpleTaskFactory.create(taskId, taskConfig);
+                    return load(taskId, taskConfig);
 
                 // Look for a "pipeline/tasks/<name>/<name>.task.xml" file
                 taskConfigPath = tasksDirPath.append(taskId.getName()).append(configFileName);
                 taskConfig = ModuleLoader.getInstance().getResource(taskConfigPath);
                 if (taskConfig != null && taskConfig.isFile())
-                    return SimpleTaskFactory.create(taskId, taskConfig);
+                    return load(taskId, taskConfig);
             }
 
             return null;
         }
+
+        private TaskFactory load(TaskId taskId, Resource taskConfig)
+        {
+            try
+            {
+                return SimpleTaskFactory.create(taskId, taskConfig);
+            }
+            catch (IllegalArgumentException|IllegalStateException e)
+            {
+                Logger.getLogger(PipelineJobServiceImpl.class).warn("Error registering '" + taskId + "' task: " + e.getMessage());
+                return null;
+            }
+        }
+
     };
 
     private final CacheLoader TASK_PIPELINE_IDS_LOADER = new CacheLoader<String, Collection<TaskId>>()
@@ -950,6 +965,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
             }
             catch (ClassNotFoundException e)
             {
+                Logger.getLogger(PipelineJobServiceImpl.class).warn(e);
                 return null;
             }
 
@@ -971,10 +987,23 @@ public class PipelineJobServiceImpl extends PipelineJobService
                 Path pipelineConfigPath = new Path(MODULE_PIPELINE_DIR, MODULE_PIPELINES_DIR, configFileName);
                 Resource pipelineConfig = module.getModuleResource(pipelineConfigPath);
                 if (pipelineConfig != null && pipelineConfig.isFile())
-                    return FileAnalysisTaskPipelineImpl.create(taskId, pipelineConfig);
+                    return load(taskId, pipelineConfig);
             }
 
             return null;
+        }
+
+        private TaskPipeline load(TaskId taskId, Resource pipelineConfig)
+        {
+            try
+            {
+                return FileAnalysisTaskPipelineImpl.create(taskId, pipelineConfig);
+            }
+            catch (IllegalArgumentException|IllegalStateException e)
+            {
+                Logger.getLogger(PipelineJobServiceImpl.class).warn("Error registering '" + taskId + "' pipeline: " + e.getMessage());
+                return null;
+            }
         }
     };
 

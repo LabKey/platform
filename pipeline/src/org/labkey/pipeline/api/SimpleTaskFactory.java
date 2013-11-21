@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.api;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
@@ -38,6 +39,7 @@ import org.labkey.api.pipeline.cmd.TaskToCommandArgs;
 import org.labkey.api.pipeline.cmd.ValueInLine;
 import org.labkey.api.pipeline.cmd.ValueToCommandArgs;
 import org.labkey.api.pipeline.cmd.ValueWithSwitch;
+import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileType;
@@ -48,26 +50,31 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.pipeline.analysis.CommandTaskImpl;
 import org.labkey.pipeline.xml.DoubleInputType;
 import org.labkey.pipeline.xml.ExecType;
+import org.labkey.pipeline.xml.FileInputOutputType;
 import org.labkey.pipeline.xml.FileInputType;
-import org.labkey.pipeline.xml.InputType;
+import org.labkey.pipeline.xml.FileOutputType;
 import org.labkey.pipeline.xml.InputsType;
 import org.labkey.pipeline.xml.IntInputType;
 import org.labkey.pipeline.xml.NamedTaskType;
 import org.labkey.pipeline.xml.OutputsType;
 import org.labkey.pipeline.xml.PropertyInputType;
 import org.labkey.pipeline.xml.ScriptType;
+import org.labkey.pipeline.xml.SimpleInputType;
 import org.labkey.pipeline.xml.TaskDocument;
 import org.labkey.pipeline.xml.TextInputType;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * User: kevink
@@ -179,27 +186,23 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
         {
             // TODO: Get switch/help/etc settings to the PathInLine/PathWithSwitch argument created in parseCommand()
             String name = xfileInput.getName();
-            String label = xfileInput.getLabel();
-            String description = xfileInput.getDescription();
-            String help = xfileInput.getHelp();
-            String switchName = xfileInput.getSwitch();
-            boolean required = xfileInput.getRequired();
+            TaskPath taskPath = createTaskPath(xfileInput);
+            ret.put(name, taskPath);
+        }
 
-            TaskPath taskPath;
-            if (xfileInput.isSetSuffixes())
-            {
-                // Task expects to match inputs based upon the set of suffixes
-                FileType fileType = createFileType(xfileInput);
-                taskPath = new TaskPath(fileType);
-            }
-            else
-            {
-                // Task expects to match inputs based complete filename, not just suffix. See TaskPath.setName().
-                taskPath = new TaskPath();
-                taskPath.setName(xfileInput.getName());
-            }
-            taskPath.setOptional(!required);
+        return ret;
+    }
 
+    private static Map<String, TaskPath> createOutputPaths(OutputsType xoutputs)
+    {
+        Map<String, TaskPath> ret = new LinkedHashMap<>();
+        if (xoutputs == null)
+            return ret;
+
+        for (FileOutputType xfileOutput : xoutputs.getFileArray())
+        {
+            String name = xfileOutput.getName();
+            TaskPath taskPath = createTaskPath(xfileOutput);
             ret.put(name, taskPath);
         }
 
@@ -208,22 +211,16 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
 
     private static Map<String, JobParamToCommandArgs> createInputParams(InputsType xinputs)
     {
-        Set<String> names = new HashSet<>();
         Map<String, JobParamToCommandArgs> ret = new LinkedHashMap<>();
         if (xinputs == null)
             return ret;
 
         for (XmlObject xobj : xinputs.selectPath("./*"))
         {
-            if (xobj instanceof InputType)
+            if (xobj instanceof SimpleInputType)
             {
-                InputType xinput = (InputType)xobj;
+                SimpleInputType xinput = (SimpleInputType)xobj;
                 String name = xinput.getName();
-                if (names.contains(name))
-                    throw new IllegalArgumentException("Duplicate input name '" + name + "'");
-
-                if (xobj instanceof FileInputType)
-                    continue;
 
                 // CONSIDER: parameter category (group?) to compose a parameter of "group, name"
                 String label = xinput.getLabel();
@@ -281,7 +278,33 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
         return ret;
     }
 
-    private static FileType createFileType(FileInputType xfile)
+    private static TaskPath createTaskPath(FileInputOutputType xfile)
+    {
+        // TODO: Get switch/help/etc settings to the PathInLine/PathWithSwitch argument created in parseCommand()
+        String description = xfile.getDescription();
+        String help = xfile.getHelp();
+        boolean required = xfile.getRequired();
+
+        TaskPath taskPath;
+        if (xfile.isSetSuffixes())
+        {
+            // Task expects to match inputs based upon the set of suffixes
+            FileType fileType = createFileType(xfile);
+            taskPath = new TaskPath(fileType);
+        }
+        else
+        {
+            // UNDONE: FileAnalysisTaskPipelineImpl expects all inputs to have FileTypes -- inputs matching by exact name aren't supported very well.
+//            // Task expects to match inputs based complete filename, not just suffix. See TaskPath.setName().
+//            taskPath = new TaskPath();
+//            taskPath.setName(xfile.getName());
+            throw new IllegalArgumentException("Task inputs and outputs must specify suffixes");
+        }
+        taskPath.setOptional(!required);
+        return taskPath;
+    }
+
+    private static FileType createFileType(FileInputOutputType xfile)
     {
         assert xfile.isSetSuffixes();
 
@@ -307,16 +330,6 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
 
         FileType ft = new FileType(suffixes, defaultSuffix, dir, gz, contentType);
         return ft;
-    }
-
-    private static Map<String, TaskPath> createOutputPaths(OutputsType outputs)
-    {
-        Set<String> names = new HashSet<>();
-        Map<String, TaskPath> ret = new LinkedHashMap<>();
-
-        // UNDONE
-
-        return ret;
     }
 
     private static ListToCommandArgs createExecConverter(Module module, Path taskDir, ExecType xexec, Map<String, TaskPath> inputs, Map<String, JobParamToCommandArgs> params, Map<String, TaskPath> outputs)
@@ -407,12 +420,13 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
                     }
                     else if (key.startsWith("output"))
                     {
-                        // TODO: Attempt to resolve unknown output
-                        //arg = parseUnknownOutput(outputs, key);
+                        // Attempt to resolve unknown output
+                        arg = parseUnknownOutput(outputs, key);
                     }
 
                     if (arg == null)
                     {
+                        // Not found in inputs, outputs, or params and doesn't start with "input" or "output".
                         // Treat as a unknown parameter
                         ValueInLine param = new ValueInLine();
                         param.setParameter(key);
@@ -482,14 +496,13 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
      *
      * The unknown token must start with "input", and is one of the forms:
      * <pre>
-     *     ${input}      => resolves to first input, will create a new input if the first input isn't found.
+     *     ${input}      => resolves to first input, will not create any new inputs.
      *     ${input.txt}  => resolves to first input. If it already exists, it must have a .txt suffix or name of 'input.txt'.
      *                      If it doesn't exist, a new input will be created with the extension '.txt'.
-     *     ${input1}     => resolves to first input, will create a new input if the first input isn't found.
+     *     ${input1}     => resolves to first input, will not create any new inputs.
      *     ${input2.txt} => resolves to second input.  If it already exists, it must have .txt suffix or name of 'input2.txt'.
      *                      If it doesn't exist and there is already at least one input, a second input is created with extension '.txt'.
-     *     ${inputX.txt} => Non-numeric input must not already exist (existing input was found earlier when parsing).
-     *                      Creates new input that matches the filename 'inputX.txt'.
+     *     ${inputX.txt} => Non-numeric index is not allowed.
      * </pre>
      * Indices are 1-based.
      *
@@ -502,7 +515,18 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
      */
     private static PathInLine parseUnknownInput(Map<String, TaskPath> inputs, String key)
     {
-        assert key.startsWith("input");
+        return parseUnknownInputOutput(WorkDirectory.Function.input, inputs, key);
+    }
+
+    private static PathInLine parseUnknownOutput(Map<String, TaskPath> outputs, String key)
+    {
+        return parseUnknownInputOutput(WorkDirectory.Function.output, outputs, key);
+    }
+
+    private static PathInLine parseUnknownInputOutput(WorkDirectory.Function pathType, Map<String, TaskPath> paths, String key)
+    {
+        String prefix = pathType.name();
+        assert key.startsWith(prefix);
 
         // CONSIDER: take extension from first dot after 'index' to allow multi-part extensions: .txt.gz
         // Get a file extension if it exists
@@ -513,9 +537,9 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
         // Find an int at the end of "input" and before the extension if it exists.
         String num;
         if (keyExt != null)
-            num = key.substring("input".length(), key.length() - keyExt.length());
+            num = key.substring(prefix.length(), key.length() - keyExt.length());
         else
-            num = key.substring("input".length());
+            num = key.substring(prefix.length());
 
         // Index is 1-based
         int index = 1;
@@ -525,94 +549,106 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
             {
                 index = Integer.parseInt(num);
                 if (index < 1)
-                    throw new IllegalArgumentException("Input '${" + key + "}' index must be greater than 0.");
+                    throw new IllegalArgumentException("File replacement '${" + key + "}' index must be greater than 0.");
 
                 // Can't reference or create a new input at arbitrary indices
-                if (index > inputs.size()+1)
-                    throw new IllegalArgumentException("Input '${" + key + "}' index must be less than inputs size '" + (inputs.size()+1) + "'.");
+                if (index > paths.size()+1)
+                    throw new IllegalArgumentException("File replacement '${" + key + "}' index must be less than current " + prefix + " size '" + (paths.size()+1) + "'.");
             }
             catch (NumberFormatException e)
             {
-                // num isn't an integer value -- don't use index.
-                index = -1;
+                // num isn't an integer value
+                throw new IllegalArgumentException("File replacement '${" + key + "}' must have numeric index greater than 0.");
             }
         }
 
-        // Inputs must be ordered so we can refer to them by index
-        assert inputs instanceof LinkedHashMap;
-        Set<String> inputKeySet = inputs.keySet();
-        String[] inputKeys = inputKeySet.toArray(new String[inputKeySet.size()]);
+        // Paths must be ordered so we can refer to them by index
+        assert paths instanceof LinkedHashMap;
+        Set<String> pathsKeySet = paths.keySet();
+        String[] pathsKeys = pathsKeySet.toArray(new String[pathsKeySet.size()]);
 
-        String inputKey = null;
-        if (index == -1)
+        String pathKey = null;
+//        if (index == -1)
+//        {
+//            // We have the form 'inputXYZ' or 'inputXYZ.txt'
+//            // The key must not already exist in the inputs map.
+//            assert !paths.containsKey(key) : "File replacement ${" + key + "} already exists; should have been found earlier in parseCommand().";
+//
+//            // Create a new input and add it to inputs map
+//            TaskPath newPath = new TaskPath();
+//            newPath.setName(key);
+//
+//            paths.put(key, newPath);
+//            pathKey = key;
+//        }
+//        else
+        if (index < pathsKeys.length+1)
         {
-            // We have the form 'inputXYZ' or 'inputXYZ.txt'
-            // The key must not already exist in the inputs map.
-            assert !inputs.containsKey(key) : "Input ${" + key + "} already exists; should have been found earlier in parseCommand().";
-
-            // Create a new input and add it to inputs map
-            TaskPath newInput = new TaskPath();
-            newInput.setName(key);
-
-            inputs.put(key, newInput);
-            inputKey = key;
-        }
-        else if (index < inputKeys.length+1)
-        {
-            // Reference an existing input
-            inputKey = inputKeys[index-1];
-            TaskPath existing = inputs.get(inputKey);
+            // Reference an existing input/output
+            pathKey = pathsKeys[index-1];
+            TaskPath existing = paths.get(pathKey);
             assert existing != null;
 
             if (existing.getType() != null)
             {
-                // If the user included an extension and the matched input has a FileType, check the suffix matches.
+                // If the user included an extension and the matched path has a FileType, check the suffix matches.
                 if (keyExt != null && !keyExt.equals(existing.getType().getDefaultSuffix()))
-                    throw new IllegalArgumentException("Input '${" + key + "}' extension doesn't match exepcted file type: " + existing.getType());
+                    throw new IllegalArgumentException("File replacement '${" + key + "}' extension doesn't match exepcted file type: " + existing.getType());
             }
-            else
-            {
-                // If the matched input has a name, check the entire ${input} name matches.
-                assert existing.getName() != null;
-                if (existing.getName().equals(key))
-                    throw new IllegalArgumentException("Input '${" + key + "}' name doesn't match exepcted file name: " + existing.getName());
-            }
+//            else
+//            {
+//                // If the matched input has a name, check the entire ${input} name matches.
+//                assert existing.getName() != null;
+//                if (existing.getName().equals(key))
+//                    throw new IllegalArgumentException("File replacement '${" + key + "}' name doesn't match exepcted file name: " + existing.getName());
+//            }
 
         }
-        else if (index == inputKeys.length+1)
+        else if (index == pathsKeys.length+1)
         {
             // Create a new input and add it to inputs map
-            TaskPath newInput = new TaskPath();
-            if (keyExt != null)
-                newInput.setExtension(keyExt);
-            else
-                newInput.setName(key);
+            TaskPath newPath = new TaskPath();
+            if (keyExt == null)
+                throw new IllegalArgumentException("File replacement '${" + key + "}' not found.  Implicitly created inputs must have an extension");
 
-            inputs.put(key, newInput);
-            inputKey = key;
+            newPath.setExtension(keyExt);
+            paths.put(key, newPath);
+            pathKey = key;
         }
 
         // This shouldn't happen -- we've checked the index is in range and the inputs map shouldn't contain null entries.
-        if (inputKey == null)
-            throw new IllegalStateException("Failed to resolve or create input for '${" + key + "}'");
+        if (pathKey == null)
+            throw new IllegalStateException("Failed to resolve or create file replacement for '${" + key + "}'");
 
         PathInLine path = new PathInLine();
-        path.setFunction(WorkDirectory.Function.input);
-        path.setKey(inputKey);
+        path.setFunction(pathType);
+        path.setKey(pathKey);
         return path;
     }
 
 
     private static void createScript(SimpleTaskFactory factory, ScriptType xscript, Map<String, TaskPath> inputs, Map<String, JobParamToCommandArgs> params, Map<String, TaskPath> outputs)
     {
+        Set<String> tokens;
+
         if (xscript.getFile() != null)
         {
             // find the file
             String file = xscript.getFile();
             Resource r = findResource(factory.getDeclaringModule(), factory.getModuleTaskPath(), file);
-            if (r == null)
+            if (r == null || !r.isFile())
                 throw new IllegalArgumentException("script file not found: " + file);
-            factory._scriptPath = r.getPath();
+
+            String source;
+            try (InputStream is = r.getInputStream())
+            {
+                source = IOUtils.toString(is);
+                tokens = tokens(source);
+            }
+            catch (IOException e)
+            {
+                throw new IllegalArgumentException("Failed to read script file.");
+            }
 
             String ext = xscript.getInterpreter();
             if (ext == null)
@@ -620,6 +656,7 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
             if (ext == null)
                 throw new IllegalArgumentException("Failed to determine script interpreter from script filename.  Please add an 'interpreter' attribute or an extension to the script filename.");
 
+            factory._scriptPath = r.getPath();
             factory._scriptExtension = ext;
         }
         else if (xscript.getInterpreter() != null)
@@ -629,6 +666,7 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
             if (script == null)
                 throw new IllegalArgumentException("<script> element must have one of either 'file' attribute or 'interpreter' attribute with an inline script.");
 
+            tokens = tokens(script);
             factory._scriptInline = script;
             factory._scriptExtension = xscript.getInterpreter();
         }
@@ -637,15 +675,67 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
             throw new IllegalArgumentException("<script> element must have one of either 'file' attribute or 'interpreter' attribute with an inline script.");
         }
 
+        // Check script engine available for the extension
+        ensureEngine(factory._scriptExtension);
+
+        // Add any implicit inputs and outputs from the script
+        for (String key : tokens)
+        {
+            if (!(inputs.containsKey(key) || outputs.containsKey(key) || params.containsKey(key)))
+            {
+                TaskToCommandArgs arg = null;
+                if (key.startsWith("input"))
+                {
+                    // Attempt to resolve unknown input
+                    arg = parseUnknownInput(inputs, key);
+                }
+                else if (key.startsWith("output"))
+                {
+                    // Attempt to resolve unknown output
+                    arg = parseUnknownOutput(outputs, key);
+                }
+
+                if (arg == null)
+                {
+                    // Not found in inputs, outputs, or params and doesn't start with "input" or "output".
+                    // Treat as a unknown parameter
+                    ValueInLine param = new ValueInLine();
+                    param.setParameter(key);
+                    params.put(key, param);
+                }
+            }
+        }
+    }
+
+    private static ScriptEngine ensureEngine(String interpreter)
+    {
         ScriptEngineManager mgr = ServiceRegistry.get().getService(ScriptEngineManager.class);
         if (mgr == null)
             throw new IllegalStateException("Script engine manager not available");
 
-        ScriptEngine engine = mgr.getEngineByName(factory._scriptExtension);
+        ScriptEngine engine = mgr.getEngineByName(interpreter);
         if (engine == null)
-            engine = mgr.getEngineByExtension(factory._scriptExtension);
+            engine = mgr.getEngineByExtension(interpreter);
         if (engine == null)
-            throw new IllegalArgumentException("Script engine not found: " + factory._scriptExtension);
+            throw new IllegalArgumentException("Script engine not found: " + interpreter);
+        return engine;
+    }
+
+    private static Set<String> tokens(String script)
+    {
+        // Preserving the order the tokens is found is important -- ${input1.txt} must be found before ${input2.txt}
+        Set<String> tokens = new LinkedHashSet<>();
+        Pattern pattern = ParamReplacementSvc.defaultScriptPattern;
+        Matcher m = pattern.matcher(script);
+
+        while (m.find())
+        {
+            String token = m.group(1);
+            if (token != null && token.length() > 0)
+                tokens.add(token);
+        }
+
+        return tokens;
     }
 
     @Override
@@ -677,18 +767,45 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
 
     public static class ParseInputTests
     {
+        private void assertTaskPath(Map<String, TaskPath> inputs, String key, String name, String defaultExt)
+        {
+            TaskPath path = inputs.get(key);
+            Assert.assertNotNull("Expected TaskPath in input map with key '" + key + "'", path);
+
+            if (name == null)
+                Assert.assertNull("Expected TaskPath without name", path.getName());
+            else
+                Assert.assertEquals("Expected TaskPath name", name, path.getName());
+
+            if (defaultExt == null)
+                Assert.assertNull("Expected TaskPath without extension", path.getType().getDefaultSuffix());
+            else
+                Assert.assertEquals("Expected TaskPath with extension", defaultExt, path.getType().getDefaultSuffix());
+        }
+
+        @Test
+        public void implicitInputExtensionRequired()
+        {
+            Map<String, TaskPath> inputs = new LinkedHashMap<>();
+            try
+            {
+                SimpleTaskFactory.parseUnknownInput(inputs, "input");
+                Assert.fail("Expected IllegalArgumentException");
+            }
+            catch (IllegalArgumentException e)
+            {
+                Assert.assertEquals("File replacement '${input}' not found.  Implicitly created inputs must have an extension", e.getMessage());
+            }
+        }
+
         @Test
         public void inputCreated()
         {
             Map<String, TaskPath> inputs = new LinkedHashMap<>();
-            PathInLine arg = SimpleTaskFactory.parseUnknownInput(inputs, "input");
-            Assert.assertEquals("Expected PathInLine argument with name 'input'", "input", arg.getKey());
-
-            TaskPath path = inputs.get("input");
+            PathInLine arg = SimpleTaskFactory.parseUnknownInput(inputs, "input.txt");
+            Assert.assertEquals("Expected PathInLine argument with name 'input.txt'", "input.txt", arg.getKey());
             Assert.assertEquals(1, inputs.size());
-            Assert.assertNotNull("Expected new TaskPath to be added to input map", path);
-            Assert.assertEquals("Expected TaskPath to be created with name 'input'", "input", path.getName());
-            Assert.assertNull("Expected TaskPath to not reference a FileType", path.getType());
+            assertTaskPath(inputs, "input.txt", null, ".txt");
         }
 
         @Test
@@ -733,26 +850,20 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
             Assert.assertEquals("Expected PathInLine argument with name 'second'", "second", arg2.getKey());
             Assert.assertEquals("Expected no new inputs", 2, inputs.size());
 
-            PathInLine arg3 = SimpleTaskFactory.parseUnknownInput(inputs, "input-three.txt");
-            Assert.assertEquals("Expected PathInLine argument with name 'input-three.txt'", "input-three.txt", arg3.getKey());
+            PathInLine arg3 = SimpleTaskFactory.parseUnknownInput(inputs, "input3.3rd");
+            Assert.assertEquals("Expected PathInLine argument with name 'input3.3rd", "input3.3rd", arg3.getKey());
             Assert.assertEquals("Expected new input created", 3, inputs.size());
-            TaskPath path3 = inputs.get("input-three.txt");
-            Assert.assertEquals("Expected TaskPath to be created with name", "input-three.txt", path3.getName());
-            Assert.assertNull("Expected TaskPath to be created without extension", path3.getType());
+            assertTaskPath(inputs, "input3.3rd", null, ".3rd");
 
-            PathInLine arg4 = SimpleTaskFactory.parseUnknownInput(inputs, "input4.4th");
-            Assert.assertEquals("Expected PathInLine argument with name 'input4.4th'", "input4.4th", arg4.getKey());
-            Assert.assertEquals("Expected new input created", 4, inputs.size());
-            TaskPath path4 = inputs.get("input4.4th");
-            Assert.assertNull("Expected TaskPath to be created without name", path4.getName());
-            Assert.assertEquals("Expected TaskPath to be created with extension", ".4th", path4.getType().getDefaultSuffix());
-
-            PathInLine arg5 = SimpleTaskFactory.parseUnknownInput(inputs, "input5");
-            Assert.assertEquals("Expected PathInLine argument with name 'input5'", "input5", arg5.getKey());
-            Assert.assertEquals("Expected new input created", 5, inputs.size());
-            TaskPath path5 = inputs.get("input5");
-            Assert.assertEquals("Expected TaskPath to be created with name", "input5", path5.getName());
-            Assert.assertNull("Expected TaskPath to be created without extension", path5.getType());
+            try
+            {
+                SimpleTaskFactory.parseUnknownInput(inputs, "input4");
+                Assert.fail("Expected Exception");
+            }
+            catch (IllegalArgumentException e)
+            {
+                Assert.assertEquals("File replacement '${input4}' not found.  Implicitly created inputs must have an extension", e.getMessage());
+            }
         }
 
         @Test
@@ -766,7 +877,7 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
             }
             catch (IllegalArgumentException e)
             {
-                Assert.assertEquals("Input '${input0}' index must be greater than 0.", e.getMessage());
+                Assert.assertEquals("File replacement '${input0}' index must be greater than 0.", e.getMessage());
             }
 
             try
@@ -776,7 +887,7 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
             }
             catch (IllegalArgumentException e)
             {
-                Assert.assertEquals("Input '${input2}' index must be less than inputs size '1'.", e.getMessage());
+                Assert.assertEquals("File replacement '${input2}' index must be less than current input size '1'.", e.getMessage());
             }
 
             try
@@ -786,7 +897,7 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
             }
             catch (IllegalArgumentException e)
             {
-                Assert.assertEquals("Input '${input100.txt}' index must be less than inputs size '1'.", e.getMessage());
+                Assert.assertEquals("File replacement '${input100.txt}' index must be less than current input size '1'.", e.getMessage());
             }
         }
 
@@ -807,7 +918,7 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
             }
             catch (IllegalArgumentException e)
             {
-                Assert.assertEquals("Input '${input.txt}' extension doesn't match exepcted file type: [.foo]", e.getMessage());
+                Assert.assertEquals("File replacement '${input.txt}' extension doesn't match exepcted file type: [.foo]", e.getMessage());
             }
         }
 

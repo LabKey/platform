@@ -125,7 +125,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
             // ExternalScriptEngine will copy script into working dir to perform replacements.
             Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
             if (scriptFile != null)
-                bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile);
+                bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.toString());
             bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, _wd.getDir().getPath());
 
             Map<String, String> replacements = createReplacements();
