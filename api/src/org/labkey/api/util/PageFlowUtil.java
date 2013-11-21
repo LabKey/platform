@@ -241,7 +241,7 @@ public class PageFlowUtil
                     if (encodeLinks)
                     {
                         String sub = s.substring(i);
-                        if ((c == 'f' || c == 'h' || c == 'm') && StringUtilsLabKey.startsWithURL(sub))
+                        if (StringUtilsLabKey.startsWithURL(sub))
                         {
                             Matcher m = urlPatternStart.matcher(sub);
                             if (m.find())
@@ -536,6 +536,9 @@ public class PageFlowUtil
     }
 
 
+    /*
+        Return a map of <T, T>. Note: iteration order of this map is unpredictable.
+     */
     public static <T> Map<T, T> map(T... args)
     {
         HashMap<T, T> m = new HashMap<>();
@@ -545,6 +548,9 @@ public class PageFlowUtil
     }
 
 
+    /*
+        Return a case-insensitive map of Objects. Note: iteration order of this map is unpredictable.
+     */
     public static Map<String, Object> mapInsensitive(Object... args)
     {
         Map<String,Object> m = new CaseInsensitiveHashMap<>();
@@ -554,9 +560,26 @@ public class PageFlowUtil
     }
 
 
+    /*
+        Return a set of T that iterates in an unpredictable order.
+     */
     public static <T> Set<T> set(T... args)
     {
         HashSet<T> s = new HashSet<>();
+
+        if (null != args)
+            s.addAll(Arrays.asList(args));
+
+        return s;
+    }
+
+
+    /*
+        Return a set of T that iterates in the order of the provided arguments.
+     */
+    public static <T> Set<T> setOrdered(T... args)
+    {
+        HashSet<T> s = new LinkedHashSet<>();
 
         if (null != args)
             s.addAll(Arrays.asList(args));
