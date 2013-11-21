@@ -666,9 +666,11 @@ public class DbSchema
             assertFalse("In transaction when shouldn't be.", testSchema.getScope().isTransactionActive());
 
             SimpleFilter filter = new SimpleFilter("RowId", rowId);
-            ResultSet rs = Table.select(testTable, Table.ALL_COLUMNS, filter, null);
-            assertTrue("Did not find inserted record.", rs.next());
-            rs.close();
+
+            try (ResultSet rs = new TableSelector(testTable, filter, null).getResultSet())
+            {
+                assertTrue("Did not find inserted record.", rs.next());
+            }
 
             testSchema.getScope().beginTransaction();
             m.put("IntNotNull", 1);

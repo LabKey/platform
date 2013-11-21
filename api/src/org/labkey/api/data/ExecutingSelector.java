@@ -131,9 +131,8 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
      */
     public Table.TableResultSet getResultSet(boolean cache, boolean scrollable)
     {
-        boolean closeResultSet = cache;
         SqlFactory sqlFactory = getSqlFactory(true);
-        ExecutingResultSetFactory factory = new ExecutingResultSetFactory(sqlFactory, closeResultSet, scrollable, true);
+        ExecutingResultSetFactory factory = new ExecutingResultSetFactory(sqlFactory, cache, scrollable, true);
 
         return getResultSet(factory, cache);
     }

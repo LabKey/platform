@@ -23,16 +23,14 @@ import org.apache.commons.lang3.time.FastDateFormat;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
@@ -55,10 +53,9 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 
 import java.lang.reflect.InvocationTargetException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -110,26 +107,11 @@ public class DomainUtil
                         if (!pkColumnInfo.getClass().equals(defaultValue.getClass()))
                             defaultValue = ConvertUtils.convert(defaultValue.toString(), pkColumnInfo.getJavaClass());
                         SimpleFilter filter = new SimpleFilter(pkCol, defaultValue);
-                        ResultSet rs = null;
-                        try
-                        {
-                            rs = Table.select(table, Table.ALL_COLUMNS, filter, null);
-                            if (rs.next())
-                            {
-                                Object value = rs.getObject(table.getTitleColumn());
-                                if (value != null)
-                                    return value.toString();
-                            }
-                        }
-                        catch (SQLException e)
-                        {
-                            throw new RuntimeSQLException(e);
-                        }
-                        finally
-                        {
-                            if (rs != null)
-                                try { rs.close(); } catch (SQLException e) { }
-                        }
+
+                        Object value = new TableSelector(table, Collections.singleton(table.getTitleColumn()), filter, null).getObject(Object.class);
+
+                        if (value != null)
+                            return value.toString();
                     }
                 }
             }
@@ -487,11 +469,7 @@ public class DomainUtil
         {
             BeanUtils.copyProperties(to, from);
         }
-        catch (IllegalAccessException e)
-        {
-            throw new RuntimeException(e);
-        }
-        catch (InvocationTargetException e)
+        catch (IllegalAccessException | InvocationTargetException e)
         {
             throw new RuntimeException(e);
         }
@@ -610,7 +588,7 @@ public class DomainUtil
             pv.setExpressionValue(gpv.getExpression());
             pv.setErrorMessage(gpv.getErrorMessage());
 
-            for (Map.Entry<String, String> entry : ((Map<String, String>)gpv.getProperties()).entrySet())
+            for (Map.Entry<String, String> entry : gpv.getProperties().entrySet())
             {
                 pv.setProperty(entry.getKey(), entry.getValue());
             }

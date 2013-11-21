@@ -24,9 +24,8 @@ import org.labkey.api.assay.dilution.DilutionSummary;
 import org.labkey.api.assay.nab.view.DuplicateDataFileRunView;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -49,8 +48,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -176,25 +173,13 @@ public class RenderAssayBean extends RenderAssayForm
     {
         if (_dupFile == null)
         {
-            ResultSet rs = null;
-            try
-            {
-                SimpleFilter filter = new SimpleFilter("ProtocolLsid", _assay.getProtocol().getLSID());
-                filter.addCondition("Name", _assay.getDataFile().getName());
-                filter.addCondition("RowId", _assay.getRun().getRowId(), CompareType.NEQ);
-                rs = Table.select(ExperimentService.get().getTinfoExperimentRun(), Table.ALL_COLUMNS, filter, null);
-                _dupFile = rs.next();
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
-            finally
-            {
-                if (rs != null)
-                    try { rs.close(); } catch (SQLException e) { /* fall through */ }
-            }
+            SimpleFilter filter = new SimpleFilter("ProtocolLsid", _assay.getProtocol().getLSID());
+            filter.addCondition("Name", _assay.getDataFile().getName());
+            filter.addCondition("RowId", _assay.getRun().getRowId(), CompareType.NEQ);
+
+            _dupFile = new TableSelector(ExperimentService.get().getTinfoExperimentRun(), filter, null).exists();
         }
+
         return _dupFile;
     }
 

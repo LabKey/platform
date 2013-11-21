@@ -313,7 +313,7 @@ public class Table
     }
 
 
-    // 26 usages
+    // 19 usages
     @Deprecated /** Use TableSelector */
     public static ResultSet select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
@@ -1429,13 +1429,13 @@ public class Table
         {
             TableInfo tinfo = _core.getTableInfoPrincipals();
 
-            ResultSet rs = select(tinfo, ALL_COLUMNS, null, null);
-            rs.close();
+            //noinspection EmptyTryBlock,UnusedDeclaration
+            try (ResultSet rs = new TableSelector(tinfo).getResultSet()){}
 
             Map[] maps = select(tinfo, ALL_COLUMNS, null, null, Map.class);
             assertNotNull(maps);
 
-            Principal[] principals = select(tinfo, ALL_COLUMNS, null, null, Principal.class);
+            Principal[] principals = new TableSelector(tinfo, ALL_COLUMNS, null, null).getArray(Principal.class);
             assertNotNull(principals);
             assertTrue(principals.length > 0);
             assertTrue(principals[0]._userId != 0);
