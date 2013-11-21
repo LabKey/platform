@@ -80,6 +80,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      *     "Issues.Issues <alias>"
      *     "(SELECT * FROM Issues.Issues WHERE Container='...') <alias>"
      **/
+    @NotNull
     SQLFragment getFromSQL(String alias);
 
     /* For most tables this is the same as getFromSQL().
