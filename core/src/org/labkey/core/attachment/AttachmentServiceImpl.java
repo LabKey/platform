@@ -41,10 +41,12 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.query.FieldKey;
@@ -645,42 +647,32 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     /** Does not work for file system parents */
     public List<Pair<String,String>> listAttachmentsForIndexing(Collection<String> parents, Date modifiedSince)
     {
-        ResultSet rs = null;
+        SimpleFilter filter = new SimpleFilter("Parent", parents, CompareType.IN);
+        if (null != modifiedSince)
+            filter.addCondition("Modified", modifiedSince, CompareType.GTE);
+        SimpleFilter.FilterClause since = new SearchService.LastIndexedClause(coreTables().getTableInfoDocuments(), modifiedSince, null);
+        filter.addClause(since);
 
-        try
-        {
-            SimpleFilter filter = new SimpleFilter("Parent", parents, CompareType.IN);
-            if (null != modifiedSince)
-                filter.addCondition("Modified", modifiedSince, CompareType.GTE);
-            SimpleFilter.FilterClause since = new SearchService.LastIndexedClause(coreTables().getTableInfoDocuments(), modifiedSince, null);
-            filter.addClause(since);
+        final ArrayList<Pair<String,String>> ret = new ArrayList<>();
 
-            // TODO: Looks dangerous... column order will be random!
-            rs = Table.select(coreTables().getTableInfoDocuments(),
-                    PageFlowUtil.set("Parent","DocumentName","LastIndexed"),
+        new TableSelector(coreTables().getTableInfoDocuments(),
+                    PageFlowUtil.setOrdered("Parent","DocumentName","LastIndexed"),
                     filter,
-                    new Sort("+Created"));
-
-            ArrayList<Pair<String,String>> ret = new ArrayList<>();
-            while (rs.next())
+                    new Sort("+Created")).forEach(new Selector.ForEachBlock<ResultSet>()
+        {
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 String parent = rs.getString(1);
                 String name = rs.getString(2);
                 java.util.Date last = rs.getTimestamp(3);
                 if (last != null && last.getTime() == SearchService.failDate.getTime())
-                    continue;
+                    return;
                 ret.add(new Pair<>(parent, name));
             }
-            return ret;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        });
+
+        return ret;
     }
 
 

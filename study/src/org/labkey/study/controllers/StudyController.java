@@ -2713,18 +2713,8 @@ public class StudyController extends BaseStudyController
     {
         SimpleFilter sourceLsidFilter = new SimpleFilter();
         sourceLsidFilter.addCondition("SourceLsid", null, CompareType.NONBLANK);
-        ResultSet rs = null;
-        try
-        {
-            rs = Table.select(datasetTable, Collections.singleton("SourceLsid"), sourceLsidFilter, null);
-            if (rs.next())
-                return true;
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
-        return false;
+
+        return new TableSelector(datasetTable, Collections.singleton("SourceLsid"), sourceLsidFilter, null).exists();
     }
 
     @RequiresPermissionClass(ReadPermission.class)
