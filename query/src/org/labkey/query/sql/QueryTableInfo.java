@@ -52,6 +52,7 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     }
 
 
+    @NotNull
     @Override
     public SQLFragment getFromSQL(String alias)
     {
