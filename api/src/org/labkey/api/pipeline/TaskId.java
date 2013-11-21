@@ -15,8 +15,6 @@
  */
 package org.labkey.api.pipeline;
 
-import org.labkey.api.util.PageFlowUtil;
-
 import java.io.Serializable;
 
 /**

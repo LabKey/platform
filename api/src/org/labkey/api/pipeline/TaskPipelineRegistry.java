@@ -100,4 +100,8 @@ public interface TaskPipelineRegistry
     String getDefaultExecutionLocation();
 
     int getDefaultAutoRetry();
+
+    void removeTaskPipeline(TaskId pipelineId);
+
+    void removeTaskFactory(TaskId taskId);
 }
