@@ -16,7 +16,6 @@
 package org.labkey.di.steps;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
@@ -65,8 +64,6 @@ public class StoredProcedureStep extends TransformTask
     private Map<String, Object> savedParamVals = new HashMap<>();
     private Map<String, Map<ParamTraits, Integer>> metadataParameters = new CaseInsensitiveHashMap<>();
 
-    Logger log;
-
     private enum ParamTraits
     {
         direction,
@@ -105,13 +102,11 @@ public class StoredProcedureStep extends TransformTask
     @Override
     public void doWork(RecordedAction action) throws PipelineJobException
     {
-        log = getJob().getLogger();
-
         try
         {
-            log.debug("StoredProcedureStep.doWork called");
+            getJob().debug("StoredProcedureStep.doWork called");
             if (!executeProcedure())
-                getJob().setStatus("ERROR"); // TODO: Should the status be set on exception as well?
+                throw new PipelineJobException("Error running procedure");
             recordWork(action);
         }
         catch (Exception x)
@@ -137,7 +132,7 @@ public class StoredProcedureStep extends TransformTask
         QuerySchema schema = DefaultSchema.get(_context.getUser(), _context.getContainer(), procSchema);
         if (schema == null || schema.getDbSchema() == null)
         {
-            log.error("Schema '" + procSchema + "' does not exist or user does not have permission.");
+            getJob().error("Schema '" + procSchema + "' does not exist or user does not have permission.");
             return false;
         }
         else scope = schema.getDbSchema().getScope();
@@ -164,7 +159,7 @@ public class StoredProcedureStep extends TransformTask
                 }
             }
 
-            log.info("Executing stored procedure " + procSchema + "." + procName);
+            getJob().info("Executing stored procedure " + procSchema + "." + procName);
             long start = System.currentTimeMillis();
             if (_meta.isUseTransaction())
                 scope.ensureTransaction(Connection.TRANSACTION_SERIALIZABLE);
@@ -189,7 +184,7 @@ public class StoredProcedureStep extends TransformTask
             SQLWarning warn = stmt.getWarnings();
             while (warn != null)
             {
-                log.debug(warn.getMessage());
+                getJob().info(warn.getMessage());
                 warn = warn.getNextWarning();
             }
 
@@ -198,15 +193,18 @@ public class StoredProcedureStep extends TransformTask
         }
         catch (SQLException e)
         {
-           scope.closeConnection();
-           throw new SQLException(e);
+           throw e;
+        }
+        finally
+        {
+            scope.closeConnection();
         }
         if (hasReturn && returnValue > 0)
         {
-            log.error("Error: Sproc exited with return code " + returnValue);
+            getJob().error("Error: Sproc exited with return code " + returnValue);
             return false;
         }
-        log.info("Stored procedure " + procSchema + "." + procName + " completed in " + DateUtil.formatDuration(duration));
+        getJob().info("Stored procedure " + procSchema + "." + procName + " completed in " + DateUtil.formatDuration(duration));
         return true;
 
     }
@@ -267,7 +265,7 @@ public class StoredProcedureStep extends TransformTask
         }
         else
         {
-            log.error("Error: sproc must have transformRunId input parameter");
+            getJob().error("Error: sproc must have transformRunId input parameter");
             return false;
         }
     }
@@ -302,7 +300,7 @@ public class StoredProcedureStep extends TransformTask
         }
         else
         {
-            log.error("Error: sproc must have @transformRunId input parameter");
+            getJob().error("Error: sproc must have @transformRunId input parameter");
             return false;
         }
     }
@@ -377,7 +375,7 @@ public class StoredProcedureStep extends TransformTask
 
             try
             {
-                log.info(filterStrategy.getClass().getSimpleName() + ": " + (null == f ? "no filter"  : f.toSQLString(scope.getSqlDialect())));
+                getJob().info(filterStrategy.getClass().getSimpleName() + ": " + (null == f ? "no filter" : f.toSQLString(scope.getSqlDialect())));
             }
             catch (UnsupportedOperationException|IllegalArgumentException x)
             {
@@ -399,21 +397,21 @@ public class StoredProcedureStep extends TransformTask
                 if (paramName.equals("@rowsInserted") && (Integer)value > -1)
                 {
                     _recordsInserted = (Integer)value;
-                    log.info("Inserted " + getNumRowsString(_recordsInserted));
+                    getJob().info("Inserted " + getNumRowsString(_recordsInserted));
                 }
                 else if (paramName.equals("@rowsDeleted") && (Integer)value > -1)
                 {
                     _recordsDeleted = (Integer)value;
-                    log.info("Deleted " + getNumRowsString(_recordsDeleted));
+                    getJob().info("Deleted " + getNumRowsString(_recordsDeleted));
                 }
                 else if (paramName.equals("@rowsModified") && (Integer)value > -1)
                 {
                     _recordsModified = (Integer)value;
-                    log.info("Modified " + getNumRowsString(_recordsModified));
+                    getJob().info("Modified " + getNumRowsString(_recordsModified));
                 }
                 else if (paramName.equals("@returnMsg") && StringUtils.isNotEmpty((String)value))
                 {
-                    log.info("Return Msg: " + value);
+                    getJob().info("Return Msg: " + value);
                 }
             }
         }

@@ -75,12 +75,12 @@ public class SimpleQueryTransformStep extends TransformTask
         {
             getJob().getLogger().debug("SimpleQueryTransformStep.doWork called");
             if (!executeCopy(_meta, _context.getContainer(), _context.getUser(), getJob().getLogger()))
-                getJob().setStatus("ERROR");
+                throw new PipelineJobException("Error running executeCopy");
             recordWork(action);
         }
         catch (Exception x)
         {
-            getJob().getLogger().error(x);
+            throw new PipelineJobException(x);
         }
     }
 

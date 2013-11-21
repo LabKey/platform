@@ -15,9 +15,13 @@
  */
 package org.labkey.di.pipeline;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.module.Module;
 import org.labkey.api.files.FileSystemDirectoryListener;
+import org.labkey.api.module.Module;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.pipeline.TaskPipeline;
 
 import java.nio.file.Path;
 
@@ -63,6 +67,7 @@ class EtlDirectoryListener implements FileSystemDirectoryListener
         LOG.warn("Overflow!!");
         // I guess we should just clear the entire cache
         DescriptorCache.clear();
+        // TODO: Should clear all the registered pipelines as well, but no current method to retrieve list of all config names across all modules.
     }
 
     private void removeDescriptor(Path entry)
@@ -70,6 +75,20 @@ class EtlDirectoryListener implements FileSystemDirectoryListener
         String filename = entry.toString();
 
         if (_transformManager.isConfigFile(filename))
-            DescriptorCache.removeDescriptor(_module, _transformManager.getConfigName(filename));
+        {
+            final String configName = _transformManager.getConfigName(filename);
+            DescriptorCache.removeDescriptor(_module, configName);
+            final TaskId pipelineId = new TaskId(_module.getName(), TaskId.Type.pipeline, TransformManager.get().createConfigId(_module, configName),0);
+            final TaskPipeline pipeline = PipelineJobService.get().getTaskPipeline(pipelineId);
+            if (pipeline != null)
+            {
+                for (TaskId taskId : pipeline.getTaskProgression())
+                {
+                    if (StringUtils.startsWith(taskId.getName(), pipelineId.getName() + ":"))
+                        PipelineJobService.get().removeTaskFactory(taskId);
+                }
+                PipelineJobService.get().removeTaskPipeline(pipelineId);
+             }
+        }
     }
 }

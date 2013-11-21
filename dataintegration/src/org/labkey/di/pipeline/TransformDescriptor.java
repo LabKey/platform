@@ -350,6 +350,10 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
         StepMeta meta = getTransformStepMetaFromTaskId(factory.getId());
 
+        if (meta == null)
+        {
+            throw new IllegalArgumentException("Bad transform task factory " + factory.getId() + ", no matching task found in config file.");
+        }
         return meta.getProvider().createStepInstance(factory, job, meta, context);
 
     }
@@ -376,7 +380,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         // step ids are guaranteed to be unique
         for (StepMeta meta : _stepMetaDatas)
         {
-            if (StringUtils.equals(meta.getId(), tid.getName()))
+            if (StringUtils.equals(getFullTaskName(meta), tid.getName()))
                 return meta;
         }
 
@@ -386,7 +390,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     // get/build the task pipeline specific to this descriptor
     public TaskPipeline getTaskPipeline()
     {
-        TaskId pipelineId = new TaskId(TransformPipelineJob.class, getId());
+        TaskId pipelineId = new TaskId(getModuleName(),TaskId.Type.pipeline, getId(), 0);
         TaskPipeline pipeline = PipelineJobService.get().getTaskPipeline(pipelineId);
 
         if (null == pipeline)
@@ -414,12 +418,13 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         // associate the correct stepMetaData with the task via the index
         for (StepMeta meta : _stepMetaDatas)
         {
-            String taskName = meta.getId();
+            String taskName = getFullTaskName(meta);
             Class taskClass = meta.getProvider().getStepClass();
+            TaskId taskId = new TaskId(getModuleName(), TaskId.Type.task, taskName, 0);
             // check to see if this class is part of our known transform tasks
             if (TransformTask.class.isAssignableFrom(taskClass))
             {
-                TransformTaskFactory factory = new TransformTaskFactory(taskClass, taskName);
+                TransformTaskFactory factory = new TransformTaskFactory(taskId);
                 factory.setDeclaringModule(declaringModule);
                 PipelineJobService.get().addTaskFactory(factory);
             }
@@ -432,7 +437,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
                 continue;
             }
 
-            progressionSpec.add(new TaskId(taskClass, taskName));
+            progressionSpec.add(taskId);
         }
 
         // Register the task to generate an experiment run to track this transform as the last step.
@@ -442,6 +447,17 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         // add the pipeline
         settings.setTaskProgressionSpec(progressionSpec.toArray());
         PipelineJobService.get().addTaskPipeline(settings);
+    }
+
+    private String getFullTaskName(StepMeta meta)
+    {
+        return getId() + ":" + meta.getId();
+    }
+
+    @Override
+    public ScheduledPipelineJobDescriptor getDescriptorFromCache()
+    {
+        return TransformManager.get().getDescriptor(getId());
     }
 
     public static class TestCase extends Assert
@@ -528,9 +544,11 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             d = checkValidSyntax(getFile("cron1h.xml"));
             assertEquals("0 0 * * * ?", d.getScheduleDescription());
 
+            d = checkValidSyntax(getFile(NO_CLASS));
+            assertEquals(1, d._stepMetaDatas.size());
+
             checkInvalidSyntax(getFile(NO_ID), TransformManager.ID_REQUIRED);
             checkInvalidSyntax(getFile(DUP_ID), TransformManager.DUPLICATE_ID);
-            checkInvalidSyntax(getFile(NO_CLASS), TransformManager.TYPE_REQUIRED);
             checkInvalidSyntax(getFile(UNKNOWN_CLASS), TransformManager.INVALID_TYPE);
             checkInvalidSyntax(getFile(INVALID_CLASS), TransformManager.INVALID_TYPE);
             checkInvalidSyntax(getFile(BAD_SOURCE_OPT), TransformManager.INVALID_SOURCE_OPTION);
@@ -628,7 +646,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             if (failStep > 0)
             {
                 // fail the step passed in; note that the index is 0 based
-                map.put(TestTask.FailStep, d._stepMetaDatas.get(failStep).getId());
+                map.put(TestTask.FailStep, d.getFullTaskName(d._stepMetaDatas.get(failStep)));
             }
 
             // put in a property we want persisted at the job level
@@ -723,7 +741,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             //  verify protocol for this job
             //
             ExpProtocol protocol = expRun.getProtocol();
-            String expectedProtocol = TransformPipelineJob.class.getName() + ":" + d.getId();
+            String expectedProtocol = d.getModuleName() + ":" + TaskId.Type.pipeline + ":" + d.getId();
             Assert.assertTrue(String.format("Expected protocols to match: expected '%s', got '%s'", expectedProtocol, protocol.getName()),
                     protocol.getName().equalsIgnoreCase(expectedProtocol));
 
@@ -796,7 +814,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         {
             for (StepMeta meta : d._stepMetaDatas)
             {
-                if (stepName.equalsIgnoreCase(meta.getId()))
+                if (stepName.equalsIgnoreCase(d.getFullTaskName(meta)))
                     return true;
             }
 

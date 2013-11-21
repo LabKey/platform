@@ -63,7 +63,6 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.di.DataIntegrationQuerySchema;
@@ -85,7 +84,6 @@ import org.labkey.etl.xml.FilterType;
 import org.labkey.etl.xml.TransformType;
 import org.labkey.etl.xml.TransformsType;
 import org.quartz.CronExpression;
-import org.quartz.Job;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
@@ -345,13 +343,6 @@ public class TransformManager implements DataIntegrationService
     }
 
 
-    public synchronized ActionURL runNowPipelineWithRedirect(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
-            throws PipelineJobException
-    {
-        Integer jobid = runNowPipeline(descriptor, container, user);
-        return null == jobid ? null : new ActionURL("pipeline-status", "details", container).addParameter("rowId", jobid);
-    }
-
     public synchronized Integer runNowPipeline(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
             throws PipelineJobException
     {
@@ -539,6 +530,9 @@ public class TransformManager implements DataIntegrationService
             .withIdentity(jobKey)
             .storeDurably()
             .build();
+        // Consider using a facade for the descriptor instead of the full descriptor. Really only need id and
+        // pointer to correct descriptor class, and the descriptor is responsible for getting the current
+        // version from the cache.
         job.getJobDataMap().put(ScheduledPipelineJobDescriptor.class.getName(),descriptor);
         return job;
     }
@@ -777,34 +771,12 @@ public class TransformManager implements DataIntegrationService
         public void scheduler() throws Exception
         {
             final AtomicInteger counter = new AtomicInteger(0);
-            final String id = GUID.makeHash();
-            final User user = TestContext.get().getUser();
-            final Container c = JunitUtil.getTestContainer();
 
-            ScheduledPipelineJobDescriptor d = new ScheduledPipelineJobDescriptor<ScheduledPipelineJobContext>()
+            final class TestTransformDescriptor extends TransformDescriptor
             {
-                @Override
-                public String getId()
+                private TestTransformDescriptor(String id, String name, String moduleName) throws XmlException, IOException
                 {
-                    return id;
-                }
-
-                @Override
-                public String getName()
-                {
-                    return "TestCase";
-                }
-
-                @Override
-                public String getDescription()
-                {
-                    return null;
-                }
-
-                @Override
-                public String getModuleName()
-                {
-                    return "dataintegration";
+                    super(id, name, null, moduleName, null, null, null, null);
                 }
 
                 @Override
@@ -826,19 +798,6 @@ public class TransformManager implements DataIntegrationService
                 }
 
                 @Override
-                public Class<? extends Job> getQuartzJobClass()
-                {
-                    return TransformQuartzJobRunner.class;
-                }
-
-                @Override
-                public ScheduledPipelineJobContext getJobContext(Container c, User user)
-                {
-                    return new ScheduledPipelineJobContext(this, c, user);
-                }
-
-
-                @Override
                 public boolean checkForWork(ScheduledPipelineJobContext context, boolean background, boolean verbose)
                 {
                     counter.incrementAndGet();
@@ -850,8 +809,17 @@ public class TransformManager implements DataIntegrationService
                 {
                     return null;
                 }
-            };
 
+                @Override
+                public ScheduledPipelineJobDescriptor getDescriptorFromCache()
+                {
+                    return this;
+                }
+            }
+
+            final ScheduledPipelineJobDescriptor d = new TestTransformDescriptor(GUID.makeHash(), "TestCase", "dataintegration");
+            final User user = TestContext.get().getUser();
+            final Container c = JunitUtil.getTestContainer();
 
             assertEquals(0, counter.get());
             TransformManager.get().runNowQuartz(d, c, user);

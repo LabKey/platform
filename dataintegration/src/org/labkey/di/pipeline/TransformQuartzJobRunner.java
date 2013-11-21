@@ -16,11 +16,11 @@
 package org.labkey.di.pipeline;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.di.ScheduledPipelineJobContext;
+import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.di.ScheduledPipelineJobContext;
-import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
@@ -91,6 +91,6 @@ public class TransformQuartzJobRunner implements Job
             if (result == null)
                 throw new IllegalArgumentException("No ScheduledPipelineJobDescriptor found!");
         }
-        return (ScheduledPipelineJobDescriptor) result;
+        return ((TransformDescriptor) result).getDescriptorFromCache();
     }
 }

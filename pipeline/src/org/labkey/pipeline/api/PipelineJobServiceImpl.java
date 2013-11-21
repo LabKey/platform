@@ -452,6 +452,26 @@ public class PipelineJobServiceImpl extends PipelineJobService
         return _defaultAutoRetry;
     }
 
+    @Override
+    public void removeTaskPipeline(TaskId pipelineId)
+    {
+        TASK_PIPELINE_CACHE.remove(pipelineId.toString());
+        synchronized (_taskPipelineStore)
+        {
+            _taskPipelineStore.remove(pipelineId);
+        }
+    }
+
+    @Override
+    public void removeTaskFactory(TaskId taskId)
+    {
+        TASK_FACTORY_CACHE.remove(taskId.toString());
+        synchronized (_taskFactoryStore)
+        {
+            _taskFactoryStore.remove(taskId);
+        }
+    }
+
     public void setDefaultAutoRetry(int defaultAutoRetry)
     {
         _defaultAutoRetry = defaultAutoRetry;

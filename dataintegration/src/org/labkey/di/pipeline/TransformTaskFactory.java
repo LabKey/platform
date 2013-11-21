@@ -18,6 +18,7 @@ package org.labkey.di.pipeline;
 import org.labkey.api.pipeline.AbstractTaskFactory;
 import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.util.FileType;
 
 import java.util.Arrays;
@@ -43,6 +44,11 @@ public class TransformTaskFactory extends AbstractTaskFactory<AbstractTaskFactor
     public TransformTaskFactory(Class namespaceClass, String id)
     {
         super(namespaceClass, id);
+    }
+
+    public TransformTaskFactory(TaskId id)
+    {
+        super(id);
     }
 
     public PipelineJob.Task createTask(PipelineJob pjob)

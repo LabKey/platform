@@ -20,6 +20,7 @@ import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformTask;
 import org.labkey.di.pipeline.TransformTaskFactory;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -32,13 +33,13 @@ public class RemoteQueryTransformStepProvider implements StepProvider
     @Override
     public String getName()
     {
-        return "RemoteQueryTransformStep";
+        return "Remote";
     }
 
     @Override
     public List<String> getLegacyNames()
     {
-        return Collections.emptyList();
+        return Collections.unmodifiableList(Arrays.asList("RemoteQueryTransformStep"));
     }
 
     @Override
