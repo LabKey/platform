@@ -3594,7 +3594,7 @@ public class AdminController extends SpringActionController
                     if (null!=sOut)
                     {
                         contentBuilder.append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;ERROR: Inconsistency in Schema ");
-                        contentBuilder.append(schema.getName());
+                        contentBuilder.append(schema.getDisplayName());
                         contentBuilder.append("<br/>");
                         contentBuilder.append(sOut);
                     }
