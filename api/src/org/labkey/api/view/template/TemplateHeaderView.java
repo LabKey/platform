@@ -96,37 +96,6 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
                 _warningMessages.add(bean.upgradeMessage);
             }
 
-    /*
-            Comment out because server no longer starts with PostgreSQL version < 8.3
-
-            //FIX: 7502
-            //show admins warning for postgres versions < 8.3 that we no longer support this
-            if (null != user && user.isAdministrator() && "PostgreSQL".equalsIgnoreCase(coreScope.getDatabaseProductName()))
-            {
-                VersionNumber dbVersion = new VersionNumber(coreScope.getDatabaseProductVersion());
-                if (dbVersion.getMajor() <= 8 && dbVersion.getMinor() < 3)
-                {
-                    HelpTopic topic = new HelpTopic("postgresUpgrade");
-                    _warningMessages.add("Support for PostgreSQL Version 8.2 and earlier has been deprecated. Please <a href=\""
-                            + topic.getHelpTopicLink() + "\">upgrade to version 8.3 or later</a>.");
-                }
-            }
-    */
-
-    /*
-            //FIX: 8853
-            //show admins deprecation warning for sql server 2000
-            if (null != user && user.isAdministrator() && "Microsoft SQL Server".equalsIgnoreCase(coreScope.getDatabaseProductName()))
-            {
-                VersionNumber dbVersion = new VersionNumber(coreScope.getDatabaseProductVersion());
-                if (dbVersion.getMajor() < 9)
-                {
-                    _warningMessages.add("Support for Microsoft SQL Server 2000 has been deprecated. Please upgrade to version 2005 or later.");
-                }
-            }
-
-    */
-
 /*
             We no longer support Java 6
 
