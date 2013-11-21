@@ -20,6 +20,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.mbean.CacheMXBean;
 import org.labkey.api.util.Filter;
+import org.labkey.api.util.ShuttingDownException;
+import org.labkey.api.view.ViewServlet;
 
 import javax.management.DynamicMBean;
 import javax.management.StandardMBean;
@@ -43,6 +45,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     private final StackTraceElement[] _stackTrace;
     private final V _nullMarker = (V)NULL_MARKER;
 
+
     CacheWrapper(@NotNull SimpleCache<K, V> cache, @NotNull String debugName, @Nullable Stats stats)
     {
         _cache = cache;
@@ -53,25 +56,44 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         _stackTrace = Thread.currentThread().getStackTrace();
     }
 
+
     @Override
     public void put(K key, V value)
     {
-        if (null == value)
-            value = _nullMarker;
+        try
+        {
+            if (null == value)
+                value = _nullMarker;
 
-        _cache.put(key, value);
-        trackPut(value);
+            _cache.put(key, value);
+            trackPut(value);
+        }
+        catch (IllegalStateException ise)
+        {
+            ViewServlet.checkShuttingDown();
+            throw ise;
+        }
     }
+
 
     @Override
     public void put(K key, V value, long timeToLive)
     {
-        if (null == value)
-            value = _nullMarker;
+        try
+        {
+            if (null == value)
+                value = _nullMarker;
 
-        _cache.put(key, value, timeToLive);
-        trackPut(value);
+            _cache.put(key, value, timeToLive);
+            trackPut(value);
+        }
+        catch (IllegalStateException ise)
+        {
+            ViewServlet.checkShuttingDown();
+            throw ise;
+        }
     }
+
 
     @Override
     public V get(K key)
@@ -79,36 +101,57 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         return get(key, null, null);
     }
 
+
     @Override
     public V get(K key, @Nullable Object arg, @Nullable CacheLoader<K, V> loader)
     {
-        V v = trackGet(_cache.get(key));
-
-        if (null != v)
+        try
         {
-            v = (v == _nullMarker ? null : v);
-        }
-        else if (null != loader)
-        {
-            v = loader.load(key, arg);
-            put(key, v);
-        }
+            V v = trackGet(_cache.get(key));
 
-        return v;
+            if (null != v)
+            {
+                v = (v == _nullMarker ? null : v);
+            }
+            else if (null != loader)
+            {
+                v = loader.load(key, arg);
+                put(key, v);
+            }
+
+            return v;
+        }
+        catch (IllegalStateException ise)
+        {
+            ViewServlet.checkShuttingDown();
+            throw ise;
+        }
     }
+
 
     @Override
     public void remove(K key)
     {
-        _cache.remove(key);
-        trackRemove();
+        try
+        {
+            _cache.remove(key);
+            trackRemove();
+        }
+        catch (IllegalStateException ise)
+        {
+            if (ViewServlet.isShuttingDown())
+                return; // ignore
+            throw ise;
+        }
     }
+
 
     @Override
     public int removeUsingFilter(Filter<K> kFilter)
     {
         return trackRemoves(_cache.removeUsingFilter(kFilter));
     }
+
 
     @Override
     public void clear()
@@ -117,11 +160,13 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         trackClear();
     }
 
+
     @Override
     public int getLimit()
     {
         return _cache.getLimit();
     }
+
 
     @Override
     public int size()
@@ -129,17 +174,20 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         return _cache.size();
     }
 
+
     @Override
     public long getDefaultExpires()
     {
         return _cache.getDefaultExpires();
     }
 
+
     @Override
     public void close()
     {
         _cache.close();
     }
+
 
     @Override
     public String getDebugName()

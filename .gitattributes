@@ -1455,6 +1455,7 @@ api/src/org/labkey/api/util/ScalabilityProblem.java -text
 api/src/org/labkey/api/util/SessionAppender.java -text
 api/src/org/labkey/api/util/SessionHelper.java -text
 api/src/org/labkey/api/util/ShutdownListener.java -text
+api/src/org/labkey/api/util/ShuttingDownException.java -text
 api/src/org/labkey/api/util/SimpleRateAccumulator.java -text
 api/src/org/labkey/api/util/SkipMothershipLogging.java -text
 api/src/org/labkey/api/util/StartupListener.java -text

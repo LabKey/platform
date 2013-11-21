@@ -34,6 +34,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.SessionAppender;
+import org.labkey.api.util.ShuttingDownException;
 import org.labkey.api.util.URLHelper;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -82,6 +83,7 @@ public class ViewServlet extends HttpServlet
     private static String _serverHeader = null;
 
     private static final AtomicInteger _requestCount = new AtomicInteger();
+    private static final AtomicInteger _pendingRequestCount = new AtomicInteger();
     private static final ThreadLocal<Boolean> IS_REQUEST_THREAD = new ThreadLocal<>();
 
     private static Map<Class<? extends Controller>, String> _controllerClassToName = null;
@@ -112,7 +114,21 @@ public class ViewServlet extends HttpServlet
             response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "The server is shutting down");
             return;
         }
+        try
+        {
+            _pendingRequestCount.incrementAndGet();
+            _service(request, response);
+        }
+        finally
+        {
+            _pendingRequestCount.decrementAndGet();
+        }
+    }
 
+
+    protected void _service(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException
+    {
         long startTime = System.currentTimeMillis();
 
         request.setAttribute(REQUEST_STARTTIME, startTime);
@@ -274,14 +290,27 @@ public class ViewServlet extends HttpServlet
     }
 
 
-    public static void setShuttingDown()
+    public static void setShuttingDown(long msWaitForRequests)
     {
         _shuttingDown = true;
+        while (msWaitForRequests > 0)
+        {
+            if (0==_pendingRequestCount.get())
+                break;
+            try {Thread.sleep(100);}catch(InterruptedException x){}
+            msWaitForRequests -= 100;
+        }
     }
 
     public static boolean isShuttingDown()
     {
         return _shuttingDown;
+    }
+
+    public static void checkShuttingDown()
+    {
+        if (_shuttingDown)
+            throw new ShuttingDownException();
     }
 
     public static Controller getController(Module module, Class controllerClass) throws IllegalAccessException, InstantiationException
