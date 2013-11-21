@@ -34,6 +34,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.data.xml.queryCustomView.OperatorType;
 
 import java.sql.Types;
@@ -612,17 +613,56 @@ public enum CompareType
         return new CompareClause(fieldKey, this, value);
     }
 
-    public static class CompareClause extends FilterClause
+    public abstract static class AbstractCompareClause extends FilterClause
     {
         @NotNull
         final FieldKey _fieldKey;
-        
-        CompareType _comparison;
 
+        public AbstractCompareClause(@NotNull FieldKey fieldKey)
+        {
+            _fieldKey = fieldKey;
+        }
+
+        @NotNull
+        public FieldKey getFieldKey()
+        {
+            return _fieldKey;
+        }
+
+        public List<FieldKey> getFieldKeys()
+        {
+            return Arrays.asList(getFieldKey());
+        }
+
+        @Deprecated /** Use getFieldKeys() instead. */
+        public List<String> getColumnNames()
+        {
+            return Arrays.asList(getFieldKey().toString());
+        }
+
+        public abstract CompareType getCompareType();
+
+        /** @return null if there is no value for this filter (such as an IS BLANK clause), or the non-URL-encoded value
+         *  that should be added to the URL that's built up
+         */
+        @Nullable
+        protected abstract String toURLParamValue();
+
+        @Override
+        public Map.Entry<String, String> toURLParam(String dataRegionPrefix)
+        {
+            String key = dataRegionPrefix + _fieldKey.toString() + SimpleFilter.SEPARATOR_CHAR + getCompareType().getPreferredUrlKey();
+            return new Pair<>(key, toURLParamValue());
+        }
+    }
+
+    public static class CompareClause extends AbstractCompareClause
+    {
+        CompareType _comparison;
 
         public CompareClause(@NotNull FieldKey fieldKey, CompareType comparison, Object value)
         {
-            _fieldKey = fieldKey;
+            super(fieldKey);
 
             _comparison = comparison;
 
@@ -702,17 +742,21 @@ public enum CompareType
             sb.append(formatter.format(_fieldKey));
         }
 
-        @Deprecated // Use getFieldKeys() instead.
-        public List<String> getColumnNames()
+        @Override
+        public CompareType getCompareType()
         {
-            return Arrays.asList(_fieldKey.toString());
+            return _comparison;
         }
 
-        public List<FieldKey> getFieldKeys()
+        @Override
+        protected String toURLParamValue()
         {
-            return Arrays.asList(_fieldKey);
+            if (getParamVals() != null && getParamVals()[0] != null)
+            {
+                return getParamVals()[0].toString();
+            }
+            return null;
         }
-
 
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {

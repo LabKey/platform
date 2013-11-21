@@ -16,12 +16,12 @@
 
 package org.labkey.api.data;
 
-import org.junit.Assert;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.data.dialect.MockSqlDialect;
@@ -29,6 +29,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
@@ -124,6 +125,13 @@ public class SimpleFilter implements Filter
             }
         }
 
+        /** @return non-URL encoded name/value pair. Value may be null if there's none to be used (for IS BLANK or similar clauses).
+         * The whole return value may be null if this clause can't be represented on the URL */
+        @Nullable
+        public  Map.Entry<String, String> toURLParam(String dataRegionPrefix)
+        {
+            return null;
+        }
 
         protected void appendSqlText(StringBuilder sb, ColumnNameFormatter formatter)
         {
@@ -490,13 +498,13 @@ public class SimpleFilter implements Filter
         }
     }
 
-    public static abstract class MultiValuedFilterClause extends FilterClause
+    public static abstract class MultiValuedFilterClause extends CompareType.AbstractCompareClause
     {
-        @NotNull protected FieldKey _fieldKey;
         public static final int MAX_FILTER_VALUES_TO_DISPLAY = 10;
 
-        public MultiValuedFilterClause(FieldKey fieldKey, Collection<?> params)
+        public MultiValuedFilterClause(@NotNull FieldKey fieldKey, Collection<?> params)
         {
+            super(fieldKey);
             params = new ArrayList<Object>(params); // possibly immutable
             if (params.contains(null)) //params.size() == 0 ||
             {
@@ -508,16 +516,31 @@ public class SimpleFilter implements Filter
                 _includeNull = true;
                 params.remove("");
             }
-            _fieldKey = fieldKey;
+
             _paramVals = params.toArray();
         }
 
-        public FieldKey getFieldKey()
+        @Override
+        protected String toURLParamValue()
         {
-            return _fieldKey;
+            if (getParamVals() != null && getParamVals().length > 0)
+            {
+                StringBuilder sb = new StringBuilder();
+                String separator = "";
+                for (Object value : getParamVals())
+                {
+                    sb.append(separator);
+                    separator = ";";
+                    sb.append(value == null ? "" : value.toString());
+                }
+                if (_includeNull)
+                {
+                    sb.append(separator);
+                }
+                return sb.toString();
+            }
+            return null;
         }
-
-        public abstract CompareType getCompareType();
     }
 
     public static class InClause extends MultiValuedFilterClause
@@ -556,17 +579,6 @@ public class SimpleFilter implements Filter
 
             _needsTypeConversion = urlClause;
             _negated = negated;
-        }
-
-        @Deprecated // Use getFieldKeys() instead.
-        public List<String> getColumnNames()
-        {
-            return Arrays.asList(getFieldKey().toString());
-        }
-
-        public List<FieldKey> getFieldKeys()
-        {
-            return Arrays.asList(getFieldKey());
         }
 
         @Override
@@ -771,29 +783,18 @@ public class SimpleFilter implements Filter
             this(fieldKey, params, urlClause, false);
         }
 
-        public List<String> getColumnNames()
-        {
-            return Arrays.asList(getFieldKey().toString());
-        }
-
-        public List<FieldKey> getFieldKeys()
-        {
-            return Arrays.asList(getFieldKey());
-        }
-
         public ContainsOneOfClause(FieldKey fieldKey, Collection params, boolean urlClause, boolean negated)
         {
             super(fieldKey, params);
 
             _needsTypeConversion = urlClause;
-            _fieldKey = fieldKey;
             _negated = negated;
         }
 
         @Override
         public CompareType getCompareType()
         {
-            return _negated ? CompareType.CONTAINS_ONE_OF : CompareType.CONTAINS_NONE_OF;
+            return _negated ? CompareType.CONTAINS_NONE_OF : CompareType.CONTAINS_ONE_OF;
         }
 
         @Override
@@ -1138,16 +1139,16 @@ public class SimpleFilter implements Filter
         String and = "";
         for (FilterClause fc : _clauses)
         {
-            if (fc instanceof CompareClause)
+            Map.Entry<String, String> entry = fc.toURLParam(prefix);
+            if (entry != null)
             {
-                CompareClause cc = (CompareClause) fc;
                 ret.append(and);
                 and = "&";
-                ret.append(PageFlowUtil.encode(prefix + cc._fieldKey.toString() + SEPARATOR_CHAR + cc._comparison.getPreferredUrlKey()));
-                if (cc.getParamVals() != null && cc.getParamVals()[0] != null)
+                ret.append(PageFlowUtil.encode(entry.getKey()));
+                if (entry.getValue() != null)
                 {
                     ret.append("=");
-                    ret.append(PageFlowUtil.encode(cc.getParamVals()[0].toString()));
+                    ret.append(PageFlowUtil.encode(entry.getValue()));
                 }
             }
         }
@@ -1164,34 +1165,11 @@ public class SimpleFilter implements Filter
         String prefix = regionName == null ? "" : regionName + ".";
         for (FilterClause fc : _clauses)
         {
-            String urlType = null;
-            String value = null;
-            if (fc instanceof CompareClause)
-            {
-                CompareClause cc = (CompareClause) fc;
-                urlType = cc._comparison.getPreferredUrlKey();
-                value = cc.getParamVals() != null && cc.getParamVals()[0] != null ?
-                        cc.getParamVals()[0].toString() : null;
-            }
-            else if (fc instanceof MultiValuedFilterClause)
-            {
-                MultiValuedFilterClause clause = (MultiValuedFilterClause)fc;
-                urlType = clause.getCompareType().getPreferredUrlKey();
-                StringBuilder values = new StringBuilder();
-                String separator = "";
-                for (Object inValue : clause.getParamVals())
-                {
-                    values.append(separator);
-                    separator = ";";
-                    values.append(inValue == null ? "" : inValue.toString());
-                }
-                value = values.toString();
-            }
+            Map.Entry<String, String> entry = fc.toURLParam(prefix);
 
-            if (urlType != null)
+            if (entry != null)
             {
-                String key = prefix + fc.getColumnNames().get(0) + SEPARATOR_CHAR + urlType;
-                url.addParameter(key, value);
+                url.addParameter(entry.getKey(), entry.getValue());
             }
         }
     }
@@ -1510,6 +1488,19 @@ public class SimpleFilter implements Filter
             //Or
             //StartsWith
         }
+
+        @Test
+        public void testURLParams() throws URISyntaxException
+        {
+            SimpleFilter filter = new SimpleFilter();
+            filter.addClause(new CompareClause(FieldKey.fromParts("Field1"), CompareType.EQUAL, 1));
+            filter.addClause(new ContainsOneOfClause(FieldKey.fromParts("Field2"), Arrays.asList("x", "y"), true));
+
+            assertEquals("query.Field1%7Eeq=1&query.Field2%7Econtainsoneof=x%3By", filter.toQueryString("query"));
+            URLHelper url = new URLHelper("http://labkey.com");
+            filter.applyToURL(url, "query");
+            assertEquals("query.Field1%7Eeq=1&query.Field2%7Econtainsoneof=x%3By", url.getQueryString());
+        }
     }
 
 
@@ -1532,6 +1523,24 @@ public class SimpleFilter implements Filter
             // Include null parameter
             test("((Foo IN ('Blip', 'Bar')) OR Foo IS NULL)", "Foo IS ONE OF (Blip, Bar, BLANK)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", "")), mockDialect);
             test("((NOT Foo IN ('Blip', 'Bar')) AND Foo IS NOT NULL)", "Foo IS NOT ANY OF (Blip, Bar, BLANK)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", ""), true, true), mockDialect);
+        }
+
+        @Test
+        public void testInClauseQueryString()
+        {
+            FieldKey fieldKey = FieldKey.fromParts("Foo");
+
+            // Empty parameter list
+            assertEquals(new Pair<>("query.Foo~in", null), new InClause(fieldKey, Collections.emptySet()).toURLParam("query."));
+            assertEquals(new Pair<>("query.Foo~notin", null), new InClause(fieldKey, Collections.emptySet(), true, true).toURLParam("query."));
+
+            // Non-null parameters only
+            assertEquals(new Pair<>("query.Foo~in", "1;2;3"), new InClause(fieldKey, Arrays.asList(1, 2, 3)).toURLParam("query."));
+            assertEquals(new Pair<>("query.Foo~notin", "1;2;3"), new InClause(fieldKey, Arrays.asList(1, 2, 3), true, true).toURLParam("query."));
+
+            // Include null parameter
+            assertEquals(new Pair<>("query.Foo~in", "Bar;Blip;"), new InClause(fieldKey, Arrays.asList("Bar", "Blip", "")).toURLParam("query."));
+            assertEquals(new Pair<>("query.Foo~notin", "Bar;Blip;"), new InClause(fieldKey, Arrays.asList("Bar", "Blip", ""), true, true).toURLParam("query."));
         }
 
         @Test
