@@ -48,13 +48,6 @@
     List<EmailTemplate> emailTemplates = EmailTemplateService.get().getEditableEmailTemplates(c);
     String errorHTML = formatMissedErrorsStr("form");
 %>
-<!-- 11769: Layout of email customization page -->
-<style type="text/css">
-    .labkey-form-label
-    {
-        width: 85px;
-    }
-</style>
 <%=text(errorHTML)%>
 
 <form action="<%=h(buildURL(AdminController.CustomizeEmailAction.class))%>" method="post">
@@ -64,7 +57,7 @@
     <table width="85%">
         <tr class="labkey-wp-header"><th colspan=2>Custom Emails</th></tr>
         <tr><td></td></tr>
-        <tr><td class="labkey-form-label">Email Type:</td>
+        <tr><td class="labkey-form-label" style="width: 85px">Email Type:</td>
             <td><select id="templateClass" name="templateClass" onchange="changeEmailTemplate();">
 <%
         for (EmailTemplate et : emailTemplates)
@@ -143,6 +136,7 @@
         {
             out.write(innerSep);
             out.write("\t\t\"paramName\":" + PageFlowUtil.jsString(param.getName()) + ",\n");
+            out.write("\t\t\"valueType\":" + PageFlowUtil.jsString(param.getValueType().getSimpleName()) + ",\n");
             out.write("\t\t\"paramDesc\":" + PageFlowUtil.jsString(param.getDescription()) + ",\n");
             Object value=param.getValue(c);
             out.write("\t\t\"paramValue\":" + PageFlowUtil.jsString(value == null ? null : value.toString()) + "\n");
@@ -227,9 +221,13 @@
 
         cell = row.insertCell(1);
         cell.className = "labkey-form-label";
-        cell.innerHTML = "<strong>Description</strong>";
+        cell.innerHTML = '<strong>Type</strong>';
 
         cell = row.insertCell(2);
+        cell.className = "labkey-form-label";
+        cell.innerHTML = "<strong>Description</strong>";
+
+        cell = row.insertCell(3);
         cell.className = "labkey-form-label";
         cell.innerHTML = "<strong>Current Value</strong>";
 
@@ -243,9 +241,12 @@
                 cell.innerHTML = record.replacements[i].paramName;
 
                 cell = row.insertCell(1);
-                cell.innerHTML = record.replacements[i].paramDesc;
+                cell.innerHTML = record.replacements[i].valueType;
 
                 cell = row.insertCell(2);
+                cell.innerHTML = record.replacements[i].paramDesc;
+
+                cell = row.insertCell(3);
                 var paramValue = record.replacements[i].paramValue;
                 cell.innerHTML = paramValue != '' ? paramValue : "<em>not available in designer</em>";
             }

@@ -20,13 +20,13 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -62,31 +62,31 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
         setPriority(10);
         setEditableScopes(Scope.SiteOrFolder);
 
-        _replacements.add(new ReplacementParam("issueId", "Unique id for the issue")
+        _replacements.add(new ReplacementParam<Integer>("issueId", Integer.class, "Unique id for the issue")
         {
-            public String getValue(Container c) {return _newIssue == null ? null : Integer.toString(_newIssue.getIssueId());}
+            public Integer getValue(Container c) {return _newIssue == null ? null : _newIssue.getIssueId();}
         });
-        _replacements.add(new ReplacementParam("detailsURL", "URL to get the details view for the issue")
+        _replacements.add(new ReplacementParam<String>("detailsURL", String.class, "URL to get the details view for the issue")
         {
             public String getValue(Container c) {return _detailsURL == null ? null : _detailsURL.getURIString();}
         });
-        _replacements.add(new ReplacementParam("action", "Description of the type of action, like 'opened' or 'resolved'")
+        _replacements.add(new ReplacementParam<String>("action", String.class, "Description of the type of action, like 'opened' or 'resolved'")
         {
             public String getValue(Container c) {return _change;}
         });
-        _replacements.add(new ReplacementParam("itemName", "Potentially customized singular item name, typically 'Issue'")
+        _replacements.add(new ReplacementParam<String>("itemName", String.class, "Potentially customized singular item name, typically 'Issue'")
         {
             public String getValue(Container c) {return IssueManager.getEntryTypeNames(c).singularName.toString();}
         });
-        _replacements.add(new ReplacementParam("itemNameLowerCase", "Potentially customized singular item name in lower case, typically 'issue'")
+        _replacements.add(new ReplacementParam<String>("itemNameLowerCase", String.class, "Potentially customized singular item name in lower case, typically 'issue'")
         {
             public String getValue(Container c) {return IssueManager.getEntryTypeNames(c).singularName.toString().toLowerCase();}
         });
-        _replacements.add(new ReplacementParam("itemNamePlural", "Potentially customized plural item name, typically 'Issues'")
+        _replacements.add(new ReplacementParam<String>("itemNamePlural", String.class, "Potentially customized plural item name, typically 'Issues'")
         {
             public String getValue(Container c) {return IssueManager.getEntryTypeNames(c).pluralName.toString();}
         });
-        _replacements.add(new ReplacementParam("itemNamePluralLowerCase", "Potentially customized plural item name in lower case, typically 'issues'")
+        _replacements.add(new ReplacementParam<String>("itemNamePluralLowerCase", String.class, "Potentially customized plural item name in lower case, typically 'issues'")
         {
             public String getValue(Container c) {return IssueManager.getEntryTypeNames(c).pluralName.toString().toLowerCase();}
         });
@@ -97,14 +97,14 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
                 return _newIssue.getModifiedBy();
             }
         });
-        _replacements.add(new ReplacementParam("comment", "The comment that was just added")
+        _replacements.add(new ReplacementParam<String>("comment", String.class, "The comment that was just added")
         {
             public String getValue(Container c)
             {
                 return _comment;
             }
         });
-        _replacements.add(new ReplacementParam("attachments", "A List of attachments, if applicable")
+        _replacements.add(new ReplacementParam<String>("attachments", String.class, "A List of attachments, if applicable")
         {
             public String getValue(Container c)
             {
@@ -112,7 +112,7 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
                 return (((_attachments == null) || (_attachments.length() == 0)) ? null : "\nAttachments: " + _attachments);
             }
         });
-        _replacements.add(new ReplacementParam("recipients", "All of the recipients of the email notification")
+        _replacements.add(new ReplacementParam<String>("recipients", String.class, "All of the recipients of the email notification")
         {
             public String getValue(Container c)
             {
@@ -147,7 +147,7 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
                 return _newIssue.getArea();
             }
         });
-        _replacements.add(new ReplacementParam("priority", "The current priority of the issue")
+        _replacements.add(new ReplacementParam<String>("priority", String.class, "The current priority of the issue")
         {
             @Override
             public String getValue(Container c)
@@ -173,18 +173,18 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
                 return _newIssue.getCreatedBy();
             }
         });
-        _replacements.add(new ReplacementParam("opened", "The date that the issue was opened")
+        _replacements.add(new ReplacementParam<Date>("opened", Date.class, "The date that the issue was opened")
         {
-            public String getValue(Container c)
+            public Date getValue(Container c)
             {
-                return _newIssue == null ? null : DateUtil.formatDate(_newIssue.getCreated());
+                return _newIssue == null ? null : _newIssue.getCreated();
             }
         });
-        _replacements.add(new ReplacementParam("resolved", "The date that the issue was last resolved")
+        _replacements.add(new ReplacementParam<Date>("resolved", Date.class, "The date that the issue was last resolved")
         {
-            public String getValue(Container c)
+            public Date getValue(Container c)
             {
-                return _newIssue == null || _newIssue.getResolved() == null ? null : DateUtil.formatDate(_newIssue.getResolved());
+                return _newIssue == null || _newIssue.getResolved() == null ? null : _newIssue.getResolved();
             }
         });
         _replacements.add(new UserIdReplacementParam("resolvedBy", "The user who last resolved this issue")
@@ -201,11 +201,11 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
                 return _newIssue.getResolution();
             }
         });
-        _replacements.add(new ReplacementParam("closed", "The date that the issue was last closed")
+        _replacements.add(new ReplacementParam<Date>("closed", Date.class, "The date that the issue was last closed")
         {
-            public String getValue(Container c)
+            public Date getValue(Container c)
             {
-                return _newIssue == null || _newIssue.getClosed() == null ? null : DateUtil.formatDate(_newIssue.getClosed());
+                return _newIssue == null || _newIssue.getClosed() == null ? null : _newIssue.getClosed();
             }
         });
         _replacements.add(new UserIdReplacementParam("closedBy", "The user who last closed this issue")
@@ -223,18 +223,18 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
                 return StringUtils.join(names, ";");
             }
         });
-        _replacements.add(new ReplacementParam("int1", "The first admin-configurable integer field this issue")
+        _replacements.add(new ReplacementParam<Integer>("int1", Integer.class, "The first admin-configurable integer field this issue")
         {
-            public String getValue(Container c)
+            public Integer getValue(Container c)
             {
-                return _newIssue == null || _newIssue.getInt1() == null ? null : _newIssue.getInt1().toString();
+                return _newIssue == null || _newIssue.getInt1() == null ? null : _newIssue.getInt1();
             }
         });
-        _replacements.add(new ReplacementParam("int2", "The second admin-configurable integer field this issue")
+        _replacements.add(new ReplacementParam<Integer>("int2", Integer.class, "The second admin-configurable integer field this issue")
         {
-            public String getValue(Container c)
+            public Integer getValue(Container c)
             {
-                return _newIssue == null || _newIssue.getInt2() == null ? null : _newIssue.getInt2().toString();
+                return _newIssue == null || _newIssue.getInt2() == null ? null : _newIssue.getInt2();
             }
         });
         _replacements.add(new StringReplacementParam("string1", "The first admin-configurable string field this issue")
@@ -272,7 +272,7 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
                 return _newIssue.getString5();
             }
         });
-        _replacements.add(new ReplacementParam("modifiedFields", "Summary of all changed fields with before and after values")
+        _replacements.add(new ReplacementParam<String>("modifiedFields", String.class, "Summary of all changed fields with before and after values")
         {
             public String getValue(Container c)
             {
@@ -285,11 +285,11 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
         _replacements.addAll(super.getValidReplacements());
     }
     
-    private abstract class StringReplacementParam extends ReplacementParam
+    private abstract class StringReplacementParam extends ReplacementParam<String>
     {
         public StringReplacementParam(String name, String description)
         {
-            super(name, description);
+            super(name, String.class, description);
         }
 
         @Override
@@ -306,11 +306,11 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
         protected abstract String getStringValue(Container c);
     }
 
-    private abstract class UserIdReplacementParam extends ReplacementParam
+    private abstract class UserIdReplacementParam extends ReplacementParam<String>
     {
         public UserIdReplacementParam(String name, String description)
         {
-            super(name, description);
+            super(name, String.class, description);
         }
 
         @Override

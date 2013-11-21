@@ -68,7 +68,7 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
         super(NAME, DEFAULT_SUBJECT, loadBody(), "Sent to the users when a specimen requests has been edited or inserted.", ContentType.HTML);
         setEditableScopes(EmailTemplate.Scope.SiteOrFolder);
 
-        _replacements.add(new EmailTemplate.ReplacementParam("studyName", "The name of this folder's study")
+        _replacements.add(new EmailTemplate.ReplacementParam<String>("studyName", String.class, "The name of this folder's study")
         {
             public String getValue(Container c)
             {
@@ -76,58 +76,58 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
                 return study == null ? "<No study>" : study.getLabel();
             }
         });
-        _replacements.add(new EmailTemplate.ReplacementParam("subjectSuffix", "Email subject suffix, configured in specimen request notification settings")
+        _replacements.add(new EmailTemplate.ReplacementParam<String>("subjectSuffix", String.class, "Email subject suffix, configured in specimen request notification settings")
         {
             public String getValue(Container c)
             {
                 return _subjectSuffix;
             }
         });
-        _replacements.add(new NotificationReplacement("specimenRequestNumber", "Unique, auto-incrementing number for this request")
+        _replacements.add(new NotificationReplacement<Integer>("specimenRequestNumber", Integer.class, "Unique, auto-incrementing number for this request")
         {
-            public String getStringValue(Container c)
+            public Integer getNotificationValue(Container c)
             {
-                return Integer.toString(_notification.getRequestId());
+                return _notification.getRequestId();
             }
         });
-        _replacements.add(new NotificationReplacement("destinationLocation", "The location to which the specimen is to be sent")
+        _replacements.add(new NotificationReplacement<String>("destinationLocation", String.class, "The location to which the specimen is to be sent")
         {
-            public String getStringValue(Container c)
+            public String getNotificationValue(Container c)
             {
                 return _notification.getRequestingSiteName();
             }
         });
-        _replacements.add(new NotificationReplacement("status", "The status of the request (submitted, approved, etc)")
+        _replacements.add(new NotificationReplacement<String>("status", String.class, "The status of the request (submitted, approved, etc)")
         {
-            public String getStringValue(Container c)
+            public String getNotificationValue(Container c)
             {
                 return _notification.getStatus();
             }
         });
-        _replacements.add(new NotificationReplacement("simpleStatus", "Either 'submitted' for brand new requests, or 'updated' for all other changes")
+        _replacements.add(new NotificationReplacement<String>("simpleStatus", String.class, "Either 'submitted' for brand new requests, or 'updated' for all other changes")
         {
-            public String getStringValue(Container c)
+            public String getNotificationValue(Container c)
             {
                 return "submitted".equalsIgnoreCase(_notification.getStatus()) ? "submitted" : "updated";
             }
         });
-        _replacements.add(new NotificationReplacement("modifiedBy", "The user who created or modified the request")
+        _replacements.add(new NotificationReplacement<String>("modifiedBy", String.class, "The user who created or modified the request")
         {
-            public String getStringValue(Container c)
+            public String getNotificationValue(Container c)
             {
                 return _notification.getModifyingUser();
             }
         });
-        _replacements.add(new NotificationReplacement("action", "A description of what action was performed, such as 'New Request Created'")
+        _replacements.add(new NotificationReplacement<String>("action", String.class, "A description of what action was performed, such as 'New Request Created'")
         {
-            public String getStringValue(Container c)
+            public String getNotificationValue(Container c)
             {
                 return _notification.getEventDescription();
             }
         });
-        _replacements.add(new NotificationReplacement("attachments", "A list of direct links to all the attachments associated with the request", ContentType.HTML)
+        _replacements.add(new NotificationReplacement<String>("attachments", String.class, "A list of direct links to all the attachments associated with the request", ContentType.HTML)
         {
-            public String getStringValue(Container c)
+            public String getNotificationValue(Container c)
             {
                 List<Attachment> attachments = _notification.getAttachments();
                 if (attachments.isEmpty())
@@ -147,9 +147,9 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
                 return sb.toString();
             }
         });
-        _replacements.add(new NotificationReplacement("specimenList", "A list of the specimens in the request, as configured in the Specimen Notification settings", ContentType.HTML)
+        _replacements.add(new NotificationReplacement<String>("specimenList", String.class, "A list of the specimens in the request, as configured in the Specimen Notification settings", ContentType.HTML)
         {
-            public String getStringValue(Container c)
+            public String getNotificationValue(Container c)
             {
                 if (_notification.getSpecimenList() != null)
                 {
@@ -169,20 +169,21 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
                 return null;
             }
         });
-        _replacements.add(new NotificationReplacement("requestDescription", "Typically includes assay plan, shipping information, etc")
+        _replacements.add(new NotificationReplacement<String>("requestDescription", String.class, "Typically includes assay plan, shipping information, etc")
         {
             @Override
-            protected String getStringValue(Container c)
+            protected String getNotificationValue(Container c)
             {
                 return _notification.getRequestDescription();
             }
         });
-        _replacements.add(new NotificationReplacement("comments", "Text submitter wrote in Comments text box, or '[Not provided]'")
+        _replacements.add(new NotificationReplacement<String>("comments", String.class, "Text submitter wrote in Comments text box, or '[Not provided]'")
         {
             @Override
-            protected String getStringValue(Container c)
+            protected String getNotificationValue(Container c)
             {
-                return _notification.getComments();
+                String comments = _notification.getComments();
+                return comments == null ? "[Not provided]" : comments;
             }
         });
 
@@ -193,20 +194,20 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
      * Evaluates to null if there's no associated specimen request (as there would be in the admin preview mode),
      * otherwise delegates to subclass to determine the actual value.
      */
-    private abstract class NotificationReplacement extends ReplacementParam
+    private abstract class NotificationReplacement<Type> extends ReplacementParam<Type>
     {
-        public NotificationReplacement(String name, String description)
+        public NotificationReplacement(String name, Class<Type> valueType, String description)
         {
-            super(name, description);
+            super(name, valueType, description);
         }
 
-        public NotificationReplacement(String name, String description, ContentType contentType)
+        public NotificationReplacement(String name, Class<Type> valueType, String description, ContentType contentType)
         {
-            super(name, description, contentType);
+            super(name, valueType, description, contentType);
         }
 
         @Override
-        public final String getValue(Container c)
+        public final Type getValue(Container c)
         {
             // No request available, so can't come up with an actual value
             if (_notification == null)
@@ -214,11 +215,11 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
                 return null;
             }
 
-            return getStringValue(c);
+            return getNotificationValue(c);
         }
 
         /** Get the actual value for the specimen request - only called when there is a request available */
-        protected abstract String getStringValue(Container c);
+        protected abstract Type getNotificationValue(Container c);
     }
 
     public void init(SpecimenUtils.NotificationBean notification)

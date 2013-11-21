@@ -389,7 +389,7 @@ public class PipelineManager
                 _template.setDataUrl(url.getURIString());
                 _template.setJobDescription(_statusFile.getDescription());
                 _template.setStatus(_statusFile.getStatus());
-                _template.setTimeCreated(_statusFile.getCreated().toString());
+                _template.setTimeCreated(_statusFile.getCreated());
 
                 final String body = _template.renderBody(_c);
                 m.setBodyContent(body, "text/plain");
@@ -437,8 +437,8 @@ public class PipelineManager
                 MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
 
                 _template.setStatusFiles(_statusFiles);
-                _template.setStartTime(_min.toString());
-                _template.setEndTime(_max.toString());
+                _template.setStartTime(_min);
+                _template.setEndTime(_max);
 
                 final String body = _template.renderBody(_c);
                 m.setBodyContent(body, "text/plain");
@@ -462,7 +462,7 @@ public class PipelineManager
     {
         protected String _dataUrl;
         protected String _jobDescription;
-        protected String _timeCreated;
+        protected Date _timeCreated;
         protected String _status;
         private List<ReplacementParam> _replacements = new ArrayList<>();
 
@@ -475,23 +475,23 @@ public class PipelineManager
         {
             super(name);
 
-            _replacements.add(new ReplacementParam("dataURL", "Link to the job details for this pipeline job"){
+            _replacements.add(new ReplacementParam<String>("dataURL", String.class, "Link to the job details for this pipeline job"){
                 public String getValue(Container c) {return _dataUrl;}
             });
-            _replacements.add(new ReplacementParam("jobDescription", "The job description"){
+            _replacements.add(new ReplacementParam<String>("jobDescription", String.class, "The job description"){
                 public String getValue(Container c) {return _jobDescription;}
             });
-            _replacements.add(new ReplacementParam("timeCreated", "The date and time this job was created"){
-                public String getValue(Container c) {return _timeCreated;}
+            _replacements.add(new ReplacementParam<Date>("timeCreated", Date.class, "The date and time this job was created"){
+                public Date getValue(Container c) {return _timeCreated;}
             });
-            _replacements.add(new ReplacementParam("status", "The job status"){
+            _replacements.add(new ReplacementParam<String>("status", String.class, "The job status"){
                 public String getValue(Container c) {return _status;}
             });
             _replacements.addAll(super.getValidReplacements());
         }
         public void setDataUrl(String dataUrl){_dataUrl = dataUrl;}
         public void setJobDescription(String description){_jobDescription = description;}
-        public void setTimeCreated(String timeCreated){_timeCreated = timeCreated;}
+        public void setTimeCreated(Date timeCreated){_timeCreated = timeCreated;}
         public void setStatus(String status){_status = status;}
         public List<ReplacementParam> getValidReplacements(){return _replacements;}
     }
@@ -524,8 +524,8 @@ public class PipelineManager
     {
         private List<ReplacementParam> _replacements = new ArrayList<>();
         private PipelineStatusFileImpl[] _statusFiles;
-        private String _startTime;
-        private String _endTime;
+        private Date _startTime;
+        private Date _endTime;
 
         protected static final String DEFAULT_BODY = "The following jobs have completed between the time of: ^startTime^ " +
                 "and the end time of: ^endTime^:\n\n^pipelineJobs^";
@@ -534,20 +534,20 @@ public class PipelineManager
         {
             super(name);
 
-            _replacements.add(new ReplacementParam("pipelineJobs", "The list of all pipeline jobs that have completed for this notification period"){
+            _replacements.add(new ReplacementParam<String>("pipelineJobs", String.class, "The list of all pipeline jobs that have completed for this notification period"){
                 public String getValue(Container c) {return getJobStatus();}
             });
-            _replacements.add(new ReplacementParam("startTime", "The start of the time period for job completion"){
-                public String getValue(Container c) {return _startTime;}
+            _replacements.add(new ReplacementParam<Date>("startTime", Date.class, "The start of the time period for job completion"){
+                public Date getValue(Container c) {return _startTime;}
             });
-            _replacements.add(new ReplacementParam("endTime", "The end of the time period for job completion"){
-                public String getValue(Container c) {return _endTime;}
+            _replacements.add(new ReplacementParam<Date>("endTime", Date.class, "The end of the time period for job completion"){
+                public Date getValue(Container c) {return _endTime;}
             });
             _replacements.addAll(super.getValidReplacements());
         }
         public void setStatusFiles(PipelineStatusFileImpl[] statusFiles){_statusFiles = statusFiles;}
-        public void setStartTime(String startTime){_startTime = startTime;}
-        public void setEndTime(String endTime){_endTime = endTime;}
+        public void setStartTime(Date startTime){_startTime = startTime;}
+        public void setEndTime(Date endTime){_endTime = endTime;}
         public List<ReplacementParam> getValidReplacements(){return _replacements;}
 
         private String getJobStatus()
