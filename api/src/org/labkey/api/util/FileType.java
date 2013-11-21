@@ -659,16 +659,19 @@ public class FileType implements Serializable
             assertTrue(ft.isType("test.foo"));
             assertTrue(!ft.isType("test.foo.gz"));
             assertEquals("test.foo",ft.getDefaultName("test"));
+
             // support for .gz
             FileType ftgz = new FileType(".foo",gzSupportLevel.SUPPORT_GZ);
             assertTrue(ftgz.isType("test.foo"));
             assertTrue(ftgz.isType("test.foo.gz"));
             assertEquals("test.foo",ftgz.getDefaultName("test"));
+
             // preference for .gz
             FileType ftgzgz = new FileType(".foo",gzSupportLevel.PREFER_GZ);
             assertTrue(ftgzgz.isType("test.foo"));
             assertTrue(ftgzgz.isType("test.foo.gz"));
             assertEquals("test.foo.gz",ftgzgz.getDefaultName("test"));
+
             // multiple extensions
             ArrayList<String> foobar = new ArrayList<>();
             foobar.add(".foo");
@@ -680,6 +683,7 @@ public class FileType implements Serializable
             assertTrue(ftt.isType("test.bar.gz"));
             assertTrue(ftt.isType("test.bAr.gZ")); // extensions are case insensitive
             assertEquals("test.foo",ftt.getDefaultName("test"));
+
             // antitypes - for example avoid mistaking protxml ".pep-prot.xml" for pepxml ".xml"
             assertTrue(ftt.isType("test.foo.bar"));
             ftt.addAntiFileType(new FileType(".foo.bar"));
