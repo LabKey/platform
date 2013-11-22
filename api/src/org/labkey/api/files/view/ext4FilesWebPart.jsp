@@ -31,6 +31,7 @@
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
       resources.add(ClientDependency.fromFilePath("File"));
+      resources.add(ClientDependency.fromFilePath("Ext4ClientApi"));
       return resources;
   }
 %>
@@ -64,10 +65,11 @@
     else
     {
 %>
-    <!-- Set a fixed height for this div so that the whole page doesn't relayout when the file browser renders into it -->
-    <div style="height: <%= height %>px" id="<%=h(bean.getContentId())%>"></div>
-    <script type="text/javascript">
+<!-- Set a fixed height for this div so that the whole page doesn't relayout when the file browser renders into it -->
+<div style="height: <%= height %>px" id="<%=h(bean.getContentId())%>"></div>
+<script type="text/javascript">
     Ext4.onReady(function() {
+        var autoResize = <%=bean.isAutoResize()%>;
         var fileSystem = Ext4.create('File.system.Webdav', {
             rootPath  : <%=q(bean.getRootPath())%>,
             rootOffset: <%=q(bean.getRootOffset())%>,
@@ -97,13 +99,34 @@
             adminUser : <%=getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class)%>,
             fileSystem: fileSystem,
             tbarItems: buttonActions
+            <%
+                if (bean.isShowDetails())
+                {
+            %>
+            ,listeners: {
+                afterrender: {
+                    fn: function(f) {
+                        var size = Ext4.getBody().getSize();
+                        LABKEY.ext4.Util.resizeToViewport(f, size.width, size.height, 20, null);
+                    },
+                    single: true
+                }
+            }
+            <%
+                }
+            %>
         });
 
-        var resize = function() {
-            if (fb && fb.doLayout) { fb.doLayout(); }
+        var _resize = function(w, h) {
+            if (!fb || !fb.rendered)
+                return;
+
+            LABKEY.ext4.Util.resizeToViewport(fb, w, h, 20, null);
         };
 
-        Ext4.EventManager.onWindowResize(resize);
+        if (autoResize) {
+            Ext4.EventManager.onWindowResize(_resize);
+        }
     });
 </script>
 <%

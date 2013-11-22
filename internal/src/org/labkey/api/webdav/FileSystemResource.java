@@ -286,7 +286,7 @@ public class FileSystemResource extends AbstractWebdavResource
             }
             catch (IOException x)
             {
-                throw new ConfigurationException("Couldn't create file on server", x);
+                throw new ConfigurationException("Couldn't create file on server.", x);
             }
             resetMetadata();
         }
