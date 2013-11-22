@@ -61,19 +61,28 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
         _stableColumnOrdering = stableColumnOrdering;  // We track this to warn at method call time, e.g., if getValueMap() is called when column order is indeterminate
     }
 
-    // Select specified columns from a table
+    /*
+        Select specified columns from a table. Note: many methods require a column collection that iterates in a predictable
+        order; getValueMap(), fillValueMap(), getResultSet(), getResults(), and forEach(ForEachBlock<ResultSet>) will all
+        throw IllegalStateException if they are called after (for example) a HashSet<ColumnInfo> has been passed to this
+        constuctor. Asking for a primitive typed array or collection will also throw, since we implicitly rely on column
+        order (we pick the first one).
+     */
     public TableSelector(@NotNull TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
         this(table, columns, filter, sort, isStableOrdered(columns));
     }
 
-    // Select all columns from a table, no filter or sort
+    // Select all columns from a table, with no filter or sort
     public TableSelector(TableInfo table)
     {
         this(table, Table.ALL_COLUMNS, null, null);
     }
 
-    // Select specified columns from a table, no filter or sort
+    /*
+        Select specified columns from a table, no filter or sort. Note: many methods require the columnNames set to
+        iterate in a predictable order; see comment above for more details.
+    */
     public TableSelector(TableInfo table, Set<String> columnNames)
     {
         this(table, columnNames, null, null);
@@ -85,7 +94,10 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
         this(table, Table.ALL_COLUMNS, filter, sort);
     }
 
-    // Select specified columns from a table
+    /*
+        Select specified columns from a table. Note: many methods require the columnNames set to iterate in a predictable
+        order; see comment above for more details.
+    */
     public TableSelector(TableInfo table, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort)
     {
         this(table, Table.columnInfosList(table, columnNames), filter, sort, isStableOrdered(columnNames));
@@ -109,17 +121,25 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
         return this;
     }
 
-    // Determine if the collection will iterate in a known order
+    /*
+        Try to determine if the collection will iterate in a predictable order. Currently, all of these are assumed
+        to be stable-ordered collections:
+
+        - Collections of size 0 or 1
+        - Non HashSets
+        - LinkedHashSet (which extend HashSet, so we need a separate check)
+
+    */
     private static boolean isStableOrdered(Collection<?> collection)
     {
-        return (!(collection instanceof HashSet) || collection instanceof LinkedHashSet);
+        return (collection.size() < 2 || !(collection instanceof HashSet) || collection instanceof LinkedHashSet);
     }
 
     @NotNull
     @Override
     public <K, V> Map<K, V> getValueMap()
     {
-        assert _stableColumnOrdering : "getValueMap() should not be called with a randomly ordered column list!";
+        ensureStableColumnOrder("getValueMap()");
         return super.getValueMap();
     }
 
@@ -127,8 +147,28 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     @Override
     public <K, V> Map<K, V> fillValueMap(@NotNull Map<K, V> fillMap)
     {
-        assert _stableColumnOrdering : "fillValueMap() should not be called with a randomly ordered column list!";
+        ensureStableColumnOrder("fillValueMap()");
         return super.fillValueMap(fillMap);
+    }
+
+    @Override
+    public Table.TableResultSet getResultSet(boolean cache, boolean scrollable)
+    {
+        ensureStableColumnOrder("getResultSet()");
+        return super.getResultSet(cache, scrollable);
+    }
+
+    @Override
+    protected void forEach(ForEachBlock<ResultSet> block, ResultSetFactory factory)
+    {
+        ensureStableColumnOrder("forEach(ForEachBlock<ResultSet> block)");
+        super.forEach(block, factory);
+    }
+
+    private void ensureStableColumnOrder(String methodDescription)
+    {
+        if (!_stableColumnOrdering)
+            throw new IllegalStateException(methodDescription + " should not be called with an unstable ordered column set");
     }
 
     /**
@@ -160,9 +200,9 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
 
     public Results getResults(boolean cache, boolean scrollable)
     {
-        boolean closeResultSet = cache;
+        ensureStableColumnOrder("getResults()");
         TableSqlFactory tableSqlFactory = getSqlFactory(true);
-        ExecutingResultSetFactory factory = new ExecutingResultSetFactory(tableSqlFactory, closeResultSet, scrollable, true);
+        ExecutingResultSetFactory factory = new ExecutingResultSetFactory(tableSqlFactory, cache, scrollable, true);
         ResultSet rs = getResultSet(factory, cache);
 
         return new ResultsImpl(rs, tableSqlFactory.getSelectedColumns());
