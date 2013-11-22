@@ -2298,7 +2298,6 @@ Ext4.define('File.panel.Browser', {
         }
 
         // no selected files in options
-        this.fileProps = [];
         if (!options.fileRecords || options.fileRecords.length == 0)
         {
             this.showErrorMsg('Error', 'No files selected.');
@@ -2307,7 +2306,8 @@ Ext4.define('File.panel.Browser', {
         else
         {
             Ext4.each(options.fileRecords, function(record){
-                this.fileProps[record.data.id] = record.data;
+                if (!this.fileProps[record.data.id])
+                    this.fileProps[record.data.id] = record.data;
             }, this);
         }
 
