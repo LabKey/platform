@@ -31,6 +31,16 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
     {
         SqlSelector selector = new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT RowId, Body FROM comm.Announcements");
         test(selector, TestClass.class);
+
+        try
+        {
+            new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT RowId FROM comm.Announcements").getValueMap();
+            fail("Expected getValueMap() call with a single column to fail");
+        }
+        catch (IllegalStateException e)
+        {
+            assertTrue(e.getMessage().startsWith("Must select at least two columns"));
+        }
     }
 
     @Override
