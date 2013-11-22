@@ -58,18 +58,6 @@ Ext4.define('File.panel.ToolbarPanel', {
 
     initComponent : function() {
 
-        var topText = {
-            xtype : 'label',
-            html: '<h2>Configure Grid columns and Toolbar</h2><p>Toolbar buttons are in display order, from top to bottom. ' +
-                    'You can adjust their position by clicking and dragging them, and can set their visibility by toggling '+
-                    'the checkboxes in the appropriate fields. '+
-                    '</p><br><p>Grid columns are in display order from top to bottom, but hidden columns do not appear in the grid. ' +
-                    'The columns can be reorganized by clicking and dragging their respective rows, and can be hidden by checking ' +
-                    'the appropriate box.  You may also set whether or not the column is sortable.</p> ' +
-                    '</br><p>Either table can be expanded or collapsed by pressing the button at the right of title bar.</p>',
-            padding : '5 5 10 5'
-        };
-
         if (!Ext4.ModelManager.isRegistered('columnsModel')) {
             Ext4.define('columnsModel', {
                 extend : 'Ext.data.Model',
@@ -141,46 +129,45 @@ Ext4.define('File.panel.ToolbarPanel', {
         });
 
         var columnData = [];
-        var baseColumnData = ['File Icon', 'Name', 'Last Modified', 'Size', 'Created By', 'Description',
+        var baseColumnNames = ['Row Checker', 'File Icon', 'Name', 'Last Modified', 'Size', 'Created By', 'Description',
                 'Usages', 'Download Link', 'File Extension'];
-        var inUse = {};
-        if(this.useCustomProps){
-            for(var i = 0; i < this.fileProperties.length; i++){
+        if (this.useCustomProps)
+        {
+            for (var i = 0; i < this.fileProperties.length; i++)
+            {
                 if (this.fileProperties[i].label)
-                {
-                    baseColumnData.push(this.fileProperties[i].label);
-                }
-                else baseColumnData.push(this.fileProperties[i].name);
+                    baseColumnNames.push(this.fileProperties[i].label);
+                else
+                    baseColumnNames.push(this.fileProperties[i].name);
             }
         }
-        var reverseBaseColumnData = [];
-        for(i=0; i < baseColumnData.length; i++){
-            reverseBaseColumnData[baseColumnData[i]] = i+1;
-        }
-        for(i=1; i < this.gridConfigs.columns.length; i++) {
-            if(this.gridConfigs.columns[i].id == 0){
+
+        for (var i = 0; i < this.gridConfigs.columns.length; i++)
+        {
+            if (this.gridConfigs.columns[i].id != i)
+                this.gridConfigs.columns[i].id = i;
+
+            if (this.gridConfigs.columns[i].id == 'checker' || this.gridConfigs.columns[i].id == 0)
                 continue;
-            }
-            var text = baseColumnData[this.gridConfigs.columns[i].id-1];
+
             columnData.push({
-                id   : reverseBaseColumnData[text],
-                text : text,
+                id   : this.gridConfigs.columns[i].id,
+                text : baseColumnNames[i],
                 hidden : this.gridConfigs.columns[i].hidden,
                 sortable : this.gridConfigs.columns[i].sortable
             });
-            inUse[reverseBaseColumnData[text]] = true;
         }
-        for(var i = 0; i < this.fileProperties.length; i++){
-            if((i+10) in inUse)
-            {
-                continue;
-            }
-            else
+
+        // if we have custom file properties and they were not already included with the gridConfigs.columns, add them here
+        for (var i = 0; i < this.fileProperties.length; i++)
+        {
+            var index = i + 9;
+            if (!columnData[index])
             {
                 columnData.push({
-                    id : i + 10,
+                    id : index + 1,
                     text : this.fileProperties[i].label ? this.fileProperties[i].label : this.fileProperties[i].name,
-                    hidden : false,
+                    hidden : this.fileProperties[i].hidden,
                     sortable : true
                 });
             }
@@ -193,13 +180,10 @@ Ext4.define('File.panel.ToolbarPanel', {
 
         var optionsPanel = {
             xtype : 'grid',
-            title : 'Toolbar Options',
             id : 'optionsPanel',
-            titleCollapse : true,
-            collapsible : true,
-            width : '100%',
+            width : 700,
             height: 290,
-            padding : '10 5 10 5',
+            padding : '0 0 15 0',
             store : this.optionsStore,
             expanded : true,
             viewConfig: {
@@ -277,26 +261,14 @@ Ext4.define('File.panel.ToolbarPanel', {
                     return '<img src = "'+path+'" />';
                 }},
                 {header : 'Text', dataIndex : 'text', flex : 2}
-            ],
-            listeners : {
-                beforeexpand : function(g) {
-                    Ext4.getCmp('gridSettingsPanel').collapse();
-                },
-                collapse : function(g) {
-                    Ext4.getCmp('gridSettingsPanel').expand();
-                }
-            }
+            ]
         };
 
-        var gridPanel = {
+        var gridSettingsPanel = {
             xtype : 'grid',
-            title : 'Grid Settings',
             id : 'gridSettingsPanel',
-            titleCollapse : true,
-            collapsible : true,
-            collapsed : true,
-            width : '100%',
-            padding : '10 5 10 5',
+            width : 700,
+            maxHeight : 250,
             store : this.columnsStore,
             viewConfig: {
                 plugins: {
@@ -308,19 +280,26 @@ Ext4.define('File.panel.ToolbarPanel', {
                 {header : 'Hidden', dataIndex : 'hidden', xtype : 'checkcolumn', flex : 1},
                 {header : 'Sortable', dataIndex : 'sortable', xtype : 'checkcolumn', flex : 1},
                 {header : 'Text', dataIndex : 'text', flex : 1}
-            ],
-            listeners : {
-                beforeexpand : function(g) {
-                    Ext4.getCmp('optionsPanel').collapse();
-                },
-                collapse : function(g) {
-                    Ext4.getCmp('optionsPanel').expand();
-                }
-            }
+            ]
         };
 
+        var optionsText = {
+            xtype : 'label',
+            html: '<span class="labkey-strong">Configure Toolbar Options</span>' +
+                    '<p>Toolbar buttons are in display order, from top to bottom. ' +
+                    'You can adjust their position by clicking and dragging them, and can set their visibility by toggling '+
+                    'the checkboxes in the appropriate fields.</p>'
+        };
 
-        this.items = [topText, optionsPanel, gridPanel];
+        var gridColumnsText = {
+            xtype : 'label',
+            html: '<span class="labkey-strong">Configure Grid Column Settings</span>' +
+                    '<p>Grid columns are in display order from top to bottom, but hidden columns do not appear in the grid. ' +
+                    'The columns can be reorganized by clicking and dragging their respective rows, and can be hidden by checking ' +
+                    'the appropriate box.  You may also set whether or not the column is sortable.</p>'
+        };
+
+        this.items = [optionsText, optionsPanel, gridColumnsText, gridSettingsPanel];
 
         this.callParent();
     },

@@ -13,8 +13,7 @@ Ext4.define('File.panel.FileProperties', {
         Ext4.apply(config, {
             defaults: {
                 xtype: 'panel',
-                border: false,
-                margin: '5 0 0 0'
+                border: false
             }
         });
 
@@ -34,7 +33,9 @@ Ext4.define('File.panel.FileProperties', {
 
     getItems: function(){
         var items = [];
-        items.push({html: '<p>Define additional properties to be collected with each file:</p>'});
+        items.push({html: '<span class="labkey-strong">Configure File Properties</span>'
+                + '<p>Define additional properties to be collected with each file:</p>'});
+
         this.fileConfigRadioGroup = Ext4.create('Ext.form.RadioGroup',{
             columns: 1,
             margin: '0 0 0 25',
@@ -115,6 +116,7 @@ Ext4.define('File.panel.FileProperties', {
         return {
             xtype: 'grid',
             width: '100%',
+            height: 300,
             margin: '25 0 0 0',
             store: this.getCustomPropertiesStore(),
             border: 1,

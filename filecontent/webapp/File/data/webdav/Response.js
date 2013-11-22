@@ -34,35 +34,11 @@ Ext4.define('File.data.webdav.XMLResponse', {
             return uri ? uri.href : '';
         }},
         {
-            name : 'fileLink', mapping : 'href', convert : function(v, rec) {
-            var uri = File.data.webdav.XMLResponse.getURI(v,rec);
-
-            if (uri && uri.file) {
-                return Ext4.DomHelper.markup({
-                    tag  :'a',
-                    href : Ext4.util.Format.htmlEncode(uri.href + '?contentDisposition=attachment'),
-                    html : Ext4.util.Format.htmlEncode(decodeURIComponent(uri.file))
-                });
-            }
-
-            return '';
-        }},
-        {
             name : 'id', mapping : 'path', convert : function(val) { return val.replace('/_webdav', '')}
         },{
             name : 'path'
         },{
             name : 'name', mapping : 'propstat/prop/displayname'
-        },{
-            name: 'fileExt', mapping: 'propstat/prop/displayname',
-                convert : function (v, rec)
-                {
-                    // parse the file extension from the file name
-                    var idx = v.lastIndexOf('.');
-                    if (idx != -1)
-                        return v.substring(idx+1);
-                    return '';
-                }
         },{
             name: 'file', mapping: 'href', type: 'boolean',
                 convert : function (v, rec)
@@ -100,6 +76,7 @@ Ext4.define('File.data.webdav.JSONReponse', {
         {name : 'createdby'},
         {name : 'contenttype'},
         {name : 'description'},
+        {name : 'actions'},
         {name : 'etag'},
         {name : 'href'},
         {name : 'id', convert : function(val) { return val.replace('/_webdav', '')}},
@@ -110,6 +87,33 @@ Ext4.define('File.data.webdav.JSONReponse', {
         {name : 'icon', mapping : 'iconHref'},
         {name : 'options', convert : function(val) { return File.data.webdav.XMLResponse.readOptions(val); }},
         {name : 'directget'},
-        {name : 'directput'}
+        {name : 'directput'},
+        {
+            name: 'fileExt', mapping: 'text',
+            convert : function (v, rec)
+            {
+                // parse the file extension from the file name
+                var idx = v.lastIndexOf('.');
+                if (idx != -1)
+                    return v.substring(idx+1);
+                return '';
+            }
+        },
+        {
+            name : 'fileLink', mapping : 'href',
+            convert : function(v, rec) {
+                var uri = File.data.webdav.XMLResponse.getURI(v,rec);
+
+                if (uri && uri.file) {
+                    return Ext4.DomHelper.markup({
+                        tag  :'a',
+                        href : Ext4.util.Format.htmlEncode(uri.href + '?contentDisposition=attachment'),
+                        html : Ext4.util.Format.htmlEncode(decodeURIComponent(uri.file))
+                    });
+                }
+
+                return '';
+            }
+        }
     ]
 });

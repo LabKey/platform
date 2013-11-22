@@ -34,8 +34,6 @@ Ext4.define('File.system.Abstract', {
 
     separator : "/",
 
-    directoryMap : {},
-
     constructor : function(config) {
 
         Ext4.apply(this, config);
@@ -47,13 +45,6 @@ Ext4.define('File.system.Abstract', {
             'filesremoved',
             'ready'
         )
-    },
-
-    // protected
-    _addFiles : function(path, records)
-    {
-        this.directoryMap[path] = records;
-        this.fireEvent(LABKEY.FileSystem.FILESYSTEM_EVENTS.fileschanged, this, path, records);
     },
 
     /**
@@ -150,41 +141,6 @@ Ext4.define('File.system.Abstract', {
     },
 
     /**
-     * A helper to test if a file of the same name exists at a given path.  If this path has not already been loaded, the local cache will be used unless forceReload is true.
-     * @param config Configuration properties.
-     * @param {String} config.name The name to test.  This can either be a filename or a full path.  If the latter is supplied, getFileName() will be used to extract the filename
-     * @param {String} config.path The path to check
-     * @param {Function} config.success Success callback function.  It will be called with the following arguments:
-     * <li>Filesystem: A reference to the filesystem</li>
-     * <li>Name: The name to be tested</li>
-     * <li>Path: The path to be checked</li>
-     * <li>Record: If a record of the same name exists, the record object will be returned.  Null indicates no name conflict exists</li>
-     * @param {Function} [config.failure] Error callback function.  It will be called with the following arguments:
-     * <li>Response: The XMLHttpRequest object containing the response data.</li>
-     * <li>Options: The parameter to the request call.</li>
-     * @param {Object} [config.scope] The scope for the callback function.  Defaults to 'this'
-     * @param {Boolean} [config.forceReload] If true, the cache will be reloaded prior to performing the check
-     * @methodOf LABKEY.FileSystem.AbstractFileSystem#
-     */
-    checkForNameConflict: function(config)
-    {
-        var filename = this.concatPaths(config.path, this.getFileName(config.name));
-        config.scope = config.scope || this;
-
-        this.listFiles({
-            path: config.path,
-            success: function (fs, path, records){
-                var rec = this.recordFromCache(filename);
-                if (Ext4.isFunction(config.success))
-                    config.success.defer(1, config.scope, [this, config.name, config.path, rec]);
-            },
-            failure: config.failure,
-            scope: this,
-            forceReload: config.forceReload
-        });
-    },
-
-    /**
      * @ignore
      * @param config
      */
@@ -192,23 +148,6 @@ Ext4.define('File.system.Abstract', {
     {
         return false;
     },
-
-    /**
-     * For a supplied path, returns an array corresponding Ext Record from the cache
-     * @param {String} path The path of the directory
-     * @returns {Ext.Record[]} An array of Ext.Records representing the contents of the directory.  Returns null if the directory is not in the cache.
-     * @methodOf LABKEY.FileSystem.AbstractFileSystem#
-     * @name directoryFromCache
-     */
-    directoryFromCache : function(path)
-    {
-        var files = this.directoryMap[path];
-        if (!files && path && path.length>0 && path.charAt(path.length-1) == this.separator)
-            path = path.substring(0,path.length-1);
-        files = this.directoryMap[path];
-        return files;
-    },
-
 
     /**
      * A utility method to extract the filename from a file path.
@@ -268,86 +207,12 @@ Ext4.define('File.system.Abstract', {
         //return a.match(new RegExp('^' + b + '.+', 'i'));
     },
 
-    /**
-     * Will list all the contents of the supplied path.  If this path has already been loaded, the local cache will be used.
-     * @param config Configuration properties.
-     * @param {String} config.path The path to load
-     * @param {Function} config.success Success callback function.  It will be called with the following arguments:
-     * <li>Filesystem: A reference to the filesystem</li>
-     * <li>Path: The path that was loaded</li>
-     * <li>Records: An array of record objects</li>
-     * @param {Function} [config.failure] Error callback function.  It will be called with the following arguments:
-     * <li>Response: The XMLHttpRequest object containing the response data.</li>
-     * <li>Options: The parameter to the request call.</li>
-     * @param {Object} [config.scope] The scope for the callback functions
-     * @param {Boolean} [config.forceReload] If true, the path will always be reloaded instead of relying on the cache
-     * @methodOf LABKEY.FileSystem.AbstractFileSystem#
-     */
-    listFiles : function(config)
-    {
-        config.scope = config.scope || this;
-        var files = this.directoryFromCache(config.path);
-        if (files && !config.forceReload) {
-
-            if (Ext4.isFunction(config.success)) {
-                config.success.defer(1, config.scope, [this, config.path, files]);
-            }
-        }
-        else {
-            this.reloadFiles(config);
-        }
-    },
-
     onReady : function(fn)
     {
         if (this.ready)
             fn.call();
         else
             this.on(LABKEY.FileSystem.FILESYSTEM_EVENTS.ready, fn);
-    },
-
-    /**
-     * For a supplied path, returns the corresponding Ext Record from the cache
-     * @param {String} path The path of the file or directory
-     * @returns {Ext.Record} The Ext.Record for this file.  Returns null if the file is not found.
-     * @methodOf LABKEY.FileSystem.AbstractFileSystem#
-     * @name recordFromCache
-     */
-    recordFromCache : function(path)
-    {
-        if (!path || path == this.rootPath)
-            return this.rootRecord;
-        var parent = this.getParentPath(path) || this.rootPath;
-        var name = this.getFileName(path);
-        var files = this.directoryFromCache(parent);
-        if (!files)
-            return null;
-        for (var i=0 ; i<files.length ; i++)
-        {
-            var r = files[i];
-            if (r.data.name == name)
-                return r;
-        }
-        return null;
-    },
-
-    /**
-     * Called by listFiles(), return false on immediate fail
-     * @ignore
-     */
-    reloadFiles : function(config)
-    {
-        return false;
-    },
-
-    /**
-     * Force reload on next listFiles call
-     * @ignore
-     * @param record
-     */
-    uncacheListing : function(record)
-    {
-        var path = (typeof record == "string") ? record : record.data.path;
-        this.directoryMap[path] = null;
     }
+
 });

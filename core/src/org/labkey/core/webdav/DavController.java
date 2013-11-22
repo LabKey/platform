@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONWriter;
 import org.labkey.api.action.BaseViewAction;
@@ -2292,6 +2293,26 @@ public class DavController extends SpringActionController
                 json.key("leaf").value(false);
             }
 
+            Collection<NavTree> actions = resource.getActions(getUser());
+            if (!actions.isEmpty())
+            {
+                JSONArray actionArr = new JSONArray();
+                for (NavTree action : actions)
+                {
+                    JSONObject actionObj = new JSONObject();
+                    if (action.getText() != null)
+                    {
+                        actionObj.put("message", PageFlowUtil.filter(action.getText()));
+                    }
+                    if (action.getHref() != null)
+                    {
+                        actionObj.put("href", PageFlowUtil.filter(action.getHref()));
+                    }
+                    actionArr.put(actionObj);
+                }
+                json.key("actions").value(actionArr);
+            }
+
             json.endObject();
             out.newLine();
         }
@@ -2557,6 +2578,13 @@ public class DavController extends SpringActionController
                 return unauthorized(resource);
             if (resource.isCollectionType() || exists && resource.isCollection())
                 throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED, "Cannot overwrite folder");
+
+            if (exists)
+            {
+                boolean overwrite = getOverwriteParameter();
+                if (!overwrite)
+                    throw new DavException(WebdavStatus.SC_FILE_MATCH, "Cannot overwrite file");
+            }
 
             Range range = parseContentRange();
             RandomAccessFile raf = null;

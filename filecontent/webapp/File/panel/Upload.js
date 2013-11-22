@@ -27,12 +27,7 @@ Ext4.define('File.panel.Upload', {
 
     header : false,
 
-    TRANSFER_STATES: {
-        success   : 1,
-        info      : 0,
-        failed    : -1,
-        retryable : -2
-    },
+    bodyStyle: 'background-color:#f0f0f0;',
 
     constructor : function(config) {
 
@@ -100,13 +95,14 @@ Ext4.define('File.panel.Upload', {
             width: 140,
             border : false,
             margins: '0 0 0 40',
+            bodyStyle: this.bodyStyle,
             items : [{
                 xtype     : 'radiogroup',
                 width     : 110,
                 columns   : 1,
                 hideLabel : true,
                 items     : [{
-                    boxLabel : 'Single&nbsp;file',
+                    boxLabel : 'Single file',
                     name     : 'rb-file-upload-type',
                     checked  : true,
                     handler  : function(cmp, checked) {
@@ -116,7 +112,7 @@ Ext4.define('File.panel.Upload', {
                     },
                     scope    : this
                 },{
-                    boxLabel : 'Multiple&nbsp;files',
+                    boxLabel : 'Multiple files',
                     name     : 'rb-file-upload-type',
                     handler  : function(cmp, checked) {
                         if(checked){
@@ -184,10 +180,9 @@ Ext4.define('File.panel.Upload', {
 
         var uploadId = Ext4.id();
 
-        var descriptionField = Ext4.create('Ext.form.field.Text', {
+        this.descriptionField = Ext4.create('Ext.form.field.Text', {
             name  : 'description',
             fieldLabel : 'Description',
-            labelSeparator : '',
             labelAlign : 'right',
             width : 382,
             margin: '5 0 0 0',
@@ -197,6 +192,7 @@ Ext4.define('File.panel.Upload', {
         this.singleUpload = Ext4.create('Ext.form.Panel', {
             border : false,
             frame : false,
+            bodyStyle: this.bodyStyle,
             items  : [{
                 xtype: 'container',
                 width: 800,
@@ -208,12 +204,12 @@ Ext4.define('File.panel.Upload', {
                     fieldLabel: 'Choose a File',
                     labelAlign: 'right',
                     buttonText: 'Browse',
-                    labelSeparator: '',
+                    clearOnSubmit: false, // allows form to be resubmitted in case of file overwrite
                     listeners: {
                         render: function(f) { this.fileField = f; },
                         change: function() {
-                            descriptionField.setDisabled(false);
-                            descriptionField.focus();
+                            this.descriptionField.setDisabled(false);
+                            this.descriptionField.focus();
                             Ext4.getCmp(uploadId).setDisabled(false);
                         },
                         scope : this
@@ -227,7 +223,7 @@ Ext4.define('File.panel.Upload', {
                     handler: this.submitFileUploadForm,
                     scope : this
                 }]
-            }, descriptionField]
+            }, this.descriptionField]
         });
 
         return this.singleUpload;
@@ -247,7 +243,9 @@ Ext4.define('File.panel.Upload', {
             layout: 'vbox',
             width: 135,
             bodyPadding: 5,
+            bodyStyle: this.bodyStyle,
             defaults: {
+                width: 125,
                 margins: '0 0 5 0'
             },
             items: [
@@ -259,7 +257,7 @@ Ext4.define('File.panel.Upload', {
                         }
                     }
                 }, scope: this},
-                {xtype:'button', text:'Choose folder', handler: function(){
+                {xtype:'button', text:'Choose Folder', handler: function(){
                     if (this.transferApplet) {
                         var appletEl = this.transferApplet.getApplet();
                         if (appletEl){
@@ -267,7 +265,7 @@ Ext4.define('File.panel.Upload', {
                         }
                     }
                 }, scope: this},
-                {xtype:'button', text:'Drag and drop', handler: function(){
+                {xtype:'button', text:'Drag and Drop', handler: function(){
                     if (this.transferApplet) {
                         var appletEl = this.transferApplet.getApplet();
                         if (appletEl){
@@ -278,14 +276,14 @@ Ext4.define('File.panel.Upload', {
             ]
         });
 
-        this.appletPanel = Ext4.create('Ext.form.Panel', {
+        this.appletPanel = Ext4.create('Ext.panel.Panel', {
             border: false,
-            fieldLabel: 'Upload Tool',
             width: 90,
             height: 90,
+            bodyStyle: this.bodyStyle,
             items: [{
                 xtype: 'container',
-                html:'<img src="' + loadingImageSrc + '"><br>Loading Java applet...' + testJavaHtml
+                html:'<img src="' + loadingImageSrc + '"><br>Loading Java applet...'
             }]
         });
 
@@ -294,9 +292,18 @@ Ext4.define('File.panel.Upload', {
             margins: '0 0 0 10',
             buttonAlign: 'left',
             layout: 'hbox',
-            width: 230,
+            width: 365,
             height: 100,
-            items: [this.appletPanel, buttonPanel]
+            bodyStyle: this.bodyStyle,
+            items: [
+                {
+                    xtype: 'displayfield',
+                    fieldLabel: 'Upload Tool' + testJavaHtml,
+                    labelWidth: 135
+                },
+                this.appletPanel,
+                buttonPanel
+            ]
         });
 
         this.multiUpload = Ext4.create('Ext.panel.Panel', {
@@ -331,7 +338,7 @@ Ext4.define('File.panel.Upload', {
 
             this.transferApplet.onReady(function(){
                 // Update applet state.
-                this.updateAppletState(this.getWorkingDirectory());
+                this.updateAppletState(this.getWorkingDirectory('model'), this.getWorkingDirectory('path'));
                 this.on('cwd', this.updateAppletState);
 
             }, this);
@@ -341,8 +348,7 @@ Ext4.define('File.panel.Upload', {
         }
     },
 
-    updateAppletState: function(record){
-        // TODO: actually finish this. Need to port it from fileBrowser.js line 2011
+    updateAppletState: function(record, folderLocation){
 
         if(!this.transferApplet || !record){
             return;
@@ -350,19 +356,25 @@ Ext4.define('File.panel.Upload', {
 
         var canWrite = this.fileSystem.canWrite(record);
         var canMkdir = this.fileSystem.canMkdir(record);
+
         // Enable or disable applet buttons depending on permissions (canWrite and canMkDir)
+        var appletFileActionButton = this.appletContainer.down('.button[text=Choose File]');
+        if (appletFileActionButton)
+            appletFileActionButton[canWrite?'enable':'disable']();
+        appletFileActionButton = this.appletContainer.down('.button[text=Choose Folder]');
+        if (appletFileActionButton)
+            appletFileActionButton[canWrite?'enable':'disable']();
+        appletFileActionButton = this.appletContainer.down('.button[text=Drag and Drop]');
+        if (appletFileActionButton)
+            appletFileActionButton[canMkdir?'enable':'disable']();
 
         try {
-            this.transferApplet.changeWorkingDirectory(record.data.id);
+            this.transferApplet.changeWorkingDirectory(folderLocation);
             if (canWrite || canMkdir) {
                 this.transferApplet.setEnabled(true);
                 this.transferApplet.setAllowDirectoryUpload(canMkdir);
-                // I think setText is not used anymore. Doesnt seem to actually work on old filebrowser.
-//                this.transferApplet..setText(canMkdir ? "Drag and drop files and folders here\ndirectly from your computer" : "Drag and drop files here directly\nfrom your computer")); // + "\nFolder: " +record.data.name);
             } else {
                 this.transferApplet.setEnabled(false);
-                // I think setText is deprecated or non-working on the old file browser.
-//                this.transferApplet.setText("(read-only)\nFolder: " +record.data.name);
             }
         } catch (e){
             console.error(e);
@@ -397,6 +409,7 @@ Ext4.define('File.panel.Upload', {
             width: 350,
             border: false,
             height: 25,
+            bodyStyle: this.bodyStyle,
             layout: 'hbox',
             items: [this.progressBarContainer, this.statusText]
         });
@@ -445,6 +458,17 @@ Ext4.define('File.panel.Upload', {
         else
         {
             this.progressBar.hide();
+            if (summary.info == 0) {
+
+                var fileRecords = [];
+                Ext4.each(this.transferApplet.getTransfers().getRange(), function(rec){
+                    // use the uri as the id and the href
+                    fileRecords.push({data: {name: rec.get("name"), id: rec.get("uri"), href: rec.get("uri")}});
+                });
+
+                // todo : need to add file & folder conflict handling
+                this.fireEvent('transfercomplete', {fileRecords : fileRecords});
+            }
         }
 
         // UNDONE: failed transfers
@@ -455,7 +479,7 @@ Ext4.define('File.panel.Upload', {
 
     submitFileUploadForm : function(fb, v) {
 
-        var cwd = this.getWorkingDirectory();
+        var cwd = this.getWorkingDirectory('cwd');
 
         if (cwd) {
             var form = this.singleUpload.getForm();
@@ -467,19 +491,51 @@ Ext4.define('File.panel.Upload', {
                 return;
             }
 
-            var file = false; // TODO: Check if the file already exists
-            var uri = this.fileSystem.getURI(cwd);
-
             this.doPost = function(overwrite) {
                 var options = {
                     method:'POST',
                     form : form,
-                    url : overwrite ? uri + '?overwrite=t' : uri, // TODO: This is not correct
+                    url : this.fileSystem.getURI(cwd) + '?Accept=application/json' + (overwrite ? '&overwrite=t' : ''),
                     name : name,
-                    success : function() {
-                        form.reset();
+                    success : function(f, action, message) {
                         this.getEl().unmask();
-                        this.fireEvent('transfercomplete');
+
+                        var txt = (action.response.responseText || "").trim();
+                        if (txt)
+                        {
+                            var response = Ext4.JSON.decode(action.response.responseText);
+                            if (!response.success)
+                            {
+                                if (response.status == 208)
+                                {
+                                    Ext4.Msg.show({
+                                        title : "File Conflict:",
+                                        msg : "There is already a file named " + name + ' in this location. Would you like to replace it?',
+                                        cls : 'data-window',
+                                        icon : Ext4.Msg.QUESTION,
+                                        buttons : Ext4.Msg.YESNO,
+                                        fn : function(btn){
+                                            if(btn == 'yes')
+                                                this.doPost(true);
+                                        },
+                                        scope : this
+                                    });
+                                }
+                                else
+                                {
+                                    this.showErrorMsg('Error', response.exception);
+                                }
+
+                                return;
+                            }
+                        }
+
+                        this.singleUpload.getForm().reset();
+                        this.fileField.setRawValue(null);
+                        this.descriptionField.setDisabled(true);
+                        this.singleUpload.down('.button[text=Upload]').setDisabled(true);
+
+                        this.fireEvent('transfercomplete', {fileNames : [{name:name}]});
                     },
                     failure : LABKEY.Utils.displayAjaxErrorResponse,
                     scope : this
@@ -494,33 +550,32 @@ Ext4.define('File.panel.Upload', {
 //                form.errorReader = this.fileSystem.transferReader;
                 form.doAction(new Ext4.form.action.Submit(options));
                 this.fireEvent('transferstarted');
-//                this.fireEvent(LABKEY.FileSystem.BROWSER_EVENTS.transferstarted, {uploadType:"webform", files:[{name:name, id:new LABKEY.URI(this.fileSystem.concatPaths(options.url, encodeURIComponent(options.name))).pathname}]});
                 this.getEl().mask("Uploading " + name + '...');
             };
 
-            if (file) {
-                Ext4.Msg.confirm('File: ' + name + ' already exists', 'There is already a file with the same name in this location, do you want to replace it? ', function(btn){
-                    if (btn == 'yes') {
-                        this.doPost(true);
-                    }
-                }, this);
-            }
-            else {
-                this.doPost(false);
-            }
+            this.doPost(false);
         }
     },
 
     changeWorkingDirectory : function(path, model, cwd) {
-        this.workingDirectory = cwd;
-        this.fireEvent('cwd', this.getWorkingDirectory());
+        this.workingDirectory = {path: path, model: model, cwd: cwd};
+        this.fireEvent('cwd', model, path);
     },
 
-    getWorkingDirectory : function() {
+    getWorkingDirectory : function(variable) {
         if (this.workingDirectory) {
-            return this.workingDirectory;
+            return this.workingDirectory[variable];
         }
         console.error('Upload: working directory not set.');
+    },
+
+    showErrorMsg : function(title, msg) {
+        Ext4.Msg.show({
+            title: title,
+            msg: msg,
+            cls : 'data-window',
+            icon: Ext4.Msg.ERROR, buttons: Ext4.Msg.OK
+        });
     }
 });
 

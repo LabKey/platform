@@ -12,13 +12,16 @@ Ext4.define('File.panel.EditCustomFileProps', {
         Ext4.apply(config);
         Ext4.applyIf(config, {
             winId       : 'NoIdSupplied',
+            fileRecords : [],
             extraColumns : [],
             fileProps : [],
             formPages : [],
             displayNum : 0,
             border : false,
-            padding : 10,
-            height : 200
+            padding : '10 0 0 10',
+            minHeight : 150,
+            maxHeight : 300,
+            autoScroll: true
         });
 
         this.callParent([config]);
@@ -26,40 +29,78 @@ Ext4.define('File.panel.EditCustomFileProps', {
 
     initComponent : function()
     {
-        this.items = this.getItems();
+        this.items = [];
         this.buttons = this.getButtons();
         this.callParent();
+
+        this.getItems();
     },
 
     getItems : function()
     {
+        var columns = ["RowId"];
+        for (var i=0; i < this.extraColumns.length; i++)
+            columns.push(this.extraColumns[i]);
 
+        // Query the exp.Data table to get the column metadata info for the extraColumns
+        LABKEY.Query.selectRows({
+            schemaName:'exp',
+            queryName:'Data',
+            maxRows: 0,
+            scope: this,
+            containerPath: this.containerPath,
+            requiredVersion: '9.1',
+            columns: columns.join(','),
+            successCallback: this.createFormPanel
+        });
+    },
 
+    createFormPanel : function(data)
+    {
+        // Create a form panel from the returned select rows metadata
         var customFields = [{
             xtype : 'label',
             id : 'topPropsLabel',
-            text : 'Edit file properties for ' + this.sm[0].get('name')
+            cls : 'labkey-mv',
+            text : 'File (1 of ' + this.fileRecords.length + ') : ' + this.fileRecords[0].data.name
         }];
-        for(var i = 0; i < this.extraColumns.length; i++)
+
+        for (var i=0; i < data.metaData.fields.length; i++)
         {
-            customFields.push({
-                xtype : 'textfield',
-                width : 200,
-                id : this.extraColumns[i],
-                fieldLabel : this.extraColumns[i],
-                value : this.fileProps[this.sm[this.displayNum].get('name')][this.extraColumns[i]],
-                padding : '10 10 0 0'
-            });
+            var field = data.metaData.fields[i];
+            var prevValues = this.fileProps[this.fileRecords[this.displayNum].data.id];
+
+            if (field.name != 'RowId')
+            {
+                var fieldConfig = LABKEY.ext.Ext4Helper.getFormEditorConfig(field);
+                fieldConfig.id = fieldConfig.name;
+                fieldConfig.value = prevValues ? prevValues[fieldConfig.name] : null;
+                fieldConfig.width = 330;
+                fieldConfig.padding = "8 8 0 0";
+                fieldConfig.helpPopup = "";
+
+                // resize text area to fit better in the dialog
+                if (fieldConfig.xtype == "textarea")
+                    fieldConfig.height = 75;
+
+                // use 'checked' for setting boolean field value
+                if (fieldConfig.xtype == 'checkbox')
+                    fieldConfig.checked = fieldConfig.value;
+
+                customFields.push(fieldConfig);
+            }
         }
-        return customFields;
+
+        this.add(customFields);
     },
 
     getButtons : function()
     {
 
         var buttons = [];
-        if(this.sm.length > 1)
-        buttons.push(
+        if (this.fileRecords.length > 1)
+        {
+            buttons.push(
                 {
                     xtype : 'button',
                     id : 'propsPrev',
@@ -84,14 +125,15 @@ Ext4.define('File.panel.EditCustomFileProps', {
                     handler : function(button) {
                         this.saveFormPage();
                         this.displayNum++;
-                        if(this.displayNum == this.sm.length-1)
+                        if(this.displayNum == this.fileRecords.length-1)
                             button.setDisabled(true);
                         Ext4.getCmp('propsPrev').setDisabled(false);
                         this.changeFormPage(this);
                     },
                     scope : this
                 }
-        );
+            );
+        }
 
         buttons.push(
                 {
@@ -100,23 +142,26 @@ Ext4.define('File.panel.EditCustomFileProps', {
                     handler : function()
                     {
                         var files = [];
-                        var row;
                         this.saveFormPage();
                         for(var i = 0; i < this.formPages.length; i++)
                         {
-                            row = {};
+                            var row = {Name: this.fileRecords[i].data.name};
+
+                            var prevValues = this.fileProps[this.fileRecords[i].data.id];
+                            if (prevValues)
+                                row["RowId"] = prevValues["rowId"];
+
                             for(var r = 0; r < this.extraColumns.length; r++)
                             {
                                 row[this.extraColumns[r]] = this.formPages[i][this.extraColumns[r]];
                             }
-                            row["RowId"] = this.fileProps[this.sm[i].get('name')]["rowId"];
-                            row["Name"] = this.fileProps[this.sm[i].get('name')]["name"];
-                            for(var r = 0; r < this.sm.length; r++)
+
+                            for(var r = 0; r < this.fileRecords.length; r++)
                             {
-                                if(this.sm[r].data.name === row["Name"])
+                                if(this.fileRecords[r].data.name === row["Name"])
                                 {
-                                    row.id = this.sm[r].data.href;
-                                    files.push(Ext4.apply(this.sm[r].data, row));
+                                    row.id = this.fileRecords[r].data.href;
+                                    files.push(Ext4.apply(this.fileRecords[r].data, row));
                                     break;
                                 }
 
@@ -175,25 +220,25 @@ Ext4.define('File.panel.EditCustomFileProps', {
     {
         if(!this.formPages[this.displayNum])
             this.formPages[this.displayNum] = {};
+
+        var values = this.getForm().getValues();
         for(var i = 0; i < this.extraColumns.length; i++)
         {
-            this.formPages[this.displayNum][this.extraColumns[i]] = Ext4.getCmp(this.extraColumns[i]).getValue();
+            this.formPages[this.displayNum][this.extraColumns[i]] = values[this.extraColumns[i]] || null;
         }
     },
 
     changeFormPage : function()
     {
+        var labelText = 'File (' + (this.displayNum+1) + ' of ' + this.fileRecords.length + ') : ' + this.fileRecords[this.displayNum].data.name;
+        Ext4.getCmp('topPropsLabel').setText(labelText);
+
         for(var i = 0; i < this.extraColumns.length; i++)
         {
-            Ext4.getCmp('topPropsLabel').setText('Edit file properties for ' + this.sm[this.displayNum].get('name'));
-            if(!this.formPages[this.displayNum]){
-                Ext4.getCmp(this.extraColumns[i]).setValue(this.fileProps[this.sm[this.displayNum].get('name')][this.extraColumns[i]]);
-            }
+            if (!this.formPages[this.displayNum])
+                Ext4.getCmp(this.extraColumns[i]).setValue(this.fileProps[this.fileRecords[this.displayNum].data.id][this.extraColumns[i]]);
             else
-            {
                 Ext4.getCmp(this.extraColumns[i]).setValue(this.formPages[this.displayNum][this.extraColumns[i]]);
-            }
-
         }
     }
 });

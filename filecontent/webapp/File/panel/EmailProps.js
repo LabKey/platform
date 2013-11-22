@@ -58,6 +58,7 @@ Ext4.define('File.panel.EmailProps', {
                     columns: 1,
                     width : 630,
                     labelSeparator: '',
+                    defaults: {width: 600},
                     items: [{
                         checked: emailPref == -1,
                         boxLabel: "<span class='labkey-strong'>Folder Default</span> - use the defaults configured for this folder by an administrator.",
@@ -121,8 +122,7 @@ Ext4.define('File.panel.EmailProps', {
             {
                 var win = Ext4.create('Ext.Window', {
                     title: 'Email Notification Settings',
-                    width: 650,
-                    height: 250,
+                    cls: 'data-window',
                     autoScroll: true,
                     closeAction: 'close',
                     modal: true,
@@ -130,6 +130,8 @@ Ext4.define('File.panel.EmailProps', {
                     autoShow: true,
                     items: [{
                         xtype: 'panel',
+                        frame: false,
+                        border: false,
                         layout: 'vbox',
                         layoutConfig: {
                             align: 'stretch',

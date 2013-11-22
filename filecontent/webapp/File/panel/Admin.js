@@ -109,11 +109,8 @@ Ext4.define('File.panel.Admin', {
         if(!this.generalSettingsPanel){
             var descriptionText = {
                 html: '<span class="labkey-strong">Configure General Settings</span>' +
-                        '<br />' +
-                        'Set the default File UI preferences for this folder.',
-                border: false,
-                height: 55,
-                autoScroll:true
+                        '<p>Set the default File UI preferences for this folder.</p>',
+                border: false
             };
 
             // We default to opening the upload panel. If the user never set the property, then it will not be present
@@ -223,6 +220,7 @@ Ext4.define('File.panel.Admin', {
         Ext4.Msg.show({
             title: 'Confirm Reset',
             msg: msg,
+            cls: 'data-window',
             buttons: Ext4.Msg.YESNO,
             icon: Ext4.Msg.QUESTION,
             fn: function(choice){

@@ -290,7 +290,7 @@ Ext4.define('Study.window.ParticipantGroup', {
             return false;
         }
         if(!idStr){
-            Ext4.Msg.alert("Error", "One or more " + this.subject.nounSingular + "Identifiers required");
+            Ext4.Msg.alert("Error", "One or more " + this.subject.nounSingular + " Identifiers required");
             return false;
         }
         return true;

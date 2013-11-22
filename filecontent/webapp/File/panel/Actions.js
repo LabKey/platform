@@ -7,8 +7,8 @@ Ext4.define('File.panel.Actions', {
     extend : 'Ext.panel.Panel',
 
     border: false,
-
     frame: false,
+    padding: 10,
 
     constructor : function(config) {
 
@@ -35,17 +35,40 @@ Ext4.define('File.panel.Actions', {
 
     initComponent : function() {
 
-        this.items = [{
-            xtype : 'checkbox',
-            itemId: 'showImportCheckbox',
-            id : 'importAction',
-            checked: this.importDataEnabled,
-            border: false, frame: false,
-            labelSeparator: '',
-            boxLabel: "Show 'Import Data' toolbar button<br/>(<i>Administrators will always see this button</i>)",
-            width : 500,
-            height : 75
-        }];
+        this.items = [];
+        this.items.push({
+            html: '<span class="labkey-strong">Configure Actions</span>',
+            border: false
+        });
+
+        if (this.isPipelineRoot)
+        {
+            this.items.push({
+                xtype : 'checkbox',
+                itemId: 'showImportCheckbox',
+                id : 'importAction',
+                checked: this.importDataEnabled,
+                border: false, frame: false,
+                labelSeparator: '',
+                boxLabel: "Show 'Import Data' toolbar button<br/>(<i>Administrators will always see this button</i>)",
+                width : 500,
+                height : 50,
+                padding : '10 0 0 0'
+            });
+        }
+        else {
+            this.items.push({
+                border: false,
+                height: 300,
+                padding : '10 0 0 0',
+                html: 'File Actions are only available for files in the pipeline directory. An administrator has defined ' +
+                        'a "pipeline override" for this folder, so actions are not available in the default file location.' +
+                        '<br/><br/>Customize this web part to use the pipeline directory by clicking on the ' +
+                        '"more" button in the web part title area and selecting the "customize" option. You can then set this ' +
+                        'web part to show files from the pipeline directory.<br>' +
+                        '<img src="' + LABKEY.contextPath + '/_images/customize-example.png"/>'
+            });
+        }
 
         this.callParent(arguments);
     },

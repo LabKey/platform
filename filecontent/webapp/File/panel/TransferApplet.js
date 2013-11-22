@@ -47,6 +47,13 @@ Ext4.define('File.panel.TransferApplet', {
 
     DEBUG_INT       : 10000,
 
+    TRANSFER_STATES: {
+        success   : 1,
+        info      : 0,
+        failed    : -1,
+        retryable : -2
+    },
+
     constructor     : function(params){
         var config = {
             id: params.id,
@@ -197,10 +204,10 @@ Ext4.define('File.panel.TransferApplet', {
             var state = record.data.state;
             switch (state)
             {
-                case LABKEY.FileSystem.TRANSFER_STATES.success: success++; break;
-                case LABKEY.FileSystem.TRANSFER_STATES.info: info++; break;
-                case LABKEY.FileSystem.TRANSFER_STATES.failed: failed++; break;
-                case LABKEY.FileSystem.TRANSFER_STATES.retryable: retryable++; break;
+                case this.TRANSFER_STATES.success: success++; break;
+                case this.TRANSFER_STATES.info: info++; break;
+                case this.TRANSFER_STATES.failed: failed++; break;
+                case this.TRANSFER_STATES.retryable: retryable++; break;
             }
         }
         return {success:success, info:info, failed:failed, retryable:retryable,
@@ -247,8 +254,8 @@ Ext4.define('File.panel.TransferApplet', {
                 console.error(r);
             }
 
-            records = result.records;
-            this._merge(this.transfers, records);
+            records = this.transfers.getProxy().getReader().readRecords(result.records);
+            this._merge(this.transfers, records.records);
             updated = true;
         }
 

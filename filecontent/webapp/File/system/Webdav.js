@@ -31,21 +31,18 @@ Ext4.define('File.system.Webdav', {
             }
             this.offsetUrl = LABKEY.ActionURL.decodePath(this.rootOffset.replace(this.baseUrl, ''));
         }
-//
-//        console.log('contextUrl:', this.contextUrl);
-//        console.log('baseUrl:', this.baseUrl);
-//        console.log('offsetUrl:', this.offsetUrl);
+
         this.callParent([config]);
 
         this.init(config);
     },
 
     getURI : function(url) {
-        return this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.concatPaths(this.contextUrl, url));
+        return this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.concatPaths(this.contextUrl, LABKEY.ActionURL.encodePath(url)));
     },
 
     getAbsoluteBaseURL : function() {
-        return this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.getBaseURL().replace(LABKEY.contextPath, ''));
+        return this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.rootPath);
     },
 
     /**
@@ -101,7 +98,7 @@ Ext4.define('File.system.Webdav', {
     getJsonProxyCfg : function() {
         return {
             type : 'ajax',
-            url  : this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.getURL()),
+            url  : this.concatPaths(LABKEY.ActionURL.getBaseURL(true), LABKEY.ActionURL.encodePath(this.getURL())),
             extraParams : {
                 method : 'JSON'
             },
@@ -115,7 +112,7 @@ Ext4.define('File.system.Webdav', {
     getXMLProxyCfg : function() {
         return {
             type : 'webdav',
-            url  : this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.getContextBaseURL()),
+            url  : this.concatPaths(LABKEY.ActionURL.getBaseURL(true), LABKEY.ActionURL.encodePath(this.getContextBaseURL())),
             reader : {
                 type : 'xml',
                 root : 'multistatus',
@@ -177,7 +174,6 @@ Ext4.define('File.system.Webdav', {
 
     /**
      * Returns true if the current user can read the passed file
-     * In order to obtain the record for the desired file, recordFromCache() is normally used.
      * @param {Ext.Record} record(s) The Ext record associated with the file.  See LABKEY.AbstractFileSystem.FileRecord for more information.
      * @methodOf LABKEY.FileSystem.WebdavFileSystem#
      */
@@ -196,7 +192,6 @@ Ext4.define('File.system.Webdav', {
 
     /**
      * Returns true if the current user can write to the passed file or location
-     * In order to obtain the record for the desired file, recordFromCache() is normally used.
      * @param {Ext.Record} record The Ext record associated with the file.  See LABKEY.AbstractFileSystem.FileRecord for more information.
      * @methodOf LABKEY.FileSystem.WebdavFileSystem#
      */
@@ -207,7 +202,6 @@ Ext4.define('File.system.Webdav', {
 
     /**
      * Returns true if the current user can create a folder in the passed location
-     * In order to obtain the record for the desired file, recordFromCache() is normally used.
      * @param {Ext.Record} record The Ext record associated with the file.  See LABKEY.AbstractFileSystem.FileRecord for more information.
      * @methodOf LABKEY.FileSystem.WebdavFileSystem#
      */
@@ -218,7 +212,6 @@ Ext4.define('File.system.Webdav', {
 
     /**
      * Returns true if the current user can delete the passed file.
-     * In order to obtain the record for the desired file, recordFromCache() is normally used.
      * @param {Ext.Record} record The Ext record associated with the file.  See LABKEY.AbstractFileSystem.FileRecord for more information.
      * @methodOf LABKEY.FileSystem.WebdavFileSystem#
      */
@@ -229,7 +222,6 @@ Ext4.define('File.system.Webdav', {
 
     /**
      * Returns true if the current user can move or rename the passed file
-     * In order to obtain the record for the desired file, recordFromCache() is normally used.
      * @param {Ext.Record} record The Ext record associated with the file.  See LABKEY.AbstractFileSystem.FileRecord for more information.
      * @methodOf LABKEY.FileSystem.WebdavFileSystem#
      */
@@ -261,7 +253,6 @@ Ext4.define('File.system.Webdav', {
             success : function(response, options) {
                 var success = false;
                 if (200 == response.status || 201 == response.status) { // OK, CREATED
-//                    success = (response.responseText ? true : false);
                     success = true;
                 }
                 else if (405 == response.status) { // METHOD NOT ALLOWED
@@ -385,12 +376,17 @@ Ext4.define('File.system.Webdav', {
                 success: function(response, options) {
                     File.system.Abstract.processAjaxResponse(response);
                     var success = (201 == response.status || 204 == response.status || 200 == response.status); //CREATED,  NO_CONTENT (success)
-                    if(!success && response.status == 208){
+                    if (!success && response.status == 208)
+                    {
+                       var noun = config.isFile ? "File" : "Folder";
+                       var name = config.fileRecord.newName || config.fileRecord.record.get('name');
+
                        Ext4.Msg.show({
-                           title : "File Conflict",
-                           msg : "There is already a file named " + config.fileRecord.record.data.name + ' in that folder. '+
-                           'Would you like to overwrite it?',
-                           buttons : Ext4.MessageBox.YESNO,
+                           title : noun + " Conflict:",
+                           msg : "There is already a " + noun.toLowerCase() + " named " + name + ' in that location. Would you like to replace it?',
+                           cls : 'data-window',
+                           icon : Ext4.Msg.QUESTION,
+                           buttons : Ext4.Msg.YESNO,
                            fn : function(btn){
                                if(btn == 'yes') {
                                     this.fileSystem.movePath(Ext4.apply(config, {overwrite : true}));
@@ -399,8 +395,6 @@ Ext4.define('File.system.Webdav', {
                            scope : this
                        });
                     }
-
-
                     else if (success) {
                         // TODO: maybe support a config option that will to force the fileSystem to
                         // auto-reload this location, instead just uncaching and relying on consumers to do it??
@@ -506,13 +500,13 @@ Ext4.define('File.system.Webdav', {
         }
         else
         {
-            if (records.length == 1 && record)
+            if (records.length == 1 && record && !record.data.collection)
             {
                 url = record.data.href + "?contentDisposition=attachment";
             }
-            else if (config.directory.data.uri)
+            else if (config.directoryURL)
             {
-                var url = config.directory.data.uri + "?method=zip&depth=-1";
+                var url = config.directoryURL + "?method=zip&depth=-1";
                 for (var i = 0; i < records.length; i++)
                 {
                     url = url + "&file=" + encodeURIComponent(records[i].data.name);

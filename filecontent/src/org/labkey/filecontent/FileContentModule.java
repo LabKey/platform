@@ -19,7 +19,6 @@ package org.labkey.filecontent;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.view.FilesWebPart;
@@ -70,8 +69,8 @@ public class FileContentModule extends DefaultModule
     {
         return new ArrayList<WebPartFactory>(Arrays.asList(
                 new FilesWebPart.Factory(WebPartFactory.LOCATION_RIGHT),
-                new FilesWebPart.Factory(WebPartFactory.LOCATION_BODY)
-//                new FilesWebPart.Ext4Factory(WebPartFactory.LOCATION_BODY)
+                new FilesWebPart.Factory(WebPartFactory.LOCATION_BODY),
+                new FilesWebPart.Ext3Factory(WebPartFactory.LOCATION_BODY) // Disable web part for 13.1 release
         ));
     }
 
