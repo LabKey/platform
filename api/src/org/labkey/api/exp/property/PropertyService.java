@@ -26,7 +26,6 @@ import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -73,8 +72,8 @@ public class PropertyService
         ValidatorKind getValidatorKind(String typeURI);
         IPropertyValidator createValidator(String typeURI);
         List<? extends IPropertyValidator> getPropertyValidators(PropertyDescriptor desc);
-        void deleteValidatorsAndFormats(int propertyDescriptorId) throws SQLException;
-        void deleteValidatorsAndFormats(Container c) throws SQLException;
+        void deleteValidatorsAndFormats(int propertyDescriptorId);
+        void deleteValidatorsAndFormats(Container c);
         List<ConditionalFormat> getConditionalFormats(PropertyDescriptor desc);
         void saveConditionalFormats(User user, PropertyDescriptor pd, List<ConditionalFormat> formats);
     }

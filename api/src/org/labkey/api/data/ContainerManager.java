@@ -884,11 +884,9 @@ public class ContainerManager
     }
 
 
-    public static void saveAliasesForContainer(Container container, List<String> aliases) throws SQLException
+    public static void saveAliasesForContainer(Container container, List<String> aliases)
     {
-        CORE.getSchema().getScope().ensureTransaction();
-
-        try
+        try (DbScope.Transaction transaction = CORE.getSchema().getScope().ensureTransaction())
         {
             SQLFragment deleteSQL = new SQLFragment();
             deleteSQL.append("DELETE FROM ");
@@ -923,11 +921,7 @@ public class ContainerManager
                 new SqlExecutor(CORE.getSchema()).execute(insertSQL);
             }
 
-            CORE.getSchema().getScope().commitTransaction();
-        }
-        finally
-        {
-            CORE.getSchema().getScope().closeConnection();
+            transaction.commit();
         }
     }
 

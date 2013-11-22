@@ -903,10 +903,8 @@ public class OntologyManager
                 throw new RuntimeException(msg);
             }
         }
-        try
+        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
-            getExpSchema().getScope().ensureTransaction();
-
             String selectPDsToDelete = "SELECT DISTINCT PDM.PropertyId " +
                             " FROM " + getTinfoPropertyDomain() + " PDM " +
                             " INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (PDM.DomainId = DD.DomainId) " +
@@ -918,7 +916,7 @@ public class OntologyManager
                     " WHERE DomainId =  " +
                     " (SELECT DD.DomainId FROM " + getTinfoDomainDescriptor() + " DD "+
                     " WHERE DD.DomainId = ? )";
-            Table.execute(getExpSchema(), deletePDMs, dd.getDomainId());
+            new SqlExecutor(getExpSchema()).execute(deletePDMs, dd.getDomainId());
 
             if (pdIdsToDelete.length > 0)
             {
@@ -941,7 +939,7 @@ public class OntologyManager
                             "AND NOT EXISTS (SELECT * FROM " + getTinfoPropertyDomain() + " PDM " +
                                 "WHERE PDM.PropertyId = " + getTinfoPropertyDescriptor() + ".PropertyId)";
 
-                Table.execute(getExpSchema(), deletePDs, dd.getContainer().getId());
+                new SqlExecutor(getExpSchema()).execute(deletePDs, dd.getContainer().getId());
             }
 
             String deleteDD = "DELETE FROM " + getTinfoDomainDescriptor() +
@@ -949,18 +947,10 @@ public class OntologyManager
                         "AND NOT EXISTS (SELECT * FROM " + getTinfoPropertyDomain() + " PDM " +
                             "WHERE PDM.DomainId = " + getTinfoDomainDescriptor() + ".DomainId)";
 
-            Table.execute(getExpSchema(), deleteDD, dd.getDomainId());
+            new SqlExecutor(getExpSchema()).execute(deleteDD, dd.getDomainId());
             clearCaches();
 
-            getExpSchema().getScope().commitTransaction();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            getExpSchema().getScope().closeConnection();
+            transaction.commit();
         }
     }
 
@@ -972,9 +962,8 @@ public class OntologyManager
         if (null==projectContainer)
                 projectContainer = c;
 
-        try
+        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
 		{
-            getExpSchema().getScope().ensureTransaction();
             if (!c.equals(projectContainer))
             {
                 copyDescriptors(c, projectContainer);
@@ -982,7 +971,7 @@ public class OntologyManager
 
             // Owned objects should be in same container, so this should work
 			String deleteObjPropSql = "DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
-			Table.execute(getExpSchema(), deleteObjPropSql, containerid);
+            new SqlExecutor(getExpSchema()).execute(deleteObjPropSql, containerid);
             if (null != getTinfoIndexInteger())
             {
                 String deleteIndexIntegerSql = "DELETE FROM " + getTinfoIndexInteger() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
@@ -991,10 +980,10 @@ public class OntologyManager
             if (null != getTinfoIndexVarchar())
             {
                 String deleteIndexVarcharSql = "DELETE FROM " + getTinfoIndexVarchar() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
-                Table.execute(getExpSchema(), deleteIndexVarcharSql, containerid);
+                new SqlExecutor(getExpSchema()).execute(deleteIndexVarcharSql, containerid);
             }
 			String deleteObjSql = "DELETE FROM " + getTinfoObject() + " WHERE Container = ?";
-			Table.execute(getExpSchema(), deleteObjSql, containerid);
+            new SqlExecutor(getExpSchema()).execute(deleteObjSql, containerid);
 
             // delete property validator references on property descriptors
             PropertyService.get().deleteValidatorsAndFormats(c);
@@ -1009,22 +998,18 @@ public class OntologyManager
             }
 
             String deletePropDomSqlPD = "DELETE FROM " + getTinfoPropertyDomain() + " WHERE PropertyId IN (SELECT PropertyId FROM " + getTinfoPropertyDescriptor() + " WHERE Container = ?)";
-            Table.execute(getExpSchema(), deletePropDomSqlPD, containerid);
+            new SqlExecutor(getExpSchema()).execute(deletePropDomSqlPD, containerid);
             String deletePropDomSqlDD = "DELETE FROM " + getTinfoPropertyDomain() + " WHERE DomainId IN (SELECT DomainId FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?)";
-            Table.execute(getExpSchema(), deletePropDomSqlDD, containerid);
+            new SqlExecutor(getExpSchema()).execute(deletePropDomSqlDD, containerid);
             String deleteDomSql = "DELETE FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
-            Table.execute(getExpSchema(), deleteDomSql, containerid);
+            new SqlExecutor(getExpSchema()).execute(deleteDomSql, containerid);
             // now delete the prop descriptors that are referenced in this container only
             String deletePropSql = "DELETE FROM " + getTinfoPropertyDescriptor() + " WHERE Container = ?";
-            Table.execute(getExpSchema(), deletePropSql, containerid);
+            new SqlExecutor(getExpSchema()).execute(deletePropSql, containerid);
 
 			clearCaches();
-            getExpSchema().getScope().commitTransaction();
+            transaction.commit();
         }
-		finally
-		{
-            getExpSchema().getScope().closeConnection();
-		}
 	}
 
     public static void copyDescriptors (final Container c, final Container project) throws SQLException
@@ -1165,21 +1150,19 @@ public class OntologyManager
             return;
         }
 
-        try
+        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
-            getExpSchema().getScope().ensureTransaction();
-
             clearCaches();
 
             // update project of any descriptors in folder just moved
             String sql = "UPDATE " + getTinfoPropertyDescriptor() + " SET Project = ? WHERE Container = ?";
-            Table.execute(getExpSchema(), sql, newProject, c);
+            new SqlExecutor(getExpSchema()).execute(sql, newProject, c);
             sql = "UPDATE " + getTinfoDomainDescriptor() + " SET Project = ? WHERE Container = ?";
-            Table.execute(getExpSchema(), sql, newProject, c);
+            new SqlExecutor(getExpSchema()).execute(sql, newProject, c);
 
             if (null == oldProject) // if container was a project & demoted I'm done
             {
-                getExpSchema().getScope().commitTransaction();
+                transaction.commit();
                 return;
             }
 
@@ -1293,15 +1276,11 @@ public class OntologyManager
                 }
             }
 
-            getExpSchema().getScope().commitTransaction();
+            transaction.commit();
         }
         catch (ValidationException ve)
         {
             throw new SQLException(ve.getMessage());
-        }
-        finally
-        {
-            getExpSchema().getScope().closeConnection();
         }
     }
 
@@ -1868,29 +1847,21 @@ public class OntologyManager
 
         DbScope dbScope = getExpSchema().getScope();
         SqlExecutor executor = new SqlExecutor(getExpSchema());
-        try
+        try (DbScope.Transaction transaction = dbScope.ensureTransaction())
         {
-            dbScope.ensureTransaction();
-
             executor.execute(deleteObjPropSql);
             executor.execute(deletePropDomSql);
             executor.execute(deletePropSql);
             propDescCache.remove(key);
             domainPropertiesCache.clear();
-            dbScope.commitTransaction();
-        }
-        finally
-        {
-            dbScope.closeConnection();
+            transaction.commit();
         }
     }
 
     public static void insertProperties(Container container, String ownerObjectLsid, ObjectProperty... properties) throws ValidationException
     {
-        try
+        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
-            getExpSchema().getScope().ensureTransaction();
-
             Integer parentId = ownerObjectLsid == null ? null : ensureObject(container, ownerObjectLsid);
             for (ObjectProperty oprop : properties)
             {
@@ -1898,15 +1869,11 @@ public class OntologyManager
             }
             insertProperties(container, properties);
 
-            getExpSchema().getScope().commitTransaction();
+            transaction.commit();
         }
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            getExpSchema().getScope().closeConnection();
         }
     }
 
@@ -2141,10 +2108,8 @@ public class OntologyManager
         if (null==domainURI)
             return;
 
-		try
+		try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
 		{
-            getExpSchema().getScope().ensureTransaction();
-
             try
 
             {
@@ -2154,15 +2119,11 @@ public class OntologyManager
             catch (DomainNotFoundException x)
             {
                 // throw exception but do not kill enclosing transaction
-                getExpSchema().getScope().commitTransaction();
+                transaction.commit();
                 throw x;
             }
 
-            getExpSchema().getScope().commitTransaction();
-		}
-        finally
-		{
-            getExpSchema().getScope().closeConnection();
+            transaction.commit();
 		}
 	}
 

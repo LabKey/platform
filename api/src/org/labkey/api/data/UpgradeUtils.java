@@ -67,7 +67,7 @@ public class UpgradeUtils
         {
             DbScope scope = column.getParentTable().getSchema().getScope();
 
-            try
+            try (DbScope.Transaction transction = scope.ensureTransaction())
             {
                 scope.ensureTransaction();
 
@@ -75,11 +75,7 @@ public class UpgradeUtils
                 for (String cid : containersToCorrect)
                     uniquifyValuesInContainer(column, cid, sort, caseSensitive, ignoreNulls);
 
-                scope.commitTransaction();
-            }
-            finally
-            {
-                scope.closeConnection();
+                transction.commit();
             }
         }
     }

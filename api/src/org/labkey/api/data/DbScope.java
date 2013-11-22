@@ -314,7 +314,8 @@ public class DbScope
         return result;
     }
 
-
+    /** Use DbScope.Transaction.commit() instead */
+    @Deprecated
     public void commitTransaction()
     {
         TransactionImpl t = getCurrentTransactionImpl();
@@ -591,7 +592,8 @@ public class DbScope
         }
     }
 
-
+    /** Use DbScope.Transaction.close() instead. Or better yet, use a try-with-resources to auto-close the Transaction object */
+    @Deprecated
     public void closeConnection()
     {
         TransactionImpl t = getCurrentTransactionImpl();

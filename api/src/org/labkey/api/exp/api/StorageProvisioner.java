@@ -557,9 +557,8 @@ public class StorageProvisioner
     {
         DbScope scope = DbSchema.get("core").getScope();
 
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
             Connection conn = scope.getConnection();
             Domain domain = PropertyService.get().getDomain(c, domainUri);
             if (null == domain)
@@ -628,17 +627,13 @@ public class StorageProvisioner
             if (hasAdds)
                 execute(scope, conn, adds);
             kind.invalidate(domain);
-            scope.commitTransaction();
+            transaction.commit();
             return !errors.hasErrors();
         }
         catch (Exception x)
         {
             errors.reject(SpringActionController.ERROR_MSG, x.getMessage());
             return false;
-        }
-        finally
-        {
-            scope.closeConnection();
         }
     }
 
