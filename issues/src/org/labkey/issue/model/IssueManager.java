@@ -336,18 +336,15 @@ public class IssueManager
     {
         TableInfo table = IssuesSchema.getInstance().getTableInfoCustomColumns();
         Filter filter = new SimpleFilter(new FieldKey(null, "Container"), c);
-        DbScope scope = table.getSchema().getScope();
 
-        try
+        try (DbScope.Transaction transaction = table.getSchema().getScope().ensureTransaction())
         {
-            scope.ensureTransaction();
-
             Table.delete(table, filter);
 
             for (CustomColumn cc : ccc.getCustomColumns())
                 Table.insert(null, table, cc);
 
-            scope.commitTransaction();
+            transaction.commit();
         }
         catch (SQLException e)
         {
@@ -355,7 +352,6 @@ public class IssueManager
         }
         finally
         {
-            scope.closeConnection();
             ColumnConfigurationCache.uncache(c);
         }
     }
@@ -767,9 +763,8 @@ public class IssueManager
     {
         String message = "";
 
-        try
+        try (DbScope.Transaction transaction = _issuesSchema.getSchema().getScope().ensureTransaction())
         {
-            _issuesSchema.getSchema().getScope().ensureTransaction();
             String deleteComments =
                     "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container NOT IN (SELECT EntityId FROM core.Containers))";
             int commentsDeleted = new SqlExecutor(_issuesSchema.getSchema()).execute(deleteComments);
@@ -778,13 +773,9 @@ public class IssueManager
             commentsDeleted += new SqlExecutor(_issuesSchema.getSchema()).execute(deleteOrphanedComments);
             int issuesDeleted = ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssues(), null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssueKeywords(), null);
-            _issuesSchema.getSchema().getScope().commitTransaction();
+            transaction.commit();
 
             message = "deleted " + issuesDeleted + " issues<br>\ndeleted " + commentsDeleted + " comments<br>\n";
-        }
-        finally
-        {
-            _issuesSchema.getSchema().getScope().closeConnection();
         }
 
         return message;

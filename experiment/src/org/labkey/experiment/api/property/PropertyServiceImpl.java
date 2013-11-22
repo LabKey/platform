@@ -18,14 +18,32 @@ package org.labkey.experiment.api.property;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.fhcrc.cpas.exp.xml.*;
+import org.fhcrc.cpas.exp.xml.DefaultType;
+import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
+import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
+import org.fhcrc.cpas.exp.xml.PropertyValidatorPropertyType;
+import org.fhcrc.cpas.exp.xml.PropertyValidatorType;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.exp.*;
-import org.labkey.api.exp.property.*;
+import org.labkey.api.exp.DomainDescriptor;
+import org.labkey.api.exp.Handler;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.XarFormatException;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.IPropertyType;
+import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.Lookup;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.QueryService;
@@ -35,8 +53,14 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.NotFoundException;
 
-import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class PropertyServiceImpl implements PropertyService.Interface
 {
@@ -159,13 +183,13 @@ public class PropertyServiceImpl implements PropertyService.Interface
         return validators;
     }
 
-    public void deleteValidatorsAndFormats(int descriptorId) throws SQLException
+    public void deleteValidatorsAndFormats(int descriptorId)
     {
         DomainPropertyManager.get().removeValidatorsForPropertyDescriptor(descriptorId);
         DomainPropertyManager.get().deleteConditionalFormats(descriptorId);
     }
 
-    public void deleteValidatorsAndFormats(Container c) throws SQLException
+    public void deleteValidatorsAndFormats(Container c)
     {
         DomainPropertyManager.get().deleteAllValidatorsAndFormats(c);
     }

@@ -260,7 +260,7 @@ public class DomainPropertyManager
         }
     }
 
-    public void deleteAllValidatorsAndFormats(Container c) throws SQLException
+    public void deleteAllValidatorsAndFormats(Container c)
     {
         SqlExecutor executor = new SqlExecutor(getExpSchema());
         SQLFragment validatorReferenceSQL = new SQLFragment("DELETE FROM " + getTinfoValidatorReference() +

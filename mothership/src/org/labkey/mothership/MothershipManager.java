@@ -17,10 +17,24 @@
 package org.labkey.mothership;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.*;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.security.*;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserDisplayNameComparator;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -32,6 +46,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * User: jeckels
@@ -46,7 +61,7 @@ public class MothershipManager
     private static final String UPGRADE_MESSAGE_PROP = "upgradeMessage";
     private static final String CREATE_ISSUE_URL_PROP = "createIssueURL";
     private static final String ISSUES_CONTAINER_PROP = "issuesContainer";
-    private static final Object INSERT_EXCEPTION_LOCK = new Object();
+    private static final ReentrantLock INSERT_EXCEPTION_LOCK = new ReentrantLock();
 
     public static MothershipManager get()
     {
@@ -69,60 +84,51 @@ public class MothershipManager
     public void insertException(ExceptionStackTrace stackTrace, ExceptionReport report) throws SQLException
     {
         // Synchronize to prevent two different threads from creating duplicate rows in the ExceptionStackTrace table
-        synchronized (INSERT_EXCEPTION_LOCK)
+        try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction(INSERT_EXCEPTION_LOCK))
         {
-            DbScope scope = getSchema().getScope();
-            scope.ensureTransaction();
-            try
+            stackTrace.hashStackTrace();
+            ExceptionStackTrace existingStackTrace = getExceptionStackTrace(stackTrace.getStackTraceHash(), stackTrace.getContainer());
+            if (existingStackTrace != null)
             {
-                stackTrace.hashStackTrace();
-                ExceptionStackTrace existingStackTrace = getExceptionStackTrace(stackTrace.getStackTraceHash(), stackTrace.getContainer());
-                if (existingStackTrace != null)
-                {
-                    stackTrace = existingStackTrace;
-                }
-                else
-                {
-                    stackTrace = Table.insert(null, getTableInfoExceptionStackTrace(), stackTrace);
-                }
-
-                report.setExceptionStackTraceId(stackTrace.getExceptionStackTraceId());
-
-                String url = report.getUrl();
-                if (null != url && url.length() > 512)
-                    report.setURL(url.substring(0, 506) + "...");
-
-                String referrerURL = report.getReferrerURL();
-                if (null != referrerURL && referrerURL.length() > 512)
-                    report.setReferrerURL(referrerURL.substring(0, 506) + "...");
-
-                String browser = report.getBrowser();
-                if (null != browser && browser.length() > 100)
-                    report.setBrowser(browser.substring(0,90) + "...");
-
-                String exceptionMessage = report.getExceptionMessage();
-                if (null != exceptionMessage && exceptionMessage.length() > 1000)
-                    report.setExceptionMessage(exceptionMessage.substring(0,990) + "...");
-
-                String actionName = report.getPageflowAction();
-                if (null != actionName && actionName.length() > 40)
-                {
-                    report.setPageflowAction(actionName.substring(0, 39));
-                }
-
-                String controllerName = report.getPageflowName();
-                if (null != controllerName && controllerName.length() > 30)
-                {
-                    report.setPageflowName(controllerName.substring(0, 29));
-                }
-
-                Table.insert(null, getTableInfoExceptionReport(), report);
-                scope.commitTransaction();
+                stackTrace = existingStackTrace;
             }
-            finally
+            else
             {
-                scope.closeConnection();
+                stackTrace = Table.insert(null, getTableInfoExceptionStackTrace(), stackTrace);
             }
+
+            report.setExceptionStackTraceId(stackTrace.getExceptionStackTraceId());
+
+            String url = report.getUrl();
+            if (null != url && url.length() > 512)
+                report.setURL(url.substring(0, 506) + "...");
+
+            String referrerURL = report.getReferrerURL();
+            if (null != referrerURL && referrerURL.length() > 512)
+                report.setReferrerURL(referrerURL.substring(0, 506) + "...");
+
+            String browser = report.getBrowser();
+            if (null != browser && browser.length() > 100)
+                report.setBrowser(browser.substring(0,90) + "...");
+
+            String exceptionMessage = report.getExceptionMessage();
+            if (null != exceptionMessage && exceptionMessage.length() > 1000)
+                report.setExceptionMessage(exceptionMessage.substring(0,990) + "...");
+
+            String actionName = report.getPageflowAction();
+            if (null != actionName && actionName.length() > 40)
+            {
+                report.setPageflowAction(actionName.substring(0, 39));
+            }
+
+            String controllerName = report.getPageflowName();
+            if (null != controllerName && controllerName.length() > 30)
+            {
+                report.setPageflowName(controllerName.substring(0, 29));
+            }
+
+            Table.insert(null, getTableInfoExceptionReport(), report);
+            transaction.commit();
         }
     }
 
@@ -262,9 +268,7 @@ public class MothershipManager
 
     public synchronized ServerSession updateServerSession(ServerSession session, ServerInstallation installation, Container container) throws SQLException
     {
-        DbScope scope = getSchema().getScope();
-        scope.ensureTransaction();
-        try
+        try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
         {
             ServerInstallation existingInstallation = getServerInstallation(installation.getServerInstallationGUID(), container);
 
@@ -321,12 +325,8 @@ public class MothershipManager
                 session = Table.update(null, getTableInfoServerSession(), existingSession, existingSession.getServerSessionId());
             }
 
-            scope.commitTransaction();
+            transaction.commit();
             return session;
-        }
-        finally
-        {
-            scope.closeConnection();
         }
     }
 
