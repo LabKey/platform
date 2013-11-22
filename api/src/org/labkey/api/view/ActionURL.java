@@ -669,7 +669,10 @@ public class ActionURL extends URLHelper implements Cloneable
 
             ActionURL parse = new ActionURL("/Controller/path/action.view?foo=bar");
             String toString = parse.getLocalURIString();
-            assertEquals(parse.getContextPath() + "/controller/path/action.view?foo=bar", toString);
+            if (useContainerRelativeURL())
+                assertEquals(parse.getContextPath() + "/path/controller-action.view?foo=bar", toString);
+            else
+                assertEquals(parse.getContextPath() + "/controller/path/action.view?foo=bar", toString);
         }
     }
 }
