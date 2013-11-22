@@ -115,6 +115,12 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
         this(column, null, null);
     }
 
+    // Used only by the junit tests
+    int getColumnCount()
+    {
+        return _columns.size();
+    }
+
     @Override
     protected TableSelector getThis()
     {
@@ -168,7 +174,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     private void ensureStableColumnOrder(String methodDescription)
     {
         if (!_stableColumnOrdering)
-            throw new IllegalStateException(methodDescription + " should not be called with an unstable ordered column set");
+            throw new IllegalStateException(methodDescription + " must not be called with an unstable ordered column set");
     }
 
     /**

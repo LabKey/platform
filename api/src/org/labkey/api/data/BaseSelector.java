@@ -313,15 +313,25 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     @Override
     public @NotNull <K, V> Map<K, V> fillValueMap(@NotNull final Map<K, V> fillMap)
     {
-        // Using forEachMap() ensures that standard type conversion happenes (vs. ResultSet enumeration and rs.getObject())
-        forEachMap(new ForEachBlock<Map<String, Object>>()
+        // Using a ResultSetIterator ensures that standard type conversion happens (vs. ResultSet enumeration and rs.getObject())
+        handleResultSet(getStandardResultSetFactory(), new ResultSetHandler<Object>()
         {
             @Override
-            public void exec(Map<String, Object> map) throws SQLException
+            public Object handle(ResultSet rs, Connection conn) throws SQLException
             {
-                RowMap rowMap = (RowMap)map;
-                //noinspection unchecked
-                fillMap.put((K)rowMap.get(1), (V)rowMap.get(2));
+                if (rs.getMetaData().getColumnCount() < 2)
+                    throw new IllegalStateException("Must select at least two columns to use fillValueMap() or getValueMap()");
+
+                ResultSetIterator iter = new ResultSetIterator(rs);
+
+                while (iter.hasNext())
+                {
+                    RowMap rowMap = (RowMap)iter.next();
+                    //noinspection unchecked
+                    fillMap.put((K)rowMap.get(1), (V)rowMap.get(2));
+                }
+
+                return null;
             }
         });
 
