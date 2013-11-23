@@ -236,13 +236,9 @@ public class ListWriter
             List<ColumnInfo> selectColumns = new ArrayList<>(attachmentColumns);
             selectColumns.add(0, ti.getColumn("EntityId"));
 
-            ResultSet rs = null; 
-
-            try
+            try (ResultSet rs = QueryService.get().select(ti, selectColumns, null, null))
             {
-                rs = QueryService.get().select(ti, selectColumns, null, null);
-
-                while(rs.next())
+                while (rs.next())
                 {
                     String entityId = rs.getString(1);
                     AttachmentParent listItemParent = new ListItemAttachmentParent(entityId, c);
@@ -260,15 +256,10 @@ public class ListWriter
 
                         String columnName = attachmentColumn.getName();
                         VirtualFile columnDir = listDir.getDir(columnName);
+                        FileNameUniquifier uniquifier = uniquifiers.get(columnName);
 
-                        InputStream is = null;
-                        OutputStream os = null;
-
-                        try
+                        try (InputStream is = AttachmentService.get().getInputStream(listItemParent, filename); OutputStream os = columnDir.getOutputStream(uniquifier.uniquify(filename)))
                         {
-                            is = AttachmentService.get().getInputStream(listItemParent, filename);
-                            FileNameUniquifier uniquifier = uniquifiers.get(columnName);
-                            os = columnDir.getOutputStream(uniquifier.uniquify(filename));
                             FileUtil.copyData(is, os);
                         }
                         catch (FileNotFoundException e)
@@ -276,19 +267,8 @@ public class ListWriter
                             // Shouldn't happen... but just skip this file in production if it does
                             assert false;
                         }
-                        finally
-                        {
-                            if (null != is)
-                                is.close();
-                            if (null != os)
-                                os.close();
-                        }
                     }
                 }
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
             }
         }
     }
