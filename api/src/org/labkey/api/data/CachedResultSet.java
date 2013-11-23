@@ -19,8 +19,10 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections15.IteratorUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
+import org.labkey.api.collections.RowMap;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.settings.AppProps;
@@ -52,6 +54,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -71,17 +74,16 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
     private static final Logger _log = Logger.getLogger(CachedResultSet.class);
 
     // metadata
-    private ResultSetMetaData _md;
-    private HashMap<String, Integer> _columns;
+    private final ResultSetMetaData _md;
+    private final HashMap<String, Integer> _columns;
 
     // data
-    ArrayListMap<String, Object>[] _arrayListMaps;
-    private Map<String, Object>[] _maps;
-    private boolean _isComplete = true;
-    private boolean _wasClosed = false;
+    @NotNull final ArrayListMap<String, Object>[] _arrayListMaps;
+    private final boolean _isComplete;
 
+    private boolean _wasClosed = false;
     private StackTraceElement[] _stackTrace = null;
-    private String _url = null;
+    private String _url;
     private String _threadName = null;
 
     // state
@@ -91,15 +93,9 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
     private Object _lastObject = null;
 
 
-    private CachedResultSet()
+    public static CachedResultSet create(ResultSet rs, boolean cacheMetaData, int maxRows) throws SQLException
     {
-        assert MemTracker.put(this);
-    }
-
-
-    public CachedResultSet(ResultSet rs, boolean cacheMetaData, int maxRows) throws SQLException
-    {
-        List<Map<String, Object>> list = new ArrayList<>();
+        List<RowMap> list = new ArrayList<>();
 
         if (maxRows == Table.ALL_ROWS)
             maxRows = Integer.MAX_VALUE;
@@ -113,27 +109,102 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
         // If we have another row, then we're not complete
         boolean isComplete = !rs.next();
 
-        init(rs.getMetaData(), cacheMetaData, list, isComplete);
+        return new CachedResultSet(rs.getMetaData(), cacheMetaData, list, isComplete);
     }
 
 
-    public CachedResultSet(ResultSetMetaData md, boolean cacheMetaData, List<Map<String, Object>> maps, boolean isComplete)
+    public static CachedResultSet create(ResultSetMetaData md, boolean cacheMetaData, List<Map<String, Object>> maps, boolean isComplete)
     {
-        this();
-        init(md, cacheMetaData, maps, isComplete);
+        return new CachedResultSet(md, cacheMetaData, convertToRowMaps(md, maps), isComplete);
     }
 
 
-    private void init(ResultSetMetaData md, boolean cacheMetaData, List<Map<String, Object>> maps, boolean isComplete)
+    public static CachedResultSet create(List<Map<String, Object>> maps)
     {
-        // TODO: consider moving to ArrayList internally to avoid this array nonsense
-        // HACK
-        if (maps.size() > 0 && maps.get(0) instanceof ArrayListMap)
-            //noinspection unchecked
-            init(md, cacheMetaData, maps.toArray((Map<String, Object>[])new ArrayListMap[maps.size()]), isComplete);
-        else
-            //noinspection unchecked
-            init(md, cacheMetaData, maps.toArray((Map<String, Object>[])new Map[maps.size()]), isComplete);
+        return create(maps, maps.get(0).keySet());
+    }
+
+
+    public static CachedResultSet create(List<Map<String, Object>> maps, Collection<String> columnNames)
+    {
+        ResultSetMetaData md = createMetaData(columnNames);
+
+        CachedResultSet crs = new CachedResultSet(md, false, convertToRowMaps(md, maps), true);
+
+        try
+        {
+            // Avoid error message from CachedResultSet.finalize() about unclosed CachedResultSet.
+            crs.close();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+        return crs;
+    }
+
+
+    private static ResultSetMetaData createMetaData(Collection<String> columnNames)
+    {
+        ResultSetMetaDataImpl md = new ResultSetMetaDataImpl(columnNames.size());
+        for (String columnName : columnNames)
+        {
+            ResultSetMetaDataImpl.ColumnMetaData col = new ResultSetMetaDataImpl.ColumnMetaData();
+            col.columnName = columnName;
+            md.addColumn(col);
+        }
+
+        return md;
+    }
+
+
+    private static List<RowMap> convertToRowMaps(ResultSetMetaData md, List<Map<String, Object>> maps)
+    {
+        List<RowMap> list = new ArrayList<>();
+
+        ResultSetRowMapFactory factory;
+        try
+        {
+            factory = ResultSetRowMapFactory.create(md);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+        for (Map<String, Object> map : maps)
+        {
+            list.add(factory.getRowMap(map));
+        }
+
+        return list;
+    }
+
+
+    private CachedResultSet(ResultSetMetaData md, boolean cacheMetaData, List<RowMap> maps, boolean isComplete)
+    {
+        //noinspection unchecked
+        _arrayListMaps = (RowMap[]) maps.toArray(new RowMap[maps.size()]);
+
+        _isComplete = isComplete;
+
+        try
+        {
+            _md = cacheMetaData ? new CachedResultSetMetaData(md) : md;
+            _columns = new HashMap<>(_md.getColumnCount() * 2);
+
+            for (int col = _md.getColumnCount(); col >= 1; col--)
+            {
+                String colName = _md.getColumnName(col).toLowerCase();
+                assert !_columns.containsKey(colName) : "Duplicate column name: " + colName;
+                _columns.put(colName, col);
+            }
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
 
         // Stash stack trace that created this CachedRowSet
         if (AppProps.getInstance().isDevMode())
@@ -154,32 +225,8 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
 
             _threadName = Thread.currentThread().getName();
         }
-    }
 
-
-    private void init(ResultSetMetaData md, boolean cacheMetaData, Map<String, Object>[] maps, boolean isComplete)
-    {
-        try
-        {
-            if (maps.length > 0 && maps[0] instanceof ArrayListMap)
-                _arrayListMaps = (ArrayListMap<String, Object>[]) maps;
-
-            _md = cacheMetaData ? new CachedResultSetMetaData(md) : md;
-            _maps = maps;
-            _isComplete = isComplete;
-            _columns = new HashMap<>(_md.getColumnCount() * 2);
-
-            for (int col = _md.getColumnCount(); col >= 1; col--)
-            {
-                String colName = _md.getColumnName(col).toLowerCase();
-                assert !_columns.containsKey(colName) : "Duplicate column name: " + colName;
-                _columns.put(colName, col);
-            }
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        assert MemTracker.put(this);
     }
 
 
@@ -344,7 +391,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
             return ((Number) o).intValue();
         if (o instanceof Long)
         {
-            long l = ((Long) o).longValue();
+            long l = (Long) o;
             if (l >= Integer.MIN_VALUE && l <= Integer.MAX_VALUE)
                 return (int)l;
         }
@@ -588,13 +635,10 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
 
     public Object getObject(int columnIndex) throws SQLException
     {
-        if (_row < 0 || _row >= _maps.length)
+        if (_row < 0 || _row >= _arrayListMaps.length)
             throw new SQLException("No current row");
 
-        if (null != _arrayListMaps)
-            _lastObject = _arrayListMaps[_row].get(columnIndex);
-        else
-            _lastObject = _maps[_row].get(_md.getColumnName(columnIndex));
+        _lastObject = _arrayListMaps[_row].get(columnIndex);
 
         if (_lastObject instanceof Double)
             _lastObject = ResultSetUtil.mapDatabaseDoubleToJavaDouble((Double) _lastObject);
@@ -604,7 +648,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
 
     public Object getObject(String columnName) throws SQLException
     {
-        _lastObject = _maps[_row].get(columnName);
+        _lastObject = _arrayListMaps[_row].get(columnName);
         // check for no illegal column name
         if (_lastObject == null)
             findColumn(columnName);
@@ -619,10 +663,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
     // careful! this does no error checking
     public void _setObject(int columnIndex, Object o) throws SQLException
     {
-        if (null != _arrayListMaps)
-            _arrayListMaps[_row].set(columnIndex,o);
-        else
-            _maps[_row].put(_md.getColumnName(columnIndex),o);
+        _arrayListMaps[_row].set(columnIndex,o);
     }
 
 
@@ -662,17 +703,17 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
 
     public boolean isAfterLast() throws SQLException
     {
-        return _row == _maps.length;
+        return _row == _arrayListMaps.length;
     }
 
     public boolean isFirst() throws SQLException
     {
-        return _maps.length > 0 && _row == 0;
+        return _arrayListMaps.length > 0 && _row == 0;
     }
 
     public boolean isLast() throws SQLException
     {
-        return _maps.length > 0 && _row == _maps.length - 1;
+        return _arrayListMaps.length > 0 && _row == _arrayListMaps.length - 1;
     }
 
     public void beforeFirst() throws SQLException
@@ -682,7 +723,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
 
     public void afterLast() throws SQLException
     {
-        _row = _maps.length;
+        _row = _arrayListMaps.length;
     }
 
     protected void finalize() throws Throwable
@@ -720,7 +761,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
     public int getRow() throws SQLException
     {
         // adjust to 1-based
-        return _row >= 0 && _row < _maps.length ? _row + 1 : 0;
+        return _row >= 0 && _row < _arrayListMaps.length ? _row + 1 : 0;
     }
 
     public boolean absolute(int row) throws SQLException
@@ -734,7 +775,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
 
     public boolean relative(int rows) throws SQLException
     {
-        _row = max(-1, min(_maps.length, _row + rows));
+        _row = max(-1, min(_arrayListMaps.length, _row + rows));
         return getRow() != 0;
     }
 
@@ -1132,29 +1173,24 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
         return "Displaying only the first " + maxRows + " rows.";
     }
 
-//    @Override
-    public boolean supportsGetRowMap()
-    {
-        return true;
-    }
-
     public Map<String, Object> getRowMap() throws SQLException
     {
-        if (_row >= _maps.length)
+        if (_row >= _arrayListMaps.length)
             throw new SQLException("No current row");
-        return _maps[_row];
+        return _arrayListMaps[_row];
     }
 
 
     public Iterator<Map<String, Object>> iterator()
     {
-        Iterator<Map<String, Object>> it = IteratorUtils.arrayIterator(_maps);
+        Map<String, Object>[] maps = _arrayListMaps;
+        Iterator<Map<String, Object>> it = IteratorUtils.arrayIterator(maps);
         return IteratorUtils.unmodifiableIterator(it);
     }
 
     public int getSize()
     {
-        return _maps.length;
+        return _arrayListMaps.length;
     }
 
     //
@@ -1439,6 +1475,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
         throw new UnsupportedOperationException();
     }
 
+    @SuppressWarnings("UnusedDeclaration")
     private class DataIteratorAdapter implements DataIterator
     {
         @Override
@@ -1450,7 +1487,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
         @Override
         public int getColumnCount()
         {
-            return getColumnCount();
+            return 0;
         }
 
         @Override

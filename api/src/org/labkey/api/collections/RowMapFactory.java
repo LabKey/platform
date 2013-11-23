@@ -15,11 +15,10 @@
  */
 package org.labkey.api.collections;
 
-import java.util.BitSet;
-import java.util.Collection;
-import java.util.Map;
-import java.util.List;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: adam
@@ -32,12 +31,12 @@ public class RowMapFactory<V>
 
     public RowMapFactory()
     {
-        _findMap = new ArrayListMap.FindMap(new CaseInsensitiveHashMap<Integer>());
+        _findMap = new ArrayListMap.FindMap<>(new CaseInsensitiveHashMap<Integer>());
     }
 
     public RowMapFactory(int columns)
     {
-        _findMap = new ArrayListMap.FindMap(new CaseInsensitiveHashMap<Integer>(2 * columns));
+        _findMap = new ArrayListMap.FindMap<>(new CaseInsensitiveHashMap<Integer>(2 * columns));
     }
 
     public RowMapFactory(ArrayListMap.FindMap<String> findMap)
@@ -84,7 +83,7 @@ public class RowMapFactory<V>
      * Will ignore values in source map that do not have values in the findmap.
      * use getRowMap().putAll() to add all values
      */
-    public RowMap<V> getRowMap(Map<String,V> source)
+    public RowMap<V> getRowMap(Map<String, V> source)
     {
         RowMap<V> to = new RowMap<>(_findMap);
         for (String key : _findMap.keySet())

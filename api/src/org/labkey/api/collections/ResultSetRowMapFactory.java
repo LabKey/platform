@@ -15,7 +15,6 @@
  */
 package org.labkey.api.collections;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.util.ResultSetUtil;
@@ -37,16 +36,16 @@ import java.util.Map;
 */
 public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Serializable
 {
-    private static final Logger _log = Logger.getLogger(ResultSetRowMapFactory.class);
-
     private boolean _convertBigDecimalToDouble = true;
 
 
     public static ResultSetRowMapFactory create(ResultSet rs) throws SQLException
     {
+        ResultSetMetaData md = rs.getMetaData();
+
         if (rs instanceof CachedResultSet)
         {
-            return new ResultSetRowMapFactory(rs)
+            return new ResultSetRowMapFactory(md)
             {
                 @Override
                 public RowMap<Object> getRowMap(ResultSet rs) throws SQLException
@@ -56,17 +55,22 @@ public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Ser
             };
         }
 
-        return new ResultSetRowMapFactory(rs);
+        return new ResultSetRowMapFactory(md);
     }
 
 
-    protected ResultSetRowMapFactory(ResultSet rs) throws SQLException
+    public static ResultSetRowMapFactory create(ResultSetMetaData md) throws SQLException
     {
-        super(rs.getMetaData().getColumnCount() + 1);
+        return new ResultSetRowMapFactory(md);
+    }
 
-        Map<String, Integer> findMap = getFindMap();
-        ResultSetMetaData md = rs.getMetaData();
+
+    private ResultSetRowMapFactory(ResultSetMetaData md) throws SQLException
+    {
+        super(md.getColumnCount() + 1);
+
         int count = md.getColumnCount();
+        Map<String, Integer> findMap = getFindMap();
         findMap.put("_row", 0);  // We're going to stuff the current row index at index 0
 
         for (int i = 1; i <= count; i++)

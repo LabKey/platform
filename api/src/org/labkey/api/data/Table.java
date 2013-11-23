@@ -1213,7 +1213,7 @@ public class Table
 
     static TableResultSet cacheResultSet(ResultSet rs, boolean cacheMetaData, int maxRows, @Nullable StackTraceElement[] creationStackTrace) throws SQLException
     {
-        CachedResultSet crs = new CachedResultSet(rs, cacheMetaData, maxRows);
+        CachedResultSet crs = CachedResultSet.create(rs, cacheMetaData, maxRows);
 
         if (null != creationStackTrace && AppProps.getInstance().isDevMode())
             crs.setStackTrace(creationStackTrace);

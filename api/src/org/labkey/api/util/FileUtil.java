@@ -589,16 +589,9 @@ quickScan:
     // Closes input stream
     public static long copyData(InputStream is, File file) throws IOException
     {
-        FileOutputStream fos = new FileOutputStream(file);
-
-        try
+        try (InputStream input = is; FileOutputStream fos = new FileOutputStream(file))
         {
-            return copyData(is, fos);
-        }
-        finally
-        {
-            if (is != null) try { is.close(); } catch (IOException e) {  }
-            try { fos.close(); } catch (IOException e) {  }
+            return copyData(input, fos);
         }
     }
 

@@ -454,7 +454,7 @@ public class ResultSetUtil
             m.put("s", null);
             maps.add(m);
 
-            ResultSet rs = new CachedResultSet(new TestMetaData(), false, maps, true);
+            ResultSet rs = CachedResultSet.create(new TestMetaData(), false, maps, true);
 
             StringWriter swXML = new StringWriter(1000);
             rs.beforeFirst();
