@@ -25,14 +25,16 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.SpecimenComment;
@@ -233,20 +235,19 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
         }
 
-        private Map<String, String> getCommentCache(RenderContext ctx, String lineSeparator) throws SQLException
+        private Map<String, String> getCommentCache(final RenderContext ctx, String lineSeparator) throws SQLException
         {
             if (_commentCache == null)
             {
-                Set<String> columns = new HashSet<>();
-                columns.add("Comments");
-                columns.add("SpecimenHash");
-                ResultSet rs = null;
-                try
+                Set<String> columns = PageFlowUtil.setOrdered("Comments", "SpecimenHash");
+
+                final Set<String> hashes = new HashSet<>();
+                final Map<String, List<SpecimenComment>> hashToComments = new HashMap<>();
+
+                new TableSelector(_summaryTable, columns, ctx.getBaseFilter(), ctx.getBaseSort()).forEach(new Selector.ForEachBlock<ResultSet>()
                 {
-                    rs = Table.select(_summaryTable, columns, ctx.getBaseFilter(), ctx.getBaseSort());
-                    Set<String> hashes = new HashSet<>();
-                    Map<String, List<SpecimenComment>> hashToComments = new HashMap<>();
-                    while (rs.next())
+                    @Override
+                    public void exec(ResultSet rs) throws SQLException
                     {
                         String maxPossibleCount = rs.getString("Comments");
                         if (maxPossibleCount != null && !"0".equals(maxPossibleCount))
@@ -257,29 +258,21 @@ public class SpecimenSummaryTable extends BaseStudyTable
                             addComments(ctx.getContainer(), hashes, hashToComments);
                             hashes.clear();
                         }
-                    }
-                    addComments(ctx.getContainer(), hashes, hashToComments);
 
-                    _commentCache = new HashMap<>();
-                    for (Map.Entry<String, List<SpecimenComment>> entry : hashToComments.entrySet())
-                    {
-                        List<SpecimenComment> commentList = entry.getValue();
-                        String formatted = formatCommentText(commentList.toArray(new SpecimenComment[commentList.size()]), lineSeparator);
-                        _commentCache.put(entry.getKey(), formatted);
                     }
-                }
-                finally
+                });
+
+                addComments(ctx.getContainer(), hashes, hashToComments);
+                _commentCache = new HashMap<>();
+
+                for (Map.Entry<String, List<SpecimenComment>> entry : hashToComments.entrySet())
                 {
-                    if (rs != null)
-                        try
-                        {
-                            rs.close();
-                        }
-                        catch (SQLException e)
-                        {
-                        }
+                    List<SpecimenComment> commentList = entry.getValue();
+                    String formatted = formatCommentText(commentList.toArray(new SpecimenComment[commentList.size()]), lineSeparator);
+                    _commentCache.put(entry.getKey(), formatted);
                 }
             }
+
             return _commentCache;
         }
 
