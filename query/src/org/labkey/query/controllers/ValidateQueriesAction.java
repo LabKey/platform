@@ -39,7 +39,7 @@ public class ValidateQueriesAction extends ApiAction
     @Override
     public ApiResponse execute(Object o, BindException errors) throws Exception
     {
-        ValidateQueriesVisitor validator = new ValidateQueriesVisitor(true);
+        ValidateQueriesVisitor validator = new ValidateQueriesVisitor();
         validator.visitTop(DefaultSchema.get(getViewContext().getUser(), getViewContext().getContainer()), null);
         if (validator.getInvalidCount() > 0)
         {

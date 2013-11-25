@@ -1400,6 +1400,7 @@ public class ReportsController extends BaseStudyController
         public String getViewName(){return _viewName;}
     }
 
+/*  Unused: TODO: Delete this!
 
     public static class ReportData
     {
@@ -1443,6 +1444,7 @@ public class ReportsController extends BaseStudyController
             return resultSet;
         }
     }
+*/
 
     @RequiresPermissionClass(ReadPermission.class)
     public class DesignChartAction extends SimpleViewAction<ChartDesignerBean>

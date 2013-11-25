@@ -32,8 +32,8 @@ import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.FieldKey;
@@ -55,7 +55,6 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.NavTree;
@@ -66,7 +65,6 @@ import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.ParticipantGroupManager;
@@ -81,7 +79,6 @@ import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
@@ -506,18 +503,8 @@ public class DataSetQueryView extends StudyQueryView
         TableInfo datasetTable = getTable();
         SimpleFilter sourceLsidFilter = new SimpleFilter();
         sourceLsidFilter.addCondition("SourceLsid", null, CompareType.NONBLANK);
-        ResultSet rs = null;
-        try
-        {
-            rs = Table.select(datasetTable, Collections.singleton("SourceLsid"), sourceLsidFilter, null);
-            if (rs.next())
-                return true;
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
-        return false;
+
+        return new TableSelector(datasetTable, sourceLsidFilter, null).exists();
     }
 
     protected QCStateSet getQcStateSet()

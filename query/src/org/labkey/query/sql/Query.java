@@ -166,8 +166,6 @@ public class Query
 
 	QuerySchema getSchema()
 	{
-        if (null == _schema)
-            throw new IllegalStateException("Schema must be set");
 		return _schema;
 	}
 
@@ -856,11 +854,8 @@ public class Query
             if (null == container)
                 container = JunitUtil.getTestContainer();
 
-            CachedResultSet rs = null;
-
-            try
+            try (CachedResultSet rs = test.resultset(sql, container == JunitUtil.getTestContainer() ? null : container))
             {
-                rs = test.resultset(sql, container==JunitUtil.getTestContainer()?null:container);
                 ResultSetMetaData md = rs.getMetaData();
                 if (countColumns >= 0)
                     QueryTestCase.assertEquals(sql, countColumns, md.getColumnCount());
@@ -869,27 +864,23 @@ public class Query
 
                 validateResults(rs);
 
-				if (name != null)
-				{
+                if (name != null)
+                {
                     User user = TestContext.get().getUser();
                     QueryDefinition existing = QueryService.get().getQueryDef(user, container, "lists", name);
                     if (null != existing)
                         existing.delete(TestContext.get().getUser());
-					QueryDefinition q = QueryService.get().createQueryDef(user, container, "lists", name);
-					q.setSql(sql);
-					if (null != metadata)
-						q.setMetadataXml(metadata);
+                    QueryDefinition q = QueryService.get().createQueryDef(user, container, "lists", name);
+                    q.setSql(sql);
+                    if (null != metadata)
+                        q.setMetadataXml(metadata);
                     q.setCanInherit(true);
-					q.save(TestContext.get().getUser(), container);
-				}
+                    q.save(TestContext.get().getUser(), container);
+                }
             }
             catch (Exception x)
             {
                 QueryTestCase.fail(x.toString() + "\n" + sql);
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
             }
         }
 
@@ -970,11 +961,9 @@ public class Query
         @Override
         void validate(QueryTestCase test, @Nullable Container container)
         {
-            CachedResultSet rs = null;
 
-            try
+            try (CachedResultSet rs = (CachedResultSet) QueryService.get().select(test.lists, sql))
             {
-                rs = (CachedResultSet)QueryService.get().select(test.lists, sql);
                 QueryTestCase.fail("should fail: " + sql);
             }
             catch (SQLException x)
@@ -988,10 +977,6 @@ public class Query
             catch (Exception x)
             {
                 QueryTestCase.fail("unexpected exception: " + x.toString());
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
             }
         }
     }
@@ -1429,12 +1414,9 @@ public class Query
             // custom tests
             SqlDialect dialect = lists.getDbSchema().getSqlDialect();
             String sql = "SELECT d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.created, R.createdby FROM R";
-            CachedResultSet rs = null;
 
-
-            try
+            try (CachedResultSet rs = resultset(sql, null))
             {
-                rs = resultset(sql, null);
                 ResultSetMetaData md = rs.getMetaData();
                 assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("d", dialect)));
                 assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("seven", dialect)));
@@ -1448,12 +1430,8 @@ public class Query
                 assertEquals(sql, Rsize, rs.getSize());
                 rs.next();
 
-                for (int col=1; col<=md.getColumnCount() ; col++)
+                for (int col = 1; col <= md.getColumnCount(); col++)
                     assertNotNull(sql, rs.getObject(col));
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
             }
 
             // simple tests

@@ -17,6 +17,7 @@ package org.labkey.search.umls;
 
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.ResultSetIterator;
 import org.labkey.api.util.ResultSetUtil;
 
 import java.sql.ResultSet;
@@ -112,8 +113,9 @@ public class SemanticType // MRSTY
             public ArrayList<SemanticType> handleArrayList(ResultSet rs) throws SQLException
             {
                 ArrayList<SemanticType> list = new ArrayList<>();
-                while (rs.next())
-                    list.add(new SemanticType(ResultSetUtil.mapRow(rs)));
+                ResultSetIterator iter = new ResultSetIterator(rs);
+                while (iter.hasNext())
+                    list.add(new SemanticType(iter.next()));
                 return list;
             }
 

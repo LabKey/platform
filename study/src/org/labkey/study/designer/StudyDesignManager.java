@@ -34,6 +34,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -275,8 +276,8 @@ public class StudyDesignManager
      */
     public Integer getLatestRevisionNumber(Container c, int studyId) throws SQLException
     {
-        String sql = "SELECT Max(revision) FROM " + getStudyVersionTable().toString() + " WHERE Container=? AND StudyId=?";
-        return Table.executeSingleton(getSchema(), sql, new Object[] {c.getId(), studyId}, Integer.class);
+        String sql = "SELECT MAX(Revision) FROM " + getStudyVersionTable().toString() + " WHERE Container = ? AND StudyId = ?";
+        return new SqlSelector(getSchema(), sql, c, studyId).getObject(Integer.class);
     }
 
     public StudyDesignVersion saveStudyDesign(User user, Container container, StudyDesignVersion version) throws SaveException, SQLException

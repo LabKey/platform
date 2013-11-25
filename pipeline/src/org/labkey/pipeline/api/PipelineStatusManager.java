@@ -335,7 +335,7 @@ public class PipelineStatusManager
         if (null != container)
             filter.addCondition("Container", container, CompareType.EQUAL);
 
-        return new TableSelector(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null).getArray(PipelineStatusFileImpl.class);
+        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArray(PipelineStatusFileImpl.class);
     }
 
     /**
@@ -389,7 +389,7 @@ public class PipelineStatusManager
         SimpleFilter filter = createQueueFilter();
         filter.addCondition("ActiveTaskId", activeTaskId, CompareType.EQUAL);
 
-        return new TableSelector(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null).getArray(PipelineStatusFileImpl.class);
+        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArray(PipelineStatusFileImpl.class);
     }
 
     public static PipelineStatusFile[] getQueuedStatusFilesForContainer(Container c)
@@ -397,7 +397,7 @@ public class PipelineStatusManager
         SimpleFilter filter = createQueueFilter();
         filter.addCondition("Container", c, CompareType.EQUAL);
 
-        return new TableSelector(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null).getArray(PipelineStatusFileImpl.class);
+        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArray(PipelineStatusFileImpl.class);
     }
 
     public static PipelineStatusFile[] getJobsWaitingForFiles(Container c)
@@ -405,14 +405,14 @@ public class PipelineStatusManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition("Status", PipelineJob.WAITING_FOR_FILES);
 
-        return new TableSelector(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null).getArray(PipelineStatusFileImpl.class);
+        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArray(PipelineStatusFileImpl.class);
     }
 
     public static PipelineStatusFileImpl[] getQueuedStatusFiles()
     {
         SimpleFilter filter = createQueueFilter();
         
-        return new TableSelector(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null).getArray(PipelineStatusFileImpl.class);
+        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArray(PipelineStatusFileImpl.class);
     }
 
     private static SimpleFilter createQueueFilter()

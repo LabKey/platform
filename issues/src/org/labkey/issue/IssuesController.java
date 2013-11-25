@@ -1715,10 +1715,8 @@ public class IssuesController extends SpringActionController
             List<ColumnInfo> cols = tinfo.getColumns("IssueId,Created,CreatedBy,Area,Type,Title,AssignedTo,Priority,Status,Milestone");
             r.addColumns(cols);
 
-            ResultSet rs = null;
-            try
+            try (ResultSet rs = r.getResultSet(new RenderContext(getViewContext())))
             {
-                rs = r.getResultSet(new RenderContext(getViewContext()));
                 ObjectFactory f = ObjectFactory.Registry.getFactory(Issue.class);
                 Issue[] issues = (Issue[]) f.handleArray(rs);
 
@@ -1735,10 +1733,6 @@ public class IssuesController extends SpringActionController
             {
                 x.printStackTrace();
                 throw new ServletException(x);
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
             }
         }
 

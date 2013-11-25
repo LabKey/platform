@@ -38,7 +38,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -80,7 +79,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ParticipantGroupManager
 {
     private static final ParticipantGroupManager _instance = new ParticipantGroupManager();
-    private static final List<ParticipantCategoryListener> _listeners = new CopyOnWriteArrayList<ParticipantCategoryListener>();
+    private static final List<ParticipantCategoryListener> _listeners = new CopyOnWriteArrayList<>();
     private static final Cache<String, ParticipantGroup[]> GROUP_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Participant Group Cache");
     private static final Cache<Container, ParticipantCategoryImpl[]> CATEGORY_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Participant Category Cache");
 
@@ -826,35 +825,26 @@ public class ParticipantGroupManager
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("RowId"), rowId);
-        ResultSet rs = null;
-        try
+
+        Integer categoryId = new TableSelector(getTableInfoParticipantGroup(), Collections.singleton("CategoryId"), filter, null).getObject(Integer.class);
+
+        if (null != categoryId)
         {
-            rs = Table.select(getTableInfoParticipantGroup(), Collections.singleton("CategoryId"), filter, null);
-            if (rs.next())
+            ParticipantCategoryImpl category = getParticipantCategory(container, user, categoryId);
+
+            if (category != null)
             {
-                ParticipantCategoryImpl category = getParticipantCategory(container, user, rs.getInt("CategoryId"));
-                if (category != null)
+                // Use getParticipantGroups here to pull the entire category into the cache- this is more expensive up-front,
+                // but will save us time later.
+                ParticipantGroup[] groups = getParticipantGroups(container, user, category);
+                for (ParticipantGroup group : groups)
                 {
-                    // Use getParticipantGroups here to pull the entire category into the cache- this is more expensive up-front,
-                    // but will save us time later.
-                    ParticipantGroup[] groups = getParticipantGroups(container, user, category);
-                    for (ParticipantGroup group : groups)
-                    {
-                        if (group.getRowId() == rowId)
-                            return group;
-                    }
+                    if (group.getRowId() == rowId)
+                        return group;
                 }
             }
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            if (rs != null)
-                try { rs.close(); } catch (SQLException e) { /* fall through */ }
-        }
+
         return null;
     }
 

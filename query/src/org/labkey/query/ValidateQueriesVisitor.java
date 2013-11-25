@@ -38,12 +38,10 @@ public class ValidateQueriesVisitor extends SchemaTreeWalker<Boolean, Logger>
     private int _totalCount = 0;
     private int _validCount = 0;
     private QueryManager _mgr;
-    private boolean _testAllColumns;
 
-    public ValidateQueriesVisitor(boolean testAllColumns)
+    public ValidateQueriesVisitor()
     {
         _mgr = QueryManager.get();
-        _testAllColumns = testAllColumns;
     }
 
     public List<Pair<String, ? extends Throwable>> getWarnings()
@@ -78,7 +76,7 @@ public class ValidateQueriesVisitor extends SchemaTreeWalker<Boolean, Logger>
         _totalCount++;
         try
         {
-            _mgr.validateQuery(table, _testAllColumns);
+            _mgr.validateQuery(table, true);
             _validCount++;
             return true;
         }

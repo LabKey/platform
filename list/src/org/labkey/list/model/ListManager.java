@@ -422,64 +422,60 @@ public class ListManager implements SearchService.DocumentProvider
         FieldKeyStringExpression titleTemplate = createEachItemTitleTemplate(list, listTable);
         FieldKeyStringExpression bodyTemplate = createBodyTemplate(list.getEachItemBodySetting(), list.getEachItemBodyTemplate(), listTable);
 
-        try
+        FieldKey keyKey = new FieldKey(null, list.getKeyName());
+        FieldKey entityIdKey = new FieldKey(null, "EntityId");
+        int count = 0;
+
+        try (Results results = new TableSelector(listTable, filter, null).setForDisplay(true).getResults())
         {
-            try (Results results = Table.selectForDisplay(listTable, Table.ALL_COLUMNS, null, filter, null, Table.ALL_ROWS, Table.NO_OFFSET))
+            while (results.next())
             {
-                results.getFieldMap().keySet();
-                FieldKey keyKey = new FieldKey(null, list.getKeyName());
-                FieldKey entityIdKey = new FieldKey(null, "EntityId");
-                int count = 0;
+                Map<FieldKey, Object> map = results.getFieldKeyRowMap();
+                final Object pk = map.get(keyKey);
+                String entityId = (String)map.get(entityIdKey);
 
-                while (results.next())
-                {
-                    Map<FieldKey, Object> map = results.getFieldKeyRowMap();
-                    final Object pk = map.get(keyKey);
-                    String entityId = (String)map.get(entityIdKey);
+                String documentId = getDocumentId(list, entityId);
+                Map<String, Object> props = new HashMap<>();
+                props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
+                props.put(SearchService.PROPERTY.title.toString(), titleTemplate.eval(map));
 
-                    String documentId = getDocumentId(list, entityId);
-                    Map<String, Object> props = new HashMap<>();
-                    props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
-                    props.put(SearchService.PROPERTY.title.toString(), titleTemplate.eval(map));
+                String body = bodyTemplate.eval(map);
 
-                    String body = bodyTemplate.eval(map);
+                ActionURL itemURL = list.urlDetails(pk);
+                itemURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
 
-                    ActionURL itemURL = list.urlDetails(pk);
-                    itemURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
+                SimpleDocumentResource r = new SimpleDocumentResource(
+                        new Path(documentId),
+                        documentId,
+                        list.getContainer().getId(),
+                        "text/plain",
+                        null == body ? new byte[0] : body.getBytes(),
+                        itemURL,
+                        props) {
+                    @Override
+                    public void setLastIndexed(long ms, long modified)
+                    {
+                        ListManager.get().setItemLastIndexed(list, pk, ms);
+                    }
+                };
 
-                    SimpleDocumentResource r = new SimpleDocumentResource(
-                            new Path(documentId),
-                            documentId,
-                            list.getContainer().getId(),
-                            "text/plain",
-                            null == body ? new byte[0] : body.getBytes(),
-                            itemURL,
-                            props) {
-                        @Override
-                        public void setLastIndexed(long ms, long modified)
-                        {
-                            ListManager.get().setItemLastIndexed(list, pk, ms);
-                        }
-                    };
+                // Add navtrail that includes link to full list grid
+                ActionURL gridURL = list.urlShowData();
+                gridURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
+                NavTree t = new NavTree("list", gridURL);
+                String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
+                r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
 
-                    // Add navtrail that includes link to full list grid
-                    ActionURL gridURL = list.urlShowData();
-                    gridURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
-                    NavTree t = new NavTree("list", gridURL);
-                    String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
-                    r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
-
-                    task.addResource(r, SearchService.PRIORITY.item);
-                    count++;
-                }
-
-                return count;
+                task.addResource(r, SearchService.PRIORITY.item);
+                count++;
             }
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
         }
+
+        return count;
     }
 
 
@@ -543,7 +539,8 @@ public class ListManager implements SearchService.DocumentProvider
                 FieldKeyStringExpression template = createBodyTemplate(list.getEntireListBodySetting(), list.getEntireListBodyTemplate(), ti);
                 StringBuilder data = new StringBuilder();
 
-                try (Results results = Table.selectForDisplay(ti, Table.ALL_COLUMNS, null, null, null, Table.ALL_ROWS, Table.NO_OFFSET))
+                // All columns, all rows, no filters, no sorts
+                try (Results results = new TableSelector(ti).setForDisplay(true).getResults())
                 {
                     while (results.next())
                     {
@@ -1107,7 +1104,7 @@ public class ListManager implements SearchService.DocumentProvider
             TableInfo toTable = StorageProvisioner.createTableInfo(newDomain, schema.getDbSchema());
 
             // Smoke test row count
-            long fromRowCount = new TableSelector(fromTable, Table.ALL_COLUMNS, null, null).getRowCount();
+            long fromRowCount = new TableSelector(fromTable).getRowCount();
 
             if (isAutoIncrement)
                 migrateBeginAutoIncrement(toTable, toTable.getSqlDialect());
@@ -1118,7 +1115,7 @@ public class ListManager implements SearchService.DocumentProvider
                 migrateEndAutoIncrement(toTable, toTable.getSqlDialect(), listDef);
 
             // Smoke test row count
-            assert fromRowCount == new TableSelector(toTable, Table.ALL_COLUMNS, null, null).getRowCount();
+            assert fromRowCount == new TableSelector(toTable).getRowCount();
 
             // Update Audit Records for the given list
             migrateListAuditRecords(listDef, hardListDef, toTable.getSchema()); // Only needed for scope -- need true TableInfo

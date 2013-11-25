@@ -17,7 +17,7 @@ package org.labkey.search.umls;
 
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.data.ResultSetIterator;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -144,11 +144,12 @@ public class ConceptName  // MRCONSO
             }
 
             @Override
-            public ArrayList<ConceptName> handleArrayList(ResultSet rs) throws SQLException
+            public ArrayList<ConceptName> handleArrayList(ResultSet rs)
             {
                 ArrayList<ConceptName> list = new ArrayList<>();
-                while (rs.next())
-                    list.add(new ConceptName(ResultSetUtil.mapRow(rs)));
+                ResultSetIterator iter = new ResultSetIterator(rs);
+                while (iter.hasNext())
+                    list.add(new ConceptName(iter.next()));
                 return list;
             }
 

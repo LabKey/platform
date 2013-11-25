@@ -24,8 +24,8 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryException;
@@ -117,15 +117,13 @@ public class TableQueryDefinition extends QueryDefinitionImpl
                     // we have enough PK values to uniquely identify the row
                     if (expr != null && pks.keySet().containsAll(table.getPkColumnNames()))
                     {
-                        Results rs = null;
-                        try
+                        SimpleFilter filter = new SimpleFilter();
+                        for (Map.Entry<String, Object> pk : pks.entrySet())
                         {
-                            SimpleFilter filter = new SimpleFilter();
-                            for (Map.Entry<String, Object> pk : pks.entrySet())
-                            {
-                                filter.addCondition(pk.getKey(), pk.getValue());
-                            }
-                            rs = Table.selectForDisplay(table, selectCols.values(), null, filter, null, 1, Table.NO_OFFSET);
+                            filter.addCondition(pk.getKey(), pk.getValue());
+                        }
+                        try (Results rs = new TableSelector(table, selectCols.values(), filter, null).setForDisplay(true).setMaxRows(1).getResults())
+                        {
                             if (rs.next())
                             {
                                 RenderContext ctx = new RenderContext(null);
@@ -142,11 +140,6 @@ public class TableQueryDefinition extends QueryDefinitionImpl
                         {
                             throw new RuntimeSQLException(e);
                         }
-                        finally
-                        {
-                            if (rs != null) { try { rs.close(); } catch (SQLException e) {} }
-                        }
-
                     }
                     break;
             }

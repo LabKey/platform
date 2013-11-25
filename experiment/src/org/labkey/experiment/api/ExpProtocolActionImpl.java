@@ -16,24 +16,27 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.exp.api.ExpProtocolAction;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.collections.CsvSet;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolAction;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
-import org.labkey.api.collections.CsvSet;
-import org.apache.log4j.Logger;
 
-import java.sql.SQLException;
 import java.sql.ResultSet;
-import java.util.*;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ExpProtocolActionImpl implements ExpProtocolAction
 {
-    static final private Logger _log = Logger.getLogger(ExpProtocolActionImpl.class);
-    ProtocolAction _action;
+    private final ProtocolAction _action;
+
     static public ExpProtocolActionImpl fromRowId(int id)
     {
         ProtocolAction action = new TableSelector(ExperimentServiceImpl.get().getTinfoProtocolAction()).getObject(id, ProtocolAction.class);
@@ -69,55 +72,38 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
 
     public ExpProtocolAction[] getPredecessors()
     {
-        ResultSet rs = null;
-        try
+        final List<ExpProtocolAction> ret = new ArrayList<>();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition("ActionId", getRowId());
+
+        new TableSelector(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), new CsvSet("PredecessorId,ActionId"), filter, null).forEach(new Selector.ForEachBlock<ResultSet>()
         {
-            List<ExpProtocolAction> ret = new ArrayList<>();
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("ActionId", getRowId());
-            rs = Table.select(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), new CsvSet("PredecessorId,ActionId"), filter, null);
-            while (rs.next())
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 ret.add(fromRowId(rs.getInt("PredecessorId")));
             }
-            return ret.toArray(new ExpProtocolAction[ret.size()]);
-        }
-        catch (SQLException e)
-        {
-            _log.error("Error", e);
-            return new ExpProtocolAction[0];
-        }
-        finally
-        {
-            if (rs != null) { try { rs.close(); } catch (SQLException e) {} }
-        }
+        });
 
+        return ret.toArray(new ExpProtocolAction[ret.size()]);
     }
 
     public ExpProtocolAction[] getSuccessors()
     {
-        ResultSet rs = null;
-        try
+        final List<ExpProtocolAction> ret = new ArrayList<>();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition("PredecessorId", getRowId());
+
+        new TableSelector(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), new CsvSet("ActionId,PredecessorId"), filter, null).forEach(new Selector.ForEachBlock<ResultSet>()
         {
-            List<ExpProtocolAction> ret = new ArrayList<>();
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("PredecessorId", getRowId());
-            rs = Table.select(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), new CsvSet("ActionId,PredecessorId"), filter, null);
-            while (rs.next())
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 ret.add(fromRowId(rs.getInt("ActionId")));
             }
-            return ret.toArray(new ExpProtocolAction[ret.size()]);
-        }
-        catch (SQLException e)
-        {
-            _log.error("Error", e);
-            return new ExpProtocolAction[0];
-        }
-        finally
-        {
-            if (rs != null) { try { rs.close(); } catch (SQLException e) {} }
-        }
+        });
+
+        return ret.toArray(new ExpProtocolAction[ret.size()]);
     }
 
     public void addSuccessor(User user, ExpProtocolAction successor) throws Exception

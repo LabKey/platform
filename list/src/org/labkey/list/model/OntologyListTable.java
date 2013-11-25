@@ -372,7 +372,7 @@ import java.util.Set;
             // SKIP DOING ANYTHING WITH ANNOUNCEMENTS AND DISCUSSIONS AS THEY SHOULD ALREADY BE MIGRATED
 
             //delete all list items
-            ListItm[] itms = new TableSelector(getIndexTable(list.getKeyType()), Table.ALL_COLUMNS, listItemFilter, null).getArray(ListItm.class);
+            ListItm[] itms = new TableSelector(getIndexTable(list.getKeyType()), listItemFilter, null).getArray(ListItm.class);
             Table.delete(getIndexTable(list.getKeyType()), listItemFilter);
 
             Set<String> ids = new HashSet<>();

@@ -39,7 +39,6 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
-import org.labkey.query.persist.QueryManager;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -211,7 +210,7 @@ public class QueryImporter implements FolderImporter
             User user = ctx.getUser();
             DefaultSchema defSchema = DefaultSchema.get(user, container);
 
-            ValidateQueriesVisitor validator = new ValidateQueriesVisitor(true);
+            ValidateQueriesVisitor validator = new ValidateQueriesVisitor();
             Boolean valid = validator.visitTop(defSchema, ctx.getLogger());
 
             ctx.getLogger().info("Finished validating queries.");

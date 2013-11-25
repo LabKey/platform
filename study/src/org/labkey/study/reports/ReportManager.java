@@ -269,7 +269,7 @@ public class ReportManager implements DatasetManager.DatasetListener
         columns.add(tinfo.getColumn("SequenceNum"));
         columns.addAll(propertyColumns);
 
-        return Table.selectForDisplay(tinfo, columns, null, filter, null, Table.ALL_ROWS, Table.NO_OFFSET);
+        return new TableSelector(tinfo, columns, filter, null).setForDisplay(true).getResults();
     }
 
 

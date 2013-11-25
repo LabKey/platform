@@ -17,6 +17,7 @@ package org.labkey.search.umls;
 
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.ResultSetIterator;
 import org.labkey.api.util.ResultSetUtil;
 
 import java.sql.ResultSet;
@@ -137,8 +138,9 @@ public class Related
             public ArrayList<Related> handleArrayList(ResultSet rs) throws SQLException
             {
                 ArrayList<Related> list = new ArrayList<>();
-                while (rs.next())
-                    list.add(new Related(ResultSetUtil.mapRow(rs)));
+                ResultSetIterator iter = new ResultSetIterator(rs);
+                while (iter.hasNext())
+                    list.add(new Related(iter.next()));
                 return list;
             }
 

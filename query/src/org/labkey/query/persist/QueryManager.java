@@ -52,6 +52,7 @@ import org.labkey.query.ExternalSchemaDocumentProvider;
 
 import java.beans.PropertyChangeEvent;
 import java.net.URISyntaxException;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -664,11 +665,6 @@ public class QueryManager
 
     public void validateQuery(SchemaKey schemaPath, String queryName, User user, Container container) throws SQLException, QueryParseException
     {
-        validateQuery(schemaPath, queryName, user, container, true);
-    }
-
-    public void validateQuery(SchemaKey schemaPath, String queryName, User user, Container container, boolean testAllColumns) throws SQLException, QueryParseException
-    {
         UserSchema schema = QueryService.get().getUserSchema(user, container, schemaPath);
         if (null == schema)
             throw new IllegalArgumentException("Could not find the schema '" + schemaPath.toDisplayString() + "'!");
@@ -677,7 +673,7 @@ public class QueryManager
         if (null == table)
             throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schemaPath.toDisplayString() + "'!");
 
-        validateQuery(table, testAllColumns);
+        validateQuery(table, true);
     }
 
     public void validateQuery(TableInfo table, boolean testAllColumns) throws SQLException, QueryParseException
@@ -691,28 +687,30 @@ public class QueryManager
             parameters.put(p.getName(), null);
         }
 
-        //get the set of columns
-        List<ColumnInfo> cols = null;
+        TableSelector selector;
+
+        // Note this check had been inverted for years, but was fixed in 14.1. Previously, testAllColumns == true meant
+        // the default column list was computed but discarded, and testAllColumns == false was completely broken
         if (testAllColumns)
+        {
+            selector = new TableSelector(table);
+        }
+        else
         {
             List<FieldKey> defVisCols = table.getDefaultVisibleColumns();
             Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(table, defVisCols);
-            cols = new ArrayList<>(colMap.values());
+            List<ColumnInfo> cols = new ArrayList<>(colMap.values());
+
+            selector = new TableSelector(table, cols, null, null);
         }
 
-        //try to execute it with a rowcount of 0 (will throw SQLException to client if it fails
-        Table.TableResultSet results = null;
-        try
+        // set forDisplay to mimic the behavior one would get in the UI
+        // try to execute with a rowcount of 0 (will throw SQLException to client if it fails)
+        selector.setForDisplay(true).setNamedParameters(parameters).setMaxRows(Table.NO_ROWS);
+
+        //noinspection EmptyTryBlock,UnusedDeclaration
+        try (ResultSet rs = selector.getResultSet())
         {
-            //use selectForDisplay to mimic the behavior one would get in the UI
-            if (testAllColumns)
-                results = Table.selectForDisplay(table, Table.ALL_COLUMNS, parameters, null, null, Table.NO_ROWS, Table.NO_OFFSET);
-            else
-                results = Table.selectForDisplay(table, cols, parameters, null, null, Table.NO_ROWS, Table.NO_OFFSET);
-        }
-        finally
-        {
-            ResultSetUtil.close(results);
         }
     }
 
@@ -732,7 +730,8 @@ public class QueryManager
         if (null == table)
             throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schemaPath.getName() + "'!");
 
-        try{
+        try
+        {
             //validate foreign keys and other metadata warnings
             columns.addAll(table.getColumns());
             columns.addAll(QueryService.get().getColumns(table, table.getDefaultVisibleColumns()).values());
@@ -840,10 +839,9 @@ public class QueryManager
             queryErrors.add("ERROR: " + errorBase + " Unable to find container" + containerPath);
         }
 
-
         //String publicSchema = col.getParentTable().getPublicSchemaName() != null ? col.getParentTable().getPublicSchemaName() : col.getParentTable().getSchema().toString();
         //String publicQuery = col.getParentTable().getPublicName() != null ? col.getParentTable().getPublicName() : col.getParentTable().getName();
-        if (o == null || col.getFk() == null)
+        if (col.getFk() == null)
             return queryErrors;
 
         if (!isPublic)
@@ -874,7 +872,8 @@ public class QueryManager
             {
                 QueryManager.get().validateQuery(schemaPath, queryName, user, lookupContainer);
             }
-            catch (Exception e){
+            catch (Exception e)
+            {
                 queryErrors.add("ERROR: " + errorBase + " has a foreign key to a table that fails query validation: " + fkt + ". The error was: " + e.getMessage());
             }
 
@@ -882,7 +881,7 @@ public class QueryManager
             {
                 FieldKey displayFieldKey = FieldKey.fromString(displayColumn);
                 Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(fkTable, Collections.singleton(displayFieldKey));
-                if (cols == null || !cols.containsKey(displayFieldKey))
+                if (!cols.containsKey(displayFieldKey))
                 {
                     queryErrors.add("ERROR: " + errorBase + " reports a foreign key with displayColumn of " + displayColumn + " in the table " + schemaPath.toDisplayString() + "." + queryName + ", but the column does not exist");
                 }
@@ -900,7 +899,7 @@ public class QueryManager
             {
                 FieldKey keyFieldKey = FieldKey.fromString(keyColumn);
                 Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(fkTable, Collections.singleton(keyFieldKey));
-                if (cols == null || !cols.containsKey(keyFieldKey))
+                if (!cols.containsKey(keyFieldKey))
                 {
                     queryErrors.add("ERROR: " + errorBase + " reports a foreign key with keyColumn of " + keyColumn + " in the table " + schemaPath.toDisplayString() + "." + queryName + ", but the column does not exist");
                 }
@@ -939,11 +938,13 @@ public class QueryManager
         //validate views
         Set<String> queryErrors = new HashSet<>();
         List<CustomView> views = QueryService.get().getCustomViews(user, container, null, schema.getSchemaName(), queryName, true);
+
         for (CustomView v : views)
         {
             validateViewColumns(user, container, v, "columns", v.getColumns(), queryErrors, table);
 
             if (!StringUtils.isEmpty(v.getFilterAndSort()))
+            {
                 try
                 {
                     CustomViewInfo.FilterAndSort fs = CustomViewInfo.FilterAndSort.fromString(v.getFilterAndSort());
@@ -966,7 +967,7 @@ public class QueryManager
                 {
                     queryErrors.add("ERROR: unable to process the filter/sort section of view: " + v.getName());
                 }
-
+            }
         }
 
         return queryErrors;
