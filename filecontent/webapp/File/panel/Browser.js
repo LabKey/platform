@@ -767,7 +767,7 @@ Ext4.define('File.panel.Browser', {
             tpl : '<div height="16px" width="100%">' +
                         '<div style="float: left;"></div>' +
                         '<div style="padding-left: 8px; white-space:normal !important;">' +
-                            '<span style="display: inline-block;">{name:htmlEncode}</span>' +
+                            '<span style="display: inline-block; white-space: nowrap;">{name:htmlEncode}</span>' +
                         '</div>' +
                    '</div>',
             scope : this
