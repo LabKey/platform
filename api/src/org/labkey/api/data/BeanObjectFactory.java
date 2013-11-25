@@ -63,11 +63,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
         {
             bean = _class.newInstance();
         }
-        catch (InstantiationException x)
-        {
-            throw new RuntimeException(x);
-        }
-        catch (IllegalAccessException x)
+        catch (InstantiationException | IllegalAccessException x)
         {
             throw new RuntimeException(x);
         }
@@ -116,12 +112,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
             fromMap(bean, m);
             return bean;
         }
-        catch (IllegalAccessException x)
-        {
-            _log.error("unexpected error", x);
-            throw new RuntimeException(x);
-        }
-        catch (InstantiationException x)
+        catch (IllegalAccessException | InstantiationException x)
         {
             _log.error("unexpected error", x);
             throw new RuntimeException(x);
@@ -133,7 +124,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     public K fromMap(K bean, Map<String, ?> m)
     {
         if (!(m instanceof CaseInsensitiveHashMap))
-            m = new CaseInsensitiveHashMap(m);
+            m = new CaseInsensitiveHashMap<>(m);
 
         for (String prop : _writeableProperties)
         {
@@ -148,11 +139,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                     BeanUtils.copyProperty(bean, prop, value);
                 }
             }
-            catch (IllegalAccessException x)
-            {
-                assert null == "unexpected exception";
-            }
-            catch (InvocationTargetException x)
+            catch (IllegalAccessException | InvocationTargetException x)
             {
                 assert null == "unexpected exception";
             }
@@ -253,17 +240,9 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                     {
                         throw new ConvertHelper.ContainerConversionException(e.getMessage());
                     }
-                    catch (ConversionException e)
+                    catch (ConversionException | IllegalAccessException | InvocationTargetException e)
                     {
                         throw new UnexpectedException(e, "Failed to copy property '" + prop + "' on class " + _class.getName());
-                    }
-                    catch (IllegalAccessException x)
-                    {
-                        throw new UnexpectedException(x, "Failed to copy property '" + prop + "' on class " + _class.getName());
-                    }
-                    catch (InvocationTargetException x)
-                    {
-                        throw new UnexpectedException(x, "Failed to copy property '" + prop + "' on class " + _class.getName());
                     }
                 }
 
@@ -271,11 +250,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                 list.add(bean);
             }
         }
-        catch (InstantiationException x)
-        {
-            assert false : "unexpected exception";
-        }
-        catch (IllegalAccessException x)
+        catch (InstantiationException | IllegalAccessException x)
         {
             assert false : "unexpected exception";
         }

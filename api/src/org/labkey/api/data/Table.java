@@ -44,7 +44,6 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
@@ -214,6 +213,32 @@ public class Table
         return new LegacyTableSelector(table, columns, filter, sort).getResults();
     }
 
+    @Deprecated /** Use TableSelector */
+    public static ResultSet select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
+    {
+        return new LegacyTableSelector(table, select, filter, sort).getResultSet();
+    }
+
+    @Deprecated /** Use TableSelector */
+    public static Results selectForDisplay(TableInfo table, Set<String> select, @Nullable Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
+            throws SQLException
+    {
+        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
+        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters);
+
+        return selector.getResults();
+    }
+
+    @Deprecated /** Use TableSelector */
+    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
+            throws SQLException
+    {
+        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
+        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters);
+
+        return selector.getResults();
+    }
+
     /**
      * This is a shortcut method that can be used for two-column ResultSets
      * The first column is key, the second column is the value
@@ -302,49 +327,13 @@ public class Table
 
     // ================== These methods have been converted to Selector/Executor, but still have callers ==================
 
-    // ===== TableSelector methods below =====
-
-    // 58 usages
+    // 48 usages
     @NotNull
     @Deprecated /** Use TableSelector */
     public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
     {
         return new LegacyTableSelector(table, select, filter, sort).getArray(clss);
     }
-
-
-    // 19 usages
-    @Deprecated /** Use TableSelector */
-    public static ResultSet select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
-    {
-        return new LegacyTableSelector(table, select, filter, sort).getResultSet();
-    }
-
-
-    // 6 usages
-    @Deprecated /** Use TableSelector */
-    public static Results selectForDisplay(TableInfo table, Set<String> select, @Nullable Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
-            throws SQLException
-    {
-        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
-        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters);
-
-        return selector.getResults();
-    }
-
-
-    // 6 usages
-    @Deprecated /** Use TableSelector */
-    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
-            throws SQLException
-    {
-        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
-        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters);
-
-        return selector.getResults();
-    }
-
-    // ===== SqlExecutor methods below =====
 
     // 110 usages
     @Deprecated /** Use SqlExecutor */
@@ -353,9 +342,7 @@ public class Table
         return new LegacySqlExecutor(schema).execute(sql, parameters);
     }
 
-    // ===== SqlSelector methods below =====
-
-    // 44 usages
+    // 42 usages
     /** return a result from a one row one column resultset. does not distinguish between not found, and NULL value */
     @Deprecated /** Use SqlSelector */
     public static <K> K executeSingleton(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> c) throws SQLException
@@ -489,7 +476,7 @@ public class Table
                     e = e.getNextException();
             }
 
-            logException(fragment(sql, null), conn, e, Level.WARN);
+            logException(new SQLFragment(sql), conn, e, Level.WARN);
             throw(e);
         }
         finally
@@ -623,7 +610,6 @@ public class Table
     }
 
 
-    // TODO: Matt: Table layer allows parameters == null, but SQLFragment doesn't... change SQLFragment?  Or change Table callers?
     private static SQLFragment fragment(String sql, @Nullable Object[] parameters)
     {
         return new SQLFragment(sql, null == parameters ? new Object[0] : parameters);
@@ -1211,17 +1197,6 @@ public class Table
     }
 
 
-    static TableResultSet cacheResultSet(ResultSet rs, boolean cacheMetaData, int maxRows, @Nullable StackTraceElement[] creationStackTrace) throws SQLException
-    {
-        CachedResultSet crs = CachedResultSet.create(rs, cacheMetaData, maxRows);
-
-        if (null != creationStackTrace && AppProps.getInstance().isDevMode())
-            crs.setStackTrace(creationStackTrace);
-
-        return crs;
-    }
-
-
     public interface TableResultSet extends ResultSet, Iterable<Map<String, Object>>
     {
         public boolean isComplete();
@@ -1432,14 +1407,15 @@ public class Table
             //noinspection EmptyTryBlock,UnusedDeclaration
             try (ResultSet rs = new TableSelector(tinfo).getResultSet()){}
 
-            Map[] maps = select(tinfo, ALL_COLUMNS, null, null, Map.class);
+            Map[] maps = new TableSelector(tinfo).getMapArray();
             assertNotNull(maps);
 
-            Principal[] principals = new TableSelector(tinfo, ALL_COLUMNS, null, null).getArray(Principal.class);
+            Principal[] principals = new TableSelector(tinfo).getArray(Principal.class);
             assertNotNull(principals);
             assertTrue(principals.length > 0);
             assertTrue(principals[0]._userId != 0);
             assertNotNull(principals[0]._name);
+            assertEquals(maps.length, principals.length);
         }
 
 
@@ -1448,19 +1424,24 @@ public class Table
         {
             TableInfo tinfo = _core.getTableInfoPrincipals();
 
-            Results rsAll = selectForDisplay(tinfo, ALL_COLUMNS, null, null, null, ALL_ROWS, NO_OFFSET);
-            rsAll.last();
-            int maxRows = rsAll.getRow();
-            assertTrue(((TableResultSet)rsAll.getResultSet()).isComplete());
-            rsAll.close();
+            int maxRows;
+
+            try (Results rsAll = new TableSelector(tinfo).getResults())
+            {
+                rsAll.last();
+                maxRows = rsAll.getRow();
+                assertTrue(rsAll.isComplete());
+            }
 
             maxRows -= 2;
-            Results rs = selectForDisplay(tinfo, ALL_COLUMNS, null, null, null, maxRows, NO_OFFSET);
-            rs.last();
-            int row = rs.getRow();
-            assertTrue(row == maxRows);
-            assertFalse(((TableResultSet)rs.getResultSet()).isComplete());
-            rs.close();
+
+            try (Results rs = new TableSelector(tinfo).setMaxRows(maxRows).getResults())
+            {
+                rs.last();
+                int row = rs.getRow();
+                assertTrue(row == maxRows);
+                assertFalse(rs.isComplete());
+            }
         }
 
 

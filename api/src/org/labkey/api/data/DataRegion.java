@@ -1641,8 +1641,10 @@ public class DataRegion extends AbstractDataRegion
         else
         {
             LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
-            rs = Table.selectForDisplay(tinfoMain, selectKeyMap.values(), getQueryParameters(), ctx.getBaseFilter(), ctx.getBaseSort(), getMaxRows(), getOffset());
-            ctx.setResults(rs);
+            TableSelector selector = new TableSelector(tinfoMain, selectKeyMap.values(), ctx.getBaseFilter(), ctx.getBaseSort()).setForDisplay(true);
+            selector.setNamedParameters(getQueryParameters());
+            selector.setMaxRows(getMaxRows()).setOffset(getOffset());
+            ctx.setResults(selector.getResults());
         }
     }
 

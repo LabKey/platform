@@ -26,7 +26,7 @@ import java.util.Map;
 public class ResultSetIterator implements Iterator<Map<String, Object>>
 {
     private final ResultSet _rs;
-    private ResultSetRowMapFactory _factory;
+    private final ResultSetRowMapFactory _factory;
 
     private boolean _didNext = false;
     private boolean _hasNext = false;
@@ -50,6 +50,10 @@ public class ResultSetIterator implements Iterator<Map<String, Object>>
             {
                 throw new RuntimeSQLException(e);
             }
+        }
+        else
+        {
+            _factory = null;
         }
     }
 

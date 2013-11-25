@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.CachedResultSet;
+import org.labkey.api.data.CachedResultSets;
 import org.labkey.api.data.ResultSetMetaDataImpl;
 
 import java.io.IOException;
@@ -454,7 +455,7 @@ public class ResultSetUtil
             m.put("s", null);
             maps.add(m);
 
-            ResultSet rs = CachedResultSet.create(new TestMetaData(), false, maps, true);
+            ResultSet rs = CachedResultSets.create(new TestMetaData(), false, maps, true);
 
             StringWriter swXML = new StringWriter(1000);
             rs.beforeFirst();

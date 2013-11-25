@@ -93,7 +93,7 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
                 public TableResultSet handle(ResultSet rs, Connection conn) throws SQLException
                 {
                     // We're handing back a ResultSet, so cache the meta data
-                    return Table.cacheResultSet(rs, true, _maxRows, getLoggingStacktrace());
+                    return CachedResultSets.create(rs, true, _maxRows, getLoggingStacktrace());
                 }
             });
         }

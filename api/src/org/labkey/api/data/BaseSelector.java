@@ -17,7 +17,6 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.RowMap;
 
 import java.lang.reflect.Array;
@@ -28,7 +27,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +38,8 @@ import java.util.Map;
  */
 
 // A partial, base implementation of Selector. This class manipulates result sets but doesn't generate them. Subclasses
-// include ExecutingSelector (which executes SQL to generate a result set) and ResultSetSelector, which takes an externally generated ResultSet (e.g., from JDBC metadata calls) and allows Selector operations on it.
+// include ExecutingSelector (which executes SQL to generate a result set) and ResultSetSelector, which takes an externally
+// generated ResultSet (e.g., from JDBC metadata calls) and allows Selector operations on it.
 public abstract class BaseSelector extends JdbcCommand implements Selector
 {
     protected BaseSelector(@NotNull DbScope scope, @Nullable Connection conn)
@@ -130,16 +129,12 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
             {
                 if (Map.class == _clazz)
                 {
-                    // We will consume the result set and close it immediately, so no need to cache meta data
-                    CachedResultSet copy = (CachedResultSet) Table.cacheResultSet(rs, false, Table.ALL_ROWS, null);
-                    //noinspection unchecked
-                    E[] arrayListMaps = (E[]) (copy._arrayListMaps == null ? new ArrayListMap[0] : copy._arrayListMaps);
-                    copy.close();
+                    ResultSetIterator iter = new ResultSetIterator(rs);
+                    list = new ArrayList<>();
 
-                    // TODO: Not very efficient...
-                    list = new ArrayList<>(arrayListMaps.length);
-                    //noinspection unchecked
-                    Collections.addAll(list, arrayListMaps);
+                    while (iter.hasNext())
+                        //noinspection unchecked
+                        list.add((E)iter.next());
                 }
                 else
                 {

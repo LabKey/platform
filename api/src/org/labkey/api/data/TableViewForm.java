@@ -98,7 +98,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     }
 
     /**
-     * Creates a view form that uses the suppllied dynaClass for the property
+     * Creates a view form that uses the supplied dynaClass for the property
      * list, but stashes the tableInfo for insert/update purposes and
      * to perform additional validation.
      */
@@ -239,12 +239,12 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         {
             throw new NotFoundException("Invalid PK value - cannot be null");
         }
-        Map[] maps = Table.select(_tinfo, _tinfo.getColumnNameSet(), new PkFilter(_tinfo, pkVals), null, Map.class);
+        Map<String, Object>[] maps = new TableSelector(_tinfo, _tinfo.getColumnNameSet(), new PkFilter(_tinfo, pkVals), null).getMapArray();
 
         if (maps.length > 0)
         {
             setTypedValues(maps[0], false);
-            setOldValues(new CaseInsensitiveHashMap(getTypedValues()));
+            setOldValues(new CaseInsensitiveHashMap<>(getTypedValues()));
         }
     }
 

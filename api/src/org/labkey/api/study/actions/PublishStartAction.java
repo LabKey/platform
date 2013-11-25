@@ -16,31 +16,50 @@
 
 package org.labkey.api.study.actions;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.Selector;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.permissions.*;
-import org.labkey.api.study.assay.*;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.study.assay.AssayProtocolSchema;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayTableMetadata;
+import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.util.HString;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpPostRedirectView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.HString;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -172,7 +191,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         _protocol = publishForm.getProtocol();
         AssayProvider provider = publishForm.getProvider();
 
-        List<Integer> ids;
+        final List<Integer> ids;
         AssayTableMetadata tableMetadata = provider.getTableMetadata(_protocol);
         if (publishForm.isRunIds())
         {
@@ -186,7 +205,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             {
                 ((ContainerFilterable)table).setContainerFilter(ContainerFilter.getContainerFilterByName(publishForm.getContainerFilterName(), getViewContext().getUser()));
             }
-            ColumnInfo dataRowIdColumn = QueryService.get().getColumns(table, Collections.singleton(tableMetadata.getResultRowIdFieldKey())).get(tableMetadata.getResultRowIdFieldKey());
+            final ColumnInfo dataRowIdColumn = QueryService.get().getColumns(table, Collections.singleton(tableMetadata.getResultRowIdFieldKey())).get(tableMetadata.getResultRowIdFieldKey());
             assert dataRowIdColumn  != null : "Could not find dataRowId column in assay results table";
             FieldKey runFieldKey = tableMetadata.getRunRowIdFieldKeyFromResults();
             ColumnInfo runIdColumn = QueryService.get().getColumns(table, Collections.singleton(runFieldKey)).get(runFieldKey);
@@ -196,20 +215,17 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             SimpleFilter filter = new SimpleFilter();
             filter.addClause(new SimpleFilter.InClause(runFieldKey, runIds, true));
 
-            ResultSet rs = Table.selectForDisplay(table, Arrays.asList(dataRowIdColumn, runIdColumn), null, filter, new Sort(runFieldKey.toString()), Table.ALL_ROWS, Table.NO_OFFSET);
-            try
+            // Pull out the data row ids
+            ids = new ArrayList<>();
+
+            new TableSelector(table, Arrays.asList(dataRowIdColumn, runIdColumn), filter, new Sort(runFieldKey.toString())).setForDisplay(true).forEach(new Selector.ForEachBlock<ResultSet>()
             {
-                // Pull out the data row ids
-                ids = new ArrayList<>();
-                while (rs.next())
+                @Override
+                public void exec(ResultSet rs) throws SQLException
                 {
                     ids.add(dataRowIdColumn.getIntValue(rs));
                 }
-            }
-            finally
-            {
-                if (rs != null) { try { rs.close(); } catch (SQLException e) {} }
-            }
+            });
         }
         else
         {

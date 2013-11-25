@@ -22,8 +22,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -153,12 +153,10 @@ public abstract class DilutionAssayRun extends Luc5Assay
     private Map<PropertyDescriptor, Object> getRunProperties(TableInfo runTable, Map<FieldKey, PropertyDescriptor> fieldKeys, Map<FieldKey, ColumnInfo> selectCols)
     {
         SimpleFilter filter = new SimpleFilter("RowId", _run.getRowId());
-
         Map<PropertyDescriptor, Object> properties = new LinkedHashMap<>();
-        ResultSet rs = null;
-        try
+
+        try (ResultSet rs = new TableSelector(runTable, selectCols.values(), filter, null).setForDisplay(true).setMaxRows(1).getResultSet())
         {
-            rs = Table.selectForDisplay(runTable, new ArrayList<>(selectCols.values()), null, filter, null, 1, Table.NO_OFFSET);
             if (!rs.next())
             {
                 throw new NotFoundException("Run " + _run.getRowId() + " was not found.");
@@ -178,11 +176,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
         {
             throw new RuntimeSQLException(e);
         }
-        finally
-        {
-            if (rs != null)
-                try { rs.close(); } catch (SQLException e) { /* do nothing */ }
-        }
+
         return properties;
     }
 

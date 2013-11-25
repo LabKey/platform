@@ -19,9 +19,7 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections15.IteratorUtils;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
-import org.labkey.api.collections.ArrayListMap;
-import org.labkey.api.collections.ResultSetRowMapFactory;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.query.BatchValidationException;
@@ -54,10 +52,8 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import static java.lang.Math.max;
@@ -78,13 +74,13 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
     private final HashMap<String, Integer> _columns;
 
     // data
-    @NotNull final ArrayListMap<String, Object>[] _arrayListMaps;
+    private final ArrayList<RowMap<Object>> _rowMaps;
     private final boolean _isComplete;
+    private final StackTraceElement[] _stackTrace;
+    private final String _threadName;
 
     private boolean _wasClosed = false;
-    private StackTraceElement[] _stackTrace = null;
-    private String _url;
-    private String _threadName = null;
+    private String _url = null;
 
     // state
     private int _row = -1;
@@ -93,100 +89,14 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
     private Object _lastObject = null;
 
 
-    public static CachedResultSet create(ResultSet rs, boolean cacheMetaData, int maxRows) throws SQLException
+    /*
+        Construtor is not normally used... see CachedResultSets for static factory methods.
+
+        stackTrace is used to set an alternate stack trace -- good for async queries, to indicate original creation stack trace
+     */
+    CachedResultSet(ResultSetMetaData md, boolean cacheMetaData, ArrayList<RowMap<Object>> maps, boolean isComplete, @Nullable StackTraceElement[] stackTrace)
     {
-        List<RowMap> list = new ArrayList<>();
-
-        if (maxRows == Table.ALL_ROWS)
-            maxRows = Integer.MAX_VALUE;
-
-        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
-
-        // Note: we check in this order to avoid consuming the "extra" row used to detect complete vs. not
-        while (list.size() < maxRows && rs.next())
-            list.add(factory.getRowMap(rs));
-
-        // If we have another row, then we're not complete
-        boolean isComplete = !rs.next();
-
-        return new CachedResultSet(rs.getMetaData(), cacheMetaData, list, isComplete);
-    }
-
-
-    public static CachedResultSet create(ResultSetMetaData md, boolean cacheMetaData, List<Map<String, Object>> maps, boolean isComplete)
-    {
-        return new CachedResultSet(md, cacheMetaData, convertToRowMaps(md, maps), isComplete);
-    }
-
-
-    public static CachedResultSet create(List<Map<String, Object>> maps)
-    {
-        return create(maps, maps.get(0).keySet());
-    }
-
-
-    public static CachedResultSet create(List<Map<String, Object>> maps, Collection<String> columnNames)
-    {
-        ResultSetMetaData md = createMetaData(columnNames);
-
-        CachedResultSet crs = new CachedResultSet(md, false, convertToRowMaps(md, maps), true);
-
-        try
-        {
-            // Avoid error message from CachedResultSet.finalize() about unclosed CachedResultSet.
-            crs.close();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-
-        return crs;
-    }
-
-
-    private static ResultSetMetaData createMetaData(Collection<String> columnNames)
-    {
-        ResultSetMetaDataImpl md = new ResultSetMetaDataImpl(columnNames.size());
-        for (String columnName : columnNames)
-        {
-            ResultSetMetaDataImpl.ColumnMetaData col = new ResultSetMetaDataImpl.ColumnMetaData();
-            col.columnName = columnName;
-            md.addColumn(col);
-        }
-
-        return md;
-    }
-
-
-    private static List<RowMap> convertToRowMaps(ResultSetMetaData md, List<Map<String, Object>> maps)
-    {
-        List<RowMap> list = new ArrayList<>();
-
-        ResultSetRowMapFactory factory;
-        try
-        {
-            factory = ResultSetRowMapFactory.create(md);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-
-        for (Map<String, Object> map : maps)
-        {
-            list.add(factory.getRowMap(map));
-        }
-
-        return list;
-    }
-
-
-    private CachedResultSet(ResultSetMetaData md, boolean cacheMetaData, List<RowMap> maps, boolean isComplete)
-    {
-        //noinspection unchecked
-        _arrayListMaps = (RowMap[]) maps.toArray(new RowMap[maps.size()]);
-
+        _rowMaps = maps;
         _isComplete = isComplete;
 
         try
@@ -206,10 +116,19 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
             throw new RuntimeSQLException(x);
         }
 
-        // Stash stack trace that created this CachedRowSet
         if (AppProps.getInstance().isDevMode())
         {
-            _stackTrace = Thread.currentThread().getStackTrace();
+            // Stash stack trace that created this CachedRowSet
+            if (null != stackTrace)
+            {
+                _stackTrace = stackTrace;
+            }
+            else
+            {
+                _stackTrace = Thread.currentThread().getStackTrace();
+            }
+
+            _threadName = Thread.currentThread().getName();
 
             if (HttpView.getStackSize() > 0)
             {
@@ -222,18 +141,14 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
                     // we might not be in a view thread...
                 }
             }
-
-            _threadName = Thread.currentThread().getName();
+        }
+        else
+        {
+            _stackTrace = null;
+            _threadName = null;
         }
 
         assert MemTracker.put(this);
-    }
-
-
-    // Set an alternate stack trace -- good for async queries, to indicate original creation stack trace
-    public void setStackTrace(StackTraceElement[] stackTrace)
-    {
-        _stackTrace = stackTrace;
     }
 
 
@@ -635,10 +550,10 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
 
     public Object getObject(int columnIndex) throws SQLException
     {
-        if (_row < 0 || _row >= _arrayListMaps.length)
+        if (_row < 0 || _row >= _rowMaps.size())
             throw new SQLException("No current row");
 
-        _lastObject = _arrayListMaps[_row].get(columnIndex);
+        _lastObject = _rowMaps.get(_row).get(columnIndex);
 
         if (_lastObject instanceof Double)
             _lastObject = ResultSetUtil.mapDatabaseDoubleToJavaDouble((Double) _lastObject);
@@ -648,7 +563,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
 
     public Object getObject(String columnName) throws SQLException
     {
-        _lastObject = _arrayListMaps[_row].get(columnName);
+        _lastObject = _rowMaps.get(_row).get(columnName);
         // check for no illegal column name
         if (_lastObject == null)
             findColumn(columnName);
@@ -663,7 +578,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
     // careful! this does no error checking
     public void _setObject(int columnIndex, Object o) throws SQLException
     {
-        _arrayListMaps[_row].set(columnIndex,o);
+        _rowMaps.get(_row).set(columnIndex, o);
     }
 
 
@@ -703,17 +618,17 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
 
     public boolean isAfterLast() throws SQLException
     {
-        return _row == _arrayListMaps.length;
+        return _row == _rowMaps.size();
     }
 
     public boolean isFirst() throws SQLException
     {
-        return _arrayListMaps.length > 0 && _row == 0;
+        return _rowMaps.size() > 0 && _row == 0;
     }
 
     public boolean isLast() throws SQLException
     {
-        return _arrayListMaps.length > 0 && _row == _arrayListMaps.length - 1;
+        return _rowMaps.size() > 0 && _row == _rowMaps.size() - 1;
     }
 
     public void beforeFirst() throws SQLException
@@ -723,7 +638,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
 
     public void afterLast() throws SQLException
     {
-        _row = _arrayListMaps.length;
+        _row = _rowMaps.size();
     }
 
     protected void finalize() throws Throwable
@@ -761,7 +676,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
     public int getRow() throws SQLException
     {
         // adjust to 1-based
-        return _row >= 0 && _row < _arrayListMaps.length ? _row + 1 : 0;
+        return _row >= 0 && _row < _rowMaps.size() ? _row + 1 : 0;
     }
 
     public boolean absolute(int row) throws SQLException
@@ -775,7 +690,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
 
     public boolean relative(int rows) throws SQLException
     {
-        _row = max(-1, min(_arrayListMaps.length, _row + rows));
+        _row = max(-1, min(_rowMaps.size(), _row + rows));
         return getRow() != 0;
     }
 
@@ -1175,22 +1090,50 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
 
     public Map<String, Object> getRowMap() throws SQLException
     {
-        if (_row >= _arrayListMaps.length)
+        if (_row >= _rowMaps.size())
             throw new SQLException("No current row");
-        return _arrayListMaps[_row];
+        return _rowMaps.get(_row);
     }
 
 
     public Iterator<Map<String, Object>> iterator()
     {
-        Map<String, Object>[] maps = _arrayListMaps;
-        Iterator<Map<String, Object>> it = IteratorUtils.arrayIterator(maps);
+        Iterator<Map<String, Object>> it = new RowMapIterator(_rowMaps.iterator());
+
         return IteratorUtils.unmodifiableIterator(it);
+    }
+
+    private static class RowMapIterator implements Iterator<Map<String, Object>>
+    {
+        private final Iterator<RowMap<Object>> _iter;
+
+        private RowMapIterator(Iterator<RowMap<Object>> iter)
+        {
+            _iter = iter;
+        }
+
+        @Override
+        public boolean hasNext()
+        {
+            return _iter.hasNext();
+        }
+
+        @Override
+        public Map<String, Object> next()
+        {
+            return _iter.next();
+        }
+
+        @Override
+        public void remove()
+        {
+            _iter.remove();
+        }
     }
 
     public int getSize()
     {
-        return _arrayListMaps.length;
+        return _rowMaps.size();
     }
 
     //
