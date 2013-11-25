@@ -310,7 +310,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             if (study != null && ctx.get(getColumnInfo().getAlias()) != null)
             {
                 VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, Integer.parseInt(ctx.get(getColumnInfo().getAlias()).toString()));
-                if (visit != null)
+                if (visit != null && (visit.getDescription() != null || visit.getLabel() != null))
                     return PageFlowUtil.filter(visit.getDescription() != null ? visit.getDescription() : visit.getLabel());
             }
 
