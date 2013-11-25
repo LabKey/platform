@@ -66,7 +66,7 @@
     {
 %>
 <!-- Set a fixed height for this div so that the whole page doesn't relayout when the file browser renders into it -->
-<div style="height: <%= height %>px" id="<%=h(bean.getContentId())%>"></div>
+<div id="<%=h(bean.getContentId())%>"></div>
 <script type="text/javascript">
     Ext4.onReady(function() {
         var autoResize = <%=bean.isAutoResize()%>;
