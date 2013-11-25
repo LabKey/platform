@@ -142,6 +142,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                 fieldLabel: ' ',
                 labelSeparator: '',
                 labelWidth: 125,
+                height: 175,
                 value: '<div class="thumbnail" id="' + this.thumbnailPreviewId + '" style="border: solid #C0C0C0 1px;"></div>'
             })
         ];
@@ -298,8 +299,8 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
     updateCurrentChartThumbnail: function(chartSVGStr, size)
     {
         // resize the svg by resetting the viewBox and width/height attributes
-        chartSVGStr = chartSVGStr.replace(/width="\d+"/, 'width="100%"');
-        chartSVGStr = chartSVGStr.replace(/height="\d+"/, 'height="100%"');
+        chartSVGStr = chartSVGStr.replace(/width="\d+"/, 'width="300"');
+        chartSVGStr = chartSVGStr.replace(/height="\d+"/, 'height="175"');
         chartSVGStr = chartSVGStr.replace(/<svg /, '<svg viewBox="0 0 ' + size.width + ' ' + size.height + '"');
         // remove the id reference so that updates to the original aren't confused
         chartSVGStr = chartSVGStr.replace(/id="[\w\-]+"/, '');
