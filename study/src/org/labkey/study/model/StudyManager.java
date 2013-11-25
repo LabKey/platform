@@ -4663,6 +4663,25 @@ public class StudyManager
             validateNewVisit(getInstance().ensureVisitWithoutSaving(study, -5, Visit.Type.BASELINE, existingVisits), existingVisits, -5, -5, "Day -5");
         }
 
+        @Test
+        public void testVisitDescription()
+        {
+            StudyImpl study = new StudyImpl();
+            study.setTimepointType(TimepointType.DATE);
+
+            List<VisitImpl> existingVisits = new ArrayList<>();
+
+            VisitImpl newVisit = getInstance().ensureVisitWithoutSaving(study, 1, Visit.Type.BASELINE, existingVisits);
+            newVisit.setDescription("My custom visit description");
+            validateNewVisit(newVisit, existingVisits, 1, 1, "Day 1", "My custom visit description");
+        }
+
+        private void validateNewVisit(VisitImpl newVisit, List<VisitImpl> existingVisits, double seqNumMin, double seqNumMax, String label, String description)
+        {
+            validateNewVisit(newVisit, existingVisits, seqNumMin, seqNumMax, label);
+            assertEquals("Descriptions don't match", description, newVisit.getDescription());
+        }
+
         private void validateNewVisit(VisitImpl newVisit, List<VisitImpl> existingVisits, double seqNumMin, double seqNumMax, String label)
         {
             validateNewVisit(newVisit, existingVisits, seqNumMin, seqNumMax);
