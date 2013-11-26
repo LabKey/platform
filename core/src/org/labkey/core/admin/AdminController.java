@@ -5690,15 +5690,19 @@ public class AdminController extends SpringActionController
             }
             else
             {
-                if (form.getTabName().length() > 64)
+                String name = form.getTabName();
+                if (name == null)
+                {
+                    errors.reject(ERROR_MSG, "A tab name must be specified.");
+                    return;
+                }
+                if (name.length() > 64)
                 {
                     errors.reject(ERROR_MSG, "Tab name cannot be longer than 64 characters.");
                     return;
                 }
 
-                String name = form.getTabName();
-
-                if(name.length() > 50)
+                if (name.length() > 50)
                     name = name.substring(0, 50).trim();
 
                 CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(tabContainer, true));
@@ -5709,11 +5713,7 @@ public class AdminController extends SpringActionController
                     folderTabMap.put(tab.getName(), tab);
                 }
 
-                if(name == null)
-                {
-                    errors.reject(ERROR_MSG, "A tab name must be specified.");
-                }
-                else if (pages.containsKey(name))
+                if (pages.containsKey(name))
                 {
                     errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
                     return;
