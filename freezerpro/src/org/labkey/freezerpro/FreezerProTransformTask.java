@@ -115,7 +115,7 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
             if (outputRows.size() > 0)
                 info("After removing duplicates, there are " + outputRows.size() + " rows of data");
             else
-                error("There are no rows of data");
+                throw new PipelineJobException("There are no rows of data");
 
             // Create a ZIP archive with the appropriate TSVs
             try (ZipOutputStream zOut = new ZipOutputStream(new FileOutputStream(output)))
