@@ -5,6 +5,8 @@
         <script path="/vis/src/stat.js"/>
         <script path="/vis/src/scale.js"/>
         <script path="/vis/src/layer.js"/>
+        <script path="/vis/src/internal/RaphaelRenderer.js"/>
+        <script path="/vis/src/internal/D3Renderer.js"/>
         <script path="/vis/src/plot.js"/>
     </library>
     <dependencies>

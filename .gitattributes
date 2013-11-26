@@ -8860,6 +8860,7 @@ internal/webapp/ux/BoxSelect/BoxSelect.js -text
 internal/webapp/ux/CheckCombo/CheckCombo.css -text
 internal/webapp/ux/CheckCombo/CheckCombo.js -text
 internal/webapp/viewPicker.js -text
+internal/webapp/vis/demo/demo_data.js -text
 internal/webapp/vis/demo/demo_script.js -text
 internal/webapp/vis/demo/index.html -text
 internal/webapp/vis/lib/d3-3.3.9.js -text
@@ -8868,6 +8869,8 @@ internal/webapp/vis/lib/patches.js -text
 internal/webapp/vis/lib/raphael-2.1.0.js -text
 internal/webapp/vis/lib/raphael-min-2.1.0.js -text
 internal/webapp/vis/src/geom.js -text
+internal/webapp/vis/src/internal/D3Renderer.js -text
+internal/webapp/vis/src/internal/RaphaelRenderer.js -text
 internal/webapp/vis/src/layer.js -text
 internal/webapp/vis/src/plot.js -text
 internal/webapp/vis/src/scale.js -text

@@ -113,12 +113,32 @@ LABKEY.vis.Scale.DarkColorDiscrete = function(){
  * {@link LABKEY.vis.Geom.Point} geoms.
  */
 LABKEY.vis.Scale.Shape = function(){
-    // Used in pointType geom.
-    var circle = function(paper, x, y, r){ return paper.circle(x, y, r)};
-    var square = function(paper, x, y, r){ return paper.rect(x-r, y-r, r*2, r*2)};
-    var diamond = function(paper, x, y, r){r = (Math.sqrt(2*Math.pow(r*2, 2)))/2; return paper.path('M' + x + ' ' + (y+r) + ' L ' + (x+r) + ' ' + y + ' L ' + x + ' ' + (y-r) + ' L ' + (x-r) + ' ' + y + ' Z')};
-    var triangle = function(paper, x, y, r){return paper.path('M ' + x + ' ' + (y + (r)) + ' L ' + (x + (r)) + ' ' + (y-(r)) + ' L ' + (x - (r)) + ' ' + (y - (r)) + ' Z')};
-    var x = function(paper, x, y, r){ return paper.path('M' + (x-r) + ' ' + (y+r) + ' L '  + (x+r) + ' ' + (y-r) + 'M' + (x-r) + ' ' + (y-r) + ' L '  + (x+r) + ' ' + (y+r)).attr('stroke-width', 3)};
-    
+    var circle = function(s){
+        return "M0," + s + "A" + s + "," + s + " 0 1,1 0," + -s + "A" + s + "," + s + " 0 1,1 0," + s + "Z";
+    };
+    var square = function(s){
+        return "M" + -s + "," + -s + "L" + s + "," + -s + " " + s + "," + s + " " + -s + "," + s + "Z";
+    };
+    var diamond = function(s){
+        var r = (Math.sqrt(1.5 * Math.pow(s * 2, 2))) / 2;
+        return 'M0 ' + r + ' L ' + r + ' 0 L 0 ' + -r + ' L ' + -r + ' 0 Z';
+    };
+    var triangle = function(s){
+        return 'M0,' + s + 'L' + s + ',' + -s + 'L' + -s + ',' + -s + ' Z';
+    };
+    var x = function(s){
+        // TODO: eliminate x and y from this.
+        var x = 0;
+        var y = 0;
+        var r = s / 2;
+        return 'M' + (x) + ',' + (y + r) +
+                'L' + (x + r) + ',' + (y + 2*r) + 'L' + (x + 2*r) + ',' + (y + r) +
+                'L' + (x + r) + ',' + (y) + 'L' + (x + 2*r) + ',' + (y - r) +
+                'L' + (x + r) + ',' + (y - 2*r) + 'L' + (x) + ',' + (y - r) +
+                'L' + (x - r) + ',' + (y - 2*r) + 'L' + (x - 2*r) + ',' + (y - r) +
+                'L' + (x - r) + ',' + (y) + 'L' + (x - 2*r) + ',' + (y + r) +
+                'L' + (x - r) + ',' + (y + 2*r) + 'L' + (x) + ',' + (y + r) + 'Z';
+    };
+
     return d3.scale.ordinal().range([circle, triangle, square, diamond, x]);
 };

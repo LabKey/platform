@@ -18,35 +18,44 @@ if(!LABKEY.vis.Geom){
  */
 LABKEY.vis.Geom.XY = function(){
     this.type = "XY";
+    this.xAes = null;
+    this.yAes = null;
+    this.xScale = null;
+    this.yScale = null;
+    this.colorAes = null;
+    this.colorScale = null;
     return this;
 };
-LABKEY.vis.Geom.XY.prototype.initAesthetics = function(scales, layerAes, parentAes){
-    this.xMap = layerAes.x ? layerAes.x : parentAes.x;
-    if(!this.xMap){
+LABKEY.vis.Geom.XY.prototype.initAesthetics = function(scales, layerAes, parentAes, layerName){
+    this.layerName = layerName;
+    this.xAes = layerAes.x ? layerAes.x : parentAes.x;
+    this.xScale = scales.x;
+    if(!this.xAes){
         console.error('x aesthetic is required for ' + this.type + ' geom to render.');
         return false;
     }
 
     if(layerAes.yLeft){
-        this.yMap = layerAes.yLeft;
-        this.yMap.side = 'left';
+        this.yAes = layerAes.yLeft;
+        this.yScale = scales.yLeft;
     } else if(layerAes.yRight){
-        this.yMap = layerAes.yRight;
-        this.yMap.side = 'right';
+        this.yAes = layerAes.yRight;
+        this.yScale = scales.yRight;
     } else if(parentAes.yLeft){
-        this.yMap = parentAes.yLeft;
-        this.yMap.side = 'left';
+        this.yAes = parentAes.yLeft;
+        this.yScale = scales.yLeft;
     } else if(parentAes.yRight){
-        this.yMap = parentAes.yRight;
-        this.yMap.side = 'right';
+        this.yAes = parentAes.yRight;
+        this.yScale = scales.yRight;
     }
 
-    if(!this.yMap){
+    this.colorAes = layerAes.color ? layerAes.color : parentAes.color;
+    this.colorScale = scales.color ? scales.color : null;
+
+    if(!this.yAes){
         console.error('y aesthetic is required for ' + this.type + ' geom to render.');
         return false;
     }
-
-    this.colorMap = layerAes.color ? layerAes.color : parentAes.color;
 
     return true;
 };
@@ -66,14 +75,14 @@ LABKEY.vis.Geom.XY.prototype.getVal = function(scale, map, row){
     }
 };
 
-LABKEY.vis.Geom.XY.prototype.getX = function(scale, row){
+LABKEY.vis.Geom.XY.prototype.getX = function(row){
     // Takes a row, returns the scaled x value.
-    return this.getVal(scale, this.xMap, row);
+    return this.getVal(this.xScale.scale, this.xAes, row);
 };
 
-LABKEY.vis.Geom.XY.prototype.getY = function(scale, row){
+LABKEY.vis.Geom.XY.prototype.getY = function(row){
     // Takes a row, returns the scaled x value.
-    return this.getVal(scale, this.yMap, row);
+    return this.getVal(this.yScale.scale, this.yAes, row);
 };
 
 /**
@@ -108,74 +117,19 @@ LABKEY.vis.Geom.Point = function(config){
     return this;
 };
 LABKEY.vis.Geom.Point.prototype = new LABKEY.vis.Geom.XY();
-LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, layerAes, parentAes, name){
-    if(!this.initAesthetics(scales, layerAes, parentAes)){
+LABKEY.vis.Geom.Point.prototype.render = function(renderer, grid, scales, data, layerAes, parentAes, name){
+    if(!this.initAesthetics(scales, layerAes, parentAes, name)){
         return false;
     }
-    var hoverText = layerAes.hoverText ? layerAes.hoverText : parentAes.hoverText;
-    var sizeMap = layerAes.size ? layerAes.size : parentAes.size;
-    var pointClickFn = layerAes.pointClickFn ? layerAes.pointClickFn : parentAes.pointClickFn;
-    var yScale = this.yMap.side == "left" ? scales.yLeft : scales.yRight;
-    var xBinWidth = null, yBinWidth = null;
-    if(scales.x.scaleType == 'discrete'){
-        xBinWidth = ((grid.rightEdge - grid.leftEdge) / (scales.x.scale.domain().length)) / 2;
-    }
 
-    if(yScale.scaleType == 'discrete'){
-        yBinWidth = ((grid.topEdge - grid.bottomEdge) / (yScale.scale.domain().length)) / 2;
-    }
+    this.shapeAes = layerAes.shape ? layerAes.shape : parentAes.shape;
+    this.shapeScale = scales.shape;
+    this.sizeAes = layerAes.size ? layerAes.size : parentAes.size;
+    this.sizeScale = scales.size;
+    this.hoverTextAes = layerAes.hoverText ? layerAes.hoverText : parentAes.hoverText;
+    this.pointClickFnAes = layerAes.pointClickFn ? layerAes.pointClickFn : parentAes.pointClickFn;
 
-    if(layerAes.shape){
-        this.shapeMap = layerAes.shape;
-    } else if(parentAes.shape){
-        this.shapeMap = parentAes.shape;
-    }
-
-    for(var i = 0; i < data.length; i++){
-        var y = this.getY(yScale.scale, data[i]);
-        var x = this.getX(scales.x.scale, data[i]);
-
-        if(!x || !y){
-            continue;
-        }
-
-        if(xBinWidth != null && this.position == 'jitter'){
-            x = (x - (xBinWidth / 2)) +(Math.random()*(xBinWidth));
-        }
-
-        if(yBinWidth != null && this.position == 'jitter'){
-            y = (y - (yBinWidth / 2)) +(Math.random()*(yBinWidth));
-        }
-
-        var color = this.colorMap ? scales.color.scale(this.colorMap.getValue(data[i]) + name) : this.color;
-        var size = sizeMap ? scales.size.scale(sizeMap.getValue(data[i])) : this.size;
-
-        if(size === null || size === undefined || isNaN(size)){
-            size = this.size;
-        }
-
-        var shapeFunction = this.shapeMap ?
-                scales.shape.scale(this.shapeMap.getValue(data[i]) + name) :
-                function(paper, x, y, r){return paper.circle(x, y, r)};
-
-        var point = shapeFunction(paper, x, -y, size)
-                .attr('fill', color)
-                .attr('fill-opacity', this.opacity)
-                .attr('stroke', color)
-                .attr('stroke-opacity', this.opacity);
-
-        if(hoverText){
-            point.attr('title', hoverText.value(data[i]));
-        }
-
-        if (pointClickFn) {
-            point.data = data[i];
-            point.click(function(clickEvent) {
-                pointClickFn.value(clickEvent, this.data);
-            });
-        }
-    }
-
+    renderer.renderPointGeom(data, this);
     return true;
 };
 
@@ -204,50 +158,16 @@ LABKEY.vis.Geom.Path = function(config){
     return this;
 };
 LABKEY.vis.Geom.Path.prototype = new LABKEY.vis.Geom.XY();
-LABKEY.vis.Geom.Path.prototype.render = function(paper, grid, scales, data, layerAes, parentAes, name){
-    if(!this.initAesthetics(scales, layerAes, parentAes)){
+LABKEY.vis.Geom.Path.prototype.render = function(renderer, grid, scales, data, layerAes, parentAes, name){
+    if(!this.initAesthetics(scales, layerAes, parentAes, name)){
         return false;
     }
-    var yScale = this.yMap.side == "left" ? scales.yLeft.scale : scales.yRight.scale;
 
-    this.group = layerAes.group ? layerAes.group : parentAes.group;
-    var size = this.size;
-    var pathScope = this;
-    var xAccessor = function(row){return pathScope.getX(scales.x.scale, row);};
-    var yAccessor = function(row){var val = pathScope.getY(yScale, row); return val == null ? null : -val;};
+    this.groupAes = layerAes.group ? layerAes.group : parentAes.group;
+    this.sizeAes = layerAes.size ? layerAes.size : parentAes.size;
+    this.sizeScale = scales.size;
 
-    if(this.group){
-        //Split data into groupedData so we can render 1 path per group.
-        var groupedData = LABKEY.vis.groupData(data, this.group.getValue);
-
-        for(var group in groupedData){
-            var groupData = groupedData[group];
-            var color = this.color;
-            var path = LABKEY.vis.makePath(groupData, xAccessor, yAccessor);
-
-            if(path != ''){
-                if(this.colorMap && this.colorMap.name == this.group.name){
-                    // If we have a colorMap and it maps to the same thing as groupedData, then we pass in the group to get the desired color.
-                    color = scales.color.scale(group + name);
-                }
-
-                if(this.sizeMap){
-                    size = this.sizeMap.getValue(groupData);
-                }
-                paper.path(path).attr('stroke', color).attr('stroke-width', size).attr('opacity', this.opacity);
-            }
-        }
-    } else {
-        // No groups, connect all the points.
-        if(this.sizeMap){
-            size = this.sizeMap.getValue(data); // This would allow a user to look at all of the rows in a group and calculate size (i.e. a user could average the CD4 in every group and make a line based on that average.)
-        }
-        var path = LABKEY.vis.makePath(data, xAccessor, yAccessor);
-        if(path != ''){
-            paper.path(path).attr('stroke-width', size).attr('opacity', this.opacity).attr('stroke', this.color);
-        }
-    }
-
+    renderer.renderLineGeom(data, this);
     return true;
 };
 
@@ -272,36 +192,19 @@ LABKEY.vis.Geom.ErrorBar = function(config){
     return this;
 };
 LABKEY.vis.Geom.ErrorBar.prototype = new LABKEY.vis.Geom.XY();
-LABKEY.vis.Geom.ErrorBar.prototype.render = function(paper, grid, scales, data, layerAes, parentAes, name){
-    if(!this.initAesthetics(scales, layerAes, parentAes)){
+LABKEY.vis.Geom.ErrorBar.prototype.render = function(renderer, grid, scales, data, layerAes, parentAes, name){
+    if(!this.initAesthetics(scales, layerAes, parentAes, name)){
         return false;
     }
-    var yScale = this.yMap.side == "left" ? scales.yLeft.scale : scales.yRight.scale;
 
-    this.errorMap = layerAes.error ? layerAes.error : parentAes.error;
-    if(!this.errorMap){
+    this.errorAes = layerAes.error ? layerAes.error : parentAes.error;
+
+    if (!this.errorAes) {
         console.error("The error aesthetic is required for the ErrorBar geom.");
         return false;
     }
 
-    for(var i = 0; i < data.length; i++){
-        var x = scales.x.scale(this.xMap.getValue(data[i]));
-        var y = this.yMap.getValue(data[i]);
-        var errorAtPoint = this.errorMap.getValue(data[i]);
-        var yBottom = -yScale(y - errorAtPoint);
-        var yTop = -yScale(y + errorAtPoint);
-        var color;
-
-        if(LABKEY.vis.isValid(yBottom) && LABKEY.vis.isValid(yTop)){
-            color = this.colorMap ? scales.color.scale(this.colorMap.getValue(data[i]) + name) : this.color;
-            var topBar = LABKEY.vis.makeLine(x - 6, yTop, x+6, yTop),
-                middleBar = LABKEY.vis.makeLine(x, yTop, x, yBottom),
-                bottomBar = LABKEY.vis.makeLine(x-6, yBottom, x+6, yBottom);
-
-            var errorBar = paper.path(topBar + middleBar + bottomBar).attr('stroke-width', this.size).attr('stroke', color).attr('fill', color);
-        }
-    }
-
+    renderer.renderErrorBarGeom(data, this);
     return true;
 };
 
@@ -361,144 +264,19 @@ LABKEY.vis.Geom.Boxplot = function(config){
     return this;
 };
 LABKEY.vis.Geom.Boxplot.prototype = new LABKEY.vis.Geom.XY();
-LABKEY.vis.Geom.Boxplot.prototype.render = function(paper, grid, scales, data, layerAes, parentAes, name){
-    if(!this.initAesthetics(scales, layerAes, parentAes)){
+LABKEY.vis.Geom.Boxplot.prototype.render = function(renderer, grid, scales, data, layerAes, parentAes, name){
+    if(!this.initAesthetics(scales, layerAes, parentAes, name)){
         return false;
     }
+    this.hoverTextAes = layerAes.hoverText ? layerAes.hoverText : parentAes.hoverText;
+    this.pointClickFnAes = layerAes.pointClickFn ? layerAes.pointClickFn : parentAes.pointClickFn;
+    this.groupAes = layerAes.group ? layerAes.group : parentAes.group;
+    this.outlierHoverTextAes = layerAes.outlierHoverText ? layerAes.outlierHoverText : parentAes.outlierHoverText;
+    this.outlierColorAes = layerAes.outlierColor ? layerAes.outlierColor : parentAes.outlierColor;
+    this.outlierShapeAes = layerAes.outlierShape ? layerAes.outlierShape : parentAes.outlierShape;
+    this.shapeScale = scales.shape;
 
-    var yScale = this.yMap.side == "left" ? scales.yLeft.scale : scales.yRight.scale;
-    var hoverText = layerAes.hoverText ? layerAes.hoverText : parentAes.hoverText;
-    var outlierHoverText = layerAes.outlierHoverText ? layerAes.outlierHoverText : parentAes.outlierHoverText;
-    var pointClickFn = layerAes.pointClickFn ? layerAes.pointClickFn : parentAes.pointClickFn;
-    var outlierColorMap = layerAes.outlierColor ? layerAes.outlierColor : parentAes.outlierColor;
-    var outlierShapeMap = layerAes.outlierShape ? layerAes.outlierShape : parentAes.outlierShape;
-    var groupedData = null;
-    var binWidth = null;
-
-    var plotBox = function(x, width, top, bottom, middleY, topWhisker, bottomWhisker, hoverText){
-        var middleX = Math.floor(x+(width/2)) + .5;
-        var whiskerLeft = middleX - (width / 4);
-        var whiskerRight = middleX + (width / 4);
-        var boxSet = paper.set();
-        var box = paper.rect(x, top, width, Math.abs(top - bottom)).attr('fill', this.fill).attr('fill-opacity', this.opacity);
-        if(hoverText){
-            box.attr('title', hoverText.value(group, stats));
-        }
-
-        // Construct the box.
-        boxSet.push(
-                box,
-                paper.path(LABKEY.vis.makeLine(x, middleY, x+width, middleY))
-        );
-        // Construct the Whiskers.
-        if(bottomWhisker != null){
-            boxSet.push(
-                    paper.path(LABKEY.vis.makeLine(middleX, bottom, middleX, bottomWhisker)),
-                    paper.path(LABKEY.vis.makeLine(whiskerLeft, bottomWhisker, whiskerRight, bottomWhisker))
-            );
-        }
-
-        if(topWhisker != null){
-            boxSet.push(
-                    paper.path(LABKEY.vis.makeLine(middleX, top, middleX, topWhisker)),
-                    paper.path(LABKEY.vis.makeLine(whiskerLeft, topWhisker, whiskerRight, topWhisker))
-            );
-        }
-
-        boxSet.attr('stroke', this.color).attr('stroke-width', this.lineWidth);
-    };
-
-    if(scales.x.scaleType == 'continuous'){
-        //Split data into groupedData so we can render 1 path per group.
-        if(this.group){
-            groupedData = LABKEY.vis.groupData(data, this.group.getValue);
-        } else {
-            console.error('No group specified for a continuous scale, cannot render boxes.');
-            return;
-        }
-    } else {
-        // Categorical data will always get grouped by X axis value
-        groupedData = LABKEY.vis.groupData(data, this.xMap.getValue);
-        binWidth = (grid.rightEdge - grid.leftEdge) / (scales.x.scale.domain().length); // Should be able to use scale.rangeBand() but in this version of d3 it seems to be broken.
-    }
-
-    for(var group in groupedData){
-        // Create a box.
-        var stats = LABKEY.vis.Stat.summary(groupedData[group], this.yMap.getValue);
-
-        if(stats.sortedValues.length == 0){
-            // Issue 17651: Batik exception creating thumbnail from box plot
-            // If all values are null or undefined the sortedValues array will have no items.
-            continue;
-        }
-
-        var width = binWidth / 2;
-        var middleX = Math.floor(scales.x.scale(group)) + .5;
-        var x = scales.x.scale(group) - width/2;
-        var bottom = Math.floor(-yScale(stats.Q1)) + .5;
-        var top = Math.floor(-yScale(stats.Q3)) + .5;
-        var middleY = Math.floor(-yScale(stats.Q2)) + .5;
-        var smallestNotOutlier = stats.Q1 - (1.5 * stats.IQR);
-        var biggestNotOutlier = stats.Q3 + (1.5 * stats.IQR);
-        var i = 0;
-        var topWhisker = null;
-        var bottomWhisker = null;
-
-        while(stats.sortedValues[i] < smallestNotOutlier){
-            i++;
-        }
-
-        if(stats.sortedValues[i] < stats.Q1){
-            bottomWhisker = Math.floor(-yScale(stats.sortedValues[i])) + .5;
-        }
-
-        i = stats.sortedValues.length - 1;
-        while(stats.sortedValues[i] > biggestNotOutlier){
-            i--;
-        }
-
-        if(stats.sortedValues[i] > stats.Q3){
-            topWhisker = Math.floor(-yScale(stats.sortedValues[i])) + .5;
-        }
-
-        plotBox.call(this, x, width, top, bottom, middleY, topWhisker, bottomWhisker, hoverText);
-
-        if(this.showOutliers){
-            for(i = 0; i < groupedData[group].length; i++){
-                var val = this.yMap.getValue(groupedData[group][i]);
-                if(val != null && (val > biggestNotOutlier || val < smallestNotOutlier)){
-                    var outlier;
-                    var outlierX = (this.position == 'jitter') ? x+(Math.random()*(width)) : middleX;
-
-                    var color = outlierColorMap && scales.color ?
-                            scales.color.scale(outlierColorMap.getValue(groupedData[group][i])) :
-                            this.outlierFill;
-                    
-                    var shapeFunction = outlierShapeMap && scales.shape ?
-                            scales.shape.scale(outlierShapeMap.getValue(groupedData[group][i]) + name) :
-                            function(paper, x, y, r){return paper.circle(x, y, r)};
-
-                    outlier = shapeFunction(paper, outlierX, -yScale(val), this.outlierSize)
-                            .attr('fill', color)
-                            .attr('fill-opacity', this.outlierOpacity)
-                            .attr('stroke', color)
-                            .attr('stroke-opacity', this.outlierOpacity);
-
-                    if(outlierHoverText){
-                        outlier.attr('title', outlierHoverText.getValue(groupedData[group][i]));
-                    }
-
-                    if (pointClickFn) {
-                        outlier.data = groupedData[group][i];
-                        outlier.click(function(clickEvent) {
-                            pointClickFn.value(clickEvent, this.data);
-                        });
-                    }
-                }
-            }
-        }
-    }
-
+    renderer.renderBoxPlotGeom(data, this);
     return true;
 };
 

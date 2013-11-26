@@ -610,6 +610,8 @@ if (typeof LABKEY == "undefined")
                     '/vis/src/stat.js',
                     '/vis/src/scale.js',
                     '/vis/src/layer.js',
+                    '/vis/src/internal/RaphaelRenderer.js',
+                    '/vis/src/internal/D3Renderer.js',
                     '/vis/src/plot.js'
                 ]);
 

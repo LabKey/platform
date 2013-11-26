@@ -237,6 +237,12 @@ boxPlot.render();
  */
 LABKEY.vis.Plot = function(config){
 
+    if(config.hasOwnProperty('rendererType') && config.rendererType == 'd3') {
+        this.renderer = new LABKEY.vis.internal.D3Renderer(this);
+    } else {
+        this.renderer = new LABKEY.vis.internal.RaphaelRenderer(this);
+    }
+
     var error = function(msg){
         if (this.throwErrors){
             throw new Error(msg);
@@ -245,10 +251,8 @@ LABKEY.vis.Plot = function(config){
             if(console.trace){
                 console.trace();
             }
-            if(this.paper){
-                this.paper.clear();
-                this.paper.text(this.paper.width / 2, this.paper.height / 2, "Error rendering chart:\n" + msg).attr('font-size', '12px').attr('fill', 'red');
-            }
+
+            this.renderer.renderError(msg);
         }
     };
 
@@ -311,8 +315,6 @@ LABKEY.vis.Plot = function(config){
         return margins;
     };
 
-    var labelElements = {}; // These are all of the Raphael elements for the labels.
-    var gridSet = null; // The Raphael set used internally.
 	this.renderTo = config.renderTo ? config.renderTo : null; // The id of the DOM element to render the plot to, required.
 	this.grid = {
 		width: config.width ? config.width : null, // height of the grid where shapes/lines/etc gets plotted.
@@ -346,25 +348,28 @@ LABKEY.vis.Plot = function(config){
 
     if(this.labels.y){
         this.labels.yLeft = this.labels.y;
+        this.labels.y = null;
     }
 
     if(this.grid.width == null){
 		error("Unable to create plot, width not specified");
-		return null;
+		return;
 	}
 
 	if(this.grid.height == null){
 		error("Unable to create plot, height not specified");
-		return null;
+		return;
 	}
 
 	if(this.renderTo == null){
 		error("Unable to create plot, renderTo not specified");
-		return null;
+		return;
 	}
 
     for(var aesthetic in this.aes){
-        LABKEY.vis.createGetter(this.aes[aesthetic]);
+        if (this.aes.hasOwnProperty(aesthetic)) {
+            LABKEY.vis.createGetter(this.aes[aesthetic]);
+        }
     }
 
 	var initScales = function(){
@@ -543,434 +548,91 @@ LABKEY.vis.Plot = function(config){
 		return true;
 	};
 
-	var initGrid = function(){
-        var i, x1, y1, x2, y2, tick, tickText, tickHoverText, text, gridLine;
-        if(this.bgColor){
-            this.paper.rect(0, 0, this.grid.width, this.grid.height).attr('fill', this.bgColor).attr('stroke', 'none');
+    var compareDomains  = function(domain1, domain2){
+        if(domain1.length != domain2.length){
+            return false;
         }
 
-        if(this.gridColor){
-            this.paper.rect(this.grid.leftEdge, (this.grid.height - this.grid.topEdge),(this.grid.rightEdge - this.grid.leftEdge), (this.grid.topEdge - this.grid.bottomEdge)).attr('fill', this.gridColor).attr('fill', this.gridColor).attr('stroke', 'none');
-        }
+        domain1.sort();
+        domain2.sort();
 
-        if(this.labels.main && this.labels.main.value){
-            this.setMainLabel(this.labels.main.value, this.labels.main.lookClickable);
-        }
-
-		// Now that we have all the scales situated we need to render the axis lines, tick marks, and titles.
-		this.paper.path(LABKEY.vis.makeLine(this.grid.leftEdge, -this.grid.bottomEdge +.5, this.grid.rightEdge, -this.grid.bottomEdge+.5)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
-
-        var xTicks;
-        var xTicksSet = this.paper.set();
-        if(this.scales.x.scaleType == 'continuous'){
-            xTicks = this.scales.x.scale.ticks(7);
-        } else {
-            xTicks = this.scales.x.domain;
-        }
-
-        for(i = 0; i < xTicks.length; i++){
-            //Plot x-axis ticks.
-            x1 = x2 = Math.floor(this.scales.x.scale(xTicks[i])) +.5;
-            y1 = -this.grid.bottomEdge + 8;
-            y2 = -this.grid.bottomEdge;
-
-            tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + this.grid.height);
-            tickText = this.scales.x.tickFormat ? this.scales.x.tickFormat(xTicks[i]) : xTicks[i];
-            text = this.paper.text(this.scales.x.scale(xTicks[i])+.5, -this.grid.bottomEdge + 15, tickText).transform("t0," + this.grid.height);
-
-            // add hover for x-axis tick mark descriptions
-            tickHoverText = this.scales.x.tickHoverText ? this.scales.x.tickHoverText(xTicks[i]) : null;
-            if (tickHoverText)
-                text.attr("title", tickHoverText);
-
-            xTicksSet.push(text);
-
-            if(x1 - .5 == this.grid.leftEdge || x1 - .5 == this.grid.rightEdge) continue;
-
-            gridLine = this.paper.path(LABKEY.vis.makeLine(x1, -this.grid.bottomEdge, x2, -this.grid.topEdge)).attr('stroke', '#DDD').transform("t0," + this.grid.height);
-            if(this.gridLineColor){
-                gridLine.attr('stroke', this.gridLineColor);
-            }
-        }
-
-        for(var i = 0; i < xTicksSet.length-1; i++){
-            var curBBox = xTicksSet[i].getBBox(),
-                nextBBox = xTicksSet[i+1].getBBox();
-            if(curBBox.x2 >= nextBBox.x){
-                xTicksSet.attr('text-anchor', 'start').transform('t0,' + (this.grid.height + 12)+'r15');
-                break;
-            }
-        }
-
-        if(this.labels.x && this.labels.x.value){
-            this.setXLabel(this.labels.x.value, this.labels.x.lookClickable);
-        }
-
-		if(this.scales.yLeft && this.scales.yLeft.scale){
-            var leftTicks;
-            if(this.scales.yLeft.scaleType == 'continuous'){
-                leftTicks = this.scales.yLeft.scale.ticks(10);
-            } else {
-                leftTicks = this.scales.yLeft.scale.domain();
-            }
-
-			this.paper.path(LABKEY.vis.makeLine(this.grid.leftEdge +.5, -this.grid.bottomEdge + 1, this.grid.leftEdge+.5, -this.grid.topEdge)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
-
-            if(this.labels.yLeft && this.labels.yLeft.value){
-                this.setYLeftLabel(this.labels.yLeft.value, this.labels.yLeft.lookClickable);
-            }
-
-			for(i = 0; i < leftTicks.length; i++){
-				x1 = this.grid.leftEdge  - 8;
-				y1 = y2 = -Math.floor(this.scales.yLeft.scale(leftTicks[i])) + .5; // Floor it and add .5 to keep the lines sharp.
-				x2 = this.grid.leftEdge;
-
-                if(y1 == -this.grid.bottomEdge + .5) continue; // Dont draw a line on top of the x-axis line.
-
-				tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + this.grid.height);
-                tickText = this.scales.yLeft.tickFormat ? this.scales.yLeft.tickFormat(leftTicks[i]) : leftTicks[i];
-				gridLine = this.paper.path(LABKEY.vis.makeLine(x2 + 1, y1, this.grid.rightEdge, y2)).attr('stroke', '#DDD').transform("t0," + this.grid.height);
-                if(this.gridLineColor){
-                    gridLine.attr('stroke', this.gridLineColor);
-                }
-				text = this.paper.text(x1 - 15, y1, tickText).transform("t0," + this.grid.height);
-			}
-		}
-
-		if(this.scales.yRight && this.scales.yRight.scale){
-            var rightTicks;
-            if(this.scales.yRight.scaleType == 'continuous'){
-                rightTicks = this.scales.yRight.scale.ticks(10);
-            } else {
-                rightTicks = this.scales.yRight.scale.domain();
-            }
-
-            this.paper.path(LABKEY.vis.makeLine(this.grid.rightEdge + .5, -this.grid.bottomEdge + 1, this.grid.rightEdge + .5, -this.grid.topEdge)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
-
-            if(this.labels.yRight && this.labels.yRight.value){
-                this.setYRightLabel(this.labels.yRight.value, this.labels.yRight.lookClickable);
-            }
-
-			for(i = 0; i < rightTicks.length; i++){
-				x1 = this.grid.rightEdge;
-				y1 = y2 = -Math.floor(this.scales.yRight.scale(rightTicks[i])) + .5;
-				x2 = this.grid.rightEdge + 8;
-
-                if(y1 == -this.grid.bottomEdge + .5) continue; // Dont draw a line on top of the x-axis line.
-
-				tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + this.grid.height);
-                tickText = this.scales.yRight.tickFormat ? this.scales.yRight.tickFormat(rightTicks[i]) : rightTicks[i];
-				gridLine = this.paper.path(LABKEY.vis.makeLine(this.grid.leftEdge + 1, y1, x1, y2)).attr('stroke', '#DDD').transform("t0," + this.grid.height);
-                if(this.gridLineColor){
-                    gridLine.attr('stroke', this.gridLineColor);
-                }
-				text = this.paper.text(x2 + 15, y1, tickText).transform("t0," + this.grid.height);
-			}
-		}
-	};
-
-    var renderLegend = function(){
-        var lastY;
-        var xPadding = this.scales.yRight && this.scales.yRight.scale ? 25 : 0,
-                startY = 0,
-                defaultColor = function(){return '#333'},
-                // We default to a rectangle because it's not one of the shapes in the shape scale.
-                defaultShape = function(){
-                    return function(paper, x, y, size){
-                        return paper.rect(x - size, y - (size/2), size*2, size);
-                    }
-                };
-
-        var compareDomains = function(domain1, domain2){
-            if(domain1.length != domain2.length){
+        for(var i = 0; i < domain1.length; i++){
+            if(domain1[i] != domain2[i]) {
                 return false;
             }
-
-            domain1.sort();
-            domain2.sort();
-
-            for(var i = 0; i < domain1.length; i++){
-                if(domain1[i] != domain2[i]) {
-                    return false;
-                }
-            }
-
-            return true;
-        };
-
-        var renderPartial = function(paper, grid, y, geomX, textX, domain, shapeFn, colorFn){
-            var legendWidth = paper.width - textX - 10;
-
-            for(var i = 0; i < domain.length; i++){
-                var translatedY = parseInt(-(grid.topEdge - y)) +.5,
-                    color = colorFn(domain[i]),
-                    shape = shapeFn(domain[i]),
-                    words = domain[i].split(' '),
-                    tempText = '',
-                    newLines = 0;
-
-                var textObj = paper.text(textX, translatedY)
-                            .attr('text-anchor', 'start')
-                            .attr('title', domain[i])
-                            .attr({"font-family": "verdana, arial, helvetica, sans-serif"});
-                
-                shape(paper, geomX, translatedY, 5).attr('fill', color).attr('stroke', color);
-
-                for(var j = 0; j < words.length; j++){
-                    textObj.attr('text', tempText + ' ' + words[j]);
-                    if(textObj.getBBox().width > legendWidth && j > 0){
-                        tempText = tempText + '\n' + words[j];
-                        y = y + 12;
-                        newLines++;
-                    } else {
-                        tempText = tempText + ' ' + words[j];
-                    }
-                }
-                
-                // We need to adjust the tranlsatedY value based on newlines and re-draw the text object because
-                // Raphael / SVG centers text vertically.
-                translatedY = translatedY + (newLines * 6);
-
-                textObj.remove();
-                textObj = paper.text(textX, translatedY, tempText)
-                        .attr('text-anchor', 'start')
-                        .attr('title', domain[i])
-                        .attr({"font-family": "verdana, arial, helvetica, sans-serif"});
-
-                y = y + 16;
-            }
-
-            // returns the next available y position.
-            return y;
-        };
-
-        if(this.legendPos && this.legendPos == "none"){
-            return;
         }
 
-        if((this.scales.color && this.scales.color.scaleType === 'discrete') && this.scales.shape){
+        return true;
+    };
+
+    var generateLegendData = function(legendData, domain, colorFn, shapeFn){
+        for(var i = 0; i < domain.length; i++) {
+            legendData.push({
+                text: domain[i],
+                color: colorFn != null ? colorFn(domain[i]) : null,
+                shape: shapeFn != null ? shapeFn(domain[i]) : null
+            });
+        }
+    };
+
+    this.getLegendData = function(){
+        var legendData = [];
+
+        if ((this.scales.color && this.scales.color.scaleType === 'discrete') && this.scales.shape) {
             if(compareDomains(this.scales.color.scale.domain(), this.scales.shape.scale.domain())){
-                lastY = renderPartial(
-                        this.paper,
-                        this.grid,
-                        startY,
-                        this.grid.rightEdge + 50 + xPadding,
-                        this.grid.rightEdge + 68 + xPadding,
-                        this.scales.shape.scale.domain(),
-                        this.scales.shape.scale,
-                        this.scales.color.scale
-                );
+                // The color and shape domains are the same. Merge them in the legend.
+                generateLegendData(legendData, this.scales.color.scale.domain(), this.scales.color.scale, this.scales.shape.scale);
             } else {
-                // Color
-                lastY = renderPartial(
-                        this.paper,
-                        this.grid,
-                        startY,
-                        this.grid.rightEdge + 50 + xPadding,
-                        this.grid.rightEdge + 68 + xPadding,
-                        this.scales.color.scale.domain(),
-                        defaultShape,
-                        this.scales.color.scale
-                );
-
-                // Shape
-                lastY = renderPartial(
-                        this.paper,
-                        this.grid,
-                        lastY + 18,
-                        this.grid.rightEdge + 50 + xPadding,
-                        this.grid.rightEdge + 68 + xPadding,
-                        this.scales.shape.scale.domain(),
-                        this.scales.shape.scale,
-                        defaultColor
-                );
+                // The color and shape domains are different.
+                generateLegendData(legendData, this.scales.color.scale.domain(), this.scales.color.scale, null);
+                generateLegendData(legendData, this.scales.shape.scale.domain(), null, this.scales.shape.scale);
             }
-        } else if(this.scales.color && this.scales.color.scaleType === 'discrete'){
-            lastY = renderPartial(
-                    this.paper, this.grid,
-                    startY,
-                    this.grid.rightEdge + 50 + xPadding,
-                    this.grid.rightEdge + 68 + xPadding,
-                    this.scales.color.scale.domain(),
-                    defaultShape,
-                    this.scales.color.scale
-            );
-        } else if(this.scales.shape){
-            lastY = renderPartial(
-                    this.paper,
-                    this.grid,
-                    startY,
-                    this.grid.rightEdge + 50 + xPadding,
-                    this.grid.rightEdge + 68 + xPadding,
-                    this.scales.shape.scale.domain(),
-                    this.scales.shape.scale,
-                    defaultColor
-            );
+        } else if(this.scales.color && this.scales.color.scaleType === 'discrete') {
+            generateLegendData(legendData, this.scales.color.scale.domain(), this.scales.color.scale, null);
+        } else if(this.scales.shape) {
+            generateLegendData(legendData, this.scales.shape.scale.domain(), null, this.scales.shape.scale);
         }
+
+        return legendData;
     };
 
     /**
      * Renders the plot.
      */
 	this.render = function(){
-
-        if(!this.paper){
-            this.paper = new Raphael(this.renderTo, this.grid.width, this.grid.height);
-        } else if(this.paper.width != this.grid.width || this.paper.height != this.grid.height){
-            // If the user changed the size of the chart we need to alter the canvas size.
-            this.paper.setSize(this.grid.width, this.grid.height);
-        }
-        this.paper.clear();
-        
-        if(!this.layers || this.layers.length < 1){
-            error.call(this,'No layers added to the plot, nothing to render.');
-            return false;
-        }
+        this.renderer.initCanvas(); // Get the canvas prepped for render time.
 
         if(!initScales.call(this)){  // Sets up the scales.
             return false; // if we have a critical error when trying to initialize the scales we don't continue with rendering.
         }
 
-		initGrid.call(this); // renders the grid (axes, grid lines, titles).
-        this.paper.setStart();
+        if(!this.layers || this.layers.length < 1){
+            error.call(this,'No layers added to the plot, nothing to render.');
+            return false;
+        }
+
+		this.renderer.renderGrid(); // renders the grid (axes, grid lines).
+        this.renderer.renderLabels();
+
         for(var i = 0; i < this.layers.length; i++){
-            this.layers[i].render(this.paper, this.grid, this.scales, this.data, this.aes);
+            this.layers[i].render(this.renderer, this.grid, this.scales, this.data, this.aes);
         }
 
-        gridSet = this.paper.setFinish();
-        if(this.clipRect){
-            gridSet.attr('clip-rect', (this.grid.leftEdge - 10) + ", " + (this.grid.height - this.grid.topEdge) + ", " + (this.grid.rightEdge - this.grid.leftEdge  + 20) + ", " + (this.grid.topEdge - this.grid.bottomEdge + 12));
+        if(!this.legendPos || (this.legendPos && !(this.legendPos == "none"))){
+            this.renderer.renderLegend();
         }
-        gridSet.transform("t0," + this.grid.height);
-        
-        this.paper.setStart();
-        renderLegend.call(this); // Renders the legend, we do this after the layers render because data is grouped at render time.
-        this.paper.setFinish().transform("t0," + this.grid.height);
+
+        return true;
     };
 
-    var renderLabel = function(x, y, value){
-        return this.paper.text(x, y, value);
-    };
-
-    var renderClickArea = function(bbox, labelName){
-        var clickArea = this.paper.set();
-        var box, triangle;
-        var wPad = 10, x = bbox.x, y = bbox.y, height = bbox.height, width = bbox.width;
-        var tx, ty, r = 4, tFn;
-        if(labelName == 'x' || labelName == 'main'){
-            width = width + height + (wPad * 2);
-            x = x - wPad;
-            tx = x + width - r - (wPad / 2);
-            ty = y + (height / 2);
-        } else if(labelName == 'yLeft' || labelName == 'yRight'){
-            height = height + width + (wPad * 2);
-            y = y - width - wPad;
-            tx = x + (width /2);
-            ty = y + r + (wPad / 2);
-        }
-
-        if(labelName == 'main'){
-            //down arrow
-            tFn = function(x, y, r){
-                var yBottom = y + r, yTop = y - r, xLeft = x - r, xRight = x + r;
-                return 'M ' + x + ' ' + yBottom + ' L ' + xLeft + ' ' + yTop + ' L ' + xRight + ' ' + yTop + ' L ' + x + ' ' + yBottom + ' Z';
-            };
-
-        }else if(labelName == 'x'){
-            // up arrow
-            tFn = function(x, y, r){
-                var yBottom = y + r, yTop = y - r, xLeft = x - r, xRight = x + r;
-                return 'M ' + x + ' ' + yTop + ' ' + ' L ' + xRight + ' ' + yBottom + ' L ' + xLeft + ' ' + yBottom + ' L ' + x + ' ' + yTop + ' Z';
-            };
-        } else if(labelName == 'yLeft'){
-            // right arrow
-            tFn = function(x, y, r){
-                var yBottom = y + r, yTop = y - r, xLeft = x - r, xRight = x + r;
-                return 'M ' + xRight + ' ' + y + ' L ' + xLeft + ' ' + yBottom + ' L ' + xLeft + ' ' + yTop + ' L ' + xRight + ' ' + y + ' Z';
-            };
-        } else if(labelName == 'yRight'){
-            // left arrow
-            tFn = function(x, y, r){
-                var yBottom = y + r, yTop = y - r, xLeft = x - r, xRight = x + r;
-                return 'M ' + xLeft + ' ' + y + ' L ' + xRight + ' ' + yTop + ' L ' + xRight + ' ' + yBottom + ' L ' + xLeft + ' ' + y + ' Z';
-            };
-        }
-        triangle = this.paper.path(tFn(tx, ty, r)).attr('fill', 'black');
-        clickArea.push(triangle);
-
-        box = this.paper.rect(Math.floor(x) + .5, Math.floor(y) + .5, width, height);
-        box.attr('fill', '#FFFFFF').attr('fill-opacity', 0);
-        clickArea.push(box);
-
-        box.mouseover(function(){
-            this.attr('stroke', '#777777');
-            triangle.attr('fill', '#777777');
-            triangle.attr('stroke', '#777777');
-        });
-        box.mouseout(function(){
-            this.attr('stroke', '#000000');
-            triangle.attr('fill', '#000000');
-            triangle.attr('stroke', '#000000');
-        });
-
-        return clickArea;
-    };
-
-    var setLabel = function(name, x, y, value, lookClickable, render){
+    var setLabel = function(name, value, lookClickable){
         if(!this.labels[name]){
             this.labels[name] = {};
         }
 
-        if(this.labels[name].value != value){
-            this.labels[name].value = value;
-        }
-
-        if(this.labels[name].lookClickable != lookClickable){
-            this.labels[name].lookClickable = lookClickable;
-        }
-
-        if(render){
-            if(labelElements[name] && labelElements[name].text){
-                labelElements[name].text.remove();
-            } else if(!labelElements[name]){
-                labelElements[name] = {};
-            }
-
-            labelElements[name].text = renderLabel.call(this, x, y, value);
-            // TODO: Automatically detect the default font to use for labels.
-            if(name == 'main'){
-                labelElements[name].text.attr({font: "18px verdana, arial, helvetica, sans-serif"});
-            } else if(name == 'x'){
-                labelElements[name].text.attr({font: "14px verdana, arial, helvetica, sans-serif"}).attr({'text-anchor': 'middle'});
-                var bbox = labelElements[name].text.getBBox()
-                this.paper.rect(x - bbox.width/2, y - bbox.height/2, bbox.width, bbox.height)
-                        .attr({'stroke-width': 0, fill: this.bgColor? this.bgColor : '#fff'});
-                labelElements[name].text.toFront();
-            } else if(name == 'yRight') {
-                labelElements[name].text.attr({font: "14px verdana, arial, helvetica, sans-serif"});
-                labelElements[name].text.transform("t0," + this.h+"r90");
-            } else if(name == 'yLeft'){
-                labelElements[name].text.attr({font: "14px verdana, arial, helvetica, sans-serif"});
-                labelElements[name].text.transform("t0," + this.h+"r270");
-            }
-
-            if(labelElements[name].clickArea){
-                labelElements[name].clickArea.remove();
-            }
-            if(this.labels[name].lookClickable === true){
-                var bbox = labelElements[name].text.getBBox();
-                labelElements[name].clickArea = renderClickArea.call(this, bbox, name);
-            }
-
-            // Replace the listeners.
-            if(this.labels[name].listeners){
-                for(var listener in this.labels[name].listeners){
-                    this.addLabelListener(name, listener, this.labels[name].listeners[listener]);
-                }
-            }
-
-            return labelElements[name];
-        }
+        this.labels[name].value = value;
+        this.labels[name].lookClickable = lookClickable;
+        this.renderer.renderLabel(name);
     };
 
     /**
@@ -979,11 +641,7 @@ LABKEY.vis.Plot = function(config){
      * @param {Boolean} lookClickable If true it styles the label to look clickable.
      */
     this.setMainLabel = function(value, lookClickable){
-        if(this.paper){
-            setLabel.call(this, 'main', this.grid.width / 2, 30, value, lookClickable, true);
-        } else {
-            setLabel.call(this, 'main', this.grid.width / 2, 30, value, lookClickable, false);
-        }
+        setLabel.call(this, 'main', value, lookClickable);
     };
 
     /**
@@ -992,11 +650,7 @@ LABKEY.vis.Plot = function(config){
      * @param {Boolean} lookClickable If true it styles the label to look clickable.
      */
     this.setXLabel = function(value, lookClickable){
-        if(this.paper){
-           setLabel.call(this, 'x', this.grid.leftEdge + (this.grid.rightEdge - this.grid.leftEdge)/2, this.grid.height - 10, value, lookClickable, true);
-        } else {
-            setLabel.call(this, 'x', this.grid.leftEdge + (this.grid.rightEdge - this.grid.leftEdge)/2, this.grid.height - 10, value, lookClickable, false);
-        }
+        setLabel.call(this, 'x', value, lookClickable);
     };
 
     /**
@@ -1005,11 +659,7 @@ LABKEY.vis.Plot = function(config){
      * @param {Boolean} lookClickable If true it styles the label to look clickable.
      */
     this.setYRightLabel = function(value, lookClickable){
-        if(this.paper){
-            setLabel.call(this, 'yRight', this.grid.rightEdge + 45, this.grid.height / 2, value, lookClickable, true);
-        } else {
-            setLabel.call(this, 'yRight', this.grid.rightEdge + 45, this.grid.height / 2, value, lookClickable, false);
-        }
+        setLabel.call(this, 'yRight', value, lookClickable);
     };
 
     /**
@@ -1018,11 +668,7 @@ LABKEY.vis.Plot = function(config){
      * @param {Boolean} lookClickable If true it styles the label to look clickable.
      */
     this.setYLeftLabel = this.setYLabel = function(value, lookClickable){
-        if(this.paper){
-            setLabel.call(this, 'yLeft', this.grid.leftEdge - 55, this.grid.height / 2, value, lookClickable, true);
-        } else {
-            setLabel.call(this, 'yLeft', this.grid.leftEdge - 55, this.grid.height / 2, value, lookClickable, false);
-        }
+        setLabel.call(this, 'yLeft', value, lookClickable);
     };
 
     /**
@@ -1032,50 +678,10 @@ LABKEY.vis.Plot = function(config){
      * @param {Function} fn The callback to b called when the event is fired.
      */
     this.addLabelListener = function(label, listener, fn){
-        var availableListeners = {
-            click: 'click', dblclick:'dblclick', drag: 'drag', hover: 'hover', mousedown: 'mousedown',
-            mousemove: 'mousemove', mouseout: 'mouseout', mouseover: 'mouseover', mouseup: 'mouseup',
-            touchcancel: 'touchcancel', touchend: 'touchend', touchmove: 'touchmove', touchstart: 'touchstart'
-        };
-
-        if(label == 'y'){
+        if(label == 'y') {
             label = 'yLeft';
         }
-
-        if(availableListeners[listener]){
-            if(labelElements[label]){
-                // Store the listener in the labels object.
-                if(!this.labels[label].listeners){
-                    this.labels[label].listeners = {};
-                }
-
-                if(this.labels[label].listeners[listener]){
-                    // There is already a listener of the requested type, so we should purge it.
-                    var unEvent = 'un' + listener;
-                    labelElements[label].text[unEvent].call(labelElements[label].text, this.labels[label].listeners[listener]);
-                    if(labelElements[label].clickArea){
-                        labelElements[label].clickArea[unEvent].call(labelElements[label].clickArea, this.labels[label].listeners[listener]);
-                    }
-                }
-
-                this.labels[label].listeners[listener] = fn;
-
-                // Need to call the listener function and keep it within the scope of the Raphael object that we're accessing,
-                // so we pass itself into the call function as the scope object. It's essentially doing something like:
-                // labelElements.x.text.click.call(labelElements.x.text, fn);
-                labelElements[label].text[listener].call(labelElements[label].text, fn);
-                if(labelElements[label].clickArea){
-                    labelElements[label].clickArea[listener].call(labelElements[label].clickArea, fn);
-                }
-                return true;
-            } else {
-                console.error('The ' + label + ' label is not available.');
-                return false;
-            }
-        } else {
-            console.error('The ' + listener + ' listener is not available.');
-            return false;
-        }
+        return this.renderer.addLabelListener(label, listener, fn);
     };
 
     /**
@@ -1136,9 +742,7 @@ LABKEY.vis.Plot = function(config){
      * Clears the grid.
      */
     this.clearGrid = function(){
-        if(gridSet){
-            gridSet.remove();
-        }
+        this.renderer.clearGrid();
     };
 
     /**

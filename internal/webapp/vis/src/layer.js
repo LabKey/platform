@@ -39,12 +39,11 @@ LABKEY.vis.Layer = function(config){
         return this.data && this.data.length > 0;
     };
 
-	this.render = function(paper, grid, scales, data, parentAes){
+	this.render = function(renderer, grid, scales, data, parentAes){
 		// This function takes the data an renders it according the mappings, geoms, stats, and positions passed in.
 
 		if(this.geom){
-			// console.log("Rendering a layer!");
-			this.geom.render(paper, grid, scales, this.data ? this.data : data, this.aes, parentAes, this.name);
+			this.geom.render(renderer, grid, scales, this.data ? this.data : data, this.aes, parentAes, this.name);
 		} else {
 			// Without a geom the render function will not do anything.
 			console.log("Unable to render this layer. No geom present");
