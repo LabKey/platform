@@ -69,7 +69,7 @@ public class CSRFUtil
     }
 
 
-    public static String  getExpectedToken(ViewContext c)
+    public static String getExpectedToken(ViewContext c)
     {
         return getExpectedToken(c.getRequest(), c.getResponse());
     }
