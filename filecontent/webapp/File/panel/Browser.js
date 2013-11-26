@@ -151,6 +151,11 @@ Ext4.define('File.panel.Browser', {
     showUpload : true,
 
     /**
+     * @cfg (Boolean) showToolbar
+     */
+    showToolbar : true,
+
+    /**
      * An additional set of toolbar configurable items that can be supplied at runtime.
      * @cfg {Array} tbarItems
      */
@@ -359,7 +364,8 @@ Ext4.define('File.panel.Browser', {
 
         this.items = this.getItems();
 
-        this.initializeToolbar();
+        if (this.showToolbar)
+            this.initializeToolbar();
 
         // Attach listeners
         this.on('folderchange', this.onFolderChange, this);
@@ -1516,7 +1522,7 @@ Ext4.define('File.panel.Browser', {
      * are used to help with automated tests.
      */
     enableImportData : function(enabled) {
-        if (this.actions && this.actions.importData) {
+        if (this.actions && this.actions.importData && this.showToolbar) {
             var el = this.getToolbar().getEl();
             var cls = 'labkey-import-enabled';
 

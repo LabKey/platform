@@ -69,8 +69,11 @@ public class FreezerProTransform implements SpecimenTransform
     @Override
     public ActionURL getManageAction(Container c, User user)
     {
+        // uncomment once integration with freezerPro api's is implemented
+/*
         if (c.hasPermission(user, AdminPermission.class))
             return new ActionURL(FreezerProController.ConfigureAction.class, c);
+*/
         return null;
     }
 }
