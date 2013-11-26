@@ -234,32 +234,43 @@ Ext4.define('File.panel.Browser', {
 
         _pipelineConfigurationCache : {},
 
-        _toggleActions : function(actions, selection) {
+        _toggleActions : function(fileSystem, actions, selection) {
+
+            // update action button state based on the number of selected records
             var types = File.panel.Browser.actionTypes;
             for (var key in actions) {
                 if (actions.hasOwnProperty(key)) {
-                    if (!actions[key].initialConfig.actionType) {
+                    var actionType = actions[key].initialConfig.actionType;
+                    if (!actionType) {
                         continue;
                     }
 
-                    var actionType = actions[key].initialConfig.actionType;
-
                     if (actionType == types.NOMIN) {
-                        continue; // do nothing
+                        // do nothing
                     }
-                    else if (selection == 0) {
+                    else if (selection.length == 0) {
                         // Set disabled when case is: ATLEASTONE or ONLYONE or ATLEASTTWO
                         actions[key].setDisabled((actionType == types.ATLEASTONE || actionType == types.ONLYONE || actionType == types.ATLEASTTWO));
                     }
-                    else if (selection == 1) {
+                    else if (selection.length == 1) {
                         // Set disabled when case is: ATLEASTTWO or NOFILE
                         actions[key].setDisabled((actionType == types.ATLEASTTWO || actionType == types.NOFILE));
                     }
-                    else if (selection >= 2) {
+                    else if (selection.length >= 2) {
                         // Set disabled when case is: ONLYONE or NOFILE
                         actions[key].setDisabled((actionType == types.ONLYONE || actionType == types.NOFILE));
                     }
                 }
+            }
+
+            // update the action button state based on the selected record options
+            for (var i = 0; i < selection.length; i++)
+            {
+                if (!fileSystem.canDelete(selection[i]))
+                    actions.deletePath.disable();
+
+                if (!fileSystem.canMove(selection[i]))
+                    actions.movePath.disable();
             }
         },
 
@@ -353,7 +364,7 @@ Ext4.define('File.panel.Browser', {
         // Attach listeners
         this.on('folderchange', this.onFolderChange, this);
         Ext4.Ajax.timeout = 60000;
-        File.panel.Browser._toggleActions(this.actions, 0);
+        File.panel.Browser._toggleActions(this.fileSystem, this.actions, []);
         this.callParent();
     },
 
@@ -1377,6 +1388,7 @@ Ext4.define('File.panel.Browser', {
                     xtype: 'radiogroup',
                     fieldLabel: provider.label + '<br>' + pa.getShortMessage(),
                     tooltip: pa.getLongMessage(),
+                    minHeight: 40,
                     columns: 1,
                     labelSeparator: '',
                     items: radios,
@@ -1648,7 +1660,7 @@ Ext4.define('File.panel.Browser', {
                 this.getDetailPanel().update('');
         }
 
-        this.fireEvent('selectionchange', File.panel.Browser._toggleActions(this.actions, selectedRecords.length));
+        this.fireEvent('selectionchange', File.panel.Browser._toggleActions(this.fileSystem, this.actions, selectedRecords));
 
         this.selectedRecord = selectedRecords[0];
 
@@ -2162,6 +2174,13 @@ Ext4.define('File.panel.Browser', {
             var newName = field.getValue();
 
             if (!newName || !field.isValid()) {
+                return;
+            }
+
+            if (newName.toLowerCase() == win.origName.toLowerCase())
+            {
+                var noun = win.fileRecord.get('collection') ? "folder" : "file";
+                field.markInvalid("Unable to rename " + noun + " by casing only");
                 return;
             }
 
