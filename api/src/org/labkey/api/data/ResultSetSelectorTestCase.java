@@ -77,7 +77,7 @@ public class ResultSetSelectorTestCase extends AbstractSelectorTestCase<ResultSe
             {
                 try
                 {
-                    ResultSetSelector selector = new ResultSetSelector(scope, rs, null);
+                    ResultSetSelector selector = new ResultSetSelector(scope, rs);
                     selector.setCompletionAction(ResultSetSelector.CompletionAction.ScrollToTop);
                     fail("ScrollToTop should have thrown with non-scrollable ResultSet");
                 }
@@ -89,7 +89,7 @@ public class ResultSetSelectorTestCase extends AbstractSelectorTestCase<ResultSe
                 rs = CachedResultSets.create(rs, true, Table.ALL_ROWS);
             }
 
-            ResultSetSelector selector = new ResultSetSelector(scope, rs, null);
+            ResultSetSelector selector = new ResultSetSelector(scope, rs);
             selector.setCompletionAction(ResultSetSelector.CompletionAction.ScrollToTop);
 
             test(selector, clazz);

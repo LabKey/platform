@@ -747,7 +747,7 @@ public class DbScope
             {
                 final Collection<String> schemaNames = new LinkedList<>();
 
-                new ResultSetSelector(this, rs, null).forEach(new Selector.ForEachBlock<ResultSet>()
+                new ResultSetSelector(this, rs).forEach(new Selector.ForEachBlock<ResultSet>()
                 {
                     @Override
                     public void exec(ResultSet rs) throws SQLException

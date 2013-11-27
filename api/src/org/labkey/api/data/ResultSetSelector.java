@@ -33,8 +33,8 @@ public class ResultSetSelector extends BaseSelector
     private CompletionAction _completionAction = CompletionAction.Nothing;  // Default assumption is that caller closes the ResultSet (e.g., using try-with-resources)
 
     /*
-        Note: By default, the ResultSet is not closed by this class. Caller must either close the ResultSet themselves
-        or call setCompletionAction(Closed).
+        Note: By default, this class does not close the passed in ResultSet; caller must either close the ResultSet
+        themselves or call setCompletionAction(Closed).
     */
 
     public ResultSetSelector(DbScope scope, ResultSet rs, @Nullable Connection conn)
