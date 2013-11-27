@@ -16,7 +16,6 @@
 
 package org.labkey.experiment.api.property;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
@@ -58,13 +57,15 @@ import org.labkey.api.writer.ContainerUser;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class DomainImpl implements Domain
 {
-    static final private Logger _log = Logger.getLogger(DomainImpl.class);
     boolean _new;
     boolean _enforceStorageProperties = true;
     DomainDescriptor _ddOld;
@@ -158,34 +159,41 @@ public class DomainImpl implements Domain
         _enforceStorageProperties = enforceStorageProperties;
     }
 
-    public Container[] getInstanceContainers()
+    /**
+     * @return all containers that contain at least one row of this domain's data.
+     * Only works for domains that are persisted in exp.object, not those with their own provisioned hard tables
+     */
+    public Set<Container> getInstanceContainers()
     {
+        assert getStorageTableName() == null : "This method only works on domains persisted in exp.object";
         SQLFragment sqlObjectIds = getDomainKind().sqlObjectIdsInDomain(this);
         if (sqlObjectIds == null)
-            return new Container[0];
+            return Collections.emptySet();
         SQLFragment sql = new SQLFragment("SELECT DISTINCT exp.object.container FROM exp.object WHERE exp.object.objectid IN ");
         sql.append(sqlObjectIds);
-        String[] ids = new SqlSelector(ExperimentService.get().getSchema(), sql).getArray(String.class);
-        Container[] ret = new Container[ids.length];
-        for (int i = 0; i < ids.length; i ++)
+        Set<Container> ret = new HashSet<>();
+        for (String id : new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(String.class))
         {
-            ret[i] = ContainerManager.getForId(ids[i]);
+            ret.add(ContainerManager.getForId(id));
         }
         return ret;
     }
 
-    public Container[] getInstanceContainers(User user, Class<? extends Permission> perm)
+    /**
+     * @return all containers that contain at least one row of this domain's data, and where the user has the specified permission
+     * Only works for domains that are persisted in exp.object, not those with their own provisioned hard tables
+     */
+    public Set<Container> getInstanceContainers(User user, Class<? extends Permission> perm)
     {
-        Container[] all = getInstanceContainers();
-        List<Container> ret = new ArrayList<>();
-        for (Container c : all)
+        Set<Container> ret = new HashSet<>();
+        for (Container c : getInstanceContainers())
         {
             if (c.hasPermission(user, perm))
             {
                 ret.add(c);
             }
         }
-        return ret.toArray(new Container[ret.size()]);
+        return ret;
     }
 
     public String getDescription()

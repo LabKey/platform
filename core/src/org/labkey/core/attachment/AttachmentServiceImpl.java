@@ -656,7 +656,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         final ArrayList<Pair<String,String>> ret = new ArrayList<>();
 
         new TableSelector(coreTables().getTableInfoDocuments(),
-                    PageFlowUtil.setOrdered("Parent","DocumentName","LastIndexed"),
+                    PageFlowUtil.set("Parent", "DocumentName", "LastIndexed"),
                     filter,
                     new Sort("+Created")).forEach(new Selector.ForEachBlock<ResultSet>()
         {

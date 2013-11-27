@@ -209,7 +209,7 @@ public class IssueManager
     {
         final Map<ColumnType, String> defaults = new HashMap<>();
         SimpleFilter filter = SimpleFilter.createContainerFilter(container).addCondition("Default", true);
-        Selector selector = new TableSelector(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.setOrdered("Type", "Keyword", "Container", "Default"), filter, null);
+        Selector selector = new TableSelector(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Type", "Keyword", "Container", "Default"), filter, null);
 
         selector.forEach(new Selector.ForEachBlock<ResultSet>() {
             @Override

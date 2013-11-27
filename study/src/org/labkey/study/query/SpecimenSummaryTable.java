@@ -239,7 +239,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         {
             if (_commentCache == null)
             {
-                Set<String> columns = PageFlowUtil.setOrdered("Comments", "SpecimenHash");
+                Set<String> columns = PageFlowUtil.set("Comments", "SpecimenHash");
 
                 final Set<String> hashes = new HashSet<>();
                 final Map<String, List<SpecimenComment>> hashToComments = new HashMap<>();
