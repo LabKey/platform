@@ -3128,9 +3128,8 @@ public class OntologyManager
                 String strProp;
                 String intProp;
 
-                try
+                try (DbScope.Transaction transaction = getExpSchema().getScope().beginTransaction())
                 {
-                    getExpSchema().getScope().beginTransaction();
                     ensureObject(c, childObjectLsid, ownerObjectLsid);
                     oParent = getOntologyObject(c, ownerObjectLsid);
                     assertNotNull(oParent);
@@ -3142,10 +3141,6 @@ public class OntologyManager
 
                     intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
                         insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 5));
-                }
-                finally
-                {
-                    getExpSchema().getScope().closeConnection();
                 }
 
                 assertEquals(0L, getObjectCount(c));
@@ -3162,15 +3157,10 @@ public class OntologyManager
                 insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, strProp, "The String"));
 
                 //Rollback transaction for one new property
-                try
+                try (DbScope.Transaction transaction = getExpSchema().getScope().beginTransaction())
                 {
-                    getExpSchema().getScope().beginTransaction();
                     intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
                     insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 5));
-                }
-                finally
-                {
-                    getExpSchema().getScope().closeConnection();
                 }
 
                 oChild = getOntologyObject(c, childObjectLsid);

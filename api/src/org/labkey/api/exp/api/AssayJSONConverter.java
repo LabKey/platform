@@ -157,9 +157,8 @@ public class AssayJSONConverter
 
         JSONArray batchesArray = new JSONArray();
 
-        for (int i = 0; i < batches.length; i++)
+        for (ExpExperiment batch : batches)
         {
-            ExpExperiment batch = batches[i];
             batchesArray.put(serializeBatch(batch, provider, protocol, user));
         }
 

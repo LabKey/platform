@@ -85,15 +85,13 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
     {
         TableInfo ti = CoreSchema.getInstance().getTableInfoActiveUsers();
 
-        testColumnList(new TableSelector(ti, PageFlowUtil.set("Email", "UserId", "DisplayName", "Created", "Active")), false);
         testColumnList(new TableSelector(ti, new HashSet<>(Arrays.asList("Email", "UserId", "DisplayName", "Created", "Active"))), false);
-        testColumnList(new TableSelector(ti, PageFlowUtil.set(ti.getColumn("Email"), ti.getColumn("UserId"), ti.getColumn("DisplayName"), ti.getColumn("Created"), ti.getColumn("Active")), null, null), false);
         testColumnList(new TableSelector(ti, new HashSet<>(ti.getColumns("Email,UserId,DisplayName,Created,Active")), null, null), false);
 
-        testColumnList(new TableSelector(ti, PageFlowUtil.setOrdered("Email", "UserId", "DisplayName", "Created", "Active")), true);
+        testColumnList(new TableSelector(ti, PageFlowUtil.set("Email", "UserId", "DisplayName", "Created", "Active")), true);
         testColumnList(new TableSelector(ti, new LinkedHashSet<>(Arrays.asList("Email", "UserId", "DisplayName", "Created", "Active"))), true);
         testColumnList(new TableSelector(ti, new CsvSet("Email, UserId, DisplayName, Created, Active")), true);
-        testColumnList(new TableSelector(ti, PageFlowUtil.setOrdered(ti.getColumn("Email"), ti.getColumn("UserId"), ti.getColumn("DisplayName"), ti.getColumn("Created"), ti.getColumn("Active")), null, null), true);
+        testColumnList(new TableSelector(ti, PageFlowUtil.set(ti.getColumn("Email"), ti.getColumn("UserId"), ti.getColumn("DisplayName"), ti.getColumn("Created"), ti.getColumn("Active")), null, null), true);
         testColumnList(new TableSelector(ti, ti.getColumns("Email,UserId,DisplayName,Created,Active"), null, null), true);
 
         // Singleton column collections should always be considered "stable"

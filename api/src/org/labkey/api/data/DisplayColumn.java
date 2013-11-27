@@ -425,16 +425,7 @@ public abstract class DisplayColumn extends RenderColumn
 
     public void renderColTag(Writer out, boolean isLast) throws IOException
     {
-        out.write("<col ");
-//        if (_width != null)
-//        {
-//            out.write("width=\"");
-//            out.write(isLast ? "*" : _width + "px");
-//            out.write("\"");
-//        }
-        out.write(" style=\"text-align:");
-        out.write(_textAlign == null ? "left" : _textAlign);
-        out.write(";\"/>");
+        out.write("<col />");
     }
 
     public String getDefaultHeaderStyle()

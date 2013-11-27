@@ -30,6 +30,7 @@ import org.labkey.api.writer.ContainerUser;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface Domain extends IPropertyType
 {
@@ -40,8 +41,8 @@ public interface Domain extends IPropertyType
     int getTypeId();
     String getTypeURI();
 
-    Container[] getInstanceContainers();
-    Container[] getInstanceContainers(User user, Class<? extends Permission> perm);
+    Set<Container> getInstanceContainers();
+    Set<Container> getInstanceContainers(User user, Class<? extends Permission> perm);
 
     void setDescription(String description);
     void setPropertyIndex(DomainProperty prop, int index);

@@ -536,7 +536,7 @@ public class PageFlowUtil
     }
 
 
-    /*
+    /**
         Return a map of <T, T>. Note: iteration order of this map is unpredictable.
      */
     public static <T> Map<T, T> map(T... args)
@@ -548,7 +548,7 @@ public class PageFlowUtil
     }
 
 
-    /*
+    /**
         Return a case-insensitive map of Objects. Note: iteration order of this map is unpredictable.
      */
     public static Map<String, Object> mapInsensitive(Object... args)
@@ -560,24 +560,10 @@ public class PageFlowUtil
     }
 
 
-    /*
-        Return a set of T that iterates in an unpredictable order.
+    /**
+     * Return a set of T that iterates in the order of the provided arguments.
      */
     public static <T> Set<T> set(T... args)
-    {
-        HashSet<T> s = new HashSet<>();
-
-        if (null != args)
-            s.addAll(Arrays.asList(args));
-
-        return s;
-    }
-
-
-    /*
-        Return a set of T that iterates in the order of the provided arguments.
-     */
-    public static <T> Set<T> setOrdered(T... args)
     {
         HashSet<T> s = new LinkedHashSet<>();
 
@@ -587,18 +573,7 @@ public class PageFlowUtil
         return s;
     }
 
-
-    public static ArrayList pairs(Object... args)
-    {
-        ArrayList<Pair> list = new ArrayList<>();
-        for (int i = 0; i < args.length; i += 2)
-            list.add(new Pair<>(args[i], args[i + 1]));
-        return list;
-    }
-
-
-    private static final Pattern pattern = Pattern.compile("\\+");
-
+    private static final Pattern PATTERN = Pattern.compile("\\+");
 
     /**
      * URL Encode string.
@@ -612,7 +587,7 @@ public class PageFlowUtil
             return "";
         try
         {
-            return pattern.matcher(URLEncoder.encode(s, "UTF-8")).replaceAll("%20");
+            return PATTERN.matcher(URLEncoder.encode(s, "UTF-8")).replaceAll("%20");
         }
         catch (UnsupportedEncodingException x)
         {

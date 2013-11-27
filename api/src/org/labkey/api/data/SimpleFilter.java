@@ -1521,8 +1521,8 @@ public class SimpleFilter implements Filter
             test("((NOT Foo IN (1, 2, 3)) OR Foo IS NULL)", "Foo IS NOT ANY OF (1, 2, 3)", new InClause(fieldKey, PageFlowUtil.set(1, 2, 3), true, true), mockDialect);
 
             // Include null parameter
-            test("((Foo IN ('Blip', 'Bar')) OR Foo IS NULL)", "Foo IS ONE OF (Blip, Bar, BLANK)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", "")), mockDialect);
-            test("((NOT Foo IN ('Blip', 'Bar')) AND Foo IS NOT NULL)", "Foo IS NOT ANY OF (Blip, Bar, BLANK)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", ""), true, true), mockDialect);
+            test("((Foo IN ('Bar', 'Blip')) OR Foo IS NULL)", "Foo IS ONE OF (Bar, Blip, BLANK)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", "")), mockDialect);
+            test("((NOT Foo IN ('Bar', 'Blip')) AND Foo IS NOT NULL)", "Foo IS NOT ANY OF (Bar, Blip, BLANK)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", ""), true, true), mockDialect);
         }
 
         @Test
