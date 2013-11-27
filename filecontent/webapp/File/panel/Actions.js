@@ -199,7 +199,7 @@ Ext4.define('File.panel.Actions', {
             this.add(this.actionGrid);
             this.doLayout();
 
-            var showImport = this.getComponent('showImportCheckbox');
+            var showImport = this.down('#showImportCheckbox');
             if (showImport) {
                 showImport.setValue(this.importDataEnabled);
             }
@@ -259,5 +259,9 @@ Ext4.define('File.panel.Actions', {
         }
 
         return adminOptions;
+    },
+
+    getShowImportCheckboxValue : function() {
+        return this.down('#showImportCheckbox').getValue()
     }
 });

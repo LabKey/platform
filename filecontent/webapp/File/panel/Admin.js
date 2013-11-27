@@ -147,7 +147,7 @@ Ext4.define('File.panel.Admin', {
     onSubmit: function(button, event, handler){
         var updateURL = LABKEY.ActionURL.buildURL('pipeline', 'updatePipelineActionConfig', this.containerPath);
         var postData = {
-            importDataEnabled : this.actionsPanel.getComponent('showImportCheckbox').getValue(), // terrible
+            importDataEnabled : this.actionsPanel.getShowImportCheckboxValue(),
             expandFileUpload: this.showUploadCheckBox.getValue(),
             fileConfig: this.filePropertiesPanel.getFileConfig(),
             actions: this.actionsPanel.getActionsForSubmission()
