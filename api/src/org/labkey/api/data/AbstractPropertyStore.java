@@ -263,10 +263,8 @@ public abstract class AbstractPropertyStore implements PropertyStore
     public void deletePropertySet(User user, Container container, String category)
     {
         String containerId = container.getId().intern();
-        try
+        try (DbScope.Transaction transaction = _prop.getSchema().getScope().ensureTransaction())
         {
-            _prop.getSchema().getScope().ensureTransaction();
-
             synchronized (containerId)
             {
                 String setSelectName = _prop.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
@@ -298,12 +296,8 @@ public abstract class AbstractPropertyStore implements PropertyStore
 
                 _cache.remove(container, user, category);
 
-                _prop.getSchema().getScope().commitTransaction();
             }
-        }
-        finally
-        {
-            _prop.getSchema().getScope().closeConnection();
+            transaction.commit();
         }
     }
 

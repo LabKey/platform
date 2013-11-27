@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
 
 public class ExperimentService
 {
@@ -284,7 +285,7 @@ public class ExperimentService
          * Provides access to an object that should be locked before inserting experiment runs, protocols, etc.
          * @return lock object on which to synchronize
          */
-        public Object getImportLock();
+        public Lock getImportLock();
 
         HttpView createRunExportView(Container container, String defaultFilenamePrefix);
         HttpView createFileExportView(Container container, String defaultFilenamePrefix);
