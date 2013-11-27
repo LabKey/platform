@@ -30,12 +30,17 @@
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<StudyController.VisitSummaryBean> me = (JspView<StudyController.VisitSummaryBean>) HttpView.currentView();
     StudyController.VisitSummaryBean visitBean = me.getModelBean();
     VisitImpl visit = visitBean.getVisit();
+
+    StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+    boolean isDateBased = study != null && study.getTimepointType() == TimepointType.DATE;
     List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(me.getViewContext().getContainer(), me.getViewContext().getUser());
 %>
 <labkey:errors/>
@@ -43,22 +48,32 @@
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(visit)%>">
 <input type="hidden" name="id" value="<%=visit.getRowId()%>">
     <table>
-<%--        <tr>
-            <th align="right">Name&nbsp;<%=helpPopup("Name", "Short unique name, e.g. 'Enroll'")%></th>
-            <td>
-                <input type="text" size="50" name="name" value="<%= h(visit.getName()) %>">
-            </td>
-        </tr> --%>
         <tr>
-            <td class=labkey-form-label>Label&nbsp;<%=helpPopup("Label", "Descriptive label, e.g. 'Enrollment interview'")%></td>
+            <td class="labkey-form-label">Label&nbsp;<%=helpPopup("Label", "Descriptive label, e.g. 'Enrollment interview' or 'Week 2'")%></td>
             <td>
                 <input type="text" size="50" name="label" value="<%= h(visit.getLabel()) %>">
             </td>
         </tr>
         <tr>
-            <td class=labkey-form-label>VisitId/Sequence Range</td>
+            <td class="labkey-form-label">
+                <%=h(isDateBased ? "Day Range" : "VisitId/Sequence Range")%>
+                <%=(isDateBased ? helpPopup("Day Range", "Days from start date encompassing this visit. E.g. 11-17 for Week 2") : "")%>
+            </td>
             <td>
-                <input type="text" size="26" name="sequenceNumMin" value="<%= visit.getSequenceNumMin() %>">-<input type="text" size="26" name="sequenceNumMax" value="<%= visit.getSequenceNumMax() %>">
+                <%
+                    if (isDateBased)
+                    {
+                %>
+                        <input type="text" size="26" name="sequenceNumMin" value="<%=(int) visit.getSequenceNumMin()%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=(int) visit.getSequenceNumMax()%>">
+                <%
+                    }
+                    else
+                    {
+                %>
+                        <input type="text" size="26" name="sequenceNumMin" value="<%=visit.getSequenceNumMin()%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=visit.getSequenceNumMax()%>">
+                <%
+                    }
+                %>
             </td>
         </tr>
         <tr>
@@ -68,7 +83,7 @@
             </td>
         </tr>
         <tr>
-            <td class=labkey-form-label>Type</td>
+            <td class="labkey-form-label">Type</td>
             <td>
                 <select name="typeCode">
                     <option value="">[None]</option>
@@ -85,7 +100,7 @@
             </td>
         </tr>
         <tr>
-            <td class=labkey-form-label>Cohort</td>
+            <td class="labkey-form-label">Cohort</td>
             <td>
                 <%
                     if (cohorts == null || cohorts.size() == 0)
@@ -97,7 +112,7 @@
                     else
                     {
                     %>
-                    <select name="<%=text(CohortFilterFactory.Params.cohortId.name())%>">
+                    <select name="<%=h(CohortFilterFactory.Params.cohortId.name())%>">
                         <option value="">All</option>
                     <%
 
@@ -116,8 +131,12 @@
                 %>
             </td>
         </tr>
+<%
+    if (!isDateBased)
+    {
+%>
         <tr>
-            <td class=labkey-form-label>Visit Date Dataset</td>
+            <td class="labkey-form-label">Visit Date Dataset</td>
             <td>
                 <select name="visitDateDatasetId">
                     <option value="0">[None]</option>
@@ -135,7 +154,7 @@
             </td>
         </tr>
         <tr>
-            <td class=labkey-form-label>Visit Date Column Name</td>
+            <td class="labkey-form-label">Visit Date Column Name</td>
             <td><%
                 // UNDONE: use fancy javascript or AJAX here
                 DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), visit.getVisitDateDatasetId());
@@ -145,7 +164,7 @@
         </tr>
     <tr>
         <%-- UNDONE: duplicated in createVisit.jsp --%>
-        <td class=labkey-form-label>Visit Handling (advanced)<%=
+        <td class="labkey-form-label">Visit Handling (advanced)<%=
             helpPopup("SequenceNum handling",
                     "You may specificy that unique sequence numbers should be based on visit date.<br>"+
                     "This is for special handling of some log/unscheduled events.<p>"+
@@ -159,14 +178,17 @@
             </select>
         </td>
     </tr>
+<%
+    }
+%>
         <tr>
-            <td class=labkey-form-label>Show By Default</td>
+            <td class="labkey-form-label">Show By Default</td>
             <td>
-                <input type="checkbox" name="showByDefault" <%=checked(visit.isShowByDefault())%>>
+                <input type="checkbox" name="showByDefault"<%=checked(visit.isShowByDefault())%>>
             </td>
         </tr>
         <tr>
-            <td class=labkey-form-label valign="top">Associated Datasets</td>
+            <td class="labkey-form-label" valign="top">Associated Datasets</td>
             <td>
                 <table>
                 <%
@@ -185,11 +207,11 @@
                             <td>
                                 <input type="hidden" name="dataSetIds" value="<%= dataSet.getDataSetId() %>">
                                 <select name="dataSetStatus">
-                                    <option value="<%= text(VisitDataSetType.NOT_ASSOCIATED.name()) %>"
+                                    <option value="<%= h(VisitDataSetType.NOT_ASSOCIATED.name()) %>"
                                         <%=selected(type == VisitDataSetType.NOT_ASSOCIATED)%>></option>
-                                    <option value="<%= text(VisitDataSetType.OPTIONAL.name()) %>"
+                                    <option value="<%= h(VisitDataSetType.OPTIONAL.name()) %>"
                                         <%=selected(type == VisitDataSetType.OPTIONAL) %>>Optional</option>
-                                    <option value="<%= text(VisitDataSetType.REQUIRED.name())  %>"
+                                    <option value="<%= h(VisitDataSetType.REQUIRED.name()) %>"
                                         <%=selected(type == VisitDataSetType.REQUIRED) %>>Required</option>
                                 </select>
                             </td>

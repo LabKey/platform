@@ -243,7 +243,7 @@ public class VisitMapImporter
                 visit.setDisplayOrder(record.getDisplayOrder());
                 visit.setSequenceNumHandling(record.getSequenceNumHandling());
                 int rowId = studyManager.createVisit(study, user, visit).getRowId();
-                record.setVisitRowId(rowId);
+                record.setVisitRowId(rowId); // used by saveVisitMap
                 assert record.getVisitRowId() > 0;
             }
             else
@@ -272,7 +272,7 @@ public class VisitMapImporter
                 {
                     StudyManager.getInstance().updateVisit(user, visit);
                 }
-                record.setVisitRowId(visit.getRowId());
+                record.setVisitRowId(visit.getRowId()); // used by saveVisitMap
                 assert record.getVisitRowId() > 0;
             }
         }

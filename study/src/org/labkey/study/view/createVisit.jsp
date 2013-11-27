@@ -21,34 +21,49 @@
 <%@ page import="org.labkey.study.controllers.StudyController.VisitForm" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<VisitForm> me = (JspView<VisitForm>)HttpView.currentView();
     VisitForm form = me.getModelBean();
     VisitImpl v = form.getBean();
+
+    StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+    boolean isDateBased = study != null && study.getTimepointType() == TimepointType.DATE;
 %>
 <labkey:errors/>
+<%
+    if (isDateBased)
+    {
+%>
+Use this form to create a new timepoint. A timepoint is a range of days defined in the study protocol. All subject data uploaded
+to this study is assigned to a timepoint using the Date field. The assignment happens by computing the number of days between the Date
+field in the uploaded data and that subject's StartDate.
+<%
+    }
+    else
+    {
+%>
 Use this form to create a new visit. A visit is a point in time defined in the study protocol. All data uploaded
 to this study must be assigned to a visit. The assignment happens using a "Sequence Number" (otherwise known as Visit Id) that
 is uploaded along with the data. This form allows you to define a range of sequence numbers that will be correspond to the visit.
+<%
+    }
+%>
 <br>
 <form action="<%=h(buildURL(StudyController.CreateVisitAction.class))%>" method="POST">
     <table>
-<%--        <tr>
-            <th align="right">Name&nbsp;<%=helpPopup("Name", "Short unique name, e.g. 'Enroll'")%></th>
-            <td>
-                <input type="text" size="50" name="name" value="<%=h(v.getName())%>">
-            </td> 
-        </tr> --%>
         <tr>
-            <td class=labkey-form-label>Label&nbsp;<%=helpPopup("Label", "Descriptive label, e.g. 'Enrollment interview'")%></td>
+            <td class="labkey-form-label">Label&nbsp;<%=helpPopup("Label", "Descriptive label, e.g. 'Enrollment interview' or '2 Weeks'")%></td>
             <td>
                 <input type="text" size="50" name="label" value="<%=h(v.getLabel())%>">
             </td>
         </tr>
         <tr>
-            <td class=labkey-form-label>VisitId/Sequence Range</td>
+            <td class="labkey-form-label"><%=h(isDateBased ? "Day Range" : "VisitId/Sequence Range")%></td>
             <td>
                 <input type="text" size="26" name="sequenceNumMin" value="<%=v.getSequenceNumMin()>0?v.getSequenceNumMin():""%>">--<input type="text" size="26" name="sequenceNumMax" value="<%=v.getSequenceNumMin()==v.getSequenceNumMax()?"":v.getSequenceNumMax()%>">
             </td>
@@ -60,7 +75,7 @@ is uploaded along with the data. This form allows you to define a range of seque
             </td>
         </tr>
         <tr>
-            <td class=labkey-form-label>Type</td>
+            <td class="labkey-form-label">Type</td>
             <td>
                 <select name="typeCode">
                     <option value="">[None]</option>
@@ -76,13 +91,17 @@ is uploaded along with the data. This form allows you to define a range of seque
                 </select>
             </td>
         </tr>
+<%
+    if (!isDateBased)
+    {
+%>
     <tr>
         <%-- UNDONE: duplicated in editVisit.jsp --%>
-        <td class=labkey-form-label>Visit Handling (advanced)<%=
+        <td class="labkey-form-label">Visit Handling (advanced)<%=
             helpPopup("SequenceNum handling",
-                    "You may specificy that unique sequence numbers should be based on visit date.<br>"+
-                    "This is for special handling of some log/unscheduled events.<p>"+
-                    "Make sure that the sequence number range is adequate (e.g #.0000-#.9999)",
+                    "You may specificy that unique sequence numbers should be based on visit date.<br>" +
+                            "This is for special handling of some log/unscheduled events.<p>" +
+                            "Make sure that the sequence number range is adequate (e.g #.0000-#.9999)",
                     true)
         %></td>
         <td>
@@ -92,10 +111,13 @@ is uploaded along with the data. This form allows you to define a range of seque
             </select>
         </td>
     </tr>
+<%
+    }
+%>
         <tr>
-            <td class=labkey-form-label>Show By Default</td>
+            <td class="labkey-form-label">Show By Default</td>
             <td>
-                <input type="checkbox" name="showByDefault" <%=checked(!form.isReshow() || v.isShowByDefault())%>>
+                <input type="checkbox" name="showByDefault"<%=checked(!form.isReshow() || v.isShowByDefault())%>>
             </td>
         </tr>
         <tr>

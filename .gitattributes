@@ -3626,7 +3626,6 @@ study/src/org/labkey/study/view/createDataSet.jsp -text
 study/src/org/labkey/study/view/createDatasetSnapshot.jsp -text
 study/src/org/labkey/study/view/createQueryReport.jsp -text
 study/src/org/labkey/study/view/createStudy.jsp -text
-study/src/org/labkey/study/view/createTimepoint.jsp -text
 study/src/org/labkey/study/view/createVisit.jsp -text
 study/src/org/labkey/study/view/crosstabDesigner.jsp -text
 study/src/org/labkey/study/view/customizeAssayDetailsWebPart.jsp -text
@@ -3641,7 +3640,6 @@ study/src/org/labkey/study/view/datasetInfo.jsp -text
 study/src/org/labkey/study/view/datasets.jsp -text
 study/src/org/labkey/study/view/demoMode.jsp -text
 study/src/org/labkey/study/view/editSnapshot.jsp -text
-study/src/org/labkey/study/view/editTimepoint.jsp -text
 study/src/org/labkey/study/view/editVisit.jsp -text
 study/src/org/labkey/study/view/externalReportDesigner.jsp -text
 study/src/org/labkey/study/view/importDataType.jsp -text

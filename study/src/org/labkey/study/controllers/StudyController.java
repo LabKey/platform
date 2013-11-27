@@ -1815,7 +1815,7 @@ public class StudyController extends BaseStudyController
             VisitSummaryBean visitSummary = new VisitSummaryBean();
             visitSummary.setVisit(_v);
 
-            return new StudyJspView<>(study, getVisitJsp("edit", study), visitSummary, errors);
+            return new StudyJspView<>(study, "editVisit.jsp", visitSummary, errors);
         }
 
         public boolean handlePost(VisitForm form, BindException errors) throws Exception
@@ -2008,7 +2008,7 @@ public class StudyController extends BaseStudyController
                 errors.reject(null, "Unsupported operation for continuous date study");
 
             form.setReshow(reshow);
-            return new StudyJspView<>(study, getVisitJsp("create", study), form, errors);
+            return new StudyJspView<>(study, "createVisit.jsp", form, errors);
         }
 
         public boolean handlePost(VisitForm form, BindException errors) throws Exception
@@ -5587,12 +5587,6 @@ public class StudyController extends BaseStudyController
         {
             return "Visits";
         }
-    }
-
-    private String getVisitJsp(String prefix, StudyImpl study) throws ServletException
-    {
-        assert study.getTimepointType() != TimepointType.CONTINUOUS;
-        return prefix + (study.getTimepointType() == TimepointType.DATE ? "Timepoint" : "Visit") + ".jsp";
     }
 
     public static class ParticipantForm extends ViewForm implements StudyManager.ParticipantViewConfig
