@@ -81,7 +81,7 @@ public abstract class AbstractPipelineStartup
 
         Map<String, BeanFactory> result = new CaseInsensitiveHashMap<>();
 
-        for (Module module : modules)
+        for (final Module module : modules)
         {
             List<String> springConfigPaths = new ArrayList<>();
             File moduleConfig = findFile(moduleConfigFiles, module.getName() + "Context.xml");
@@ -100,9 +100,15 @@ public abstract class AbstractPipelineStartup
                 _log.info("Loading Spring configuration for the " + module.getName() + " module from " + springConfigPaths);
 
                 // Initialize the Spring context
-                BeanFactory context = new FileSystemXmlApplicationContext(springConfigPaths.toArray(new String[springConfigPaths.size()]));
+                BeanFactory context = new FileSystemXmlApplicationContext(springConfigPaths.toArray(new String[springConfigPaths.size()]))
+                {
+                    @Override
+                    public String getDisplayName()
+                    {
+                        return module.getName();
+                    }
+                };
                 result.put(module.getName(), context);
-
             }
         }
 
