@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,6 +43,8 @@ import java.util.concurrent.Callable;
 
 public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFactory, TableSelector>
 {
+    private static final Logger LOG = Logger.getLogger(TableSelector.class);
+
     private final TableInfo _table;
     private final Collection<ColumnInfo> _columns;
     private final @Nullable Filter _filter;
@@ -100,7 +103,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     */
     public TableSelector(TableInfo table, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort)
     {
-        this(table, Table.columnInfosList(table, columnNames), filter, sort, isStableOrdered(columnNames));
+        this(table, columnInfosList(table, columnNames), filter, sort, isStableOrdered(columnNames));
     }
 
     // Select a single column
@@ -113,6 +116,54 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     public TableSelector(ColumnInfo column)
     {
         this(column, null, null);
+    }
+
+    private static Collection<ColumnInfo> columnInfosList(TableInfo table, Collection<String> select)
+    {
+        Collection<ColumnInfo> selectColumns;
+
+        if (select == Table.ALL_COLUMNS)
+        {
+            selectColumns = table.getColumns();
+        }
+        else
+        {
+            selectColumns = new LinkedHashSet<>();
+
+            for (String name : select)
+            {
+                ColumnInfo column = table.getColumn(name);
+
+                if (null != column)
+                    selectColumns.add(column);
+                else
+                    LOG.warn("Requested column does not exist in table '" + table.getSelectName() + "': " + name);
+            }
+        }
+
+        return selectColumns;
+    }
+
+    private static Map<String, ColumnInfo> getDisplayColumnsList(Collection<ColumnInfo> arrColumns)
+    {
+        Map<String, ColumnInfo> columns = new LinkedHashMap<>();
+        ColumnInfo existing;
+
+        for (ColumnInfo column : arrColumns)
+        {
+            existing = columns.get(column.getAlias());
+            assert null == existing || existing.getName().equals(column.getName()) : existing.getName() + " != " + column.getName();
+            columns.put(column.getAlias(), column);
+            ColumnInfo displayColumn = column.getDisplayField();
+            if (displayColumn != null)
+            {
+                existing = columns.get(displayColumn.getAlias());
+                assert null == existing || existing.getName().equals(displayColumn.getName());
+                columns.put(displayColumn.getAlias(), displayColumn);
+            }
+        }
+
+        return columns;
     }
 
     // Used only by the junit tests
@@ -392,7 +443,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
         {
             if (_forDisplay)
             {
-                Map<String, ColumnInfo> map = Table.getDisplayColumnsList(_columns);
+                Map<String, ColumnInfo> map = getDisplayColumnsList(_columns);
 
                 // QueryService.getSelectSQL() also calls ensureRequiredColumns, so this call is redundant. However, we
                 // need to know the actual select columns (e.g., if the caller is building a Results) and getSelectSQL()

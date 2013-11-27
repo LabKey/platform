@@ -655,15 +655,18 @@ public class DbSchema
             m.put("Container", JunitUtil.getTestContainer());
 
             Integer rowId;
-            testSchema.getScope().beginTransaction();
-            assertTrue("Not in transaction when should be.", testSchema.getScope().isTransactionActive());
-            m = Table.insert(ctx.getUser(), testTable, m);
-            rowId = ((Integer) m.get("RowId"));
-            assertNotNull("Inserted Row doesn't have Id", rowId);
-            assertTrue(rowId != 0);
 
-            testSchema.getScope().commitTransaction();
-            assertFalse("In transaction when shouldn't be.", testSchema.getScope().isTransactionActive());
+            try (DbScope.Transaction transaction = testSchema.getScope().beginTransaction())
+            {
+                assertTrue("Not in transaction when should be.", testSchema.getScope().isTransactionActive());
+                m = Table.insert(ctx.getUser(), testTable, m);
+                rowId = ((Integer) m.get("RowId"));
+                assertNotNull("Inserted Row doesn't have Id", rowId);
+                assertTrue(rowId != 0);
+
+                transaction.commit();
+                assertFalse("In transaction when shouldn't be.", testSchema.getScope().isTransactionActive());
+            }
 
             SimpleFilter filter = new SimpleFilter("RowId", rowId);
 
@@ -672,14 +675,15 @@ public class DbSchema
                 assertTrue("Did not find inserted record.", rs.next());
             }
 
-            testSchema.getScope().beginTransaction();
-            m.put("IntNotNull", 1);
-            m = Table.update(ctx.getUser(), testTable, m, rowId);
-            assertTrue("Update is consistent in transaction?", (Integer) m.get("IntNotNull") == 1);
-            testSchema.getScope().closeConnection();
+            try (DbScope.Transaction transaction = testSchema.getScope().beginTransaction())
+            {
+                m.put("IntNotNull", 1);
+                m = Table.update(ctx.getUser(), testTable, m, rowId);
+                assertTrue("Update is consistent in transaction?", (Integer) m.get("IntNotNull") == 1);
+            }
 
             //noinspection unchecked
-            Map<String, Object>[] maps = (Map<String, Object>[]) Table.select(testTable, Table.ALL_COLUMNS, filter, null, Map.class);
+            Map<String, Object>[] maps = new TableSelector(testTable, filter, null).getMapArray();
             assertTrue(maps.length == 1);
             m = maps[0];
 

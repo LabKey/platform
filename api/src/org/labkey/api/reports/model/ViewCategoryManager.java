@@ -52,7 +52,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class ViewCategoryManager implements ContainerManager.ContainerListener
 {
-    private static final Logger _log = Logger.getLogger(ViewCategoryManager.class);
     private static final ViewCategoryManager _instance = new ViewCategoryManager();
     private static final List<ViewCategoryListener> _listeners = new CopyOnWriteArrayList<>();
 
@@ -89,44 +88,22 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
     public ViewCategory[] getCategories(Container c, User user, SimpleFilter filter)
     {
-        try
-        {
-            filter.addCondition("Container", c);
-            ViewCategory[] categories = Table.select(getTableInfoCategories(), Table.ALL_COLUMNS, filter, null, ViewCategory.class);
+        filter.addCondition("Container", c);
 
-            return categories;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
+        return new TableSelector(getTableInfoCategories(), filter, null).getArray(ViewCategory.class);
     }
 
     public ViewCategory getCategory(int rowId)
     {
-        try {
-            String cacheKey = getCacheKey(rowId);
-            ViewCategory category = getCategoryCache().get(cacheKey);
+        String cacheKey = getCacheKey(rowId);
+        ViewCategory category = getCategoryCache().get(cacheKey);
 
-            if (category != null)
-                return category;
+        if (category != null)
+            return category;
 
-            SimpleFilter filter = new SimpleFilter("rowId", rowId);
-            ViewCategory[] categories = Table.select(getTableInfoCategories(), Table.ALL_COLUMNS, filter, null, ViewCategory.class);
+        SimpleFilter filter = new SimpleFilter("rowId", rowId);
 
-            assert categories.length <= 1;
-
-            if (categories.length == 1)
-            {
-                getCategoryCache().put(cacheKey, categories[0]);
-                return categories[0];
-            }
-            return null;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
+        return new TableSelector(getTableInfoCategories(), filter, null).getObject(ViewCategory.class);
     }
 
     /**

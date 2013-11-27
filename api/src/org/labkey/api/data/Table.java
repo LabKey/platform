@@ -68,8 +68,6 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -90,7 +88,6 @@ public class Table
     public static final int ERROR_ROWVERSION = 10001;
     public static final int ERROR_DELETED = 10002;
     public static final int ERROR_TABLEDELETED = 10003;
-
 
     private static final Logger _log = Logger.getLogger(Table.class);
 
@@ -239,6 +236,13 @@ public class Table
         return selector.getResults();
     }
 
+    @NotNull
+    @Deprecated /** Use TableSelector */
+    public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
+    {
+        return new LegacyTableSelector(table, select, filter, sort).getArray(clss);
+    }
+
     /**
      * This is a shortcut method that can be used for two-column ResultSets
      * The first column is key, the second column is the value
@@ -326,14 +330,6 @@ public class Table
     }
 
     // ================== These methods have been converted to Selector/Executor, but still have callers ==================
-
-    // 48 usages
-    @NotNull
-    @Deprecated /** Use TableSelector */
-    public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
-    {
-        return new LegacyTableSelector(table, select, filter, sort).getArray(clss);
-    }
 
     // 110 usages
     @Deprecated /** Use SqlExecutor */
@@ -1097,55 +1093,6 @@ public class Table
     public static SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
         return QueryService.get().getSelectSQL(table, columns, filter, sort, ALL_ROWS, NO_OFFSET, false);
-    }
-
-
-    // Move to TableSelector
-    static Collection<ColumnInfo> columnInfosList(TableInfo table, Collection<String> select)
-    {
-        Collection<ColumnInfo> selectColumns;
-
-        if (select == ALL_COLUMNS)
-        {
-            selectColumns = table.getColumns();
-        }
-        else
-        {
-            selectColumns = new LinkedHashSet<>();
-
-            for (String name : select)
-            {
-                ColumnInfo column = table.getColumn(name);
-
-                if (null != column)
-                    selectColumns.add(column);
-                else
-                    _log.warn("Requested column does not exist in table '" + table.getSelectName() + "': " + name);
-            }
-        }
-
-        return selectColumns;
-    }
-
-
-    static Map<String, ColumnInfo> getDisplayColumnsList(Collection<ColumnInfo> arrColumns)
-    {
-        Map<String, ColumnInfo> columns = new LinkedHashMap<>();
-        ColumnInfo existing;
-        for (ColumnInfo column : arrColumns)
-        {
-            existing = columns.get(column.getAlias());
-            assert null == existing || existing.getName().equals(column.getName()) : existing.getName() + " != " + column.getName();
-            columns.put(column.getAlias(), column);
-            ColumnInfo displayColumn = column.getDisplayField();
-            if (displayColumn != null)
-            {
-                existing = columns.get(displayColumn.getAlias());
-                assert null == existing || existing.getName().equals(displayColumn.getName());
-                columns.put(displayColumn.getAlias(), displayColumn);
-            }
-        }
-        return columns;
     }
 
 
