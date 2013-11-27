@@ -32,10 +32,20 @@ public class ResultSetSelector extends BaseSelector
     private final ResultSet _rs;
     private CompletionAction _completionAction = CompletionAction.Nothing;  // Default assumption is that caller closes the ResultSet (e.g., using try-with-resources)
 
+    /*
+        Note: By default, the ResultSet is not closed by this class. Caller must either close the ResultSet themselves
+        or call setCompletionAction(Closed).
+    */
+
     public ResultSetSelector(DbScope scope, ResultSet rs, @Nullable Connection conn)
     {
         super(scope, conn);
         _rs = rs;
+    }
+
+    public ResultSetSelector(DbScope scope, ResultSet rs)
+    {
+        this (scope, rs, null);
     }
 
     // Different semantics... never grab a new connection
@@ -120,11 +130,11 @@ public class ResultSetSelector extends BaseSelector
         }
     }
 
-    // Tells the selector what action to take on the ResultSet after each operation is complete. Default is Close, the
-    // passed in ResultSet will be closed after the first method is called. Unless you have a peculiar ResultSet (that
-    // continues to allow operations after close() is called), the default action means that only one select method can
-    // be used on a ResultSet.
-    public void setCompletionAction(CompletionAction action)
+    /*
+        Tells the selector what action to take on the ResultSet after each operation is complete. Default is Nothing; the
+        caller is responsible for closing the ResultSet (via try-with-resources, e.g.)
+    */
+    public ResultSetSelector setCompletionAction(CompletionAction action)
     {
         try
         {
@@ -136,6 +146,8 @@ public class ResultSetSelector extends BaseSelector
         }
 
         _completionAction = action;
+
+        return this;
     }
 
     ResultSet getUnderlyingResultSet()
@@ -145,6 +157,11 @@ public class ResultSetSelector extends BaseSelector
 
     public enum CompletionAction
     {
+        /*
+            Close action means the passed in ResultSet will be closed after the first method is called. Unless you have
+            a peculiar ResultSet (that continues to allow operations after close() is called), this action means that
+            only one select method can be used on a ResultSet.
+        */
         Close
         {
             @Override
