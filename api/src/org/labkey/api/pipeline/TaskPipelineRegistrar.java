@@ -23,7 +23,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.web.context.WebApplicationContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -181,18 +180,18 @@ public class TaskPipelineRegistrar implements InitializingBean, ApplicationConte
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException
     {
-        if (applicationContext instanceof WebApplicationContext)
+        try
         {
-            try
+            _declaringModule = (SpringModule)applicationContext.getBean("moduleBean", SpringModule.class);
+        }
+        catch (NoSuchBeanDefinitionException x)
+        {
+            String name = applicationContext.getDisplayName();
+            if (name.contains(" "))
             {
-                _declaringModule = (SpringModule)applicationContext.getBean("moduleBean", SpringModule.class);
+                name = name.substring(0, name.indexOf(" "));
             }
-            catch (NoSuchBeanDefinitionException x)
-            {
-                String name = applicationContext.getDisplayName();
-                name = name.substring(0,name.indexOf(" "));
-                _declaringModule = ModuleLoader.getInstance().getModule(name);
-            }
+            _declaringModule = ModuleLoader.getInstance().getModule(name);
         }
     }
 }
