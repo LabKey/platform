@@ -661,22 +661,17 @@ public class ParticipantGroupManager
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         ParticipantGroup ret;
 
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
             if (!group.isNew())
             {
                 ParticipantGroup savedGroup = getParticipantGroupFromGroupRowId(c, user, group.getRowId());
                 deleteGroupParticipants(c, user, savedGroup);
             }
             ret = _setParticipantGroup(c, user, group, true);
-            scope.commitTransaction();
+            transaction.commit();
         }
-        finally
-        {
-            scope.closeConnection();
-        }
-        
+
         return ret;
     }
 
@@ -747,10 +742,8 @@ public class ParticipantGroupManager
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
-
             if (group.isNew())
                 throw new IllegalArgumentException("Adding participants to non-existent group.");
 
@@ -777,13 +770,8 @@ public class ParticipantGroupManager
             }
             GROUP_CACHE.remove(getCacheKey(group.getCategoryId()));
 
-            scope.commitTransaction();
+            transaction.commit();
         }
-        finally
-        {
-            scope.closeConnection();
-        }
-
     }
 
 
@@ -960,8 +948,8 @@ public class ParticipantGroupManager
         {
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-            try {
-                scope.ensureTransaction();
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
+            {
                 ParticipantGroup group = new ParticipantGroup();
 
                 group.setCategoryId(def.getRowId());
@@ -985,11 +973,7 @@ public class ParticipantGroupManager
                 group = _setParticipantGroup(c, user, group, false);
                 def.setGroups(new ParticipantGroup[]{group});
 
-                scope.commitTransaction();
-            }
-            finally
-            {
-                scope.closeConnection();
+                transaction.commit();
             }
         }
     }
@@ -1005,8 +989,8 @@ public class ParticipantGroupManager
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-        try {
-            scope.ensureTransaction();
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
             SqlExecutor executor = new SqlExecutor(scope);
 
             // remove any participant group mappings from the junction table
@@ -1026,7 +1010,7 @@ public class ParticipantGroupManager
             GROUP_CACHE.remove(getCacheKey(def));
             CATEGORY_CACHE.remove(c);
 
-            scope.commitTransaction();
+            transaction.commit();
 
             List<Throwable> errors = fireDeleteCategory(user, def);
             if (errors.size() != 0)
@@ -1037,10 +1021,6 @@ public class ParticipantGroupManager
                 else
                     throw new RuntimeException(first);
             }
-        }
-        finally
-        {
-            scope.closeConnection();
         }
     }
 
@@ -1054,9 +1034,8 @@ public class ParticipantGroupManager
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
             SqlExecutor executor = new SqlExecutor(scope);
 
             // remove any participant group mappings from the junction table
@@ -1083,13 +1062,8 @@ public class ParticipantGroupManager
 
             GROUP_CACHE.remove(getCacheKey(cat));
 
-            scope.commitTransaction();
+            transaction.commit();
         }
-        finally
-        {
-            scope.closeConnection();
-        }
-
     }
 
     public List<String> getParticipantsFromSelection(Container container, QueryView view, Collection<String> lsids) throws SQLException

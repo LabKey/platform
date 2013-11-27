@@ -111,8 +111,7 @@ public class CohortUpdateService extends AbstractQueryUpdateService
 
         // Start a transaction, so that we can rollback if our insert fails
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        scope.ensureTransaction();
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
 
             // label and enrolled are in the hard table so handle separately
@@ -138,13 +137,8 @@ public class CohortUpdateService extends AbstractQueryUpdateService
             cohort.savePropertyBag(row);
 
             // Successfully updated
-            scope.commitTransaction();
+            transaction.commit();
         }
-        finally
-        {
-            scope.closeConnection();
-        }
-
 
         // The rowId will not have changed
         return getRow(user, container, row);

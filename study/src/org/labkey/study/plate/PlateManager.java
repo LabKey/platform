@@ -378,8 +378,8 @@ public class PlateManager implements PlateService.Service
             throw new UnsupportedOperationException("Resaving of plate templates is not supported.");
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        scope.ensureTransaction();
-        try
+
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             String plateInstanceLsid = getLsid(plate, Plate.class, true);
             String plateObjectLsid = getLsid(plate, Plate.class, false);
@@ -414,13 +414,9 @@ public class PlateManager implements PlateService.Service
                     savePropertyBag(container, wellLsid, wellObjectLsid, getPositionProperties(plate, position));
                 }
             }
-            scope.commitTransaction();
+            transaction.commit();
             clearCache();
             return newPlate.getRowId();
-        }
-        finally
-        {
-            scope.closeConnection();
         }
     }
 
@@ -528,20 +524,15 @@ public class PlateManager implements PlateService.Service
         plateIdFilter.addCondition("PlateId", plate.getRowId());
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
             AttachmentService.get().deleteAttachments(plate);
             OntologyManager.deleteOntologyObjects(container, lsids.toArray(new String[lsids.size()]));
             Table.delete(StudySchema.getInstance().getTableInfoWell(), plateIdFilter);
             Table.delete(StudySchema.getInstance().getTableInfoWellGroup(), plateIdFilter);
             Table.delete(StudySchema.getInstance().getTableInfoPlate(), plateFilter);
-            scope.commitTransaction();
+            transaction.commit();
             clearCache();
-        }
-        finally
-        {
-            scope.closeConnection();
         }
     }
 

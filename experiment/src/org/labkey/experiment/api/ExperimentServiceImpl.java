@@ -136,6 +136,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ExperimentServiceImpl implements ExperimentService.Interface
 {
@@ -148,7 +149,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     protected Map<String, DataType> _dataTypes = new HashMap<>();
     protected Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
 
-    private static final Object XAR_IMPORT_LOCK = new Object();
+    private static final ReentrantLock XAR_IMPORT_LOCK = new ReentrantLock();
 
     synchronized DatabaseCache<MaterialSource> getMaterialSourceCache()
     {
@@ -166,7 +167,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return run == null ? null : new ExpRunImpl(run);
     }
 
-    public Object getImportLock()
+    public ReentrantLock getImportLock()
     {
         return XAR_IMPORT_LOCK;
     }
@@ -1626,10 +1627,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (selectedDataIds.length == 0)
             return;
 
-        try
+        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
-            getExpSchema().getScope().ensureTransaction();
-
             SqlExecutor executor = new SqlExecutor(getExpSchema());
 
             for (int from = 0, to; from < selectedDataIds.length; from = to)
@@ -1657,15 +1656,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 executor.execute("DELETE FROM exp.Data WHERE RowId IN (" + dataIds + ");");
             }
 
-            getExpSchema().getScope().commitTransaction();
+            transaction.commit();
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            getExpSchema().getScope().closeConnection();
         }
     }
 
@@ -2463,185 +2458,182 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         User user = info.getUser();
         XarContext context = new XarContext("Simple Run Creation", run.getContainer(), user);
 
-        synchronized (ExperimentService.get().getImportLock())
+        try
         {
-            try
+            try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction(ExperimentService.get().getImportLock()))
             {
-                try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
+                if (run.getContainer() == null)
                 {
-                    if (run.getContainer() == null)
+                    run.setContainer(info.getContainer());
+                }
+                run.save(user);
+                insertedDatas = ensureSimpleExperimentRunParameters(inputMaterials.keySet(), inputDatas.keySet(), outputMaterials.keySet(), outputDatas.keySet(), transformedDatas.keySet(), user);
+
+                // add any transformed data to the outputDatas collection
+                for (Map.Entry<ExpData, String> entry : transformedDatas.entrySet())
+                    outputDatas.put(entry.getKey(), entry.getValue());
+
+                ExpProtocolImpl parentProtocol = run.getProtocol();
+
+                ProtocolAction[] actions = getProtocolActions(parentProtocol.getRowId());
+                if (actions.length != 3)
+                {
+                    throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol, it should have three");
+                }
+                ProtocolAction action1 = actions[0];
+                assert action1.getSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE;
+                assert action1.getChildProtocolId() == parentProtocol.getRowId();
+
+                context.addSubstitution("ExperimentRun.RowId", Integer.toString(run.getRowId()));
+
+                Date date = new Date();
+
+                ProtocolAction action2 = actions[1];
+                assert action2.getSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE;
+                ExpProtocol protocol2 = getExpProtocol(action2.getChildProtocolId());
+
+                ProtocolAction action3 = actions[2];
+                assert action3.getSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE;
+                ExpProtocol outputProtocol = getExpProtocol(action3.getChildProtocolId());
+                assert outputProtocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput : "Expected third protocol to be of type ExperimentRunOutput but was " + outputProtocol.getApplicationType();
+
+                ExpProtocolApplicationImpl protApp1 = new ExpProtocolApplicationImpl(new ProtocolApplication());
+                ExpProtocolApplicationImpl protApp2 = new ExpProtocolApplicationImpl(new ProtocolApplication());
+                ExpProtocolApplicationImpl protApp3 = new ExpProtocolApplicationImpl(new ProtocolApplication());
+
+                for (ExpProtocolApplicationImpl existingProtApp : run.getProtocolApplications())
+                {
+                    if (existingProtApp.getProtocol().equals(parentProtocol) && existingProtApp.getActionSequence() == action1.getSequence())
                     {
-                        run.setContainer(info.getContainer());
+                        protApp1 = existingProtApp;
                     }
-                    run.save(user);
-                    insertedDatas = ensureSimpleExperimentRunParameters(inputMaterials.keySet(), inputDatas.keySet(), outputMaterials.keySet(), outputDatas.keySet(), transformedDatas.keySet(), user);
-
-                    // add any transformed data to the outputDatas collection
-                    for (Map.Entry<ExpData, String> entry : transformedDatas.entrySet())
-                        outputDatas.put(entry.getKey(), entry.getValue());
-
-                    ExpProtocolImpl parentProtocol = run.getProtocol();
-
-                    ProtocolAction[] actions = getProtocolActions(parentProtocol.getRowId());
-                    if (actions.length != 3)
+                    else if (existingProtApp.getProtocol().equals(protocol2))
                     {
-                        throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol, it should have three");
-                    }
-                    ProtocolAction action1 = actions[0];
-                    assert action1.getSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE;
-                    assert action1.getChildProtocolId() == parentProtocol.getRowId();
-
-                    context.addSubstitution("ExperimentRun.RowId", Integer.toString(run.getRowId()));
-
-                    Date date = new Date();
-
-                    ProtocolAction action2 = actions[1];
-                    assert action2.getSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE;
-                    ExpProtocol protocol2 = getExpProtocol(action2.getChildProtocolId());
-
-                    ProtocolAction action3 = actions[2];
-                    assert action3.getSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE;
-                    ExpProtocol outputProtocol = getExpProtocol(action3.getChildProtocolId());
-                    assert outputProtocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput : "Expected third protocol to be of type ExperimentRunOutput but was " + outputProtocol.getApplicationType();
-
-                    ExpProtocolApplicationImpl protApp1 = new ExpProtocolApplicationImpl(new ProtocolApplication());
-                    ExpProtocolApplicationImpl protApp2 = new ExpProtocolApplicationImpl(new ProtocolApplication());
-                    ExpProtocolApplicationImpl protApp3 = new ExpProtocolApplicationImpl(new ProtocolApplication());
-
-                    for (ExpProtocolApplicationImpl existingProtApp : run.getProtocolApplications())
-                    {
-                        if (existingProtApp.getProtocol().equals(parentProtocol) && existingProtApp.getActionSequence() == action1.getSequence())
+                        if (existingProtApp.getActionSequence() == SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE)
                         {
-                            protApp1 = existingProtApp;
+                            existingProtApp.delete(user);
                         }
-                        else if (existingProtApp.getProtocol().equals(protocol2))
+                        else if (existingProtApp.getActionSequence() == action2.getSequence())
                         {
-                            if (existingProtApp.getActionSequence() == SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE)
-                            {
-                                existingProtApp.delete(user);
-                            }
-                            else if (existingProtApp.getActionSequence() == action2.getSequence())
-                            {
-                                protApp2 = existingProtApp;
-                            }
-                            else
-                            {
-                                throw new IllegalStateException("Unexpected existing protocol application: " + existingProtApp.getLSID() + " with sequence " + existingProtApp.getActionSequence());
-                            }
-                        }
-                        else if (existingProtApp.getProtocol().equals(outputProtocol) && existingProtApp.getActionSequence() == action3.getSequence())
-                        {
-                            protApp3 = existingProtApp;
+                            protApp2 = existingProtApp;
                         }
                         else
                         {
                             throw new IllegalStateException("Unexpected existing protocol application: " + existingProtApp.getLSID() + " with sequence " + existingProtApp.getActionSequence());
                         }
                     }
-
-                    protApp1.setActivityDate(date);
-                    protApp1.setActionSequence(action1.getSequence());
-                    protApp1.setRun(run);
-                    protApp1.setProtocol(parentProtocol);
-                    Map<String, ProtocolParameter> parentParams = parentProtocol.getProtocolParameters();
-                    ProtocolParameter parentLSIDTemplateParam = parentParams.get(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
-                    ProtocolParameter parentNameTemplateParam = parentParams.get(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
-                    assert parentLSIDTemplateParam != null : "Parent LSID Template was null";
-                    assert parentNameTemplateParam != null : "Parent Name Template was null";
-                    protApp1.setLSID(LsidUtils.resolveLsidFromTemplate(parentLSIDTemplateParam.getStringValue(), context, "ProtocolApplication"));
-                    protApp1.setName(parentNameTemplateParam.getStringValue());
-
-                    protApp1.save(user);
-
-                    addDataInputs(inputDatas, protApp1._object, user);
-                    addMaterialInputs(inputMaterials, protApp1._object, user);
-
-                    protApp2.setActivityDate(date);
-                    protApp2.setActionSequence(action2.getSequence());
-                    protApp2.setRun(run);
-                    protApp2.setProtocol(protocol2);
-
-                    Map<String, ProtocolParameter> coreParams = protocol2.getProtocolParameters();
-                    ProtocolParameter coreLSIDTemplateParam = coreParams.get(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
-                    ProtocolParameter coreNameTemplateParam = coreParams.get(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
-                    assert coreLSIDTemplateParam != null;
-                    assert coreNameTemplateParam != null;
-                    protApp2.setLSID(LsidUtils.resolveLsidFromTemplate(coreLSIDTemplateParam.getStringValue(), context, "ProtocolApplication"));
-                    protApp2.setName(coreNameTemplateParam.getStringValue());
-
-                    protApp2.save(user);
-
-                    addDataInputs(inputDatas, protApp2._object, user);
-                    addMaterialInputs(inputMaterials, protApp2._object, user);
-
-                    for (ExpMaterial outputMaterial : outputMaterials.keySet())
+                    else if (existingProtApp.getProtocol().equals(outputProtocol) && existingProtApp.getActionSequence() == action3.getSequence())
                     {
-                        if (outputMaterial.getSourceApplication() != null)
-                        {
-                            throw new IllegalArgumentException("Output material " + outputMaterial.getName() + " is already marked as being created by another protocol application");
-                        }
-                        if (outputMaterial.getRun() != null)
-                        {
-                            throw new IllegalArgumentException("Output material " + outputMaterial.getName() + " is already marked as being created by another run");
-                        }
-                        outputMaterial.setSourceApplication(protApp2);
-                        outputMaterial.setRun(run);
-                        Table.update(user, getTinfoMaterial(), ((ExpMaterialImpl)outputMaterial)._object, outputMaterial.getRowId());
+                        protApp3 = existingProtApp;
                     }
-
-                    for (ExpData outputData : outputDatas.keySet())
+                    else
                     {
-                        ExpRun existingRun = outputData.getRun();
-                        if (existingRun != null && !existingRun.equals(run))
-                        {
-                            throw new IllegalArgumentException("Output data " + outputData.getName() + " (RowId " + outputData.getRowId() + ") is already marked as being created by another run '" + outputData.getRun().getName() + "' (RowId " + outputData.getRunId() + ")");
-                        }
-                        ExpProtocolApplication existingProtApp = outputData.getSourceApplication();
-                        if (existingProtApp != null && !existingProtApp.equals(protApp2))
-                        {
-                            throw new IllegalArgumentException("Output data " + outputData.getName() + " (RowId " + outputData.getRowId() + ") is already marked as being created by another protocol application");
-                        }
-                        outputData.setSourceApplication(protApp2);
-                        outputData.setRun(run);
-                        Table.update(user, getTinfoData(), ((ExpDataImpl)outputData).getDataObject(), outputData.getRowId());
+                        throw new IllegalStateException("Unexpected existing protocol application: " + existingProtApp.getLSID() + " with sequence " + existingProtApp.getActionSequence());
                     }
-
-                    protApp3.setActivityDate(date);
-                    protApp3.setActionSequence(action3.getSequence());
-                    protApp3.setRun(run);
-                    protApp3.setProtocol(outputProtocol);
-
-                    Map<String, ProtocolParameter> outputParams = outputProtocol.getProtocolParameters();
-                    ProtocolParameter outputLSIDTemplateParam = outputParams.get(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
-                    ProtocolParameter outputNameTemplateParam = outputParams.get(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
-                    assert outputLSIDTemplateParam != null;
-                    assert outputNameTemplateParam != null;
-                    protApp3.setLSID(LsidUtils.resolveLsidFromTemplate(outputLSIDTemplateParam.getStringValue(), context, "ProtocolApplication"));
-                    protApp3.setName(outputNameTemplateParam.getStringValue());
-                    protApp3.save(user);
-
-                    addDataInputs(outputDatas, protApp3._object, user);
-                    addMaterialInputs(outputMaterials, protApp3._object, user);
-
-                    transaction.commit();
                 }
 
-                if (loadDataFiles)
+                protApp1.setActivityDate(date);
+                protApp1.setActionSequence(action1.getSequence());
+                protApp1.setRun(run);
+                protApp1.setProtocol(parentProtocol);
+                Map<String, ProtocolParameter> parentParams = parentProtocol.getProtocolParameters();
+                ProtocolParameter parentLSIDTemplateParam = parentParams.get(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
+                ProtocolParameter parentNameTemplateParam = parentParams.get(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
+                assert parentLSIDTemplateParam != null : "Parent LSID Template was null";
+                assert parentNameTemplateParam != null : "Parent Name Template was null";
+                protApp1.setLSID(LsidUtils.resolveLsidFromTemplate(parentLSIDTemplateParam.getStringValue(), context, "ProtocolApplication"));
+                protApp1.setName(parentNameTemplateParam.getStringValue());
+
+                protApp1.save(user);
+
+                addDataInputs(inputDatas, protApp1._object, user);
+                addMaterialInputs(inputMaterials, protApp1._object, user);
+
+                protApp2.setActivityDate(date);
+                protApp2.setActionSequence(action2.getSequence());
+                protApp2.setRun(run);
+                protApp2.setProtocol(protocol2);
+
+                Map<String, ProtocolParameter> coreParams = protocol2.getProtocolParameters();
+                ProtocolParameter coreLSIDTemplateParam = coreParams.get(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
+                ProtocolParameter coreNameTemplateParam = coreParams.get(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
+                assert coreLSIDTemplateParam != null;
+                assert coreNameTemplateParam != null;
+                protApp2.setLSID(LsidUtils.resolveLsidFromTemplate(coreLSIDTemplateParam.getStringValue(), context, "ProtocolApplication"));
+                protApp2.setName(coreNameTemplateParam.getStringValue());
+
+                protApp2.save(user);
+
+                addDataInputs(inputDatas, protApp2._object, user);
+                addMaterialInputs(inputMaterials, protApp2._object, user);
+
+                for (ExpMaterial outputMaterial : outputMaterials.keySet())
                 {
-                    for (ExpData insertedData : insertedDatas)
+                    if (outputMaterial.getSourceApplication() != null)
                     {
-                        insertedData.findDataHandler().importFile(getExpData(insertedData.getRowId()), insertedData.getFile(), info, log, context);
+                        throw new IllegalArgumentException("Output material " + outputMaterial.getName() + " is already marked as being created by another protocol application");
                     }
+                    if (outputMaterial.getRun() != null)
+                    {
+                        throw new IllegalArgumentException("Output material " + outputMaterial.getName() + " is already marked as being created by another run");
+                    }
+                    outputMaterial.setSourceApplication(protApp2);
+                    outputMaterial.setRun(run);
+                    Table.update(user, getTinfoMaterial(), ((ExpMaterialImpl)outputMaterial)._object, outputMaterial.getRowId());
                 }
 
-                run.clearCache();
+                for (ExpData outputData : outputDatas.keySet())
+                {
+                    ExpRun existingRun = outputData.getRun();
+                    if (existingRun != null && !existingRun.equals(run))
+                    {
+                        throw new IllegalArgumentException("Output data " + outputData.getName() + " (RowId " + outputData.getRowId() + ") is already marked as being created by another run '" + outputData.getRun().getName() + "' (RowId " + outputData.getRunId() + ")");
+                    }
+                    ExpProtocolApplication existingProtApp = outputData.getSourceApplication();
+                    if (existingProtApp != null && !existingProtApp.equals(protApp2))
+                    {
+                        throw new IllegalArgumentException("Output data " + outputData.getName() + " (RowId " + outputData.getRowId() + ") is already marked as being created by another protocol application");
+                    }
+                    outputData.setSourceApplication(protApp2);
+                    outputData.setRun(run);
+                    Table.update(user, getTinfoData(), ((ExpDataImpl)outputData).getDataObject(), outputData.getRowId());
+                }
 
-                return run;
+                protApp3.setActivityDate(date);
+                protApp3.setActionSequence(action3.getSequence());
+                protApp3.setRun(run);
+                protApp3.setProtocol(outputProtocol);
+
+                Map<String, ProtocolParameter> outputParams = outputProtocol.getProtocolParameters();
+                ProtocolParameter outputLSIDTemplateParam = outputParams.get(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
+                ProtocolParameter outputNameTemplateParam = outputParams.get(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
+                assert outputLSIDTemplateParam != null;
+                assert outputNameTemplateParam != null;
+                protApp3.setLSID(LsidUtils.resolveLsidFromTemplate(outputLSIDTemplateParam.getStringValue(), context, "ProtocolApplication"));
+                protApp3.setName(outputNameTemplateParam.getStringValue());
+                protApp3.save(user);
+
+                addDataInputs(outputDatas, protApp3._object, user);
+                addMaterialInputs(outputMaterials, protApp3._object, user);
+
+                transaction.commit();
             }
-            catch (SQLException e)
+
+            if (loadDataFiles)
             {
-                throw new RuntimeSQLException(e);
+                for (ExpData insertedData : insertedDatas)
+                {
+                    insertedData.findDataHandler().importFile(getExpData(insertedData.getRowId()), insertedData.getFile(), info, log, context);
+                }
             }
+
+            run.clearCache();
+
+            return run;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
     }
 
@@ -3008,113 +3000,110 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpProtocol insertSimpleProtocol(ExpProtocol wrappedProtocol, User user) throws ExperimentException
     {
-        synchronized (ExperimentService.get().getImportLock())
+        try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction(ExperimentService.get().getImportLock()))
         {
-            try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
+            if (ExperimentService.get().getExpProtocol(wrappedProtocol.getLSID()) != null)
             {
-                if (ExperimentService.get().getExpProtocol(wrappedProtocol.getLSID()) != null)
-                {
-                    throw new ExperimentException("An assay with that name already exists");
-                }
-
-                Protocol baseProtocol = ((ExpProtocolImpl)wrappedProtocol).getDataObject();
-                wrappedProtocol.setApplicationType(ExpProtocol.ApplicationType.ExperimentRun);
-                baseProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
-                baseProtocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
-                baseProtocol.setContainer(baseProtocol.getContainer());
-
-                Map<String, ProtocolParameter> baseParams = new HashMap<>(wrappedProtocol.getProtocolParameters());
-                ProtocolParameter baseLSIDTemplate = new ProtocolParameter();
-                baseLSIDTemplate.setName(XarConstants.APPLICATION_LSID_TEMPLATE_NAME);
-                baseLSIDTemplate.setOntologyEntryURI(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
-                baseLSIDTemplate.setValue(SimpleTypeNames.STRING, "${RunLSIDBase}:SimpleProtocol.InputStep");
-                baseParams.put(XarConstants.APPLICATION_LSID_TEMPLATE_URI, baseLSIDTemplate);
-                ProtocolParameter baseNameTemplate = new ProtocolParameter();
-                baseNameTemplate.setName(XarConstants.APPLICATION_NAME_TEMPLATE_NAME);
-                baseNameTemplate.setOntologyEntryURI(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
-                baseNameTemplate.setValue(SimpleTypeNames.STRING, baseProtocol.getName() + " Protocol");
-                baseParams.put(XarConstants.APPLICATION_NAME_TEMPLATE_URI, baseNameTemplate);
-                baseProtocol.storeProtocolParameters(baseParams.values());
-
-                baseProtocol = saveProtocol(user, baseProtocol);
-
-                Protocol coreProtocol = new Protocol();
-                coreProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
-                coreProtocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
-                coreProtocol.setContainer(baseProtocol.getContainer());
-                coreProtocol.setApplicationType(ExpProtocol.ApplicationType.ProtocolApplication.name());
-                coreProtocol.setName(baseProtocol.getName() + " - Core");
-                coreProtocol.setLSID(baseProtocol.getLSID() + ".Core");
-
-                List<ProtocolParameter> coreParams = new ArrayList<>();
-                ProtocolParameter coreLSIDTemplate = new ProtocolParameter();
-                coreLSIDTemplate.setName(XarConstants.APPLICATION_LSID_TEMPLATE_NAME);
-                coreLSIDTemplate.setOntologyEntryURI(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
-                coreLSIDTemplate.setValue(SimpleTypeNames.STRING, "${RunLSIDBase}:SimpleProtocol.CoreStep");
-                coreParams.add(coreLSIDTemplate);
-                ProtocolParameter coreNameTemplate = new ProtocolParameter();
-                coreNameTemplate.setName(XarConstants.APPLICATION_NAME_TEMPLATE_NAME);
-                coreNameTemplate.setOntologyEntryURI(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
-                coreNameTemplate.setValue(SimpleTypeNames.STRING, baseProtocol.getName());
-                coreParams.add(coreNameTemplate);
-                coreProtocol.storeProtocolParameters(coreParams);
-
-                coreProtocol = saveProtocol(user, coreProtocol);
-
-                Protocol outputProtocol = new Protocol();
-                outputProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
-                outputProtocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
-                outputProtocol.setName(baseProtocol.getName() + " - Output");
-                outputProtocol.setLSID(baseProtocol.getLSID() + ".Output");
-                outputProtocol.setApplicationType(ExpProtocol.ApplicationType.ExperimentRunOutput.name());
-                outputProtocol.setContainer(baseProtocol.getContainer());
-
-                List<ProtocolParameter> outputParams = new ArrayList<>();
-                ProtocolParameter outputLSIDTemplate = new ProtocolParameter();
-                outputLSIDTemplate.setName(XarConstants.APPLICATION_LSID_TEMPLATE_NAME);
-                outputLSIDTemplate.setOntologyEntryURI(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
-                outputLSIDTemplate.setValue(SimpleTypeNames.STRING, "${RunLSIDBase}:SimpleProtocol.OutputStep");
-                outputParams.add(outputLSIDTemplate);
-                ProtocolParameter outputNameTemplate = new ProtocolParameter();
-                outputNameTemplate.setName(XarConstants.APPLICATION_NAME_TEMPLATE_NAME);
-                outputNameTemplate.setOntologyEntryURI(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
-                outputNameTemplate.setValue(SimpleTypeNames.STRING, baseProtocol.getName() + " output");
-                outputParams.add(outputNameTemplate);
-                outputProtocol.storeProtocolParameters(outputParams);
-
-                outputProtocol = saveProtocol(user, outputProtocol);
-
-                ProtocolAction action1 = new ProtocolAction();
-                action1.setParentProtocolId(baseProtocol.getRowId());
-                action1.setChildProtocolId(baseProtocol.getRowId());
-                action1.setSequence(SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE);
-                action1 = Table.insert(user, getTinfoProtocolAction(), action1);
-
-                insertProtocolPredecessor(user, action1.getRowId(), action1.getRowId());
-
-                ProtocolAction action2 = new ProtocolAction();
-                action2.setParentProtocolId(baseProtocol.getRowId());
-                action2.setChildProtocolId(coreProtocol.getRowId());
-                action2.setSequence(SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE);
-                action2 = Table.insert(user, getTinfoProtocolAction(), action2);
-
-                insertProtocolPredecessor(user, action2.getRowId(), action1.getRowId());
-
-                ProtocolAction action3 = new ProtocolAction();
-                action3.setParentProtocolId(baseProtocol.getRowId());
-                action3.setChildProtocolId(outputProtocol.getRowId());
-                action3.setSequence(SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE);
-                action3 = Table.insert(user, getTinfoProtocolAction(), action3);
-
-                insertProtocolPredecessor(user, action3.getRowId(), action2.getRowId());
-
-                transaction.commit();
-                return wrappedProtocol;
+                throw new ExperimentException("An assay with that name already exists");
             }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+
+            Protocol baseProtocol = ((ExpProtocolImpl)wrappedProtocol).getDataObject();
+            wrappedProtocol.setApplicationType(ExpProtocol.ApplicationType.ExperimentRun);
+            baseProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
+            baseProtocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
+            baseProtocol.setContainer(baseProtocol.getContainer());
+
+            Map<String, ProtocolParameter> baseParams = new HashMap<>(wrappedProtocol.getProtocolParameters());
+            ProtocolParameter baseLSIDTemplate = new ProtocolParameter();
+            baseLSIDTemplate.setName(XarConstants.APPLICATION_LSID_TEMPLATE_NAME);
+            baseLSIDTemplate.setOntologyEntryURI(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
+            baseLSIDTemplate.setValue(SimpleTypeNames.STRING, "${RunLSIDBase}:SimpleProtocol.InputStep");
+            baseParams.put(XarConstants.APPLICATION_LSID_TEMPLATE_URI, baseLSIDTemplate);
+            ProtocolParameter baseNameTemplate = new ProtocolParameter();
+            baseNameTemplate.setName(XarConstants.APPLICATION_NAME_TEMPLATE_NAME);
+            baseNameTemplate.setOntologyEntryURI(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
+            baseNameTemplate.setValue(SimpleTypeNames.STRING, baseProtocol.getName() + " Protocol");
+            baseParams.put(XarConstants.APPLICATION_NAME_TEMPLATE_URI, baseNameTemplate);
+            baseProtocol.storeProtocolParameters(baseParams.values());
+
+            baseProtocol = saveProtocol(user, baseProtocol);
+
+            Protocol coreProtocol = new Protocol();
+            coreProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
+            coreProtocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
+            coreProtocol.setContainer(baseProtocol.getContainer());
+            coreProtocol.setApplicationType(ExpProtocol.ApplicationType.ProtocolApplication.name());
+            coreProtocol.setName(baseProtocol.getName() + " - Core");
+            coreProtocol.setLSID(baseProtocol.getLSID() + ".Core");
+
+            List<ProtocolParameter> coreParams = new ArrayList<>();
+            ProtocolParameter coreLSIDTemplate = new ProtocolParameter();
+            coreLSIDTemplate.setName(XarConstants.APPLICATION_LSID_TEMPLATE_NAME);
+            coreLSIDTemplate.setOntologyEntryURI(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
+            coreLSIDTemplate.setValue(SimpleTypeNames.STRING, "${RunLSIDBase}:SimpleProtocol.CoreStep");
+            coreParams.add(coreLSIDTemplate);
+            ProtocolParameter coreNameTemplate = new ProtocolParameter();
+            coreNameTemplate.setName(XarConstants.APPLICATION_NAME_TEMPLATE_NAME);
+            coreNameTemplate.setOntologyEntryURI(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
+            coreNameTemplate.setValue(SimpleTypeNames.STRING, baseProtocol.getName());
+            coreParams.add(coreNameTemplate);
+            coreProtocol.storeProtocolParameters(coreParams);
+
+            coreProtocol = saveProtocol(user, coreProtocol);
+
+            Protocol outputProtocol = new Protocol();
+            outputProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
+            outputProtocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
+            outputProtocol.setName(baseProtocol.getName() + " - Output");
+            outputProtocol.setLSID(baseProtocol.getLSID() + ".Output");
+            outputProtocol.setApplicationType(ExpProtocol.ApplicationType.ExperimentRunOutput.name());
+            outputProtocol.setContainer(baseProtocol.getContainer());
+
+            List<ProtocolParameter> outputParams = new ArrayList<>();
+            ProtocolParameter outputLSIDTemplate = new ProtocolParameter();
+            outputLSIDTemplate.setName(XarConstants.APPLICATION_LSID_TEMPLATE_NAME);
+            outputLSIDTemplate.setOntologyEntryURI(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
+            outputLSIDTemplate.setValue(SimpleTypeNames.STRING, "${RunLSIDBase}:SimpleProtocol.OutputStep");
+            outputParams.add(outputLSIDTemplate);
+            ProtocolParameter outputNameTemplate = new ProtocolParameter();
+            outputNameTemplate.setName(XarConstants.APPLICATION_NAME_TEMPLATE_NAME);
+            outputNameTemplate.setOntologyEntryURI(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
+            outputNameTemplate.setValue(SimpleTypeNames.STRING, baseProtocol.getName() + " output");
+            outputParams.add(outputNameTemplate);
+            outputProtocol.storeProtocolParameters(outputParams);
+
+            outputProtocol = saveProtocol(user, outputProtocol);
+
+            ProtocolAction action1 = new ProtocolAction();
+            action1.setParentProtocolId(baseProtocol.getRowId());
+            action1.setChildProtocolId(baseProtocol.getRowId());
+            action1.setSequence(SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE);
+            action1 = Table.insert(user, getTinfoProtocolAction(), action1);
+
+            insertProtocolPredecessor(user, action1.getRowId(), action1.getRowId());
+
+            ProtocolAction action2 = new ProtocolAction();
+            action2.setParentProtocolId(baseProtocol.getRowId());
+            action2.setChildProtocolId(coreProtocol.getRowId());
+            action2.setSequence(SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE);
+            action2 = Table.insert(user, getTinfoProtocolAction(), action2);
+
+            insertProtocolPredecessor(user, action2.getRowId(), action1.getRowId());
+
+            ProtocolAction action3 = new ProtocolAction();
+            action3.setParentProtocolId(baseProtocol.getRowId());
+            action3.setChildProtocolId(outputProtocol.getRowId());
+            action3.setSequence(SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE);
+            action3 = Table.insert(user, getTinfoProtocolAction(), action3);
+
+            insertProtocolPredecessor(user, action3.getRowId(), action2.getRowId());
+
+            transaction.commit();
+            return wrappedProtocol;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
     }
 

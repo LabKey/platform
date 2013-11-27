@@ -22,6 +22,7 @@ import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.api.exp.DomainDescriptor;
@@ -333,10 +334,8 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             if (replaceIfExisting)
             {
                 DbSchema schema = StudySchema.getInstance().getSchema();
-                try
+                try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
                 {
-                    schema.getScope().ensureTransaction();
-
                     ExpProtocol protocol;
                     if (assay.getProtocolId() == null)
                     {
@@ -459,7 +458,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     if (errors.length() > 0)
                         throw new AssayException(errors.toString());
 
-                    schema.getScope().commitTransaction();
+                    transaction.commit();
                     AssayManager.get().clearProtocolCache();
                     return getAssayDefinition(assay.getProtocolId(), false);
                 }
@@ -475,10 +474,6 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 catch (SQLException e)
                 {
                     throw new RuntimeSQLException(e);
-                }
-                finally
-                {
-                    schema.getScope().closeConnection();
                 }
             }
             else

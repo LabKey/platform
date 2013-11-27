@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.MvUtil;
@@ -288,10 +289,8 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         assert qus != null;
 
         DbSchema dbschema = datasetTable.getSchema();
-        try
+        try (DbScope.Transaction transaction = dbschema.getScope().ensureTransaction())
         {
-            dbschema.getScope().ensureTransaction();
-
             Map<String,Object> data = updateForm.getTypedColumns();
 
             if (isInsert())
@@ -334,7 +333,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                     return false;
             }
 
-            dbschema.getScope().commitTransaction();
+            transaction.commit();
         }
         catch (SQLException x)
         {
@@ -347,15 +346,9 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
             errors.addAllErrors(errors);
             x.addToErrors(errors);
         }
-        finally
-        {
-            dbschema.getScope().closeConnection();
-        }
 
-        if (errors.hasErrors())
-            return false;
+        return !errors.hasErrors();
 
-        return true;
     }
 
     public ActionURL getSuccessURL(Form form)

@@ -73,6 +73,7 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class SampleManager implements ContainerManager.ContainerListener
 {
@@ -484,10 +485,8 @@ public class SampleManager implements ContainerManager.ContainerListener
     public void updateRequest(User user, SampleRequest request) throws SQLException, RequestabilityManager.InvalidRuleException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
-
             _requestHelper.update(user, request);
 
             // update specimen states
@@ -497,11 +496,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                 SampleRequestStatus status = getRequestStatus(request.getContainer(), request.getStatusId());
                 updateSpecimenStatus(specimens, user, status.isSpecimensLocked());
             }
-            scope.commitTransaction();
-        }
-        finally
-        {
-            scope.closeConnection();
+            transaction.commit();
         }
     }
 
@@ -1245,7 +1240,7 @@ public class SampleManager implements ContainerManager.ContainerListener
             return str;
     }
 
-    private static final Object REQUEST_ADDITION_LOCK = new Object();
+    private static final ReentrantLock REQUEST_ADDITION_LOCK = new ReentrantLock();
     public void createRequestSampleMapping(User user, SampleRequest request, List<Specimen> specimens, boolean createEvents, boolean createRequirements)
             throws SQLException, RequestabilityManager.InvalidRuleException, AttachmentService.DuplicateFilenameException
     {
@@ -1253,44 +1248,35 @@ public class SampleManager implements ContainerManager.ContainerListener
             return;
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction(REQUEST_ADDITION_LOCK))
         {
-            scope.ensureTransaction();
-
-            synchronized (REQUEST_ADDITION_LOCK)
+            for (Specimen specimen : specimens)
             {
-                for (Specimen specimen : specimens)
-                {
-                    if (!request.getContainer().getId().equals(specimen.getContainer().getId()))
-                        throw new IllegalStateException("Mismatched containers.");
+                if (!request.getContainer().getId().equals(specimen.getContainer().getId()))
+                    throw new IllegalStateException("Mismatched containers.");
 
-                    if (!specimen.isAvailable())
-                        throw new IllegalStateException(RequestabilityManager.makeSpecimenUnavailableMessage(specimen, null));
-                }
-
-                for (Specimen specimen : specimens)
-                {
-                    Map<String, Object> fields = new HashMap<>();
-                    fields.put("Container", request.getContainer().getId());
-                    fields.put("SampleRequestId", request.getRowId());
-                    fields.put("SpecimenGlobalUniqueId", specimen.getGlobalUniqueId());
-                    Table.insert(user, StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), fields);
-                    if (createEvents)
-                        createRequestEvent(user, request, RequestEventType.SPECIMEN_ADDED, specimen.getSampleDescription(), null);
-                }
-
-                if (createRequirements)
-                    getRequirementsProvider().generateDefaultRequirements(user, request);
-
-                SampleRequestStatus status = getRequestStatus(request.getContainer(), request.getStatusId());
-                updateSpecimenStatus(specimens, user, status.isSpecimensLocked());
+                if (!specimen.isAvailable())
+                    throw new IllegalStateException(RequestabilityManager.makeSpecimenUnavailableMessage(specimen, null));
             }
 
-            scope.commitTransaction();
-        }
-        finally
-        {
-            scope.closeConnection();
+            for (Specimen specimen : specimens)
+            {
+                Map<String, Object> fields = new HashMap<>();
+                fields.put("Container", request.getContainer().getId());
+                fields.put("SampleRequestId", request.getRowId());
+                fields.put("SpecimenGlobalUniqueId", specimen.getGlobalUniqueId());
+                Table.insert(user, StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), fields);
+                if (createEvents)
+                    createRequestEvent(user, request, RequestEventType.SPECIMEN_ADDED, specimen.getSampleDescription(), null);
+            }
+
+            if (createRequirements)
+                getRequirementsProvider().generateDefaultRequirements(user, request);
+
+            SampleRequestStatus status = getRequestStatus(request.getContainer(), request.getStatusId());
+            updateSpecimenStatus(specimens, user, status.isSpecimensLocked());
+
+            transaction.commit();
         }
     }
 
@@ -1321,10 +1307,9 @@ public class SampleManager implements ContainerManager.ContainerListener
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         Set<String> uniqueRowIds = new HashSet<>(globalUniqueIds.length);
-        for (String globalUniqueId : globalUniqueIds)
-            uniqueRowIds.add(globalUniqueId);
+        Collections.addAll(uniqueRowIds, globalUniqueIds);
         List<String> ids = new ArrayList<>(uniqueRowIds);
-        filter.addInClause("GlobalUniqueId", ids);
+        filter.addInClause(FieldKey.fromParts("GlobalUniqueId"), ids);
         List<Specimen> specimens = _specimenDetailHelper.get(container, filter);
         if (specimens == null || specimens.size() != ids.size())
             throw new SpecimenRequestException();       // an id has no matching specimen, let caller determine what to report
@@ -1334,10 +1319,8 @@ public class SampleManager implements ContainerManager.ContainerListener
     public void deleteRequest(User user, SampleRequest request) throws SQLException, RequestabilityManager.InvalidRuleException, AttachmentService.DuplicateFilenameException
     {
         DbScope scope = _requestHelper.getTableInfo().getSchema().getScope();
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
-
             List<Specimen> specimens = request.getSpecimens();
             int[] specimenIds = new int[specimens.size()];
             for (int i = 0; i < specimens.size(); i++)
@@ -1352,11 +1335,7 @@ public class SampleManager implements ContainerManager.ContainerListener
             deleteRequestEvents(user, request);
             _requestHelper.delete(request);
 
-            scope.commitTransaction();
-        }
-        finally
-        {
-            scope.closeConnection();
+            transaction.commit();
         }
     }
 
@@ -1375,10 +1354,8 @@ public class SampleManager implements ContainerManager.ContainerListener
         }
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
-
             SimpleFilter filter = SimpleFilter.createContainerFilter(request.getContainer());
             filter.addCondition("SampleRequestId", request.getRowId());
             filter.addInClause("SpecimenGlobalUniqueId", globalUniqueIds);
@@ -1391,11 +1368,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
             updateSpecimenStatus(specimens, user, false);
 
-            scope.commitTransaction();
-        }
-        finally
-        {
-            scope.closeConnection();
+            transaction.commit();
         }
     }
 
@@ -2701,9 +2674,9 @@ public class SampleManager implements ContainerManager.ContainerListener
         DbScope scope = commentTable.getSchema().getScope();
         SpecimenComment comment = getSpecimenCommentForVial(vial);
         boolean clearComment = commentText == null && !qualityControlFlag && !qualityControlFlagForced;
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
+            SpecimenComment result;
             if (clearComment)
             {
                 if (comment != null)
@@ -2711,8 +2684,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                     Table.delete(commentTable, comment.getRowId());
                     auditSpecimenComment(user, vial, comment.getComment(), null, comment.isQualityControlFlag(), false);
                 }
-                scope.commitTransaction();
-                return null;
+                result = null;
             }
             else
             {
@@ -2724,10 +2696,8 @@ public class SampleManager implements ContainerManager.ContainerListener
                     comment.setQualityControlFlag(qualityControlFlag);
                     comment.setQualityControlFlagForced(qualityControlFlagForced);
                     comment.beforeUpdate(user);
-                    SpecimenComment updated = Table.update(user, commentTable, comment, comment.getRowId());
-                    auditSpecimenComment(user, vial, prevComment, updated.getComment(), prevConflictState, updated.isQualityControlFlag());
-                    scope.commitTransaction();
-                    return updated;
+                    result = Table.update(user, commentTable, comment, comment.getRowId());
+                    auditSpecimenComment(user, vial, prevComment, result.getComment(), prevConflictState, result.isQualityControlFlag());
                 }
                 else
                 {
@@ -2738,16 +2708,12 @@ public class SampleManager implements ContainerManager.ContainerListener
                     comment.setQualityControlFlag(qualityControlFlag);
                     comment.setQualityControlFlagForced(qualityControlFlagForced);
                     comment.beforeInsert(user, vial.getContainer().getId());
-                    SpecimenComment inserted = Table.insert(user, commentTable, comment);
-                    auditSpecimenComment(user, vial, null, inserted.getComment(), false, comment.isQualityControlFlag());
-                    scope.commitTransaction();
-                    return inserted;
+                    result = Table.insert(user, commentTable, comment);
+                    auditSpecimenComment(user, vial, null, result.getComment(), false, comment.isQualityControlFlag());
                 }
             }
-        }
-        finally
-        {
-            scope.closeConnection();
+            transaction.commit();
+            return result;
         }
     }
 

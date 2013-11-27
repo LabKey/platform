@@ -2574,9 +2574,8 @@ public class StudyController extends BaseStudyController
 
             // Operate on each individually for audit logging purposes, but transact the whole thing
             DbScope scope =  StudySchema.getInstance().getSchema().getScope();
-            scope.ensureTransaction();
 
-            try
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
                 Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), true);
                 List<Map<String, Object>> keys = new ArrayList<>(lsids.size());
@@ -2591,12 +2590,8 @@ public class StudyController extends BaseStudyController
 
                 qus.deleteRows(getViewContext().getUser(), getContainer(), keys, null);
 
-                scope.commitTransaction();
+                transaction.commit();
                 return true;
-            }
-            finally
-            {
-                scope.closeConnection();
             }
         }
 
@@ -4205,19 +4200,15 @@ public class StudyController extends BaseStudyController
                 }
 
                 DbScope scope = StudySchema.getInstance().getSchema().getScope();
-                try
+                try (DbScope.Transaction transaction = scope.ensureTransaction())
                 {
-                    scope.ensureTransaction();
                     int numRowsDeleted = StudyManager.getInstance().purgeDataset(dataset, getUser());
-                    scope.commitTransaction();
 
                     // Log the purge
                     String comment = "Dataset purged. " + numRowsDeleted + " rows deleted";
                     StudyServiceImpl.addDatasetAuditEvent(getUser(), getContainer(), dataset, comment, null);
-                }
-                finally
-                {
-                    scope.closeConnection();
+
+                    transaction.commit();
                 }
                 DataRegionSelection.clearAll(getViewContext());
             }
@@ -4621,17 +4612,12 @@ public class StudyController extends BaseStudyController
                 redirectTypeNotFound(form.getId());
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
-            try
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                scope.ensureTransaction();
                 StudyManager.getInstance().deleteDataset(getStudyRedirectIfNull(), getUser(), ds, true);
-                scope.commitTransaction();
-                throw new RedirectException(new ActionURL(ManageTypesAction.class, getContainer()));
+                transaction.commit();
             }
-            finally
-            {
-                scope.closeConnection();
-            }
+            throw new RedirectException(new ActionURL(ManageTypesAction.class, getContainer()));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4898,10 +4884,8 @@ public class StudyController extends BaseStudyController
 
             if (null != jsonDatasets)
             {
-                try
+                try (DbScope.Transaction transaction = scope.ensureTransaction())
                 {
-                    scope.ensureTransaction();
-
                     for (JSONObject jdataset : jsonDatasets.toJSONObjectArray())
                     {
                         DataSetDefinition dataset = AssayPublishManager.getInstance().createAssayDataset(getUser(), study, jdataset.getString("name"),
@@ -4928,11 +4912,7 @@ public class StudyController extends BaseStudyController
                         OntologyManager.ensureDomainDescriptor(dataset.getTypeURI(), dataset.getName(), study.getContainer());
                         datasets.add(dataset);
                     }
-                    scope.commitTransaction();
-                }
-                finally
-                {
-                    scope.closeConnection();
+                    transaction.commit();
                 }
             }
 
@@ -5163,9 +5143,8 @@ public class StudyController extends BaseStudyController
         {
             DbSchema schema = StudySchema.getInstance().getSchema();
 
-            try {
-                schema.getScope().ensureTransaction();
-
+            try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
+            {
                 if (StudySnapshotForm.EDIT_DATASET.equals(form.getAction()))
                 {
                     createDataset(form, errors);
@@ -5185,11 +5164,7 @@ public class StudyController extends BaseStudyController
                 }
 
                 if (!errors.hasErrors())
-                    schema.getScope().commitTransaction();
-            }
-            finally
-            {
-                schema.getScope().closeConnection();
+                    transaction.commit();
             }
 
             return !errors.hasErrors();
@@ -7013,9 +6988,9 @@ public class StudyController extends BaseStudyController
             DataSetDefinition def = null;
 
             DbScope scope =  StudySchema.getInstance().getSchema().getScope();
-            scope.ensureTransaction();
 
-            try {
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
+            {
                 Integer categoryId = null;
 
                 if (form.getCategory() != null)
@@ -7087,11 +7062,7 @@ public class StudyController extends BaseStudyController
                         break;
                 }
                 response.put("success", true);
-                scope.commitTransaction();
-            }
-            finally
-            {
-                scope.closeConnection();
+                transaction.commit();
             }
 
             return response;
@@ -7384,33 +7355,19 @@ public class StudyController extends BaseStudyController
 
     private void setAlternateIdProperties(StudyImpl study, String prefix, int numDigits)
     {
-        try
-        {
-            study = study.createMutable();
-            study.setAlternateIdPrefix(prefix);
-            study.setAlternateIdDigits(numDigits);
-            StudyManager.getInstance().updateStudy(getUser(), study);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        study = study.createMutable();
+        study.setAlternateIdPrefix(prefix);
+        study.setAlternateIdDigits(numDigits);
+        StudyManager.getInstance().updateStudy(getUser(), study);
     }
 
     private void setAliasMappingProperties(StudyImpl study, int dataSetId, String aliasColumn, String sourceColumn)
     {
-        try
-        {
-            study = study.createMutable();
-            study.setParticipantAliasDatasetId(dataSetId);
-            study.setParticipantAliasProperty(aliasColumn);
-            study.setParticipantAliasSourceProperty(sourceColumn);
-            StudyManager.getInstance().updateStudy(getUser(), study);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        study = study.createMutable();
+        study.setParticipantAliasDatasetId(dataSetId);
+        study.setParticipantAliasProperty(aliasColumn);
+        study.setParticipantAliasSourceProperty(sourceColumn);
+        StudyManager.getInstance().updateStudy(getUser(), study);
     }
 
     @RequiresPermissionClass(AdminPermission.class)
@@ -7444,19 +7401,13 @@ public class StudyController extends BaseStudyController
             StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             if (study != null)
             {
-                try
-                {
-                    study = study.createMutable();
-                    study.setAllowReqLocRepository(form.isRepository());
-                    study.setAllowReqLocClinic(form.isClinic());
-                    study.setAllowReqLocSal(form.isSal());
-                    study.setAllowReqLocEndpoint(form.isEndpoint());
-                    StudyManager.getInstance().updateStudy(getUser(), study);
-                }
-                catch (SQLException x)
-                {
-                    throw new RuntimeSQLException(x);
-                }
+                study = study.createMutable();
+                study.setAllowReqLocRepository(form.isRepository());
+                study.setAllowReqLocClinic(form.isClinic());
+                study.setAllowReqLocSal(form.isSal());
+                study.setAllowReqLocEndpoint(form.isEndpoint());
+                StudyManager.getInstance().updateStudy(getUser(), study);
+
                 response.put("success", true);
                 return response;
             }

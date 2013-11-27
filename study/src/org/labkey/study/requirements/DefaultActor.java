@@ -183,22 +183,16 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
     public void delete()
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
-
             deleteAllGroups();
             Table.delete(getTableInfo(), getPrimaryKey());
 
-            scope.commitTransaction();
+            transaction.commit();
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            scope.closeConnection();
         }
     }
 

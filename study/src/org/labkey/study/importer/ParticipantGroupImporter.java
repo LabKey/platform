@@ -17,9 +17,8 @@ package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.admin.InvalidFileException;
-import org.labkey.api.study.StudyService;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
@@ -77,13 +76,11 @@ public class ParticipantGroupImporter implements InternalStudyImporter
         {
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-            try
+            ParticipantGroupsDocument doc = (ParticipantGroupsDocument)xmlObject;
+            XmlBeansUtil.validateXmlDocument(doc);
+
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                ParticipantGroupsDocument doc = (ParticipantGroupsDocument)xmlObject;
-                XmlBeansUtil.validateXmlDocument(doc);
-
-                scope.ensureTransaction();
-
                 Map<String, ParticipantCategoryImpl> existingGroups = new HashMap<>();
                 for (ParticipantCategoryImpl group : ParticipantGroupManager.getInstance().getParticipantCategories(ctx.getContainer(), ctx.getUser()))
                     existingGroups.put(group.getLabel(), group);
@@ -142,11 +139,7 @@ public class ParticipantGroupImporter implements InternalStudyImporter
                         }
                     }
                 }
-                scope.commitTransaction();
-            }
-            finally
-            {
-                scope.closeConnection();
+                transaction.commit();
             }
         }
     }

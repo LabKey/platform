@@ -401,76 +401,69 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     protected Pair<String, String> getParticipantPicker(String inputName, String selectedParticipantId)
     {
-        try
+        Study study = StudyManager.getInstance().getStudy(getContainer());
+        StringBuilder builder = new StringBuilder();
+
+        String allString = getAllString();
+
+        Participant[] participants = StudyManager.getInstance().getParticipants(study);
+        if (participants.length <= 200)
         {
-            Study study = StudyManager.getInstance().getStudy(getContainer());
-            StringBuilder builder = new StringBuilder();
-
-            String allString = getAllString();
-
-            Participant[] participants = StudyManager.getInstance().getParticipants(study);
-            if (participants.length <= 200)
+            builder.append("<select name=\"").append(inputName).append("\">\n");
+            builder.append("<option value=\"").append(allString).append("\"");
+            if (isAllSubjectsOption(selectedParticipantId))
+                builder.append(" SELECTED");
+            builder.append(">").append(allString).append("</option>\n");
+            boolean first = true;
+            for (Participant participant : participants)
             {
-                builder.append("<select name=\"").append(inputName).append("\">\n");
-                builder.append("<option value=\"").append(allString).append("\"");
-                if (isAllSubjectsOption(selectedParticipantId))
+                builder.append("<option value=\"").append(PageFlowUtil.filter(participant.getParticipantId())).append("\"");
+                // select the previously selected option or the first non-all option.  We don't want to select 'all participants'
+                // by default, since these reports are extremely expensive to generate.
+                if ((selectedParticipantId != null && selectedParticipantId.equals(participant.getParticipantId())) ||
+                        (selectedParticipantId == null && first))
                     builder.append(" SELECTED");
-                builder.append(">").append(allString).append("</option>\n");
-                boolean first = true;
-                for (Participant participant : participants)
-                {
-                    builder.append("<option value=\"").append(PageFlowUtil.filter(participant.getParticipantId())).append("\"");
-                    // select the previously selected option or the first non-all option.  We don't want to select 'all participants'
-                    // by default, since these reports are extremely expensive to generate.
-                    if ((selectedParticipantId != null && selectedParticipantId.equals(participant.getParticipantId())) ||
-                            (selectedParticipantId == null && first))
-                        builder.append(" SELECTED");
-                    builder.append(">");
-                    builder.append(PageFlowUtil.filter(DemoMode.id(participant.getParticipantId(), getContainer(), getUser())));
-                    builder.append("</option>\n");
-                    first = false;
-                }
-                builder.append("</select>");
+                builder.append(">");
+                builder.append(PageFlowUtil.filter(DemoMode.id(participant.getParticipantId(), getContainer(), getUser())));
+                builder.append("</option>\n");
+                first = false;
             }
-            else
-            {
-                String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
-                String completionUrl = new ActionURL(SpecimenController.CompleteSpecimenAction.class, getContainer()).addParameter("type", "ParticipantId").getLocalURIString();
-                String initValue = selectedParticipantId != null ? selectedParticipantId : participants[0].getParticipantId();
-
-                StringBuilder sb = new StringBuilder();
-
-                sb.append("<script type=\"text/javascript\">");
-                sb.append("LABKEY.requiresExt4Sandbox(true);\n");
-                sb.append("LABKEY.requiresScript('completion.js');\n");
-
-                sb.append("Ext4.onReady(function(){\n" +
-                    "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
-                    "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
-                    "            completionUrl   : " + PageFlowUtil.jsString(completionUrl) + ",\n" +
-                    "            sharedStore     : true,\n" +
-                    "            tagConfig   : {\n" +
-                    "                tag     : 'input',\n" +
-                    "                type    : 'text',\n" +
-                    "                name    : " + PageFlowUtil.jsString(inputName) + ",\n" +
-                    "                size    : 25,\n" +
-                    "                value   : " + PageFlowUtil.jsString(initValue) + ",\n" +
-                    "                autocomplete : 'off'\n" +
-                    "            }\n" +
-                    "        });\n" +
-                    "      });\n");
-                sb.append("</script>\n");
-                sb.append("<div id='").append(renderId).append("'></div>");
-
-                builder.append(sb.toString());
-            }
-
-            return new Pair<>(StudyService.get().getSubjectColumnName(getContainer()), builder.toString());
+            builder.append("</select>");
         }
-        catch (SQLException e)
+        else
         {
-            throw new RuntimeSQLException(e);
+            String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+            String completionUrl = new ActionURL(SpecimenController.CompleteSpecimenAction.class, getContainer()).addParameter("type", "ParticipantId").getLocalURIString();
+            String initValue = selectedParticipantId != null ? selectedParticipantId : participants[0].getParticipantId();
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.append("<script type=\"text/javascript\">");
+            sb.append("LABKEY.requiresExt4Sandbox(true);\n");
+            sb.append("LABKEY.requiresScript('completion.js');\n");
+
+            sb.append("Ext4.onReady(function(){\n" +
+                "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
+                "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
+                "            completionUrl   : " + PageFlowUtil.jsString(completionUrl) + ",\n" +
+                "            sharedStore     : true,\n" +
+                "            tagConfig   : {\n" +
+                "                tag     : 'input',\n" +
+                "                type    : 'text',\n" +
+                "                name    : " + PageFlowUtil.jsString(inputName) + ",\n" +
+                "                size    : 25,\n" +
+                "                value   : " + PageFlowUtil.jsString(initValue) + ",\n" +
+                "                autocomplete : 'off'\n" +
+                "            }\n" +
+                "        });\n" +
+                "      });\n");
+            sb.append("</script>\n");
+            sb.append("<div id='").append(renderId).append("'></div>");
+
+            builder.append(sb.toString());
         }
+
+        return new Pair<>(StudyService.get().getSubjectColumnName(getContainer()), builder.toString());
     }
     
     protected abstract List<? extends SpecimenVisitReport> createReports();

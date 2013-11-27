@@ -194,24 +194,19 @@ public class VisitMapImporter
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
             saveDataSets(user, study, records);
             saveVisits(user, study, records);
             saveVisitMap(user, study, records);
             saveImportAliases(user, study, aliases);
-            scope.commitTransaction();
+            transaction.commit();
             return true;
         }
         catch (StudyManager.VisitCreationException e)
         {
             errors.add(e.getMessage());
             return false;
-        }
-        finally
-        {
-            scope.closeConnection();
         }
     }
 

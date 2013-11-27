@@ -88,31 +88,24 @@ public class CohortManager
     //
     // used when importing a folder with automatic cohorts with an exported cohort.xml file.
     //
-    public void setAutomaticCohortAssignment(StudyImpl study, User user, Integer participantCohortDataSetId, String participantCohortProperty, boolean advancedCohorts, Map<String, Integer> p2c) throws SQLException
+    public void setAutomaticCohortAssignment(StudyImpl study, User user, Integer participantCohortDataSetId, String participantCohortProperty, boolean advancedCohorts, Map<String, Integer> p2c)
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
-
             study = study.createMutable();
             setCohortProperties(study, user, false, advancedCohorts, participantCohortDataSetId, participantCohortProperty );
             setCohortAssignment(study, user, p2c);
 
-            scope.commitTransaction();
-        }
-        finally
-        {
-            scope.closeConnection();
+            transaction.commit();
         }
     }
+
     public void setManualCohortAssignment(StudyImpl study, User user, Map<String, Integer> p2c)
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
-
             if (!study.isManualCohortAssignment())
             {
                 study = study.createMutable();
@@ -121,19 +114,11 @@ public class CohortManager
 
             setCohortAssignment(study, user, p2c);
 
-            scope.commitTransaction();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            scope.closeConnection();
+            transaction.commit();
         }
     }
 
-    private void setCohortProperties(StudyImpl study, User user, boolean isManual, boolean isAdvanced, Integer participantCohortDataSetId, String participantCohortProperty)  throws SQLException
+    private void setCohortProperties(StudyImpl study, User user, boolean isManual, boolean isAdvanced, Integer participantCohortDataSetId, String participantCohortProperty)
     {
         assert(study.isMutable());
 
@@ -152,7 +137,7 @@ public class CohortManager
     //
     // internal helper to set the cohort assignment independent of cohort type.
     //
-    private void setCohortAssignment(StudyImpl study, User user, Map<String, Integer> p2c) throws SQLException
+    private void setCohortAssignment(StudyImpl study, User user, Map<String, Integer> p2c)
     {
         Participant[] participants = StudyManager.getInstance().getParticipants(study);
         clearParticipantCohorts(study);
@@ -306,18 +291,18 @@ public class CohortManager
         return script.toString();
     }
 
-    public void clearParticipantCohorts(Study study) throws SQLException
+    public void clearParticipantCohorts(Study study)
     {
         DbSchema ss = StudySchema.getInstance().getSchema();
 
         // null out cohort for all participants in this container:
-        Table.execute(ss, "UPDATE " + StudySchema.getInstance().getTableInfoParticipant() +
+        new SqlExecutor(ss).execute("UPDATE " + StudySchema.getInstance().getTableInfoParticipant() +
                 (ss.getSqlDialect().isSqlServer() ? " WITH (UPDLOCK)" : "") +
                 "\nSET InitialCohortId = NULL, CurrentCohortId = NULL\nWHERE Container = ?", study.getContainer().getId());
 
         // null out cohort for all participant/visits in this container (required for advanced cohort support, where participants
         // can change cohorts over time):
-        Table.execute(ss, "UPDATE " + StudySchema.getInstance().getTableInfoParticipantVisit() +
+        new SqlExecutor(ss).execute("UPDATE " + StudySchema.getInstance().getTableInfoParticipantVisit() +
                 (ss.getSqlDialect().isSqlServer() ? " WITH (UPDLOCK)" : "") +
                 "\nSET CohortId = NULL\nWHERE Container = ?", study.getContainer().getId());
 
@@ -334,10 +319,8 @@ public class CohortManager
             return;
         }
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
-
             DataSetDefinition dataset = null;
             if (study.getParticipantCohortDataSetId() != null)
                 dataset = study.getDataSet(study.getParticipantCohortDataSetId().intValue());
@@ -374,17 +357,12 @@ public class CohortManager
 
                     updateCohorts(user, study, tableParticipant, dataset, cohortLabelCol);
 
-                    scope.commitTransaction();
-
                     // aggressively uncache study data (including cached participants) whenever
                     // cohorts may have changed:
                     StudyManager.getInstance().clearCaches(study.getContainer(), false);
                 }
             }
-        }
-        finally
-        {
-            scope.closeConnection();
+            transaction.commit();
         }
     }
 

@@ -18,22 +18,37 @@ package org.labkey.study.controllers;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryUpdateForm;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.permissions.*;
-import org.labkey.api.study.*;
-import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.study.Cohort;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
-import org.labkey.study.model.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.InsertView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UpdateView;
+import org.labkey.api.view.VBox;
+import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.CohortManager;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.CohortQueryView;
 import org.labkey.study.query.CohortTable;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.StudySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -352,8 +367,7 @@ public class CohortController extends BaseStudyController
             boolean newEnrolled = (Boolean) dataMap.remove("enrolled"); // same with enrolled
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
-            scope.ensureTransaction();
-            try
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
                 if (isInsert())
                 {
@@ -404,7 +418,7 @@ public class CohortController extends BaseStudyController
                 }
                 cohort.savePropertyBag(dataMap);
 
-                scope.commitTransaction();
+                transaction.commit();
                 return true;
             }
             catch (ValidationException e)
@@ -417,10 +431,6 @@ public class CohortController extends BaseStudyController
             {
                 errors.reject("insertCohort", e.getMessage());
                 return false;
-            }
-            finally
-            {
-                scope.closeConnection();
             }
         }
 

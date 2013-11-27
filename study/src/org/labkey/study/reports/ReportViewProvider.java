@@ -320,14 +320,11 @@ public class ReportViewProvider implements DataViewProvider
         {
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-            try
+            Report report = ReportService.get().getReportByEntityId(context.getContainer(), id);
+            if (report != null)
             {
-                Report report = ReportService.get().getReportByEntityId(context.getContainer(), id);
-
-                if (report != null)
+                try (DbScope.Transaction transaction = scope.ensureTransaction())
                 {
-                    scope.ensureTransaction();
-
                     ViewCategory category = null;
 
                     // save the category information then the dataset information
@@ -408,12 +405,8 @@ public class ReportViewProvider implements DataViewProvider
                         }
                     }
 
-                    scope.commitTransaction();
+                    transaction.commit();
                 }
-            }
-            finally
-            {
-                scope.closeConnection();
             }
         }
 

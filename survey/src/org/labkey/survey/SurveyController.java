@@ -893,9 +893,8 @@ public class SurveyController extends SpringActionController implements SurveyUr
                         if (table != null && pk != null)
                         {
                             DbSchema dbschema = table.getSchema();
-                            try
+                            try (DbScope.Transaction transaction = dbschema.getScope().ensureTransaction())
                             {
-                                dbschema.getScope().ensureTransaction();
                                 ColumnInfo col = table.getColumn(FieldKey.fromParts(form.getQuestionName()));
 
                                 // if the column is an attachment type, it only allows a single file per question (this is the basic case)
@@ -946,11 +945,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                                 SurveyQuestion question = new SurveyQuestion(getContainer().getId(), form.getEntityId());
                                 AttachmentService.get().addAttachments(question, files, getUser());
 */
-                                dbschema.getScope().commitTransaction();
-                            }
-                            finally
-                            {
-                                dbschema.getScope().closeConnection();
+                                transaction.commit();
                             }
                        }
                     }
@@ -1018,19 +1013,14 @@ public class SurveyController extends SpringActionController implements SurveyUr
 
             DbScope scope = SurveySchema.getInstance().getSchema().getScope();
 
-            try {
-                scope.ensureTransaction();
-
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
+            {
                 for (String surveyDesign : DataRegionSelection.getSelected(getViewContext(), true))
                 {
                     int rowId = NumberUtils.toInt(surveyDesign);
                     SurveyManager.get().deleteSurveyDesign(getContainer(), getUser(), rowId, true);
                 }
-                scope.commitTransaction();
-            }
-            finally
-            {
-                scope.closeConnection();
+                transaction.commit();
             }
 
             return true;

@@ -25,7 +25,7 @@ import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -39,7 +39,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.ServletException;
 import java.util.Map;
 
 /**
@@ -113,8 +112,7 @@ public class StudyPropertiesController extends BaseStudyController
             String newLabel = (String)dataMap.remove("label"); // remove and handle label, as it isn't an ontology object
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
-            scope.ensureTransaction();
-            try
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
                 if (newLabel != null && !study.getLabel().equals(newLabel))
                 {
@@ -125,7 +123,7 @@ public class StudyPropertiesController extends BaseStudyController
 
                 study.savePropertyBag(dataMap);
 
-                scope.commitTransaction();
+                transaction.commit();
                 return true;
             }
             catch (ValidationException e)
@@ -133,10 +131,6 @@ public class StudyPropertiesController extends BaseStudyController
                 for (ValidationError error : e.getErrors())
                     errors.reject(SpringActionController.ERROR_MSG, PageFlowUtil.filter(error.getMessage()));
                 return false;
-            }
-            finally
-            {
-                scope.closeConnection();
             }
         }
 

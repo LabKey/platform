@@ -1076,9 +1076,8 @@ public class ParticipantGroupController extends BaseStudyController
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-            try {
-                scope.ensureTransaction();
-
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
+            {
                 for (String survey : DataRegionSelection.getSelected(getViewContext(), true))
                 {
                     int rowId = NumberUtils.toInt(survey);
@@ -1087,11 +1086,7 @@ public class ParticipantGroupController extends BaseStudyController
                     if (group != null)
                         ParticipantGroupManager.getInstance().deleteParticipantGroup(getContainer(), getUser(), group);
                 }
-                scope.commitTransaction();
-            }
-            finally
-            {
-                scope.closeConnection();
+                transaction.commit();
             }
 
             return true;

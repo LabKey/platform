@@ -16,6 +16,7 @@
 package org.labkey.experiment.pipeline;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.ProtocolApplicationParameter;
@@ -203,9 +204,8 @@ public class ExpGeneratorHelper
                 }
             }
 
-            synchronized (ExperimentService.get().getImportLock())
+            try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getImportLock()))
             {
-                ExperimentService.get().getSchema().getScope().ensureTransaction();
                 // Build up the sequence of steps for this pipeline definition, which gets turned into a protocol
                 for (TaskId taskId : job.getTaskPipeline().getTaskProgression())
                 {
@@ -240,17 +240,13 @@ public class ExpGeneratorHelper
                 if (null != xarWriter)
                     xarWriter.writeToDisk(run);
 
-                ExperimentService.get().getSchema().getScope().commitTransaction();
+                transaction.commit();
             }
             ExperimentRunGraph.clearCache(run.getContainer());
         }
         catch (XarFormatException e)
         {
             throw new PipelineJobException(e);
-        }
-        finally
-        {
-            ExperimentService.get().closeTransaction();
         }
 
         // Consider these actions complete. There may be additional runs created later in this job, and they

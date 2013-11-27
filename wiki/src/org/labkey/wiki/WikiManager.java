@@ -153,11 +153,9 @@ public class WikiManager implements WikiService
     {
         DbScope scope = comm.getSchema().getScope();
 
-        try
+        //transact insert of wiki page, new version, and any attachments
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
-
-            //transact insert of wiki page, new version, and any attachments
             wikiInsert.beforeInsert(user, c.getId());
             wikiInsert.setPageVersionId(null);
             LOG.debug("Table.insert() for wiki " + wikiInsert.getName());
@@ -181,13 +179,10 @@ public class WikiManager implements WikiService
 
             getAttachmentService().addAttachments(wikiInsert, files, user);
 
-            scope.commitTransaction();
+            transaction.commit();
         }
         finally
         {
-            if (scope != null)
-                scope.closeConnection();
-
             WikiCache.uncache(c, wikiInsert, true);
 
             LOG.debug("indexWiki() for " + wikiInsert.getName());
@@ -207,11 +202,9 @@ public class WikiManager implements WikiService
         boolean uncacheAllContent = true;
         Wiki wikiOld = null;
 
-        try
+        //transact wiki update and version insert
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            //transact wiki update and version insert
-            scope.ensureTransaction();
-
             //if name, title, parent, & sort order are all still the same,
             //we don't need to uncache all wikis, only the wiki being updated
             //NOTE: getWikiByEntityId does not use the cache, so we'll get a fresh copy from the database
@@ -245,13 +238,10 @@ public class WikiManager implements WikiService
                 Table.update(user, comm.getTableInfoPages(), wikiNew, wikiNew.getEntityId());
             }
 
-            scope.commitTransaction();
+            transaction.commit();
         }
         finally
         {
-            if (scope != null)
-                scope.closeConnection();
-
             // TODO: unindexWiki()... especially in rename case?
 
             if (null != wikiNew)
@@ -281,11 +271,9 @@ public class WikiManager implements WikiService
 
         DbScope scope = comm.getSchema().getScope();
 
-        try
+        //transact deletion of wiki, version, attachments, and discussions
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            //transact deletion of wiki, version, attachments, and discussions
-            scope.ensureTransaction();
-
             wiki.setPageVersionId(null);
             Table.update(user, comm.getTableInfoPages(), wiki, wiki.getEntityId());
             Table.delete(comm.getTableInfoPageVersions(),
@@ -298,13 +286,10 @@ public class WikiManager implements WikiService
             if (null != getDiscussionService())
                 getDiscussionService().deleteDiscussions(c, user, wiki.getEntityId());
 
-            scope.commitTransaction();
+            transaction.commit();
         }
         finally
         {
-            if (scope != null)
-                scope.closeConnection();
-
             unindexWiki(wiki.getEntityId());
         }
 

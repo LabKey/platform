@@ -1242,20 +1242,15 @@ public class AssayController extends SpringActionController
 
             DbScope scope = sti.getSchema().getScope();
             int rowsAffected  = 0 ;
-            try
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                scope.ensureTransaction();
                 for (Integer id : form.getRowList())
                 {
                     // assuming that column in storage table has same name
                     Table.update(getUser(), sti, Collections.singletonMap(flagCol.getColumnName(),comment), id);
                     rowsAffected++;
                 }
-                scope.commitTransaction();
-            }
-            finally
-            {
-                scope.closeConnection();
+                transaction.commit();
             }
 
             // the flag is editable even if the assay is not

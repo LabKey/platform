@@ -61,7 +61,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.SequenceNumImportHelper;
 import org.labkey.study.model.StudyManager;
 
@@ -476,10 +475,8 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
         DbScope scope = target.getSchema().getScope();
         DataIteratorContext context = new DataIteratorContext();
 
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.beginTransaction();
-
             DataLoaderFactory df = DataLoader.get().findFactory(source, null);
             if (null == df)
                 return;
@@ -492,12 +489,11 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
             int count = target.getUpdateService().importRows(job.getUser(), study.getContainer(), sampleminded, context.getErrors(), empty);
             if (!context.getErrors().hasErrors())
             {
-                scope.commitTransaction();
-                return;
+                transaction.commit();
             }
+            else
             {
                 // TODO write errors to log
-                return;
             }
         }
         catch (SQLException x)
@@ -517,7 +513,6 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
             // write errors to log
             for (ValidationException error : context.getErrors().getRowErrors())
                 job.error(error.getMessage());
-            scope.closeConnection();
         }
     }
 

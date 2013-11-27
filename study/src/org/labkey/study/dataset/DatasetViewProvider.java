@@ -186,9 +186,8 @@ public class DatasetViewProvider implements DataViewProvider
         {
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-            try {
-                scope.ensureTransaction();
-
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
+            {
                 StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
                 if (study != null)
                 {
@@ -247,14 +246,9 @@ public class DatasetViewProvider implements DataViewProvider
                             ReportPropsManager.get().setPropertyValue(id, context.getContainer(), Property.status.name(), props.get(Property.status.name()));
                         if (props.containsKey(Property.refreshDate.name()))
                             ReportPropsManager.get().setPropertyValue(id, context.getContainer(), Property.refreshDate.name(), props.get(Property.refreshDate.name()));
-
-                        scope.commitTransaction();
                     }
                 }
-            }
-            finally
-            {
-                scope.closeConnection();
+                transaction.commit();
             }
         }
 

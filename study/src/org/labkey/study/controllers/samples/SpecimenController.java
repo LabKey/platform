@@ -1748,10 +1748,8 @@ public class SpecimenController extends BaseStudyController
             _sampleRequest.setStatusId(SampleManager.getInstance().getInitialRequestStatus(getContainer(), getUser(), false).getRowId());
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
-            try
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                scope.ensureTransaction();
-
                 if (!StudyManager.getInstance().isSiteValidRequestingLocation(getContainer(), _sampleRequest.getDestinationSiteId()))
                 {
                     errors.reject(ERROR_MSG, "The requesting location is not valid.");
@@ -1805,11 +1803,7 @@ public class SpecimenController extends BaseStudyController
                         return false;
                     }
                 }
-                scope.commitTransaction();
-            }
-            finally
-            {
-                scope.closeConnection();
+                transaction.commit();
             }
 
             if (!SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))

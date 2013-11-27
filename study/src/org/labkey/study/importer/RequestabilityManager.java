@@ -718,10 +718,8 @@ public class RequestabilityManager
     {
         TableInfo ruleTableInfo = StudySchema.getInstance().getTableInfoSampleAvailabilityRule();
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
-
             Table.delete(ruleTableInfo, new SimpleFilter(FieldKey.fromString("Container"), container.getId()));
 
             int sortOrder = 0;
@@ -732,11 +730,7 @@ public class RequestabilityManager
                 Table.insert(user, ruleTableInfo, bean);
             }
 
-            scope.commitTransaction();
-        }
-        finally
-        {
-            scope.closeConnection();
+            transaction.commit();
         }
     }
 

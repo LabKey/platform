@@ -29,6 +29,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -279,16 +280,15 @@ public class StudyDesignManager
         int studyDesignId = version.getStudyId();
         StudyDesignInfo designInfo;
 
-        try
+        // Check if there is a name conflict
+        StudyDesignInfo existingStudyDesign = getStudyDesign(container, version.getLabel(), true);
+        if (existingStudyDesign != null && (0 == studyDesignId || existingStudyDesign.getStudyId() != studyDesignId))
         {
-            // Check if there is a name conflict
-            StudyDesignInfo existingStudyDesign = getStudyDesign(container, version.getLabel(), true);
-            if (existingStudyDesign != null && (0 == studyDesignId || existingStudyDesign.getStudyId() != studyDesignId))
-            {
-                throw new SaveException("The name '" + version.getLabel() + "' is already in use");
-            }
+            throw new SaveException("The name '" + version.getLabel() + "' is already in use");
+        }
 
-            getSchema().getScope().ensureTransaction();
+        try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
+        {
             if (0 == studyDesignId)
             {
                 designInfo = new StudyDesignInfo();
@@ -308,11 +308,7 @@ public class StudyDesignManager
             designInfo.setPublicRevision(version.getRevision());
             designInfo.setLabel(version.getLabel());
             Table.update(user, getStudyDesignTable(), designInfo, designInfo.getStudyId());
-            getSchema().getScope().commitTransaction();
-        }
-        finally
-        {
-            getSchema().getScope().closeConnection();
+            transaction.commit();
         }
 
         return version;

@@ -176,9 +176,8 @@ public class SurveyManager
     {
         DbScope scope = SurveySchema.getInstance().getSchema().getScope();
 
-        try {
-            scope.ensureTransaction();
-
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
             SurveyDesign ret;
             if (survey.isNew())
             {
@@ -188,16 +187,12 @@ public class SurveyManager
             else
                 ret = Table.update(user, SurveySchema.getInstance().getSurveyDesignsTable(), survey, survey.getRowId());
 
-            scope.commitTransaction();
+            transaction.commit();
             return ret;
         }
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            scope.closeConnection();
         }
     }
 
@@ -363,9 +358,8 @@ public class SurveyManager
         DbScope scope = SurveySchema.getInstance().getSchema().getScope();
         List<Throwable> errors;
 
-        try {
-            scope.ensureTransaction();
-
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
             Survey survey = getSurvey(c, user, surveyId);
 
             if (survey != null)
@@ -385,15 +379,11 @@ public class SurveyManager
                         throw new RuntimeException(first);
                 }
             }
-            scope.commitTransaction();
+            transaction.commit();
         }
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            scope.closeConnection();
         }
     }
 

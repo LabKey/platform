@@ -216,9 +216,8 @@ public class StudyUpgradeCode implements UpgradeCode
         if (!context.isNewInstall())
         {
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
-            try
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                scope.ensureTransaction();
                 for (Report report : ReportService.get().getReports(new SimpleFilter()))
                 {
                     // for existing participant reports, upgrade the descriptor type to enable
@@ -248,15 +247,11 @@ public class StudyUpgradeCode implements UpgradeCode
                         }
                     }
                 }
-                scope.commitTransaction();
+                transaction.commit();
             }
             catch (Exception e)
             {
                 _log.error("An error occurred upgrading participant reports: ", e);
-            }
-            finally
-            {
-                scope.closeConnection();
             }
         }
     }
@@ -310,10 +305,8 @@ public class StudyUpgradeCode implements UpgradeCode
         {
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-            try
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                scope.ensureTransaction();
-
                 for (Report report : ReportService.get().getReports(new SimpleFilter()))
                 {
                     // Find external reports and split single "commandLine" parameter into "program" and "arguments", see #18077
@@ -357,15 +350,11 @@ public class StudyUpgradeCode implements UpgradeCode
                         ReportService.get().saveReport(rptContext, descriptor.getReportKey(), externalReport);
                     }
                 }
-                scope.commitTransaction();
+                transaction.commit();
             }
             catch (Exception e)
             {
                 _log.error("An error occurred upgrading participant reports: ", e);
-            }
-            finally
-            {
-                scope.closeConnection();
             }
         }
     }

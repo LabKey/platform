@@ -69,9 +69,8 @@ public class ViewCategoryImporter implements InternalStudyImporter
         {
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-            try
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                scope.ensureTransaction();
                 CategoriesDocument doc = (CategoriesDocument)xmlObject;
                 XmlBeansUtil.validateXmlDocument(doc);
 
@@ -93,11 +92,7 @@ public class ViewCategoryImporter implements InternalStudyImporter
                         ViewCategoryManager.getInstance().saveCategory(ctx.getContainer(), ctx.getUser(), category);
                     }
                 }
-                scope.commitTransaction();
-            }
-            finally
-            {
-                scope.closeConnection();
+                transaction.commit();
             }
         }
     }

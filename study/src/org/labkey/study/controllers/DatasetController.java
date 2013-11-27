@@ -512,16 +512,11 @@ public class DatasetController extends BaseStudyController
                     continue; // It's already been deleted; ignore it. User likely double-clicked.
 
                 DbScope scope = StudySchema.getInstance().getSchema().getScope();
-                try
+                try (DbScope.Transaction transaction = scope.ensureTransaction())
                 {
-                    scope.ensureTransaction();
                     StudyManager.getInstance().deleteDataset(study, getUser(), def, false);
-                    scope.commitTransaction();
+                    transaction.commit();
                     countDeleted++;
-                }
-                finally
-                {
-                    scope.closeConnection();
                 }
             }
 

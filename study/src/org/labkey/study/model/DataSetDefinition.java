@@ -825,20 +825,15 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     {
         TableInfo data = getStorageTableInfo();
         DbScope scope =  StudySchema.getInstance().getSchema().getScope();
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
             Table.delete(data, new SimpleFilter().addWhereClause("1=1", null));
             StudyManager.dataSetModified(this, user, true);
-            scope.commitTransaction();
+            transaction.commit();
         }
         catch (SQLException s)
         {
             throw new RuntimeSQLException(s);
-        }
-        finally
-        {
-            scope.closeConnection();
         }
     }
 
@@ -2257,10 +2252,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         DbScope scope = ExperimentService.get().getSchema().getScope();
 
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
-
             long start = System.currentTimeMillis();
             {
                 Pump p = new Pump(insert.getDataIterator(context), context);
@@ -2273,7 +2266,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             _log.info("imported " + getName() + " : " + DateUtil.formatDuration(Math.max(0,end-start)));
             StudyManager.dataSetModified(this, user, true);
-            scope.commitTransaction();
+            transaction.commit();
             if (logger != null) logger.debug("commit complete");
 
             return lsids;
@@ -2305,10 +2298,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 return Collections.emptyList();
             }
             throw e;
-        }
-        finally
-        {
-            scope.closeConnection();
         }
     }
 

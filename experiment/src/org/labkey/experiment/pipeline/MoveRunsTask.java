@@ -70,10 +70,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
                 ExpRunImpl experimentRun = ExperimentServiceImpl.get().getExpRun(runId);
                 if (experimentRun != null)
                 {
-                    synchronized (ExperimentService.get().getImportLock())
-                    {
-                        moveRun(job, experimentRun);
-                    }
+                    moveRun(job, experimentRun);
                 }
                 else
                 {
@@ -101,7 +98,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         exporter.dumpXML(bOut);
 
-        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
+        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getImportLock()))
         {
             Map<String,Integer> dataFiles = new HashMap<>();
 

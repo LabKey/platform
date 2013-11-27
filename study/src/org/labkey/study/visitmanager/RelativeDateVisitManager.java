@@ -244,7 +244,7 @@ public class RelativeDateVisitManager extends VisitManager
             _updateVisitRowId();
     }
 
-    public void recomputeDates(Date oldStartDate, User user) throws SQLException
+    public void recomputeDates(Date oldStartDate, User user)
     {
         if (null != oldStartDate)
         {

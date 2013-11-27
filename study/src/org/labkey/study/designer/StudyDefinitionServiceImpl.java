@@ -223,48 +223,41 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         if (studyDefinition.getAssaySchedule().getTimepoints().size() == 0)
             return studyDefinition;
 
-        try
+        //Make sure we're a date type study
+        study = study.createMutable();
+        if (!study.getDataSets().isEmpty()&& study.getTimepointType() != TimepointType.DATE)
         {
-            //Make sure we're a date type study
-            study = study.createMutable();
-            if (!study.getDataSets().isEmpty()&& study.getTimepointType() != TimepointType.DATE)
-            {
-                throw new IllegalStateException("Cannot change timepoint type after datasets already exist");
-            }
-            study.setTimepointType(TimepointType.DATE);
-            StudyManager.getInstance().updateStudy(getUser(), study);
-
-            List<GWTTimepoint> timepoints = studyDefinition.getAssaySchedule().getTimepoints();
-            Collections.sort(timepoints);
-            if (timepoints.get(0).getDays() > 0)
-                timepoints.add(0, new GWTTimepoint("Study Start", 0, GWTTimepoint.DAYS));
-
-            //We try to create timepoints that make sense. A week is day-3 to day +3 unless that would overlap
-            double previousDay = timepoints.get(0).getDays() - 1.0;
-            for (int timepointIndex = 0; timepointIndex < timepoints.size(); timepointIndex++)
-            {
-                GWTTimepoint timepoint = timepoints.get(timepointIndex);
-                double startDay = timepoints.get(timepointIndex).getDays();
-                double endDay = startDay;
-                double nextDay = timepointIndex + 1 == timepoints.size() ? Double.MAX_VALUE : timepoints.get(timepointIndex + 1).getDays();
-                if (timepoint.getUnit().equals(GWTTimepoint.WEEKS))
-                {
-                    startDay = Math.max(previousDay + 1, startDay - 3);
-                    endDay = Math.min(nextDay - 1, endDay + 3);
-                }
-                else if (timepoint.getUnit().equals(GWTTimepoint.MONTHS))
-                {
-                    startDay = Math.max(previousDay + 1, startDay - 15);
-                    endDay = Math.min(nextDay - 1, endDay + 15);
-                }
-                VisitImpl visit = new VisitImpl(getContainer(), startDay, endDay, timepoint.toString(), Visit.Type.REQUIRED_BY_TERMINATION);
-                StudyManager.getInstance().createVisit(study, getUser(), visit);
-                previousDay = endDay;
-            }
+            throw new IllegalStateException("Cannot change timepoint type after datasets already exist");
         }
-        catch(SQLException e)
+        study.setTimepointType(TimepointType.DATE);
+        StudyManager.getInstance().updateStudy(getUser(), study);
+
+        List<GWTTimepoint> timepoints = studyDefinition.getAssaySchedule().getTimepoints();
+        Collections.sort(timepoints);
+        if (timepoints.get(0).getDays() > 0)
+            timepoints.add(0, new GWTTimepoint("Study Start", 0, GWTTimepoint.DAYS));
+
+        //We try to create timepoints that make sense. A week is day-3 to day +3 unless that would overlap
+        double previousDay = timepoints.get(0).getDays() - 1.0;
+        for (int timepointIndex = 0; timepointIndex < timepoints.size(); timepointIndex++)
         {
-            throw UnexpectedException.wrap(e);
+            GWTTimepoint timepoint = timepoints.get(timepointIndex);
+            double startDay = timepoints.get(timepointIndex).getDays();
+            double endDay = startDay;
+            double nextDay = timepointIndex + 1 == timepoints.size() ? Double.MAX_VALUE : timepoints.get(timepointIndex + 1).getDays();
+            if (timepoint.getUnit().equals(GWTTimepoint.WEEKS))
+            {
+                startDay = Math.max(previousDay + 1, startDay - 3);
+                endDay = Math.min(nextDay - 1, endDay + 3);
+            }
+            else if (timepoint.getUnit().equals(GWTTimepoint.MONTHS))
+            {
+                startDay = Math.max(previousDay + 1, startDay - 15);
+                endDay = Math.min(nextDay - 1, endDay + 15);
+            }
+            VisitImpl visit = new VisitImpl(getContainer(), startDay, endDay, timepoint.toString(), Visit.Type.REQUIRED_BY_TERMINATION);
+            StudyManager.getInstance().createVisit(study, getUser(), visit);
+            previousDay = endDay;
         }
 
         return  studyDefinition;

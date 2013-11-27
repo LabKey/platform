@@ -741,20 +741,15 @@ public class AssayPublishManager implements AssayPublishService.Service
 
             if (!useQueryUpdateService)
             {
-                try
+                try (DbScope.Transaction transaction = scope.ensureTransaction())
                 {
-                    scope.ensureTransaction();
                     Integer defaultQCStateId = study.getDefaultDirectEntryQCState();
                     QCState defaultQCState = null;
                     if (defaultQCStateId != null)
                         defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
                     lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, true, defaultQCState, null);
                     if (!errors.hasErrors())
-                        scope.commitTransaction();
-                }
-                finally
-                {
-                    scope.closeConnection();
+                        transaction.commit();
                 }
             }
             else

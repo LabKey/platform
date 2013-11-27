@@ -300,10 +300,6 @@ public class StudyPermissionExporter
         {
             throw new IllegalArgumentException("Unable to read XML file: " + e.getMessage(), e);
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
         finally
         {
             if (is != null)

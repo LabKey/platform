@@ -322,46 +322,39 @@ public class StudyManager
     @Nullable
     public synchronized StudyImpl getStudy(Container c)
     {
-        try
+        StudyImpl study;
+        boolean retry = true;
+
+        while (true)
         {
-            StudyImpl study;
-            boolean retry = true;
+            List<StudyImpl> studies = _studyHelper.get(c);
+            if (studies == null || studies.size() == 0)
+                return null;
+            else if (studies.size() > 1)
+                throw new IllegalStateException("Only one study is allowed per container");
+            else
+                study = studies.get(0);
 
-            while (true)
-            {
-                List<StudyImpl> studies = _studyHelper.get(c);
-                if (studies == null || studies.size() == 0)
-                    return null;
-                else if (studies.size() > 1)
-                    throw new IllegalStateException("Only one study is allowed per container");
-                else
-                    study = studies.get(0);
+            // UNDONE: There is a subtle bug in QueryHelper caching, cached objects shouldn't hold onto Container objects
+            assert(study.getContainer().getId().equals(c.getId()));
+            if (study.getContainer() == c)
+                break;
 
-                // UNDONE: There is a subtle bug in QueryHelper caching, cached objects shouldn't hold onto Container objects
-                assert(study.getContainer().getId().equals(c.getId()));
-                if (study.getContainer() == c)
-                    break;
+            if (!retry) // we only get one retry
+                break;
 
-                if (!retry) // we only get one retry
-                    break;
-
-                _studyHelper.clearCache(study);
-                retry = false;
-            }
-
-            // upgrade checks
-            if (null == study.getEntityId() || c.getId().equals(study.getEntityId()))
-            {
-                study.setEntityId(GUID.makeGUID());
-                updateStudy(null, study);
-            }
-
-            return study;
+            _studyHelper.clearCache(study);
+            retry = false;
         }
-        catch (SQLException x)
+
+        // upgrade checks
+        if (null == study.getEntityId() || c.getId().equals(study.getEntityId()))
         {
-            throw new RuntimeSQLException(x);
+            study.setEntityId(GUID.makeGUID());
+            updateStudy(null, study);
         }
+
+        return study;
     }
 
     @NotNull
@@ -413,11 +406,18 @@ public class StudyManager
         return study;
     }
 
-    public void updateStudy(@Nullable User user, StudyImpl study) throws SQLException
+    public void updateStudy(@Nullable User user, StudyImpl study)
     {
         Study oldStudy = getStudy(study.getContainer());
         Date oldStartDate = oldStudy.getStartDate();
-        _studyHelper.update(user, study, new Object[] { study.getContainer() });
+        try
+        {
+            _studyHelper.update(user, study, new Object[] { study.getContainer() });
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
 
         if (oldStudy.getTimepointType() == TimepointType.DATE && !Objects.equals(study.getStartDate(), oldStartDate))
         {
@@ -1071,13 +1071,20 @@ public class StudyManager
         _cohortHelper.update(user, cohort);
     }
 
-    public void updateParticipant(User user, Participant participant) throws SQLException
+    public void updateParticipant(User user, Participant participant)
     {
-        Table.update(user,
-                SCHEMA.getTableInfoParticipant(),
-                participant,
-                new Object[] {participant.getContainer().getId(), participant.getParticipantId()}
-        );
+        try
+        {
+            Table.update(user,
+                    SCHEMA.getTableInfoParticipant(),
+                    participant,
+                    new Object[] {participant.getContainer().getId(), participant.getParticipantId()}
+            );
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
 
@@ -3187,7 +3194,7 @@ public class StudyManager
         DbCache.remove(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheName(container));
     }
 
-    public Participant[] getParticipants(Study study) throws SQLException
+    public Participant[] getParticipants(Study study)
     {
         Map<String, Participant> participantMap = getParticipantMap(study);
         Participant[] participants = new Participant[participantMap.size()];
