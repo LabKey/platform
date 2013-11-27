@@ -1146,7 +1146,7 @@ public class ListManager implements SearchService.DocumentProvider
             filter.addCondition(FieldKey.fromParts("container"), c.getEntityId());
             filter.addCondition(FieldKey.fromParts("domainid"), d.getTypeId());
 
-            return new TableSelector(OntologyManager.getTinfoDomainDescriptor(), Table.ALL_COLUMNS, filter, null).exists();
+            return new TableSelector(OntologyManager.getTinfoDomainDescriptor(), filter, null).exists();
         }
         return false;
     }

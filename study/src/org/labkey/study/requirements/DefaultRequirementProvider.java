@@ -89,16 +89,10 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
 
     public R[] getRequirements(Container container, String ownerEntityId)
     {
-        try
-        {
-            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-            filter.addCondition(getOwnerEntityIdColumnName(), ownerEntityId);
-            return Table.select(getRequirementTableInfo(), Table.ALL_COLUMNS, filter, getDefaultRequirementSort(), _requirementClass);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(getOwnerEntityIdColumnName(), ownerEntityId);
+
+        return new TableSelector(getRequirementTableInfo(), filter, getDefaultRequirementSort()).getArray(_requirementClass);
     }
 
     protected Sort getDefaultRequirementSort()
@@ -108,29 +102,15 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
 
     public R[] getRequirements(Container container)
     {
-        try
-        {
-            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-            return Table.select(getRequirementTableInfo(), Table.ALL_COLUMNS, filter, getDefaultRequirementSort(), _requirementClass);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        return new TableSelector(getRequirementTableInfo(), filter, getDefaultRequirementSort()).getArray(_requirementClass);
     }
 
     public A[] getActors(Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        try
-        {
-            return Table.select(getActorTableInfo(), Table.ALL_COLUMNS, filter,
-                    new Sort(getActorSortColumnName()), _actorClass);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+
+        return new TableSelector(getActorTableInfo(), filter, new Sort(getActorSortColumnName())).getArray(_actorClass);
     }
 
     public A getActor(Container c, Object primaryKey)

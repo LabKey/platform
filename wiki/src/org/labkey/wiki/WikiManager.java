@@ -38,6 +38,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -141,15 +142,9 @@ public class WikiManager implements WikiService
         if (null == c || c.getId().length() == 0 || null == entityId || entityId.length() == 0)
             return null;
 
-        Wiki[] wikis = Table.select(comm.getTableInfoPages(),
-                Table.ALL_COLUMNS,
+        return new TableSelector(comm.getTableInfoPages(),
                 SimpleFilter.createContainerFilter(c).addCondition("EntityId", entityId),
-                null, Wiki.class);
-
-        if (0 == wikis.length)
-            return null;
-        else
-            return wikis[0];
+                null).getObject(Wiki.class);
     }
 
 

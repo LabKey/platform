@@ -1657,6 +1657,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         return new SqlSelector(StudySchema.getInstance().getSchema(), sql, sampleRequest.getRowId(), sampleRequest.getContainer(), sampleRequest.getContainer()).getArrayList(String.class);
     }
 
+/*  TODO: Delete... unused
     public Map<Specimen, SpecimenComment> getSpecimensWithComments(Container container) throws SQLException
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
@@ -1693,6 +1694,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
         return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenSummary(), filter, null).getArray(Specimen.class);
     }
+*/
 
     public Map<String,List<Specimen>> getVialsForSampleHashes(Container container, Collection<String> hashes, boolean onlyAvailable)
     {
@@ -2594,11 +2596,13 @@ public class SampleManager implements ContainerManager.ContainerListener
             return Collections.emptyMap();
 
         Container container = vials.get(0).getContainer();
-        Map<Specimen, SpecimenComment> result = new HashMap<>();
+        final Map<Specimen, SpecimenComment> result = new HashMap<>();
         int offset = 0;
+
         while (offset < vials.size())
         {
-            Map<String, Specimen> idToVial = new HashMap<>();
+            final Map<String, Specimen> idToVial = new HashMap<>();
+
             for (int current = offset; current < offset + GET_COMMENT_BATCH_SIZE && current < vials.size(); current++)
             {
                 Specimen vial = vials.get(current);
@@ -2609,15 +2613,20 @@ public class SampleManager implements ContainerManager.ContainerListener
 
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
             filter.addInClause("GlobalUniqueId", idToVial.keySet());
-            SpecimenComment[]  comments = Table.select(StudySchema.getInstance().getTableInfoSpecimenComment(), Table.ALL_COLUMNS, filter, null, SpecimenComment.class);
 
-            for (SpecimenComment comment : comments)
+            new TableSelector(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null).forEach(new Selector.ForEachBlock<SpecimenComment>()
             {
-                Specimen vial = idToVial.get(comment.getGlobalUniqueId());
-                result.put(vial, comment);
-            }
+                @Override
+                public void exec(SpecimenComment comment) throws SQLException
+                {
+                    Specimen vial = idToVial.get(comment.getGlobalUniqueId());
+                    result.put(vial, comment);
+                }
+            }, SpecimenComment.class);
+
             offset += GET_COMMENT_BATCH_SIZE;
         }
+
         return result;
     }
 
@@ -2643,8 +2652,8 @@ public class SampleManager implements ContainerManager.ContainerListener
     {
         SimpleFilter hashFilter = SimpleFilter.createContainerFilter(container);
         hashFilter.addInClause("SpecimenHash", specimenHashes);
-        return Table.select(StudySchema.getInstance().getTableInfoSpecimenComment(), Table.ALL_COLUMNS,
-                hashFilter, new Sort("GlobalUniqueId"), SpecimenComment.class);
+
+        return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenComment(), hashFilter, new Sort("GlobalUniqueId")).getArray(SpecimenComment.class);
     }
 
     private boolean safeComp(Object a, Object b)

@@ -449,14 +449,8 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     public FileSystemAttachmentParent[] getRegisteredDirectories(Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        try
-        {
-            return Table.select(CoreSchema.getInstance().getMappedDirectories(), Table.ALL_COLUMNS, filter, null, FileSystemAttachmentParent.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+
+        return new TableSelector(CoreSchema.getInstance().getMappedDirectories(), filter, null).getArray(FileSystemAttachmentParent.class);
     }
 
     public void containerCreated(Container c, User user)
@@ -593,10 +587,10 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         }
     }
 
-    public AttachmentParent[] getNamedAttachmentDirectories(Container c) throws SQLException
-    {
-        return Table.select(CoreSchema.getInstance().getMappedDirectories(), Table.ALL_COLUMNS, SimpleFilter.createContainerFilter(c), null, FileSystemAttachmentParent.class);
-    }
+//    public AttachmentParent[] getNamedAttachmentDirectories(Container c) throws SQLException
+//    {
+//        return Table.select(CoreSchema.getInstance().getMappedDirectories(), Table.ALL_COLUMNS, SimpleFilter.createContainerFilter(c), null, FileSystemAttachmentParent.class);
+//    }
 
     public @Nullable String getFolderName(FileContentService.ContentType type)
     {

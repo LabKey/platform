@@ -185,17 +185,10 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     public ExpMaterialImpl[] getSamples()
     {
-        try
-        {
-            SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
-            filter.addCondition("CpasType", getLSID());
-            Sort sort = new Sort("Name");
-            return ExpMaterialImpl.fromMaterials(Table.select(ExperimentServiceImpl.get().getTinfoMaterial(), Table.ALL_COLUMNS, filter, sort, Material.class));
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
+        filter.addCondition("CpasType", getLSID());
+        Sort sort = new Sort("Name");
+        return ExpMaterialImpl.fromMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, sort).getArray(Material.class));
     }
 
     public ExpMaterialImpl getSample(String name)

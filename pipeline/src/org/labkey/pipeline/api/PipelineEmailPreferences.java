@@ -26,6 +26,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.ContextListener;
@@ -411,7 +412,7 @@ public class PipelineEmailPreferences
                 filter.addCondition("modified", min, CompareType.GTE);
                 filter.addCondition("modified", max, CompareType.LT);
 
-                PipelineStatusFileImpl[] files = Table.select(PipelineStatusManager.getTableInfo(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+                PipelineStatusFileImpl[] files = new TableSelector(PipelineStatusManager.getTableInfo(), filter, null).getArray(PipelineStatusFileImpl.class);
                 if (files.length > 0)
                 {
                     PipelineManager.sendNotificationEmail(files, _c, min, max, _isSuccessNotification);

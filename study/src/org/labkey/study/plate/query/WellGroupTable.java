@@ -19,9 +19,11 @@ package org.labkey.study.plate.query;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -49,8 +51,8 @@ public class WellGroupTable extends BasePlateTable
     public WellGroupTable(PlateSchema schema, WellGroup.Type groupType)
     {
         super(schema, StudySchema.getInstance().getTableInfoWellGroup());
-        FieldKey keyProp = new FieldKey(null, "Property");
-        List<FieldKey> visibleColumns = new ArrayList<>();
+        final FieldKey keyProp = new FieldKey(null, "Property");
+        final List<FieldKey> visibleColumns = new ArrayList<>();
         addWrapColumn(_rootTable.getColumn("RowId"));
         addWrapColumn(_rootTable.getColumn("Name"));
         visibleColumns.add(FieldKey.fromParts("Name"));
@@ -76,31 +78,30 @@ public class WellGroupTable extends BasePlateTable
 
         //String sqlObjectId = "( SELECT objectid FROM exp.object WHERE exp.object.objecturi = " + ExprColumn.STR_TABLE_ALIAS + ".lsid)";
 
-        try
+        //ColumnInfo colProperty = new ExprColumn(this, "property", new SQLFragment(sqlObjectId), Types.INTEGER);
+        ColumnInfo colProperty = wrapColumn("property", _rootTable.getColumn("lsid"));
+        String propPrefix = new Lsid("WellGroupInstance", "Folder-" + schema.getContainer().getRowId(), "").toString();
+        SimpleFilter filter = SimpleFilter.createContainerFilter(schema.getContainer());
+        filter.addCondition("PropertyURI", propPrefix, CompareType.STARTS_WITH);
+        final Map<String, PropertyDescriptor> map = new TreeMap<>();
+
+        new TableSelector(OntologyManager.getTinfoPropertyDescriptor(), filter, null).forEach(new Selector.ForEachBlock<PropertyDescriptor>()
         {
-            //ColumnInfo colProperty = new ExprColumn(this, "property", new SQLFragment(sqlObjectId), Types.INTEGER);
-            ColumnInfo colProperty = wrapColumn("property", _rootTable.getColumn("lsid"));
-            String propPrefix = new Lsid("WellGroupInstance", "Folder-" + schema.getContainer().getRowId(), "").toString();
-            SimpleFilter filter = SimpleFilter.createContainerFilter(schema.getContainer());
-            filter.addCondition("PropertyURI", propPrefix, CompareType.STARTS_WITH);
-            PropertyDescriptor[] pds = Table.select(OntologyManager.getTinfoPropertyDescriptor(), Table.ALL_COLUMNS, filter, null, PropertyDescriptor.class);
-            Map<String, PropertyDescriptor> map = new TreeMap<>();
-            for(PropertyDescriptor pd : pds)
+            @Override
+            public void exec(PropertyDescriptor pd) throws SQLException
             {
                 if (pd.getPropertyType() == PropertyType.DOUBLE)
                     pd.setFormat("0.##");
                 map.put(pd.getName(), pd);
                 visibleColumns.add(new FieldKey(keyProp, pd.getName()));
+
             }
-            colProperty.setFk(new PropertyForeignKey(map, schema));
-            colProperty.setIsUnselectable(true);
-            addColumn(colProperty);
-            setDefaultVisibleColumns(visibleColumns);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        }, PropertyDescriptor.class);
+
+        colProperty.setFk(new PropertyForeignKey(map, schema));
+        colProperty.setIsUnselectable(true);
+        addColumn(colProperty);
+        setDefaultVisibleColumns(visibleColumns);
     }
 
     protected String getPlateIdColumnName()

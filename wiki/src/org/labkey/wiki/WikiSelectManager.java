@@ -20,10 +20,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.util.HString;
 import org.labkey.api.view.NavTree;
 import org.labkey.wiki.WikiCache.WikiCacheLoader;
@@ -128,36 +127,24 @@ public class WikiSelectManager
     // Available outside this class only to support junit tests
     static Wiki getWikiFromDatabase(Container c, HString name)
     {
-        try
+        if (name == null)
+            return null;
+
+        Wiki wiki = new TableSelector(CommSchema.getInstance().getTableInfoPages(),
+                SimpleFilter.createContainerFilter(c).addCondition("name", name),
+                null).getObject(Wiki.class);
+
+        if (null == wiki)
         {
-            if (name == null)
-                return null;
-
-            Wiki[] wikis = Table.select(CommSchema.getInstance().getTableInfoPages(),
-                    Table.ALL_COLUMNS,
-                    SimpleFilter.createContainerFilter(c).addCondition("name", name),
-                    null, Wiki.class);
-
-            if (0 == wikis.length)
-            {
-                //Didn't find it with case-sensitive lookup, try case-sensitive (in case the
-                //underlying database is case sensitive)
-                //Bug 2225
-                wikis = Table.select(CommSchema.getInstance().getTableInfoPages(),
-                        Table.ALL_COLUMNS,
-                        SimpleFilter.createContainerFilter(c).addWhereClause("LOWER(name) = LOWER(?)", new Object[] { name }),
-                        null, Wiki.class);
-
-                if (0 == wikis.length)
-                    return null;
-            }
-
-            return wikis[0];
+            //Didn't find it with case-sensitive lookup, try case-sensitive (in case the
+            //underlying database is case sensitive)
+            //Bug 2225
+            wiki = new TableSelector(CommSchema.getInstance().getTableInfoPages(),
+                    SimpleFilter.createContainerFilter(c).addWhereClause("LOWER(name) = LOWER(?)", new Object[] { name }),
+                    null).getObject(Wiki.class);
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+
+        return wiki;
     }
 
 
@@ -282,19 +269,9 @@ public class WikiSelectManager
         if (null == wiki.getEntityId())
             throw new IllegalStateException("Cannot retrieve version for non-existent wiki page.");
 
-        try
-        {
-            WikiVersion[] versions = Table.select(CommSchema.getInstance().getTableInfoPageVersions(),
-                        Table.ALL_COLUMNS,
-                        new SimpleFilter("pageentityid", wiki.getEntityId()),
-                        new Sort("pageentityid,version"),
-                        WikiVersion.class);
-            return versions;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return new TableSelector(CommSchema.getInstance().getTableInfoPageVersions(),
+                    new SimpleFilter("pageentityid", wiki.getEntityId()),
+                    new Sort("pageentityid,version")).getArray(WikiVersion.class);
     }
 
     public static int getVersionCount(Wiki wiki)

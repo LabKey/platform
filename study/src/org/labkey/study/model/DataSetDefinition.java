@@ -2447,19 +2447,19 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             int indexLSID, int indexPTID, int indexDate, int indexKey, int indexReplace,
             BatchValidationException errors)
     {
-        boolean isDemographic = isDemographicData();
+        final boolean isDemographic = isDemographicData();
 
         try
         {
             // duplicate keys found that should be deleted
-            Set<String> deleteSet = new HashSet<>();
+            final Set<String> deleteSet = new HashSet<>();
 
             // duplicate keys found in error
-            LinkedHashMap<String,Object[]> noDeleteMap = new LinkedHashMap<>();
+            final LinkedHashMap<String,Object[]> noDeleteMap = new LinkedHashMap<>();
 
-            StringBuffer sbIn = new StringBuffer();
+            StringBuilder sbIn = new StringBuilder();
             String sep = "";
-            Map<String, Object[]> uriMap = new HashMap<>();
+            final Map<String, Object[]> uriMap = new HashMap<>();
             int count = 0;
             while (rows.next())
             {
@@ -2504,22 +2504,26 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             SimpleFilter filter = new SimpleFilter();
             filter.addWhereClause((isDemographic?"ParticipantId":"LSID") + " IN (" + sbIn + ")", new Object[]{});
 
-            Map[] results = Table.select(tinfo, Table.ALL_COLUMNS, filter, null, Map.class);
-            for (Map orig : results)
+            new TableSelector(tinfo, filter, null).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
             {
-                String lsid = (String) orig.get("LSID");
-                String uniq = isDemographic ? (String)orig.get("ParticipantID"): lsid;
-                Object[] keys = uriMap.get(uniq);
-                boolean replace = Boolean.TRUE.equals(keys[3]);
-                if (replace)
+                @Override
+                public void exec(Map<String, Object> orig) throws SQLException
                 {
-                    deleteSet.add(lsid);
+                    String lsid = (String) orig.get("LSID");
+                    String uniq = isDemographic ? (String)orig.get("ParticipantID"): lsid;
+                    Object[] keys = uriMap.get(uniq);
+                    boolean replace = Boolean.TRUE.equals(keys[3]);
+                    if (replace)
+                    {
+                        deleteSet.add(lsid);
+                    }
+                    else
+                    {
+                        noDeleteMap.put(uniq, keys);
+                    }
+
                 }
-                else
-                {
-                    noDeleteMap.put(uniq, keys);
-                }
-            }
+            });
 
             // If we have duplicates, and we don't have an auto-keyed dataset,
             // then we cannot proceed.
@@ -2530,7 +2534,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 return null;
 
             SimpleFilter deleteFilter = new SimpleFilter();
-            StringBuffer sbDelete = new StringBuffer();
+            StringBuilder sbDelete = new StringBuilder();
             sep = "";
             for (String s : deleteSet)
             {

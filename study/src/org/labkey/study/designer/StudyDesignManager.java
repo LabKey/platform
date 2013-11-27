@@ -119,9 +119,9 @@ public class StudyDesignManager
     public StudyDesignInfo[] getStudyDesigns(Container c) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addWhereClause("(Container = ? OR SourceContainer = ?)", new Object[] {c.getId(), c.getId()} , FieldKey.fromParts("Container"), FieldKey.fromParts("SourceContainer"));
+        filter.addWhereClause("(Container = ? OR SourceContainer = ?)", new Object[] {c, c} , FieldKey.fromParts("Container"), FieldKey.fromParts("SourceContainer"));
 
-        return Table.select(getStudyDesignTable(), Table.ALL_COLUMNS, filter, null, StudyDesignInfo.class);
+        return new TableSelector(getStudyDesignTable(), filter, null).getArray(StudyDesignInfo.class);
     }
 
     public StudyDesignInfo[] getStudyDesignsForAllFolders(User u, Container root) throws SQLException
@@ -130,7 +130,7 @@ public class StudyDesignManager
         ContainerFilter cf = new ContainerFilter.CurrentAndSubfolders(u);
         filter.addClause(cf.createFilterClause(getSchema(), FieldKey.fromParts("Container"), root));
 
-        return Table.select(getStudyDesignTable(), Table.ALL_COLUMNS, filter, null, StudyDesignInfo.class);
+        return new TableSelector(getStudyDesignTable(), filter, null).getArray(StudyDesignInfo.class);
     }
 
 
@@ -237,7 +237,7 @@ public class StudyDesignManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition("studyId", studyId);
 
-        return  Table.select(getStudyVersionTable(), Table.ALL_COLUMNS, filter, new Sort("Revision"), StudyDesignVersion.class);
+        return new TableSelector(getStudyVersionTable(), filter, new Sort("Revision")).getArray(StudyDesignVersion.class);
     }
     
     public StudyDesignVersion getStudyDesignVersion(Container c, int studyId, int versionId) throws SQLException
@@ -246,10 +246,7 @@ public class StudyDesignManager
         filter.addCondition("studyId", studyId);
         filter.addCondition("revision", versionId);
 
-        StudyDesignVersion[] version = Table.select(getStudyVersionTable(), Table.ALL_COLUMNS, filter, null, StudyDesignVersion.class);
-        assert(null == version || version.length == 0 || version.length == 1);
-
-        return (null == version || version.length == 0) ? null : version[0];
+        return new TableSelector(getStudyVersionTable(), filter, null).getObject(StudyDesignVersion.class);
     }
 
     /**
@@ -265,10 +262,7 @@ public class StudyDesignManager
         filter.addCondition("studyId", studyId);
         filter.addWhereClause("revision = (SELECT MAX(revision) FROM " + getStudyVersionTable().toString() + " WHERE studyid=?)", new Object[] {studyId}, FieldKey.fromParts("revision"), FieldKey.fromParts("studyid"));
 
-        StudyDesignVersion[] version = Table.select(getStudyVersionTable(), Table.ALL_COLUMNS, filter, null, StudyDesignVersion.class);
-        assert(null == version || version.length == 0 || version.length == 1);
-
-        return (null == version || version.length == 0) ? null : version[0];
+        return new TableSelector(getStudyVersionTable(), filter, null).getObject(StudyDesignVersion.class);
     }
 
     /**

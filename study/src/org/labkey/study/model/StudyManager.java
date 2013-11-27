@@ -1819,17 +1819,7 @@ public class StudyManager
     public List<String> getDatasetLSIDs(User user, DataSetDefinition def) throws ServletException, SQLException
     {
         TableInfo tInfo = def.getTableInfo(user, true);
-        Set<String> select = Collections.singleton("lsid");
-
-        @SuppressWarnings("unchecked")
-        Map<String,Object>[] data = Table.select(tInfo, select, new SimpleFilter(), null, Map.class);
-        
-        List<String> lsids = new ArrayList<>(data.length);
-        for (Map<String,Object> row : data)
-        {
-            lsids.add(row.get("lsid").toString());
-        }
-        return lsids;
+        return new TableSelector(tInfo.getColumn("lsid")).getArrayList(String.class);
     }
 
 

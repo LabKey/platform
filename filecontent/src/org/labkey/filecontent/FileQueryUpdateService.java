@@ -23,8 +23,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DataType;
@@ -94,7 +94,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         Filter filter = getQueryFilter(container, keys);
         Set<String> queryColumns = getQueryColumns(container);
 
-        Map<String, Object>[] rows = Table.select(getQueryTable(), queryColumns, filter, null, Map.class);
+        Map<String, Object>[] rows = new TableSelector(getQueryTable(), queryColumns, filter, null).getMapArray();
         Map<String, Object> rowMap = new HashMap<>();
 
         if (rows.length > 0)
@@ -253,7 +253,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             try
             {
                 Filter filter = getQueryFilter(container, row);
-                Map<String, Object>[] rows = Table.select(getQueryTable(), getQueryColumns(container), filter, null, Map.class);
+                Map<String, Object>[] rows = new TableSelector(getQueryTable(), getQueryColumns(container), filter, null).getMapArray();
 
                 if (rows.length > 0)
                 {

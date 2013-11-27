@@ -26,6 +26,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -49,48 +50,20 @@ public class MessageConfigManager
 
     public static EmailPref getUserEmailPrefRecord(Container c, User user, String type, String srcIdentifier)
     {
-        EmailPref[] prefs = _getUserEmailPrefRecord(c, user, type, srcIdentifier);
-
-        if (prefs != null)
-            return prefs[0];
-        else
-            return null;
-    }
-
-    private static EmailPref[] _getUserEmailPrefRecord(Container c, User user, String type, String srcIdentifier)
-    {
         if (srcIdentifier == null)
         {
             throw new IllegalArgumentException("srcIdentifier must not be null");
         }
 
-        try
-        {
-            SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-            filter.addCondition("UserId", user.getUserId());
-            filter.addCondition("SrcIdentifier", srcIdentifier);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition("UserId", user.getUserId());
+        filter.addCondition("SrcIdentifier", srcIdentifier);
 
-            if (type != null)
-                filter.addCondition("Type", type);
+        if (type != null)
+            filter.addCondition("Type", type);
 
-            //return records only for those users who have explicitly set a preference for this container.
-            EmailPref[] emailPrefs = Table.select(
-                    _comm.getTableInfoEmailPrefs(),
-                    Table.ALL_COLUMNS,
-                    filter,
-                    null,
-                    EmailPref.class
-                    );
-
-            if (emailPrefs.length == 0)
-                return null;
-            else
-                return emailPrefs;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        //return records only for those users who have explicitly set a preference for this container.
+        return new TableSelector(_comm.getTableInfoEmailPrefs(), filter, null).getObject(EmailPref.class);
     }
 
     // Returns email preferences for all active users with read permissions to this container. A user could have multiple
@@ -233,34 +206,14 @@ public class MessageConfigManager
 
     public static EmailOption[] getEmailOptions(@NotNull String type)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter("Type", type);
-            return Table.select(_comm.getTableInfoEmailOptions(), Table.ALL_COLUMNS, filter, new Sort("EmailOptionId"), EmailOption.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SimpleFilter filter = new SimpleFilter("Type", type);
+        return new TableSelector(_comm.getTableInfoEmailOptions(), filter, new Sort("EmailOptionId")).getArray(EmailOption.class);
     }
 
     public static EmailOption getEmailOption(int optionId)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter("EmailOptionId", optionId);
-            EmailOption[] options = Table.select(_comm.getTableInfoEmailOptions(), Table.ALL_COLUMNS, filter, null, EmailOption.class);
-
-            assert (options.length <= 1);
-            if (options.length == 0)
-                return null;
-            else
-                return options[0];
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SimpleFilter filter = new SimpleFilter("EmailOptionId", optionId);
+        return new TableSelector(_comm.getTableInfoEmailOptions(), filter, null).getObject(EmailOption.class);
     }
 
     public static class EmailPref implements MessageConfigService.UserPreference
