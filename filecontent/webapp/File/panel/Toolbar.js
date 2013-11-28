@@ -8,7 +8,7 @@
  * See http://docs.sencha.com/ext-js/4-1/#!/api/Ext.ux.CheckColumn
  */
 
-Ext4.define('File.panel.ToolbarPanel', {
+Ext4.define('File.panel.Toolbar', {
     extend : 'Ext.panel.Panel',
 
     constructor : function(config){

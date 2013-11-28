@@ -197,9 +197,8 @@ Ext4.define('File.panel.Actions', {
             });
 
             this.add(this.actionGrid);
-            this.doLayout();
 
-            var showImport = this.down('#showImportCheckbox');
+            var showImport = this.getShowImportCheckbox();
             if (showImport) {
                 showImport.setValue(this.importDataEnabled);
             }
@@ -245,15 +244,18 @@ Ext4.define('File.panel.Actions', {
 
             for (config in actionConfig)
             {
-                i = actionConfig[config];
-                if (Ext4.isObject(i))
+                if (actionConfig.hasOwnProperty(config))
                 {
-                    adminOptions.push({
-                        id: i.id,
-                        display: i.display,
-                        label: i.label,
-                        links: i.links
-                    });
+                    i = actionConfig[config];
+                    if (Ext4.isObject(i))
+                    {
+                        adminOptions.push({
+                            id: i.id,
+                            display: i.display,
+                            label: i.label,
+                            links: i.links
+                        });
+                    }
                 }
             }
         }
@@ -261,7 +263,18 @@ Ext4.define('File.panel.Actions', {
         return adminOptions;
     },
 
-    getShowImportCheckboxValue : function() {
-        return this.down('#showImportCheckbox').getValue()
+    getShowImportCheckbox : function() {
+        return this.down('#showImportCheckbox');
+    },
+
+    isImportDataEnabled : function() {
+        var cb = this.getShowImportCheckbox(),
+                value = this.importDataEnabled; // default value
+
+        if (cb) {
+            value = cb.getValue();
+        }
+
+        return value;
     }
 });

@@ -8,6 +8,10 @@ Ext4.define('File.panel.FileProperties', {
 
     extend : 'Ext.panel.Panel',
 
+    title: 'File Properties',
+
+    fileConfig: 'useDefault',
+
     constructor : function(config) {
 
         Ext4.apply(config, {
@@ -17,16 +21,10 @@ Ext4.define('File.panel.FileProperties', {
             }
         });
 
-        Ext4.applyIf(config, {
-            fileConfig: 'useDefault'
-        });
-
         this.callParent([config]);
-
     },
 
     initComponent : function() {
-        this.title = 'File Properties';
         this.items = this.getItems();
         this.callParent();
     },
@@ -44,10 +42,8 @@ Ext4.define('File.panel.FileProperties', {
                 scope: this,
                 change: function(radio, newValue){
                     this.fileConfig = newValue.fileConfig;
-                    if(this.fileConfig == 'useCustom'){
-                        this.editPropertiesButton.setDisabled(false);
-                    } else {
-                        this.editPropertiesButton.setDisabled(true);
+                    if (this.editPropertiesButton) {
+                        this.editPropertiesButton.setDisabled(!(this.fileConfig == 'useCustom'));
                     }
                 }
             },
@@ -90,25 +86,27 @@ Ext4.define('File.panel.FileProperties', {
         return items;
     },
 
-    getCustomPropertiesStore: function(){
-        Ext4.define('File.panel.CustomFilePropertiesStore', {
-            extend: 'Ext.data.Model',
-            fields: [
-                {name: 'name', type: 'string'},
-                {name: 'label', type: 'string'},
-                {name: 'rangeURI', type: 'string'}
-            ]
-        });
+    getCustomPropertiesStore : function() {
+        if (!Ext4.ModelManager.isRegistered('File.panel.CustomFilePropertiesStore')) {
+            Ext4.define('File.panel.CustomFilePropertiesStore', {
+                extend: 'Ext.data.Model',
+                fields: [
+                    {name: 'name', type: 'string'},
+                    {name: 'label', type: 'string'},
+                    {name: 'rangeURI', type: 'string'}
+                ]
+            });
+        }
 
-         return Ext4.create('Ext.data.Store', {
-             model: 'File.panel.CustomFilePropertiesStore',
-             proxy: {
-                 type: 'ajax',
-                 extraParams: {fileConfig: this.fileConfig},
-                 url: LABKEY.ActionURL.buildURL("pipeline", "getPipelineFileProperties", this.containerPath),
-                 reader: {type: 'json', root: 'fileProperties'}
-             },
-             autoLoad: true
+        return Ext4.create('Ext.data.Store', {
+            model: 'File.panel.CustomFilePropertiesStore',
+            proxy: {
+                type: 'ajax',
+                extraParams: {fileConfig: this.fileConfig},
+                url: LABKEY.ActionURL.buildURL('pipeline', 'getPipelineFileProperties', this.containerPath),
+                reader: {type: 'json', root: 'fileProperties'}
+            },
+            autoLoad: true
         });
     },
 

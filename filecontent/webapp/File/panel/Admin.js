@@ -11,6 +11,11 @@ Ext4.define('File.panel.Admin', {
 
     constructor : function(config) {
 
+        if (!config.pipelineFileProperties) {
+            console.error('pipelineFileProperties required for', this.$className);
+            return;
+        }
+
         Ext4.apply(config, {
             defaults: {
                 xtype: 'panel',
@@ -19,27 +24,16 @@ Ext4.define('File.panel.Admin', {
             }
         });
 
-        Ext4.applyIf(config, {
-
-        });
-
         this.callParent([config]);
     },
 
     initComponent : function() {
-        this.items = this.getItems();
-
-        var submitButton = {
-            text: 'submit',
-            handler: this.onSubmit,
-            scope: this
-        };
-
-        var cancelButton = {
-            text: 'cancel',
-            handler: this.onCancel,
-            scope: this
-        };
+        this.items = [
+            this.getActionsPanel(),
+            this.getFilePropertiesPanel(),
+            this.getToolBarPanel(),
+            this.getGeneralSettingsPanel()
+        ];
 
         this.resetDefaultsButton = Ext4.create('Ext.button.Button', {
             text: 'Reset To Default',
@@ -47,49 +41,53 @@ Ext4.define('File.panel.Admin', {
             scope: this
         });
 
+        this.buttons = [{
+            text: 'submit',
+            handler: this.onSubmit,
+            scope: this
+        },{
+            text: 'cancel',
+            handler: this.onCancel,
+            scope: this
+        }, this.resetDefaultsButton];
 
-        this.buttons = [submitButton, cancelButton, this.resetDefaultsButton];
         this.callParent();
     },
 
-    getItems: function(){
-        return [
-            this.getActionsPanel(),
-            this.getFilePropertiesPanel(),
-            this.getToolBarPanel(),
-            this.getGeneralSettingsPanel()
-        ];
-    },
-
-    getFilePropertiesPanel: function(){
-        this.filePropertiesPanel = Ext4.create('File.panel.FileProperties', {
-            border: false,
-            padding: 10,
-            fileConfig: this.pipelineFileProperties.fileConfig,
-            additionalPropertiesType: this.additionalPropertiesType
-        });
-
-        this.filePropertiesPanel.on('editfileproperties', this.onEditFileProperties, this);
-
-        this.filePropertiesPanel.on('activate', function(){
-            this.resetDefaultsButton.hide();
-        }, this);
+    getFilePropertiesPanel : function() {
+        if (!this.filePropertiesPanel) {
+            this.filePropertiesPanel = Ext4.create('File.panel.FileProperties', {
+                border: false,
+                padding: 10,
+                fileConfig: this.pipelineFileProperties.fileConfig,
+                additionalPropertiesType: this.additionalPropertiesType,
+                listeners : {
+                    activate: function() { this.resetDefaultsButton.hide(); },
+                    editfileproperties: this.onEditFileProperties,
+                    scope: this
+                },
+                scope: this
+            });
+        }
 
         return this.filePropertiesPanel;
     },
 
-    getToolBarPanel: function(){
-        this.toolBarPanel = Ext4.create('File.panel.ToolbarPanel', {
-            title : 'Toolbar and Grid Settings',
-            tbarActions : this.pipelineFileProperties.tbarActions,
-            gridConfigs : this.pipelineFileProperties.gridConfig,
-            useCustomProps: this.pipelineFileProperties.fileConfig === 'useCustom',
-            fileProperties : this.fileProperties
-        });
-
-        this.toolBarPanel.on('activate', function(){
-            this.resetDefaultsButton.show();
-        }, this);
+    getToolBarPanel : function() {
+        if (!this.toolBarPanel) {
+            this.toolBarPanel = Ext4.create('File.panel.Toolbar', {
+                title: 'Toolbar and Grid Settings',
+                tbarActions: this.pipelineFileProperties.tbarActions,
+                gridConfigs: this.pipelineFileProperties.gridConfig,
+                useCustomProps: this.pipelineFileProperties.fileConfig === 'useCustom',
+                fileProperties: this.fileProperties,
+                listeners: {
+                    activate: function() { this.resetDefaultsButton.show(); },
+                    scope: this
+                },
+                scope: this
+            });
+        }
         return this.toolBarPanel;
     },
 
@@ -105,17 +103,15 @@ Ext4.define('File.panel.Admin', {
         return this.actionsPanel;
     },
 
-    getGeneralSettingsPanel: function(){
-        if(!this.generalSettingsPanel){
-            var descriptionText = {
-                html: '<span class="labkey-strong">Configure General Settings</span>' +
-                        '<p>Set the default File UI preferences for this folder.</p>',
-                border: false
-            };
+    getGeneralSettingsPanel : function() {
+        if (!this.generalSettingsPanel) {
 
-            // We default to opening the upload panel. If the user never set the property, then it will not be present
-            // in the pipelineFileProperties.
-            var checked = this.pipelineFileProperties.hasOwnProperty('expandFileUpload') ? this.pipelineFileProperties.expandFileUpload : true;
+            //
+            // We default to opening the upload panel. If the user never set the property,
+            // then it will not be present in the pipelineFileProperties.
+            //
+            var pfp = this.pipelineFileProperties;
+            var checked = pfp.hasOwnProperty('expandFileUpload') ? pfp.expandFileUpload : true;
 
             this.showUploadCheckBox = Ext4.create('Ext.form.field.Checkbox', {
                 boxLabel: 'Show the file upload panel by default.',
@@ -129,44 +125,50 @@ Ext4.define('File.panel.Admin', {
                 title: 'General Settings',
                 border: false,
                 padding: 10,
-                items: [descriptionText, this.showUploadCheckBox]
+                items: [{
+                    html: '<span class="labkey-strong">Configure General Settings</span>' +
+                            '<p>Set the default File UI preferences for this folder.</p>',
+                    border: false
+                }, this.showUploadCheckBox],
+                listeners: {
+                    activate: function() { this.resetDefaultsButton.hide(); },
+                    scope: this
+                },
+                scope: this
             });
         }
-
-        this.generalSettingsPanel.on('activate', function(){
-            this.resetDefaultsButton.hide();
-        }, this);
 
         return this.generalSettingsPanel;
     },
 
-    onCancel: function(){
+    onCancel : function() {
         this.fireEvent('close');
     },
 
-    onSubmit: function(button, event, handler){
+    onSubmit : function(button, event, handler) {
         var updateURL = LABKEY.ActionURL.buildURL('pipeline', 'updatePipelineActionConfig', this.containerPath);
         var postData = {
-            importDataEnabled : this.actionsPanel.getShowImportCheckboxValue(),
+            importDataEnabled : this.getActionsPanel().isImportDataEnabled(),
             expandFileUpload: this.showUploadCheckBox.getValue(),
             fileConfig: this.filePropertiesPanel.getFileConfig(),
-            actions: this.actionsPanel.getActionsForSubmission()
+            actions: this.getActionsPanel().getActionsForSubmission()
         };
 
-        if(this.toolBarPanel.gridConfigsChanged())
-        {
-            postData.gridConfig = this.toolBarPanel.getGridConfigs();
-        }
-        if(this.toolBarPanel.tbarChanged())
-        {
-            postData.tbarActions = this.toolBarPanel.getTbarActions();
+        var toolbar = this.getToolBarPanel();
+
+        if (toolbar.gridConfigsChanged()) {
+            postData.gridConfig = toolbar.getGridConfigs();
         }
 
-        if(!handler){
-            handler = function(){
-                this.fireEvent('success', this.toolBarPanel.gridConfigsChanged());
+        if (toolbar.tbarChanged()) {
+            postData.tbarActions = toolbar.getTbarActions();
+        }
+
+        if (!handler) {
+            handler = function() {
+                this.fireEvent('success', this.getToolBarPanel().gridConfigsChanged());
                 this.fireEvent('close');
-            }
+            };
         }
 
         Ext4.Ajax.request({
@@ -174,7 +176,7 @@ Ext4.define('File.panel.Admin', {
             method: 'POST',
             scope: this,
             success: handler,
-            failure: function(){
+            failure: function() {
                 console.log('Failure saving files webpart settings.');
                 this.fireEvent('failure');
             },
@@ -182,16 +184,16 @@ Ext4.define('File.panel.Admin', {
         });
     },
 
-    onEditFileProperties: function(){
+    onEditFileProperties : function() {
         // TODO: Save new settings and navigate to ecit properties page.
-        var handler = function(){
-            window.location = LABKEY.ActionURL.buildURL('fileContent', 'designer', this.containerPath, {'returnURL':window.location});
-        };
-        
-        this.onSubmit(null, null, handler);
+        this.onSubmit(null, null, function() {
+            window.location = LABKEY.ActionURL.buildURL('fileContent', 'designer', this.containerPath, {
+                'returnURL': window.location
+            });
+        });
     },
 
-    onResetDefaults: function(){
+    onResetDefaults : function() {
         var tab = this.getActiveTab(),
             type,
             msg;
@@ -212,6 +214,7 @@ Ext4.define('File.panel.Admin', {
             },
             failure: function(response){
                 var json = Ext4.JSON.decode(response.responseText);
+                console.log('Failed to request filecontent/resetFileOptions');
                 console.log(json);
             },
             scope: this
