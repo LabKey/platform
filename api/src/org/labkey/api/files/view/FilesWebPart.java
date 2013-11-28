@@ -289,6 +289,12 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         setWide(null == webPartDescriptor.getLocation() || HttpView.BODY.equals(webPartDescriptor.getLocation()));
         setShowAdmin(container.hasPermission(ctx.getUser(), AdminPermission.class));
+
+        if (!isWide())
+        {
+            _path = JSP_RIGHT;
+            _page = JspLoader.createPage((String)null, _path);
+        }
     }
 
     @Override
