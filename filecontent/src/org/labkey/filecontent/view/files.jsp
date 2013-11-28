@@ -19,22 +19,18 @@
 <%@ page import="org.labkey.api.attachments.Attachment"%>
 <%@ page import="org.labkey.api.attachments.AttachmentDirectory"%>
 <%@ page import="org.labkey.api.attachments.AttachmentService" %>
-<%@ page import="org.labkey.api.attachments.DownloadURL" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.files.MissingRootDirectoryException" %>
 <%@ page import="org.labkey.api.files.UnsetRootDirectoryException" %>
 <%@ page import="org.labkey.api.files.view.FilesWebPart" %>
-<%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.filecontent.FileContentController" %>
 <%@ page import="org.labkey.filecontent.FileContentController.BeginAction" %>
-<%@ page import="org.labkey.filecontent.FileContentController.DeleteAttachmentAction" %>
 <%@ page import="org.labkey.filecontent.FileContentController.RenderStyle" %>
 <%@ page import="org.labkey.filecontent.FileContentController.ShowAdminAction" %>
 <%@ page import="java.io.File" %>
@@ -49,6 +45,8 @@
     AttachmentDirectory parent = bean.getRoot();
     FilesWebPart me = (FilesWebPart) HttpView.currentView();
     Container c = context.getContainer();
+
+    assert(!me.isWide());
 
     if (!bean.isEnabled())
     {
@@ -69,7 +67,7 @@
     try
     {
         //Ensure that we can actually upload files
-        File dir = parent.getFileSystemDirectory();
+        parent.getFileSystemDirectory();
     }
     catch (UnsetRootDirectoryException e)
     {
@@ -100,67 +98,23 @@
     ActionURL addAttachmentUrl = new ActionURL(FileContentController.AddAttachmentAction.class, context.getContainer());
     addAttachmentUrl.addParameter("entityId", parent.getEntityId());
 
-    if (me.isWide())
-    {
-        boolean canDelete = me.isShowAdmin() && context.hasPermission(DeletePermission.class);
-%>
-    <table>
-        <tr>
-            <th style="color:#003399;text-align:left;">File</th>
-            <th style="color:#003399;text-align:right;">Size</th>
-            <th style="color:#003399;text-align:left;">Date</th>
-            <th style="color:#003399;text-align:left;">Person</th>
-            <th>&nbsp;</th>
-            <%if (canDelete)
-            {
-                %><th>&nbsp;</th><%
-            }
-         %></tr><%
-
     for (Attachment a : attachments)
     {
-        DownloadURL deleteUrl = new DownloadURL(DeleteAttachmentAction.class, c, parent.getEntityId(), a.getName());
         URLHelper viewUrl = showFileUrl(fileUrl, a);
-        URLHelper downloadUrl = downloadFileUrl(fileUrl, a);
-        File file = a.getFile();
-        boolean exists = null != file && file.exists();
-    %>
-            <tr>
-            <td><%
-            if (exists)
-            {
-                %><a href="<%=h(viewUrl)%>"><img src="<%=request.getContextPath()%><%=a.getFileIcon()%>" alt=""> <%=a.getName()%></a><%
-            } else
-            {
-                %><span title="File was uploaded but is no longer available on disk"><img src="<%=request.getContextPath()%>/_images/exclaim.gif" alt=""> <%=a.getName()%></span><%
-            } %>
-            </td>
-            <td align="right"><%if (exists){%><%=file.length()%><%}%></td>
-            <td align="right"><%=a.getCreated()%></td>
-            <td><%=a.getCreatedBy() != 0 ? a.getCreatedByName(context.getUser()) : ""%></td>
-            <td><%if (exists){%>[<a href="<%=h(downloadUrl)%>" class="labkey-message">Download</a>]<%}%></td>
-            <td><%
-            if (canDelete)
-            {
-                %>[<a href="#deleteFile" onclick="window.open(<%=hq(deleteUrl.getLocalURIString())%>, null, 'height=200,width=450', false)" class="labkey-message">Delete&nbsp;<%=exists ? "File" : "Row"%></a>]<%
-            } %></td>
-            </tr><%
+        if (null != a.getFile() && a.getFile().exists()) {
+%>
+            <a href="<%=h(viewUrl)%>"><img src="<%=h(request.getContextPath())%><%=h(a.getFileIcon())%>" alt=""> <%=h(a.getName())%></a>
+<%
+        } else {
+%>
+          <span title="File was uploaded but is no longer available on disk"><img src="<%=h(request.getContextPath())%>/_images/exclaim.gif" alt=""><%=h(a.getName())%></span>
+<%
+        }
+%>
+        <br>
+<%
     }
-    %></table><%
-    }
-    else  //Narrow
-    {
-        for (Attachment a : attachments)
-        {
-            URLHelper viewUrl = showFileUrl(fileUrl, a);
-            if (null != a.getFile() && a.getFile().exists()) { %>
-                <a href="<%=h(viewUrl)%>"><img src="<%=request.getContextPath()%><%=a.getFileIcon()%>" alt=""> <%=a.getName()%></a><%
-            } else { %>
-              <span title="File was uploaded but is no longer available on disk"><img src="<%=request.getContextPath()%>/_images/exclaim.gif" alt=""><%=a.getName()%></span><%
-            } %>
-            <br>
-<%      }
-    }%>
+%>
 <br>
 <% if (context.hasPermission(InsertPermission.class))
 {
@@ -188,14 +142,6 @@ if (me.isShowAdmin() && context.getUser().isSiteAdmin())
         return url;
     }
 
-    URLHelper downloadFileUrl(URLHelper u, Attachment a)
-    {
-        URLHelper url = u.clone();
-        url.setFile(a.getName());
-        url.replaceParameter("renderAs", RenderStyle.ATTACHMENT.name());
-        return url;
-    }
-
     String adminError(ViewContext context)
     {
         StringBuilder sb = new StringBuilder();
@@ -206,7 +152,7 @@ if (me.isShowAdmin() && context.getUser().isSiteAdmin())
         }
         else
         {
-            sb.append("Contact an adminsistrator");
+            sb.append("Contact an administrator");
         }
         return sb.toString();
     }

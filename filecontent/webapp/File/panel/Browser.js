@@ -1789,7 +1789,7 @@ Ext4.define('File.panel.Browser', {
             fileSystem : this.fileSystem,
             listeners : {
                 transfercomplete : function(options) {
-                    this.getFileStore().load({
+                    this.reload({
                         callback: function() {
 
                             //
@@ -1858,9 +1858,9 @@ Ext4.define('File.panel.Browser', {
         return this.details;
     },
 
-    reload : function() {
+    reload : function(options) {
         // Reload stores
-        this.getFileStore().load();
+        this.getFileStore().load(options);
         var nodes = this.tree.getSelectionModel().getSelection();
 
         this.tree.getStore().on('load', function(s) {
