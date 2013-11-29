@@ -44,9 +44,9 @@ import java.sql.SQLException;
  * is used (for example, TrackingSaveHandler) then LabKey will attempt to find this class under
  * org.labkey.[module name].assay.[assay name].[save handler name].
  *
- * The SaveAssayBatch function will dispatch to the methods of this interface according to the format of the JSON
- * Experiment Batch (or run group) sent to it by the client.  If a client chooses to implement this interface directly
- * then the order of method calls will look like:
+ * The SaveAssayBatch function creates a new instance of the SaveHandler for each request. SaveAssayBatch will dispatch
+ * to the methods of this interface according to the format of the JSON Experiment Batch (or run group) sent to it
+ * by the client.  If a client chooses to implement this interface directly then the order of method calls will be:
  *
  * beforeSave
  * handleBatch
@@ -54,7 +54,7 @@ import java.sql.SQLException;
  *
  * A client can also inherit from DefaultAssaySaveHandler class to get a default implementation.  In this case, the
  * default handler does a deep walk through all the runs in a batch, inputs, outputs, materials, and properties.  The
- * sequence of calls for DefaultAssaySaveHandler will look something like:
+ * sequence of calls for DefaultAssaySaveHandler will be:
  *
  * beforeSave
  * handleBatch
@@ -73,38 +73,38 @@ import java.sql.SQLException;
  */
 public interface AssaySaveHandler
 {
-    /*
+    /**
      * convenience functions to access the AssayProvider for this file-based assay.
      */
     void setProvider(AssayProvider provider);
     AssayProvider getProvider();
 
-    /*
+    /**
      * This function will always be called.  It is invoked by the SaveAssayBatch action.  A custom implementation
      * could choose to handle the entire batch itself without invoking any of the other functions in this interface.
      */
     ExpExperiment handleBatch(ViewContext context, JSONObject batchJson, ExpProtocol protocol) throws Exception;
 
-    /*
+    /**
      * Handles each run included in a batch.
      * Called from DefaultAssaySaveHandler.handleBatch.
      */
     ExpRun handleRun(ViewContext context, JSONObject runJson, ExpProtocol protocol, ExpExperiment batch)
             throws JSONException, ValidationException, ExperimentException, SQLException;
 
-    /*
+    /**
      * Handles persistence of each outout data object if included
      * Called from DefaultAssaySaveHandler.handleProtocolApplications
      */
     ExpData handleData(ViewContext context, JSONObject dataJson) throws ValidationException;
 
-    /*
+    /**
      * Handles persistence of all materials for the run (input or output) if included.
      * Called from DefaultAssaySaveHandler.handleProtocolAplications
      */
     ExpMaterial handleMaterial(ViewContext context, JSONObject materialJson) throws ValidationException;
 
-    /*
+    /**
      * Enables the implementor to decide how to save the passed in ExpRun.  The default implementation deletes the
      * run and recreates it.  A custom implementation could choose to enforce that only certain aspects of the
      * protocol application change or choose not add its own data for saving.
@@ -114,32 +114,23 @@ public interface AssaySaveHandler
             JSONArray dataArray, JSONArray inputMaterialArray, JSONObject runJsonObject, JSONArray outputDataArray,
             JSONArray outputMaterialArray) throws ExperimentException, ValidationException;
 
-
-    /*
+    /**
      * Used to handle any properties of an ExpObject.
      * Called from DefaultAssaySaveHandler.handleBatch, handleRun, handleData, and handleMaterial as appropriate.
      */
     void handleProperties(ViewContext context, ExpObject object, DomainProperty[] dps, JSONObject propertiesJson) throws ValidationException, JSONException;
 
-    /*
+    /**
      * The JSON object sent to beforeSave is the JSON sent directly from the client.  As long as the client provides a
      * "batch" or "batches" id in the JSON, this object can contain whatever JSON format the client and AssaySaveHandler agree upon
      * Always called by SaveAssayBatchAction.
      */
     void beforeSave(ViewContext context, JSONObject rootJson, ExpProtocol protocol)throws Exception;
 
-    /*
-     * The batch object here will contain all the updates that have been processed including values that are refreshed
-     * from the database if needed.  Either afterSave with a single batch or afterSave with an array of batches
-     * will be called by the SaveAssayBatchAction.
-     */
-    void afterSave(ViewContext context, ExpExperiment batch, ExpProtocol protocol) throws Exception;
-
-    /*
+    /**
      * The batches will contain all the updates that have been processed including values that are refreshed
-     * from the database if needed.  Either afterSave with a single batch or afterSave with an array of batches
-     * will be called by the SaveAssayBatchAction.
+     * from the database if needed.  In the case of a single batch, a single element array of batches will
+     * be passed.  This method is always called by SaveAssayBatchAction
      */
     void afterSave(ViewContext context, ExpExperiment[] batches, ExpProtocol protocol) throws Exception;
-
 }

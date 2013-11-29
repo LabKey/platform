@@ -80,11 +80,6 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
     }
 
     @Override
-    public void afterSave(ViewContext context, ExpExperiment batch, ExpProtocol protocol) throws Exception
-    {
-    }
-
-    @Override
     public void afterSave(ViewContext context, ExpExperiment[] batches, ExpProtocol protocol) throws Exception
     {
     }

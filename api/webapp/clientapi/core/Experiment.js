@@ -47,6 +47,51 @@ LABKEY.Experiment = new function()
         };
     }
 
+    function _saveBatches(config, createExps)
+    {
+        LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL("assay", "saveAssayBatch", LABKEY.ActionURL.getContainer()),
+            method: 'POST',
+            jsonData: {
+                assayId: config.assayId,
+                batches: config.batches
+            },
+            success: getSuccessCallbackWrapper(createExps, config.success, config.scope),
+            failure: LABKEY.Utils.getCallbackWrapper(config.failure, config.scope, true),
+            scope: config.scope,
+            headers: {
+                'Content-Type' : 'application/json'
+            }
+        });
+    }
+
+    // normalize the different config object passed in for saveBatch and saveBatches into one config
+    // appropriate for _saveBatches call above
+    function getSaveBatchesConfig(config)
+    {
+        if (!LABKEY.Utils.getOnSuccess(config)) {
+            console.error("You must specify a callback function in config.success when calling LABKEY.Exp.saveBatch()!");
+            return;
+        }
+
+        var wrapConfig = {};
+
+        if (config.batches)
+        {
+            wrapConfig.batches = config.batches;
+        }
+        else
+        {
+            wrapConfig.batches=[];
+            wrapConfig.batches.push(config.batch);
+        }
+        wrapConfig.assayId = config.assayId;
+        wrapConfig.scope = config.scope;
+        wrapConfig.success = LABKEY.Utils.getOnSuccess(config);
+        wrapConfig.failure = LABKEY.Utils.getOnFailure(config);
+        return wrapConfig;
+    }
+
     /** @scope LABKEY.Experiment */
     return {
 
@@ -170,30 +215,11 @@ LABKEY.Experiment = new function()
          */
         saveBatch : function (config)
         {
-            if (!LABKEY.Utils.getOnSuccess(config)) {
-                console.error("You must specify a callback function in config.success when calling LABKEY.Exp.saveBatch()!");
-                return;
-            }
-
-            function createExp(json)
-            {
-                return new LABKEY.Exp.RunGroup(json.batch);
-            }
-
-            LABKEY.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("assay", "saveAssayBatch", LABKEY.ActionURL.getContainer()),
-                method: 'POST',
-                jsonData: {
-                    assayId: config.assayId,
-                    batch: config.batch
-                },
-                success: getSuccessCallbackWrapper(createExp, LABKEY.Utils.getOnSuccess(config), config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
-                scope: config.scope,
-                headers: {
-                    'Content-Type' : 'application/json'
+            _saveBatches(getSaveBatchesConfig(config), function(json) {
+                if (json.batches) {
+                    return new LABKEY.Exp.RunGroup(json.batches[0])
                 }
-            });
+             });
         },
 
         /**
@@ -219,13 +245,7 @@ LABKEY.Experiment = new function()
          */
         saveBatches : function (config)
         {
-            if (!LABKEY.Utils.getOnSuccess(config)) {
-                console.error("You must specify a callback function in config.success when calling LABKEY.Exp.saveBatch()!");
-                return;
-            }
-
-            function createExps(json)
-            {
+            _saveBatches(getSaveBatchesConfig(config), function(json){
                 var batches = [];
                 if (json.batches) {
                     for (var i = 0; i < json.batches.length; i++) {
@@ -233,21 +253,6 @@ LABKEY.Experiment = new function()
                     }
                 }
                 return batches;
-            }
-
-            LABKEY.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("assay", "saveAssayBatch", LABKEY.ActionURL.getContainer()),
-                method: 'POST',
-                jsonData: {
-                    assayId: config.assayId,
-                    batches: config.batches
-                },
-                success: getSuccessCallbackWrapper(createExps, LABKEY.Utils.getOnSuccess(config), config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
-                scope: config.scope,
-                headers: {
-                    'Content-Type' : 'application/json'
-                }
             });
         },
 
