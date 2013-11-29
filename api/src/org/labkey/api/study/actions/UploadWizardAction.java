@@ -178,22 +178,37 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         InsertView view = new UploadWizardInsertView(createDataRegionForInsert(baseTable, lsidCol, properties, null), getViewContext(), errors);
-        if (errorReshow)
-            view.setInitialValues(getViewContext().getRequest().getParameterMap());
-        else if (domain != null)
-        {
 
+        Map<DomainProperty, Object> defaultValues = new HashMap<>();
+        if (domain != null)
+        {
             try
             {
-                Map<String, Object> inputNameToValue = new HashMap<>();
-                for (Map.Entry<DomainProperty, Object> entry : form.getDefaultValues(domain).entrySet())
-                    inputNameToValue.put(getInputName(entry.getKey()), entry.getValue());
-                view.setInitialValues(inputNameToValue);
+                defaultValues = form.getDefaultValues(domain);
             }
             catch (ExperimentException e)
             {
                 errors.addError(new ObjectError("main", null, null, e.toString()));
             }
+        }
+
+        if (errorReshow)
+            view.setInitialValues(getViewContext().getRequest().getParameterMap());
+        else
+        {
+            Map<String, Object> inputNameToValue = new HashMap<>();
+            for (Map.Entry<DomainProperty, Object> entry : defaultValues.entrySet())
+                inputNameToValue.put(getInputName(entry.getKey()), entry.getValue());
+            view.setInitialValues(inputNameToValue);
+        }
+
+        // issue 19090: add hidden form field for properties with default value that are hidden from insert view
+        for (DomainProperty prop : properties)
+        {
+            String inputName = getInputName(prop);
+            DisplayColumn col = view.getDataRegion().getDisplayColumn(inputName);
+            if (col == null && !prop.isShownInInsertView() && defaultValues.get(prop) != null)
+                view.getDataRegion().addHiddenFormField(inputName, defaultValues.get(prop).toString());
         }
 
         if (form.getBatchId() != null)
