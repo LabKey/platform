@@ -29,6 +29,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -37,11 +38,13 @@ import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.WrapperDataIterator;
+import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.exp.list.ListItem;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorContext;
@@ -90,8 +93,30 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
     public ListQueryUpdateService(ListTable queryTable, TableInfo dbTable, ListDefinition list)
     {
-        super(queryTable, dbTable);
+        super(queryTable, dbTable, createMVMapping(queryTable.getList()));
         _list = (ListDefinitionImpl) list;
+    }
+
+    /**
+     * The database table has underscores for MV column names, but we expose a column without the underscore.
+     * Therefore, we need to translate between the two sets of column names.
+     * @return database column name -> exposed TableInfo column name
+     */
+    private static Map<String, String> createMVMapping(ListDefinition list)
+    {
+        Map<String, String> result = new CaseInsensitiveHashMap<>();
+        Domain domain = list.getDomain();
+        if (domain != null)
+        {
+            for (DomainProperty domainProperty : domain.getProperties())
+            {
+                if (domainProperty.isMvEnabled())
+                {
+                    result.put(PropertyStorageSpec.getMvIndicatorColumnName(domainProperty.getName()), domainProperty.getName() + MvColumn.MV_INDICATOR_SUFFIX);
+                }
+            }
+        }
+        return result;
     }
 
     @Override
@@ -281,10 +306,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         for (Map.Entry<String, Object> r : row.entrySet())
         {
             ColumnInfo column = qt.getColumn(FieldKey.fromParts(r.getKey()));
-            if (null != column && column.isMvIndicatorColumn())
-                rowCopy.put(column.getMetaDataName(), r.getValue());
-            else
-                rowCopy.put(r.getKey(), r.getValue());
+            rowCopy.put(r.getKey(), r.getValue());
 
             // Attachments
             if (r.getValue() instanceof AttachmentFile)

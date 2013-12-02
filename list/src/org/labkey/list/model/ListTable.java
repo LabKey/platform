@@ -26,6 +26,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
@@ -165,7 +166,8 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                 column.setHidden(true);
                 column.setUserEditable(false);
             }
-            else
+            // MV indicator columns will be handled by their associated value column
+            else if (!baseColumn.isMvIndicatorColumn())
             {
                 assert baseColumn.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
 
@@ -199,11 +201,13 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
                         if (pd.isMvEnabled())
                         {
-                            ColumnInfo mvColumn = new ColumnInfo(col.getName() + MvColumn.MV_INDICATOR_SUFFIX, this);
+                            // The column in the physical table has a "_MVIndicator" suffix, but we want to expose
+                            // it with a "MVIndicator" suffix (no underscore)
+                            ColumnInfo mvColumn = new AliasedColumn(this, col.getName() + MvColumn.MV_INDICATOR_SUFFIX, getRealTable().getColumn(PropertyStorageSpec.getMvIndicatorColumnName(col.getName())));
                             // MV indicators are strings
+                            mvColumn.setLabel(col.getLabel() + " MV Indicator");
                             mvColumn.setSqlTypeName("VARCHAR");
                             mvColumn.setPropertyURI(col.getPropertyURI());
-                            mvColumn.setMetaDataName(col.getAlias() + "_" + MvColumn.MV_INDICATOR_SUFFIX);
                             mvColumn.setNullable(true);
                             mvColumn.setUserEditable(false);
                             mvColumn.setHidden(true);
@@ -211,7 +215,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
                             ColumnInfo rawValueCol = new AliasedColumn(col.getName() + RawValueColumn.RAW_VALUE_SUFFIX, col);
                             rawValueCol.setDisplayColumnFactory(ColumnInfo.DEFAULT_FACTORY);
-                            rawValueCol.setLabel(getName());
+                            rawValueCol.setLabel(col.getLabel() + " Raw Value");
                             rawValueCol.setUserEditable(false);
                             rawValueCol.setHidden(true);
                             rawValueCol.setMvColumnName(null);   // This version of the column does not show missing values
@@ -221,7 +225,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                             addColumn(mvColumn);
                             addColumn(rawValueCol);
 
-                            col.setMvColumnName(mvColumn.getFieldKey());
+                            col.setMvColumnName(FieldKey.fromParts(col.getName() + MvColumn.MV_INDICATOR_SUFFIX));
                         }
 
                         if (pd.getPropertyType() == PropertyType.MULTI_LINE)

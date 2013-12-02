@@ -1112,11 +1112,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
                 if (p.isMvEnabled())
                 {
-                    ColumnInfo mvColumn = new ColumnInfo(wrapped.getName() + MvColumn.MV_INDICATOR_SUFFIX, this);
-                    // MV indicators are strings
-                    mvColumn.setSqlTypeName("VARCHAR");
+                    ColumnInfo baseColumn = getStorageColumn(PropertyStorageSpec.getMvIndicatorColumnName(col.getName()));
+                    ColumnInfo mvColumn = newDatasetColumnInfo(this, baseColumn, p.getPropertyDescriptor().getPropertyURI());
+                    mvColumn.setName(p.getName() + MvColumn.MV_INDICATOR_SUFFIX);
+                    mvColumn.setLabel(col.getLabel() + " MV Indicator");
                     mvColumn.setPropertyURI(wrapped.getPropertyURI());
-                    mvColumn.setMetaDataName(col.getAlias() + "_" + MvColumn.MV_INDICATOR_SUFFIX);
                     mvColumn.setNullable(true);
                     mvColumn.setUserEditable(false);
                     mvColumn.setHidden(true);
@@ -1124,7 +1124,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
                     ColumnInfo rawValueCol = new AliasedColumn(wrapped.getName() + RawValueColumn.RAW_VALUE_SUFFIX, wrapped);
                     rawValueCol.setDisplayColumnFactory(ColumnInfo.DEFAULT_FACTORY);
-                    rawValueCol.setLabel(getName());
+                    rawValueCol.setLabel(wrapped.getLabel() + " Raw Value");
                     rawValueCol.setUserEditable(false);
                     rawValueCol.setHidden(true);
                     rawValueCol.setMvColumnName(null); // This version of the column does not show missing values
