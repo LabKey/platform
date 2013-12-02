@@ -34,7 +34,6 @@ import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -404,20 +403,15 @@ public abstract class VisitManager
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo visitTable = StudySchema.getInstance().getTableInfoVisit();
 
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) AS overlaps FROM ");
-        sql.append(visitTable);
-        sql.append(" WHERE SequenceNumMax >= ");
-        sql.append(visit.getSequenceNumMin());
-        sql.append(" AND SequenceNumMin <= ");
-        sql.append(visit.getSequenceNumMax());
-        sql.append(" AND Container = '");
-        sql.append(visit.getContainer().getId());
-        sql.append("'");
-        sql.append(" AND RowId <> "); //exclude the specified visit itself
-        sql.append(visit.getRowId()); //new visits will have a rowId of 0, which shouldn't conflict
+        SQLFragment sql = new SQLFragment("SELECT * FROM ");
+        sql.append(visitTable, "vt");
+        sql.append(" WHERE SequenceNumMax >= ? AND SequenceNumMin <= ? AND Container = ? AND RowId <> ?");
+        sql.add(visit.getSequenceNumMin());
+        sql.add(visit.getSequenceNumMax());
+        sql.add(visit.getContainer());
+        sql.add(visit.getRowId()); // exclude the specified visit itself; new visits will have a rowId of 0, which shouldn't conflict
 
-        Integer overlaps = Table.executeSingleton(schema, sql.toString(), null, Integer.class);
-        return (null != overlaps && overlaps != 0);
+        return new SqlSelector(schema, sql).exists();
     }
 
     /** Update the Participants table to match the entries in StudyData. */
@@ -437,8 +431,7 @@ public abstract class VisitManager
         {
             SQLFragment datasetParticipantsSQL = new SQLFragment("INSERT INTO " + tableParticipant + " (container, participantid)\n" +
                     "SELECT DISTINCT ?, participantid\n" +
-                    "FROM (").append(studyPtidsFragment).append("\n" +
-                    ") x WHERE participantid NOT IN (SELECT participantid FROM " + tableParticipant + " WHERE container = ?)");
+                    "FROM (").append(studyPtidsFragment).append("\n) x WHERE participantid NOT IN (SELECT participantid FROM ").append(tableParticipant).append(" WHERE container = ?)");
             datasetParticipantsSQL.add(c);
             datasetParticipantsSQL.add(c);
 

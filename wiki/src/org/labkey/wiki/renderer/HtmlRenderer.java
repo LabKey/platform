@@ -41,10 +41,10 @@ import java.util.regex.Pattern;
  */
 public class HtmlRenderer implements WikiRenderer
 {
-    String _hrefPrefix;
-    String _attachPrefix;
-    Map<HString, HString> _nameTitleMap;
-    Map<String, Attachment> _attachments;
+    private final String _hrefPrefix;
+    private final String _attachPrefix;
+    private final Map<HString, HString> _nameTitleMap;
+    private final Map<String, Attachment> _attachments;
 
     private static Map<String, SubstitutionHandler> _substitutionHandlers = new HashMap<>();
 
@@ -174,16 +174,6 @@ public class HtmlRenderer implements WikiRenderer
         return new FormattedHtml(innerHtml.toString(), volatilePage);
     }
 
-
-    private void inspectNode(Node node, int indent)
-    {
-        System.out.println(StringUtils.repeat(" ", indent) + node.getLocalName() + " " + node.getNodeValue());
-
-        NodeList l = node.getChildNodes();
-
-        for (int i = 0; i < l.getLength(); i++)
-            inspectNode(l.item(i), indent + 1);
-    }
 
     // ${labkey.<type>(<any_stream of characters>)}
     // Pattern.DOTALL allows the parameter list to span multiple lines

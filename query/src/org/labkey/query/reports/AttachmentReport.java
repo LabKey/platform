@@ -344,27 +344,16 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
             // for attachment reports, write the attachment to a subdirectory to avoid collisions
             VirtualFile reportDir = dir.getDir(getSerializedReportName());
             Attachment attachment = getLatestVersion();
+
             if (attachment != null && attachment.getName() != null)
             {
-                InputStream is = null;
-                OutputStream os = null;
-
-                try
+                try (InputStream is = AttachmentService.get().getInputStream(this, attachment.getName()); OutputStream os = reportDir.getOutputStream(attachment.getName()))
                 {
-                    is = AttachmentService.get().getInputStream(this, attachment.getName());
-                    os = reportDir.getOutputStream(attachment.getName());
                     FileUtil.copyData(is, os);
                 }
                 catch (FileNotFoundException e)
                 {
                     throw new FileNotFoundException("Attachment report file not found: " + attachment.getName());
-                }
-                finally
-                {
-                    if (null != is)
-                        is.close();
-                    if (null != os)
-                        os.close();
                 }
             }
 

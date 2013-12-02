@@ -1491,7 +1491,6 @@ public class ProjectController extends SpringActionController
                     visibleChild.put("children", theseChildren);
                     visibleChildren.add(visibleChild);
                 }
-
             }
 
             return visibleChildren;

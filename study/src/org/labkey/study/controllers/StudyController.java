@@ -4241,9 +4241,10 @@ public class StudyController extends BaseStudyController
 
             TableInfo tinfoParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
             Integer visitDates = Table.executeSingleton(StudySchema.getInstance().getSchema(),
-                    "SELECT Count(VisitDate) FROM " + tinfoParticipantVisit + "\nWHERE Container = ?",
+                    "SELECT COUNT(VisitDate) FROM " + tinfoParticipantVisit + "\nWHERE Container = ?",
                     new Object[] {getContainer()}, Integer.class);
-            int count = null == visitDates ? 0 : visitDates.intValue();
+
+            int count = null == visitDates ? 0 : visitDates;
 
             return new HtmlView(
                     "<div>" + count + " rows were updated.<p/>" +

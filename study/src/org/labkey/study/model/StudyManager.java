@@ -598,8 +598,8 @@ public class StudyManager
         // don't use dataSet.getTableInfo() since this method is called during updateDatasetDefinition`() and may be in an inconsistent state
         TableInfo t = dataSet.getStorageTableInfo();
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT max(n) FROM (SELECT COUNT(*) AS n FROM ").append(t.getFromSQL("DS")).append(" GROUP BY participantid) x");
-        Integer maxCount = Table.executeSingleton(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), Integer.class);
+        sql.append("SELECT MAX(n) FROM (SELECT COUNT(*) AS n FROM ").append(t.getFromSQL("DS")).append(" GROUP BY ParticipantId) x");
+        Integer maxCount = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getObject(Integer.class);
         return maxCount == null || maxCount <= 1;
     }
 
@@ -1243,27 +1243,20 @@ public class StudyManager
 
     public boolean isQCStateInUse(QCState state)
     {
-        try
+        StudyImpl study = getStudy(state.getContainer());
+        if (safeIntegersEqual(study.getDefaultAssayQCState(), state.getRowId()) ||
+            safeIntegersEqual(study.getDefaultDirectEntryQCState(), state.getRowId() )||
+            safeIntegersEqual(study.getDefaultPipelineQCState(), state.getRowId()))
         {
-            StudyImpl study = getStudy(state.getContainer());
-            if (safeIntegersEqual(study.getDefaultAssayQCState(), state.getRowId()) ||
-                safeIntegersEqual(study.getDefaultDirectEntryQCState(), state.getRowId() )||
-                safeIntegersEqual(study.getDefaultPipelineQCState(), state.getRowId()))
-            {
-                return true;
-            }
-            SQLFragment f = new SQLFragment();
-            f.append("SELECT COUNT(*) FROM ").append(
-                    StudySchema.getInstance().getTableInfoStudyData(study, null).getFromSQL("SD")).append(
-                    " WHERE QCState = ?");
-            f.add(state.getRowId());
-            Integer count = Table.executeSingleton(StudySchema.getInstance().getSchema(), f.getSQL(), f.getParamsArray(), Integer.class);
-            return count != null && count.intValue() > 0;
+            return true;
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
+        SQLFragment f = new SQLFragment();
+        f.append("SELECT * FROM ").append(
+                StudySchema.getInstance().getTableInfoStudyData(study, null).getFromSQL("SD")).append(
+                " WHERE QCState = ?");
+        f.add(state.getRowId());
+
+        return new SqlSelector(StudySchema.getInstance().getSchema(), f).exists();
     }
 
     public QCState insertQCState(User user, QCState state) throws SQLException
@@ -1582,30 +1575,21 @@ public class StudyManager
 
     private boolean isCohortInUse(CohortImpl cohort, TableInfo table, String... columnNames)
     {
-        try
-        {
-            List<Object> params = new ArrayList<>();
-            params.add(cohort.getContainer().getId());
+        List<Object> params = new ArrayList<>();
+        params.add(cohort.getContainer().getId());
 
-            StringBuilder cols = new StringBuilder("(");
-            String or = "";
-            for (String columnName : columnNames)
-            {
-                cols.append(or).append(columnName).append(" = ?");
-                params.add(cohort.getRowId());
-                or = " OR ";
-            }
-            cols.append(")");
-
-            Integer count = Table.executeSingleton(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM " +
-                    table + " WHERE Container = ? AND " + cols.toString(),
-                    params.toArray(new Object[params.size()]), Integer.class);
-            return count != null && count > 0;
-        }
-        catch (SQLException e)
+        StringBuilder cols = new StringBuilder("(");
+        String or = "";
+        for (String columnName : columnNames)
         {
-            throw new RuntimeException(e);
+            cols.append(or).append(columnName).append(" = ?");
+            params.add(cohort.getRowId());
+            or = " OR ";
         }
+        cols.append(")");
+
+        return new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT * FROM " +
+                table + " WHERE Container = ? AND " + cols.toString(), params).exists();
     }
 
     public boolean isCohortInUse(CohortImpl cohort)
