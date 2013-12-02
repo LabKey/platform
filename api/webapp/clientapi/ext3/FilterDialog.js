@@ -1190,6 +1190,7 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             schemaName: dr.schemaName,
             queryName: dr.queryName,
             dataRegionName: dr.name,
+            viewName: dr.viewName,
             column: this.fieldKey,
             containerPath: dr.container || dr.containerPath || LABKEY.container.path,
             containerFilter: dr.containerFilter,
