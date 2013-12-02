@@ -35,6 +35,7 @@
     boolean isDateBased = study != null && study.getTimepointType() == TimepointType.DATE;
 %>
 <labkey:errors/>
+<p style="width: 750px;">
 <%
     if (isDateBased)
     {
@@ -53,7 +54,7 @@ is uploaded along with the data. This form allows you to define a range of seque
 <%
     }
 %>
-<br>
+</p>
 <form action="<%=h(buildURL(StudyController.CreateVisitAction.class))%>" method="POST">
     <table>
         <tr>
@@ -98,10 +99,10 @@ is uploaded along with the data. This form allows you to define a range of seque
     <tr>
         <%-- UNDONE: duplicated in editVisit.jsp --%>
         <td class="labkey-form-label">Visit Handling (advanced)<%=
-            helpPopup("SequenceNum handling",
-                    "You may specificy that unique sequence numbers should be based on visit date.<br>" +
-                            "This is for special handling of some log/unscheduled events.<p>" +
-                            "Make sure that the sequence number range is adequate (e.g #.0000-#.9999)",
+            helpPopup("Visit Handling (advanced)",
+                    "You may specify that unique sequence numbers should be based on visit date." +
+                            "<p>This is for special handling of some log/unscheduled events.</p>" +
+                            "<p>Make sure that the sequence number range is adequate (e.g #.0000-#.9999).</p>",
                     true)
         %></td>
         <td>

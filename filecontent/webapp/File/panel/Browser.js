@@ -1785,9 +1785,16 @@ Ext4.define('File.panel.Browser', {
         this.uploadPanel = Ext4.create('File.panel.Upload', {
             region : 'north',
             header : false,
+            cls : 'upload-files-panel',
             hidden : !this.expandUpload,
             fileSystem : this.fileSystem,
             listeners : {
+                closeUploadPanel : function() {
+                    this.onUpload();
+                    Ext4.each(this.actions.upload.items, function(action){
+                        action.toggle(false);
+                    });
+                },
                 transfercomplete : function(options) {
                     this.reload({
                         callback: function() {

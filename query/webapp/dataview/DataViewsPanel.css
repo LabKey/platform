@@ -172,3 +172,7 @@ div.icon img
 .fbrowser table.fb-details td {
     padding-left: 5px;
 }
+
+.fbrowser .upload-files-panel .x4-panel-body {
+    border-top-width: 0 !important;
+}

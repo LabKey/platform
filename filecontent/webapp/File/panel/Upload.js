@@ -33,11 +33,12 @@ Ext4.define('File.panel.Upload', {
 
         this.callParent([config]);
 
-        this.addEvents('cwd', 'transferstarted', 'transfercomplete');
+        this.addEvents('cwd', 'transferstarted', 'transfercomplete', 'closeUploadPanel');
     },
 
     initComponent : function() {
 
+        this.dockedItems = this.getAppletStatusBar();
         this.items = this.getItems();
 
         this.callParent();
@@ -165,8 +166,8 @@ Ext4.define('File.panel.Upload', {
 
         var outerContainer = Ext4.create('Ext.container.Container', {
             layout: 'vbox',
-            height: 130,
-            items: [this.getAppletStatusBar(), uploadsContainer]
+            height: 100,
+            items: [uploadsContainer]
         });
 
         return [outerContainer];
@@ -382,9 +383,6 @@ Ext4.define('File.panel.Upload', {
     },
 
     getAppletStatusBar: function(){
-        if (this.appletStatusBar) {
-            return this.appletStatusBar;
-        }
 
         this.progressBar = Ext4.create('Ext.ProgressBar', {
             width: 200,
@@ -405,16 +403,20 @@ Ext4.define('File.panel.Upload', {
             border: false
         });
 
-        this.appletStatusBar = Ext4.create('Ext.panel.Panel', {
-            width: 350,
-            border: false,
-            height: 25,
-            bodyStyle: this.bodyStyle,
-            layout: 'hbox',
-            items: [this.progressBarContainer, this.statusText]
+        this.closeBtn = Ext4.create('Ext.button.Button', {
+            iconCls: 'iconClose',
+            tooltip: 'Close the file upload panel',
+            scope: this,
+            handler: function() {
+                this.fireEvent('closeUploadPanel');
+            }
         });
 
-        return this.appletStatusBar;
+        return [{
+            xtype: 'toolbar',
+            dock: 'top',
+            items: [this.progressBarContainer, this.statusText, '->', this.closeBtn]
+        }];
     },
 
     updateProgressBarRecord: function(store, record){

@@ -165,10 +165,10 @@
     <tr>
         <%-- UNDONE: duplicated in createVisit.jsp --%>
         <td class="labkey-form-label">Visit Handling (advanced)<%=
-            helpPopup("SequenceNum handling",
-                    "You may specificy that unique sequence numbers should be based on visit date.<br>"+
-                    "This is for special handling of some log/unscheduled events.<p>"+
-                    "Make sure that the sequence number range is adequate (e.g #.0000-#.9999)",
+            helpPopup("Visit Handling (advanced)",
+                    "You may specify that unique sequence numbers should be based on visit date."+
+                    "<p>This is for special handling of some log/unscheduled events.</p>"+
+                    "<p>Make sure that the sequence number range is adequate (e.g #.0000-#.9999).</p>",
                     true)
         %></td>
         <td>
