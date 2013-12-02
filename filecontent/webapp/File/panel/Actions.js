@@ -10,6 +10,8 @@ Ext4.define('File.panel.Actions', {
     frame: false,
     padding: 10,
 
+    isPipelineRoot: false,
+
     constructor : function(config) {
 
         this.actionConfig = {};
@@ -35,11 +37,10 @@ Ext4.define('File.panel.Actions', {
 
     initComponent : function() {
 
-        this.items = [];
-        this.items.push({
+        this.items = [{
             html: '<span class="labkey-strong">Configure Actions</span>',
             border: false
-        });
+        }];
 
         if (this.isPipelineRoot)
         {
@@ -209,7 +210,17 @@ Ext4.define('File.panel.Actions', {
 
     getActionsForSubmission : function() {
         var adminOptions = [];
-        var records = this.actionGrid.getStore() ? this.actionGrid.getStore().getModifiedRecords() : undefined;
+        var grid = this.actionGrid;
+
+        //
+        // 19122 - If pipeline is configured, yet the browser is still configured to point at the files directory
+        // it can cause a configuration where a grid is not supplied.
+        //
+        if (!this.isPipelineRoot || !grid) {
+            return adminOptions;
+        }
+
+        var records = grid.getStore() ? grid.getStore().getModifiedRecords() : undefined;
 
         // pipeline action configuration
         if (records && records.length)

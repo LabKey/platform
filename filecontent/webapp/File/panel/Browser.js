@@ -1250,6 +1250,9 @@ Ext4.define('File.panel.Browser', {
             File.panel.Browser._getActions(actionCb, this.containerPath, this);
             File.panel.Browser._getPipelineConfiguration(pipeCb, this.containerPath, this);
         }
+        else {
+            this.updatePipelineActions([]);
+        }
     },
 
     // worst named method ever
@@ -1798,7 +1801,6 @@ Ext4.define('File.panel.Browser', {
                 transfercomplete : function(options) {
                     this.reload({
                         callback: function() {
-
                             //
                             // Reconfigure the actions based on any new files that are present
                             //
