@@ -1789,13 +1789,12 @@ public class ContainerManager
 
         for (ContainerListener cl : list)
         {
-            try
+            // While we would ideally transact the full container move, that will likely cause long-blocking
+            // queries and/or deadlocks. For now, at least transact each separate move handler independently
+            try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
                 cl.containerMoved(c, oldParent, user);
-            }
-            catch (Throwable t)
-            {
-                LOG.error("fireMoveContainer for " + cl.getClass().getName(), t);
+                transaction.commit();
             }
         }
         ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, user, Property.Parent, oldParent, c.getParent());
