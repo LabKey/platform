@@ -40,20 +40,14 @@ public class ResultSetIterator implements Iterator<Map<String, Object>>
     {
         _rs = rs;
 
-        if (!(_rs instanceof CachedResultSet))
+        try
         {
-            try
-            {
-                _factory = ResultSetRowMapFactory.create(_rs);
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            // Note: If _rs is a CachedResultSet then this method returns a simple, pass-through factory
+            _factory = ResultSetRowMapFactory.create(_rs);
         }
-        else
+        catch (SQLException e)
         {
-            _factory = null;
+            throw new RuntimeSQLException(e);
         }
     }
 
@@ -86,10 +80,7 @@ public class ResultSetIterator implements Iterator<Map<String, Object>>
             }
             _didNext = false;
 
-            if (_rs instanceof CachedResultSet)
-                return ((CachedResultSet)_rs).getRowMap();
-            else
-                return _factory.getRowMap(_rs);
+            return _factory.getRowMap(_rs);
         }
         catch (SQLException e)
         {

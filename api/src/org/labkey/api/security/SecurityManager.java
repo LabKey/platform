@@ -584,13 +584,13 @@ public class SecurityManager
 
 
     // Test if non-LDAP email has been verified
-    public static boolean isVerified(ValidEmail email) throws UserManagementException
+    public static boolean isVerified(ValidEmail email)
     {
         return (null == getVerification(email));
     }
 
 
-    public static boolean verify(ValidEmail email, String verification) throws UserManagementException
+    public static boolean verify(ValidEmail email, String verification)
     {
         String dbVerification = getVerification(email);
         return (dbVerification != null && dbVerification.equals(verification));
@@ -613,17 +613,9 @@ public class SecurityManager
     }
 
 
-    public static String getVerification(ValidEmail email) throws UserManagementException
+    public static String getVerification(ValidEmail email)
     {
-        try
-        {
-            return Table.executeSingleton(core.getSchema(), "SELECT Verification FROM " + core.getTableInfoLogins() + " WHERE email=?", new Object[]{email.getEmailAddress()}, String.class);
-        }
-        catch (SQLException e)
-        {
-            _log.error("verify: ", e);
-            throw new UserManagementException(email, e);
-        }
+        return new SqlSelector(core.getSchema(), "SELECT Verification FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email.getEmailAddress()).getObject(String.class);
     }
 
 
@@ -775,19 +767,11 @@ public class SecurityManager
                     }
                 }
 
-                try
-                {
-                    // If insert didn't return an id it must already exist... select it
-                    if (null == userId)
-                        userId = Table.executeSingleton(core.getSchema(),
-                                "SELECT UserId FROM " + core.getTableInfoPrincipals() + " WHERE Name = ?",
-                                new Object[]{email.getEmailAddress()}, Integer.class);
-                }
-                catch (SQLException x)
-                {
-                    _log.debug("createUser: Something failed user: " + email, x);
-                    throw x;
-                }
+                // If insert didn't return an id it must already exist... select it
+                if (null == userId)
+                    userId = new SqlSelector(core.getSchema(),
+                            "SELECT UserId FROM " + core.getTableInfoPrincipals() + " WHERE Name = ?",
+                           email.getEmailAddress()).getObject(Integer.class);
 
                 if (null == userId)
                 {

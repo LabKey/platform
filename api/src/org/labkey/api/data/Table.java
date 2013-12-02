@@ -82,7 +82,8 @@ import java.util.TreeSet;
 
 public class Table
 {
-    public static final Set<String> ALL_COLUMNS = Collections.unmodifiableSet(Collections.<String>emptySet());
+    @SuppressWarnings("UnusedDeclaration")  // For backward compatibility with external modules
+    public static final Set<String> ALL_COLUMNS = TableSelector.ALL_COLUMNS;
 
     public static final String SQLSTATE_TRANSACTION_STATE = "25000";
     public static final int ERROR_ROWVERSION = 10001;
@@ -338,7 +339,7 @@ public class Table
         return new LegacySqlExecutor(schema).execute(sql, parameters);
     }
 
-    // 42 usages
+    // 32 usages
     /** return a result from a one row one column resultset. does not distinguish between not found, and NULL value */
     @Deprecated /** Use SqlSelector */
     public static <K> K executeSingleton(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> c) throws SQLException

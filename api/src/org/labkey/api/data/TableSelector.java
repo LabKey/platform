@@ -43,6 +43,8 @@ import java.util.concurrent.Callable;
 
 public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFactory, TableSelector>
 {
+    public static final Set<String> ALL_COLUMNS = Collections.unmodifiableSet(Collections.<String>emptySet());
+
     private static final Logger LOG = Logger.getLogger(TableSelector.class);
 
     private final TableInfo _table;
@@ -79,7 +81,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     // Select all columns from a table, with no filter or sort
     public TableSelector(TableInfo table)
     {
-        this(table, Table.ALL_COLUMNS, null, null);
+        this(table, ALL_COLUMNS, null, null);
     }
 
     /*
@@ -94,7 +96,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     // Select all columns from a table
     public TableSelector(TableInfo table, @Nullable Filter filter, @Nullable Sort sort)
     {
-        this(table, Table.ALL_COLUMNS, filter, sort);
+        this(table, ALL_COLUMNS, filter, sort);
     }
 
     /*
@@ -122,7 +124,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     {
         Collection<ColumnInfo> selectColumns;
 
-        if (select == Table.ALL_COLUMNS)
+        if (select == ALL_COLUMNS)
         {
             selectColumns = table.getColumns();
         }

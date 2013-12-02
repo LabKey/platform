@@ -27,6 +27,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -123,9 +124,7 @@ public class GroupManager
     private static int createSystemGroup(int userId, String name, PrincipalType type) throws SQLException
     {
         // See if principal with the given name already exists
-        Integer id = Table.executeSingleton(_core.getSchema(),
-                "SELECT UserId FROM " + _core.getTableInfoPrincipals() + " WHERE Name = ?",
-                new Object[]{name}, Integer.class);
+        Integer id = new SqlSelector(_core.getSchema(), "SELECT UserId FROM " + _core.getTableInfoPrincipals() + " WHERE Name = ?", name).getObject(Integer.class);
 
         if (id != null)
             return id;

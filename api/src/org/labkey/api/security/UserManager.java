@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -376,7 +377,8 @@ public class UserManager
 
     public static int getUserCount(Date registeredBefore) throws SQLException
     {
-        return Table.executeSingleton(CORE.getSchema(), "SELECT COUNT(*) FROM " + CORE.getTableInfoUsersData() + " WHERE Created <= ?", new Object[] { registeredBefore }, Integer.class);
+        SimpleFilter filter = new SimpleFilter("Created", registeredBefore, CompareType.LTE);
+        return (int)new TableSelector(CORE.getTableInfoUsersData(), filter, null).getRowCount();
     }
 
     public static int getActiveUserCount()

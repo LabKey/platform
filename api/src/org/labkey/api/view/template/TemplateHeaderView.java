@@ -23,6 +23,7 @@ import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
@@ -47,15 +48,15 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
 
     private List<String> _warningMessages = new ArrayList<>();
 
-    public TemplateHeaderView(@Nullable List<String> containerLinks, @Nullable String upgradeMessage, @Nullable Map<String, Throwable> moduleErrors, PageConfig page)
+    public TemplateHeaderView(@Nullable String upgradeMessage, @Nullable Map<String, Throwable> moduleErrors, PageConfig page)
     {
-        super("/org/labkey/api/view/template/header.jsp", new TemplateHeaderBean(containerLinks, upgradeMessage, moduleErrors, page));
+        super("/org/labkey/api/view/template/header.jsp", new TemplateHeaderBean(upgradeMessage, moduleErrors, page));
         buildWarningMessageList();
     }
 
     public TemplateHeaderView(PageConfig page)
     {
-        this(null, null, null, page);
+        this(null, null, page);
     }
 
     public boolean isUserHidingWarningMessages()
@@ -103,6 +104,18 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
             if (!SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_1_7))
                 _warningMessages.add("LabKey Server no longer supports Java 6. Please upgrade your runtime to Java 7.");
 */
+
+            String serverInfo = ModuleLoader.getServletContext().getServerInfo();
+
+            if (serverInfo.startsWith("Apache Tomcat/"))
+            {
+                String[] versionParts = serverInfo.substring(14).split("\\.");
+                int majorVersion = Integer.valueOf(versionParts[0]);
+
+                if (majorVersion < 7)
+                    _warningMessages.add("Tomcat 6.0.x (and earlier) is no longer supported. Please upgrade your Tomcat installation to 7.0.x.");
+            }
+
             //FIX: 9683
             //show admins warning about inadequate heap size (<= 256Mb)
             MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
@@ -156,14 +169,12 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
 
     public static class TemplateHeaderBean
     {
-        public @Nullable List<String> containerLinks;
         public @Nullable String upgradeMessage;
         public @Nullable Map<String, Throwable> moduleFailures;
         public PageConfig pageConfig;
 
-        private TemplateHeaderBean(@Nullable List<String> containerLinks, @Nullable String upgradeMessage, @Nullable Map<String, Throwable> moduleFailures, PageConfig page)
+        private TemplateHeaderBean(@Nullable String upgradeMessage, @Nullable Map<String, Throwable> moduleFailures, PageConfig page)
         {
-            this.containerLinks = containerLinks;    // TODO: Remove -- not used!
             this.upgradeMessage = upgradeMessage;
             this.moduleFailures = moduleFailures;
             this.pageConfig = page;

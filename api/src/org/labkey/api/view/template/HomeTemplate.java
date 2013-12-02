@@ -15,14 +15,11 @@
  */
 package org.labkey.api.view.template;
 
-import org.apache.commons.collections15.ArrayStack;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.MultiPortalFolderType;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -75,28 +72,6 @@ public class HomeTemplate extends PrintTemplate
     }
 
 
-    private List<String> buildContainerNavLinks(ViewContext context)
-    {
-        List<String> links = new ArrayList<>();
-        Container container = context.getContainer();
-
-        if (container != null)
-        {
-            ArrayStack<NavTree> stack = new ArrayStack<>();
-            while (!container.isRoot())
-            {
-                // don't add the home project folder, since 'Home' is always displayed:
-                boolean isHomeProject = container.getId().equals(ContainerManager.getForPath("home").getId());
-                if (!isHomeProject)
-                    stack.push(new NavTree(container.getName(), stack.size() > 0 ? container.getStartURL(context.getUser()) : null));
-                container = container.getParent();
-            }
-            while (stack.size() > 0)
-                links.add(formatLink(stack.pop()));
-        }
-        return links;
-    }
-
     protected HttpView getAppBarView(ViewContext context, PageConfig page)
     {
         AppBar appBar;
@@ -132,39 +107,12 @@ public class HomeTemplate extends PrintTemplate
         return new AppBarView(appBar);
     }
 
-    private String formatLink(String display, String href)
-    {
-        if (null == display)
-            display = href;
-        if (href == null && display == null)
-            return null;
-        if (href == null)
-            return display;
-        else
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.append("<a href=\"").append(href).append("\">").append(display).append("</a>");
-            return sb.toString();
-        }
-    }
-
-
-    private String formatLink(NavTree tree)
-    {
-        if (null == tree)
-            return null;
-        String display = null == tree.getText() ? null : PageFlowUtil.filter(String.valueOf(tree.getText()));
-        String href = null == tree.getHref() ? null : PageFlowUtil.filter(String.valueOf(tree.getHref()));
-        return formatLink(display, href);
-    }
-
 
     protected HttpView getHeaderView(PageConfig page)
     {
-        List<String> navLinks = buildContainerNavLinks(getRootContext());
         String upgradeMessage = UsageReportingLevel.getUpgradeMessage();
         Map<String, Throwable> moduleFailures = ModuleLoader.getInstance().getModuleFailures();
-        return new TemplateHeaderView(navLinks, upgradeMessage, moduleFailures, page);
+        return new TemplateHeaderView(upgradeMessage, moduleFailures, page);
     }
 
 
