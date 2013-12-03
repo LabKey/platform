@@ -2805,8 +2805,6 @@ public class StudyManager
             return false;
 
         List<Map<String, Object>> mapsImport = reader.getImportMaps();
-        if (mapsImport.isEmpty())
-            return true;
 
         List<String> importErrors = new LinkedList<>();
         final Container c = study.getContainer();
