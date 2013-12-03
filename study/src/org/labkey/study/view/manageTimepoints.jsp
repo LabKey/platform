@@ -78,7 +78,7 @@
             </td>
         </tr>
         <tr>
-            <td class="labkey-form-label"><label for="defaultTimepointDurationInput">Default Timepoint Duration</label><%=helpPopup("Default Timepoint Duration", "A start date is required for studies that are date based.")%></td>
+            <td class="labkey-form-label"><label for="defaultTimepointDurationInput">Default Timepoint Duration</label></td>
             <td><input type="number" id="defaultTimepointDurationInput" name="defaultTimepointDuration" value="<%=h(form.getDefaultTimepointDuration())%>">
             </td>
         </tr>

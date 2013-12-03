@@ -35,8 +35,8 @@ Ext4.define('File.panel.Browser', {
     /**
      * @cfg {Ext4.util.Format.fileSize} fileSize
      */
-    sizeRenderer : function(value) {
-        return value > 0 ? Ext4.util.Format.fileSize(value) : null;
+    sizeRenderer : function(value, metaData, record) {
+        return !record.get("collection") ? Ext4.util.Format.fileSize(value) : null;
     },
 
     /**

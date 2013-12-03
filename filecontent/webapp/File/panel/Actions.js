@@ -58,16 +58,25 @@ Ext4.define('File.panel.Actions', {
             });
         }
         else {
+            var descriptionText = 'File Actions are only available for files in the pipeline directory. An administrator has defined ' +
+                    'a "pipeline override" for this folder, so actions are not available in the default file location.<br/><br/>';
+            if (LABKEY.ActionURL.getController() != 'filecontent')
+            {
+                descriptionText += 'Customize this web part to use the pipeline directory by clicking on the ' +
+                        '"more" button in the web part title area and selecting the "customize" option. You can then set this ' +
+                        'web part to show files from the pipeline directory.<br>' +
+                        '<img src="' + LABKEY.contextPath + '/_images/customize-example.png"/>';
+            }
+            else
+            {
+                descriptionText += LABKEY.Utils.textLink({text: "Go To Pipeline Directory", href: LABKEY.ActionURL.buildURL('pipeline', 'browse')});
+            }
+
             this.items.push({
                 border: false,
                 height: 300,
                 padding : '10 0 0 0',
-                html: 'File Actions are only available for files in the pipeline directory. An administrator has defined ' +
-                        'a "pipeline override" for this folder, so actions are not available in the default file location.' +
-                        '<br/><br/>Customize this web part to use the pipeline directory by clicking on the ' +
-                        '"more" button in the web part title area and selecting the "customize" option. You can then set this ' +
-                        'web part to show files from the pipeline directory.<br>' +
-                        '<img src="' + LABKEY.contextPath + '/_images/customize-example.png"/>'
+                html: descriptionText
             });
         }
 

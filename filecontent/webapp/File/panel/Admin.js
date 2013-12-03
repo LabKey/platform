@@ -185,7 +185,6 @@ Ext4.define('File.panel.Admin', {
     },
 
     onEditFileProperties : function() {
-        // TODO: Save new settings and navigate to ecit properties page.
         this.onSubmit(null, null, function() {
             window.location = LABKEY.ActionURL.buildURL('fileContent', 'designer', this.containerPath, {
                 'returnURL': window.location
