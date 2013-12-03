@@ -185,7 +185,7 @@ public class ServerManager
     {
         synchronized (_serverLock)
         {
-            ServerReferenceCount ref = _servers.get(getServerCacheKey(c));
+            ServerReferenceCount ref = _servers.remove(getServerCacheKey(c));
             if (null != ref)
                 ref.decrement();
         }
