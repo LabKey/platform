@@ -300,7 +300,7 @@ public class StoredProcedureStep extends TransformTask
         }
         else
         {
-            getJob().error("Error: sproc must have @transformRunId input parameter");
+            getJob().error("Error: sproc " + procSchema + "." + procName + " does not exist or does not have required @transformRunId input parameter");
             return false;
         }
     }
@@ -345,6 +345,8 @@ public class StoredProcedureStep extends TransformTask
                         savedParamVals.put(paramName, null);
                     else if (paramName.equals("@filterEndTimestamp"))
                         savedParamVals.put(paramName, null);
+                    else if (paramName.equals("@filterRunId"))
+                        savedParamVals.put(paramName, -1);
                     else if (paramName.equals("@returnMsg"))
                         savedParamVals.put(paramName, "");
                     else if (paramName.equals("@debug"))
