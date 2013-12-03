@@ -46,7 +46,17 @@ public class QMethodCall extends QExpr
         for (QNode n : getLastChild().children())
         {
 			QExpr expr = (QExpr)n;
-            arguments.add(expr.getSqlFragment(builder.getDbSchema(), query));
+            SQLFragment sqlf = expr.getSqlFragment(builder.getDbSchema(), query);
+            if (null == sqlf)
+            {
+                QueryParseException qpe = new QueryParseException("Unexpected error parsing query near method " + getFirstChild().getTokenText(), null, expr.getLine(), expr.getColumn());
+                if (null == query)
+                    throw qpe;
+                if (query.getParseErrors().isEmpty())
+                    query.getParseErrors().add(qpe);
+                return;
+            }
+            arguments.add(sqlf);
         }
         QNode first = getFirstChild();
 
