@@ -22,6 +22,7 @@ import org.apache.commons.lang3.time.FastDateFormat;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.annotations.JavaRuntimeVersion;
+import org.labkey.api.settings.AppProps;
 
 import javax.xml.bind.DatatypeConverter;
 import java.sql.Timestamp;
@@ -74,6 +75,7 @@ public class DateUtil
         public _Calendar(TimeZone tz, Locale locale, int year, int mon, int mday, int hour, int min, int sec, int ms)
         {
             super(tz, locale);
+            //noinspection MagicConstant
             set(year, mon, mday, hour, min, sec);
             set(Calendar.MILLISECOND, ms);
         }
@@ -114,18 +116,6 @@ public class DateUtil
     }
 
 
-    public static Calendar newCalendar(TimeZone tz)
-    {
-        return new _Calendar(tz, _localeDefault);
-    }
-
-
-    public static Calendar newCalendar()
-    {
-        return new _Calendar(_timezoneDefault, _localeDefault);
-    }
-
-
     public static Calendar newCalendar(long l)
     {
         return new _Calendar(_timezoneDefault, _localeDefault, l);
@@ -157,7 +147,7 @@ public class DateUtil
         int ms = c.get(Calendar.MILLISECOND);
 
         if (year < 0)
-            throw new IllegalArgumentException("BC date not supported");
+            throw new IllegalArgumentException("BCE date not supported");
         if (year < 1000)
         {
             sb.append('0');
@@ -249,11 +239,23 @@ public class DateUtil
 
     enum TZ
     {
-        z(0),gmt(0),ut(0),utc(0),est(5*60),edt(4*60),cst(6*60),cdt(5*60),mst(7*60),mdt(6*60),pst(8*60),pdt(7*60);
-        int tzoffset;
+        z("UTC"),gmt("UTC"),ut("UTC"),utc("UTC"),
+        // North America
+        est(-5*60),edt(-4*60),cst(-6*60),cdt(-5*60),mst(-7*60),mdt(-6*60),pst(-8*60),pdt(-7*60),
+        // Europe
+        cet("CET"), wet("WET")
+        ;
+
+        TimeZone tz=null;
+        int tzoffset=-1;
         TZ(int tzoffset)
         {
             this.tzoffset = tzoffset;
+        }
+        TZ(String id)
+        {
+            tz = TimeZone.getTimeZone(id);
+            assert !"GMT".equals(tz.getID());
         }
     }
 
@@ -276,16 +278,30 @@ public class DateUtil
     }
 
     static Comparator compEnum = new Comparator<Object>() {public int compare(Object o1, Object o2){return ((Enum)o1).name().compareTo((String)o2);}};
-    static Enum resolveDatePart(String sequence, int start, int end)
+
+    static Enum resolveDatePartEnum(String s)
     {
-        String s = sequence.substring(start,end).toLowerCase();
+        s = s.toLowerCase();
         int i = Arrays.binarySearch(parts, s, compEnum);
         if (i>=0)
             return parts[i];
-        if (end-start < 2)
+        if (s.length() < 2)
             return null;
         i = -(i+1);
         return i>parts.length-1 ? null : parts[i].name().startsWith(s) ? parts[i] : null;
+    }
+
+    static Object resolveDatePart(String s)
+    {
+        Enum e = resolveDatePartEnum(s);
+        if (null != e)
+            return e instanceof TZ && (null != ((TZ)e).tz) ? ((TZ)e).tz : e;
+
+        TimeZone tz = TimeZone.getTimeZone(s);
+        // getTimeZone() unhelpfully returns GMT if the id is not recognized
+        if ("GMT".equals(tz.getID()))
+            return null;
+        return tz;
     }
 
 
@@ -297,7 +313,20 @@ public class DateUtil
     }
 
 
+    private enum MonthDayOption
+    {
+        MONTH_DAY,
+        DAY_MONTH
+    }
+
+
     private static long parseDateTimeUS(String s, DateTimeOption option, boolean strict)
+    {
+        return parseDateTimeEN(s, option, MonthDayOption.MONTH_DAY, strict);
+    }
+
+
+    private static long parseDateTimeEN(String s, DateTimeOption option, MonthDayOption md, boolean strict)
     {
         Month month = null; // set if month is specified using name
         int year = -1;
@@ -306,17 +335,16 @@ public class DateUtil
         int hour = -1;
         int min = -1;
         int sec = -1;
-        char c = 0;
-        char si = 0;
+        char c, si;
         int i = 0;
         int n, digits;
         int tzoffset = -1;
+        TimeZone tz = null;
         char prevc = 0;
-        int limit = 0;
         boolean seenplusminus = false;
         boolean monthexpected = false;
 
-        limit = s.length();
+        int limit = s.length();
         while (i < limit)
         {
             c = s.charAt(i);
@@ -333,24 +361,26 @@ public class DateUtil
                 }
                 continue;
             }
-/*
-This syntax seems unused and untested, so removing for now
+
             if (c == '(')
             {
-                int depth = 1;
-                while (i < limit)
-                {
-                    c = s.charAt(i);
+                int start = i;
+                while (i < limit && s.charAt(i) != ')')
                     i++;
-                    if (c == '(')
-                        depth++;
-                    else if (c == ')')
-                        if (--depth <= 0)
-                            break;
-                }
+                if (i == limit)
+                    throw new ConversionException("Could not parse timezone specification: " + s.substring(start-1));
+                String spec = s.substring(start,i);
+                Object dp = resolveDatePart(spec);
+                if (dp instanceof TimeZone)
+                    tz = (TimeZone)dp;
+                else if (dp instanceof TZ)
+                    tzoffset = ((TZ)dp).tzoffset;
+                else
+                    throw new ConversionException("Could not parse timezone specification: " + spec);
+                i++;
                 continue;
             }
-*/
+
             if ('0' <= c && c <= '9')
             {
                 n = c - '0';
@@ -380,18 +410,19 @@ validNum:       {
                             n = n * 60; /* EG. "GMT-3" */
                         else
                             n = n % 100 + n / 100 * 60; /* eg "GMT-0430" */
-                        if (prevc == '+')       /* plus means east of GMT */
+                        if (prevc == '-')
                             n = -n;
-                        if (tzoffset != 0 && tzoffset != -1)
+                        if ((tz != null && tz.getRawOffset() != 0) || (tzoffset != 0 && tzoffset != -1))
                             throw new ConversionException(s);
                         tzoffset = n;
+                        tz = null;
                         break validNum;
                     }
-                    if (digits > 3 || n >= 70 || ((prevc == '/' || prevc == '-') && mon >= 0 && mday >= 0 && year < 0))
+                    if (digits > 3 || n >= 70 || ((prevc == '/' || prevc == '-' || prevc == '.') && mon >= 0 && mday >= 0 && year < 0))
                     {
                         if (year >= 0)
                             throw new ConversionException(s);
-                        else if (c <= ' ' || c == ',' || c == '/' || c == '-' || i >= limit)
+                        else if (c <= ' ' || c == ',' || c == '/' || c == '-' || c == '.' || i >= limit)
                         {
                             if (n >= 100 || digits > 3)
                                 year = n;
@@ -406,7 +437,7 @@ validNum:       {
                     }
                     if (c == ':' || (hour < 0 && option == DateTimeOption.TimeOnly))
                     {
-                        if (c == '/')
+                        if (c == '/' || c == '.')
                             throw new ConversionException(s);
                         else if (hour < 0)
                             hour = n;
@@ -416,16 +447,28 @@ validNum:       {
                             throw new ConversionException(s);
                         break validNum;
                     }
-                    if (c == '/' || c == '-')
+                    if (c == '/' || c == '-' || c == '.')
                     {
                         if (c == '/' && option == DateTimeOption.TimeOnly)
                             throw new ConversionException(s);
-                        if (mon < 0)
-                            mon = n - 1;
-                        else if (mday < 0)
-                            mday = n;
+                        if (md == MonthDayOption.MONTH_DAY || year >= 0)
+                        {
+                            if (mon < 0)
+                                mon = n - 1;
+                            else if (mday < 0)
+                                mday = n;
+                            else
+                                throw new ConversionException(s);
+                        }
                         else
-                            throw new ConversionException(s);
+                        {
+                            if (mday < 0)
+                                mday = n;
+                            else if (mon < 0)
+                                mon = n - 1;
+                            else
+                                throw new ConversionException(s);
+                        }
                         break validNum;
                     }
                     if (i < limit)
@@ -469,7 +512,7 @@ validNum:       {
                 } // validNum: end of number handling
                 prevc = 0;
             }
-            else if (c == '/' || c == ':' || c == '+' || c == '-')
+            else if (c == '/' || c == ':' || c == '+' || c == '-' || c == '.')
             {
                 prevc = c;
             }
@@ -483,14 +526,7 @@ validNum:       {
                         break;
                     i++;
                 }
-                Enum dp = null;
-                try
-                {
-                    dp = resolveDatePart(s,st,i);
-                }
-                catch (IllegalArgumentException ignored)
-                {
-                }
+                Object dp = resolveDatePart(s.substring(st,i));
                 if (null == dp)
                     throw new ConversionException(s);
                 if (option != DateTimeOption.TimeOnly && monthexpected && !(dp instanceof Month))
@@ -524,7 +560,8 @@ validNum:       {
                             hour += 12;
                     }
                 }
-                else if (dp instanceof Weekday)
+                else //noinspection StatementWithEmptyBody
+                    if (dp instanceof Weekday)
                 {
                     // ignore week days
                 }
@@ -550,6 +587,10 @@ validNum:       {
                     // handle "01Jan2001" or "01 Jan 2001" pretend we're seeing 01/Jan/2001
                     if (i < limit && year < 0)
                         prevc = '/';
+                }
+                else if (dp instanceof TimeZone)
+                {
+                    tz = (TimeZone)dp;
                 }
                 else
                 {
@@ -595,21 +636,26 @@ validNum:       {
         // This part is changed to work with Java
         //
 
-        TimeZone tz;
-        if (tzoffset == -1)
-            tz = _timezoneDefault;
-        else
+        if (tzoffset != -1 && tz != null)
+            throw new ConversionException("ambiguous timezone specification");
+
+        if (tz == null)
         {
-            tz = tzCache.get(tzoffset);
-            if (null == tz)
+            if (tzoffset == -1)
+                tz = _timezoneDefault;
+            else
             {
-                char sign = tzoffset < 0 ? '+' : '-'; // tzoffset seems to switched from TimeZone sense
-                int mins = Math.abs(tzoffset);
-                int hr = mins / 60;
-                int mn = mins % 60;
-                String tzString = "GMT" + sign + (hr / 10) + (hr % 10) + (mn / 10) + (mn % 10);
-                tz = TimeZone.getTimeZone(tzString);
-                tzCache.put(tzoffset, tz);
+                tz = tzCache.get(tzoffset);
+                if (null == tz)
+                {
+                    char sign = tzoffset < 0 ? '-' : '+';
+                    int mins = Math.abs(tzoffset);
+                    int hr = mins / 60;
+                    int mn = mins % 60;
+                    String tzString = "GMT" + sign + (hr / 10) + (hr % 10) + (mn / 10) + (mn % 10);
+                    tz = TimeZone.getTimeZone(tzString);
+                    tzCache.put(tzoffset, tz);
+                }
             }
         }
 
@@ -723,9 +769,17 @@ validNum:       {
     }
 
 
-
     // Lenient parsing using a variety of standard formats
     public static long parseDateTime(String s)
+    {
+        if (AppProps.getInstance().getUseMDYDateParsing())
+            return parseDateTime(s, MonthDayOption.MONTH_DAY);
+        else
+            return parseDateTime(s, MonthDayOption.DAY_MONTH);
+    }
+
+
+    public static long parseDateTime(String s, MonthDayOption md)
     {
         int ms = 0;
         try
@@ -745,7 +799,8 @@ validNum:       {
                     ms *= 10;
                 s = s.substring(0, period);
             }
-            long time = parseDateTimeUS(s, DateTimeOption.DateTime, true);
+
+            long time = parseDateTimeEN(s, DateTimeOption.DateTime, md, true);
             return time + ms;
         }
         catch (ConversionException ignored) {}
@@ -757,6 +812,15 @@ validNum:       {
     // Lenient parsing using a variety of standard formats
     public static long parseDate(String s)
     {
+        if (AppProps.getInstance().getUseMDYDateParsing())
+            return parseDate(s, MonthDayOption.MONTH_DAY);
+        else
+            return parseDate(s, MonthDayOption.DAY_MONTH);
+    }
+
+
+    public static long parseDate(String s, MonthDayOption md)
+    {
         try
         {
             // quick check for JDBC/ISO date
@@ -767,7 +831,7 @@ validNum:       {
 
         try
         {
-            return parseDateTimeUS(s, DateTimeOption.DateOnly, true);
+            return parseDateTimeEN(s, DateTimeOption.DateOnly, md, true);
         }
         catch (ConversionException e)
         {
@@ -1193,7 +1257,7 @@ Parse:
 
 
         @Test
-        public void testDateTime() throws ParseException
+        public void testDateTimeUS() throws ParseException
         {
             long datetimeExpected = java.sql.Timestamp.valueOf("2001-02-03 04:05:06").getTime();
             long dateExpected = java.sql.Date.valueOf("2001-02-03").getTime();
@@ -1231,6 +1295,7 @@ Parse:
             assertEquals(dateExpected, DateUtil.parseDateTime("2001-02-03"));
             assertEquals(dateExpected, DateUtil.parseDateTime("2001-2-03"));
             assertEquals(dateExpected, DateUtil.parseDateTime("2/3/01"));
+            assertEquals(dateExpected, DateUtil.parseDateTime("2/3/2001"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3-Feb-01"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3Feb01"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3Feb2001"));
@@ -1288,6 +1353,128 @@ Parse:
             assertEquals(datetimeUTC, parseDateTimeUS("2001-02-03T04:05:06Z", DateTimeOption.DateTime, true));
         }
 
+
+        @Test
+        public void testDateTimeGB() throws ParseException
+        {
+            long datetimeExpected = java.sql.Timestamp.valueOf("2001-02-03 04:05:06").getTime();
+            long dateExpected = java.sql.Date.valueOf("2001-02-03").getTime();
+
+            // DateTime with time
+            Date dt = new Date(datetimeExpected);
+            assertEquals(datetimeExpected, DateUtil.parseDateTime(dt.toString(), MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime(dt.toGMTString(), MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime(dt.toLocaleString(), MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime(ConvertUtils.convert(dt), MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03 04:05:06", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03 04:05:06.0", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03T04:05:06", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("3/2/01 4:05:06", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("3/2/2001 4:05:06", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("3/2/2001 4:05:06.000", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("03 feb 2001 04:05:06", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("03 feb 2001 04:05:06am", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("03 feb 2001 04:05:06 am", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected-6000, DateUtil.parseDateTime("03 feb 2001 04:05am", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected-6000, DateUtil.parseDateTime("03 feb 2001 04:05 am", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("03-FEB-2001-04:05:06", MonthDayOption.DAY_MONTH)); // FCS dates
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("3-02-2001 4:05:06", MonthDayOption.DAY_MONTH));
+
+            // illegal
+            assertIllegalDateTime("2");
+            assertIllegalDateTime("2/3");
+
+            // DateTime without time
+            Date d = new Date(dateExpected);
+            assertEquals(dateExpected, DateUtil.parseDateTime(d.toString()));
+            assertEquals(dateExpected, DateUtil.parseDateTime(d.toGMTString()));
+            assertEquals(dateExpected, DateUtil.parseDateTime(d.toLocaleString()));
+            assertEquals(dateExpected, DateUtil.parseDateTime(ConvertUtils.convert(d)));
+            assertEquals(dateExpected, DateUtil.parseDateTime("2001-02-03", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, DateUtil.parseDateTime("2001-2-03", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, DateUtil.parseDateTime("3/2/01", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, DateUtil.parseDateTime("3/2/2001", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, DateUtil.parseDateTime("3-Feb-01", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, DateUtil.parseDateTime("3Feb01", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, DateUtil.parseDateTime("3Feb2001", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, DateUtil.parseDateTime("03Feb01", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, DateUtil.parseDateTime("03Feb2001", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, DateUtil.parseDateTime("3 Feb 01", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, DateUtil.parseDateTime("3 Feb 2001", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, DateUtil.parseDateTime("February 3, 2001", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, DateUtil.parseDateTime("20010203", MonthDayOption.DAY_MONTH));
+
+            // Only recognize years in the "recent" past/future with this all-digit format
+            assertIllegalDateTime("17000101");
+            assertIllegalDateTime("23000101");
+
+            // Test XML date format
+            assertXmlDateMatches(DateUtil.parseDate("2001-02-03+01:00", MonthDayOption.DAY_MONTH));
+            assertXmlDateMatches(DateUtil.parseDate("2001-02-03Z", MonthDayOption.DAY_MONTH));
+            assertIllegalDateTime("115468001");
+
+            // some zero testing
+            datetimeExpected = java.sql.Timestamp.valueOf("2001-02-03 00:00:00.000").getTime();
+            assertEquals(datetimeExpected, parseDateTime("2001-02-03 00:00:00.000", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, parseDateTime("2001-02-03 00:00:00", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, parseDateTime("2001-02-03 00:00", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, parseDateTime("2001-02-03", MonthDayOption.DAY_MONTH));
+
+            // dd/mmm/yy testing
+            assertEquals(dateExpected, parseDateTime("3/Feb/01", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, parseDateTime("3/FEB/01", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, parseDateTime("3/FeB/2001", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, parseDateTime("03/feb/2001", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, parseDateTime("03/FEB/2001", MonthDayOption.DAY_MONTH));
+            assertIllegalDateTime("Jan/Feb/2001");
+
+            // Z testing
+            SimpleDateFormat zo = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+            SimpleDateFormat lo = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat ut = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            ut.setTimeZone(TimeZone.getTimeZone("GMT"));
+
+            long datetimeUTC = zo.parse("2001-02-03 04:05:06 GMT").getTime();
+            long datetimeLocal = lo.parse("2001-02-03 04:05:06").getTime();
+            assertEquals(zo.parse("2001-02-03 04:05:06 GMT"), ut.parse("2001-02-03 04:05:06"));
+            long utcOffset = TimeZone.getDefault().getOffset(datetimeUTC);
+            assertEquals(datetimeLocal + utcOffset, datetimeUTC);
+            assertEquals(datetimeUTC, DateUtil.parseDateTime("Sat Feb 03 04:05:06 GMT-0000 2001", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeUTC+TimeUnit.HOURS.toMillis(1), DateUtil.parseDateTime("Sat Feb 03 04:05:06 GMT-1 2001", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeUTC+TimeUnit.HOURS.toMillis(1), DateUtil.parseDateTime("Sat Feb 03 04:05:06 GMT-0100 2001", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeUTC-TimeUnit.MINUTES.toMillis(270), DateUtil.parseDateTime("Sat Feb 03 04:05:06 GMT+0430 2001", MonthDayOption.DAY_MONTH));
+
+            // check that parseDateTimeUS handles ISO
+            assertEquals(datetimeLocal, parseDateTimeEN("2001-02-03 04:05:06", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH, true));
+            assertEquals(datetimeLocal, parseDateTimeEN("2001-02-03T04:05:06", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH, true));
+            assertEquals(datetimeUTC, parseDateTimeEN("2001-02-03 04:05:06Z", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH, true));
+            assertEquals(datetimeUTC, parseDateTimeEN("2001-02-03T04:05:06Z", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH, true));
+        }
+
+
+        @Test
+        public void testDateTimeCH() throws ParseException
+        {
+            long datetimeExpected = java.sql.Timestamp.valueOf("2001-02-03 04:05:06").getTime();
+            long dateExpected = java.sql.Date.valueOf("2001-02-03").getTime();
+
+            // DateTime with time
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("3.2.01 4:05:06", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("3.2.2001 4:05:06", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("3.2.2001 4:05:06.000", MonthDayOption.DAY_MONTH));
+
+            // DateTime with time
+            long offset = (long)_timezoneDefault.getRawOffset() - (long)TimeZone.getTimeZone("CET").getRawOffset();
+            assertEquals(datetimeExpected+offset, DateUtil.parseDateTime("3.2.2001 4:05:06 (CET)", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected+offset, DateUtil.parseDateTime("3.2.2001 - 4:05:06 (CET)", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected+offset, DateUtil.parseDateTime("3.2.2001 4:05:06 (Europe/Paris)", MonthDayOption.DAY_MONTH));
+
+            // DateTime without time
+            assertEquals(dateExpected, DateUtil.parseDateTime("3.2.01", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, DateUtil.parseDateTime("3.2.2001", MonthDayOption.DAY_MONTH));
+        }
+
+
         private void assertXmlDateMatches(long millis)
         {
             Calendar parsedXml = new GregorianCalendar();
@@ -1297,6 +1484,7 @@ Parse:
             // Depending on your local time zone, you will get different days
             assertTrue(parsedXml.get(Calendar.DAY_OF_MONTH) == 3 || parsedXml.get(Calendar.DAY_OF_MONTH) == 2);
         }
+
 
         @Test
         public void testDate()

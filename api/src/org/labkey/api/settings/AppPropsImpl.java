@@ -554,4 +554,10 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         DecimalFormat format = new DecimalFormat("0.00");
         return format.format(ModuleLoader.getInstance().getCoreModule().getVersion());
     }
+
+    @Override
+    public boolean getUseMDYDateParsing()
+    {
+        return true;
+    }
 }

@@ -26,18 +26,28 @@ LABKEY.Utils = new function()
     var CHARS = '0123456789abcdefghijklmnopqrstuvwxyz'.split('');
 
     //When using Ext dateFields you can use DATEALTFORMATS for the altFormat: config option.
-    var DATEALTFORMATS= 'n/j/y g:i:s a|n/j/Y g:i:s a|n/j/y G:i:s|n/j/Y G:i:s|' +
-                        'n-j-y g:i:s a|n-j-Y g:i:s a|n-j-y G:i:s|n-j-Y G:i:s|' +
-                        'n/j/y g:i a|n/j/Y g:i a|n/j/y G:i|n/j/Y G:i|' +
-                        'n-j-y g:i a|n-j-Y g:i a|n-j-y G:i|n-j-Y G:i|' +
-                        'j-M-y g:i a|j-M-Y g:i a|j-M-y G:i|j-M-Y G:i|' +
-                        'n/j/y|n/j/Y|' +
-                        'n-j-y|n-j-Y|' +
-                        'j-M-y|j-M-Y|' +
-                        'Y-n-d H:i:s|Y-n-d|' +
-                        'Y/n/d H:i:s|Y/n/d|' +
-                        'j M Y G:i:s O|' +  // 10 Sep 2009 11:24:12 -0700
-                        'j M Y H:i:s|c';
+    var DATEALTFORMATS_Either =
+            'j-M-y g:i a|j-M-Y g:i a|j-M-y G:i|j-M-Y G:i|' +
+            'j-M-y|j-M-Y|' +
+            'Y-n-d H:i:s|Y-n-d|' +
+            'Y/n/d H:i:s|Y/n/d|' +
+            'j M Y G:i:s O|' +  // 10 Sep 2009 11:24:12 -0700
+            'j M Y H:i:s|c';
+    var DATEALTFORMATS_MonthDay =
+            'n/j/y g:i:s a|n/j/Y g:i:s a|n/j/y G:i:s|n/j/Y G:i:s|' +
+            'n-j-y g:i:s a|n-j-Y g:i:s a|n-j-y G:i:s|n-j-Y G:i:s|' +
+            'n/j/y g:i a|n/j/Y g:i a|n/j/y G:i|n/j/Y G:i|' +
+            'n-j-y g:i a|n-j-Y g:i a|n-j-y G:i|n-j-Y G:i|' +
+            'n/j/y|n/j/Y|' +
+            'n-j-y|n-j-Y|' + DATEALTFORMATS_Either;
+    var DATEALTFORMATS_DayMonth =
+            'j/n/y g:i:s a|j/n/Y g:i:s a|j/n/y G:i:s|j/n/Y G:i:s|' +
+            'j-n-y g:i:s a|j-n-Y g:i:s a|j-n-y G:i:s|j-n-Y G:i:s|' +
+            'j/n/y g:i a|j/n/Y g:i a|j/n/y G:i|j/n/Y G:i|' +
+            'j-n-y g:i a|j-n-Y g:i a|j-n-y G:i|j-n-Y G:i|' +
+            'j/n/y|j/n/Y|' +
+            'j-n-y|j-n-Y|' +
+            'j-M-y|j-M-Y|' + DATEALTFORMATS_Either;
 
     function isObject(v)
     {
@@ -136,7 +146,7 @@ LABKEY.Utils = new function()
          */
         getDateAltFormats : function()
         {
-            return DATEALTFORMATS;
+            return LABKEY.useMDYDateParsing ? DATEALTFORMATS_DayMonth : DATEALTFORMATS_MonthDay;
         },
 
         /**

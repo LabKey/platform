@@ -2065,13 +2065,15 @@ public class PageFlowUtil
 
     public static JSONObject jsInitObject(LinkedHashSet<ClientDependency> resources)
     {
-        String contextPath = AppProps.getInstance().getContextPath();
+        AppProps.Interface appProps = AppProps.getInstance();
+        String contextPath = appProps.getContextPath();
         JSONObject json = new JSONObject();
-        json.put("experimentalContainerRelativeURL", AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_CONTAINER_RELATIVE_URL));
+        json.put("experimentalContainerRelativeURL", appProps.isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_CONTAINER_RELATIVE_URL));
+        json.put("useMDYDateParsing", appProps.getUseMDYDateParsing());
         json.put("contextPath", contextPath);
         json.put("imagePath", contextPath + "/_images");
         json.put("extJsRoot", extJsRoot());
-        json.put("devMode", AppProps.getInstance().isDevMode());
+        json.put("devMode", appProps.isDevMode());
         json.put("homeContainer", ContainerManager.getHomeContainer().getName());
         Container shared = ContainerManager.getSharedContainer();
         if (null != shared) // not good
@@ -2125,8 +2127,8 @@ public class PageFlowUtil
             json.put("project", projectProps);
         }
 
-        json.put("serverName", StringUtils.isNotEmpty(AppProps.getInstance().getServerName()) ? AppProps.getInstance().getServerName() : "Labkey Server");
-        json.put("versionString", AppProps.getInstance().getLabKeyVersionString());
+        json.put("serverName", StringUtils.isNotEmpty(appProps.getServerName()) ? appProps.getServerName() : "Labkey Server");
+        json.put("versionString", appProps.getLabKeyVersionString());
         if (request != null)
         {
             if ("post".equalsIgnoreCase(request.getMethod()))
