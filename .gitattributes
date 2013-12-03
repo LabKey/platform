@@ -4058,8 +4058,6 @@ timeline/webapp/timeline/timeline_2.3.0/timeplot_js/timeplot-bundle.js -text
 visualization/Visualization.iml -text
 visualization/module.properties -text
 visualization/resources/config/module.xml -text
-visualization/resources/schemas/dbscripts/postgresql/visualization-13.20-13.21.sql -text
-visualization/resources/schemas/dbscripts/sqlserver/visualization-13.20-13.21.sql -text
 visualization/resources/web/timechart.lib.xml -text
 visualization/resources/web/vis/SVGConverter.js -text
 visualization/resources/web/vis/baseExportScriptPanel.js -text

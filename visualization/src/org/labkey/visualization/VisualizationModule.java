@@ -51,7 +51,7 @@ public class VisualizationModule extends DefaultModule
 
     public boolean hasScripts()
     {
-        return true;
+        return false;
     }
 
     @NotNull
@@ -74,12 +74,6 @@ public class VisualizationModule extends DefaultModule
 
     public void doStartup(ModuleContext moduleContext)
     {
-    }
-
-    @Override
-    public UpgradeCode getUpgradeCode()
-    {
-        return new VisualizationUpgradeCode();
     }
 
     @Override
