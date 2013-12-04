@@ -44,7 +44,7 @@ public class ActionURL extends URLHelper implements Cloneable
 {
     private static boolean useContainerRelativeURL()
     {
-        return AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_CONTAINER_RELATIVE_URL);
+        return AppProps.getInstance().getUseContainerRelativeURL();
     }
 
     public static enum Param
@@ -638,6 +638,12 @@ public class ActionURL extends URLHelper implements Cloneable
             return toString().equals(obj.toString());
         }
         return false;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return toString().hashCode();
     }
 
     public static class TestCase extends Assert

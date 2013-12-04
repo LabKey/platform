@@ -97,6 +97,7 @@ public class AppProps
         public String getWebappConfigurationFilename();
         public String getAdministratorContactEmail();
         public boolean getUseMDYDateParsing();
+        public boolean getUseContainerRelativeURL();
     }
 
     public static final String EXPERIMENTAL_CONTAINER_RELATIVE_URL = "containerRelativeURL";

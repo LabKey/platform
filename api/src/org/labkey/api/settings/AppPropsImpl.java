@@ -49,12 +49,12 @@ import java.util.Set;
  */
 public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.Interface
 {
-    private static String _contextPathStr;
-    private static Path _contextPath = null;
-    private static int _serverPort = -1;
-    private static String _scheme;
-    private static String _serverName;
-    private static String _projectRoot = null;
+    private String _contextPathStr;
+    private Path _contextPath = null;
+    private int _serverPort = -1;
+    private String _scheme;
+    private String _serverName;
+    private String _projectRoot = null;
 
     protected static final String LOOK_AND_FEEL_REVISION = "logoRevision";
     protected static final String DEFAULT_DOMAIN_PROP = "defaultDomain";
@@ -113,14 +113,6 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
 
     public Path getParsedContextPath()
     {
-        if (_contextPath == null)
-        {
-            if (StringUtils.isEmpty(getContextPath()))
-                _contextPath = Path.rootPath;
-            else
-                _contextPath = Path.parse(getContextPath() + "/");
-            assert _contextPath.isDirectory();
-        }
         return _contextPath;
     }
 
@@ -151,14 +143,21 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         return _serverName;
     }
 
+
     public void initializeFromRequest(HttpServletRequest request)
     {
         // Should be called once at first request
         assert null == _contextPathStr;
+        assert null == _serverName && null == _scheme && -1 == _serverPort;
+
         _contextPathStr = request.getContextPath();
         assert _contextPathStr.isEmpty() || _contextPathStr.startsWith("/");
 
-        assert null == _serverName && null == _scheme && -1 == _serverPort;     // Should be called once at first request
+        if (StringUtils.isEmpty(_contextPathStr))
+            _contextPath = Path.rootPath;
+        else
+            _contextPath = Path.parse(getContextPath() + "/");
+        assert _contextPath.isDirectory();
 
         String baseServerUrl = lookupStringValue(BASE_SERVER_URL_PROP, null);
 
@@ -167,15 +166,6 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
             try
             {
                 setBaseServerUrlAttributes(baseServerUrl);
-
-/*              TODO: Turn into test case
-
-                setBaseServerAttributes("https://localhost/");
-                setBaseServerAttributes("http://localhost:8080");
-                setBaseServerAttributes("http://localhost");
-                setBaseServerAttributes("https://localhost/");
-                setBaseServerAttributes("https://localhost/notallowed");  // Should error
-*/
                 return;
             }
             catch (URISyntaxException e)
@@ -559,5 +549,14 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     public boolean getUseMDYDateParsing()
     {
         return true;
+    }
+
+
+    final static boolean useContainerRelativeURLByDefault = false;
+
+    @Override
+    public boolean getUseContainerRelativeURL()
+    {
+        return useContainerRelativeURLByDefault || isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_CONTAINER_RELATIVE_URL);
     }
 }

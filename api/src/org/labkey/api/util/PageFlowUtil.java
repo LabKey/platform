@@ -109,6 +109,7 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -992,6 +993,8 @@ public class PageFlowUtil
     }
 
 
+    static Charset utf8 = Charset.forName("UTF-8");
+
     public static class Content
     {
         public Content(String s)
@@ -1004,7 +1007,7 @@ public class PageFlowUtil
             content = s;
             encoded = e;
             if (null == e && null != s)
-                encoded = s.getBytes();
+                encoded = s.getBytes(utf8);
             modified = m;
         }
 
@@ -2068,7 +2071,7 @@ public class PageFlowUtil
         AppProps.Interface appProps = AppProps.getInstance();
         String contextPath = appProps.getContextPath();
         JSONObject json = new JSONObject();
-        json.put("experimentalContainerRelativeURL", appProps.isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_CONTAINER_RELATIVE_URL));
+        json.put("experimentalContainerRelativeURL", appProps.getUseContainerRelativeURL());
         json.put("useMDYDateParsing", appProps.getUseMDYDateParsing());
         json.put("contextPath", contextPath);
         json.put("imagePath", contextPath + "/_images");
