@@ -1,0 +1,1 @@
+ALTER TABLE dataintegration.TransformRun ALTER COLUMN TransformId nvarchar(100) NOT NULL;

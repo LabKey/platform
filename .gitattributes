@@ -836,6 +836,7 @@ dataintegration/resources/schemas/dataintegration.xml -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.00-13.10.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-13.10-13.20.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-13.20-13.30.sql -text
+dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-13.30-13.31.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/obsolete/dataintegration-0.01-0.02.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/obsolete/dataintegration-0.02-0.03.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/obsolete/dataintegration-0.03-0.04.sql -text
@@ -845,6 +846,7 @@ dataintegration/resources/schemas/dbscripts/postgresql/obsolete/dataintegration-
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.00-13.10.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.10-13.20.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.20-13.30.sql -text
+dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.30-13.31.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/obsolete/dataintegration-0.01-0.02.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/obsolete/dataintegration-0.02-0.03.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/obsolete/dataintegration-0.03-0.04.sql -text
