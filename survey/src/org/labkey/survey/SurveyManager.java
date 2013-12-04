@@ -387,6 +387,23 @@ public class SurveyManager
         }
     }
 
+    public List<Throwable> fireBeforeDeleteSurvey(Container c, User user, Survey survey)
+    {
+        List<Throwable> errors = new ArrayList<>();
+
+        for (SurveyListener l : _surveyListeners)
+        {
+            try {
+                l.surveyBeforeDelete(c, user, survey);
+            }
+            catch (Throwable t)
+            {
+                errors.add(t);
+            }
+        }
+        return errors;
+    }
+
     public static List<Throwable> fireDeleteSurvey(Container c, User user, Survey survey)
     {
         List<Throwable> errors = new ArrayList<>();

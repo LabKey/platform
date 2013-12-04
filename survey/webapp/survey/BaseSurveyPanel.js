@@ -957,9 +957,9 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         // default, do nothing
     },
 
-    submitSurvey : function() {
+    submitSurvey : function(btn, evt) {
         // call the save function with the toSubmit parameter as true
-        this.saveSurvey(null, null, true, null, null);
+        this.saveSurvey(btn, evt, true, null, null);
     },
 
     isSurveyDirty : function() {

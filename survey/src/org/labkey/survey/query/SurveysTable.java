@@ -185,6 +185,10 @@ public class SurveysTable extends SimpleUserSchema.SimpleTable<UserSchema>
             if (keys.length >= 1 && (keys[0] instanceof Integer))
                 survey = SurveyManager.get().getSurvey(c, user, (Integer)keys[0]);
 
+            List<Throwable> errors = SurveyManager.get().fireBeforeDeleteSurvey(c, user, survey);
+            if (!errors.isEmpty())
+                throw new QueryUpdateServiceException(errors.get(0).getMessage());
+
             Map<String, Object> row = super.deleteRow(user, c, oldRowMap);
 
             if (survey != null)
