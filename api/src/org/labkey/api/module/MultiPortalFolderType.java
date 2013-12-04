@@ -151,7 +151,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                     navMap.put(portalPage.getPageId(), nav);
 
                     // Stop looking for a tab to select if we've already found one
-                    if (_activePortalPage == null &&
+                    if (_activePortalPage == null && !portalPage.isHidden() &&
                             (null == childContainer && (folderTab.isSelectedPage(ctx)) ||
                             (null != childContainer && childContainer.getName().equalsIgnoreCase(folderTab.getName()))))
                     {
@@ -196,10 +196,17 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         // If we didn't find a match, and there is a tab that should be the default, and we're on the generic portal page
         if (_activePortalPage == null && !navMap.isEmpty() && ctx.getActionURL().equals(PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ctx.getContainer())))
         {
-            Map.Entry<String, NavTree> entry = navMap.entrySet().iterator().next();
-            // Mark the first tab as selected
-            _activePortalPage = entry.getKey();
-            entry.getValue().setSelected(true);
+            for (Map.Entry<String, NavTree> entry : navMap.entrySet())
+            {
+                NavTree nav = entry.getValue();
+                if (!nav.isDisabled())
+                {
+                    // Mark the first visible tab as selected
+                    _activePortalPage = entry.getKey();
+                    nav.setSelected(true);
+                    break;
+                }
+            }
         }
 
         if (null != childContainer && childContainer.getFolderType() instanceof MultiPortalFolderType)

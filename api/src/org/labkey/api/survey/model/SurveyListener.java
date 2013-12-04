@@ -28,6 +28,22 @@ import java.util.Map;
  */
 public interface SurveyListener
 {
+    /**
+     * Invoked before the survey is deleted
+     * @param c
+     * @param user
+     * @param survey
+     * @throws Exception
+     */
+    void surveyBeforeDelete(Container c, User user, Survey survey) throws Exception;
+
+    /**
+     * Invoked when a survey is deleted
+     * @param c
+     * @param user
+     * @param survey
+     * @throws Exception
+     */
     void surveyDeleted(Container c, User user, Survey survey) throws Exception;
 
     /**
