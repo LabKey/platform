@@ -149,7 +149,6 @@
                     xtype: 'textfield',
                     name: 'name',
                     width: 400,
-                    fieldCls: 'labkey-wizard-input',
                     style: 'padding-left: 5px;',
                     value: '<%=h(name)%>',
                     allowBlank: false,

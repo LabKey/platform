@@ -109,7 +109,6 @@
                 name: 'folderRootPath',
                 disabled: true,
                 width: 400,
-                fieldCls: 'labkey-wizard-input',
                 value: projectDefault
             },{
                 style: 'padding-bottom: 20px;'

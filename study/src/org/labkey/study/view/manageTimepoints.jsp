@@ -92,7 +92,7 @@
 <%WebPartView.startTitleFrame(out, "Timepoints", null, "900", null);%>
 <p>NOTE: If you edit the day range of timepoints, use <%= textLink("Recompute Timepoints", UpdateParticipantVisitsAction.class)%> to
 assign dataset data to the correct timepoints.</p>
-<table>
+<table border="1" cellpadding="3" style="border-collapse: collapse; border: solid #c0c0c0 1px;">
     <tr>
         <th>&nbsp;</th>
         <th>Label</th>
@@ -101,6 +101,7 @@ assign dataset data to the correct timepoints.</p>
         <th>Cohort</th>
         <th>Type</th>
         <th>Show By Default</th>
+        <th>Description</th>
     </tr>
 <%
     Study study = getStudy();
@@ -116,6 +117,7 @@ assign dataset data to the correct timepoints.</p>
         <td><%= h(timepoint.getCohort() != null ? h(timepoint.getCohort().getLabel()) : "All") %></td>
         <td><%= h(timepoint.getType() != null ? timepoint.getType().getMeaning() : "[Not defined]") %></td>
         <td><%= timepoint.isShowByDefault()%></td>
+        <td><%= h(timepoint.getDescription()) %></td>
     </tr>
 <%  }
 %>

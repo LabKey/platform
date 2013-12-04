@@ -697,9 +697,8 @@ Ext4.define('File.panel.Browser', {
                 if (mapTbarItems[tbarConfig[i].id]) {
                     actionConfig = tbarConfig[i];
                     action = this.actions[actionConfig.id];
-                    action.initialConfig.hideText = actionConfig.hideText;
-                    action.initialConfig.hideIcon = actionConfig.hideIcon;
 
+                    action.initialConfig.hideText = actionConfig.hideText;
                     if(action.initialConfig.hideText && action.initialConfig.text != undefined)
                     {
                         action.initialConfig.prevText = action.initialConfig.text;
@@ -708,6 +707,17 @@ Ext4.define('File.panel.Browser', {
                     else if(!action.initialConfig.hideText && action.initialConfig.text == undefined)
                     {
                         action.initialConfig.text = action.initialConfig.prevText;
+                    }
+
+                    action.initialConfig.hideIcon = actionConfig.hideIcon;
+                    if(action.initialConfig.hideIcon && action.initialConfig.iconCls != undefined)
+                    {
+                        action.initialConfig.prevIconCls = action.initialConfig.iconCls;
+                        action.initialConfig.iconCls = undefined;
+                    }
+                    else if(!action.initialConfig.hideIcon && action.initialConfig.iconCls == undefined)
+                    {
+                        action.initialConfig.iconCls = action.initialConfig.prevIconCls;
                     }
 
                     buttons.push(action);

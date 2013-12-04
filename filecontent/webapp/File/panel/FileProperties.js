@@ -73,6 +73,7 @@ Ext4.define('File.panel.FileProperties', {
 
         this.editPropertiesButton = Ext4.create('Ext.button.Button', {
             text: 'edit properties',
+            border: true,
             disabled: this.fileConfig != 'useCustom',
             handler: function(){
                 this.fireEvent('editfileproperties');

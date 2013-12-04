@@ -64,7 +64,7 @@
     {
 %>
 <p>
-<table id="visits">
+<table id="visits" border="1" cellpadding="3" style="border-collapse: collapse; border: solid #c0c0c0 1px;">
     <tr>
         <th>&nbsp;</th>
         <th>Label</th>
@@ -72,6 +72,7 @@
         <th>Cohort</th>
         <th>Type</th>
         <th>Show By Default</th>
+        <th>Description</th>
     </tr>
     <%
         for (VisitImpl visit : getVisits(Visit.Order.DISPLAY))
@@ -84,6 +85,7 @@
             <td><%= h(visit.getCohort() != null ? h(visit.getCohort().getLabel()) : "All") %></td>
             <td><%= h(visit.getType() != null ? visit.getType().getMeaning() : "[Not defined]") %></td>
             <td><%= visit.isShowByDefault()%></td>
+            <td><%= h(visit.getDescription()) %></td>
         </tr>
     <%
         }
