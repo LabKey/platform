@@ -6,85 +6,22 @@
 
 Ext4.define('File.panel.FileProperties', {
 
-    extend : 'Ext.panel.Panel',
+    extend : 'Ext.Panel',
 
     title: 'File Properties',
 
     fileConfig: 'useDefault',
 
-    constructor : function(config) {
-
-        Ext4.apply(config, {
-            defaults: {
-                xtype: 'panel',
-                border: false
-            }
-        });
-
-        this.callParent([config]);
-    },
-
     initComponent : function() {
-        this.items = this.getItems();
+
+        this.items = [
+            this.getHeader(),
+            this.getPropertyChoice(),
+            this.getPropertyEditButton(),
+            this.getCustomPropertiesGrid()
+        ];
+
         this.callParent();
-    },
-
-    getItems: function(){
-        var items = [];
-        items.push({html: '<span class="labkey-strong">Configure File Properties</span>'
-                + '<p>Define additional properties to be collected with each file:</p>'});
-
-        this.fileConfigRadioGroup = Ext4.create('Ext.form.RadioGroup',{
-            columns: 1,
-            margin: '0 0 0 25',
-            vertical: true,
-            listeners: {
-                scope: this,
-                change: function(radio, newValue){
-                    this.fileConfig = newValue.fileConfig;
-                    if (this.editPropertiesButton) {
-                        this.editPropertiesButton.setDisabled(!(this.fileConfig == 'useCustom'));
-                    }
-                }
-            },
-            items: [
-                {
-                    boxLabel: 'Use Default (none)',
-                    name: 'fileConfig',
-                    inputValue: 'useDefault',
-                    width: 250,
-                    checked: (this.fileConfig == 'useDefault' || this.fileConfig == null)
-                }, {
-                    boxLabel: 'Use Same Settings as Parent',
-                    name: 'fileConfig',
-                    inputValue: 'useParent',
-                    width: 250,
-                    checked: this.fileConfig == 'useParent'
-                }, {
-                    boxLabel: 'Use Custom File Properties',
-                    name: 'fileConfig',
-                    inputValue: 'useCustom',
-                    width: 250,
-                    checked: this.fileConfig == 'useCustom'
-                }
-            ]
-        });
-        items.push(this.fileConfigRadioGroup);
-
-        this.editPropertiesButton = Ext4.create('Ext.button.Button', {
-            text: 'edit properties',
-            border: true,
-            disabled: this.fileConfig != 'useCustom',
-            handler: function(){
-                this.fireEvent('editfileproperties');
-            },
-            scope: this
-        });
-        items.push(this.editPropertiesButton);
-
-        items.push(this.getCustomPropertiesGrid());
-
-        return items;
     },
 
     getCustomPropertiesStore : function() {
@@ -111,12 +48,12 @@ Ext4.define('File.panel.FileProperties', {
         });
     },
 
-    getCustomPropertiesGrid: function(){
+    getCustomPropertiesGrid : function() {
         return {
             xtype: 'grid',
             width: '100%',
             height: 300,
-            margin: '25 0 0 0',
+            margin: '20 0 0 0',
             store: this.getCustomPropertiesStore(),
             border: 1,
             columns: [
@@ -127,8 +64,70 @@ Ext4.define('File.panel.FileProperties', {
         }
     },
 
-    getFileConfig: function(){
-        return this.fileConfigRadioGroup.getValue().fileConfig;
-    }
+    getHeader : function() {
+        return {
+            border: false,
+            html: '<span class="labkey-strong">Configure File Properties</span><p>Define additional properties to be collected with each file:</p>'
+        };
+    },
 
+    getPropertyChoice : function() {
+        return {
+            xtype: 'radiogroup',
+            itemId: 'fileConfigRadioGroup',
+            columns: 1,
+            margin: '0 0 5 25',
+            vertical: true,
+            listeners: {
+                change: function(radio, newValue) {
+                    this.fileConfig = newValue.fileConfig;
+                    var btn = this.getComponent('editPropertiesBtn');
+                    if (btn) { btn.setDisabled(!(this.fileConfig == 'useCustom')); }
+                },
+                scope: this
+            },
+            items: [{
+                boxLabel: 'Use Default (none)',
+                name: 'fileConfig',
+                inputValue: 'useDefault',
+                width: 250,
+                checked: (this.fileConfig == 'useDefault' || this.fileConfig == null)
+            },{
+                boxLabel: 'Use Same Settings as Parent',
+                name: 'fileConfig',
+                inputValue: 'useParent',
+                width: 250,
+                checked: this.fileConfig == 'useParent'
+            },{
+                boxLabel: 'Use Custom File Properties',
+                name: 'fileConfig',
+                inputValue: 'useCustom',
+                width: 250,
+                checked: this.fileConfig == 'useCustom'
+            }]
+        };
+    },
+
+    getPropertyEditButton : function() {
+        return {
+            xtype: 'button',
+            itemId: 'editPropertiesBtn',
+            text: 'edit properties',
+            disabled: this.fileConfig != 'useCustom',
+            handler: function() { this.fireEvent('editfileproperties'); },
+            scope: this
+        }
+    },
+
+    //
+    // Can return 'undefined'
+    //
+    getFileConfig : function() {
+        var propertyChoice = this.getComponent('fileConfigRadioGroup');
+        var fileConfig;
+        if (propertyChoice) {
+            fileConfig = propertyChoice.getValue().fileConfig;
+        }
+        return fileConfig;
+    }
 });

@@ -359,8 +359,6 @@ Ext4.define('File.panel.Browser', {
         // Initialize the actions that are available to the current user
         //
         this.createActions();
-        this.initializeActions();
-
 
         this.items = this.getItems();
 
@@ -379,9 +377,11 @@ Ext4.define('File.panel.Browser', {
 
         this.actions.parentFolder = new Ext4.Action({
             text: 'Parent Folder',
+            hardText: 'Parent Folder',
             itemId: 'parentFolder',
             tooltip: 'Navigate to parent folder',
-            iconCls:'iconUp',
+            iconCls: 'iconUp',
+            hardIconCls: 'iconUp',
             disabledClass:'x-button-disabled',
             handler : this.onNavigateParent,
             actionType : File.panel.Browser.actionTypes.NOMIN,
@@ -391,9 +391,11 @@ Ext4.define('File.panel.Browser', {
 
         this.actions.refresh = new Ext4.Action({
             text: 'Refresh',
+            hardText: 'Refresh',
             itemId: 'refresh',
             tooltip: 'Refresh the contents of the current folder',
             iconCls: 'iconReload',
+            hardIconCls: 'iconReload',
             disabledClass: 'x-button-disabled',
             handler : this.onRefresh,
             actionType : File.panel.Browser.actionTypes.NOMIN,
@@ -403,8 +405,10 @@ Ext4.define('File.panel.Browser', {
 
         this.actions.createDirectory = new Ext4.Action({
             text: 'Create Folder',
+            hardText: 'Create Folder',
             itemId: 'createDirectory',
             iconCls:'iconFolderNew',
+            hardIconCls: 'iconFolderNew',
             tooltip: 'Create a new folder on the server',
             disabledClass: 'x-button-disabled',
             handler : this.onCreateDirectory,
@@ -415,9 +419,11 @@ Ext4.define('File.panel.Browser', {
 
         this.actions.download = new Ext4.Action({
             text: 'Download',
+            hardText: 'Download',
             itemId: 'download',
             tooltip: 'Download the selected files or folders',
             iconCls: 'iconDownload',
+            hardIconCls: 'iconDownload',
             disabledClass: 'x-button-disabled',
             disabled: true,
             handler: this.onDownload,
@@ -428,9 +434,11 @@ Ext4.define('File.panel.Browser', {
         
         this.actions.deletePath = new Ext4.Action({
             text: 'Delete',
+            hardText: 'Delete',
             itemId: 'deletePath',
             tooltip: 'Delete the selected files or folders',
             iconCls: 'iconDelete',
+            hardIconCls: 'iconDelete',
             disabledClass: 'x-button-disabled',
             handler: this.onDelete,
             actionType : File.panel.Browser.actionTypes.ATLEASTONE,
@@ -441,9 +449,11 @@ Ext4.define('File.panel.Browser', {
 
         this.actions.renamePath = new Ext4.Action({
             text: 'Rename',
+            hardText: 'Rename',
             itemId: 'renamePath',
             tooltip: 'Rename the selected file or folder',
             iconCls: 'iconRename',
+            hardIconCls: 'iconRename',
             disabledClass: 'x-button-disabled',
             handler : this.onRename,
             actionType : File.panel.Browser.actionTypes.ONLYONE,
@@ -454,9 +464,11 @@ Ext4.define('File.panel.Browser', {
 
         this.actions.movePath = new Ext4.Action({
             text: 'Move',
+            hardText: 'Move',
             itemId: 'movePath',
             tooltip: 'Move the selected file or folder',
             iconCls: 'iconMove',
+            hardIconCls: 'iconMove',
             disabledClass: 'x-button-disabled',
             handler : this.onMovePath,
             actionType : File.panel.Browser.actionTypes.ATLEASTONE,
@@ -467,20 +479,24 @@ Ext4.define('File.panel.Browser', {
 
         this.actions.help = new Ext4.Action({
             text: 'Help',
+            hardText: 'Help',
             itemId: 'help',
             scope: this
         });
 
         this.actions.showHistory = new Ext4.Action({
             text: 'Show History',
+            hardText: 'Show History',
             itemId: 'showHistory',
             scope: this
         });
 
         this.actions.uploadTool = new Ext4.Action({
             text: 'Multi-file Upload',
+            hardText: 'Multi-file Upload',
             itemId: 'uploadTool',
             iconCls: 'iconUpload',
+            hardIconCls: 'iconUpload',
             tooltip: "Upload multiple files or folders using drag-and-drop<br>(requires Java)",
             disabled: true,
             scope: this
@@ -488,10 +504,12 @@ Ext4.define('File.panel.Browser', {
 
         this.actions.upload = new Ext4.Action({
             text: 'Upload Files',
+            hardText: 'Upload Files',
             itemId: 'upload',
             enableToggle: true,
             pressed: this.showUpload && this.expandUpload,
             iconCls: 'iconUpload',
+            hardIconCls: 'iconUpload',
             handler : this.onUpload,
             scope: this,
             disabledClass:'x-button-disabled',
@@ -500,6 +518,7 @@ Ext4.define('File.panel.Browser', {
 
         this.actions.appletFileAction = new Ext4.Action({
             text: '&nbsp;&nbsp;&nbsp;&nbsp;Choose File&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;',
+            hardText: '&nbsp;&nbsp;&nbsp;&nbsp;Choose File&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;',
             itemId: 'appletFileAction',
             scope: this,
             disabled: false,
@@ -508,6 +527,7 @@ Ext4.define('File.panel.Browser', {
 
         this.actions.appletDirAction = new Ext4.Action({
             text: '&nbsp;Choose Folder&nbsp;',
+            hardText: '&nbsp;Choose Folder&nbsp;',
             itemId: 'appletDirAction',
             scope: this,
             disabled: false,
@@ -516,17 +536,20 @@ Ext4.define('File.panel.Browser', {
 
         this.actions.appletDragAndDropAction = new Ext4.Action({
             text: 'Drag and Drop&nbsp;',
+            hardText: 'Drag and Drop&nbsp;',
             itemId: 'appletDragAndDropAction',
             scope: this,
             disabled: false,
-            cls     : 'applet-button'
+            cls: 'applet-button'
         });
 
         this.actions.folderTreeToggle = new Ext4.Action({
             text: 'Toggle Folder Tree',
+            hardText: 'Toggle Folder Tree',
             itemId: 'folderTreeToggle',
             enableToggle: true,
             iconCls: 'iconFolderTree',
+            hardIconCls: 'iconFolderTree',
             disabledClass:'x-button-disabled',
             tooltip: 'Show or hide the folder tree',
             hideText: true,
@@ -537,9 +560,11 @@ Ext4.define('File.panel.Browser', {
 
         this.actions.importData = new Ext4.Action({
             text: 'Import Data',
+            hardText: 'Import Data',
             itemId: 'importData',
             handler: this.onImportData,
             iconCls: 'iconDBCommit',
+            hardIconCls: 'iconDBCommit',
             disabledClass:'x-button-disabled',
             tooltip: 'Import data from files into the database, or analyze data files',
             actionType : File.panel.Browser.actionTypes.NOMIN,
@@ -548,8 +573,10 @@ Ext4.define('File.panel.Browser', {
 
         this.actions.customize = new Ext4.Action({
             text: 'Admin',
+            hardText: 'Admin',
             itemId: 'customize',
             iconCls: 'iconConfigure',
+            hardIconCls: 'iconConfigure',
             disabledClass:'x-button-disabled',
             tooltip: 'Configure the buttons shown on the toolbar',
             actionType : File.panel.Browser.actionTypes.NOMIN,
@@ -559,8 +586,10 @@ Ext4.define('File.panel.Browser', {
 
         this.actions.editFileProps = new Ext4.Action({
             text: 'Edit Properties',
+            hardText: 'Edit Properties',
             itemId: 'editFileProps',
             iconCls: 'iconEditFileProps',
+            hardIconCls: 'iconEditFileProps',
             disabledClass:'x-button-disabled',
             tooltip: 'Edit properties on the selected file(s)',
             actionType : File.panel.Browser.actionTypes.ATLEASTONE,
@@ -572,8 +601,10 @@ Ext4.define('File.panel.Browser', {
 
         this.actions.emailPreferences = new Ext4.Action({
             text: 'Email Preferences',
+            hardText: 'Email Preferences',
             itemId: 'emailPreferences',
             iconCls: 'iconEmailSettings',
+            hardIconCls: 'iconEmailSettings',
             disabledClass:'x-button-disabled',
             tooltip: 'Configure email notifications on file actions.',
             hideText: true,
@@ -584,8 +615,10 @@ Ext4.define('File.panel.Browser', {
 
         this.actions.auditLog = new Ext4.Action({
             text: 'Audit History',
+            hardText: 'Audit History',
             itemId: 'auditLog',
             iconCls: 'iconAuditLog',
+            hardIconCls: 'iconAuditLog',
             disabledClass:'x-button-disabled',
             tooltip: 'View the files audit log for this folder.',
             actionType : File.panel.Browser.actionTypes.NOMIN,
@@ -605,13 +638,8 @@ Ext4.define('File.panel.Browser', {
                     action.initialConfig.prevText = action.initialConfig.text;
                     action.initialConfig.prevIconCls = action.initialConfig.iconCls;
 
-                    if (action.initialConfig.hideText) {
-                        action.setText(undefined);
-                    }
-
-                    if (action.initialConfig.hideIcon) {
-                        action.setIconClass(undefined);
-                    }
+                    action.setText(action.initialConfig.hideText ? undefined : action.initialConfig.hardText);
+                    action.setIconCls(action.initialConfig.hideIcon ? undefined : action.initialConfig.hardIconCls);
                 }
             }
         }
@@ -626,6 +654,7 @@ Ext4.define('File.panel.Browser', {
             var configure = function(response) {
                 var json = Ext4.JSON.decode(response.responseText);
                 if (json.config) {
+                    this.initializeActions();
                     this.updateActions();
                     // First intialize all the actions prepping them to be shown
 
@@ -1880,18 +1909,15 @@ Ext4.define('File.panel.Browser', {
     reload : function(options) {
         // Reload stores
         this.getFileStore().load(options);
-        var nodes = this.tree.getSelectionModel().getSelection();
+        var nodes = this.tree.getSelectionModel().getSelection(),
+            treeStore = this.tree.getStore();
 
-        this.tree.getStore().on('load', function(s) {
+        treeStore.on('load', function(s) {
             this.tree.getView().refresh();
         }, this, {single: true});
 
-        if (nodes && nodes.length) {
-            this.tree.getStore().load({node: nodes[0]});
-        }
-        else {
-            this.tree.getStore().load({node: this.tree.getStore().getRootNode()});
-        }
+        var node = (nodes && nodes.length ? nodes[0] : treeStore.getRootNode());
+        treeStore.load({node: node});
     },
 
     onCreateDirectory : function() {
@@ -2328,7 +2354,7 @@ Ext4.define('File.panel.Browser', {
 
     showAdminWindow : function() {
         if (this.adminWindow && !this.adminWindow.isDestroyed) {
-            this.adminWindow.setVisible(true);
+            this.adminWindow.show();
         }
         else {
             File.panel.Browser._getPipelineConfiguration(function(response) {
