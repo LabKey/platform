@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocol.AssayDomainTypes;
@@ -46,11 +47,13 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.study.assay.AssayDataType;
 import org.labkey.api.study.assay.AssayPipelineProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssaySaveHandler;
 import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.assay.TsvDataHandler;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.PageFlowUtil;
@@ -72,6 +75,7 @@ import javax.script.ScriptEngineManager;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -113,7 +117,6 @@ public class ModuleAssayProvider extends TsvAssayProvider
     private Resource basePath;
     private String name;
     private String description;
-    private FileType[] inputFileSuffices = new FileType[0];
     private Class saveHandlerClass;
 
     private FieldKey participantIdKey;
@@ -122,6 +125,8 @@ public class ModuleAssayProvider extends TsvAssayProvider
     private FieldKey specimenIdKey;
 
     private List<ScriptMetadata> _scriptMetadata = new ArrayList<>();
+
+    private List<AssayDataType> _relatedDataTypes = new ArrayList<>();
 
     private Set<String> _missingScriptWarnings = new HashSet<>();
 
@@ -154,10 +159,21 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 specimenIdKey = FieldKey.fromString(fieldKeys.getSpecimenId());
         }
 
-        inputFileSuffices = new FileType[providerConfig.getInputDataFileSuffixArray().length];
-        for (int i = 0; i < inputFileSuffices.length; i++)
+        if (providerConfig.getInputDataFileSuffixArray().length > 0)
         {
-            inputFileSuffices[i] = new FileType(providerConfig.getInputDataFileSuffixArray(i));
+            List<String> suffices = Arrays.asList(providerConfig.getInputDataFileSuffixArray());
+            _dataType = new AssayDataType(TsvDataHandler.NAMESPACE, new FileType(suffices, suffices.get(0)));
+        }
+
+        if (providerConfig.isSetPrimaryDataFileType())
+        {
+            // Prefer this over inputDataFileSuffix, which is deprecated
+            _dataType = createAssayDataTypeFromXML(providerConfig.getPrimaryDataFileType(), ExpDataRunInput.DEFAULT_ROLE, TsvDataHandler.NAMESPACE);
+        }
+
+        for (org.labkey.study.assay.xml.AssayDataType assayDataType : providerConfig.getRelatedDataFileTypeArray())
+        {
+            _relatedDataTypes.add(createAssayDataTypeFromXML(assayDataType, null, RELATED_FILE_DATA_TYPE.getNamespacePrefix()));
         }
 
         // Remember the preferred order of the transform scripts
@@ -171,6 +187,36 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
         if (providerConfig.isSetSaveHandler())
             setSaveHandlerClass(providerConfig.getSaveHandler());
+    }
+
+    private AssayDataType createAssayDataTypeFromXML(org.labkey.study.assay.xml.AssayDataType inputConfig, String defaultRole, String defaultNamespace)
+    {
+        String role = defaultRole;
+        if (inputConfig.isSetRole())
+        {
+            role = inputConfig.getRole();
+        }
+        String namespacePrefix = defaultNamespace;
+        if (inputConfig.isSetNamespacePrefix())
+        {
+            namespacePrefix = inputConfig.getNamespacePrefix();
+        }
+        List<String> suffices = new ArrayList<>();
+        String defaultSuffix = null;
+        for (org.labkey.study.assay.xml.AssayDataType.FileSuffix fileSuffix : inputConfig.getFileSuffixArray())
+        {
+            String suffix = fileSuffix.getStringValue();
+            suffices.add(suffix);
+            if (defaultSuffix == null && fileSuffix.getDefault())
+            {
+                defaultSuffix = suffix;
+            }
+        }
+        if (defaultSuffix == null)
+        {
+            defaultSuffix = suffices.get(0);
+        }
+        return new AssayDataType(namespacePrefix, new FileType(suffices, defaultSuffix), role);
     }
 
     @Override
@@ -714,7 +760,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     public PipelineProvider getPipelineProvider()
     {
         return new ModuleAssayPipelineProvider(StudyModule.class,
-                new PipelineProvider.FileTypesEntryFilter(inputFileSuffices), this, "Import " + getName());
+                new PipelineProvider.FileTypesEntryFilter(_dataType.getFileType()), this, "Import " + getName());
     }
 
     static class ModuleAssayPipelineProvider extends AssayPipelineProvider
@@ -764,5 +810,12 @@ public class ModuleAssayProvider extends TsvAssayProvider
     public ReRunSupport getReRunSupport()
     {
         return ReRunSupport.None;
+    }
+
+    @NotNull
+    @Override
+    public List<AssayDataType> getRelatedDataTypes()
+    {
+        return _relatedDataTypes;
     }
 }

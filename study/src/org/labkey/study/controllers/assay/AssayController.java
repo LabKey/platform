@@ -45,6 +45,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -70,30 +71,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.study.actions.AssayBatchDetailsAction;
-import org.labkey.api.study.actions.AssayBatchesAction;
-import org.labkey.api.study.actions.AssayDetailRedirectAction;
-import org.labkey.api.study.actions.AssayHeaderView;
-import org.labkey.api.study.actions.AssayResultDetailsAction;
-import org.labkey.api.study.actions.AssayResultsAction;
-import org.labkey.api.study.actions.AssayRunDetailsAction;
-import org.labkey.api.study.actions.AssayRunUploadForm;
-import org.labkey.api.study.actions.AssayRunsAction;
-import org.labkey.api.study.actions.BaseAssayAction;
-import org.labkey.api.study.actions.DeleteAction;
-import org.labkey.api.study.actions.DesignerAction;
-import org.labkey.api.study.actions.ImportAction;
-import org.labkey.api.study.actions.PlateBasedUploadWizardAction;
-import org.labkey.api.study.actions.ProtocolIdForm;
-import org.labkey.api.study.actions.PublishConfirmAction;
-import org.labkey.api.study.actions.PublishStartAction;
-import org.labkey.api.study.actions.ReimportRedirectAction;
-import org.labkey.api.study.actions.ShowSelectedDataAction;
-import org.labkey.api.study.actions.ShowSelectedRunsAction;
-import org.labkey.api.study.actions.TemplateAction;
-import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.study.actions.*;
 import org.labkey.api.study.assay.AbstractAssayProvider;
-import org.labkey.api.study.assay.AssayView;
 import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
@@ -103,6 +82,7 @@ import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.assay.AssayView;
 import org.labkey.api.study.assay.PipelineDataCollectorRedirectAction;
 import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.study.assay.ReplacedRunFilter;
@@ -711,9 +691,29 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
-    public class AssayFileUploadAction extends AbstractFileUploadAction<AbstractFileUploadAction.FileUploadForm>
+    public static class AssayFileUploadForm extends AbstractFileUploadAction.FileUploadForm
     {
+        private Integer _protocolId;
+
+        public Integer getProtocolId()
+        {
+            return _protocolId;
+        }
+
+        public void setProtocolId(Integer protocolId)
+        {
+            _protocolId = protocolId;
+        }
+    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class AssayFileUploadAction extends AbstractFileUploadAction<AssayFileUploadForm>
+    {
+        public AssayFileUploadAction()
+        {
+            super(AssayFileUploadForm.class);
+        }
+
         protected File getTargetFile(String filename) throws IOException
         {
             if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
@@ -731,7 +731,7 @@ public class AssayController extends SpringActionController
             }
         }
 
-        protected String getResponse(Map<String, Pair<File, String>> files, FileUploadForm form) throws UploadException
+        protected String getResponse(Map<String, Pair<File, String>> files, AssayFileUploadForm form) throws UploadException
         {
             JSONObject fullMap = new JSONObject();
             for (Map.Entry<String, Pair<File, String>> entry : files.entrySet())
@@ -740,7 +740,9 @@ public class AssayController extends SpringActionController
                 File file = entry.getValue().getKey();
                 String originalName = entry.getValue().getValue();
 
-                ExpData data = ExperimentService.get().createData(getContainer(), ExperimentService.get().getDataType(FileBasedModuleDataHandler.NAMESPACE));
+                DataType dataType = getDataType(form, originalName);
+
+                ExpData data = ExperimentService.get().createData(getContainer(), dataType);
 
                 data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
                 data.setName(originalName);
@@ -759,6 +761,40 @@ public class AssayController extends SpringActionController
             // Make sure that Ext treats the submission as a success
             fullMap.put("success", true);
             return fullMap.toString();
+        }
+
+        /**
+         * Checks if we've been given a protocol id to use as a reference. If so, tracks down its assay provider and
+         * request its desired data LSID namespace prefix, validing that the file name matches the expected inputs.
+         */
+        private DataType getDataType(AssayFileUploadForm form, String originalName)
+        {
+            if (form.getProtocolId() != null)
+            {
+                ExpProtocol protocol = ExperimentService.get().getExpProtocol(form.getProtocolId());
+                if (protocol == null)
+                {
+                    throw new NotFoundException("No such assay design: " + form.getProtocolId());
+                }
+                if (!AssayService.get().getAssayProtocols(getContainer()).contains(protocol))
+                {
+                    throw new NotFoundException("Assay design " + form.getProtocolId() + " is not in scope for " + getContainer().getPath());
+                }
+                AssayProvider provider = AssayService.get().getProvider(protocol);
+                if (provider == null)
+                {
+                    throw new NotFoundException("Assay provider not found for assay design '" + protocol.getName() + "'");
+                }
+                if (provider.getDataType() != null)
+                {
+                    if (!provider.getDataType().getFileType().isType(originalName))
+                    {
+                        throw new IllegalArgumentException("File '" + originalName + "' does not match expected suffices for " + provider.getName());
+                    }
+                    return provider.getDataType();
+                }
+            }
+            return ExperimentService.get().getDataType(FileBasedModuleDataHandler.NAMESPACE);
         }
     }
 
