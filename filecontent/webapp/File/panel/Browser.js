@@ -1141,6 +1141,18 @@ Ext4.define('File.panel.Browser', {
             var listeners = {
                 load : {
                     fn : function(s) {
+
+                        // 18348
+                        if (this.tree) {
+                            var root = this.tree.getRootNode();
+                            if (root) {
+                                this.tree.getView().select(root);
+                            }
+                        }
+
+                        //
+                        // Ensure the offset URL folder is opened and selected
+                        //
                         this.ensureVisible(this.fileSystem.getOffsetURL());
                         this.onRefresh();
                     },
@@ -1673,7 +1685,7 @@ Ext4.define('File.panel.Browser', {
             //
             // Update any action buttons that have been activated
             //
-            var btn, providerId, action;
+            var btn, providerId;
 
             for (providerId in this.actionMap) {
 
@@ -1693,7 +1705,7 @@ Ext4.define('File.panel.Browser', {
                             continue;
                         }
 
-                        var files = this.actionMap[providerId].getFiles();
+                        files = this.actionMap[providerId].getFiles();
 
                         btn.setDisabled(false);
                     }
@@ -1789,8 +1801,9 @@ Ext4.define('File.panel.Browser', {
                 action.setDisabled(!this.fileSystem.canDelete(model)); // TODO: Check grid selection
 
             action = tb.getComponent('createDirectory');
-            if (action)
+            if (action) {
                 action.setDisabled(!this.fileSystem.canMkdir(model));
+            }
 
             action = tb.getComponent('upload');
             if (action)
