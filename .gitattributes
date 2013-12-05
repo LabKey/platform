@@ -273,6 +273,7 @@ api/src/org/labkey/api/data/ForeignKey.java -text
 api/src/org/labkey/api/data/GroupTableInfo.java -text
 api/src/org/labkey/api/data/GroupedResultSet.java -text
 api/src/org/labkey/api/data/HighlightingDisplayColumn.java -text
+api/src/org/labkey/api/data/HtmlDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/HtmlWriter.java -text
 api/src/org/labkey/api/data/IconDisplayColumn.java -text
 api/src/org/labkey/api/data/ImportAliasable.java -text
