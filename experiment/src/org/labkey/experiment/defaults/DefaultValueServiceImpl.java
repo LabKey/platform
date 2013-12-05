@@ -191,7 +191,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
         return values;
     }
 
-    private Map<DomainProperty, Object> getMergedValues(Domain domain, Map<DomainProperty, Object> userValues, Map<DomainProperty, Object> globalValues)
+    public Map<DomainProperty, Object> getMergedValues(Domain domain, Map<DomainProperty, Object> userValues, Map<DomainProperty, Object> globalValues)
     {
         if (userValues == null || userValues.isEmpty())
             return globalValues != null ? globalValues : Collections.<DomainProperty, Object>emptyMap();
