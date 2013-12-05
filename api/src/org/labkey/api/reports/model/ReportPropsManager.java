@@ -266,8 +266,6 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
                 propDef.setType(tag.getKey().getPropertyDescriptor().getPropertyType().getTypeUri());
 
                 PropValueDocument.PropValue propValue = prop.addNewPropValue();
-
-                propValue.setEntityId(entityId);
                 propValue.setValue(String.valueOf(tag.getValue()));
             }
         }
