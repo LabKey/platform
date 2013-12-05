@@ -43,7 +43,9 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.qc.DataTransformer;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 
@@ -524,8 +526,8 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
         if (material == null)
             return null;
 
-        if (!material.getContainer().equals(context.getContainer()))
-            throw new NotFoundException("Material with row id " + material.getRowId() + " is not in folder " + context.getContainer());
+        if (!material.getContainer().hasPermission(context.getUser(), ReadPermission.class))
+            throw new UnauthorizedException("User does not have permissions to reference Material with row id " + material.getRowId());
 
         if (materialObject.has(ExperimentJSONConverter.PROPERTIES))
         {
