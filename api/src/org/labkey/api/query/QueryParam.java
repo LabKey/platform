@@ -16,6 +16,9 @@
 
 package org.labkey.api.query;
 
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.URLHelper;
+
 public enum QueryParam
 {
     schemaName,
@@ -33,6 +36,8 @@ public enum QueryParam
 
     allowHeaderLock,
     dataRegionName,
+    /** Use {@link ActionURL.Param#returnUrl} and {@link ActionURL#addReturnURL(URLHelper)} instead. */
+    @Deprecated
     srcURL,
     containerFilterName,
     selectionKey

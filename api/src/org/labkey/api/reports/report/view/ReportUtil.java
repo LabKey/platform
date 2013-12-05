@@ -619,7 +619,7 @@ public class ReportUtil
                         ActionURL url = filter.getViewEditURL(c, view, user);
                         if (url != null)
                         {
-                            url.addParameter(QueryParam.srcURL, PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c).getLocalURIString());
+                            url.addReturnURL(PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c));
                             info.setEditUrl(url);
                         }
                     }

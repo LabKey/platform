@@ -108,42 +108,44 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         return bb;
     }
 
-    public ActionURL getSuccessURL(QueryUpdateForm form)
+    private ActionURL getActionURLParam(ActionURL.Param param)
     {
-        String returnURL = getViewContext().getRequest().getParameter(QueryParam.srcURL.toString());
-        if (returnURL != null)
+        String url = getViewContext().getActionURL().getParameter(param);
+        if (url != null)
         {
             try
             {
-                return new ActionURL(returnURL);
+                return new ActionURL(url);
             }
             catch (IllegalArgumentException ignored) {}
         }
-        return _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
+        return null;
+    }
+
+    public ActionURL getSuccessURL(QueryUpdateForm form)
+    {
+        ActionURL returnURL = getActionURLParam(ActionURL.Param.returnUrl);
+        if (returnURL == null)
+        {
+            if (_schema != null && _table != null)
+                returnURL = _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
+            else
+                returnURL = QueryService.get().urlDefault(form.getContainer(), QueryAction.executeQuery, null, null);
+        }
+        return returnURL;
     }
 
     public ActionURL getCancelURL(QueryUpdateForm form)
     {
-        ActionURL cancelURL = null;
-        if (getViewContext().getActionURL().getParameter(QueryParam.srcURL) != null)
-        {
-            try
-            {
-                cancelURL = new ActionURL(getViewContext().getActionURL().getParameter(QueryParam.srcURL));
-            }
-            catch (IllegalArgumentException ignored) {}
-        }
+        ActionURL cancelURL = getActionURLParam(ActionURL.Param.cancelUrl);
+        if (cancelURL == null)
+            cancelURL = getActionURLParam(ActionURL.Param.returnUrl);
         if (cancelURL == null)
         {
             if (_schema != null && _table != null)
-            {
                 cancelURL = _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
-            }
             else
-            {
                 cancelURL = QueryService.get().urlDefault(form.getContainer(), QueryAction.executeQuery, null, null);
-                //cancelURL = new ActionURL(ExecuteQueryAction.class, form.getContainer());
-            }
         }
         return cancelURL;
     }

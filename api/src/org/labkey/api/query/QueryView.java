@@ -421,11 +421,11 @@ public class QueryView extends WebPartView<Object>
             case deleteQueryRows:
             {
                 // ICK
-                URLHelper srcURL = getReturnURL();
-                if (srcURL != null)
+                URLHelper returnURL = getReturnURL();
+                if (returnURL != null)
                 {
-                    String encodedSrcURL = PageFlowUtil.encode(srcURL.getLocalURIString());
-                    expr = ((StringExpressionFactory.AbstractStringExpression) expr).addParameter(QueryParam.srcURL.name(), encodedSrcURL);
+                    String encodedReturnURL = PageFlowUtil.encode(returnURL.getLocalURIString());
+                    expr = ((StringExpressionFactory.AbstractStringExpression) expr).addParameter(ActionURL.Param.returnUrl.name(), encodedReturnURL);
                 }
             }
         }
@@ -476,7 +476,7 @@ public class QueryView extends WebPartView<Object>
             case insertQueryRow:
             case updateQueryRow:
             case deleteQueryRows:
-                ret.addParameter(QueryParam.srcURL.toString(), getReturnURL().getLocalURIString());
+                ret.addReturnURL(getReturnURL());
                 break;
             case editSnapshot:
                 ret.addParameter("snapshotName", getSettings().getQueryName());
