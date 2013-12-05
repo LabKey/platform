@@ -37,6 +37,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ColumnInfo;
@@ -1580,7 +1581,7 @@ public class IssuesController extends SpringActionController
             checkPickLists(form, errors);
             
             CustomColumnConfiguration ccc = new CustomColumnConfiguration(getViewContext());
-            String defaultCols[] = {"Milestone", "Area", "Type", "Priority", "Resolution"};
+            String defaultCols[] = {"Milestone", "Area", "Type", "Priority", "Resolution", "Status"};
 
             Map<String, String> captions = ccc.getColumnCaptions(); //All of the custom captions
             for (String column : defaultCols)
@@ -1592,7 +1593,7 @@ public class IssuesController extends SpringActionController
                 }
             }
 
-            HashSet<String> uniqueCaptions = new HashSet<>(captions.values());
+            CaseInsensitiveHashSet uniqueCaptions = new CaseInsensitiveHashSet(captions.values());
             if (captions.size() > uniqueCaptions.size())
             {
                 errors.reject(ERROR_MSG, "Custom field names must be unique.");
