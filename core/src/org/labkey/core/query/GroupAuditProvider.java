@@ -228,8 +228,8 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
 
     public static class GroupAuditEvent extends AuditTypeEvent
     {
-        int _user;
-        int _group;
+        Integer _user;
+        Integer _group;
         String _resourceEntityId;
 
         public GroupAuditEvent()
@@ -242,22 +242,22 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
             super(GroupManager.GROUP_AUDIT_EVENT, container, comment);
         }
 
-        public int getUser()
+        public Integer getUser()
         {
             return _user;
         }
 
-        public void setUser(int user)
+        public void setUser(Integer user)
         {
             _user = user;
         }
 
-        public int getGroup()
+        public Integer getGroup()
         {
             return _group;
         }
 
-        public void setGroup(int group)
+        public void setGroup(Integer group)
         {
             _group = group;
         }

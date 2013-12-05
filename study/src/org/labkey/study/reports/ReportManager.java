@@ -17,36 +17,56 @@ package org.labkey.study.reports;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.data.*;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.query.*;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.CustomViewInfo;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.util.Pair;
-import org.labkey.api.study.DataSet;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.samples.SpecimenController;
-import org.labkey.study.model.*;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetManager;
+import org.labkey.study.model.SecurityType;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitImpl;
 
 import javax.servlet.ServletException;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: migra
@@ -188,45 +208,10 @@ public class ReportManager implements DatasetManager.DatasetListener
         return ReportService.get().getReport(reportId);
     }
     
-/*
-    public Report getReport(User user, Container c, int datasetId, String label) throws Exception
-    {
-        return getReport(user, c, getReportViewKey(datasetId, label));
-    }
-
-    public Report getReport(User user, Container c, String label) throws Exception
-    {
-        Report[] reports = ReportService.get().getReports(user, c, label);
-        assert(reports.length == 0 || reports.length == 1);
-        if (reports.length > 0)
-            return reports[0];
-        return null;
-    }
-*/
-    public void deleteReport(ViewContext context, int reportId) throws Exception
-    {
-        final Report report = ReportService.get().getReport(reportId);
-        if (report != null)
-            ReportService.get().deleteReport(context, report);
-    }
-
     public void deleteReport(ViewContext context, Report report) throws Exception
     {
         ReportService.get().deleteReport(context, report);
     }
-
-    public ResultSet getReportResultSet(ViewContext context, ActionURL url, DataSet def) throws Exception
-    {
-        UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
-        QuerySettings settings = schema.getSettings(url.getPropertyValues(), "Dataset");
-        //Otherwise get from the URL somehow...
-        if (null != def)
-            settings.setQueryName(def.getName());
-
-        ReportQueryView qv = new ReportQueryView(schema, settings);
-        return qv.getResultSet(0);
-    }
-
 
     public Results getReportResultSet(ViewContext ctx, int datasetId, int visitRowId) throws ServletException, SQLException
     {
@@ -283,42 +268,6 @@ public class ReportManager implements DatasetManager.DatasetListener
     public Report createReport(String reportType)
     {
         return ReportService.get().createReportInstance(reportType);
-    }
-
-    public boolean canDeleteReport(User user, Container c, int reportId)
-    {
-        if (!user.isSiteAdmin())
-        {
-            try
-            {
-                // a non-admin can delete reports they own (non admins are not allowed to create shared reports).
-                Report report = ReportService.get().getReport(reportId);
-                if (report != null)
-                {
-                    Integer owner = report.getDescriptor().getOwner();
-                    return (owner != null && owner.equals(user.getUserId()));
-                }
-                return false;
-            }
-            catch (Exception e)
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Returns the list of views available and additionally checks study security.
-     */
-    public List<ViewInfo> getViews(ViewContext context, String schemaName, String queryName, boolean includeQueries, boolean editOnly)
-    {
-        return ReportUtil.getViews(context, schemaName, queryName, true, includeQueries, new StudyReportFilter(editOnly));
-    }
-
-    public List<ViewInfo> getViews(ViewContext context, String schemaName, String queryName, boolean includeReports, boolean includeQueries, boolean editOnly)
-    {
-        return ReportUtil.getViews(context, schemaName, queryName, includeReports, includeQueries, new StudyReportFilter(editOnly));
     }
 
     public static class StudyReportFilter extends ReportUtil.DefaultReportFilter
@@ -444,35 +393,6 @@ public class ReportManager implements DatasetManager.DatasetListener
         public String getReportViewType();
 
         public void setReports(Report[] reports);
-    }
-
-    public static class StudyReport
-    {
-        private int _createdBy;
-        private String _entityId;
-        private Date _created;
-        private String _label;
-        private String _params;
-        private String _reportType;
-        private Integer _showWithDataset;
-        private String _containerId;
-
-        public void setEntityId(String entity){_entityId = entity;}
-        public String getEntityId(){return _entityId;}
-        public void setCreatedBy(int id){_createdBy = id;}
-        public int getCreatedBy(){return _createdBy;}
-        public void setCreated(Date created){_created = created;}
-        public Date getCreated(){return _created;}
-        public void setLabel(String label){_label = label;}
-        public String getLabel(){return _label;}
-        public void setParams(String params){_params = params;}
-        public String getParams(){return _params;}
-        public void setReportType(String reportType){_reportType = reportType;}
-        public String getReportType(){return _reportType;}
-        public void setShowWithDataset(Integer datasetId){_showWithDataset = datasetId;}
-        public Integer getShowWithDataset(){return _showWithDataset;}
-        public void setContainerId(String id){_containerId = id;}
-        public String getContainerId(){return _containerId;}
     }
 
     public void datasetChanged(final DataSet def)

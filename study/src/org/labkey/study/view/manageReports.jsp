@@ -16,7 +16,10 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.reports.model.ViewInfo" %>
+<%@ page import="org.labkey.api.data.views.DataViewInfo" %>
+<%@ page import="org.labkey.api.data.views.DataViewProvider" %>
+<%@ page import="org.labkey.api.data.views.DataViewService" %>
+<%@ page import="org.labkey.api.reports.model.ViewCategory" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
@@ -26,9 +29,9 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.reports.StudyManageReportsBean" %>
-<%@ page import="org.labkey.study.reports.ReportManager" %>
 <%@ page import="java.io.Writer" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
@@ -42,23 +45,38 @@
     ViewContext context = HttpView.currentContext();
     Container c = context.getContainer();
     User user = context.getUser();
+    List<DataViewInfo> allViews = new ArrayList<>();
 
     // group by category name
-    List<ViewInfo> allViews = ReportManager.get().getViews(context, null, null, true, false);
-    Map<String, List<ViewInfo>> groups = new TreeMap<>();
-    for (ViewInfo view : allViews)
+    for (DataViewProvider.Type type : DataViewService.get().getDataTypes(getContainer(), getUser()))
     {
-        List<ViewInfo> views;
-        String category = view.getCategory();
-
-        if (groups.containsKey(category))
+        String typeName = type.getName();
+        if (typeName.equalsIgnoreCase("reports") || typeName.equalsIgnoreCase("queries"))
         {
-            views = groups.get(category);
+            allViews.addAll(DataViewService.get().getViews(context, Collections.singletonList(type)));
+        }
+    }
+
+    Map<String, List<DataViewInfo>> groups = new TreeMap<>();
+    for (DataViewInfo view : allViews)
+    {
+        List<DataViewInfo> views;
+        ViewCategory category = view.getCategory();
+
+        if (category == null)
+        {
+            category = new ViewCategory();
+            category.setLabel("Uncategorized");
+        }
+
+        if (groups.containsKey(category.getLabel()))
+        {
+            views = groups.get(category.getLabel());
         }
         else
         {
             views = new ArrayList<>();
-            groups.put(category, views);
+            groups.put(category.getLabel(), views);
         }
         views.add(view);
     }
@@ -80,7 +98,7 @@
     else if (bean.getAdminView())
         out.print("<table>");
 
-    for (Map.Entry<String, List<ViewInfo>> entry : groups.entrySet())
+    for (Map.Entry<String, List<DataViewInfo>> entry : groups.entrySet())
     {
         if (entry.getValue().isEmpty())
             continue;
@@ -91,7 +109,7 @@
             maxColumns--;
         }
         startReportSection(out, entry.getKey(), bean);
-        for (ViewInfo view : entry.getValue())
+        for (DataViewInfo view : entry.getValue())
         {
             reportCount++;
             if (view.getRunUrl() != null) { %>
@@ -106,7 +124,7 @@
                         }
                         %>
                     </td>
-                <td><a href="<%=h(view.getRunUrl().getLocalURIString())%>" <%=view.getRunTarget() != null ? " target=\"" + view.getRunTarget() + "\"" : ""%>><%=h(view.getName())%></a></td></tr>
+                <td><a href="<%=h(view.getRunUrl().getLocalURIString())%>" <%=h(view.getRunTarget() != null ? " target=\"" + view.getRunTarget() + "\"" : "")%>><%=h(view.getName())%></a></td></tr>
          <% } else { %>
                 <tr><td><%=h(view.getName())%></td></tr>
          <% }
