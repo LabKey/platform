@@ -2062,7 +2062,7 @@ Ext4.define('File.panel.Browser', {
         if (recs.length >= 1) {
             this.fileSystem.downloadResource({
                 record: recs,
-                directoryURL : this.fileSystem.concatPaths(LABKEY.ActionURL.getBaseURL(true), LABKEY.ActionURL.encodePath(this.fileSystem.getURL()))
+                directoryURL : LABKEY.ActionURL.getBaseURL(true) + LABKEY.ActionURL.encodePath(this.getFolderURL())
             });
         }
         else {
