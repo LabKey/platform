@@ -57,6 +57,8 @@ public abstract class DefaultValueService
 
     public abstract Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user, @Nullable String scope);
 
+    public abstract Map<DomainProperty, Object> getMergedValues(Domain domain, Map<DomainProperty, Object> userValues, Map<DomainProperty, Object> globalValues);
+
     public abstract void setDefaultValues(Container container, Map<DomainProperty, Object> values) throws ExperimentException;
 
     public abstract void setDefaultValues(Container container, Map<DomainProperty, Object> values, User user) throws ExperimentException;
