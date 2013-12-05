@@ -24,6 +24,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HString;
@@ -625,9 +626,19 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return UniqueID.getRequestScopedUID(getViewContext().getRequest());
     }
 
-    /** simple link to different action w/no parameters */
+    /** simple link to different action in same container w/no parameters */
     protected String buildURL(Class<? extends Controller> actionClass)
     {
+        if (AppProps.getInstance().getUseContainerRelativeURL())
+        {
+            String controller = SpringActionController.getControllerName(actionClass);
+            if (controller == null)
+                throw new IllegalStateException("Could not find a controller name for " + actionClass);
+            String action = SpringActionController.getActionName(actionClass);
+            if (action == null)
+                throw new IllegalStateException("Could not find an action name for " + actionClass);
+            return controller + "-" + action + ".view?";
+        }
         ActionURL v = getViewContext().getActionURL();
         ActionURL u = new ActionURL(actionClass, getViewContext().getContainer());
         String full = u.getLocalURIString();
