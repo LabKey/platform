@@ -34,6 +34,8 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.exp.ExperimentMembershipDisplayColumnFactory;
@@ -48,6 +50,9 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
     {
         super(name, ExperimentServiceImpl.get().getTinfoExperiment(), schema, new ExpExperimentImpl(new Experiment()));
         addCondition(new SQLFragment("Hidden = ?", Boolean.FALSE), FieldKey.fromParts("Hidden"));
+
+        ActionURL deleteExpUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteSelectedExperimentsURL(getContainer(), null);
+        setDeleteURL(new DetailsURL(deleteExpUrl));
     }
 
     public ColumnInfo createColumn(String alias, Column column)
@@ -100,6 +105,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         col.setShownInUpdateView(false);
         return col;
     }
+
     public void addExperimentMembershipColumn(ExpRun run)
     {
         SQLFragment sql;
@@ -210,5 +216,11 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
             filter = new UnionContainerFilter(filter, getContainerFilter());
         }
         super.setContainerFilter(filter);
+    }
+
+    @Override
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        return isAllowedPermission(perm) && _userSchema.getContainer().hasPermission(user, perm);
     }
 }

@@ -60,6 +60,11 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         _allowablePermissions.add(permission);
     }
 
+    protected final boolean isAllowedPermission(Class<? extends Permission> perm)
+    {
+        return _allowablePermissions.contains(perm);
+    }
+
     @Override
     protected ColumnInfo resolveColumn(String name)
     {

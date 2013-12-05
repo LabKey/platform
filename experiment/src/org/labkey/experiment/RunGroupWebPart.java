@@ -18,7 +18,6 @@ package org.labkey.experiment;
 import org.labkey.api.view.*;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.data.*;
-import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.QuerySettings;
@@ -58,7 +57,7 @@ public class RunGroupWebPart extends QueryView
             setShowBorders(true);
             setShadeAlternatingRows(true);
         }
-        setTitle("Run Groups");
+
         setAllowableContainerFilterTypes(ContainerFilter.Type.Current, ContainerFilter.Type.CurrentAndSubfolders,
                 ContainerFilter.Type.CurrentAndParents, ContainerFilter.Type.CurrentPlusProjectAndShared);
     }
@@ -109,13 +108,6 @@ public class RunGroupWebPart extends QueryView
         super.populateButtonBar(view, bb);
         if (!_narrow)
         {
-            ActionURL deleteExpUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteSelectedExperimentsURL(getViewContext().getContainer(), getReturnURL());
-            ActionButton deleteExperiment = new ActionButton(deleteExpUrl, "Delete");
-            deleteExperiment.setActionType(ActionButton.Action.POST);
-            deleteExperiment.setDisplayPermission(DeletePermission.class);
-            deleteExperiment.setRequiresSelection(true);
-            bb.add(deleteExperiment);
-
             ActionButton addXarFile = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getUploadXARURL(getViewContext().getContainer()), "Upload XAR");
             addXarFile.setActionType(ActionButton.Action.LINK);
             addXarFile.setDisplayPermission(InsertPermission.class);
@@ -126,5 +118,17 @@ public class RunGroupWebPart extends QueryView
             createExperiment.setDisplayPermission(InsertPermission.class);
             bb.add(createExperiment);
         }
+    }
+
+    @Override
+    public ActionButton createDeleteButton()
+    {
+        // Use default delete button, but without showing the confirmation text -- DeleteSelectedExperimentsAction will show a confirmation page.
+        ActionButton button = super.createDeleteButton();
+        if (button != null)
+        {
+            button.setRequiresSelection(true);
+        }
+        return button;
     }
 }

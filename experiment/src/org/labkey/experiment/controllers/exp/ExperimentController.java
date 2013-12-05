@@ -302,7 +302,9 @@ public class ExperimentController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new RunGroupWebPart(getViewContext(), false);
+            RunGroupWebPart webPart = new RunGroupWebPart(getViewContext(), false);
+            webPart.setFrame(WebPartView.FrameType.NONE);
+            return webPart;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4640,17 +4642,20 @@ public class ExperimentController extends SpringActionController
 
         public ActionURL getDeleteDatasURL(Container c, URLHelper returnURL)
         {
-            return new ActionURL(DeleteSelectedDataAction.class, c).addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
+            return new ActionURL(DeleteSelectedDataAction.class, c).addReturnURL(returnURL);
         }
 
         public ActionURL getDeleteSelectedExperimentsURL(Container c, URLHelper returnURL)
         {
-            return new ActionURL(DeleteSelectedExperimentsAction.class, c).addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
+            ActionURL result = new ActionURL(DeleteSelectedExperimentsAction.class, c);
+            if (returnURL != null)
+                result.addReturnURL(returnURL);
+            return result;
         }
 
         public ActionURL getDeleteSelectedExpRunsURL(Container container, URLHelper returnURL)
         {
-            return new ActionURL(DeleteSelectedExpRunsAction.class, container).addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
+            return new ActionURL(DeleteSelectedExpRunsAction.class, container).addReturnURL(returnURL);
         }
 
         public ActionURL getShowUpdateURL(ExpExperiment experiment)
@@ -4660,7 +4665,7 @@ public class ExperimentController extends SpringActionController
 
         public ActionURL getRemoveSelectedExpRunsURL(Container container, URLHelper returnURL, ExpExperiment exp)
         {
-            return new ActionURL(RemoveSelectedExpRunsAction.class, container).addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString()).addParameter("expRowId", exp.getRowId());
+            return new ActionURL(RemoveSelectedExpRunsAction.class, container).addReturnURL(returnURL).addParameter("expRowId", exp.getRowId());
         }
 
         public ActionURL getCreateRunGroupURL(Container container, URLHelper returnURL, boolean addSelectedRuns)
@@ -4668,7 +4673,7 @@ public class ExperimentController extends SpringActionController
             ActionURL result = new ActionURL(CreateRunGroupAction.class, container);
             if (returnURL != null)
             {
-                result.addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
+                result.addReturnURL(returnURL);
             }
             if (addSelectedRuns)
             {
