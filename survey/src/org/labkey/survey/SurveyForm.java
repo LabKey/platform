@@ -16,13 +16,13 @@
 package org.labkey.survey;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.action.ReturnUrlForm;
 
 /**
  * User: cnathe
  * Date: 12/11/12
   */
-public class SurveyForm
+public class SurveyForm extends ReturnUrlForm
 {
     protected Integer _rowId;
     protected Integer _surveyDesignId;
@@ -30,7 +30,6 @@ public class SurveyForm
     protected String _status;
     protected String _responsesPk;
     protected boolean _isSubmitted;
-    private ReturnURLString _srcURL;
 
     public Integer getRowId()
     {
@@ -92,13 +91,4 @@ public class SurveyForm
         _isSubmitted = isSubmitted;
     }
 
-    public ReturnURLString getSrcURL()
-    {
-        return _srcURL;
-    }
-
-    public void setSrcURL(ReturnURLString srcURL)
-    {
-        _srcURL = srcURL;
-    }
 }

@@ -831,6 +831,8 @@ public class ListController extends SpringActionController
 
                 String srcUrl = getViewContext().getActionURL().getParameter(ActionURL.Param.redirectUrl);
                 if (srcUrl == null)
+                    srcUrl = getViewContext().getActionURL().getParameter(ActionURL.Param.returnUrl);
+                if (srcUrl == null)
                     srcUrl = getViewContext().getActionURL().getParameter(QueryParam.srcURL);
                 AuditChangesView view = new AuditChangesView(comment, oldData, newData);
                 view.setReturnUrl(srcUrl);

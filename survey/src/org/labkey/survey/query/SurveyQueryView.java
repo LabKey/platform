@@ -17,7 +17,6 @@ package org.labkey.survey.query;
 
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
-import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
@@ -64,7 +63,7 @@ public class SurveyQueryView extends QueryView
         {
             ActionURL insertURL = new ActionURL(SurveyController.UpdateSurveyAction.class, getContainer());
             insertURL.addParameter("surveyDesignId", _surveyDesignId);
-            insertURL.addParameter(QueryParam.srcURL, getReturnURL().toString());
+            insertURL.addReturnURL(getReturnURL());
 
             ActionButton insert = new ActionButton(insertURL, "Create Survey");
             insert.setActionType(ActionButton.Action.LINK);

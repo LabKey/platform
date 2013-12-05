@@ -366,9 +366,7 @@ public class ParticipantGroupController extends BaseStudyController
         @Override
         public boolean handlePost(QueryForm form, BindException errors) throws Exception
         {
-            String returnURL = (String)this.getProperty(QueryParam.srcURL);
-            if (returnURL != null)
-                _returnURL = new ActionURL(returnURL);
+            _returnURL = form.getReturnActionURL();
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
@@ -1070,9 +1068,7 @@ public class ParticipantGroupController extends BaseStudyController
         @Override
         public boolean handlePost(QueryForm form, BindException errors) throws Exception
         {
-            String returnURL = (String)this.getProperty(QueryParam.srcURL);
-            if (returnURL != null)
-                _returnURL = new ActionURL(returnURL);
+            _returnURL = form.getReturnActionURL();
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 

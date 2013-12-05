@@ -89,13 +89,13 @@
 </script>
 
 <form action="<%=new ActionURL(ReportsController.SaveReportAction.class, container)%>" method="POST">
-<input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=StudyQueryReport.TYPE%>">
+<input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=h(StudyQueryReport.TYPE)%>">
 <input type="hidden" id="redirectToReport" name="redirectToReport" value="true">
 <input type="hidden" id="redirectToDataset" name="redirectToDataset" value="-1">
 <input type="hidden" id="showWithDataset" name="showWithDataset" value="0">
-<input type="hidden" name="srcURL" value="<%= bean.getSrcURL().getLocalURIString() %>">
-<input type="hidden" id="viewName" name="<%=QueryParam.viewName.toString()%>" value="">
-<input type="hidden" name="dataRegionName" value="<%=DataSetQueryView.DATAREGION%>">
+<input type="hidden" name="<%=h(ActionURL.Param.returnUrl.name())%>" value="<%=h(bean.getSrcURL().getLocalURIString())%>">
+<input type="hidden" id="viewName" name="<%=h(QueryParam.viewName.toString())%>" value="">
+<input type="hidden" name="dataRegionName" value="<%=h(DataSetQueryView.DATAREGION)%>">
 <table>
     <tr>
         <th align="right">Label for View</th>
@@ -129,7 +129,7 @@
     <tr>
         <td></td>
         <td>
-            <%= buttonImg("Create View", "return verifyLabel();") %>
+            <%= text(buttonImg("Create View", "return verifyLabel();")) %>
             <br>After creating the new view, you will have the chance to customize its appearance.
         </td>
     </tr>

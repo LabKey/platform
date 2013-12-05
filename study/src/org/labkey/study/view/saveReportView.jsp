@@ -110,7 +110,7 @@
     if (confirm)
     {
 %>
-        &nbsp;<%=generateButton("Cancel", bean.getSrcURL())%>
+        &nbsp;<%=generateButton("Cancel", bean.getReturnActionURL())%>
 <%
     } 
 %>

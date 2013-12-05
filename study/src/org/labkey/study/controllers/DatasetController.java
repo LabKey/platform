@@ -20,6 +20,7 @@ import gwt.client.org.labkey.study.dataset.client.DatasetImporter;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
@@ -626,26 +627,15 @@ public class DatasetController extends BaseStudyController
         }
     }
 
-    public static class EditDatasetRowForm
+    public static class EditDatasetRowForm extends ReturnUrlForm
     {
         private String lsid;
         private int datasetId;
-        private ReturnURLString srcURL;
 
         public String getLsid() {return lsid;}
         public void setLsid(String lsid) {this.lsid = lsid;}
         public int getDatasetId() {return datasetId;}
         public void setDatasetId(int datasetId) {this.datasetId = datasetId;}
-
-        public ReturnURLString getSrcURL()
-        {
-            return srcURL;
-        }
-
-        public void setSrcURL(ReturnURLString srcURL)
-        {
-            this.srcURL = srcURL;
-        }
     }
 
     public static class DatasetAuditHistoryForm

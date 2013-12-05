@@ -2288,10 +2288,8 @@ public class QueryController extends SpringActionController
 
         public boolean handlePost(QueryForm form, BindException errors) throws Exception
         {
-            ActionURL forward = null;
-            String returnURL = (String)this.getProperty(QueryParam.srcURL); // UNDONE: add to QueryForm
-            if (returnURL != null)
-                forward = new ActionURL(returnURL);
+            ActionURL forward = form.getReturnActionURL();
+
             TableInfo table = form.getQueryDef().getTable(form.getSchema(), null, true);
 
             if (!table.hasPermission(getUser(), DeletePermission.class))

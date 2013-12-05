@@ -65,7 +65,7 @@
         responsesPk = bean.getResponsesPk();
         surveyLabel = bean.getLabel();
         submitted = bean.isSubmitted();
-        returnURL = bean.getSrcURL() != null ? bean.getSrcURL().toString() : null;
+        returnURL = bean.getReturnActionURL() != null ? bean.getReturnActionURL().getLocalURIString() : null;
     }
 
     Survey survey = SurveyManager.get().getSurvey(ctx.getContainer(), ctx.getUser(), rowId);

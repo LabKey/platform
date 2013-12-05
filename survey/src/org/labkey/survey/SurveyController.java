@@ -33,6 +33,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentFile;
@@ -236,7 +237,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
     }
 
-    public static class SurveyDesignForm
+    public static class SurveyDesignForm extends ReturnUrlForm
     {
         private int _rowId;
         private String _label;
@@ -244,7 +245,6 @@ public class SurveyController extends SpringActionController implements SurveyUr
         private String _metadata;
         private String _schemaName;
         private String _queryName;
-        private ReturnURLString _srcURL;
         private boolean _stringifyMetadata;
 
         public int getRowId()
@@ -305,16 +305,6 @@ public class SurveyController extends SpringActionController implements SurveyUr
         public void setQueryName(String queryName)
         {
             _queryName = queryName;
-        }
-
-        public ReturnURLString getSrcURL()
-        {
-            return _srcURL;
-        }
-
-        public void setSrcURL(ReturnURLString srcURL)
-        {
-            _srcURL = srcURL;
         }
 
         public boolean isStringifyMetadata()
@@ -968,9 +958,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         @Override
         public boolean handlePost(QueryForm form, BindException errors) throws Exception
         {
-            String returnURL = (String)this.getProperty(QueryParam.srcURL);
-            if (returnURL != null)
-                _returnURL = new ActionURL(returnURL);
+            _returnURL = form.getReturnActionURL();
 
             DbScope scope = SurveySchema.getInstance().getSchema().getScope();
 
@@ -1007,9 +995,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         @Override
         public boolean handlePost(QueryForm form, BindException errors) throws Exception
         {
-            String returnURL = (String)this.getProperty(QueryParam.srcURL);
-            if (returnURL != null)
-                _returnURL = new ActionURL(returnURL);
+            _returnURL = form.getReturnActionURL();
 
             DbScope scope = SurveySchema.getInstance().getSchema().getScope();
 

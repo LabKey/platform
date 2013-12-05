@@ -91,6 +91,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
@@ -3747,7 +3748,7 @@ public class SpecimenController extends BaseStudyController
                                 addParameter(ParticipantCommentForm.params.participantId, vial.getPtid()).
                                 addParameter(ParticipantCommentForm.params.visitId, String.valueOf(vial.getVisitValue())).
                                 addParameter(ParticipantCommentForm.params.comment, commentsForm.getComments()).
-                                addParameter(QueryParam.srcURL, commentsForm.getReferrer());
+                                addReturnURL(new URLHelper(commentsForm.getReferrer()));
                     }
                 }
                 else
@@ -3755,7 +3756,7 @@ public class SpecimenController extends BaseStudyController
                     _successUrl = new ActionURL(CopyParticipantCommentAction.class, getContainer()).
                             addParameter(ParticipantCommentForm.params.participantId, commentsForm.getCopyParticipantId()).
                             addParameter(ParticipantCommentForm.params.comment, commentsForm.getComments()).
-                            addParameter(QueryParam.srcURL, commentsForm.getReferrer());
+                            addReturnURL(new URLHelper(commentsForm.getReferrer()));
                 }
 
                 // delete existing vial comments if move is specified
@@ -5197,7 +5198,7 @@ public class SpecimenController extends BaseStudyController
 
                 url.addParameter(ParticipantCommentForm.params.datasetId, def.getDataSetId()).
                         addParameter(ParticipantCommentForm.params.comment, form.getComment()).
-                        addParameter(QueryParam.srcURL, form.getSrcURL()).
+                        addReturnURL(form.getReturnActionURL()).
                         addParameter(ParticipantCommentForm.params.visitId, form.getVisitId());
 
                 for (int rowId : form.getVialCommentsToClear())

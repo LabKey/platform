@@ -17,7 +17,6 @@ package org.labkey.survey.query;
 
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
-import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
@@ -56,7 +55,7 @@ public class SurveyDesignQueryView extends QueryView
         if (getContainer().hasPermission(getUser(), InsertPermission.class))
         {
             ActionURL insertURL = new ActionURL(SurveyController.SurveyDesignAction.class, getContainer());
-            insertURL.addParameter(QueryParam.srcURL, getReturnURL().toString());
+            insertURL.addReturnURL(getReturnURL());
 
             ActionButton insert = new ActionButton(insertURL, "Create Survey Design");
             insert.setActionType(ActionButton.Action.LINK);
@@ -69,7 +68,7 @@ public class SurveyDesignQueryView extends QueryView
     public ActionButton createDeleteButton()
     {
         ActionURL url = new ActionURL(SurveyController.DeleteSurveyDesignsAction.class, getContainer());
-        url.addParameter(QueryParam.srcURL.toString(), getReturnURL().getLocalURIString());
+        url.addReturnURL(getReturnURL());
 
         ActionButton btnDelete = new ActionButton(url, "Delete");
         btnDelete.setActionType(ActionButton.Action.POST);

@@ -1137,7 +1137,6 @@ public class ReportsController extends BaseStudyController
         protected String label;
         protected String params;
         protected String reportType;
-        protected String srcURL;
         protected String confirmed;
         protected int showWithDataset;
         protected boolean redirectToReport;
@@ -1199,16 +1198,6 @@ public class ReportsController extends BaseStudyController
             descriptor.setProperty(ReportDescriptor.Prop.dataRegionName, dataRegionName);
 
             return report;
-        }
-
-        public String getSrcURL()
-        {
-            return srcURL;
-        }
-
-        public void setSrcURL(String srcURL)
-        {
-            this.srcURL = srcURL;
         }
 
         public String getConfirmed()

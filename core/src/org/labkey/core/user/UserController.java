@@ -229,7 +229,7 @@ public class UserController extends SpringActionController
         editURL.addParameter(QueryParam.schemaName.toString(), "core");
         editURL.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, CoreQuerySchema.SITE_USERS_TABLE_NAME);
         editURL.addParameter("userId", NumberUtils.toInt(currentURL.getParameter("userId")));
-        editURL.addParameter(QueryParam.srcURL, currentURL.getLocalURIString());
+        editURL.addReturnURL(currentURL);
 
         if (isOwnRecord || isSiteAdmin)
         {
@@ -284,7 +284,9 @@ public class UserController extends SpringActionController
             if (domain != null)
             {
                 ActionURL url = domain.getDomainKind().urlEditDefinition(domain, getViewContext());
-                url.addParameter(QueryParam.srcURL, getViewContext().getActionURL().getLocalURIString());
+                ActionURL returnURL = getViewContext().getActionURL();
+                if (returnURL != null)
+                    url.addReturnURL(returnURL);
 
                 ActionButton preferences = new ActionButton(url, "Change User Properties");
                 preferences.setActionType(ActionButton.Action.LINK);
@@ -756,7 +758,7 @@ public class UserController extends SpringActionController
             if (domain != null)
             {
                 _successUrl = domain.getDomainKind().urlEditDefinition(domain, getViewContext());
-                _successUrl.addParameter(QueryParam.srcURL, getViewContext().getActionURL().getLocalURIString());
+                _successUrl.addReturnURL(getViewContext().getActionURL());
 
                 return true;
             }
