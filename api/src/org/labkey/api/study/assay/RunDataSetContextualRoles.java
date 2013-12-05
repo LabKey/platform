@@ -25,6 +25,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -125,7 +126,7 @@ public class RunDataSetContextualRoles implements HasContextualRoles
         if (datasetColumnNames.size() == 0)
             return null;
 
-        Map<String, Object>[] results = new TableSelector(resultsTable, datasetColumnNames, new SimpleFilter("runid", run.getRowId()), null).getMapArray();
+        Map<String, Object>[] results = new TableSelector(resultsTable, datasetColumnNames, new SimpleFilter(FieldKey.fromParts("runid"), run.getRowId()), null).getMapArray();
 
         if (results.length == 0)
             return null;

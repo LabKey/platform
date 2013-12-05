@@ -88,7 +88,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
     public ViewCategory[] getCategories(Container c, User user, SimpleFilter filter)
     {
-        filter.addCondition("Container", c);
+        filter.addCondition(FieldKey.fromParts("Container"), c);
 
         return new TableSelector(getTableInfoCategories(), filter, null).getArray(ViewCategory.class);
     }
@@ -101,7 +101,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
         if (category != null)
             return category;
 
-        SimpleFilter filter = new SimpleFilter("rowId", rowId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("rowId"), rowId);
 
         return new TableSelector(getTableInfoCategories(), filter, null).getObject(ViewCategory.class);
     }
@@ -225,7 +225,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             if (category.isNew()) // insert
             {
                 // check for duplicates
-                SimpleFilter filter = new SimpleFilter("label", category.getLabel());
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("label"), category.getLabel());
                 if (category.getParent() != null)
                     filter.addCondition(FieldKey.fromParts("parent"), category.getParent().getRowId());
                 else

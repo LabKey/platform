@@ -29,6 +29,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.Portal.WebPart;
 
@@ -107,7 +108,7 @@ public class WebPartCache
                 pages.put(p.getPageId(), p);
             }
 
-            SimpleFilter filter = new SimpleFilter("Container", containerId);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), containerId);
             ArrayList<WebPart> list = new ArrayList<>(new TableSelector(Portal.getTableInfoPortalWebParts(), filter, new Sort("Index")).getCollection(WebPart.class));
 
             for (WebPart wp : list)

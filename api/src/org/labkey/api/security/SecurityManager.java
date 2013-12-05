@@ -43,6 +43,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.impersonation.ImpersonateGroupContextFactory;
 import org.labkey.api.security.impersonation.ImpersonateRoleContextFactory;
 import org.labkey.api.security.impersonation.ImpersonateUserContextFactory;
@@ -1141,12 +1142,12 @@ public class SecurityManager
             // Need to invalidate all computed group lists. This isn't quite right, but it gets the job done.
             GroupMembershipCache.handleGroupChange(group, group);
 
-            Table.delete(core.getTableInfoRoleAssignments(), new SimpleFilter("UserId", groupId));
+            Table.delete(core.getTableInfoRoleAssignments(), new SimpleFilter(FieldKey.fromParts("UserId"), groupId));
 
-            Filter groupFilter = new SimpleFilter("GroupId", groupId);
+            Filter groupFilter = new SimpleFilter(FieldKey.fromParts("GroupId"), groupId);
             Table.delete(core.getTableInfoMembers(), groupFilter);
 
-            Filter principalsFilter = new SimpleFilter("UserId", groupId);
+            Filter principalsFilter = new SimpleFilter(FieldKey.fromParts("UserId"), groupId);
             Table.delete(core.getTableInfoPrincipals(), principalsFilter);
 
             GroupCache.uncache(groupId);

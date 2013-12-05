@@ -41,6 +41,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -126,8 +127,8 @@ public class Portal
     public static void clearWebPartProperties(String nameSearchText, String propertiesSearchText)
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("Name", nameSearchText, CompareType.CONTAINS);
-        filter.addCondition("Properties", propertiesSearchText, CompareType.CONTAINS);
+        filter.addCondition(FieldKey.fromParts("Name"), nameSearchText, CompareType.CONTAINS);
+        filter.addCondition(FieldKey.fromParts("Properties"), propertiesSearchText, CompareType.CONTAINS);
 
         // Select all containers that are affected
         SQLFragment where = filter.getSQLFragment(Portal.getSqlDialect());

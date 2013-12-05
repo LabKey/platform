@@ -16,20 +16,38 @@
 
 package org.labkey.api.exp;
 
-import org.labkey.api.data.*;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.MenuButton;
+import org.labkey.api.data.PanelButton;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Sort;
+import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.query.ExpRunTable;
-import org.labkey.api.query.*;
-import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -144,8 +162,8 @@ public class ExperimentRunListView extends QueryView
                     view.getDataRegion().getJavascriptFormReference(false) + ".submit();";
             addToExperimentButton.addMenuItem("Create new run group...", null, javascript);
 
-            ExpExperiment[] experiments = ExperimentService.get().getExperiments(c, getViewContext().getUser(), true, false);
-            if (experiments.length > 0)
+            List<? extends ExpExperiment> experiments = ExperimentService.get().getExperiments(c, getViewContext().getUser(), true, false);
+            if (experiments.size() > 0)
             {
                 addToExperimentButton.addSeparator();
             }

@@ -44,6 +44,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -106,7 +107,7 @@ public class DomainUtil
                         ColumnInfo pkColumnInfo = table.getColumn(pkCol);
                         if (!pkColumnInfo.getClass().equals(defaultValue.getClass()))
                             defaultValue = ConvertUtils.convert(defaultValue.toString(), pkColumnInfo.getJavaClass());
-                        SimpleFilter filter = new SimpleFilter(pkCol, defaultValue);
+                        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(pkCol), defaultValue);
 
                         Object value = new TableSelector(table, Collections.singleton(table.getTitleColumn()), filter, null).getObject(Object.class);
 

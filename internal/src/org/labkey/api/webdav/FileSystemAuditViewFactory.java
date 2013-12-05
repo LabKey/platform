@@ -140,7 +140,7 @@ public class FileSystemAuditViewFactory extends SimpleAuditViewFactory
 
     public static AuditLogQueryView createAttachmentView(ViewContext context, File dir)
     {
-        SimpleFilter filter = new SimpleFilter("ContainerId", context.getContainer().getId());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), context.getContainer().getId());
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, EVENT_TYPE);
         view.setTitle("<b>Directory Log:</b>");
@@ -151,7 +151,7 @@ public class FileSystemAuditViewFactory extends SimpleAuditViewFactory
 
     public AuditLogQueryView createFileContentView(ViewContext context)
     {
-        SimpleFilter filter = new SimpleFilter("ContainerId", context.getContainer().getId());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), context.getContainer().getId());
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
         view.setSort(new Sort("-Date"));

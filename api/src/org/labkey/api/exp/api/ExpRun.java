@@ -26,7 +26,7 @@ import java.util.Map;
 
 public interface ExpRun extends ExpObject
 {
-    public ExpExperiment[] getExperiments();
+    public List<? extends ExpExperiment> getExperiments();
     public ExpProtocol getProtocol();
 
     /**

@@ -169,7 +169,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         else
             _timepointType = null;
         _filter = new SimpleFilter();
-        _filter.addInClause(provider.getTableMetadata(protocol).getResultRowIdFieldKey().toString(), objectIds);
+        _filter.addInClause(provider.getTableMetadata(protocol).getResultRowIdFieldKey(), objectIds);
         _reshowPtids = reshowPtids;
         _reshowVisits = reshowVisits;
         _reshowDates = reshowDates;

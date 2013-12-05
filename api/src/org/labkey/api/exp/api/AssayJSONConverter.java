@@ -86,10 +86,10 @@ public class AssayJSONConverter
         TableInfo tableInfo = provider.createProtocolSchema(user, data.getContainer(), protocol, null).createDataTable();
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, fieldKeys);
         assert columns.size() == fieldKeys.size() : "Missing a column for at least one of the properties";
-        SimpleFilter filter = new SimpleFilter(AbstractTsvAssayProvider.DATA_ID_COLUMN_NAME, data.getRowId());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(AbstractTsvAssayProvider.DATA_ID_COLUMN_NAME), data.getRowId());
         if (objectIds != null && objectIds.length > 0)
         {
-            filter.addClause(new SimpleFilter.InClause(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME, Arrays.asList(objectIds)));
+            filter.addClause(new SimpleFilter.InClause(FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME), Arrays.asList(objectIds)));
         }
 
         try (Results results = new TableSelector(tableInfo, columns.values(), filter, new Sort(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME)).getResults())

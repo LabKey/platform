@@ -33,6 +33,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 
 import java.sql.SQLException;
 import java.util.Date;
@@ -62,7 +63,7 @@ public class SecurityPolicyManager
             @Override
             public SecurityPolicy load(String key, @Nullable Object argument)
             {
-                SimpleFilter filter = new SimpleFilter("ResourceId", resource.getResourceId());
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResourceId"), resource.getResourceId());
 
                 SecurityPolicyBean policyBean = new TableSelector(core.getTableInfoPolicies())
                         .getObject(resource.getResourceId(), SecurityPolicyBean.class);
@@ -126,7 +127,7 @@ public class SecurityPolicyManager
             TableInfo table = core.getTableInfoRoleAssignments();
 
             //delete all rows where resourceid = resource.getId()
-            Table.delete(table, new SimpleFilter("ResourceId", policy.getResourceId()));
+            Table.delete(table, new SimpleFilter(FieldKey.fromParts("ResourceId"), policy.getResourceId()));
 
             //insert rows for the policy entries
             for (RoleAssignment assignment : policy.getAssignments())
@@ -157,7 +158,7 @@ public class SecurityPolicyManager
         try (DbScope.Transaction transaction = core.getSchema().getScope().ensureTransaction())
         {
             //delete all rows where resourceid = resource.getResourceId()
-            SimpleFilter filter = new SimpleFilter("ResourceId", resource.getResourceId());
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResourceId"), resource.getResourceId());
             Table.delete(core.getTableInfoRoleAssignments(), filter);
             Table.delete(core.getTableInfoPolicies(), filter);
 

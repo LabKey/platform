@@ -319,7 +319,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
         }
 
         if (null != c)
-            filter.addCondition("container", c);
+            filter.addCondition(FieldKey.fromParts("container"), c);
 
         // Ignore the sort -- we're just getting one object
         TableSqlFactory tableSqlGetter = new PreventSortTableSqlFactory(filter, _columns);

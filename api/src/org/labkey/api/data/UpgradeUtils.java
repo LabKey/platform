@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.sql.SQLException;
@@ -89,7 +90,7 @@ public class UpgradeUtils
 
         LOG.info("  Updating duplicate values in container " + cid);
 
-        SimpleFilter filter = new SimpleFilter("Container", cid);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), cid);
 
         if (ignoreNulls)
             filter.addCondition(col, null, CompareType.NONBLANK);

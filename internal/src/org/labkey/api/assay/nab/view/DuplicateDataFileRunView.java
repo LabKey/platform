@@ -23,6 +23,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.nab.NabUrls;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -76,8 +77,8 @@ public class DuplicateDataFileRunView extends RunListQueryView
         {
             filter = new SimpleFilter(view.getRenderContext().getBaseFilter());
         }
-        filter.addCondition("Name", _assay.getDataFile().getName());
-        filter.addCondition("RowId", _run.getRowId(), CompareType.NEQ);
+        filter.addCondition(FieldKey.fromParts("Name"), _assay.getDataFile().getName());
+        filter.addCondition(FieldKey.fromParts("RowId"), _run.getRowId(), CompareType.NEQ);
         view.getRenderContext().setBaseFilter(filter);
         return view;
     }

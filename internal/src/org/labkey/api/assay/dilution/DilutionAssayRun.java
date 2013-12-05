@@ -152,7 +152,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
 
     private Map<PropertyDescriptor, Object> getRunProperties(TableInfo runTable, Map<FieldKey, PropertyDescriptor> fieldKeys, Map<FieldKey, ColumnInfo> selectCols)
     {
-        SimpleFilter filter = new SimpleFilter("RowId", _run.getRowId());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), _run.getRowId());
         Map<PropertyDescriptor, Object> properties = new LinkedHashMap<>();
 
         try (ResultSet rs = new TableSelector(runTable, selectCols.values(), filter, null).setForDisplay(true).setMaxRows(1).getResultSet())

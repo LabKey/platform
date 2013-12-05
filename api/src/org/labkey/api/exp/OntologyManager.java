@@ -559,10 +559,10 @@ public class OntologyManager
 		if (null != m)
 			return m;
 
-        SimpleFilter filter = new SimpleFilter("ObjectURI", objectLSID);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectURI"), objectLSID);
         if (container != null)
         {
-            filter.addCondition("Container", container);
+            filter.addCondition(FieldKey.fromParts("Container"), container);
         }
 
         ObjectProperty[] pvals = new TableSelector(getTinfoObjectPropertiesView(), filter, null).getArray(ObjectProperty.class);
@@ -1799,8 +1799,8 @@ public class OntologyManager
             PropertyDescriptor pd = getPropertyDescriptor(propertyURI, propContainer);
             if (pd == null)
                 return;
-            SimpleFilter filter = new SimpleFilter("ObjectId", o.getObjectId());
-            filter.addCondition("PropertyId", pd.getPropertyId());
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectId"), o.getObjectId());
+            filter.addCondition(FieldKey.fromParts("PropertyId"), pd.getPropertyId());
             Table.delete(getTinfoObjectProperty(), filter);
             clearPropertyCache(objectURI);
         }
@@ -3603,7 +3603,7 @@ public class OntologyManager
         {
             PropertyType oldType = pdOld.getPropertyType();
             PropertyType newType = pdNew.getPropertyType();
-            if (oldType.getStorageType() != newType.getStorageType() && new TableSelector(getTinfoObjectProperty(), new SimpleFilter("PropertyId", pdOld.getPropertyId()), null).exists())
+            if (oldType.getStorageType() != newType.getStorageType() && new TableSelector(getTinfoObjectProperty(), new SimpleFilter(FieldKey.fromParts("PropertyId"), pdOld.getPropertyId()), null).exists())
                 throw new ChangePropertyDescriptorException("This property type cannot be changed because there are existing values.");
 
             validatePropertyDescriptor(pdNew);
@@ -3659,7 +3659,7 @@ public class OntologyManager
 
     static public boolean checkObjectExistence(String lsid)
     {
-        return new TableSelector(getTinfoObject(), new SimpleFilter("ObjectURI", lsid), null).exists();
+        return new TableSelector(getTinfoObject(), new SimpleFilter(FieldKey.fromParts("ObjectURI"), lsid), null).exists();
     }
 
 

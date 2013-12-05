@@ -34,6 +34,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -190,7 +191,7 @@ public class UserManager
     // Only used for creating/modifying a user, so no need to cache
     public static @Nullable User getUserByDisplayName(String displayName)
     {
-        User[] users = new TableSelector(CORE.getTableInfoUsers(), new SimpleFilter("DisplayName", displayName), null).getArray(User.class);
+        User[] users = new TableSelector(CORE.getTableInfoUsers(), new SimpleFilter(FieldKey.fromParts("DisplayName"), displayName), null).getArray(User.class);
         return users.length == 0 ? null : users[0];
     }
 
@@ -377,7 +378,7 @@ public class UserManager
 
     public static int getUserCount(Date registeredBefore) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("Created", registeredBefore, CompareType.LTE);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Created"), registeredBefore, CompareType.LTE);
         return (int)new TableSelector(CORE.getTableInfoUsersData(), filter, null).getRowCount();
     }
 

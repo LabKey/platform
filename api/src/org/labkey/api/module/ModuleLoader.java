@@ -48,6 +48,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -1732,7 +1733,7 @@ public class ModuleLoader implements Filter
 
     public ModuleContext getModuleContext(String name)
     {
-        SimpleFilter filter = new SimpleFilter("Name", name);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), name);
         return new TableSelector(getTableInfoModules(), filter, null).getObject(ModuleContext.class);
     }
 

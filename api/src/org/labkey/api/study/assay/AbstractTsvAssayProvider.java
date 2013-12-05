@@ -22,7 +22,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -93,7 +92,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         }
 
         TableInfo table = StorageProvisioner.createTableInfo(getResultsDomain(protocol), DbSchema.get(AbstractTsvAssayProvider.ASSAY_SCHEMA_NAME));
-        Map<String, Object>[] rows = new TableSelector(table, table.getColumns(AbstractTsvAssayProvider.DATA_ID_COLUMN_NAME), new SimpleFilter(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME, id), null).getMapArray();
+        Map<String, Object>[] rows = new TableSelector(table, table.getColumns(AbstractTsvAssayProvider.DATA_ID_COLUMN_NAME), new SimpleFilter(FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME), id), null).getMapArray();
 
         for (Map<String, Object> row : rows)
         {

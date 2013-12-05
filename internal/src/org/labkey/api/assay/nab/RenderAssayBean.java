@@ -35,6 +35,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.nab.NabUrls;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.study.assay.AbstractAssayProvider;
@@ -173,9 +174,9 @@ public class RenderAssayBean extends RenderAssayForm
     {
         if (_dupFile == null)
         {
-            SimpleFilter filter = new SimpleFilter("ProtocolLsid", _assay.getProtocol().getLSID());
-            filter.addCondition("Name", _assay.getDataFile().getName());
-            filter.addCondition("RowId", _assay.getRun().getRowId(), CompareType.NEQ);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ProtocolLsid"), _assay.getProtocol().getLSID());
+            filter.addCondition(FieldKey.fromParts("Name"), _assay.getDataFile().getName());
+            filter.addCondition(FieldKey.fromParts("RowId"), _assay.getRun().getRowId(), CompareType.NEQ);
 
             _dupFile = new TableSelector(ExperimentService.get().getTinfoExperimentRun(), filter, null).exists();
         }

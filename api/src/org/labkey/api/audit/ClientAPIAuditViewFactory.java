@@ -16,9 +16,9 @@
 package org.labkey.api.audit;
 
 import org.labkey.api.audit.query.AuditLogQueryView;
-import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.view.ViewContext;
 
@@ -51,7 +51,7 @@ public class ClientAPIAuditViewFactory extends SimpleAuditViewFactory
     public QueryView createDefaultQueryView(ViewContext context)
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("EventType", EVENT_TYPE);
+        filter.addCondition(FieldKey.fromParts("EventType"), EVENT_TYPE);
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, EVENT_TYPE);
         view.setSort(new Sort("-Date"));

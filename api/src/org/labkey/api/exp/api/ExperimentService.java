@@ -123,7 +123,7 @@ public class ExperimentService
         ExpExperiment createExpExperiment(Container container, String name);
         ExpExperiment getExpExperiment(int rowid);
         ExpExperiment getExpExperiment(String lsid);
-        ExpExperiment[] getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches);
+        List<? extends ExpExperiment> getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches);
 
         ExpProtocol getExpProtocol(int rowid);
         ExpProtocol getExpProtocol(String lsid);
@@ -292,6 +292,6 @@ public class ExperimentService
 
         void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String message);
 
-        ExpExperiment[] getMatchingBatches(String name, Container container, ExpProtocol protocol);
+        List<? extends ExpExperiment> getMatchingBatches(String name, Container container, ExpProtocol protocol);
     }
 }

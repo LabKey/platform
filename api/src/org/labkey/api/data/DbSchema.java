@@ -26,6 +26,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.ms2.MS2Service;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.TableSorter;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
@@ -668,7 +669,7 @@ public class DbSchema
                 assertFalse("In transaction when shouldn't be.", testSchema.getScope().isTransactionActive());
             }
 
-            SimpleFilter filter = new SimpleFilter("RowId", rowId);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
 
             try (ResultSet rs = new TableSelector(testTable, filter, null).getResultSet())
             {

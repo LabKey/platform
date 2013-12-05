@@ -45,6 +45,7 @@ import org.labkey.api.files.FileUrls;
 import org.labkey.api.flow.api.FlowService;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityLogger;
@@ -624,9 +625,9 @@ public class FileSystemResource extends AbstractWebdavResource
     public Collection<WebdavResolver.History> getHistory()
     {
         File file = getFile();
-        SimpleFilter filter = new SimpleFilter("EventType",  "FileSystem"); // FileSystemAuditViewFactory.EVENT_TYPE);
-        filter.addCondition("Key1", file.getParent());
-        filter.addCondition("Key2", file.getName());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EventType"), "FileSystem"); // FileSystemAuditViewFactory.EVENT_TYPE);
+        filter.addCondition(FieldKey.fromParts("Key1"), file.getParent());
+        filter.addCondition(FieldKey.fromParts("Key2"), file.getName());
         List<AuditLogEvent> logs = AuditLogService.get().getEvents(filter);
         if (null == logs)
             return Collections.emptyList();

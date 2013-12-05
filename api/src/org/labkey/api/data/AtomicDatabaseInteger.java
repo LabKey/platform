@@ -21,6 +21,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
@@ -85,10 +86,10 @@ public class AtomicDatabaseInteger
     public boolean compareAndSet(int expect, int update) throws SQLException
     {
         String targetColumnName = _targetColumn.getSelectName();
-        SimpleFilter filter = new SimpleFilter(targetColumnName, expect);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(targetColumnName), expect);
 
         if (null != _container)
-            filter.addCondition("Container", _container);
+            filter.addCondition(FieldKey.fromParts("Container"), _container);
 
         Map<String, Object> in = new HashMap<>();
         in.put(_targetColumn.getSelectName(), update);
