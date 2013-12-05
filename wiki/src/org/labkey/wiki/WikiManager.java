@@ -39,6 +39,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -143,7 +144,7 @@ public class WikiManager implements WikiService
             return null;
 
         return new TableSelector(comm.getTableInfoPages(),
-                SimpleFilter.createContainerFilter(c).addCondition("EntityId", entityId),
+                SimpleFilter.createContainerFilter(c).addCondition(FieldKey.fromParts("EntityId"), entityId),
                 null).getObject(Wiki.class);
     }
 
@@ -277,9 +278,9 @@ public class WikiManager implements WikiService
             wiki.setPageVersionId(null);
             Table.update(user, comm.getTableInfoPages(), wiki, wiki.getEntityId());
             Table.delete(comm.getTableInfoPageVersions(),
-                    new SimpleFilter("pageentityId", wiki.getEntityId()));
+                    new SimpleFilter(FieldKey.fromParts("pageentityId"), wiki.getEntityId()));
             Table.delete(comm.getTableInfoPages(),
-                    new SimpleFilter("entityId", wiki.getEntityId()));
+                    new SimpleFilter(FieldKey.fromParts("entityId"), wiki.getEntityId()));
 
             getAttachmentService().deleteAttachments(wiki);
 

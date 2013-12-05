@@ -26,6 +26,7 @@ import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -98,7 +99,7 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
 
     public ExpProtocolApplication[] getTargetApplications()
     {
-        return getTargetApplications(new SimpleFilter("MaterialId", getRowId()), ExperimentServiceImpl.get().getTinfoMaterialInput());
+        return getTargetApplications(new SimpleFilter(FieldKey.fromParts("MaterialId"), getRowId()), ExperimentServiceImpl.get().getTinfoMaterialInput());
     }
 
     public String getCpasType()

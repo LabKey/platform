@@ -24,6 +24,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -168,7 +169,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
     {
         if (filter == null)
             filter = new SimpleFilter();
-        filter.addCondition("Hidden", Boolean.FALSE);
+        filter.addCondition(FieldKey.fromParts("Hidden"), Boolean.FALSE);
         return filter;
     }
 

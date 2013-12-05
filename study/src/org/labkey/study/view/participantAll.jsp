@@ -153,7 +153,7 @@
     final VisitMultiMap visitSequenceMap = new VisitMultiMap();
     final Map<Double, Integer> countKeysForSequence = new HashMap<>();
     final Set<Integer> datasetSet = new HashSet<>();
-    SimpleFilter filter = new SimpleFilter(study.getSubjectColumnName(), bean.getParticipantId());
+    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(study.getSubjectColumnName()), bean.getParticipantId());
     Sort sort = new Sort("SequenceNum");
     SQLFragment f = new SQLFragment();
     f.append("SELECT ParticipantId, SequenceNum, DatasetId, COUNT(*) AS _RowCount FROM ");

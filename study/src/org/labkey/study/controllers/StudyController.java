@@ -2707,7 +2707,7 @@ public class StudyController extends BaseStudyController
     private boolean hasSourceLsids(TableInfo datasetTable) throws SQLException
     {
         SimpleFilter sourceLsidFilter = new SimpleFilter();
-        sourceLsidFilter.addCondition("SourceLsid", null, CompareType.NONBLANK);
+        sourceLsidFilter.addCondition(FieldKey.fromParts("SourceLsid"), null, CompareType.NONBLANK);
 
         return new TableSelector(datasetTable, Collections.singleton("SourceLsid"), sourceLsidFilter, null).exists();
     }
@@ -3665,7 +3665,7 @@ public class StudyController extends BaseStudyController
                         filter = new SimpleFilter();
                         view.getRenderContext().setBaseFilter(filter);
                     }
-                    filter.addInClause("lsid", new ArrayList<>(finalLsids));
+                    filter.addInClause(FieldKey.fromParts("lsid"), new ArrayList<>(finalLsids));
                     return view;
                 }
             };

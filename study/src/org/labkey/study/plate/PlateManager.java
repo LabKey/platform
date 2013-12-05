@@ -507,7 +507,7 @@ public class PlateManager implements PlateService.Service
     public void deletePlate(Container container, int rowid) throws SQLException
     {
         SimpleFilter plateFilter = SimpleFilter.createContainerFilter(container);
-        plateFilter.addCondition("RowId", rowid);
+        plateFilter.addCondition(FieldKey.fromParts("RowId"), rowid);
         PlateTemplateImpl plate = new TableSelector(StudySchema.getInstance().getTableInfoPlate(),
                 plateFilter, null).getObject(PlateTemplateImpl.class);
         WellGroupTemplateImpl[] wellgroups = getWellGroups(plate);
@@ -521,7 +521,7 @@ public class PlateManager implements PlateService.Service
             lsids.add(position.getLsid());
 
         SimpleFilter plateIdFilter = SimpleFilter.createContainerFilter(container);
-        plateIdFilter.addCondition("PlateId", plate.getRowId());
+        plateIdFilter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())

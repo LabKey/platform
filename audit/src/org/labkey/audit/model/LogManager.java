@@ -34,13 +34,13 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.HttpView;
 import org.labkey.audit.AuditSchema;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -163,7 +163,7 @@ public class LogManager
 
     public AuditLogEvent getEvent(int rowId)
     {
-        SimpleFilter filter = new SimpleFilter("RowId", rowId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
         return new TableSelector(getTinfoAuditLog(), filter, null).getObject(AuditLogEvent.class);
     }
 

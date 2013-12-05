@@ -116,7 +116,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
             {
                 try
                 {
-                    filter = new SimpleFilter("ID", Integer.valueOf(id));
+                    filter = new SimpleFilter(FieldKey.fromParts("ID"), Integer.valueOf(id));
                 }
                 catch (NumberFormatException ex)
                 {
@@ -126,12 +126,12 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
             else if (keys.get("EntityId") != null)
             {
                 String entityId = keys.get("EntityId").toString();
-                filter = new SimpleFilter("EntityId", entityId);
+                filter = new SimpleFilter(FieldKey.fromParts("EntityId"), entityId);
             }
             else if (keys.get("Container") != null)
             {
                 String entityId = keys.get("Container").toString();
-                filter = new SimpleFilter("EntityId", entityId);
+                filter = new SimpleFilter(FieldKey.fromParts("EntityId"), entityId);
             }
             else
             {

@@ -15,18 +15,30 @@
  */
 package org.labkey.experiment;
 
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.view.*;
-import org.labkey.api.data.*;
-import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.GridView;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.springframework.validation.BindException;
 
 import java.io.PrintWriter;
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * User: jeckels
@@ -95,7 +107,7 @@ public class ProtocolWebPart extends WebPartView
         gridView.getRenderContext().setBaseSort(new Sort("Name"));
 
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("ApplicationType", EXPERIMENT_RUN_TYPE, CompareType.EQUAL);
+        filter.addCondition(FieldKey.fromParts("ApplicationType"), EXPERIMENT_RUN_TYPE, CompareType.EQUAL);
         gridView.setFilter(filter);
         gridView.setFrame(FrameType.DIV);
 

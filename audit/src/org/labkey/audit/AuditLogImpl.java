@@ -476,16 +476,16 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
     public List<AuditLogEvent> getEvents(String eventType, String key)
     {
-        SimpleFilter filter = new SimpleFilter("EventType", eventType);
-        filter.addCondition("Key1", key);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EventType"), eventType);
+        filter.addCondition(FieldKey.fromParts("Key1"), key);
 
         return getEvents(filter);
     }
 
     public List<AuditLogEvent> getEvents(String eventType, int key)
     {
-        SimpleFilter filter = new SimpleFilter("EventType", eventType);
-        filter.addCondition("IntKey1", key);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EventType"), eventType);
+        filter.addCondition(FieldKey.fromParts("IntKey1"), key);
 
         return getEvents(filter);
     }

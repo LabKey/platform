@@ -20,12 +20,24 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.data.*;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
@@ -97,13 +109,13 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
     public AnnouncementModel[] getDiscussions(Container c, String identifier)
     {
-        SimpleFilter filter = new SimpleFilter("discussionSrcIdentifier", identifier);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("discussionSrcIdentifier"), identifier);
         return AnnouncementManager.getBareAnnouncements(c, filter, new Sort("Created"));
     }
 
     public AnnouncementModel[] getDiscussions(Container c, String[] identifiers)
     {
-        SimpleFilter filter = new SimpleFilter("discussionSrcIdentifier", Arrays.asList(identifiers), CompareType.IN);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("discussionSrcIdentifier"), Arrays.asList(identifiers), CompareType.IN);
         return AnnouncementManager.getBareAnnouncements(c, filter, new Sort("Created"));
     }
 

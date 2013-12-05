@@ -29,6 +29,7 @@ import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DuplicateKeyException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
@@ -193,9 +194,9 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
     {
         Filter filter;
         if (rowId != null)
-            filter = new SimpleFilter(ExpMaterialTable.Column.RowId.name(), rowId);
+            filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId), rowId);
         else if (lsid != null)
-            filter = new SimpleFilter(ExpMaterialTable.Column.LSID.name(), lsid);
+            filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.LSID), lsid);
         else
             throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Set Material.");
 

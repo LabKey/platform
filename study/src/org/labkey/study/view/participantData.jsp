@@ -60,7 +60,7 @@
             if (bean.getParticipantId() != null)
             {
                 if (table instanceof FilteredTable)
-                    ((FilteredTable)table).addCondition(new SimpleFilter("ParticipantID", bean.getParticipantId()));
+                    ((FilteredTable)table).addCondition(new SimpleFilter(FieldKey.fromParts("ParticipantID"), bean.getParticipantId()));
 
                 // remove 'ParticipantId' from the default column list
                 List<FieldKey> visible = new ArrayList<>(table.getDefaultVisibleColumns());

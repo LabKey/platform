@@ -1158,9 +1158,8 @@ public class ExperimentController extends SpringActionController
             {
                 throw new NotFoundException();
             }
-            ExpExperiment[] experiments = ExperimentService.get().getExperiments(run.getContainer(), getUser(), true, false);
             // Check if this
-            if (!Arrays.asList(experiments).contains(exp))
+            if (!ExperimentService.get().getExperiments(run.getContainer(), getUser(), true, false).contains(exp))
             {
                 throw new NotFoundException();
             }

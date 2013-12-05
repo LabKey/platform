@@ -27,10 +27,9 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyManager;
 
@@ -61,7 +60,7 @@ public class PublishedRecordQueryView extends DataSetQueryView
         {
             SimpleFilter filter = new SimpleFilter();
 
-            filter.addCondition("SourceLSID", _sourceLsid, CompareType.EQUAL);
+            filter.addCondition(FieldKey.fromParts("SourceLSID"), _sourceLsid, CompareType.EQUAL);
             getSettings().getBaseFilter().addAllClauses(filter);
         }
     }

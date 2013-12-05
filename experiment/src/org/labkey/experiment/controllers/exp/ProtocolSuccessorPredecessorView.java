@@ -16,18 +16,28 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import org.labkey.api.view.GridView;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.data.*;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.GridView;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.springframework.validation.BindException;
 
-import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -50,7 +60,7 @@ public class ProtocolSuccessorPredecessorView extends GridView
         getDataRegion().getDisplayColumn(0).setTextAlign("left");
 
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("ParentProtocolLSID", parentProtocolLSID, CompareType.EQUAL);
+        filter.addCondition(FieldKey.fromParts("ParentProtocolLSID"), parentProtocolLSID, CompareType.EQUAL);
         filter.addCondition(filterColumn, actionSequence, CompareType.EQUAL);
         setFilter(filter);
 

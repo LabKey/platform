@@ -35,6 +35,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -82,7 +83,7 @@ public class PipelineManager
     protected static PipelineRoot getPipelineRootObject(Container container, String type)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition("Type", type);
+        filter.addCondition(FieldKey.fromParts("Type"), type);
 
         return CACHE.get(getCacheKey(container, type), filter);
     }
@@ -107,7 +108,7 @@ public class PipelineManager
 
     static public PipelineRoot[] getPipelineRoots(String type)
     {
-        SimpleFilter filter = new SimpleFilter("Type", type);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Type"), type);
 
         return new TableSelector(pipeline.getTableInfoPipelineRoots(), filter, null).getArray(PipelineRoot.class);
     }

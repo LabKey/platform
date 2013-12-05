@@ -426,15 +426,15 @@ public class AssayManager implements AssayService.Interface
         {
             int suffix = 1;
             String originalName = batch.getName();
-            ExpExperiment[] batches = ExperimentService.get().getMatchingBatches(batch.getName(), batch.getContainer(), protocol);
-            while (batches.length > 1)
+            List<? extends ExpExperiment> batches = ExperimentService.get().getMatchingBatches(batch.getName(), batch.getContainer(), protocol);
+            while (batches.size() > 1)
             {
                 batch.setName(originalName + " " + (++suffix));
                 batch.save(user);
                 batches = ExperimentService.get().getMatchingBatches(batch.getName(), batch.getContainer(), protocol);
             }
 
-            return batches[0];
+            return batches.get(0);
         }
     }
 

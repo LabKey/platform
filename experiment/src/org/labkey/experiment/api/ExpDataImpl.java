@@ -16,22 +16,33 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.*;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.exp.ExperimentDataHandler;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Handler;
+import org.labkey.api.exp.XarFormatException;
+import org.labkey.api.exp.XarSource;
+import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.data.*;
-import org.labkey.api.security.User;
-import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.util.URLHelper;
 
-import java.sql.SQLException;
+import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.io.File;
+import java.sql.SQLException;
 
 public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements ExpData
 {
@@ -63,7 +74,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
     public ExpProtocolApplication[] getTargetApplications()
     {
-        return getTargetApplications(new SimpleFilter("DataId", getRowId()), ExperimentServiceImpl.get().getTinfoDataInput());
+        return getTargetApplications(new SimpleFilter(FieldKey.fromParts("DataId"), getRowId()), ExperimentServiceImpl.get().getTinfoDataInput());
     }
 
     public ExpRun[] getTargetRuns()

@@ -82,7 +82,7 @@ public class WellGroupTable extends BasePlateTable
         ColumnInfo colProperty = wrapColumn("property", _rootTable.getColumn("lsid"));
         String propPrefix = new Lsid("WellGroupInstance", "Folder-" + schema.getContainer().getRowId(), "").toString();
         SimpleFilter filter = SimpleFilter.createContainerFilter(schema.getContainer());
-        filter.addCondition("PropertyURI", propPrefix, CompareType.STARTS_WITH);
+        filter.addCondition(FieldKey.fromParts("PropertyURI"), propPrefix, CompareType.STARTS_WITH);
         final Map<String, PropertyDescriptor> map = new TreeMap<>();
 
         new TableSelector(OntologyManager.getTinfoPropertyDescriptor(), filter, null).forEach(new Selector.ForEachBlock<PropertyDescriptor>()

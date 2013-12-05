@@ -140,9 +140,9 @@ public class IssueManager
 
     public static Issue getIssue(@Nullable Container c, int issueId)
     {
-        SimpleFilter f = new SimpleFilter("issueId", issueId);
+        SimpleFilter f = new SimpleFilter(FieldKey.fromParts("issueId"), issueId);
         if (null != c)
-            f.addCondition("container", c);
+            f.addCondition(FieldKey.fromParts("container"), c);
 
         TableSelector selector = new TableSelector(_issuesSchema.getTableInfoIssues(), f, null);
         selector.setForDisplay(true);
@@ -151,12 +151,12 @@ public class IssueManager
             return null;
 
         List<Issue.Comment> comments = new TableSelector(_issuesSchema.getTableInfoComments(),
-                new SimpleFilter("issueId", issue.getIssueId()),
+                new SimpleFilter(FieldKey.fromParts("issueId"), issue.getIssueId()),
                 new Sort("CommentId")).getArrayList(Issue.Comment.class);
         issue.setComments(comments);
 
         Collection<Integer> dups = new TableSelector(_issuesSchema.getTableInfoIssues().getColumn("IssueId"),
-                new SimpleFilter("Duplicate", issueId),
+                new SimpleFilter(FieldKey.fromParts("Duplicate"), issueId),
                 new Sort("IssueId")).getCollection(Integer.class);
         issue.setDuplicates(dups);
         return issue;
@@ -208,7 +208,7 @@ public class IssueManager
     public static Map<ColumnType, String> getAllDefaults(Container container) throws SQLException
     {
         final Map<ColumnType, String> defaults = new HashMap<>();
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container).addCondition("Default", true);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container).addCondition(FieldKey.fromParts("Default"), true);
         Selector selector = new TableSelector(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Type", "Keyword", "Container", "Default"), filter, null);
 
         selector.forEach(new Selector.ForEachBlock<ResultSet>() {
@@ -727,7 +727,7 @@ public class IssueManager
 
     public static void deleteUserEmailPreferences(User user) throws SQLException
     {
-        Table.delete(_issuesSchema.getTableInfoEmailPrefs(), new SimpleFilter("UserId", user.getUserId()));
+        Table.delete(_issuesSchema.getTableInfoEmailPrefs(), new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()));
     }
 
     public static long getIssueCount(Container c)

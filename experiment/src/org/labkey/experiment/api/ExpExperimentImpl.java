@@ -31,7 +31,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.util.URLHelper;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -233,13 +235,13 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         _object.setComments(comments);
     }
 
-    public static ExpExperimentImpl[] fromExperiments(Experiment[] experiments)
+    public static List<ExpExperimentImpl> fromExperiments(Experiment[] experiments)
     {
-        ExpExperimentImpl[] result = new ExpExperimentImpl[experiments.length];
-        for (int i = 0; i < experiments.length; i++)
+        List<ExpExperimentImpl> result = new ArrayList<>(experiments.length);
+        for (Experiment experiment : experiments)
         {
-            result[i] = new ExpExperimentImpl(experiments[i]);
+            result.add(new ExpExperimentImpl(experiment));
         }
-        return result;
+        return Collections.unmodifiableList(result);
     }
 }

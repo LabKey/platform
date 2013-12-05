@@ -64,7 +64,7 @@ public class CBCData
         TableInfo tableInfo = provider.createProtocolSchema(user, data.getContainer(), protocol, null).createDataTable();
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, fieldKeys);
         assert columns.size() == fieldKeys.size() : "Missing a column for at least one of the properties";
-        SimpleFilter filter = new SimpleFilter(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME, objectId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME), objectId);
 
         Map<String, Object> map = new TableSelector(tableInfo, columns.values(), filter, null).getMap();
 

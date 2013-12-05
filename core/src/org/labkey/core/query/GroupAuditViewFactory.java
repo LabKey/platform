@@ -156,13 +156,13 @@ public class GroupAuditViewFactory extends SimpleAuditViewFactory
 
     public AuditLogQueryView createProjectMemberView(ViewContext context, int userId)
     {
-        SimpleFilter filter = new SimpleFilter("ProjectId", context.getContainer().getProject());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ProjectId"), context.getContainer().getProject());
         return createUserView(context, userId, "Access Modification History For This Project:", new String[]{"Date", "CreatedBy", "IntKey2", "Comment"}, filter);
     }
 
     private AuditLogQueryView createUserView(ViewContext context, int userId, String title, String[] visibleColumns, SimpleFilter extraFilter)
     {
-        SimpleFilter filter = new SimpleFilter("IntKey1", userId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("IntKey1"), userId);
 
         if (null != extraFilter)
             filter.addAllClauses(extraFilter);
@@ -178,7 +178,7 @@ public class GroupAuditViewFactory extends SimpleAuditViewFactory
     @Deprecated
     public AuditLogQueryView createGroupView(ViewContext context, int groupId)
     {
-        SimpleFilter filter = new SimpleFilter("IntKey2", groupId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("IntKey2"), groupId);
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
         view.setTitle("Group Membership History");
@@ -191,7 +191,7 @@ public class GroupAuditViewFactory extends SimpleAuditViewFactory
     @Deprecated
     public AuditLogQueryView createFolderView(ViewContext context, Container container)
     {
-        SimpleFilter filter = new SimpleFilter("ContainerId", container.getId());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), container.getId());
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
         view.setTitle("Access Modification History For This Folder");
         view.setVisibleColumns(new String[]{"Date", "CreatedBy", "Comment"});

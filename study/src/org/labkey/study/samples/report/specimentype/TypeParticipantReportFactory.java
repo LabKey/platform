@@ -15,6 +15,7 @@
  */
 package org.labkey.study.samples.report.specimentype;
 
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DemoMode;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.samples.report.SpecimenTypeVisitReport;
@@ -91,7 +92,7 @@ public class TypeParticipantReportFactory extends TypeReportFactory
         Study study = StudyManager.getInstance().getStudy(getContainer());
         for (String participantId : participantIds)
         {
-            SimpleFilter filter = new SimpleFilter(StudyService.get().getSubjectColumnName(getContainer()), participantId);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(StudyService.get().getSubjectColumnName(getContainer())), participantId);
             addBaseFilters(filter);
             List<VisitImpl> visits = null;
             if (showCohorts)

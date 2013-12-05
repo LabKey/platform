@@ -114,7 +114,7 @@ public class AuditLogTable extends FilteredTable<UserSchema>
             //String sqlObjectId = "( SELECT objectid FROM exp.object WHERE exp.object.objecturi = " + ExprColumn.STR_TABLE_ALIAS + ".lsid)";
             String parentLsid = AuditLogService.get().getDomainURI(_viewFactory.getEventType());
             SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("PropertyURI", parentLsid, CompareType.STARTS_WITH);
+            filter.addCondition(FieldKey.fromParts("PropertyURI"), parentLsid, CompareType.STARTS_WITH);
             Collection<PropertyDescriptor> pds = new TableSelector(OntologyManager.getTinfoPropertyDescriptor(), filter, null).getCollection(PropertyDescriptor.class);
 
             if (!pds.isEmpty())
@@ -138,7 +138,7 @@ public class AuditLogTable extends FilteredTable<UserSchema>
         {
             // issue: 14463, exclude dataset audit events from the general query
             SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("EventType", "DatasetAuditEvent", CompareType.NEQ);
+            filter.addCondition(FieldKey.fromParts("EventType"), "DatasetAuditEvent", CompareType.NEQ);
 
             addCondition(filter);
         }

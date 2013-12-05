@@ -107,7 +107,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
 
     public AuditLogQueryView createDatasetView(ViewContext context, DataSetDefinition def)
     {
-        SimpleFilter filter = new SimpleFilter("IntKey1", def.getRowId());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("IntKey1"), def.getRowId());
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
         view.setSort(new Sort("-Date"));

@@ -30,6 +30,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
@@ -232,7 +233,7 @@ public class ReportManager implements DatasetManager.DatasetListener
                 throw new NotFoundException();
         }
 
-        SimpleFilter filter = new SimpleFilter("DatasetId", datasetId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DatasetId"), datasetId);
         if (visit != null)
             visit.addVisitFilter(filter);
 //        filter.addCondition("container", ctx.getContainer().getId());
@@ -260,7 +261,7 @@ public class ReportManager implements DatasetManager.DatasetListener
 
     public void deleteReports(Container c, Set<TableInfo> set) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("ContainerId", c.getId());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), c.getId());
         Table.delete(getTable(), filter);
         assert set.add(getTable());
     }

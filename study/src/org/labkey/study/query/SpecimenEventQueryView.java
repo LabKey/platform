@@ -16,15 +16,15 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.QuerySettings;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.DataRegion;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.model.Specimen;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 
 /**
  * User: brittp
@@ -44,7 +44,7 @@ public class SpecimenEventQueryView extends BaseStudyQueryView
         StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
         String queryName = "SpecimenEvent";
         QuerySettings qs = schema.getSettings(context, queryName, queryName);
-        SimpleFilter filter = new SimpleFilter("VialId", specimen.getRowId());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("VialId"), specimen.getRowId());
         Sort sort = new Sort("-ShipDate");
         return new SpecimenEventQueryView(schema, qs, filter, sort);
     }

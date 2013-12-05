@@ -109,7 +109,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
     public AuditLogQueryView createListItemDetailsView(ViewContext context, String entityId)
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("Key2", entityId);
+        filter.addCondition(FieldKey.fromParts("Key2"), entityId);
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
         view.setTitle("List Item History:");
@@ -182,7 +182,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
     public AuditLogQueryView createListHistoryView(ViewContext context, ListDefinition def)
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("Key1", def.getDomain().getTypeURI());
+        filter.addCondition(FieldKey.fromParts("Key1"), def.getDomain().getTypeURI());
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
         view.setSort(new Sort("-Date"));

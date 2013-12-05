@@ -73,7 +73,7 @@ public class ContainerAuditViewFactory extends SimpleAuditViewFactory
 
     public QueryView createDefaultQueryView(ViewContext context)
     {
-        SimpleFilter filter = new SimpleFilter("EventType", ContainerManager.CONTAINER_AUDIT_EVENT);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EventType"), ContainerManager.CONTAINER_AUDIT_EVENT);
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
         view.setSort(new Sort("-Date"));

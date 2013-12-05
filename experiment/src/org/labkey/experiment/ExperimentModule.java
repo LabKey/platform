@@ -299,7 +299,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     public Collection<String> getSummary(Container c)
     {
         Collection<String> list = new LinkedList<>();
-        int runGroupCount = ExperimentService.get().getExperiments(c, null, false, true).length;
+        int runGroupCount = ExperimentService.get().getExperiments(c, null, false, true).size();
         if (runGroupCount > 0)
             list.add("" + runGroupCount + " Run Group" + (runGroupCount > 1 ? "s" : ""));
 

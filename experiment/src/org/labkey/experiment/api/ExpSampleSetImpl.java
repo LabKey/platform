@@ -17,19 +17,25 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.*;
-import org.labkey.api.exp.PropertyColumn;
-import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
@@ -186,7 +192,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     public ExpMaterialImpl[] getSamples()
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
-        filter.addCondition("CpasType", getLSID());
+        filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
         Sort sort = new Sort("Name");
         return ExpMaterialImpl.fromMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, sort).getArray(Material.class));
     }
@@ -194,8 +200,8 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     public ExpMaterialImpl getSample(String name)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
-        filter.addCondition("CpasType", getLSID());
-        filter.addCondition("Name", name);
+        filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
+        filter.addCondition(FieldKey.fromParts("Name"), name);
 
         Material material = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).getObject(Material.class);
         if (material == null)

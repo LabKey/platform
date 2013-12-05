@@ -1989,7 +1989,7 @@ public class SpecimenController extends BaseStudyController
                     throw new UnauthorizedException();
 
                 SampleRequestStatus cartStatus = SampleManager.getInstance().getRequestShoppingCartStatus(context.getContainer(), context.getUser());
-                filter = new SimpleFilter("StatusId", cartStatus.getRowId());
+                filter = new SimpleFilter(FieldKey.fromParts("StatusId"), cartStatus.getRowId());
             }
 
             String addLink = new ActionURL(HandleAddRequestSamplesAction.class, context.getContainer()).toString() + params.toString();
@@ -2205,8 +2205,8 @@ public class SpecimenController extends BaseStudyController
         {
             _requirement = requirement;
             _possibleNotifications = getUtils().getPossibleNotifications(request);
-            SimpleFilter filter = new SimpleFilter("RequestId", requirement.getRequestId());
-            filter.addCondition("RequirementId", requirement.getRowId());
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), requirement.getRequestId());
+            filter.addCondition(FieldKey.fromParts("RequirementId"), requirement.getRowId());
             _requestManager = context.getContainer().hasPermission(context.getUser(), ManageRequestsPermission.class);
             _historyView = getUtils().getRequestEventGridView(context.getRequest(), null, filter);
             _finalState = SampleManager.getInstance().isInFinalState(request);
@@ -2359,7 +2359,7 @@ public class SpecimenController extends BaseStudyController
         {
             _requestId = form.getId();
             HtmlView header = new HtmlView(PageFlowUtil.textLink("View Request", new ActionURL(ManageRequestAction.class,getContainer()).addParameter("id",form.getId())));
-            SimpleFilter filter = new SimpleFilter("RequestId", form.getId());
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), form.getId());
             GridView historyGrid = getUtils().getRequestEventGridView(getViewContext().getRequest(), errors, filter);
             return new VBox(header, historyGrid);
         }
@@ -5181,7 +5181,7 @@ public class SpecimenController extends BaseStudyController
                         }
                         filter.addCondition(StudyService.get().getSubjectColumnName(view.getViewContext().getContainer()), form.getParticipantId());
                         if (form.getVisitId() != 0)
-                            filter.addCondition("sequenceNum", form.getVisitId());
+                            filter.addCondition(FieldKey.fromParts("sequenceNum"), form.getVisitId());
 
                         return view;
                     }

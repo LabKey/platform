@@ -526,11 +526,11 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         if (type.equals(ListDefinition.KeyType.Integer) || type.equals(ListDefinition.KeyType.AutoIncrementInteger))
         {
             if (key instanceof Integer)
-                return new SimpleFilter(keyName, key);
-            return new SimpleFilter(keyName, Integer.valueOf(key.toString()));
+                return new SimpleFilter(FieldKey.fromParts(keyName), key);
+            return new SimpleFilter(FieldKey.fromParts(keyName), Integer.valueOf(key.toString()));
         }
 
-        return new SimpleFilter(keyName, key.toString());
+        return new SimpleFilter(FieldKey.fromParts(keyName), key.toString());
     }
 
     @Nullable

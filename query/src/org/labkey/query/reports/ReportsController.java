@@ -1486,8 +1486,8 @@ public class ReportsController extends SpringActionController
     {
         public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception
         {
-            SimpleFilter filter = new SimpleFilter("ContainerId", getContainer().getId());
-            filter.addCondition("EntityId", form.getEntityId());
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), getContainer().getId());
+            filter.addCondition(FieldKey.fromParts("EntityId"), form.getEntityId());
 
             Report[] report = ReportService.get().getReports(filter);
             if (report.length != 1)

@@ -26,6 +26,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoGetter;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyCachable;
 
@@ -77,7 +78,7 @@ public class QueryHelper<K extends StudyCachable>
             {
                 SimpleFilter filter = null != filterArg ? filterArg : SimpleFilter.createContainerFilter(c);
                 if (!filter.hasContainerEqualClause())
-                    filter.addCondition("Container", c);
+                    filter.addCondition(FieldKey.fromParts("Container"), c);
                 Sort sort = null;
                 if (sortString != null)
                     sort = new Sort(sortString);

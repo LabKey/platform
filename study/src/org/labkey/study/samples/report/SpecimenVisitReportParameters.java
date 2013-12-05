@@ -15,9 +15,9 @@
  */
 package org.labkey.study.samples.report;
 
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.CustomView;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -28,19 +28,18 @@ import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewForm;
+import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.SampleManager;
-import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
-import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.CohortImpl;
 
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -252,16 +251,16 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
             case ALL:
                 break;
             case AVAILABLE:
-                filter.addCondition("Available", Boolean.TRUE);
+                filter.addCondition(FieldKey.fromParts("Available"), Boolean.TRUE);
                 break;
             case UNAVAILABLE:
-                filter.addCondition("Available", Boolean.FALSE);
+                filter.addCondition(FieldKey.fromParts("Available"), Boolean.FALSE);
                 break;
             case REQUESTED_INPROCESS:
-                filter.addCondition("LockedInRequest", Boolean.TRUE);
+                filter.addCondition(FieldKey.fromParts("LockedInRequest"), Boolean.TRUE);
                 break;
             case NOT_REQUESTED_INPROCESS:
-                filter.addCondition("LockedInRequest", Boolean.FALSE);
+                filter.addCondition(FieldKey.fromParts("LockedInRequest"), Boolean.FALSE);
                 break;
             case REQUESTED_COMPLETE:
                 filter.addWhereClause("GlobalUniqueId IN (\n" + COMPLETED_REQUESTS_FILTER_SQL + ")", 

@@ -47,6 +47,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.message.settings.MessageConfigService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -140,7 +141,7 @@ public class AnnouncementManager
     // Get first rowlimit threads in this container, filtered using filter
     public static Pair<AnnouncementModel[], Boolean> getAnnouncements(Container c, SimpleFilter filter, Sort sort, int rowLimit)
     {
-        filter.addCondition("Container", c);
+        filter.addCondition(FieldKey.fromParts("Container"), c);
         AnnouncementModel[] recent = new TableSelector(_comm.getTableInfoThreads(), filter, sort).setMaxRows(rowLimit + 1).getArray(AnnouncementModel.class);
 
         Boolean limited = (recent.length > rowLimit);
@@ -160,7 +161,7 @@ public class AnnouncementManager
     // Get all threads in this container, filtered using filter, no attachments, no responses
     public static AnnouncementModel[] getBareAnnouncements(Container c, SimpleFilter filter, Sort sort)
     {
-        filter.addCondition("Container", c);
+        filter.addCondition(FieldKey.fromParts("Container"), c);
 
         return new TableSelector(_comm.getTableInfoThreads(), filter, sort).getArray(BareAnnouncementModel.class);
     }
@@ -173,7 +174,7 @@ public class AnnouncementManager
         for (Container container : containers)
             ids.add(container.getId());
 
-        SimpleFilter filter = new SimpleFilter("Container", ids, CompareType.IN);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), ids, CompareType.IN);
         Sort sort = new Sort("-Created");
 
         return new TableSelector(_comm.getTableInfoAnnouncements(), filter, sort).getArray(AnnouncementModel.class);
@@ -184,13 +185,13 @@ public class AnnouncementManager
         SimpleFilter filter = new SimpleFilter();
         if (c != null)
         {
-            filter.addCondition("container", c);
+            filter.addCondition(FieldKey.fromParts("container"), c);
         }
 
         if (null == parent)
-            filter.addCondition("parent", null, CompareType.ISBLANK);
+            filter.addCondition(FieldKey.fromParts("parent"), null, CompareType.ISBLANK);
         else
-            filter.addCondition("parent", parent);
+            filter.addCondition(FieldKey.fromParts("parent"), parent);
 
         Sort sort = new Sort("Created");
 
@@ -206,10 +207,10 @@ public class AnnouncementManager
 
     public static AnnouncementModel getAnnouncement(@Nullable Container c, String entityId, boolean eager)
     {
-        SimpleFilter filter = new SimpleFilter("EntityId", entityId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EntityId"), entityId);
         if (c != null)
         {
-            filter.addCondition("Container", c);
+            filter.addCondition(FieldKey.fromParts("Container"), c);
         }
         Selector selector = new TableSelector(_comm.getTableInfoAnnouncements(), filter, null);
         AnnouncementModel[] ann = selector.getArray(AnnouncementModel.class);
@@ -259,10 +260,10 @@ public class AnnouncementManager
 
     public static AnnouncementModel getAnnouncement(@Nullable Container c, int rowId, int mask)
     {
-        SimpleFilter filter = new SimpleFilter("RowId", rowId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
         if (c != null)
         {
-            filter.addCondition("Container", c);
+            filter.addCondition(FieldKey.fromParts("Container"), c);
         }
         Selector selector = new TableSelector(_comm.getTableInfoAnnouncements(), filter, null);
         AnnouncementModel ann = selector.getObject(AnnouncementModel.class);
@@ -487,7 +488,7 @@ public class AnnouncementManager
         // TODO: Should delete/insert only on diff
         if (null != users)
         {
-            Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter("MessageId", messageId));
+            Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter(FieldKey.fromParts("MessageId"), messageId));
 
             for (User u : users)
                 Table.insert(user, _comm.getTableInfoMemberList(), PageFlowUtil.map("MessageId", messageId, "UserId", u.getUserId()));
@@ -551,7 +552,7 @@ public class AnnouncementManager
                 deleteAnnouncement(ann);
 
                 // Delete the member list associated with this thread
-                Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter("MessageId", ann.getRowId()));
+                Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter(FieldKey.fromParts("MessageId"), ann.getRowId()));
 
                 Collection<AnnouncementModel> responses = ann.getResponses();
                 if (null == responses)
@@ -574,12 +575,12 @@ public class AnnouncementManager
 
     public static void deleteUserFromAllMemberLists(User user) throws SQLException
     {
-        Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter("UserId", user.getUserId()));
+        Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()));
     }
 
     public static void deleteUserFromMemberList(User user, int messageId) throws SQLException
     {
-        Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter("UserId", user.getUserId()).addCondition("MessageId", messageId));
+        Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()).addCondition(FieldKey.fromParts("MessageId"), messageId));
     }
 
     public static int getUserEmailOption(Container c, User user, String srcIdentifier)

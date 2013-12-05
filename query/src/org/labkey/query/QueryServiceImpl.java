@@ -2200,7 +2200,7 @@ public class QueryServiceImpl extends QueryService
 					issues.getColumn("issueid"),
 					issues.getColumn("title"),
 					issues.getColumn("status"));
-				Filter f = new SimpleFilter("assignedto",1001);
+                Filter f = new SimpleFilter(FieldKey.fromParts("assignedto"), 1001);
 				rs = qs.select(issues, l, f, null);
 				assertEquals(rs.getMetaData().getColumnCount(),3);
 		        _close();
@@ -2213,7 +2213,7 @@ public class QueryServiceImpl extends QueryService
 				        new FieldKey(null, "status"),
 				        new FieldKey(new FieldKey(null, "createdby"), "email")));
 		        Sort sort = new Sort("+milestone");
-				Filter f = new SimpleFilter("assignedto",1001);
+                Filter f = new SimpleFilter(FieldKey.fromParts("assignedto"), 1001);
 				rs = qs.select(issues, map.values(), f, sort);
 				assertEquals(rs.getMetaData().getColumnCount(),4);
 		        _close();

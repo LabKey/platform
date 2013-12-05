@@ -17,25 +17,56 @@
 package org.labkey.experiment;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.xmlbeans.*;
+import org.apache.xmlbeans.SchemaType;
+import org.apache.xmlbeans.XmlCursor;
+import org.apache.xmlbeans.XmlError;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlObject;
+import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.exp.xml.*;
-import org.fhcrc.cpas.exp.xml.DataType;
-import org.fhcrc.cpas.exp.xml.ExperimentRunType;
-import org.labkey.api.data.*;
-import org.labkey.api.exp.*;
-import org.labkey.api.exp.xar.LsidUtils;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.api.*;
-import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.DomainDescriptor;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.IdentifiableBase;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.ProtocolApplicationParameter;
+import org.labkey.api.exp.ProtocolParameter;
+import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.XarFormatException;
+import org.labkey.api.exp.XarSource;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.Pair;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.api.property.DomainImpl;
+import org.labkey.experiment.xar.AbstractXarImporter;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExpander;
-import org.labkey.experiment.xar.AbstractXarImporter;
-import org.labkey.api.util.*;
 
 import javax.xml.namespace.QName;
 import java.io.File;
@@ -48,7 +79,17 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 public class XarReader extends AbstractXarImporter
 {
@@ -821,8 +862,8 @@ public class XarReader extends AbstractXarImporter
             {
                 _xarSource.addMaterial(experimentRun.getLSID(), inputRow);
             }
-            SimpleFilter filter = new SimpleFilter("MaterialId", inputRow.getRowId());
-            filter = filter.addCondition("TargetApplicationId", protAppId);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialId"), inputRow.getRowId());
+            filter = filter.addCondition(FieldKey.fromParts("TargetApplicationId"), protAppId);
             if (new TableSelector(tiMaterialInput, filter, null).getObject(MaterialInput.class) == null)
             {
                 MaterialInput mi = new MaterialInput();
@@ -846,8 +887,8 @@ public class XarReader extends AbstractXarImporter
                 _xarSource.addData(experimentRun.getLSID(), data);
             }
 
-            SimpleFilter filter = new SimpleFilter("DataId", data.getRowId());
-            filter = filter.addCondition("TargetApplicationId", protAppId);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DataId"), data.getRowId());
+            filter = filter.addCondition(FieldKey.fromParts("TargetApplicationId"), protAppId);
             if (new TableSelector(tiDataInput, filter, null).getObject(DataInput.class) == null)
             {
                 DataInput input = new DataInput();

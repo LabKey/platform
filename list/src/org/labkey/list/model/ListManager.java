@@ -263,7 +263,7 @@ public class ListManager implements SearchService.DocumentProvider
             {
                 public void run()
                 {
-                    SimpleFilter filter = new SimpleFilter(list.getKeyName(), item.getKey());
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(list.getKeyName()), item.getKey());
                     int count = indexItems(task, list, filter);
                     if (0 == count)
                         LOG.info("I should be deleting!");

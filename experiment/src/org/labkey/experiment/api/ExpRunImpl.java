@@ -112,7 +112,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         return _object.getRowId();
     }
 
-    public ExpExperimentImpl[] getExperiments()
+    public List<ExpExperimentImpl> getExperiments()
     {
         final String sql= " SELECT E.* FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
                         + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoRunList() + " RL ON (E.RowId = RL.ExperimentId) "

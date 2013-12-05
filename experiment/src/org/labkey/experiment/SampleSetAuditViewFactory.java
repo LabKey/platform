@@ -19,9 +19,9 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.CompareType;
-import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.view.ViewContext;
 
@@ -61,7 +61,7 @@ public class SampleSetAuditViewFactory extends SimpleAuditViewFactory
     public QueryView createDefaultQueryView(ViewContext context)
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("EventType", EVENT_TYPE, CompareType.EQUAL);
+        filter.addCondition(FieldKey.fromParts("EventType"), EVENT_TYPE, CompareType.EQUAL);
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter);
         view.setSort(new Sort("-Date"));

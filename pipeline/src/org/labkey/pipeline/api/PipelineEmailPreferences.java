@@ -25,10 +25,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ShutdownListener;
@@ -400,7 +400,7 @@ public class PipelineEmailPreferences
                 SimpleFilter filter = new SimpleFilter();
 
                 if (_isSuccessNotification)
-                    filter.addCondition("Status", PipelineJob.COMPLETE_STATUS, CompareType.EQUAL);
+                    filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.COMPLETE_STATUS, CompareType.EQUAL);
                 else
                 {
                     filter.addWhereClause("Status IN (?, ?)",
@@ -408,9 +408,9 @@ public class PipelineEmailPreferences
                 }
 
                 if (!_c.isRoot())
-                    filter.addCondition("container", _c, CompareType.EQUAL);
-                filter.addCondition("modified", min, CompareType.GTE);
-                filter.addCondition("modified", max, CompareType.LT);
+                    filter.addCondition(FieldKey.fromParts("container"), _c, CompareType.EQUAL);
+                filter.addCondition(FieldKey.fromParts("modified"), min, CompareType.GTE);
+                filter.addCondition(FieldKey.fromParts("modified"), max, CompareType.LT);
 
                 PipelineStatusFileImpl[] files = new TableSelector(PipelineStatusManager.getTableInfo(), filter, null).getArray(PipelineStatusFileImpl.class);
                 if (files.length > 0)

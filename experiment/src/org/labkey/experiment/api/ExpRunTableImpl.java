@@ -692,13 +692,13 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
     private class ExperimentsForeignKey implements ForeignKey
     {
-        private ExpExperiment[] _experiments;
+        private List<ExpExperimentImpl> _experiments;
 
         public ExperimentsForeignKey()
         {
         }
 
-        private synchronized ExpExperiment[] getExperiments()
+        private synchronized List<ExpExperimentImpl> getExperiments()
         {
             if (_experiments == null)
             {
@@ -823,7 +823,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             if (rowIdRaw != null)
             {
                 Integer rowId = (Integer) ConvertUtils.convert(rowIdRaw.toString(), Integer.class);
-                return new TableSelector(getQueryTable(), new SimpleFilter(Column.RowId.toString(), rowId), null).getMap();
+                return new TableSelector(getQueryTable(), new SimpleFilter(FieldKey.fromParts(Column.RowId), rowId), null).getMap();
             }
             return null;
         }

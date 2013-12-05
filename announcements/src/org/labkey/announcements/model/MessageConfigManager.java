@@ -28,6 +28,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.message.settings.MessageConfigService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -56,11 +57,11 @@ public class MessageConfigManager
         }
 
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition("UserId", user.getUserId());
-        filter.addCondition("SrcIdentifier", srcIdentifier);
+        filter.addCondition(FieldKey.fromParts("UserId"), user.getUserId());
+        filter.addCondition(FieldKey.fromParts("SrcIdentifier"), srcIdentifier);
 
         if (type != null)
-            filter.addCondition("Type", type);
+            filter.addCondition(FieldKey.fromParts("Type"), type);
 
         //return records only for those users who have explicitly set a preference for this container.
         return new TableSelector(_comm.getTableInfoEmailPrefs(), filter, null).getObject(EmailPref.class);
@@ -135,9 +136,9 @@ public class MessageConfigManager
                     //if preference has been set back to default (either the default for the container, or the user's container
                     // level preference, delete user's email pref record
                     SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-                    filter.addCondition("UserId", projectUser.getUserId());
-                    filter.addCondition("Type", type);
-                    filter.addCondition("SrcIdentifier", srcIdentifier);
+                    filter.addCondition(FieldKey.fromParts("UserId"), projectUser.getUserId());
+                    filter.addCondition(FieldKey.fromParts("Type"), type);
+                    filter.addCondition(FieldKey.fromParts("SrcIdentifier"), srcIdentifier);
                     Table.delete(_comm.getTableInfoEmailPrefs(), filter);
                 }
                 else if (!matches(containerEmailPref, emailPreference))
@@ -176,12 +177,12 @@ public class MessageConfigManager
             if (containerList == null)
             {
                 Table.delete(_comm.getTableInfoEmailPrefs(),
-                        new SimpleFilter("UserId", user.getUserId()));
+                        new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()));
             }
             else
             {
                 SimpleFilter filter = new SimpleFilter();
-                filter.addCondition("UserId", user.getUserId());
+                filter.addCondition(FieldKey.fromParts("UserId"), user.getUserId());
                 StringBuilder whereClause = new StringBuilder("Container IN (");
                 for (int i = 0; i < containerList.size(); i++)
                 {
@@ -206,13 +207,13 @@ public class MessageConfigManager
 
     public static EmailOption[] getEmailOptions(@NotNull String type)
     {
-        SimpleFilter filter = new SimpleFilter("Type", type);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Type"), type);
         return new TableSelector(_comm.getTableInfoEmailOptions(), filter, new Sort("EmailOptionId")).getArray(EmailOption.class);
     }
 
     public static EmailOption getEmailOption(int optionId)
     {
-        SimpleFilter filter = new SimpleFilter("EmailOptionId", optionId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EmailOptionId"), optionId);
         return new TableSelector(_comm.getTableInfoEmailOptions(), filter, null).getObject(EmailOption.class);
     }
 

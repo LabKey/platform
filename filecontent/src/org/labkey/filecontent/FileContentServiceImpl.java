@@ -16,15 +16,14 @@
 
 package org.labkey.filecontent;
 
-import org.junit.Assert;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentDirectory;
-import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -46,6 +45,7 @@ import org.labkey.api.files.UnsetRootDirectoryException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -379,7 +379,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     {
         FileSystemAttachmentParent parent = getRegisteredDirectory(c, name);
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition("Name", name);
+        filter.addCondition(FieldKey.fromParts("Name"), name);
         try
         {
             Table.delete(CoreSchema.getInstance().getMappedDirectories(), filter);
@@ -433,7 +433,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     public FileSystemAttachmentParent getRegisteredDirectory(Container c, String name)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition("Name", name);
+        filter.addCondition(FieldKey.fromParts("Name"), name);
 
         return new TableSelector(CoreSchema.getInstance().getMappedDirectories(), filter, null).getObject(FileSystemAttachmentParent.class);
     }
@@ -441,7 +441,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     public FileSystemAttachmentParent getRegisteredDirectoryFromEntityId(Container c, String entityId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition("EntityId", entityId);
+        filter.addCondition(FieldKey.fromParts("EntityId"), entityId);
 
         return new TableSelector(CoreSchema.getInstance().getMappedDirectories(), filter, null).getObject(FileSystemAttachmentParent.class);
     }

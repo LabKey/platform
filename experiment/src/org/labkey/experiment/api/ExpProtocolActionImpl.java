@@ -24,6 +24,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolAction;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 
 import java.sql.ResultSet;
@@ -74,7 +75,7 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
     {
         final List<ExpProtocolAction> ret = new ArrayList<>();
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("ActionId", getRowId());
+        filter.addCondition(FieldKey.fromParts("ActionId"), getRowId());
 
         new TableSelector(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), new CsvSet("PredecessorId,ActionId"), filter, null).forEach(new Selector.ForEachBlock<ResultSet>()
         {
@@ -92,7 +93,7 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
     {
         final List<ExpProtocolAction> ret = new ArrayList<>();
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("PredecessorId", getRowId());
+        filter.addCondition(FieldKey.fromParts("PredecessorId"), getRowId());
 
         new TableSelector(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), new CsvSet("ActionId,PredecessorId"), filter, null).forEach(new Selector.ForEachBlock<ResultSet>()
         {

@@ -331,9 +331,9 @@ public class PipelineStatusManager
             return new PipelineStatusFileImpl[0];
         }
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("JobParent", parentId, CompareType.EQUAL);
+        filter.addCondition(FieldKey.fromParts("JobParent"), parentId, CompareType.EQUAL);
         if (null != container)
-            filter.addCondition("Container", container, CompareType.EQUAL);
+            filter.addCondition(FieldKey.fromParts("Container"), container, CompareType.EQUAL);
 
         return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArray(PipelineStatusFileImpl.class);
     }
@@ -387,7 +387,7 @@ public class PipelineStatusManager
     public static PipelineStatusFileImpl[] getQueuedStatusFilesForActiveTaskId(String activeTaskId)
     {
         SimpleFilter filter = createQueueFilter();
-        filter.addCondition("ActiveTaskId", activeTaskId, CompareType.EQUAL);
+        filter.addCondition(FieldKey.fromParts("ActiveTaskId"), activeTaskId, CompareType.EQUAL);
 
         return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArray(PipelineStatusFileImpl.class);
     }
@@ -395,7 +395,7 @@ public class PipelineStatusManager
     public static PipelineStatusFile[] getQueuedStatusFilesForContainer(Container c)
     {
         SimpleFilter filter = createQueueFilter();
-        filter.addCondition("Container", c, CompareType.EQUAL);
+        filter.addCondition(FieldKey.fromParts("Container"), c, CompareType.EQUAL);
 
         return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArray(PipelineStatusFileImpl.class);
     }
@@ -403,7 +403,7 @@ public class PipelineStatusManager
     public static PipelineStatusFile[] getJobsWaitingForFiles(Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition("Status", PipelineJob.WAITING_FOR_FILES);
+        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.WAITING_FOR_FILES);
 
         return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArray(PipelineStatusFileImpl.class);
     }
@@ -418,12 +418,12 @@ public class PipelineStatusManager
     private static SimpleFilter createQueueFilter()
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("Status", PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
-        filter.addCondition("Status", PipelineJob.ERROR_STATUS, CompareType.NEQ);
-        filter.addCondition("Status", PipelineJob.WAITING_FOR_FILES, CompareType.NEQ);
-        filter.addCondition("Status", PipelineJob.SPLIT_STATUS, CompareType.NEQ);
-        filter.addCondition("Status", PipelineJob.CANCELLED_STATUS, CompareType.NEQ);
-        filter.addCondition("Job", null, CompareType.NONBLANK);
+        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
+        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.ERROR_STATUS, CompareType.NEQ);
+        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.WAITING_FOR_FILES, CompareType.NEQ);
+        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.SPLIT_STATUS, CompareType.NEQ);
+        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.CANCELLED_STATUS, CompareType.NEQ);
+        filter.addCondition(FieldKey.fromParts("Job"), null, CompareType.NONBLANK);
         return filter;
     }
 

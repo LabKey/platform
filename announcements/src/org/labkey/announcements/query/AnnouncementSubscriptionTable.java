@@ -135,8 +135,8 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
 
         private SimpleFilter createFilter(Pair<User, AnnouncementModel> targets)
         {
-            SimpleFilter filter = new SimpleFilter("User", targets.getKey().getUserId());
-            filter.addCondition("Announcement", targets.getValue().getRowId());
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("User"), targets.getKey().getUserId());
+            filter.addCondition(FieldKey.fromParts("Announcement"), targets.getValue().getRowId());
             return filter;
         }
 
@@ -195,7 +195,7 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             Pair<User, AnnouncementModel> targets = getTargets(oldRow, user);
-            Table.delete(getRealTable(), new SimpleFilter("UserId", targets.getKey().getUserId()).addCondition("MessageId", targets.getValue().getRowId()));
+            Table.delete(getRealTable(), new SimpleFilter(FieldKey.fromParts("UserId"), targets.getKey().getUserId()).addCondition(FieldKey.fromParts("MessageId"), targets.getValue().getRowId()));
 
             return oldRow;
         }

@@ -22,6 +22,7 @@ import org.labkey.api.exp.ProtocolParameter;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.ExperimentProperty;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
@@ -221,8 +222,8 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
 
     public List<ExpExperimentImpl> getBatches()
     {
-        Filter filter = new SimpleFilter("BatchProtocolId", getRowId());
-        return Arrays.asList(ExpExperimentImpl.fromExperiments(new TableSelector(ExperimentServiceImpl.get().getTinfoExperiment(), filter, null).getArray(Experiment.class)));
+        Filter filter = new SimpleFilter(FieldKey.fromParts("BatchProtocolId"), getRowId());
+        return ExpExperimentImpl.fromExperiments(new TableSelector(ExperimentServiceImpl.get().getTinfoExperiment(), filter, null).getArray(Experiment.class));
     }
 
     public static ExpProtocolImpl[] fromProtocols(Protocol[] protocols)

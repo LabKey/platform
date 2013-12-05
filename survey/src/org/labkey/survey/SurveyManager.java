@@ -242,7 +242,7 @@ public class SurveyManager
 
     public SurveyDesign getSurveyDesign(Container container, User user, int surveyId)
     {
-        return new TableSelector(SurveySchema.getInstance().getSurveyDesignsTable(), new SimpleFilter("rowId", surveyId), null).getObject(SurveyDesign.class);
+        return new TableSelector(SurveySchema.getInstance().getSurveyDesignsTable(), new SimpleFilter(FieldKey.fromParts("rowId"), surveyId), null).getObject(SurveyDesign.class);
     }
 
     public SurveyDesign[] getSurveyDesigns(Container container, ContainerFilter filter)

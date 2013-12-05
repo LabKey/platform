@@ -22,6 +22,7 @@ import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.wiki.WikiCache.WikiCacheLoader;
 import org.labkey.wiki.model.WikiVersion;
@@ -53,7 +54,7 @@ public class WikiVersionCache
     // Exposed outside this class only for junit tests
     static WikiVersion loadVersionFromDatabase(int version)
     {
-        WikiVersion wikiversion = new TableSelector(CommSchema.getInstance().getTableInfoPageVersions(), new SimpleFilter("RowId", version), null).getObject(WikiVersion.class);
+        WikiVersion wikiversion = new TableSelector(CommSchema.getInstance().getTableInfoPageVersions(), new SimpleFilter(FieldKey.fromParts("RowId"), version), null).getObject(WikiVersion.class);
 
         if (wikiversion == null)
             throw new NotFoundException("Wiki version " + version + " not found");

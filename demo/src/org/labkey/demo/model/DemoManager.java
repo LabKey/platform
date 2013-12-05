@@ -23,6 +23,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.demo.DemoSchema;
 import org.springframework.validation.Errors;
@@ -60,14 +61,14 @@ public class DemoManager
     public void deletePerson(Container c, int rowId) throws SQLException
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition("RowId", rowId);
+        filter.addCondition(FieldKey.fromParts("RowId"), rowId);
         Table.delete(DemoSchema.getInstance().getTableInfoPerson(), filter);
     }
 
     public Person getPerson(Container c, int rowId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition("RowId", rowId);
+        filter.addCondition(FieldKey.fromParts("RowId"), rowId);
         Person[] people = getPeople(filter);
         if (people != null && people.length > 0)
             return people[0];

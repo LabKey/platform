@@ -38,6 +38,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.view.SetupForm;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -554,7 +555,7 @@ public class PipelineServiceImpl extends PipelineService
 
     public Integer getJobId(User u, Container c, String jobGUID)
     {
-        SimpleFilter filter = new SimpleFilter("job", jobGUID);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("job"), jobGUID);
         Collection<Map<String, Object>> selectResults = new TableSelector(PipelineService.get().getJobsTable(u, c), Collections.singleton("RowId"), filter, null).getMapCollection();
         Integer rowId = null;
 

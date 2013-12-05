@@ -26,6 +26,7 @@ import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -352,7 +353,7 @@ public class ChartReportView extends AbstractReportView
                 if (participantId != null && NumberUtils.isNumber(participantId))
                 {
                     SimpleFilter filter = new SimpleFilter();
-                    filter.addCondition("participantId", participantId, CompareType.EQUAL);
+                    filter.addCondition(FieldKey.fromParts("participantId"), participantId, CompareType.EQUAL);
 
                     ctx.setBaseFilter(filter);
                 }

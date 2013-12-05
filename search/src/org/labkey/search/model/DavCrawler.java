@@ -25,6 +25,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
@@ -630,7 +631,7 @@ public class DavCrawler implements ShutdownListener
         if (!paused)
         {
             Date nextHour = new Date(now + TimeUnit.SECONDS.toMillis(60*60));
-            Filter nextFilter = new SimpleFilter("NextCrawl", nextHour);
+            Filter nextFilter = new SimpleFilter(FieldKey.fromParts("NextCrawl"), nextHour);
             long countNext = new TableSelector(SearchSchema.getInstance().getCrawlCollectionsTable(), nextFilter, null).getRowCount();
             double max = (60*60) * _listingRateLimiter.getTarget().getRate(TimeUnit.SECONDS);
             long scheduled = Math.min(countNext, Math.round(max));

@@ -16,11 +16,18 @@
 package org.labkey.pipeline.status;
 
 import org.labkey.api.action.ApiAction;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -94,7 +101,7 @@ public class PipelineQueryView extends QueryView
     public static Filter createCompletedFilter()
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("Status", PipelineJob.COMPLETE_STATUS + ";" + PipelineJob.CANCELLED_STATUS, CompareType.NOT_IN);
+        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.COMPLETE_STATUS + ";" + PipelineJob.CANCELLED_STATUS, CompareType.NOT_IN);
         return filter;
     }
 

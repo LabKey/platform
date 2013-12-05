@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.HString;
 import org.labkey.api.view.NavTree;
 import org.labkey.wiki.WikiCache.WikiCacheLoader;
@@ -131,7 +132,7 @@ public class WikiSelectManager
             return null;
 
         Wiki wiki = new TableSelector(CommSchema.getInstance().getTableInfoPages(),
-                SimpleFilter.createContainerFilter(c).addCondition("name", name),
+                SimpleFilter.createContainerFilter(c).addCondition(FieldKey.fromParts("name"), name),
                 null).getObject(Wiki.class);
 
         if (null == wiki)
@@ -270,8 +271,8 @@ public class WikiSelectManager
             throw new IllegalStateException("Cannot retrieve version for non-existent wiki page.");
 
         return new TableSelector(CommSchema.getInstance().getTableInfoPageVersions(),
-                    new SimpleFilter("pageentityid", wiki.getEntityId()),
-                    new Sort("pageentityid,version")).getArray(WikiVersion.class);
+                new SimpleFilter(FieldKey.fromParts("pageentityid"), wiki.getEntityId()),
+                new Sort("pageentityid,version")).getArray(WikiVersion.class);
     }
 
     public static int getVersionCount(Wiki wiki)

@@ -27,6 +27,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -50,7 +51,7 @@ public class AttachmentCache
 
             Collection<Attachment> attachments = new TableSelector(CoreSchema.getInstance().getTableInfoDocuments(),
                     AttachmentServiceImpl.ATTACHMENT_COLUMNS,
-                    new SimpleFilter("Parent", parent.getEntityId()),
+                    new SimpleFilter(FieldKey.fromParts("Parent"), parent.getEntityId()),
                     new Sort("+RowId")).getCollection(Attachment.class);
 
             Map<String, Attachment> map = new LinkedHashMap<>(attachments.size());

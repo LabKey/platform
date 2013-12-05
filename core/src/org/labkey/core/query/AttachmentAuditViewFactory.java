@@ -122,8 +122,8 @@ public class AttachmentAuditViewFactory extends SimpleAuditViewFactory
 
     public static AuditLogQueryView createAttachmentView(ViewContext context, AttachmentParent parent)
     {
-        SimpleFilter filter = new SimpleFilter("ContainerId", parent.getContainerId());
-        filter.addCondition("EntityId", parent.getEntityId());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), parent.getContainerId());
+        filter.addCondition(FieldKey.fromParts("EntityId"), parent.getEntityId());
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, AttachmentService.ATTACHMENT_AUDIT_EVENT);
         view.setTitle("Attachments History:");

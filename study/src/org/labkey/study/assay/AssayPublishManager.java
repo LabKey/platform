@@ -814,7 +814,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     public UploadLog getUploadLog(Container c, int id)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition("rowId", id);
+        filter.addCondition(FieldKey.fromParts("rowId"), id);
 
         return new TableSelector(getTinfoUpdateLog(), filter, null).getObject(UploadLog.class);
     }
@@ -919,7 +919,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                         final Map<Integer, AssayPublishKey> keys = new HashMap<>();
                         assert cols.get(runFK) != null : "Could not find object id column: " + objectIdFK;
 
-                        SQLFragment sql = QueryService.get().getSelectSQL(resultTable, cols.values(), new SimpleFilter(runFK.encode(), run.getRowId()), null, Table.ALL_ROWS, Table.NO_OFFSET, false);
+                        SQLFragment sql = QueryService.get().getSelectSQL(resultTable, cols.values(), new SimpleFilter(runFK, run.getRowId()), null, Table.ALL_ROWS, Table.NO_OFFSET, false);
 
                         new SqlSelector(resultTable.getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
                         {

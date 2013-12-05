@@ -237,7 +237,7 @@ public class MothershipManager
     public ExceptionStackTrace getExceptionStackTrace(String stackTraceHash, String containerId)
             throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("Container", containerId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), containerId);
         filter.addCondition(FieldKey.fromString("StackTraceHash"), stackTraceHash);
         return new TableSelector(getTableInfoExceptionStackTrace(), filter, null).getObject(ExceptionStackTrace.class);
     }
@@ -474,7 +474,7 @@ public class MothershipManager
 
     public void deleteSoftwareRelease(Container container, int i) throws SQLException
     {
-        Filter filter = SimpleFilter.createContainerFilter(container).addCondition("ReleaseId", i);
+        Filter filter = SimpleFilter.createContainerFilter(container).addCondition(FieldKey.fromParts("ReleaseId"), i);
         Table.delete(getTableInfoSoftwareRelease(), filter);
     }
 

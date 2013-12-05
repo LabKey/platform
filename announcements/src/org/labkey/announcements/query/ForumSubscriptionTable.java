@@ -28,6 +28,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
@@ -156,7 +157,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         public SimpleFilter createDbSchemaFilter()
         {
             SimpleFilter result = createFilter("UserId", "Container");
-            result.addCondition("Type", "messages");
+            result.addCondition(FieldKey.fromParts("Type"), "messages");
             return result;
         }
 
@@ -164,7 +165,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         {
             SimpleFilter filter = new SimpleFilter(userColumnName, getUser().getUserId());
             filter.addCondition(containerColumnName, getContainer().getEntityId());
-            filter.addCondition("SrcIdentifier", _srcIdentifier);
+            filter.addCondition(FieldKey.fromParts("SrcIdentifier"), _srcIdentifier);
             return filter;
         }
     }

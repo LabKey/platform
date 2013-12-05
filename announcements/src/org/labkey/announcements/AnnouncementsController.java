@@ -2183,7 +2183,7 @@ public class AnnouncementsController extends SpringActionController
                 filter.addWhereClause("Expires IS NULL OR Expires > ?", new Object[]{new Date(System.currentTimeMillis() - DateUtils.MILLIS_PER_DAY)});
 
             if (settings.hasStatus())
-                filter.addCondition("Status", "Closed", CompareType.NEQ_OR_NULL);
+                filter.addCondition(FieldKey.fromParts("Status"), "Closed", CompareType.NEQ_OR_NULL);
         }
 
         return filter;

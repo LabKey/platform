@@ -502,7 +502,7 @@ public class DataSetQueryView extends StudyQueryView
     {
         TableInfo datasetTable = getTable();
         SimpleFilter sourceLsidFilter = new SimpleFilter();
-        sourceLsidFilter.addCondition("SourceLsid", null, CompareType.NONBLANK);
+        sourceLsidFilter.addCondition(FieldKey.fromParts("SourceLsid"), null, CompareType.NONBLANK);
 
         return new TableSelector(datasetTable, sourceLsidFilter, null).exists();
     }

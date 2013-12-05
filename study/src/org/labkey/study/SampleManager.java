@@ -170,7 +170,7 @@ public class SampleManager implements ContainerManager.ContainerListener
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addClause(new SimpleFilter.SQLClause("LOWER(ptid) = LOWER(?)", new Object[] {participantId}, FieldKey.fromParts("ptid")));
-        filter.addCondition("VisitValue", visit);
+        filter.addCondition(FieldKey.fromParts("VisitValue"), visit);
         return _specimenDetailHelper.get(container, filter);
     }
 
@@ -243,7 +243,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public List<SpecimenEvent> getSpecimenEvents(Specimen sample)
     {
-        SimpleFilter filter = new SimpleFilter("VialId", sample.getRowId());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("VialId"), sample.getRowId());
         return _specimenEventHelper.get(sample.getContainer(), filter);
     }
 
@@ -463,9 +463,9 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public List<SampleRequest> getRequests(Container c, User user)
     {
-        SimpleFilter filter = new SimpleFilter("Hidden", Boolean.FALSE);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Hidden"), Boolean.FALSE);
         if (user != null)
-            filter.addCondition("CreatedBy", user.getUserId());
+            filter.addCondition(FieldKey.fromParts("CreatedBy"), user.getUserId());
         return _requestHelper.get(c, filter, "-Created");
     }
 
@@ -859,7 +859,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     private void deleteRequestEvents(User user, SampleRequest request) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("RequestId", request.getRowId());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), request.getRowId());
         List<SampleRequestEvent> events = _requestEventHelper.get(request.getContainer(), filter);
         for (SampleRequestEvent event : events)
         {
@@ -1292,7 +1292,7 @@ public class SampleManager implements ContainerManager.ContainerListener
     public List<Specimen> getSpecimens(Container container, List<Long> sampleRowIds)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addInClause("RowId", sampleRowIds);
+        filter.addInClause(FieldKey.fromParts("RowId"), sampleRowIds);
         List<Specimen> specimens = _specimenDetailHelper.get(container, filter);
         if (specimens.size() != sampleRowIds.size())
             throw new IllegalStateException("One or more specimen RowIds had no matching specimen.");
@@ -1357,8 +1357,8 @@ public class SampleManager implements ContainerManager.ContainerListener
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             SimpleFilter filter = SimpleFilter.createContainerFilter(request.getContainer());
-            filter.addCondition("SampleRequestId", request.getRowId());
-            filter.addInClause("SpecimenGlobalUniqueId", globalUniqueIds);
+            filter.addCondition(FieldKey.fromParts("SampleRequestId"), request.getRowId());
+            filter.addInClause(FieldKey.fromParts("SpecimenGlobalUniqueId"), globalUniqueIds);
             Table.delete(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), filter);
             if (createEvents)
             {
@@ -1597,8 +1597,8 @@ public class SampleManager implements ContainerManager.ContainerListener
         if (missingSpecimens.isEmpty())
             return;
         SimpleFilter filter = SimpleFilter.createContainerFilter(sampleRequest.getContainer());
-        filter.addCondition("SampleRequestId", sampleRequest.getRowId());
-        filter.addInClause("SpecimenGlobalUniqueId", missingSpecimens);
+        filter.addCondition(FieldKey.fromParts("SampleRequestId"), sampleRequest.getRowId());
+        filter.addInClause(FieldKey.fromParts("SpecimenGlobalUniqueId"), missingSpecimens);
         Table.delete(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), filter);
     }
 
@@ -1672,9 +1672,9 @@ public class SampleManager implements ContainerManager.ContainerListener
     public Map<String,List<Specimen>> getVialsForSampleHashes(Container container, Collection<String> hashes, boolean onlyAvailable)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addInClause("SpecimenHash", hashes);
+        filter.addInClause(FieldKey.fromParts("SpecimenHash"), hashes);
         if (onlyAvailable)
-            filter.addCondition("Available", true);
+            filter.addCondition(FieldKey.fromParts("Available"), true);
         SQLFragment sql = new SQLFragment("SELECT * FROM " + StudySchema.getInstance().getTableInfoSpecimenDetail().toString() + " ");
         sql.append(filter.getSQLFragment(StudySchema.getInstance().getSqlDialect()));
 
@@ -1888,7 +1888,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
         DbSchema expSchema = ExperimentService.get().getSchema();
         TableInfo tinfoMaterial = expSchema.getTable("Material");
-        containerFilter.addCondition("CpasType", StudyService.SPECIMEN_NAMESPACE_PREFIX);
+        containerFilter.addCondition(FieldKey.fromParts("CpasType"), StudyService.SPECIMEN_NAMESPACE_PREFIX);
         Table.delete(tinfoMaterial, containerFilter);
 
         // Views
@@ -1946,7 +1946,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         List<Integer> visitIds = new SqlSelector(StudySchema.getInstance().getSchema(), visitIdSQL).getArrayList(Integer.class);
 
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addInClause("RowId", visitIds);
+        filter.addInClause(FieldKey.fromParts("RowId"), visitIds);
         if (cohort != null)
             filter.addWhereClause("CohortId IS NULL OR CohortId = ?", new Object[] { cohort.getRowId() });
         return new TableSelector(StudySchema.getInstance().getTableInfoVisit(), filter, new Sort("DisplayOrder,SequenceNumMin")).getArrayList(VisitImpl.class);
@@ -2585,7 +2585,7 @@ public class SampleManager implements ContainerManager.ContainerListener
             }
 
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-            filter.addInClause("GlobalUniqueId", idToVial.keySet());
+            filter.addInClause(FieldKey.fromParts("GlobalUniqueId"), idToVial.keySet());
 
             new TableSelector(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null).forEach(new Selector.ForEachBlock<SpecimenComment>()
             {
@@ -2606,7 +2606,7 @@ public class SampleManager implements ContainerManager.ContainerListener
     public SpecimenComment getSpecimenCommentForVial(Container container, String globalUniqueId) throws SQLException
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition("GlobalUniqueId", globalUniqueId);
+        filter.addCondition(FieldKey.fromParts("GlobalUniqueId"), globalUniqueId);
 
         return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null).getObject(SpecimenComment.class);
     }
@@ -2624,7 +2624,7 @@ public class SampleManager implements ContainerManager.ContainerListener
     public SpecimenComment[] getSpecimenCommentForSpecimens(Container container, Collection<String> specimenHashes) throws SQLException
     {
         SimpleFilter hashFilter = SimpleFilter.createContainerFilter(container);
-        hashFilter.addInClause("SpecimenHash", specimenHashes);
+        hashFilter.addInClause(FieldKey.fromParts("SpecimenHash"), specimenHashes);
 
         return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenComment(), hashFilter, new Sort("GlobalUniqueId")).getArray(SpecimenComment.class);
     }

@@ -16,20 +16,31 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.Container;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataRunInput;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpMaterialRunInput;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 
 public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<ProtocolApplication> implements ExpProtocolApplication
 {
@@ -253,9 +264,9 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         {
             try
             {
-                Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), new SimpleFilter("TargetApplicationId", getRowId()));
-                Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), new SimpleFilter("TargetApplicationId", getRowId()));
-                Table.delete(ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter(), new SimpleFilter("ProtocolApplicationId", getRowId()));
+                Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
+                Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
+                Table.delete(ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter(), new SimpleFilter(FieldKey.fromParts("ProtocolApplicationId"), getRowId()));
 
                 SQLFragment commonSQL = new SQLFragment(" SET SourceApplicationId = NULL, RunId = NULL WHERE SourceApplicationId = ?", getRowId());
 
@@ -338,8 +349,8 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         try
         {
             SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("TargetApplicationId", getRowId());
-            filter.addCondition("DataId", data.getRowId());
+            filter.addCondition(FieldKey.fromParts("TargetApplicationId"), getRowId());
+            filter.addCondition(FieldKey.fromParts("DataId"), data.getRowId());
             Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), filter);
         }
         catch (SQLException e)
@@ -353,8 +364,8 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         try
         {
             SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("TargetApplicationId", getRowId());
-            filter.addCondition("MaterialId", material.getRowId());
+            filter.addCondition(FieldKey.fromParts("TargetApplicationId"), getRowId());
+            filter.addCondition(FieldKey.fromParts("MaterialId"), material.getRowId());
             Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), filter);
         }
         catch (SQLException e)

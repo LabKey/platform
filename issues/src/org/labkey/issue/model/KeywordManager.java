@@ -27,6 +27,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.issue.ColumnType;
 
@@ -57,7 +58,7 @@ public class KeywordManager
             {
                 assert type.getOrdinal() > 0;   // Ordinal 0 ==> no pick list (e.g., custom integer columns)
 
-                SimpleFilter filter = SimpleFilter.createContainerFilter(c).addCondition("Type", type.getOrdinal());
+                SimpleFilter filter = SimpleFilter.createContainerFilter(c).addCondition(FieldKey.fromParts("Type"), type.getOrdinal());
                 Sort sort = new Sort("Keyword");
 
                 Selector selector = new TableSelector(IssuesSchema.getInstance().getTableInfoIssueKeywords(), PageFlowUtil.set("Keyword", "Default", "Container", "Type"), filter, sort);

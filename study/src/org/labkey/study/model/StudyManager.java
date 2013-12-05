@@ -1173,8 +1173,8 @@ public class StudyManager
     public VisitDataSet getVisitDataSetMapping(Container container, int visitRowId, int dataSetId) throws SQLException
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition("VisitRowId", visitRowId);
-        filter.addCondition("DataSetId", dataSetId);
+        filter.addCondition(FieldKey.fromParts("VisitRowId"), visitRowId);
+        filter.addCondition(FieldKey.fromParts("DataSetId"), dataSetId);
 
         Boolean required = new TableSelector(SCHEMA.getTableInfoVisitMap().getColumn("Required"), filter, null).getObject(Boolean.class);
 
@@ -1564,7 +1564,7 @@ public class StudyManager
     {
         assertCohortsViewable(container, user);
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition("Label", label);
+        filter.addCondition(FieldKey.fromParts("Label"), label);
 
         List<CohortImpl> cohorts = _cohortHelper.get(container, filter);
         if (cohorts != null && cohorts.size() == 1)
@@ -1648,7 +1648,7 @@ public class StudyManager
             {
                 if (filter == null)
                     filter = SimpleFilter.createContainerFilter(study.getContainer());
-                filter.addInClause("Type", Arrays.asList(types));
+                filter.addInClause(FieldKey.fromParts("Type"), Arrays.asList(types));
             }
         }
 
@@ -1726,7 +1726,7 @@ public class StudyManager
     public DataSetDefinition getDataSetDefinitionByEntityId(Study s, String entityId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(s.getContainer());
-        filter.addCondition("EntityId", entityId);
+        filter.addCondition(FieldKey.fromParts("EntityId"), entityId);
 
         List<DataSetDefinition> defs = _datasetHelper.get(s.getContainer(), filter);
         if (defs != null && defs.size() == 1)
@@ -3615,7 +3615,7 @@ public class StudyManager
         if (null == ssci || ssci.isUnselectable())
             return new StudyImpl[0];
         return new TableSelector(StudySchema.getInstance().getTableInfoStudy(),
-                new SimpleFilter("SourceStudyContainerId", sourceStudyContainer), null).getArray(StudyImpl.class);
+                new SimpleFilter(FieldKey.fromParts("SourceStudyContainerId"), sourceStudyContainer), null).getArray(StudyImpl.class);
     }
 /*
     public void forceDatasetSnapshotRefresh(Study study)
@@ -3732,7 +3732,7 @@ public class StudyManager
                 if (study != null)
                 {
                     SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
-                    filter.addCondition("CategoryId", category.getRowId());
+                    filter.addCondition(FieldKey.fromParts("CategoryId"), category.getRowId());
                     return _instance._datasetHelper.get(study.getContainer(), filter);
                 }
             }

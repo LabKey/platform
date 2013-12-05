@@ -156,15 +156,15 @@ public class FileContentDigestProvider implements MessageDigest.Provider
         }
         else
         {
-            SimpleFilter filter = new SimpleFilter("EventType", FileSystemAuditViewFactory.EVENT_TYPE);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EventType"), FileSystemAuditViewFactory.EVENT_TYPE);
             Sort sort = new Sort("Created");
 
-            filter.addCondition("Created", start, CompareType.GTE);
-            filter.addCondition("Created", end, CompareType.LT);
+            filter.addCondition(FieldKey.fromParts("Created"), start, CompareType.GTE);
+            filter.addCondition(FieldKey.fromParts("Created"), end, CompareType.LT);
 
 
             if (container != null)
-                filter.addCondition("ContainerId", container.getId());
+                filter.addCondition(FieldKey.fromParts("ContainerId"), container.getId());
 
             return AuditLogService.get().getEvents(filter, sort);
         }

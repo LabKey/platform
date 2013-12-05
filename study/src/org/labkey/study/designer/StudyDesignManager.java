@@ -236,7 +236,7 @@ public class StudyDesignManager
     public StudyDesignVersion[] getStudyDesignVersions(Container c, int studyId) throws SQLException
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition("studyId", studyId);
+        filter.addCondition(FieldKey.fromParts("studyId"), studyId);
 
         return new TableSelector(getStudyVersionTable(), filter, new Sort("Revision")).getArray(StudyDesignVersion.class);
     }
@@ -244,8 +244,8 @@ public class StudyDesignManager
     public StudyDesignVersion getStudyDesignVersion(Container c, int studyId, int versionId) throws SQLException
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition("studyId", studyId);
-        filter.addCondition("revision", versionId);
+        filter.addCondition(FieldKey.fromParts("studyId"), studyId);
+        filter.addCondition(FieldKey.fromParts("revision"), versionId);
 
         return new TableSelector(getStudyVersionTable(), filter, null).getObject(StudyDesignVersion.class);
     }
@@ -260,7 +260,7 @@ public class StudyDesignManager
     public StudyDesignVersion getStudyDesignVersion(Container c, int studyId) throws SQLException
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition("studyId", studyId);
+        filter.addCondition(FieldKey.fromParts("studyId"), studyId);
         filter.addWhereClause("revision = (SELECT MAX(revision) FROM " + getStudyVersionTable().toString() + " WHERE studyid=?)", new Object[] {studyId}, FieldKey.fromParts("revision"), FieldKey.fromParts("studyid"));
 
         return new TableSelector(getStudyVersionTable(), filter, null).getObject(StudyDesignVersion.class);
@@ -369,11 +369,11 @@ public class StudyDesignManager
     public void deleteStudyDesign(Container container, int studyId) throws SQLException
     {
         SimpleFilter deleteVersionsFilter = SimpleFilter.createContainerFilter(container);
-        deleteVersionsFilter.addCondition("studyId", studyId);
+        deleteVersionsFilter.addCondition(FieldKey.fromParts("studyId"), studyId);
         Table.delete(getStudyVersionTable(), deleteVersionsFilter);
 
         SimpleFilter deleteDesignInfoFilter = SimpleFilter.createContainerFilter(container);
-        deleteDesignInfoFilter.addCondition("studyId", studyId);
+        deleteDesignInfoFilter.addCondition(FieldKey.fromParts("studyId"), studyId);
         Table.delete(getStudyDesignTable(), deleteDesignInfoFilter);
     }
 
@@ -593,7 +593,7 @@ public class StudyDesignManager
     public StudyDesignInfo getDesignForStudy(Study study)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
-        filter.addCondition("Active", Boolean.TRUE);
+        filter.addCondition(FieldKey.fromParts("Active"), Boolean.TRUE);
         StudyDesignInfo info = new TableSelector(getStudyDesignTable(), filter, null).getObject(StudyDesignInfo.class);
         return info;
     }

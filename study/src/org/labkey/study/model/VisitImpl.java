@@ -24,6 +24,7 @@ import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.Transient;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Visit;
 import org.labkey.study.StudySchema;
@@ -130,7 +131,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
 
     public void addVisitFilter(SimpleFilter filter)
     {
-        filter.addCondition("VisitRowId", getRowId());
+        filter.addCondition(FieldKey.fromParts("VisitRowId"), getRowId());
     }
 
 

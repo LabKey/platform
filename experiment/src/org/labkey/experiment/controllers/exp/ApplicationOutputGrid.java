@@ -16,9 +16,15 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import org.labkey.api.view.GridView;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.data.*;
+import org.labkey.api.view.GridView;
 import org.springframework.validation.BindException;
 
 import java.util.List;
@@ -39,7 +45,7 @@ public class ApplicationOutputGrid extends GridView
         getDataRegion().getDisplayColumn(1).setURL(resolve.toString() + "?lsid=${LSID}");
         getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("SourceApplicationId", rowIdPA);
+        filter.addCondition(FieldKey.fromParts("SourceApplicationId"), rowIdPA);
         setFilter(filter);
         setTitle("Output " + ti.getName());
     }

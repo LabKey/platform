@@ -129,6 +129,6 @@ public class StudyDesignsWebPart extends GridView
         setTitle("Vaccine Study Protocols");
         setSort(new Sort("Label"));
         getRenderContext().setUseContainerFilter(false);
-        setFilter(new SimpleFilter("SourceContainer", ctx.getContainer()));
+        setFilter(new SimpleFilter(FieldKey.fromParts("SourceContainer"), ctx.getContainer()));
     }
 }

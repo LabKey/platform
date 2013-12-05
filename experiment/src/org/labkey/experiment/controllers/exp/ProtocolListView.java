@@ -16,8 +16,16 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GridView;
 import org.labkey.experiment.api.ExperimentServiceImpl;
@@ -44,8 +52,8 @@ public class ProtocolListView extends GridView
         getDataRegion().getDisplayColumn(2).setTextAlign("left");
 
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("ParentProtocolLSID", protocol.getLSID(), CompareType.EQUAL);
-        filter.addCondition("ChildProtocolLSID", protocol.getLSID(), CompareType.NEQ);
+        filter.addCondition(FieldKey.fromParts("ParentProtocolLSID"), protocol.getLSID(), CompareType.EQUAL);
+        filter.addCondition(FieldKey.fromParts("ChildProtocolLSID"), protocol.getLSID(), CompareType.NEQ);
         setFilter(filter);
 
         setSort(new Sort("ActionSequence"));

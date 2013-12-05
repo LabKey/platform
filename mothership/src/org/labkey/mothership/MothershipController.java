@@ -537,7 +537,7 @@ public class MothershipController extends SpringActionController
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = new QuerySettings(getViewContext(), "ExceptionReports", MothershipSchema.EXCEPTION_REPORT_WITH_STACK_TABLE_NAME);
             settings.getBaseSort().insertSortColumn("-Created");
-            settings.getBaseFilter().addCondition("ServerSessionId", session.getServerSessionId());
+            settings.getBaseFilter().addCondition(FieldKey.fromParts("ServerSessionId"), session.getServerSessionId());
 
             QueryView exceptionGridView = new QueryView(schema, settings, errors);
             exceptionGridView.setShadeAlternatingRows(true);
@@ -569,7 +569,7 @@ public class MothershipController extends SpringActionController
             MothershipSchema schema = new MothershipSchema(MothershipController.this.getUser(), MothershipController.this.getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "ServerSessions", "ServerSessions");
             settings.getBaseSort().insertSortColumn("-ServerSessionId");
-            settings.getBaseFilter().addCondition("ServerInstallationId", installation.getServerInstallationId());
+            settings.getBaseFilter().addCondition(FieldKey.fromParts("ServerInstallationId"), installation.getServerInstallationId());
 
             QueryView sessionGridView = schema.createView(getViewContext(), settings, errors);
             sessionGridView.setShowBorders(true);
