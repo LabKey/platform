@@ -17,10 +17,14 @@
 package org.labkey.api.util;
 
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
+import org.labkey.api.annotations.JavaRuntimeVersion;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.view.NavTree;
 
+import java.util.Formatter;
 import java.util.Map;
 
 /**
@@ -33,17 +37,22 @@ public class HelpTopic
     public static String TARGET_NAME = "labkeyHelp"; // LabKey help should always appear in the same tab/window
     private static String HELP_VERSION = null;
 
+    @JavaRuntimeVersion // Update this link whenever we require a new major Java version so we always point at the current docs
+    private static final String JDK_JAVADOC_BASE_URL = "http://docs.oracle.com/javase/7/docs/api/";
+
     private String _topic;
 
-    static
+    public static String getHelpVersion()
     {
-        // Get core module version number, truncate to one decimal place, and use as help version
-        Module core = ModuleLoader.getInstance().getCoreModule();
-        double coreVersion = core.getVersion();
-        HELP_VERSION = Formats.f1.format(Math.floor(coreVersion * 10) / 10);
+        if (HELP_VERSION == null)
+        {
+            // Get core module version number, truncate to one decimal place, and use as help version
+            Module core = ModuleLoader.getInstance().getCoreModule();
+            double coreVersion = core.getVersion();
+            HELP_VERSION = Formats.f1.format(Math.floor(coreVersion * 10) / 10);
+        }
+        return HELP_VERSION;
     }
-
-    private static final String HELP_ROOT_URL = "http://help.labkey.org/wiki/home/documentation/" + HELP_VERSION + "/page.view?name=";
 
     public static final HelpTopic DEFAULT_HELP_TOPIC = new HelpTopic("default");
 
@@ -63,7 +72,7 @@ public class HelpTopic
 
     public String getHelpTopicHref()
     {
-        return HELP_ROOT_URL + _topic;
+        return "http://help.labkey.org/wiki/home/documentation/" + getHelpVersion() + "/page.view?name=" + _topic;
     }
 
     // Create a simple link (just an <a> tag with plain mixed case text, no graphics) that links to the help topic, displays
@@ -98,5 +107,23 @@ public class HelpTopic
         tree.setTarget(HelpTopic.TARGET_NAME);
 
         return tree;
+    }
+
+    /**
+     * @return a link to the Oracle JDK JavaDocs for whatever the current LabKey-supported JDK is
+     */
+    public static String getJDKJavaDocLink(Class c)
+    {
+        return JDK_JAVADOC_BASE_URL + c.getName().replace(".", "/").replace("$", ".") + ".html";
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testJavaDocLinkGeneration()
+        {
+            assertEquals(JDK_JAVADOC_BASE_URL + "java/util/Formatter.html", getJDKJavaDocLink(Formatter.class));
+            assertEquals(JDK_JAVADOC_BASE_URL + "java/util/Map.Entry.html", getJDKJavaDocLink(Map.Entry.class));
+        }
     }
 }

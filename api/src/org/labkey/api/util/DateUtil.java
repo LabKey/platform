@@ -21,7 +21,6 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.annotations.JavaRuntimeVersion;
 import org.labkey.api.settings.AppProps;
 
 import javax.xml.bind.DatatypeConverter;
@@ -1210,10 +1209,9 @@ Parse:
     }
 
 
-    @JavaRuntimeVersion  // Update this link whenever we require a new major Java version so we always point at the current docs
     public static String getSimpleDateFormatDocumentationURL()
     {
-        return "http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html";
+        return HelpTopic.getJDKJavaDocLink(SimpleDateFormat.class);
     }
 
 
