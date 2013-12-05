@@ -32,7 +32,7 @@
     PlateTemplate template = bean.getTemplate();
 %>
 <form action="plateTemplate.view" method="GET">
-    <input type="hidden" name="name" value="<%= template.getName() %>">
+    <input type="hidden" name="name" value="<%= h(template.getName()) %>">
     <select name="type" onChange="form.submit();">
         <%
             for (WellGroup.Type type : WellGroup.Type.values())

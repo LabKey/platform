@@ -33,9 +33,3 @@
         %><tr><td><%=h(pd.getName())%></td><td><%=h(pd.getPropertyURI())%></td><td><%=h(t.getXmlName())%></td></tr><%
     }
 %></table>
-<!-- <p>
-[ <a href="types.view">View Types</a> ]<br>
-[ <a href="importData.view?typeURI=<%=PageFlowUtil.encode(typeName)%>">Import Data</a> ]<br>&nbsp;<br>
-<%=generateButton("Delete data", "deleteData.view?typeURI=" + PageFlowUtil.encode(typeName) + "&deleteType=0")%>
-&nbsp;<%=generateButton("Delete type", "deleteData.view?typeURI=" + PageFlowUtil.encode(typeName) + "&deleteType=1")%>
-</p> --!>

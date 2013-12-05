@@ -35,7 +35,7 @@
 
     ActionURL returnURL = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer());
 %>
-<form action="participantCrosstab.view" method="GET">
+<form action="<%=h(buildURL(ReportsController.ParticipantCrosstabAction.class))%>" method="GET">
 <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=h(StudySchema.getInstance().getSchemaName())%>">
 <input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=h(StudyCrosstabReport.TYPE)%>">
 <input type="hidden" name="redirectUrl" value="<%=h(returnURL)%>">

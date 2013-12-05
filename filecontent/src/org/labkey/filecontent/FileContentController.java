@@ -214,7 +214,7 @@ public class FileContentController extends SpringActionController
             if (null == dir)
             {
                 if (getUser().isSiteAdmin())
-                    return HttpView.redirect("showAdmin.view");
+                    return HttpView.redirect(new ActionURL(ShowAdminAction.class,getContainer()));
                 else
                     throw new NotFoundException();
             }

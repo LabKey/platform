@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.core.admin.FilesSiteSettingsAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -39,7 +40,7 @@
 %>
 
 <labkey:errors/>
-<form action="filesSiteSettings.view" method="post">
+<form action="<%=h(buildURL(FilesSiteSettingsAction.class))%>" method="post">
     <input type="hidden" name="upgrade" value="<%=bean.isUpgrade()%>">
     <table width="80%">
         <tr><td colspan="2" class="labkey-announcement-title"><span>Site-Level File Root</span></td></tr>

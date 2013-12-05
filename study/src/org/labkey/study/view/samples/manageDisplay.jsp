@@ -18,10 +18,10 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.samples.settings.DisplaySettings" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -32,7 +32,7 @@
 %>
 
 <labkey:errors/>
-<form action="manageDisplaySettings.view" method="POST">
+<form action="<%=h(buildURL(SpecimenController.ManageDisplaySettingsAction.class))%>" method="POST">
     <table class="labkey-manage-display" width=600>
         <tr>
             <td colspan="2" class="labkey-announcement-title" align="left">

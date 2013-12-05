@@ -32,7 +32,7 @@
 
 <labkey:errors/>
 
-<form action="getSchemaXmlDoc.view" method="get">
+<form action="<%=h(buildURL(AdminController.GetSchemaXmlDocAction.class))%>" method="get">
     <table>
         <tr class="labkey-wp-header"><th colspan=2 align=center>Database Tools</th></tr>
         <tr><td>Check table consistency:&nbsp;</td>

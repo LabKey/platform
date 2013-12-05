@@ -32,6 +32,3 @@ for (DomainDescriptor type : bean.locals.values())
     %><a href="typeDetails.view?type=<%=h(PageFlowUtil.encode(type.getDomainURI()))%>"><%=h(type.getName())%></a><br /><%
 }
 %>
-<!--<p>
-[ <a href="importTypes.view">Import Types</a> ]
-</p>-->

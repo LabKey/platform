@@ -36,9 +36,9 @@ PropertyDescriptor[] pds = null;
 String error = null;
 %>
 <p><%=h(bean.caption)%></p>
-<form id="columnPickerForm" action="renderConfigureEnrollmentReport.view" method="POST">
+<form id="columnPickerForm" action="<%=h(buildURL(ReportsController.RenderConfigureEnrollmentReportAction.class))%>" method="POST">
 <table>
-<tr><td>Dataset</td><td><select name="<%=DataSetDefinition.DATASETKEY%>" onchange="refreshForm(this.options[this.selectedIndex].value);">
+<tr><td>Dataset</td><td><select name="<%=text(DataSetDefinition.DATASETKEY)%>" onchange="refreshForm(this.options[this.selectedIndex].value);">
     <option value="-1"></option>
 <%
 for (DataSetDefinition ds : bean.study.getDataSets())
@@ -46,7 +46,7 @@ for (DataSetDefinition ds : bean.study.getDataSets())
     boolean selected = bean.form.getDatasetId().intValue() == ds.getDataSetId();
     if (selected)
         selectedDataset = ds;
-    %><option <%=selected?"selected ":""%>value="<%=ds.getDataSetId()%>"><%=h(ds.getDisplayString())%></option><%
+    %><option <%=text(selected?"selected ":"")%>value="<%=ds.getDataSetId()%>"><%=h(ds.getDisplayString())%></option><%
 }
 %></select></td></tr>
 <%
@@ -64,7 +64,7 @@ if (selectedDataset != null)
     if (null == pds || pds.length == 0)
         error = "Dataset is not defined yet.";
 
-    %><tr><td>Visit</td><td><select name="<%=VisitImpl.SEQUENCEKEY%>"><%
+    %><tr><td>Visit</td><td><select name="<%=text(VisitImpl.SEQUENCEKEY)%>"><%
     if (datasetVisits.size() == 0 && error == null)
         error = "No visits defined for this dataset.";
     for (VisitDataSet vds : datasetVisits)
@@ -73,7 +73,7 @@ if (selectedDataset != null)
 //        if (!visit.isRequired())            continue;
         if (null == visit)
             {%><!-- <%=vds.getVisitRowId()%> not found --><% continue;}
-        %><option <%=bean.form.getSequenceNum() == visit.getSequenceNumMin() ? "selected " : ""%>value="<%=visit.getSequenceNumMin()%>"><%=h(visit.getDisplayString())%></option><%
+        %><option <%=text(bean.form.getSequenceNum() == visit.getSequenceNumMin() ? "selected " : "")%>value="<%=visit.getSequenceNumMin()%>"><%=h(visit.getDisplayString())%></option><%
     }
     %></select></td></tr><%
     %>
@@ -90,7 +90,7 @@ if (selectedDataset != null)
                 if (bean.propertyType != null && bean.propertyType != pd.getPropertyType())
                     continue;
                 count++;
-                %><option <%=(pd.getPropertyId() == bean.form.getPropertyId()) ? "selected " : ""%>value="<%=h(pd.getPropertyId())%>"><%=h(pd.getLabel())%></option><%
+                %><option <%=text((pd.getPropertyId() == bean.form.getPropertyId()) ? "selected " : "")%>value="<%=h(pd.getPropertyId())%>"><%=h(pd.getLabel())%></option><%
             }
             if (count==0 && error==null)
                 error = "No date fields found in this dataset.";
@@ -104,7 +104,7 @@ if (selectedDataset != null)
 </table>
 <%=generateSubmitButton("Submit")%>
 </form>
-<font class=labkey-error><%= error==null ? "" : h(error)%></font>
+<span class=labkey-error><%=h(error==null ? "" : error)%></span>
 <script type="text/javascript">
 function refreshForm(value)
 {

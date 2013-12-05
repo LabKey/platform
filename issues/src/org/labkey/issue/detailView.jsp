@@ -50,7 +50,7 @@
 {
 %>
 <%--<script src="<%=contextPath%>/issues/hashbang.js" type="text/javascript"></script>--%>
-<form name="jumpToIssue" action="jumpToIssue.view" method="get">
+<form name="jumpToIssue" action="<%=h(buildURL(IssuesController.JumpToIssueAction.class))%>" method="get">
     <table><tr><%
 
     if (bean.getHasUpdatePermissions())

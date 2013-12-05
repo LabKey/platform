@@ -51,7 +51,7 @@
     if (!bean.isPrint())
     {
 %>
-<form name="jumpToIssue" action="jumpToIssue.view" method="get">
+<form name="jumpToIssue" action="<%=h(buildURL(IssuesController.JumpToIssueAction.class))%>" method="get">
 <table><tr>
     <td><%= textLink("new " + names.singularName.getSource().toLowerCase(), IssuesController.issueURL(context.getContainer(), IssuesController.InsertAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     <td><%= textLink("view grid", IssuesController.issueURL(context.getContainer(), IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>

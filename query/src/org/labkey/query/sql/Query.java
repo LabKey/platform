@@ -1289,7 +1289,6 @@ public class Query
             R.setKeyName("rowid");
             addProperties(R);
             R.save(user);
-//            R.insertListItems(user, new TestDataLoader(R.getName() + hash, Rsize), null, null);
             TableInfo rTableInfo = DefaultSchema.get(user,c).getSchema("lists").getTable("R");
             DataIteratorContext context = new DataIteratorContext();
             rTableInfo.getUpdateService().importRows(user, c, new TestDataLoader(R.getName() + hash, Rsize), context.getErrors(), null);
@@ -1300,7 +1299,6 @@ public class Query
             S.setKeyName("rowid");
             addProperties(S);
             S.save(user);
-//            S.insertListItems(user, new TestDataLoader(S.getName() + hash, Ssize), null, null);
             TableInfo sTableInfo = DefaultSchema.get(user,qtest).getSchema("lists").getTable("S");
             context = new DataIteratorContext();
             sTableInfo.getUpdateService().importRows(user, qtest, new TestDataLoader(S.getName() + hash, Rsize), context.getErrors(), null);

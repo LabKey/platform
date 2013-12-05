@@ -41,7 +41,7 @@
         return true;
     }
 </script>
-<form action="customizeParticipantView.view" name="editorForm" method="POST">
+<form action="<%=h(buildURL(StudyController.CustomizeParticipantViewAction.class))%>" name="editorForm" method="POST">
     <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl())%>">
     <input type="hidden" name="reshow" value="false">
     <input type="hidden" name="participantId" value="<%= h(bean.getParticipantId()) %>">
@@ -80,9 +80,9 @@
             <td>
                 <%= buttonImg("Save", "document.forms['editorForm'].customScript.disabled = false; LABKEY.setSubmit(true); document.forms['editorForm'].reshow.value = true; return true;")%>
                 <%= buttonImg("Save and Finish", "document.forms['editorForm'].customScript.disabled = false; LABKEY.setSubmit(true); return true;")%>
-                <%= bean.getReturnUrl() != null && bean.getReturnUrl().length() > 0 ? 
+                <%= text(bean.getReturnUrl() != null && bean.getReturnUrl().length() > 0 ?
                         generateButton("Cancel", bean.getReturnUrl()) :
-                        generateButton("Cancel", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer())) %>
+                        generateButton("Cancel", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer()))) %>
                 <%= buttonImg("Restore default script", "if (confirm('Restore default script?  You will lose any changes made to this page.')) document.getElementById('customScript').value = DEFAULT_SCRIPT_VALUE; return false;") %>
             </td>
         </tr>
@@ -98,7 +98,7 @@
         </tr>
         <tr>
             <td>
-                <textarea rows="30" cols="150" style="width:100%" DISABLED><%= bean.getCustomScript() %></textarea><br>
+                <textarea rows="30" cols="150" style="width:100%" DISABLED><%= h(bean.getCustomScript()) %></textarea><br>
             </td>
         </tr>
 <%

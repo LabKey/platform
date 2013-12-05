@@ -40,7 +40,7 @@
 Use this wizard to create a folder that will contain all of the assay results and information about each <%=h(species)%> (subject) within
 the vaccine study.
 
-<form name="createRepositoryForm" action="createRepository.view" method="post">
+<form name="createRepositoryForm" action="<%=h(buildURL(DesignerController.CreateRepository.class))%>" method="post">
     <input type="hidden" name="studyId" value="<%=form.getStudyId()%>">
     <input type="hidden" name="studyName" value="<%=h(form.getStudyName())%>">
     <input type="hidden" name="wizardStepNumber" value="<%=form.getWizardStepNumber()%>">
@@ -56,7 +56,7 @@ the vaccine study.
 
         <tr>
             <td>Study Begin Date</td>
-            <td><input name="beginDate" value="<%=DateUtil.formatDate(form.getBeginDate())%>"></td>
+            <td><input name="beginDate" value="<%=h(DateUtil.formatDate(form.getBeginDate()))%>"></td>
         </tr>
         <tr>
             <td>Subject Noun (Singular)</td>
@@ -97,7 +97,7 @@ the vaccine study.
                 for (Container c : sortedContainers)
                 {
             %>
-                    <option value="<%=c.getId()%>"<%=selected(c.getId().equals(form.getParentFolderId()))%>><%=h(c.getPath())%></option>
+                    <option value="<%=h(c.getId())%>"<%=selected(c.getId().equals(form.getParentFolderId()))%>><%=h(c.getPath())%></option>
             <%  } %>
                 </select>
             </td>
@@ -112,11 +112,11 @@ else
 {
 %>
     <input type="hidden" name="beginDate" value="<%=form.getBeginDate()%>">
-    <input type="hidden" name="subjectNounSingular" value="<%=form.getSubjectNounSingular()%>">
-    <input type="hidden" name="subjectNounPlural" value="<%=form.getSubjectNounPlural()%>">
-    <input type="hidden" name="subjectColumnName" value="<%=form.getSubjectColumnName()%>">
+    <input type="hidden" name="subjectNounSingular" value="<%=h(form.getSubjectNounSingular())%>">
+    <input type="hidden" name="subjectNounPlural" value="<%=h(form.getSubjectNounPlural())%>">
+    <input type="hidden" name="subjectColumnName" value="<%=h(form.getSubjectColumnName())%>">
     <input type="hidden" name="folderName" value="<%=h(form.getFolderName())%>">
-    <input type="hidden" name="parentFolderId" value="<%=form.getParentFolderId()%>">
+    <input type="hidden" name="parentFolderId" value="<%=h(form.getParentFolderId())%>">
 <%
 }
 if (form.getWizardStep() == DesignerController.WizardStep.SHOW_SAMPLES)

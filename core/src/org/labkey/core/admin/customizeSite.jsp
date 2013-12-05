@@ -359,7 +359,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <input type="hidden" name="upgradeInProgress" value="<%=bean.upgradeInProgress ? 0 : 1%>" />
     <input type="hidden" name="sequestServer" value="" />
 </form>
-<form name="networkdrivetest" action="<%=buildURL(AdminController.ShowNetworkDriveTestAction.class)%>" enctype="multipart/form-data" method="post" target="_new">
+<form name="networkdrivetest" action="<%=h(buildURL(AdminController.ShowNetworkDriveTestAction.class))%>" enctype="multipart/form-data" method="post" target="_new">
     <input type="hidden" name="upgradeInProgress" value="<%=bean.upgradeInProgress ? 0 : 1%>" />
     <input type="hidden" name="networkDriveLetter" value="" />
     <input type="hidden" name="networkDrivePath" value="" />

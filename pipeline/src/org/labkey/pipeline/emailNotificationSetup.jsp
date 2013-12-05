@@ -118,16 +118,16 @@
 
 </script>
 
-<form action="updateEmailNotification.view" method="post">
+<form action="<%=h(buildURL(PipelineController.UpdateEmailNotificationAction.class))%>" method="post">
     <table>
         <tr><td colspan=2>Check the appropriate box(es) to configure notification emails to be sent
-            when a pipeline job succeeds and/or fails.<br/><%=c.isRoot() ? "" : "<span class=\"labkey-error\">*</span>&nbsp;Indicates that the field value has been inherited from the site wide configuration."%>
+            when a pipeline job succeeds and/or fails.<br/><%=text(c.isRoot() ? "" : "<span class=\"labkey-error\">*</span>&nbsp;Indicates that the field value has been inherited from the site wide configuration.")%>
         </td></tr>
     </table>
     <table>
         <tr><td colspan="2"><input type=checkbox id="notifyOnSuccess" name="notifyOnSuccess" onclick="return updateControls(this, false);"<%=checked(displaySuccess.equals("none"))%>>Send email notifications if the pipeline job succeeds</td></tr>
-        <tr style="display:<%=displaySuccess%>"><td>&nbsp;&nbsp;&nbsp;</td><td><input value="true" type=checkbox id="notifyOwnerOnSuccess" name="notifyOwnerOnSuccess"<%=checked(notifyOwnerOnSuccess)%>><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_SUCCESS, c, "Send to owner")%></td></tr>
-        <tr style="display:<%=displaySuccess%>"><td></td><td><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_USERS_ON_SUCCESS, c, "Additional users to notify<br/><i>Enter one or more email addresses, each on its own line:</i>")%></td></tr>
+        <tr style="display:<%=displaySuccess%>"><td>&nbsp;&nbsp;&nbsp;</td><td><input value="true" type=checkbox id="notifyOwnerOnSuccess" name="notifyOwnerOnSuccess"<%=checked(notifyOwnerOnSuccess)%>><%=text(getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_SUCCESS, c, "Send to owner"))%></td></tr>
+        <tr style="display:<%=displaySuccess%>"><td></td><td><%=text(getTitle(PipelineEmailPreferences.PREF_NOTIFY_USERS_ON_SUCCESS, c, "Additional users to notify<br/><i>Enter one or more email addresses, each on its own line:</i>"))%></td></tr>
         <tr style="display:<%=displaySuccess%>"><td></td><td>
             <labkey:autoCompleteTextArea
                     name="notifyUsersOnSuccess"

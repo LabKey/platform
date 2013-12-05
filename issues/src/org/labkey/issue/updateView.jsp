@@ -307,10 +307,10 @@ window.onbeforeunload = LABKEY.beforeunload(isDirty);
 
         StringBuilder sb = new StringBuilder();
         sb.append("Email notifications can be controlled via either this notification list (one email address per line) ");
-        sb.append("or your user <a href=\"emailPrefs.view");
+        sb.append("or your user <a href=\"" + h(buildURL(IssuesController.EmailPrefsAction.class)));
         if (issueId != 0)
         {
-            sb.append("?issueId=").append(issueId);
+            sb.append("issueId=").append(issueId);
         }
         sb.append("\">email preferences</a>. ");
         if (emailPrefs != 0)

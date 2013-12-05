@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.study.visitmanager.VisitManager.VisitStatistic" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
@@ -51,11 +52,11 @@
 %>
 <labkey:errors/>
 
-<form action="deleteVisit.view" method=POST>
-    Do you want to delete <%=visitManager.getLabel() %> <b><%=visit.getDisplayString()%></b>?<p/>
+<form action="<%=h(urlFor(StudyController.DeleteVisitAction.class))%>" method=POST>
+    Do you want to delete <%=h(visitManager.getLabel())%> <b><%=h(visit.getDisplayString())%></b>?<p/>
     <%if (datasetRowCount != 0)
     {
-        %>This <%=visitManager.getLabel()%> has <%=datasetRowCount%> dataset results
+        %>This <%=h(visitManager.getLabel())%> has <%=datasetRowCount%> dataset results
         <%
         if (vialCount > 0)
         {

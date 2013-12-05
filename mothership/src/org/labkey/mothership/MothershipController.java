@@ -948,10 +948,10 @@ public class MothershipController extends SpringActionController
     {
         StringBuilder builder = new StringBuilder();
         builder.append(PageFlowUtil.textLink("View Exceptions", "showExceptions.view?" + DataRegion.LAST_FILTER_PARAM + "=true") + " " +
-                PageFlowUtil.textLink("View All Installations", "showInstallations.view") + " " +
-                PageFlowUtil.textLink("Configure Mothership", "editUpgradeMessage.view") + " " +
-                PageFlowUtil.textLink("List of Releases", "showReleases.view") + " " +
-                PageFlowUtil.textLink("Reports", "reports.view") + " ");
+                PageFlowUtil.textLink("View All Installations", new ActionURL(ShowInstallationsAction.class,getContainer())) + " " +
+                PageFlowUtil.textLink("Configure Mothership", new ActionURL(EditUpgradeMessageAction.class,getContainer())) + " " +
+                PageFlowUtil.textLink("List of Releases", new ActionURL(ShowReleasesAction.class,getContainer())) + " " +
+                PageFlowUtil.textLink("Reports", new ActionURL(ReportsAction.class,getContainer())) + " ");
 
         if (getUser() != null && !getUser().isGuest())
         {
