@@ -72,7 +72,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     private Container container;
     private boolean _isPipelineFiles;       // viewing @pipeline files
 
-    private static final String JSP = "/org/labkey/api/files/view/ext4FilesWebPart.jsp";
+    private static final String JSP = "/org/labkey/api/files/view/filesWebPart.jsp";
     private static final String EXT3_JSP = "/org/labkey/api/files/view/fileContent.jsp";
     private static final String JSP_RIGHT = "/org/labkey/filecontent/view/files.jsp";
 
