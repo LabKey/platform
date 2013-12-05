@@ -610,7 +610,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         FileUtils.moveFile(file, targetFile);
 
                         // Add the file as an output to the run, and as being created by the script
-                        Pair<ExpData,String> outputData = DefaultAssayRunCreator.createdRelatedOutputData(context.getContainer(), Collections.<AssayDataType>emptyList(), baseName, targetFile);
+                        Pair<ExpData,String> outputData = DefaultAssayRunCreator.createdRelatedOutputData(context, baseName, targetFile);
                         if (outputData != null)
                         {
                             outputData.getKey().setSourceApplication(scriptPA);

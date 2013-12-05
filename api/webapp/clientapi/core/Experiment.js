@@ -756,12 +756,14 @@ LABKEY.Exp.Material.prototype.constructor = LABKEY.Exp.Material;
  * &lt;/form>
  * &lt;script type="text/javascript">
  *    LABKEY.Utils.requiresScript("FileUploadField.js");
+ *    // Optional - specify a protocolId so that the Exp.Data object is assigned the related LSID namespace.
+ *    var url = LABKEY.ActionURL.buildURL("assay", "assayFileUpload", LABKEY.ActionURL.getContainer(), { protocolId: 50 });
  *    Ext.onReady(function() {
  *       var form = new Ext.form.BasicForm(
  *       Ext.get("upload-run-form"), {
  *          fileUpload: true,
  *          frame: false,
- *          url: LABKEY.ActionURL.buildURL("assay", "assayFileUpload"),
+ *          url: url,
  *          listeners: {
  *             actioncomplete : function (form, action) {
  *                alert('Upload successful!');

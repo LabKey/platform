@@ -48,13 +48,13 @@ import java.util.Set;
  * User: klum
  * Date: Sep 22, 2009
  */
-public class DefaultDataTransformer implements DataTransformer<AssayProvider>
+public class DefaultDataTransformer<ProviderType extends AssayProvider> implements DataTransformer<ProviderType>
 {
     public static final String RUN_INFO_REPLACEMENT = "runInfo";
     public static final String SRC_DIR_REPLACEMENT = "srcDirectory";
     public static final String R_JESSIONID_REPLACEMENT = "rLabkeySessionId";
 
-    public TransformResult transformAndValidate(AssayRunUploadContext<AssayProvider> context, ExpRun run) throws ValidationException
+    public TransformResult transformAndValidate(AssayRunUploadContext<ProviderType> context, ExpRun run) throws ValidationException
     {
         boolean isDefault = isDefault(context.getProtocol());
         TransformResult result = DefaultTransformResult.createEmptyResult();
@@ -215,7 +215,7 @@ public class DefaultDataTransformer implements DataTransformer<AssayProvider>
     /**
      * Creates the session information string
      */
-    private String getSessionInfo(AssayRunUploadContext context)
+    private String getSessionInfo(AssayRunUploadContext<ProviderType> context)
     {
         StringBuilder sb = new StringBuilder();
         if (context.getRequest() != null)

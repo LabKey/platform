@@ -15,9 +15,9 @@
  */
 package org.labkey.api.study.assay;
 
+import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.util.FileType;
-import org.labkey.api.exp.api.DataType;
 
 /**
  * User: jeckels

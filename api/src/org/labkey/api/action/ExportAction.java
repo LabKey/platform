@@ -29,6 +29,16 @@ import javax.servlet.http.HttpServletResponse;
 */
 public abstract class ExportAction<FORM> extends SimpleViewAction<FORM>
 {
+    public ExportAction()
+    {
+        super();
+    }
+
+    protected ExportAction(Class<? extends FORM> formClass)
+    {
+        super(formClass);
+    }
+
     protected String getCommandClassMethodName()
     {
         return "export";

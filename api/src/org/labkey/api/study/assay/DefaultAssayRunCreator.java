@@ -82,9 +82,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         _provider = provider;
     }
 
-    public TransformResult transform(AssayRunUploadContext context, ExpRun run) throws ValidationException
+    public TransformResult transform(AssayRunUploadContext<ProviderType> context, ExpRun run) throws ValidationException
     {
-        DataTransformer transformer = getDataTransformer();
+        DataTransformer<ProviderType> transformer = getDataTransformer();
         if (transformer != null)
             return transformer.transformAndValidate(context, run);
 
@@ -192,7 +192,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     /**
      * @param batch if not null, the run group that's already created for this batch. If null, a new one needs to be created
      * @param run The run to save
-     * @param forceSaveBatchProps
      * @return the run and batch that were inserted
      */
     public ExpExperiment saveExperimentRun(final AssayRunUploadContext<ProviderType> context, @Nullable ExpExperiment batch, @NotNull ExpRun run, boolean forceSaveBatchProps) throws ExperimentException, ValidationException
@@ -388,7 +387,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
         else
         {
-            ExpData data = ExperimentService.get().createData(context.getContainer(), getProvider().getDataType());
+            AssayDataType dataType = getProvider().getDataType();
+            ExpData data = ExperimentService.get().createData(context.getContainer(), dataType);
             ExperimentDataHandler handler = data.findDataHandler();
 
             // this should assert to always be true
@@ -414,11 +414,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    protected void addInputMaterials(AssayRunUploadContext context, Map<ExpMaterial, String> inputMaterials, ParticipantVisitResolverType resolverType) throws ExperimentException
+    protected void addInputMaterials(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> inputMaterials, ParticipantVisitResolverType resolverType) throws ExperimentException
     {
     }
 
-    protected void addInputDatas(AssayRunUploadContext context, Map<ExpData, String> inputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException
+    protected void addInputDatas(AssayRunUploadContext<ProviderType> context, Map<ExpData, String> inputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException
     {
     }
 
@@ -455,35 +455,43 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         return data;
     }
 
-    protected void addOutputMaterials(AssayRunUploadContext context, Map<ExpMaterial, String> outputMaterials, ParticipantVisitResolverType resolverType) throws ExperimentException
+    protected void addOutputMaterials(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> outputMaterials, ParticipantVisitResolverType resolverType) throws ExperimentException
     {
     }
 
-    protected void addOutputDatas(AssayRunUploadContext context, Map<ExpData, String> outputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException
+    protected void addOutputDatas(AssayRunUploadContext<ProviderType> context, Map<ExpData, String> outputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException
     {
         Map<String, File> files = context.getUploadedData();
 
         for (Map.Entry<String, File> entry : files.entrySet())
         {
             ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), entry.getValue(), entry.getValue().getName(), getProvider().getDataType(), context.getReRunId() == null);
-            outputDatas.put(data, ExpDataRunInput.DEFAULT_ROLE);
+            AssayDataType dataType = context.getProvider().getDataType();
+            String role = ExpDataRunInput.DEFAULT_ROLE;
+            if (dataType != null && dataType.getFileType().isType(entry.getValue()))
+            {
+                if (dataType.getRole() != null)
+                {
+                    role = dataType.getRole();
+                }
+            }
+            outputDatas.put(data, role);
         }
 
         File primaryFile = files.get(AssayDataCollector.PRIMARY_FILE);
         if (primaryFile != null)
         {
-            addRelatedOutputDatas(context.getContainer(), outputDatas, primaryFile, Collections.<AssayDataType>emptyList());
+            addRelatedOutputDatas(context, outputDatas, primaryFile);
         }
     }
 
     /**
      * Add files that follow the general naming convention (same basename) as the primary file
-     * @param knownRelatedDataTypes data types that should be given a particular LSID or role, others file types
-     * will have them auto-generated based on their extension
      */
-    public void addRelatedOutputDatas(Container container, Map<ExpData, String> outputDatas, final File primaryFile, List<AssayDataType> knownRelatedDataTypes) throws ExperimentException
+    public void addRelatedOutputDatas(AssayRunUploadContext context, Map<ExpData, String> outputDatas, final File primaryFile) throws ExperimentException
     {
-        final String baseName = getProvider().getDataType().getFileType().getBaseName(primaryFile);
+        AssayDataType dataType = getProvider().getDataType();
+        final String baseName = dataType == null ? null : dataType.getFileType().getBaseName(primaryFile);
         if (baseName != null)
         {
             // Grab all the files that are related based on naming convention
@@ -492,7 +500,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             {
                 for (File relatedFile : relatedFiles)
                 {
-                    Pair<ExpData, String> dataOutput = createdRelatedOutputData(container, knownRelatedDataTypes, baseName, relatedFile);
+                    Pair<ExpData, String> dataOutput = createdRelatedOutputData(context, baseName, relatedFile);
                     if (dataOutput != null)
                     {
                         outputDatas.put(dataOutput.getKey(), dataOutput.getValue());
@@ -514,14 +522,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     /**
      * Create an ExpData object for the file, and figure out what its role name should be
-     * @return null if the file is already linked to another run 
+     * @return null if the file is already linked to another run
      */
     @Nullable
-    public static Pair<ExpData, String> createdRelatedOutputData(Container container, List<AssayDataType> knownRelatedDataTypes, String baseName, File relatedFile)
+    public static Pair<ExpData, String> createdRelatedOutputData(AssayRunUploadContext context, String baseName, File relatedFile)
     {
         String roleName = null;
         DataType dataType = null;
-        for (AssayDataType inputType : knownRelatedDataTypes)
+        for (AssayDataType inputType : context.getProvider().getRelatedDataTypes())
         {
             // Check if we recognize it as a specially handled file type
             if (inputType.getFileType().isMatch(relatedFile.getName(), baseName))
@@ -543,9 +551,13 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             {
                 roleName = null;
             }
+        }
+        if (dataType == null)
+        {
             dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
         }
-        ExpData data = createData(container, relatedFile, relatedFile.getName(), dataType, true);
+
+        ExpData data = createData(context.getContainer(), relatedFile, relatedFile.getName(), dataType, true);
         if (data.getSourceApplication() == null)
         {
             return new Pair<>(data, roleName);
@@ -660,8 +672,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         return _provider;
     }
 
-    public DataTransformer getDataTransformer()
+    public DataTransformer<ProviderType> getDataTransformer()
     {
-        return new DefaultDataTransformer();
+        return new DefaultDataTransformer<>();
     }
 }

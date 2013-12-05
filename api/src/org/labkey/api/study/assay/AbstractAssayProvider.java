@@ -84,7 +84,6 @@ import org.labkey.api.study.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.NavTree;
@@ -152,11 +151,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
     protected final String _protocolLSIDPrefix;
     protected final String _runLSIDPrefix;
     private final Module _declaringModule;
-    protected final AssayDataType _dataType;
+    @Nullable protected AssayDataType _dataType;
 
     public int _maxFileInputs = 1;
 
-    public AbstractAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, Module declaringModule)
+    public AbstractAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, @Nullable AssayDataType dataType, Module declaringModule)
     {
         _dataType = dataType;
         _protocolLSIDPrefix = protocolLSIDPrefix;
@@ -1248,9 +1247,16 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return protocol.getLSID() + "#" + propertySuffix;
     }
 
-    public AssayDataType getDataType()
+    @Nullable public AssayDataType getDataType()
     {
         return _dataType;
+    }
+
+    @NotNull
+    @Override
+    public List<AssayDataType> getRelatedDataTypes()
+    {
+        return Collections.emptyList();
     }
 
     public void setMaxFileInputs(int maxFileInputs)

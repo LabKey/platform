@@ -76,6 +76,16 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
         }
     }
 
+    public AbstractFileUploadAction()
+    {
+        super();
+    }
+
+    protected AbstractFileUploadAction(Class<? extends FORM> formClass)
+    {
+        super(formClass);
+    }
+
     public void export(FORM form, HttpServletResponse response, BindException errors) throws Exception
     {
         response.reset();

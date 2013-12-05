@@ -17,23 +17,25 @@
 package org.labkey.api.assay.dilution;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.exp.*;
-import org.labkey.api.study.actions.AssayRunUploadForm;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.study.actions.PlateUploadFormImpl;
 import org.labkey.api.study.assay.AssayDataCollector;
 import org.labkey.api.study.assay.AssayFileWriter;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.api.*;
-import org.labkey.api.study.actions.PlateUploadForm;
 import org.labkey.api.study.assay.PlateSamplePropertyHelper;
 import org.labkey.api.view.NotFoundException;
 
-import java.util.Map;
+import java.io.File;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Collections;
-import java.io.File;
+import java.util.Map;
 
 /**
  * User: brittp
@@ -109,7 +111,7 @@ public class DilutionRunUploadForm<Provider extends DilutionAssayProvider> exten
                 {
                     File possibleFile = data.getFile();
                     String dataLsid = data.getLSID();
-                    if (possibleFile != null && dataLsid != null && getProvider().getDataType().matches(new Lsid(dataLsid)))
+                    if (possibleFile != null && dataLsid != null && getProvider().getDataType() != null && getProvider().getDataType().matches(new Lsid(dataLsid)))
                     {
                         if (dataFile != null)
                         {

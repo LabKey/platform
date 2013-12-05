@@ -81,7 +81,10 @@ public class AssayService
 
         public AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy);
 
+        /** @return all of the assay protocols that are in scope in the given container */
         List<ExpProtocol> getAssayProtocols(Container container);
+
+        /** @return all of the assay protocols that are in scope in the given container, filtered to only include those that are owned by the given provider */
         List<ExpProtocol> getAssayProtocols(Container container, @Nullable AssayProvider provider);
 
         /**

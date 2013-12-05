@@ -50,5 +50,5 @@ public interface AssayRunCreator<ProviderType extends AssayProvider>
     public ExpExperiment saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable ExpExperiment batch, ExpRun run, boolean forceSaveBatchProps)
         throws ExperimentException, ValidationException;
 
-    DataTransformer getDataTransformer();
+    DataTransformer<ProviderType> getDataTransformer();
 }

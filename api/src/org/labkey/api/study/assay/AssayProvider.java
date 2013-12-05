@@ -232,7 +232,13 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /**
      * @return the data type that this run creates for its analyzed results
      */
-    AssayDataType getDataType();
+    @Nullable AssayDataType getDataType();
+
+    /**
+    * @return data types that should be given a particular LSID or role, others files which do not match any of the types
+    * will have them auto-generated based on their extension
+    */
+    @NotNull List<AssayDataType> getRelatedDataTypes();
 
     /**
      * @return a short description of this assay type - what kinds of data it can be used to analyze, etc.
