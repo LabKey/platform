@@ -1349,7 +1349,6 @@ public class AdminController extends SpringActionController
         private String _themeFont;
         private String _folderDisplayMode;
         private boolean _enableHelpMenu;
-        private String _navigationBarWidth;
         private String _logoHref;
         private String _companyName;
         private String _systemEmailAddress;
@@ -1360,6 +1359,8 @@ public class AdminController extends SpringActionController
         private String _fileRootOption;
         private String _supportEmail;
         private String[] _enabledCloudStore;
+        private String _defaultDateFormat;
+        private String _defaultNumberFormat;
 
         public enum FileRootProp
         {
@@ -1443,17 +1444,6 @@ public class AdminController extends SpringActionController
         public void setEnableHelpMenu(boolean enableHelpMenu)
         {
             _enableHelpMenu = enableHelpMenu;
-        }
-
-        // TODO: Delete: not used?
-        public String getNavigationBarWidth()
-        {
-            return _navigationBarWidth;
-        }
-
-        public void setNavigationBarWidth(String navigationBarWidth)
-        {
-            _navigationBarWidth = navigationBarWidth;
         }
 
         public String getLogoHref()
@@ -1588,6 +1578,28 @@ public class AdminController extends SpringActionController
         public void setEnabledCloudStore(String[] enabledCloudStore)
         {
             _enabledCloudStore = enabledCloudStore;
+        }
+
+        public String getDefaultDateFormat()
+        {
+            return _defaultDateFormat;
+        }
+
+        @SuppressWarnings("UnusedDeclaration")
+        public void setDefaultDateFormat(String defaultDateFormat)
+        {
+            _defaultDateFormat = defaultDateFormat;
+        }
+
+        public String getDefaultNumberFormat()
+        {
+            return _defaultNumberFormat;
+        }
+
+        @SuppressWarnings("UnusedDeclaration")
+        public void setDefaultNumberFormat(String defaultNumberFormat)
+        {
+            _defaultNumberFormat = defaultNumberFormat;
         }
     }
 

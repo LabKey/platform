@@ -28,6 +28,8 @@
 <%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 
@@ -167,6 +169,56 @@
 <tr>
     <td class="labkey-form-label">Organization name (appears in notification emails sent by system)</td>
     <td><input type="text" name="companyName" size="50" value="<%= h(laf.getCompanyName()) %>"></td>
+</tr>
+<tr>
+    <td>&nbsp;</td>
+</tr>
+
+<%
+    String decimalFormatHelp = "The format string for numbers must be compatible with the format that the java class " +
+            "<code>DecimalFormat</code> understands. A valid <code>DecimalFormat</code> is a pattern " +
+            "specifying a prefix, numeric part, and suffix. For more information see the " +
+            "<a href=\"" + Formats.getDecimalFormatDocumentationURL() + "\" target=\"blank\">java&nbsp;documentation</a>. " +
+            "The following table has an abbreviated guide to pattern symbols:<br/>" +
+            "<table class=\"labkey-data-region labkey-show-borders\"><colgroup><col><col><col><col></colgroup>" +
+            "<tr class=\"labkey-frame\"><th align=left>Symbol<th align=left>Location<th align=left>Localized?<th align=left>Meaning</tr>" +
+            "<tr valign=top><td><code>0</code><td>Number<td>Yes<td>Digit</tr>" +
+            "<tr valign=top class=\"labkey-alternate-row\"><td><code>#</code><td>Number<td>Yes<td>Digit, zero shows as absent</tr>" +
+            "<tr valign=top><td><code>.</code><td>Number<td>Yes<td>Decimal separator or monetary decimal separator</tr>" +
+            "<tr valign=top class=\"labkey-alternate-row\"><td><code>-</code><td>Number<td>Yes<td>Minus sign</tr>" +
+            "<tr valign=top><td><code>,</code><td>Number<td>Yes<td>Grouping separator</tr></table>";
+    String dateFormatHelp = "The format string for dates must be compatible with the format that the java class " +
+            "<code>SimpleDateFormat</code> understands. For more information see the " +
+            "<a href=\"" + DateUtil.getSimpleDateFormatDocumentationURL() + "\" target=\"blank\">java&nbsp;documentation</a>. " +
+            "The following table has a partial guide to pattern symbols:<br/>" +
+            "<table class=\"labkey-data-region labkey-show-borders\"><colgroup><col><col><col></colgroup>" +
+            "<tr class=\"labkey-frame\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>" +
+            "<tr><td><code>G</code><td>Era designator<td><code>AD</code></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>y</code><td>Year<td><code>1996</code>; <code>96</code></tr>" +
+            "<tr><td><code>M</code><td>Month in year<td><code>July</code>; <code>Jul</code>; <code>07</code></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>w</code><td>Week in year<td><code>27</code></td></tr>" +
+            "<tr><td><code>W</code><td>Week in month<td><code>2</code></td></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>D</code><td>Day in year<td><code>189</code></td></tr>" +
+            "<tr><td><code>d</code><td>Day in month<td><code>10</code></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>F</code><td>Day of week in month<td><code>2</code></tr>" +
+            "<tr><td><code>E</code><td>Day in week<td><code>Tuesday</code>; <code>Tue</code></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>a</code><td>Am/pm marker<td><code>PM</code></tr>" +
+            "<tr><td><code>H</code><td>Hour in day (0-23)<td><code>0</code></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>k</code><td>Hour in day (1-24)<td><code>24</code></tr>" +
+            "<tr><td><code>K</code><td>Hour in am/pm (0-11)<td><code>0</code></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>h</code><td>Hour in am/pm (1-12)<td><code>12</code></tr></table>";
+%>
+<tr>
+    <td colspan=2>Customize default formats (<%=bean.helpLink%>)</td>
+</tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
+<tr>
+    <td class="labkey-form-label">Default date format<%=PageFlowUtil.helpPopup("Date format", dateFormatHelp, true)%></td>
+    <td><input type="text" name="defaultDateFormat" size="50" value="<%= h(laf.getDefaultDateFormat()) %>"></td>
+</tr>
+<tr>
+    <td class="labkey-form-label">Default number format<%=PageFlowUtil.helpPopup("Number format", decimalFormatHelp, true)%></td>
+    <td><input type="text" name="defaultNumberFormat" size="50" value="<%= h(laf.getDefaultNumberFormat()) %>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>

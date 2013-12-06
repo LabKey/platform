@@ -17,6 +17,7 @@
 package org.labkey.core.admin;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.SpringActionController;
@@ -66,6 +67,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -175,7 +177,6 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         props.setSystemDescription(form.getSystemDescription());
         props.setLogoHref(form.getLogoHref());
         props.setSystemShortName(form.getSystemShortName());
-        props.setNavigationBarWidth(form.getNavigationBarWidth());
         props.setReportAProblemPath(form.getReportAProblemPath());
 
         if (!StringUtils.isBlank(form.getSupportEmail()))
@@ -201,6 +202,37 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         FolderDisplayMode folderDisplayMode = FolderDisplayMode.fromString(form.getFolderDisplayMode());
         props.setFolderDisplayMode(folderDisplayMode);
         props.setHelpMenuEnabled(form.isEnableHelpMenu());
+
+        String defaultDateFormat = StringUtils.trimToNull(form.getDefaultDateFormat());
+        if (null != defaultDateFormat)
+        {
+            try
+            {
+                FastDateFormat.getInstance(defaultDateFormat);
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Invalid date format: " + e.getMessage());
+                return false;
+            }
+        }
+        props.setDefaultDateFormat(defaultDateFormat);
+
+        String defaultNumberFormat = StringUtils.trimToNull(form.getDefaultNumberFormat());
+        if (null != defaultNumberFormat)
+        {
+            try
+            {
+                new DecimalFormat(defaultNumberFormat);
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Invalid number format: " + e.getMessage());
+                return false;
+            }
+        }
+        props.setDefaultNumberFormat(defaultNumberFormat);
+
         props.save();
 
         //write an audit log event
