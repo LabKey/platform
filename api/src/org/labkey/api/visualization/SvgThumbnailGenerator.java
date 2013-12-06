@@ -24,7 +24,7 @@ import org.labkey.api.thumbnail.DynamicThumbnailProvider;
  */
 
 // Primarily a marker interface that indicates the provider generates its thumbnail from provided SVG. Used by the
-// VisualizationController to generate thumbnails for time charts (and soon box/scatter)
+// VisualizationController to generate thumbnails for time and box/scatter charts
 public interface SvgThumbnailGenerator extends DynamicThumbnailProvider
 {
     public void setSvg(String svg);
