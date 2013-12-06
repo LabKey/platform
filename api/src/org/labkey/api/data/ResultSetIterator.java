@@ -31,11 +31,6 @@ public class ResultSetIterator implements Iterator<Map<String, Object>>
     private boolean _didNext = false;
     private boolean _hasNext = false;
 
-    public static ResultSetIterator get(ResultSet rs)
-    {
-        return new ResultSetIterator(rs);
-    }
-
     public ResultSetIterator(ResultSet rs)
     {
         _rs = rs;
