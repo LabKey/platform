@@ -617,7 +617,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
 
     protected _HtmlString formAction(Class<? extends Controller> actionClass, Method method)
     {
-        return new _HtmlString("action=\"" + SpringActionController.getActionName(actionClass) + "." + method.getSuffix() + "\" method=\"" + method.getMethod() + "\"");
+        return new _HtmlString("action=\"" + buildURL(actionClass,method) + "\" method=\"" + method.getMethod() + "\"");
     }
 
     // Provides a unique integer within the context of this request.  Handy for generating element ids, etc. See UniqueID for caveats and warnings.
@@ -629,6 +629,11 @@ abstract public class JspBase extends JspContext implements HasViewContext
     /** simple link to different action in same container w/no parameters */
     protected String buildURL(Class<? extends Controller> actionClass)
     {
+        return buildURL(actionClass, Method.Get);
+    }
+
+    protected String buildURL(Class<? extends Controller> actionClass, Method m)
+    {
         if (AppProps.getInstance().getUseContainerRelativeURL())
         {
             String controller = SpringActionController.getControllerName(actionClass);
@@ -637,7 +642,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
             String action = SpringActionController.getActionName(actionClass);
             if (action == null)
                 throw new IllegalStateException("Could not find an action name for " + actionClass);
-            return controller + "-" + action + ".view?";
+            return controller + "-" + action + "." + m.getSuffix() + "?";
         }
         ActionURL v = getViewContext().getActionURL();
         ActionURL u = new ActionURL(actionClass, getViewContext().getContainer());
