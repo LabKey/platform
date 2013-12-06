@@ -48,7 +48,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             border: false,
             disabled: this.pointClickFn == null,                    // name is for selenium testing
             html: '<textarea id="' + this.pointClickTextAreaId + '" name="point-click-fn-textarea" onchange="Ext4.ComponentManager.get(\'' + this.getId() + '\').hasChanges = true;"'
-                    + 'wrap="on" rows="23" cols="120" style="width: 100%;"></textarea>',
+                    + 'wrap="on" rows="21" cols="120" style="width: 100%;"></textarea>',
             listeners: {
                 afterrender: function(cmp) {
                     var code = Ext4.get(this.pointClickTextAreaId);
