@@ -103,4 +103,14 @@ public class WriteableLookAndFeelProperties extends LookAndFeelProperties
     {
         storeStringValue(REPORT_A_PROBLEM_PATH_PROP, reportAProblemPath);
     }
+
+    public void setDefaultDateFormat(String defaultDateFormat)
+    {
+        storeStringValue(DEFAULT_DATE_FORMAT, defaultDateFormat);
+    }
+
+    public void setDefaultNumberFormat(String defaultNumberFormat)
+    {
+        storeStringValue(DEFAULT_NUMBER_FORMAT, defaultNumberFormat);
+    }
 }

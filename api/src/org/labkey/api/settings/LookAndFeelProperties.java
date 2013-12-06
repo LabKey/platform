@@ -44,7 +44,10 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
     protected static final String SUPPORT_EMAIL = "supportEmail";
     protected static final String REPORT_A_PROBLEM_PATH_PROP = "reportAProblemPath";
 
-    private Container _c;
+    protected static final String DEFAULT_DATE_FORMAT = "defaultDateFormatString";
+    protected static final String DEFAULT_NUMBER_FORMAT = "defaultNumberFormatString";
+
+    private final Container _c;
 
     protected String getType()
     {
@@ -170,6 +173,18 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
         return path.replace("${contextPath}", AppProps.getInstance().getContextPath());
     }
 
+    public String getDefaultDateFormat()
+    {
+        // TODO: Inherit up the entire folder hierarchy
+        return lookupStringValue(DEFAULT_DATE_FORMAT, null);
+    }
+
+    public String getDefaultNumberFormat()
+    {
+        // TODO: Inherit up the entire folder hierarchy
+        return lookupStringValue(DEFAULT_NUMBER_FORMAT, null);
+    }
+
     public boolean isMenuUIEnabled()
     {
         return true;
@@ -188,5 +203,4 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
             return c;
         return c.getProject();
     }
-
 }
