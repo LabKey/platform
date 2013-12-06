@@ -282,14 +282,4 @@ public class UmlsController extends SpringActionController
 
         return new SqlSelector(umls, sqlf).getValueMap();
     }
-
-    
-    DbSchema _schema;
-
-    DbSchema getSchema()
-    {
-        if (null == _schema)
-            _schema = DbSchema.get("umls");
-        return _schema;
-    }
 }

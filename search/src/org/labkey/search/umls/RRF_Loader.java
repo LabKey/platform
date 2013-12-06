@@ -67,7 +67,7 @@ public class RRF_Loader extends Job
     {
         try
         {
-            _umls = DbSchema.get("umls");
+            _umls = UmlsSchema.getSchema();
 
             JSONObject o = new JSONObject();
             o.put("count",0);

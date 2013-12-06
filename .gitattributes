@@ -2678,6 +2678,7 @@ search/src/org/labkey/search/umls/Relationship.java -text
 search/src/org/labkey/search/umls/SemanticTree.java -text
 search/src/org/labkey/search/umls/SemanticType.java -text
 search/src/org/labkey/search/umls/UmlsController.java -text
+search/src/org/labkey/search/umls/UmlsSchema.java -text
 search/src/org/labkey/search/umls/concept.jsp -text
 search/src/org/labkey/search/umls/index.jsp -text
 search/src/org/labkey/search/view/DefaultSearchResultTemplate.java -text

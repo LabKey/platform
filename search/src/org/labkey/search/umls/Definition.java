@@ -17,8 +17,7 @@ package org.labkey.search.umls;
 
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.ResultSetIterator;
-import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.data.ResultSetSelector;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -116,18 +115,13 @@ public class Definition // MRDEF
             @Override
             public ArrayList<Definition> handleArrayList(ResultSet rs) throws SQLException
             {
-                ArrayList<Definition> list = new ArrayList<>();
-                ResultSetIterator iter = new ResultSetIterator(rs);
-                while (iter.hasNext())
-                    list.add(new Definition(iter.next()));
-                return list;
+                return new ResultSetSelector(UmlsSchema.getScope(), rs).getArrayList(Definition.class);
             }
 
             @Override
             public Definition[] handleArray(ResultSet rs) throws SQLException
             {
-                ArrayList<Definition> list = handleArrayList(rs);
-                return list.toArray(new Definition[list.size()]);
+                return new ResultSetSelector(UmlsSchema.getScope(), rs).getArray(Definition.class);
             }
         });
     }

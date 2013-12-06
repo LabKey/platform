@@ -37,6 +37,7 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
+<%@ page import="org.labkey.search.umls.UmlsSchema" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -81,7 +82,7 @@ Set<String> preferredSAB = PageFlowUtil.set("SNOMEDCT","LCN","MSH","NCI");
 <%
 if (null != CUI)
 {
-    DbSchema umls = DbSchema.get("umls");
+    DbSchema umls = UmlsSchema.getSchema();
     ConceptName[] names = UmlsController.getNames(umls,CUI);
     if (names.length == 0)
     {

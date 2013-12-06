@@ -17,8 +17,7 @@ package org.labkey.search.umls;
 
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.ResultSetIterator;
-import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.data.ResultSetSelector;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -112,18 +111,13 @@ public class SemanticType // MRSTY
             @Override
             public ArrayList<SemanticType> handleArrayList(ResultSet rs) throws SQLException
             {
-                ArrayList<SemanticType> list = new ArrayList<>();
-                ResultSetIterator iter = new ResultSetIterator(rs);
-                while (iter.hasNext())
-                    list.add(new SemanticType(iter.next()));
-                return list;
+                return new ResultSetSelector(UmlsSchema.getScope(), rs).getArrayList(SemanticType.class);
             }
 
             @Override
             public SemanticType[] handleArray(ResultSet rs) throws SQLException
             {
-                ArrayList<SemanticType> list = handleArrayList(rs);
-                return list.toArray(new SemanticType[list.size()]);
+                return new ResultSetSelector(UmlsSchema.getScope(), rs).getArray(SemanticType.class);
             }
         });
     }
