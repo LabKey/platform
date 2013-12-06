@@ -39,6 +39,7 @@ var hemoglobinPathLayer = new LABKEY.vis.Layer({
 });
 
 var plotConfig = {
+    rendererType: 'd3',
 	renderTo: 'chart',
     labels: {
         x: {value: "Days Since Start Date"},
@@ -82,7 +83,6 @@ var plotConfig = {
 };
 
 var plot = new LABKEY.vis.Plot(plotConfig);
-
 plot.addLayer(CD4PathLayer);
 plot.addLayer(CD4PointLayer);
 //plot.addLayer(hemoglobinPathLayer);
@@ -140,6 +140,7 @@ var individualPathLayer = new LABKEY.vis.Layer({
 
 var errorPlotConfig = {
     renderTo: 'errorChart',
+    rendererType: 'd3',
     width: 900,
     height: 300,
     labels: {
@@ -206,6 +207,7 @@ var coffeePathLayer = new LABKEY.vis.Layer({
 
 var coffeePlot = new LABKEY.vis.Plot({
     renderTo: 'coffeePlot',
+    rendererType: 'd3',
     width: 900,
     height: 300,
     labels: {
@@ -277,6 +279,7 @@ var medianLineLayer = new LABKEY.vis.Layer({
 
 var boxPlot = new LABKEY.vis.Plot({
     renderTo: 'box',
+    rendererType: 'd3',
     width: 900,
     height: 300,
     labels: {
@@ -310,6 +313,7 @@ var boxPlot = new LABKEY.vis.Plot({
 
 var discreteScatter = new LABKEY.vis.Plot({
     renderTo: 'discreteScatter',
+    rendererType: 'd3',
     width: 900,
     height: 300,
     labels: {
@@ -329,6 +333,9 @@ var discreteScatter = new LABKEY.vis.Plot({
         yLeft: 'age',
         x: 'group',
         color: 'group',
+        hoverText: function(row) {
+            return row.age + '\n' + row.group;
+        },
         pointClickFn: function(event, data){
             console.log(data);
         }
@@ -339,7 +346,7 @@ var discreteScatter = new LABKEY.vis.Plot({
         },
         yLeft: {
 //            scaleType: 'discrete',
-//            domain: ['10', '20', '30', '40', '50', '60', '70', '80', '90']
+//            domain: ['40', '50']
             scaleType: 'continuous',
             trans: 'linear'
         }
@@ -357,7 +364,7 @@ var pGeom = new LABKEY.vis.Geom.Point({
 
 var scatterPlot = new LABKEY.vis.Plot({
     renderTo: 'scatter',
-//    rendererType: 'd3',
+    rendererType: 'd3',
     width: 900,
     height: 700,
     clipRect: false,
@@ -376,16 +383,19 @@ var scatterPlot = new LABKEY.vis.Plot({
                 click: function(){console.log("Clicking the X Axis!")}
             }
         },
+        yRight: {
+            value: "y-right",
+            lookClickable: true,
+            listeners: {
+                click: function(){console.log("Clicking the Y-Right Axis!")}
+            }
+        },
         y: {
             value:"Y Axis",
             lookClickable: true,
             listeners: {
-                click: function(){console.log("Clicking the Y Axis!")}
+                click: function(){console.log("Clicking the Y-Left Axis!")}
             }
-        },
-        yRight: {
-            value: "y-right",
-            lookClickable: true
         }
     },
     layers: [new LABKEY.vis.Layer({
@@ -394,6 +404,7 @@ var scatterPlot = new LABKEY.vis.Plot({
         aes: {
             x:'x',
             y: 'y',
+//            yRight: 'y',
             size: 'z'
         }
     })],
@@ -405,6 +416,7 @@ var scatterPlot = new LABKEY.vis.Plot({
 
 var colorScatter = new LABKEY.vis.Plot({
     renderTo: 'colorScatter',
+    rendererType: 'd3',
     width: 900,
     height: 700,
     clipRect: false,
@@ -432,6 +444,7 @@ var colorScatter = new LABKEY.vis.Plot({
 
 var statFnPlot = new LABKEY.vis.Plot({
     renderTo: 'statFn',
+    rendererType: 'd3',
     width: 900,
     height: 300,
     clipRect: false,

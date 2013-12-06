@@ -127,17 +127,13 @@ LABKEY.vis.Scale.Shape = function(){
         return 'M0,' + s + 'L' + s + ',' + -s + 'L' + -s + ',' + -s + ' Z';
     };
     var x = function(s){
-        // TODO: eliminate x and y from this.
-        var x = 0;
-        var y = 0;
         var r = s / 2;
-        return 'M' + (x) + ',' + (y + r) +
-                'L' + (x + r) + ',' + (y + 2*r) + 'L' + (x + 2*r) + ',' + (y + r) +
-                'L' + (x + r) + ',' + (y) + 'L' + (x + 2*r) + ',' + (y - r) +
-                'L' + (x + r) + ',' + (y - 2*r) + 'L' + (x) + ',' + (y - r) +
-                'L' + (x - r) + ',' + (y - 2*r) + 'L' + (x - 2*r) + ',' + (y - r) +
-                'L' + (x - r) + ',' + (y) + 'L' + (x - 2*r) + ',' + (y + r) +
-                'L' + (x - r) + ',' + (y + 2*r) + 'L' + (x) + ',' + (y + r) + 'Z';
+        return 'M0,' + r + 'L' + r + ',' + (2*r) + 'L' + (2*r) + ',' + r +
+                'L' + r + ',0L' + (2*r) + ',' + -r +
+                'L' + r + ',' + (-2*r) + 'L0,' + -r +
+                'L' + -r + ',' + (-2*r) + 'L' + (-2*r) + ',' + -r +
+                'L' + -r + ',0L' + (-2*r) + ',' + r +
+                'L' + -r + ',' + (2*r) + 'L0,' + r + 'Z';
     };
 
     return d3.scale.ordinal().range([circle, triangle, square, diamond, x]);
