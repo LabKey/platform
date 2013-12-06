@@ -469,26 +469,19 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     @Override
     public void deleteAttachment(AttachmentParent parent, String name, @Nullable User auditUser)
     {
-        try
+        Attachment att = getAttachment(parent,name);
+
+        if (null != att)
         {
-            Attachment att = getAttachment(parent,name);
-
-            if (null != att)
-            {
-                SearchService ss = ServiceRegistry.get(SearchService.class);
-                ss.deleteResource(makeDocId(parent, att.getName()));
-            }
-
-            Table.execute(coreTables().getSchema(), sqlDelete(), parent.getEntityId(), name);
-            if (parent instanceof AttachmentDirectory)
-                ((AttachmentDirectory)parent).deleteAttachment(auditUser, name);
-
-            AttachmentCache.removeAttachments(parent);
+            SearchService ss = ServiceRegistry.get(SearchService.class);
+            ss.deleteResource(makeDocId(parent, att.getName()));
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+
+        new SqlExecutor(coreTables().getSchema()).execute(sqlDelete(), parent.getEntityId(), name);
+        if (parent instanceof AttachmentDirectory)
+            ((AttachmentDirectory)parent).deleteAttachment(auditUser, name);
+
+        AttachmentCache.removeAttachments(parent);
 
         if (null != auditUser)
             addAuditEvent(auditUser, parent, name, "The attachment " + name + " was deleted");

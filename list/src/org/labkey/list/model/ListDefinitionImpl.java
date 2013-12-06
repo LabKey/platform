@@ -18,11 +18,7 @@ package org.labkey.list.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.announcements.DiscussionService;
-import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
@@ -35,7 +31,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListImportProgress;
@@ -58,7 +53,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.list.client.ListEditorService;
 import org.labkey.list.controllers.ListController;
-import org.labkey.list.view.ListItemAttachmentParent;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
@@ -67,10 +61,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static org.labkey.api.util.GUID.makeGUID;
 

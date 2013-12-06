@@ -140,7 +140,7 @@ public class StudyDesignManager
         design.setContainer(newContainer);
         Table.update(user, getStudyDesignTable(), design, design.getStudyId());
         String sql = "UPDATE " + getStudyVersionTable() + " SET Container = ? WHERE Container = ? AND StudyId = ?";
-        Table.execute(getSchema(), sql, newContainer.getId(), oldContainer.getId(), design.getStudyId());
+        new SqlExecutor(getSchema()).execute(sql, newContainer, oldContainer, design.getStudyId());
         
         return design;
     }

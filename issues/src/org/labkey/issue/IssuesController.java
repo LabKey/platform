@@ -420,21 +420,16 @@ public class IssuesController extends SpringActionController
 
             if (issueIds.isEmpty())
             {
-                ResultSet rs = null;
                 issueIds = new LinkedHashSet<>();
-                try
+
+                try (ResultSet rs = getIssuesResultSet())
                 {
-                    rs = getIssuesResultSet();
                     int issueColumnIndex = rs.findColumn("issueId");
 
                     while (rs.next())
                     {
                         issueIds.add(rs.getString(issueColumnIndex));
                     }
-                }
-                finally
-                {
-                    ResultSetUtil.close(rs);
                 }
             }
 
@@ -1768,53 +1763,45 @@ public class IssuesController extends SpringActionController
             limit = 20;
 
         List<Issue.Comment> result = new ArrayList<>(limit);
-        ResultSet rs = null;
-        try
+
+        SimpleFilter filter = new SimpleFilter();
+        ContainerFilter containerFilter = new ContainerFilter.CurrentAndSubfolders(user);
+        FieldKey containerFieldKey = FieldKey.fromParts("IssueId_Container");
+        filter.addCondition(containerFilter.createFilterClause(IssuesSchema.getInstance().getSchema(), containerFieldKey, container));
+
+        Sort sort = new Sort("-Created");
+
+        // Selecting comments as maps so we can get the issue id -- it's not on the Comment entity.
+        List<FieldKey> fields = new ArrayList<>(IssuesSchema.getInstance().getTableInfoComments().getDefaultVisibleColumns());
+        fields.add(containerFieldKey);
+
+        Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(IssuesSchema.getInstance().getTableInfoComments(), fields);
+
+        TableSelector selector = new TableSelector(IssuesSchema.getInstance().getTableInfoComments(), columnMap.values(), filter, sort);
+        selector.setMaxRows(limit);
+        Collection<Map<String, Object>> comments = selector.getMapCollection();
+        ObjectFactory<Issue.Comment> commentFactory = ObjectFactory.Registry.getFactory(Issue.Comment.class);
+        Map<Integer, Issue> issuesIds = new HashMap<>();
+
+        for (Map<String, Object> comment : comments)
         {
-            SimpleFilter filter = new SimpleFilter();
-            ContainerFilter containerFilter = new ContainerFilter.CurrentAndSubfolders(user);
-            FieldKey containerFieldKey = FieldKey.fromParts("IssueId_Container");
-            filter.addCondition(containerFilter.createFilterClause(IssuesSchema.getInstance().getSchema(), containerFieldKey, container));
+            Integer issueId = (Integer)comment.get("issueid");
+            if (issueId == null)
+                continue;
 
-            Sort sort = new Sort("-Created");
-
-            // Selecting comments as maps so we can get the issue id -- it's not on the Comment entity.
-            List<FieldKey> fields = new ArrayList<>(IssuesSchema.getInstance().getTableInfoComments().getDefaultVisibleColumns());
-            fields.add(containerFieldKey);
-
-            Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(IssuesSchema.getInstance().getTableInfoComments(), fields);
-
-            TableSelector selector = new TableSelector(IssuesSchema.getInstance().getTableInfoComments(), columnMap.values(), filter, sort);
-            selector.setMaxRows(limit);
-            Collection<Map<String, Object>> comments = selector.getMapCollection();
-
-            ObjectFactory<Issue.Comment> commentFactory = ObjectFactory.Registry.getFactory(Issue.Comment.class);
-
-            Map<Integer, Issue> issuesIds = new HashMap<>();
-            for (Map<String, Object> comment : comments)
+            Issue issue = issuesIds.get(issueId);
+            if (issue == null)
             {
-                Integer issueId = (Integer)comment.get("issueid");
-                if (issueId == null)
-                    continue;
-
-                Issue issue = issuesIds.get(issueId);
-                if (issue == null)
-                {
-                    issue = new TableSelector(IssuesSchema.getInstance().getTableInfoIssues()).getObject(issueId, Issue.class);
-                    issuesIds.put(issueId, issue);
-                }
-
-                Issue.Comment c = commentFactory.fromMap(comment);
-                c.setIssue(issue);
-                result.add(c);
+                issue = new TableSelector(IssuesSchema.getInstance().getTableInfoIssues()).getObject(issueId, Issue.class);
+                issuesIds.put(issueId, issue);
             }
 
-            return result;
+            Issue.Comment c = commentFactory.fromMap(comment);
+            c.setIssue(issue);
+            result.add(c);
         }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+
+        return result;
     }
 
 

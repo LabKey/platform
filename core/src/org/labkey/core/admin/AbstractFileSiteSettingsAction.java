@@ -25,7 +25,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
@@ -192,7 +192,7 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
                         }
                         // remove the old attachments
                         TableInfo tInfo = CoreSchema.getInstance().getTableInfoDocuments();
-                        Table.execute(tInfo.getSchema(), "DELETE FROM " + tInfo + " WHERE Parent = ?", root.getEntityId());
+                        new SqlExecutor(tInfo.getSchema()).execute("DELETE FROM " + tInfo + " WHERE Parent = ?", root.getEntityId());
                     }
                 }
             }

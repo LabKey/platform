@@ -37,11 +37,11 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
@@ -807,16 +807,9 @@ public class AnnouncementManager
 
     public static void setLastIndexed(String entityId, long ms)
     {
-        try
-        {
-            Table.execute(_comm.getSchema(),
-                    "UPDATE comm.announcements SET lastIndexed=? WHERE entityId=?",
-                    new Timestamp(ms), entityId);
-        }
-        catch (SQLException sql)
-        {
-            throw new RuntimeSQLException(sql);
-        }
+        new SqlExecutor(_comm.getSchema()).execute(
+                "UPDATE comm.Announcements SET LastIndexed=? WHERE EntityId=?",
+                new Timestamp(ms), entityId);
     }
 
 
@@ -866,9 +859,9 @@ public class AnnouncementManager
         private void purgeAnnouncements(Container c, boolean verifyEmpty) throws SQLException
         {
             String deleteDocuments = "DELETE FROM " + _core.getTableInfoDocuments() + " WHERE Container = ? AND Parent IN (SELECT EntityId FROM " + _comm.getTableInfoAnnouncements() + " WHERE Container = ?)";
-            int docs = Table.execute(_comm.getSchema(), deleteDocuments, c.getId(), c.getId());
+            int docs = new SqlExecutor(_comm.getSchema()).execute(deleteDocuments, c, c);
             String deleteAnnouncements = "DELETE FROM " + _comm.getTableInfoAnnouncements() + " WHERE Container = ?";
-            int pages = Table.execute(_comm.getSchema(), deleteAnnouncements, c.getId());
+            int pages = new SqlExecutor(_comm.getSchema()).execute(deleteAnnouncements, c);
 
             if (verifyEmpty)
             {

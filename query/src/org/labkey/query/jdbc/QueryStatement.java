@@ -15,23 +15,15 @@
  */
 package org.labkey.query.jdbc;
 
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.query.persist.QueryDef;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * User: matthewb

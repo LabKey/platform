@@ -24,6 +24,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -603,37 +604,30 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
      */
     private void ensureGroupParticipants()
     {
-        try
+        if (!_participantGroups.isEmpty())
         {
-            if (!_participantGroups.isEmpty())
+            StudySchema schema = StudySchema.getInstance();
+
+            StringBuilder groupInClause = new StringBuilder();
+            String delim = "";
+
+            groupInClause.append("(");
+            for (ParticipantGroup group : _participantGroups)
             {
-                StudySchema schema = StudySchema.getInstance();
+                groupInClause.append(delim);
+                groupInClause.append(group.getRowId());
 
-                StringBuilder groupInClause = new StringBuilder();
-                String delim = "";
-
-                groupInClause.append("(");
-                for (ParticipantGroup group : _participantGroups)
-                {
-                    groupInClause.append(delim);
-                    groupInClause.append(group.getRowId());
-
-                    delim = ",";
-                }
-                groupInClause.append(")");
-
-                SQLFragment sql = new SQLFragment();
-
-                sql.append("INSERT INTO ").append(schema.getTableInfoParticipant()).append(" (ParticipantId, Container)");
-                sql.append(" SELECT DISTINCT(ParticipantId), ? FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "");
-                sql.append(" WHERE GroupId IN ").append(groupInClause).append(" AND Container = ?");
-
-                Table.execute(schema.getSchema(), sql.getSQL(), _dstContainer.getId(), _sourceStudy.getContainer().getId());
+                delim = ",";
             }
-        }
-        catch (SQLException se)
-        {
-            throw new RuntimeException(se);
+            groupInClause.append(")");
+
+            SQLFragment sql = new SQLFragment();
+
+            sql.append("INSERT INTO ").append(schema.getTableInfoParticipant()).append(" (ParticipantId, Container)");
+            sql.append(" SELECT DISTINCT(ParticipantId), ? FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "");
+            sql.append(" WHERE GroupId IN ").append(groupInClause).append(" AND Container = ?");
+
+            new SqlExecutor(schema.getSchema()).execute(sql.getSQL(), _dstContainer.getId(), _sourceStudy.getContainer());
         }
     }
 }

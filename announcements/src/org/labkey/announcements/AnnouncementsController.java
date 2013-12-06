@@ -62,6 +62,7 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.message.digest.DailyMessageDigest;
@@ -2615,11 +2616,11 @@ public class AnnouncementsController extends SpringActionController
             // Remove or add the thread-level subscription from the database table
             if (bean.isUnsubscribe())
             {
-                Table.execute(CommSchema.getInstance().getSchema(), "DELETE FROM comm.userlist WHERE UserId = ? AND MessageId = ?", getUser().getUserId(), ann.getRowId());
+                new SqlExecutor(CommSchema.getInstance().getSchema()).execute("DELETE FROM comm.userlist WHERE UserId = ? AND MessageId = ?", getUser(), ann.getRowId());
             }
             else if (!ann.getMemberList().contains(getUser()))
             {
-                Table.execute(CommSchema.getInstance().getSchema(), "INSERT INTO comm.userlist (UserId, MessageId) VALUES (?, ?)", getUser().getUserId(), ann.getRowId());
+                new SqlExecutor(CommSchema.getInstance().getSchema()).execute("INSERT INTO comm.userlist (UserId, MessageId) VALUES (?, ?)", getUser(), ann.getRowId());
             }
             return true;
         }
