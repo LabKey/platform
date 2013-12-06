@@ -1022,14 +1022,13 @@ Ext4.define('File.panel.Browser', {
             columns : ['Name', 'Run', 'Data File URL'].concat(extraColumns),
             requiredVersion : '9.1',
             success : function(resp) {
-                resp = resp.rows;
-                this.setFileObjects(resp);
+                this.setFileObjects(resp.rows);
                 var i, r, propName, rec, idx;
 
-                for (i = 0; i < resp.length; i++) {
-
+                for (i = 0; i < resp.rows.length; i++)
+                {
                     // use the record 'Id' to lookup the fileStore record because it includes the relative path and file/folder name
-                    var dataFileUrl = Ext4.Object.fromQueryString("url=" + resp[i].DataFileUrl.value);
+                    var dataFileUrl = Ext4.Object.fromQueryString("url=" + resp.rows[i].DataFileUrl.value);
                     var strStartIndex = dataFileUrl.url.indexOf(this.getBaseURL());
                     var recId = dataFileUrl.url.substring(strStartIndex);
                     idx = this.getFileStore().findExact('id', recId);
@@ -1041,18 +1040,23 @@ Ext4.define('File.panel.Browser', {
                         if (!propName) {
                             propName = {};
                         }
-                        for (r = 0; r < extraColumns.length; r++) {
-                            var value = Ext4.util.Format.htmlEncode(resp[i][extraColumns[r]].value);
-                            if (resp[i][extraColumns[r]].displayValue)
-                                value = Ext4.util.Format.htmlEncode(resp[i][extraColumns[r]].displayValue);
-                            if (resp[i][extraColumns[r]].url)
-                                value = "<a href='" + resp[i][extraColumns[r]].url + "'>" + value + "</a>";
-                            rec.set(extraColumns[r], value);
 
-                            propName[extraColumns[r]] = resp[i][extraColumns[r]].value;
+                        var values = {};
+                        for (r = 0; r < extraColumns.length; r++) {
+                            var value = Ext4.util.Format.htmlEncode(resp.rows[i][extraColumns[r]].value);
+                            if (resp.rows[i][extraColumns[r]].displayValue)
+                                value = Ext4.util.Format.htmlEncode(resp.rows[i][extraColumns[r]].displayValue);
+                            if (resp.rows[i][extraColumns[r]].url)
+                                value = "<a href='" + resp.rows[i][extraColumns[r]].url + "'>" + value + "</a>";
+
+                            values[extraColumns[r]] = value;
+
+                            propName[extraColumns[r]] = resp.rows[i][extraColumns[r]].value;
                         }
-                        propName.rowId = resp[i]['RowId'].value;
-                        propName.name = resp[i]['Name'].value;
+                        rec.set(values);
+
+                        propName.rowId = resp.rows[i]['RowId'].value;
+                        propName.name = resp.rows[i]['Name'].value;
                         this.fileProps[rec.get('id')] = propName;
                     }
                 }

@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 Ext4.define('File.panel.EditCustomFileProps', {
-    extend : 'Ext.form.Panel',
+    extend : 'Ext.panel.Panel',
     alias : ['widget.editFileProps'],
 
     constructor : function(config)
@@ -19,9 +19,7 @@ Ext4.define('File.panel.EditCustomFileProps', {
             displayNum : 0,
             border : false,
             padding : '10 0 0 10',
-            minHeight : 150,
-            maxHeight : 300,
-            autoScroll: true
+            minHeight : 150
         });
 
         this.callParent([config]);
@@ -58,13 +56,14 @@ Ext4.define('File.panel.EditCustomFileProps', {
     createFormPanel : function(data)
     {
         // Create a form panel from the returned select rows metadata
-        var customFields = [{
+        this.add({
             xtype : 'label',
             id : 'topPropsLabel',
             cls : 'labkey-mv',
             text : 'File (1 of ' + this.fileRecords.length + ') : ' + this.fileRecords[0].data.name
-        }];
+        });
 
+        var customFields = [];
         for (var i=0; i < data.metaData.fields.length; i++)
         {
             var field = data.metaData.fields[i];
@@ -85,13 +84,36 @@ Ext4.define('File.panel.EditCustomFileProps', {
 
                 // use 'checked' for setting boolean field value
                 if (fieldConfig.xtype == 'checkbox')
+                {
                     fieldConfig.checked = fieldConfig.value;
+                    fieldConfig.uncheckedValue = false;
+                }
 
                 customFields.push(fieldConfig);
             }
         }
 
-        this.add(customFields);
+        this.add({
+            xtype: 'form',
+            border: false,
+            maxHeight: 250,
+            autoScroll: true,
+            items: customFields
+        });
+
+        this.applyCheckbox = Ext4.create('Ext.form.field.Checkbox', {
+            boxLabel: "Apply to all remaining files",
+            width: 330,
+            style: "margin-top: 10px;",
+            cls: "labkey-checkbox-mv",
+            hidden: this.fileRecords.length <= 1,
+            scope: this,
+            handler: function(cb, checked) {
+                this.down('#propsPrev').setDisabled(checked || this.displayNum == 0);
+                this.down('#propsNext').setDisabled(checked || this.displayNum == (this.fileRecords.length-1));
+            }
+        });
+        this.add(this.applyCheckbox);
     },
 
     getButtons : function()
@@ -114,6 +136,7 @@ Ext4.define('File.panel.EditCustomFileProps', {
                             button.setDisabled(true);
                         Ext4.getCmp('propsNext').setDisabled(false);
                         this.changeFormPage(this);
+                        this.applyCheckbox.setValue(false);
                     },
                     scope : this
                 },
@@ -129,6 +152,7 @@ Ext4.define('File.panel.EditCustomFileProps', {
                             button.setDisabled(true);
                         Ext4.getCmp('propsPrev').setDisabled(false);
                         this.changeFormPage(this);
+                        this.applyCheckbox.setValue(false);
                     },
                     scope : this
                 }
@@ -178,7 +202,7 @@ Ext4.define('File.panel.EditCustomFileProps', {
                             },
                             failure: function(response, opt){
                                 var errorTxt = 'An error occurred submitting the .';
-                                var jsonResponse = Ext.util.JSON.decode(response.responseText);
+                                var jsonResponse = Ext4.util.JSON.decode(response.responseText);
                                 if (jsonResponse && jsonResponse.errors)
                                 {
                                     for (var i=0; i < jsonResponse.errors.length; i++)
@@ -218,13 +242,23 @@ Ext4.define('File.panel.EditCustomFileProps', {
 
     saveFormPage : function()
     {
-        if(!this.formPages[this.displayNum])
-            this.formPages[this.displayNum] = {};
+        var values = this.down('.form').getForm().getValues();
 
-        var values = this.getForm().getValues();
-        for(var i = 0; i < this.extraColumns.length; i++)
+        if (this.applyCheckbox.getValue())
         {
-            this.formPages[this.displayNum][this.extraColumns[i]] = values[this.extraColumns[i]] || null;
+            // apply current form to all files in this set
+            for (var i = 0; i < this.fileRecords.length; i++)
+            {
+                if(!this.formPages[i])
+                    this.formPages[i] = {};
+                Ext4.apply(this.formPages[i], values);
+            }
+        }
+        else
+        {
+            if(!this.formPages[this.displayNum])
+                this.formPages[this.displayNum] = {};
+            Ext4.apply(this.formPages[this.displayNum], values);
         }
     },
 

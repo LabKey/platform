@@ -751,7 +751,7 @@ regions on mouseover */
 }
 
 /* This lightens the text to make it look "grayed out", but still readable, unlike labkey-disabled, above. */
-.labkey-mv
+.labkey-mv, .labkey-checkbox-mv .x4-form-cb-label
 {
     color: #606060;
 }
