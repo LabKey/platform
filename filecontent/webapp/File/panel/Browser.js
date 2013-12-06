@@ -86,6 +86,11 @@ Ext4.define('File.panel.Browser', {
     fileSystem : undefined,
 
     /**
+     * @cfg {Object} folderSeparator
+     */
+    folderSeparator : '/',
+
+    /**
      * @cfg {Object} gridConfig
      */
     gridConfig : {},
@@ -1092,7 +1097,7 @@ Ext4.define('File.panel.Browser', {
         var path = offsetPath;
 
         // Replace the base URL so only offsets are used
-        path = path.replace(this.fileSystem.getBaseURL(), '/');
+        path = path.replace(this.fileSystem.getBaseURL(), this.folderSeparator);
         // If we don't go anywhere, don't fire a folder change
         if (this.rootOffset != path) {
             this.rootOffset = path;
@@ -1190,12 +1195,12 @@ Ext4.define('File.panel.Browser', {
     },
 
     /**
-     * Helper method to ensure that the ID is wrapped by '/' on either side. Tree nodes require this.
+     * Helper method to ensure that the ID is wrapped by this.folderSeparator on either side. Tree nodes require this.
      * @param id
      * @returns {String}
      */
     ensureNodeId : function(id) {
-        var _id = id, sep = '/';
+        var _id = id, sep = this.folderSeparator;
         if (_id[0] != sep)
             _id = sep + _id;
         if (_id[_id.length-1] != sep)
@@ -1213,11 +1218,11 @@ Ext4.define('File.panel.Browser', {
         var node = this.tree.getView().getTreeStore().getRootNode().findChild('id', nodeId, true);
         if (!node) {
             var p = this.fileSystem.getParentPath(nodeId);
-            if (p == '/') {
+            if (p == this.folderSeparator) {
                 return;
             }
-            if (nodeId.length > 0 && nodeId.substring(nodeId.length-1) != '/') {
-                nodeId += '/';
+            if (nodeId.length > 0 && nodeId.substring(nodeId.length-1) != this.folderSeparator) {
+                nodeId += this.folderSeparator;
             }
             this.vStack.push(nodeId);
             this.ensureVisible(p);
@@ -1943,7 +1948,7 @@ Ext4.define('File.panel.Browser', {
                 if (values && values.folderName) {
                     var folder = values.folderName;
                     this.fileSystem.createDirectory({
-                        path : path + '/' + folder,
+                        path : path + this.folderSeparator + folder,
                         success : function(path) {
                             win.close();
                             this.onRefresh();
@@ -2201,7 +2206,7 @@ Ext4.define('File.panel.Browser', {
                 // TODO: Doesn't handle @cloud.  Shouldn't the fileSystem know this?
                 source: selected.record.data.id,
                 destination: newPath,
-                isFile: !this.selectedRecord.data.collection,
+                isFile: !selected.record.data.collection,
                 success: function(fs, src, dest) {
                     // Does this work for multiple file moves?
                     this.on('pipelineconfigured', function() {
@@ -2210,6 +2215,7 @@ Ext4.define('File.panel.Browser', {
                         if (grid) {
                             grid.getStore().data.clear();
                             this.onRefresh();
+                            this.refreshTreePath(dest);
                         }
                     }, this, {single: true});
                     this.configureActions();
@@ -2322,6 +2328,39 @@ Ext4.define('File.panel.Browser', {
         }
         this.refreshTask.delay(100);
         this.selectedRecord = undefined;
+    },
+
+    refreshTreePath : function(path) {
+        var sep = this.folderSeparator;
+        var d = path.split(sep);
+        var destId = '';
+        for (var i=0; i < d.length-1; i++) {
+            if (d[i].length > 0)
+                destId += sep + d[i];
+        }
+
+        var nodeId = this.ensureNodeId(destId);
+        if (nodeId) {
+            var root = this.tree.getStore().getRootNode();
+            if (root) {
+                var target;
+                // check if the root node matches
+                if (nodeId == root.getId()) {
+                    target = root;
+                }
+                else {
+                    var node = root.findChild('id', nodeId, true);
+                    if (node) {
+                        target = node;
+                    }
+                }
+
+                if (target) {
+                    this.tree.getStore().load({node: target});
+                }
+            }
+        }
+
     },
 
     // TODO: This should work even when a tree is not present
