@@ -59,7 +59,9 @@ Ext4.define('File.panel.FileProperties', {
             columns: [
                 {text: 'Name', dataIndex: 'name', flex: 1},
                 {text: 'Label', dataIndex: 'label', flex: 1},
-                {text: 'Type', dataIndex: 'rangeURI', flex: 1}
+                {text: 'Type', dataIndex: 'rangeURI', flex: 1, renderer: function(val) {
+                    return val.replace("http://www.w3.org/2001/XMLSchema#", "");
+                }}
             ]
         }
     },

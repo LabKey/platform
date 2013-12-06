@@ -849,10 +849,9 @@ Ext4.define('File.panel.Browser', {
 
     _onExtraColumns : function(response) {
         var finalColumns = [];
-        var extraColumns = [];
         var json = Ext4.JSON.decode(response.responseText);
 
-        // initially populate the finalColumns array and extraColumns array with the defaults
+        // initially populate the finalColumns array with the defaults
         var defaultColumns = this.getDefaultColumns();
         var customColumns = json.fileProperties, i;
 
@@ -869,7 +868,6 @@ Ext4.define('File.panel.Browser', {
                 hidden : customColumns[i].hidden
             };
             finalColumns.push(customCol);
-            extraColumns.push(customCol);
         }
 
         // apply the gridConfig metadata, i.e. hidden and sortable state, if it exists
@@ -882,18 +880,11 @@ Ext4.define('File.panel.Browser', {
                     finalColumns[index].hidden = gridConfigColInfo[i].hidden;
                     finalColumns[index].sortable = gridConfigColInfo[i].sortable;
                 }
-
-                // also apply it to the extraColumns array, offset will be based on the length of the defaultColumns
-                index = gridConfigColInfo[i].id - defaultColumns.length - 1;
-                if (extraColumns[index]) {
-                    extraColumns[index].hidden = gridConfigColInfo[i].hidden;
-                    extraColumns[index].sortable = gridConfigColInfo[i].sortable;
-                }
             }
         }
 
         this.setDefaultColumns(finalColumns);
-        this.setExtraColumns(extraColumns);
+        this.setExtraColumns(customColumns);
     },
 
     setFileObjects : function(fileObjects) {
@@ -926,7 +917,7 @@ Ext4.define('File.panel.Browser', {
         {
             for(var i = 0; i < columns.length; i++)
             {
-                retCols.push(columns[i].dataIndex);
+                retCols.push(columns[i].name);
             }
         }
         return retCols;
@@ -1014,12 +1005,12 @@ Ext4.define('File.panel.Browser', {
 
     attachCustomFileProperties : function(){
         //Copied array so as not to be include name/Row Id in extra columns
-        var extraColumns = this.getExtraColumnNames();
+        var extraColumnNames = this.getExtraColumnNames();
 
         var config = {
             schemaName : 'exp',
             queryName : 'Data',
-            columns : ['Name', 'Run', 'Data File URL'].concat(extraColumns),
+            columns : ['Name', 'Run', 'Data File URL'].concat(extraColumnNames),
             requiredVersion : '9.1',
             success : function(resp) {
                 this.setFileObjects(resp.rows);
@@ -1042,16 +1033,16 @@ Ext4.define('File.panel.Browser', {
                         }
 
                         var values = {};
-                        for (r = 0; r < extraColumns.length; r++) {
-                            var value = Ext4.util.Format.htmlEncode(resp.rows[i][extraColumns[r]].value);
-                            if (resp.rows[i][extraColumns[r]].displayValue)
-                                value = Ext4.util.Format.htmlEncode(resp.rows[i][extraColumns[r]].displayValue);
-                            if (resp.rows[i][extraColumns[r]].url)
-                                value = "<a href='" + resp.rows[i][extraColumns[r]].url + "'>" + value + "</a>";
+                        for (r = 0; r < extraColumnNames.length; r++) {
+                            var value = Ext4.util.Format.htmlEncode(resp.rows[i][extraColumnNames[r]].value);
+                            if (resp.rows[i][extraColumnNames[r]].displayValue)
+                                value = Ext4.util.Format.htmlEncode(resp.rows[i][extraColumnNames[r]].displayValue);
+                            if (resp.rows[i][extraColumnNames[r]].url)
+                                value = "<a href='" + resp.rows[i][extraColumnNames[r]].url + "'>" + value + "</a>";
 
-                            values[extraColumns[r]] = value;
+                            values[extraColumnNames[r]] = value;
 
-                            propName[extraColumns[r]] = resp.rows[i][extraColumns[r]].value;
+                            propName[extraColumnNames[r]] = resp.rows[i][extraColumnNames[r]].value;
                         }
                         rec.set(values);
 
@@ -2483,7 +2474,7 @@ Ext4.define('File.panel.Browser', {
             width : 400,
             autoShow: true,
             items : Ext4.create('File.panel.EditCustomFileProps', {
-                extraColumns : this.getExtraColumnNames(),
+                extraColumns : this.getExtraColumns(),
                 fileRecords : options.fileRecords,
                 winId : 'editFilePropsWin',
                 fileProps : this.fileProps
