@@ -330,21 +330,20 @@ public class Table
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getResultSet();
     }
 
-    // ================== These methods have been converted to Selector/Executor, but still have callers ==================
-
-    // 97 usages
-    @Deprecated /** Use SqlExecutor */
-    public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
-    {
-        return new LegacySqlExecutor(schema).execute(sql, parameters);
-    }
-
-    // 32 usages
     /** return a result from a one row one column resultset. does not distinguish between not found, and NULL value */
     @Deprecated /** Use SqlSelector */
     public static <K> K executeSingleton(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> c) throws SQLException
     {
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getObject(c);
+    }
+
+    // ================== This method has been converted to SqlExecutor, but still has callers ==================
+
+    // 76 usages
+    @Deprecated /** Use SqlExecutor */
+    public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
+    {
+        return new LegacySqlExecutor(schema).execute(sql, parameters);
     }
 
     // ================== These methods have not been converted to Selector/Executor ==================
@@ -1076,7 +1075,7 @@ public class Table
         SQLFragment where = filter.getSQLFragment(table, null);
 
         String deleteSQL = "DELETE FROM " + table.getSelectName() + "\n\t" + where.getSQL();
-        int result = execute(table.getSchema(), deleteSQL, where.getParams().toArray());
+        int result = new SqlExecutor(table.getSchema()).execute(deleteSQL, where.getParams().toArray());
 
         notifyTableUpdate(table);
         return result;
@@ -1112,7 +1111,6 @@ public class Table
 
         if (null != aggregates)
         {
-            // UNDONE: use fieldkeys
             for (Aggregate agg : aggregates)
                 requiredColumns.add(agg.getFieldKey());
         }

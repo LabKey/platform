@@ -957,7 +957,6 @@ public class OntologyManager
 
     public static void deleteAllObjects(Container c, User user) throws SQLException
 	{
-        String containerid = c.getId();
         Container projectContainer = c.getProject();
         if (null==projectContainer)
                 projectContainer = c;
@@ -969,21 +968,23 @@ public class OntologyManager
                 copyDescriptors(c, projectContainer);
             }
 
+            SqlExecutor executor = new SqlExecutor(getExpSchema());
+
             // Owned objects should be in same container, so this should work
 			String deleteObjPropSql = "DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
-            new SqlExecutor(getExpSchema()).execute(deleteObjPropSql, containerid);
+            executor.execute(deleteObjPropSql, c);
             if (null != getTinfoIndexInteger())
             {
                 String deleteIndexIntegerSql = "DELETE FROM " + getTinfoIndexInteger() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
-                Table.execute(getExpSchema(), deleteIndexIntegerSql, containerid);
+                executor.execute(deleteIndexIntegerSql, c);
             }
             if (null != getTinfoIndexVarchar())
             {
                 String deleteIndexVarcharSql = "DELETE FROM " + getTinfoIndexVarchar() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
-                new SqlExecutor(getExpSchema()).execute(deleteIndexVarcharSql, containerid);
+                executor.execute(deleteIndexVarcharSql, c);
             }
 			String deleteObjSql = "DELETE FROM " + getTinfoObject() + " WHERE Container = ?";
-            new SqlExecutor(getExpSchema()).execute(deleteObjSql, containerid);
+            executor.execute(deleteObjSql, c);
 
             // delete property validator references on property descriptors
             PropertyService.get().deleteValidatorsAndFormats(c);
@@ -998,14 +999,14 @@ public class OntologyManager
             }
 
             String deletePropDomSqlPD = "DELETE FROM " + getTinfoPropertyDomain() + " WHERE PropertyId IN (SELECT PropertyId FROM " + getTinfoPropertyDescriptor() + " WHERE Container = ?)";
-            new SqlExecutor(getExpSchema()).execute(deletePropDomSqlPD, containerid);
+            executor.execute(deletePropDomSqlPD, c);
             String deletePropDomSqlDD = "DELETE FROM " + getTinfoPropertyDomain() + " WHERE DomainId IN (SELECT DomainId FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?)";
-            new SqlExecutor(getExpSchema()).execute(deletePropDomSqlDD, containerid);
+            executor.execute(deletePropDomSqlDD, c);
             String deleteDomSql = "DELETE FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
-            new SqlExecutor(getExpSchema()).execute(deleteDomSql, containerid);
+            executor.execute(deleteDomSql, c);
             // now delete the prop descriptors that are referenced in this container only
             String deletePropSql = "DELETE FROM " + getTinfoPropertyDescriptor() + " WHERE Container = ?";
-            new SqlExecutor(getExpSchema()).execute(deletePropSql, containerid);
+            executor.execute(deletePropSql, c);
 
 			clearCaches();
             transaction.commit();

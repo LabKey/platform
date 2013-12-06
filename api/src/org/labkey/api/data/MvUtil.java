@@ -128,16 +128,16 @@ public class MvUtil
      * parent container, project, or site, whichever
      * in the hierarchy first has mv indicators.
      */
-    public static void inheritMvIndicators(@NotNull Container c) throws SQLException
+    public static void inheritMvIndicators(@NotNull Container c)
     {
         deleteMvIndicators(c);
     }
 
-    private static void deleteMvIndicators(@NotNull Container c) throws SQLException
+    private static void deleteMvIndicators(@NotNull Container c)
     {
         TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
         String sql = "DELETE FROM " + mvTable + " WHERE container = ?";
-        Table.execute(CoreSchema.getInstance().getSchema(), sql, c.getId());
+        new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(sql, c);
         clearCache(c);
     }
 
@@ -193,7 +193,7 @@ public class MvUtil
         return CacheManager.getSharedCache();
     }
 
-    public static void containerDeleted(@NotNull Container c) throws SQLException
+    public static void containerDeleted(@NotNull Container c)
     {
         deleteMvIndicators(c);
     }
