@@ -339,7 +339,7 @@ public class ViewServlet extends HttpServlet
         {
             url.setIsCanonical(false);
             // recover from duplicated controller (e.g. /project/home/announcements-begin.view)
-            if (null != url.getController() && path.size() > 0 && null != ModuleLoader.getInstance().getModuleForController(path.get(0)))
+            if (null != url.getController() && path.size() > 0 && null != ModuleLoader.getInstance().getModuleForController(path.get(0).toLowerCase()))
             {
                 Path shortened = path.subpath(1,path.size());
                 c = ContainerManager.getForPath(shortened);
