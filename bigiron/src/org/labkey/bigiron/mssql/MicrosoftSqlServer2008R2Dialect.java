@@ -888,7 +888,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         for (Map.Entry<String, String> oldToNew : change.getColumnRenames().entrySet())
         {
             statements.add(String.format("EXEC sp_rename '%s','%s','COLUMN'",
-                    makeTableIdentifier(change) + "." + oldToNew.getKey(), oldToNew.getValue()));
+                    makeTableIdentifier(change) + ".\"" + oldToNew.getKey() + "\"", oldToNew.getValue()));
         }
 
         for (Map.Entry<PropertyStorageSpec.Index, PropertyStorageSpec.Index> oldToNew : change.getIndexRenames().entrySet())
