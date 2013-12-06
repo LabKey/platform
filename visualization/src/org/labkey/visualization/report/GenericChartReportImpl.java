@@ -64,8 +64,6 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
         return view;
     }
 
-    // Note: This class should properly generate a dynamic thumbnail based on passed in SVG, however, SaveVisualizationAction
-    // is not invoked by generic charts yet, so this method is never called. TODO: Finish dynamic thumbnails for box/scatter
     @Override
     public void setSvg(String svg)
     {

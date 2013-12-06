@@ -19,6 +19,7 @@ import org.apache.batik.transcoder.TranscoderException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.PNGTranscoder;
+import org.apache.batik.transcoder.wmf.tosvg.WMFTranscoder;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.jetbrains.annotations.Nullable;
@@ -52,7 +53,6 @@ public class DocumentConversionServiceImpl implements DocumentConversionService
     public void svgToPng(String svg, OutputStream os, @Nullable Float height) throws TranscoderException
     {
         TranscoderInput xIn = new TranscoderInput(new StringReader(svg));
-        TranscoderOutput xOut = new TranscoderOutput(os);
 
         PNGTranscoder transcoder = new PNGTranscoder();
         transcoder.addTranscodingHint(PNGTranscoder.KEY_BACKGROUND_COLOR, java.awt.Color.WHITE);
@@ -60,7 +60,15 @@ public class DocumentConversionServiceImpl implements DocumentConversionService
         if (null != height)
             transcoder.addTranscodingHint(PNGTranscoder.KEY_HEIGHT, height);
 
-        transcoder.transcode(xIn, xOut);
+        transcoder.transcode(xIn, new TranscoderOutput(os));
+    }
+
+    // Not tested yet... but should work  TODO: wmfToPng, chaining this with svgToPng
+    public void wmfToSvg(InputStream is, OutputStream os, @Nullable Float height) throws TranscoderException
+    {
+        TranscoderInput xIn = new TranscoderInput(is);
+        WMFTranscoder transcoder = new WMFTranscoder();
+        transcoder.transcode(xIn, new TranscoderOutput(os));
     }
 
     @Override
