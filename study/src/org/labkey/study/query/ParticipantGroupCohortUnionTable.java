@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.apache.commons.lang3.math.NumberUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
@@ -80,12 +81,13 @@ public class ParticipantGroupCohortUnionTable extends BaseStudyTable
                         return _getValue(ctx);
                     }
 
-                    @Override
+                    @Override @NotNull
                     public String getFormattedValue(RenderContext ctx)
                     {
                         return _getValue(ctx) + "<br>";
                     }
 
+                    @NotNull
                     private String _getValue(RenderContext ctx)
                     {
                         String value = getValue(ctx).toString();

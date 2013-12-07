@@ -19,6 +19,7 @@ package org.labkey.announcements;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
@@ -2340,7 +2341,7 @@ public class AnnouncementsController extends SpringActionController
             }
 
 
-            @Override
+            @Override @NotNull
             public String getFormattedValue(RenderContext ctx)
             {
                 Integer userId = (Integer)getValue(ctx);

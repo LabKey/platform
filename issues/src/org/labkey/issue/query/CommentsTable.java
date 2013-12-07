@@ -15,6 +15,7 @@
  */
 package org.labkey.issue.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
@@ -72,7 +73,7 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
                 DataColumn dc = new DataColumn(colInfo) {
-                    @Override
+                    @Override @NotNull
                     public String getFormattedValue(RenderContext ctx)
                     {
                         String html = super.getFormattedValue(ctx);

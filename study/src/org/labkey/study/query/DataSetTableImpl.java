@@ -716,6 +716,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
             super(col);
         }
 
+        @Override @NotNull
         public String getFormattedValue(RenderContext ctx)
         {
             Object value = getValue(ctx);

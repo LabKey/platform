@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.NamedObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
@@ -40,7 +41,7 @@ public class PtidObfuscatingDisplayColumn extends DataColumn
         return DemoMode.obfuscate(super.getValue(ctx));
     }
 
-    @Override
+    @Override @NotNull
     public String getFormattedValue(RenderContext ctx)
     {
         return getValue(ctx);

@@ -18,6 +18,7 @@ package org.labkey.mothership;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jfree.chart.ChartColor;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartUtilities;
@@ -1478,7 +1479,7 @@ public class MothershipController extends SpringActionController
             defaultServerInstallationColumn.setVisible(false);
             DataColumn replacementServerInstallationColumn = new DataColumn(defaultServerInstallationColumn.getColumnInfo())
             {
-                @Override
+                @Override @NotNull
                 public String getFormattedValue(RenderContext ctx)
                 {
                     Map<String, Object> row = ctx.getRow();

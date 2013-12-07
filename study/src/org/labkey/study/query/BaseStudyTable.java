@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -282,7 +283,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             _seqNumMinFieldKey = seqNumMinFieldKey;
         }
 
-        @Override
+        @Override @NotNull
         public String getFormattedValue(RenderContext ctx)
         {
             Object value = ctx.get(getDisplayColumn().getFieldKey());
