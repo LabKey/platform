@@ -293,6 +293,7 @@ public abstract class DisplayColumn extends RenderColumn
 
 
     /** @return the HTML version of this column's value */
+    @NotNull
     public String getFormattedValue(RenderContext ctx)
     {
         Format format = getFormat();
@@ -300,6 +301,7 @@ public abstract class DisplayColumn extends RenderColumn
     }
 
 
+    @NotNull
     private String formatValue(RenderContext ctx, Format format)
     {
         Object value = getDisplayValue(ctx);

@@ -432,6 +432,7 @@ public class DataColumn extends DisplayColumn
         return result;
     }
 
+    @Override @NotNull
     public String getFormattedValue(RenderContext ctx)
     {
         StringBuilder sb = new StringBuilder();

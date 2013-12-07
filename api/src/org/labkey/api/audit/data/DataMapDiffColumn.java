@@ -14,6 +14,7 @@
  * limitations under the License.
  */package org.labkey.api.audit.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
@@ -68,7 +69,7 @@ public class DataMapDiffColumn extends AliasedColumn
             return value != null ? value : "";
         }
 
-        @Override
+        @Override @NotNull
         public String getFormattedValue(RenderContext ctx)
         {
             return formatColumn(ctx.get(_oldValues.getFieldKey()), ctx.get(_newValues.getFieldKey()), "<br>");
@@ -107,6 +108,7 @@ public class DataMapDiffColumn extends AliasedColumn
             keys.add(_newValues.getFieldKey());
         }
 
+        @NotNull
         private String formatColumn(Object oldContent, Object newContent, String lineBreak)
         {
             if (oldContent != null || newContent != null)

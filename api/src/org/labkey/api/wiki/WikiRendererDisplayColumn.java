@@ -45,7 +45,7 @@ public class WikiRendererDisplayColumn extends DataColumn
             _defaultRenderer = defaultRenderer;
     }
 
-    @Override
+    @Override @NotNull
     public String getFormattedValue(RenderContext ctx)
     {
         WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);

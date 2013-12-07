@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 
@@ -131,7 +132,7 @@ public class MVDisplayColumn extends DataColumn
         }
     }
 
-    @Override
+    @Override @NotNull
     public String getFormattedValue(RenderContext ctx)
     {
         if (getMvIndicator(ctx) != null)

@@ -15,6 +15,8 @@
  */
 package org.labkey.api.audit.data;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
@@ -32,7 +34,7 @@ public class DataMapColumn extends DataColumn
         super(col);
     }
 
-    @Override
+    @Override @NotNull
     public String getFormattedValue(RenderContext ctx)
     {
         return formatColumn(getValue(ctx), "<br>");
@@ -61,7 +63,8 @@ public class DataMapColumn extends DataColumn
         return false;
     }
 
-    private String formatColumn(Object contents, String lineBreak)
+    @NotNull
+    private String formatColumn(@Nullable Object contents, String lineBreak)
     {
         if (contents instanceof String)
         {

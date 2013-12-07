@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -172,6 +173,7 @@ public class ContainerDisplayColumn extends DataColumn
         return super.renderURL(ctx);
     }
 
+    @Override @NotNull
     public String getFormattedValue(RenderContext ctx)
     {
         String displayValue = getDisplayValue(ctx).toString();

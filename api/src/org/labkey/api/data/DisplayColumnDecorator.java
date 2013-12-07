@@ -250,7 +250,7 @@ public class DisplayColumnDecorator extends DisplayColumn
         return _column.getTsvFormat();
     }
 
-    @Override
+    @Override @NotNull
     public String getFormattedValue(RenderContext ctx)
     {
         return _column.getFormattedValue(ctx);

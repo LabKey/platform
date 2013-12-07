@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 
@@ -61,6 +62,7 @@ public class OutOfRangeDisplayColumn extends DataColumn
         }
     }
 
+    @Override @NotNull
     public String getFormattedValue(RenderContext ctx)
     {
         StringBuilder result = new StringBuilder();

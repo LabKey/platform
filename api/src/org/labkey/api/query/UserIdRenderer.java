@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
@@ -36,6 +37,7 @@ public class UserIdRenderer extends DataColumn
             super(column);
         }
 
+        @Override @NotNull
         public String getFormattedValue(RenderContext ctx)
         {
             if (isGuestUserId(getBoundColumn().getValue(ctx)))
@@ -49,6 +51,7 @@ public class UserIdRenderer extends DataColumn
         super(column);
     }
 
+    @Override @NotNull
     public String getFormattedValue(RenderContext ctx)
     {
         if (isGuestUserId(getBoundColumn().getValue(ctx)))
