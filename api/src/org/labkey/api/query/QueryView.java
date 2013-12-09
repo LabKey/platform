@@ -44,6 +44,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
@@ -889,6 +890,19 @@ public class QueryView extends WebPartView<Object>
         public String getDataRegionName()
         {
             return _dataRegionName;
+        }
+
+        public String convertToForm(ActionURL url)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append("<form method='POST' action='" + PageFlowUtil.encodePath(url.getFullParsedPath().toString()) + "' >");
+            for (Pair<String, String> param : url.getParameters())
+            {
+                sb.append("<input name=\"" + PageFlowUtil.filter(param.first) + "\" type=\"hidden\" value=\"" + PageFlowUtil.filter(param.second) + "\" />");
+            }
+            sb.append("</form>");
+
+            return sb.toString();
         }
     }
 
@@ -1921,7 +1935,8 @@ public class QueryView extends WebPartView<Object>
         List<DisplayColumn> ret = new ArrayList<>(list);
         for (Iterator<DisplayColumn> it = ret.iterator(); it.hasNext(); )
         {
-            if (it.next() instanceof DetailsColumn)
+            DisplayColumn next = it.next();
+            if (next instanceof DetailsColumn || next instanceof UpdateColumn)
             {
                 it.remove();
             }

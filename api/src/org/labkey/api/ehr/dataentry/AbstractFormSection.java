@@ -83,6 +83,11 @@ abstract public class AbstractFormSection implements FormSection
         return _xtype;
     }
 
+    public void setXtype(String xtype)
+    {
+        _xtype = xtype;
+    }
+
     public EHRService.FORM_SECTION_LOCATION getLocation()
     {
         return _location;
@@ -108,7 +113,7 @@ abstract public class AbstractFormSection implements FormSection
         _clientModelClass = clientModelClass;
     }
 
-    protected void setClientStoreClass(String clientStoreClass)
+    public void setClientStoreClass(String clientStoreClass)
     {
         _clientStoreClass = clientStoreClass;
     }
@@ -200,7 +205,14 @@ abstract public class AbstractFormSection implements FormSection
         defaultButtons.add("ADDANIMALS");
         defaultButtons.add("DELETERECORD");
         defaultButtons.add("SELECTALL");
-        //defaultButtons.add("TEMPLATE");
+
+        //omit the template btn from any formtype with specialized parent->child inheritance
+        List<String> sources = getConfigSources();
+        if (!sources.contains("Encounter") && !sources.contains("Labwork"))
+        {
+            defaultButtons.add("COPYFROMSECTION");
+            defaultButtons.add("TEMPLATE");
+        }
 
         return defaultButtons;
     }
@@ -209,8 +221,15 @@ abstract public class AbstractFormSection implements FormSection
     {
         List<String> defaultButtons = new ArrayList<String>();
 
-        defaultButtons.add("DUPLICATE");
+        //omit the template btn from any formtype with specialized parent->child inheritance
+        List<String> sources = getConfigSources();
+        if (!sources.contains("Encounter") && !sources.contains("Labwork"))
+        {
+            defaultButtons.add("DUPLICATE");
+        }
+
         defaultButtons.add("BULKEDIT");
+        defaultButtons.add("GUESSPROJECT");
 
         return defaultButtons;
     }

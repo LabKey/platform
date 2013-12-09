@@ -35,7 +35,7 @@ import org.labkey.api.view.ActionURL;
  * Date: 10/1/12
  * Time: 12:27 PM
  */
-public class QueryCountNavItem extends SingleNavItem
+public class QueryCountNavItem extends SingleNavItem implements SummaryNavItem
 {
     private static final Logger _log = Logger.getLogger(QueryCountNavItem.class);
 
@@ -72,7 +72,7 @@ public class QueryCountNavItem extends SingleNavItem
         return us.getTable(_query);
     }
 
-    private Long getRowCount(Container c, User u)
+    public Long getRowCount(Container c, User u)
     {
         TableInfo ti = getTableInfo(c, u);
         if (ti == null)
@@ -87,7 +87,7 @@ public class QueryCountNavItem extends SingleNavItem
     {
         SimpleFilter filter = new SimpleFilter();
 
-        if (ti.getColumn("container") != null)
+        if (ti.getColumn("container") != null && !(ti.supportsContainerFilter() && ContainerFilter.CURRENT.equals(ti.getContainerFilter())))
             filter.addClause(ContainerFilter.CURRENT.createFilterClause(ti.getSchema(), FieldKey.fromString("container"), c));
 
         if (_filter != null)

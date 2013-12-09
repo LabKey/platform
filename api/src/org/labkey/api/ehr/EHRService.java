@@ -158,6 +158,7 @@ abstract public class EHRService
         RequestApproved("Request: Approved"),
         RequestSampleDelivered("Request: Sample Delivered"),
         RequestDenied("Request: Denied"),
+        RequestCancelled("Request: Cancelled"),
         RequestPending("Request: Pending"),
         InProgress("In Progress"),
         ReviewRequired("Review Required"),

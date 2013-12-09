@@ -1871,6 +1871,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
 
                         var viewName = (this.view && this.view.name) || this.viewName || "";
                         LABKEY.Query.getQueryDetails({
+                            containerPath : this.containerPath,
                             schemaName: this.schemaName,
                             queryName: this.queryName,
                             viewName: viewName,
@@ -1886,7 +1887,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                                 // If there was an error parsing the query, we won't be able to render the customize view panel.
                                 if (json.exception)
                                 {
-                                    var viewSourceUrl = LABKEY.ActionURL.buildURL('query', 'viewQuerySource.view', null, {schemaName: this.schemaName, "query.queryName": this.queryName});
+                                    var viewSourceUrl = LABKEY.ActionURL.buildURL('query', 'viewQuerySource.view', this.containerPath, {schemaName: this.schemaName, "query.queryName": this.queryName});
                                     var msg = Ext.util.Format.htmlEncode(json.exception) +
                                             " &nbsp;<a target=_blank class='labkey-button' href='" + viewSourceUrl + "'>View Source</a>";
 
@@ -1902,6 +1903,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                                     width: minWidth,
                                     activeGroup: activeTab,
                                     dataRegion: this,
+                                    containerPath : this.containerPath,
                                     schemaName: this.schemaName,
                                     queryName: this.queryName,
                                     viewName: viewName,
@@ -1998,7 +2000,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 }.defer(500, this);
 
                 Ext.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL("query", "deleteView"),
+                    url: LABKEY.ActionURL.buildURL("query", "deleteView", this.containerPath),
                     jsonData: {schemaName: this.schemaName, queryName: this.queryName, viewName: this.viewName, complete: complete},
                     method: "POST",
                     scope: this,
@@ -2057,7 +2059,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                                 jsonData.containerPath = o.containerPath;
 
                             Ext.Ajax.request({
-                                url: LABKEY.ActionURL.buildURL("query", "saveSessionView"),
+                                url: LABKEY.ActionURL.buildURL("query", "saveSessionView", self.containerPath),
                                 method: "POST",
                                 jsonData: jsonData,
                                 headers: {

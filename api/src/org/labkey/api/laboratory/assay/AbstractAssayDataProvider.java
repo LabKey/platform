@@ -32,6 +32,7 @@ import org.labkey.api.laboratory.QueryTabbedReportItem;
 import org.labkey.api.laboratory.ReportItem;
 import org.labkey.api.laboratory.SimpleQueryNavItem;
 import org.labkey.api.laboratory.SingleNavItem;
+import org.labkey.api.laboratory.SummaryNavItem;
 import org.labkey.api.laboratory.TabbedReportItem;
 import org.labkey.api.ldk.NavItem;
 import org.labkey.api.module.Module;
@@ -307,27 +308,27 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
         return _module;
     }
 
-    public List<NavItem> getSummary(Container c, User u)
+    public List<SummaryNavItem> getSummary(Container c, User u)
     {
-        List<NavItem> items = new ArrayList<>();
+        List<SummaryNavItem> items = new ArrayList<>();
 
-        for (ExpProtocol p : getProtocols(c))
+        for (final ExpProtocol p : getProtocols(c))
         {
             boolean visible = new AssayNavItem(this, p).isVisible(c, u);
             if (visible)
             {
-                ExpRun[] runs = p.getExpRuns();
-                Integer totalRuns = 0;
-                for (ExpRun run : runs)
+                TableInfo ti = AssayService.get().createRunTable(p, getAssayProvider(), u, c);
+                if (ti != null)
                 {
-                    Container runContainer = run.getContainer();
-                    if (runContainer.equals(c) || (runContainer.isWorkbook() && c.equals(runContainer.getParent())))
+                    items.add(new QueryCountNavItem(this, ti.getPublicSchemaName(), ti.getPublicName(), LaboratoryService.NavItemCategory.data.name(), p.getName() + " Runs")
                     {
-                        totalRuns++;
-                    }
+                        @Override
+                        protected ActionURL getActionURL(Container c, User u)
+                        {
+                            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, p);
+                        }
+                    });
                 }
-
-                items.add(new SingleNavItem(this, p.getName() + " Runs", totalRuns.toString(), new DetailsURL(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, p)), LaboratoryService.NavItemCategory.data.name()));
             }
         }
 

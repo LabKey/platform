@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 LabKey Corporation
+ * Copyright (c) 2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.ehr.dataentry;
-
-import org.json.JSONObject;
-import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+package org.labkey.api.ehr.security;
 
 /**
- * User: bimber
- * Date: 6/9/13
- * Time: 4:15 PM
+ * User: bbimber
+ * Date: Mar 24, 2011
  */
-public class TaskFormSection extends SimpleFormPanelSection
+public class EHRRequestCancelledInsertPermission extends AbstractEHRPermission
 {
-    public TaskFormSection()
+    public EHRRequestCancelledInsertPermission()
     {
-        super("ehr", "tasks", "Task");
-        setConfigSources(Collections.singletonList("Task"));
+        super("EHRRequestCancelledInsertPermission", "Can insert data with the QC State: Request: Cancelled");
     }
 }

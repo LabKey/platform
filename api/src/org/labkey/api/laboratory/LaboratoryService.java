@@ -98,7 +98,7 @@ abstract public class LaboratoryService
 
     abstract public void ensureAssayColumns(User u, String providerName) throws ChangePropertyDescriptorException;
 
-    abstract public void sortNavItems(List<NavItem> navItems);
+    abstract public void sortNavItems(List<? extends NavItem> navItems);
 
     abstract public void registerClientDependency(ClientDependency cd, Module owner);
 
@@ -115,6 +115,10 @@ abstract public class LaboratoryService
     abstract public List<ButtonConfigFactory> getAssayButtons(TableInfo ti, String providerName, String domain);
 
     abstract public TableCustomizer getLaboratoryTableCustomizer();
+
+    abstract public void registerAssayResultsIndex(String providerName, List<String> columnsToIndex);
+
+    abstract public void registerTableIndex(String schemaName, String queryName, List<String> columnsToIndex);
 
     public static enum NavItemCategory
     {

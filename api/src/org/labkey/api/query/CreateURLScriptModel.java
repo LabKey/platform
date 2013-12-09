@@ -78,7 +78,10 @@ public class CreateURLScriptModel extends ExportScriptModel
         if (_view.getQueryDef().isTemporary())
             return "This is a temporary query that does not support stable URLs";
 
-        ActionURL url = QueryService.get().urlFor(_view.getUser(), _view.getContainer(), QueryAction.executeQuery, _view.getSchema().getSchemaName(), _view.getTable().getPublicName());
+        ActionURL url = DetailsURL.fromString("/query/executeQuery.view").getActionURL();
+        url.addParameter("schemaName", _view.getSchema().getSchemaName());
+        url.addParameter("query.queryName", _view.getTable().getPublicName());
+        url.setContainer(_view.getContainer());
 
         ContainerFilter containerFilter = getContainerFilter();
         if (null != containerFilter && null != containerFilter.getType())

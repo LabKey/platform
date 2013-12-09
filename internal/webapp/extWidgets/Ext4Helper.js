@@ -601,7 +601,7 @@ LABKEY.ext.Ext4Helper = new function(){
                         displayValue = date.format(format);
                         break;
                     case "int":
-                        displayValue = (Ext4.util.Format.numberRenderer(this.format || '0'))(displayValue);
+                        displayValue = (Ext4.util.Format.numberRenderer(meta.extFormat || this.format || '0'))(displayValue);
                         break;
                     case "boolean":
                         var t = this.trueText || 'true', f = this.falseText || 'false', u = this.undefinedText || ' ';
@@ -616,7 +616,7 @@ LABKEY.ext.Ext4Helper = new function(){
                         }
                         break;
                     case "float":
-                        displayValue = (Ext4.util.Format.numberRenderer(this.format || '0,000.00'))(displayValue);
+                        displayValue = (Ext4.util.Format.numberRenderer(meta.extFormat || this.format || '0,000.00'))(displayValue);
                         break;
                     case "string":
                     default:

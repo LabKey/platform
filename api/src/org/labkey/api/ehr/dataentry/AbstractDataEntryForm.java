@@ -144,6 +144,7 @@ public class AbstractDataEntryForm implements DataEntryForm
         json.put("javascriptClass", getJavascriptClass());
         json.put("storeCollectionClass", getStoreCollectionClass());
         json.put("isAvailable", isAvailable(c, u));
+        json.put("isVisible", isVisible(c, u));
 
         JSONArray sections = new JSONArray();
         for (FormSection section : getFormSections())
@@ -260,5 +261,11 @@ public class AbstractDataEntryForm implements DataEntryForm
     protected void addClientDependency(ClientDependency cd)
     {
         _clientDependencies.add(cd);
+    }
+
+    @Override
+    public boolean isVisible(Container c, User u)
+    {
+        return true;
     }
 }

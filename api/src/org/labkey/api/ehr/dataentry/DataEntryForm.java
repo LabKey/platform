@@ -46,6 +46,8 @@ public interface DataEntryForm
      */
     abstract public boolean isAvailable(Container c, User u);
 
+    abstract public boolean isVisible(Container c, User u);
+
     abstract public String getJavascriptClass();
 
     abstract public JSONObject toJSON(Container c, User u);

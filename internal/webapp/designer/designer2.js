@@ -72,6 +72,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         
         this.dataRegion = config.dataRegion;
 
+        this.containerPath = config.containerPath;
         this.schemaName = config.schemaName;
         this.queryName = config.queryName;
         this.viewName = config.viewName || "";
@@ -107,6 +108,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
 
         // Create the FieldKey metadata store
         this.fieldMetaStore = new LABKEY.ext.FieldMetaStore({
+            containerPath: this.containerPath,
             schemaName: this.schemaName,
             queryName: this.queryName,
             data: this.query
@@ -239,6 +241,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             loader: new LABKEY.ext.FieldTreeLoader({
                 store: this.fieldMetaStore,
                 designer: this,
+                containerPath: this.containerPath,
                 schemaName: this.schemaName,
                 queryName: this.queryName,
                 createNodeConfigFn: {fn: this.createNodeAttrs, scope: this }
@@ -614,7 +617,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
     _deleteCustomView : function (complete)
     {
         Ext.Ajax.request({
-            url: LABKEY.ActionURL.buildURL("query", "deleteView"),
+            url: LABKEY.ActionURL.buildURL("query", "deleteView", this.containerPath),
             jsonData: {schemaName: this.schemaName, queryName: this.queryName, viewName: this.viewName, complete: complete},
             method: "POST",
             scope: this,
@@ -705,6 +708,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
     doSave : function (edited, urlParameters, callback, scope)
     {
         LABKEY.Query.saveQueryViews({
+            containerPath: this.containerPath,
             schemaName: this.schemaName,
             queryName: this.queryName,
             views: [ edited ],
@@ -2518,6 +2522,7 @@ LABKEY.ext.FieldTreeLoader = Ext.extend(Ext.tree.TreeLoader, {
         this.createNodeConfigFn = config.createNodeConfigFn;
 
         this.store = config.store || new LABKEY.ext.FieldMetaStore({
+            containerPath: config.containerPath,
             schemaName: config.schemaName,
             queryName: config.queryName
         });

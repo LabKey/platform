@@ -438,7 +438,9 @@ api/src/org/labkey/api/ehr/dataentry/FormElement.java -text
 api/src/org/labkey/api/ehr/dataentry/FormSection.java -text
 api/src/org/labkey/api/ehr/dataentry/RequestForm.java -text
 api/src/org/labkey/api/ehr/dataentry/RequestFormSection.java -text
+api/src/org/labkey/api/ehr/dataentry/SimpleFormPanelSection.java -text
 api/src/org/labkey/api/ehr/dataentry/SimpleFormSection.java -text
+api/src/org/labkey/api/ehr/dataentry/SingleQueryFormSection.java -text
 api/src/org/labkey/api/ehr/dataentry/TaskForm.java -text
 api/src/org/labkey/api/ehr/dataentry/TaskFormSection.java -text
 api/src/org/labkey/api/ehr/demographics/AbstractDemographicsProvider.java -text
@@ -471,6 +473,10 @@ api/src/org/labkey/api/ehr/security/EHRRequestApprovedAdminPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRRequestApprovedDeletePermission.java -text
 api/src/org/labkey/api/ehr/security/EHRRequestApprovedInsertPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRRequestApprovedUpdatePermission.java -text
+api/src/org/labkey/api/ehr/security/EHRRequestCancelledAdminPermission.java -text
+api/src/org/labkey/api/ehr/security/EHRRequestCancelledDeletePermission.java -text
+api/src/org/labkey/api/ehr/security/EHRRequestCancelledInsertPermission.java -text
+api/src/org/labkey/api/ehr/security/EHRRequestCancelledUpdatePermission.java -text
 api/src/org/labkey/api/ehr/security/EHRRequestCompleteAdminPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRRequestCompleteDeletePermission.java -text
 api/src/org/labkey/api/ehr/security/EHRRequestCompleteInsertPermission.java -text
@@ -692,6 +698,7 @@ api/src/org/labkey/api/laboratory/SimpleQueryNavItem.java -text
 api/src/org/labkey/api/laboratory/SimpleSettingsItem.java -text
 api/src/org/labkey/api/laboratory/SimpleUrlNavItem.java -text
 api/src/org/labkey/api/laboratory/SingleNavItem.java -text
+api/src/org/labkey/api/laboratory/SummaryNavItem.java -text
 api/src/org/labkey/api/laboratory/TabbedReportItem.java -text
 api/src/org/labkey/api/laboratory/assay/AbstractAssayDataProvider.java -text
 api/src/org/labkey/api/laboratory/assay/AssayDataProvider.java -text
