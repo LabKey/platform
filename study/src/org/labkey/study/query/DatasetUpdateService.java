@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
@@ -86,7 +87,13 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
             throws SQLException
     {
-        return _importRowsUsingETL(user, container, rows, null,  getDataIteratorContext(errors, InsertOption.MERGE), extraScriptContext);
+        int count = _importRowsUsingETL(user, container, rows, null,  getDataIteratorContext(errors, InsertOption.MERGE), extraScriptContext);
+        if (count > 0)
+        {
+            StudyManager.dataSetModified(_dataset, user, true);
+            resyncStudy(user, container, null, null, true);
+        }
+        return count;
     }
 
 
@@ -98,7 +105,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         if (count > 0)
         {
             StudyManager.dataSetModified(_dataset, user, true);
-            resyncStudy(user, container);
+            resyncStudy(user, container, null, null, true);
         }
         return count;
     }
@@ -247,12 +254,26 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
     private void resyncStudy(User user, Container container)
     {
-        StudyImpl study = StudyManager.getInstance().getStudy(container);
+        resyncStudy(user, container, _potentiallyNewParticipants, _potentiallyDeletedParticipants, _participantVisitResyncRequired);
 
-        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singletonList(_dataset), _potentiallyNewParticipants, _potentiallyDeletedParticipants, _participantVisitResyncRequired);
         _participantVisitResyncRequired = false;
         _potentiallyNewParticipants.clear();
         _potentiallyDeletedParticipants.clear();
+    }
+
+    /**
+      * Resyncs the study : updates the participant, visit, and (optionally) participant visit tables. Also updates automatic cohort assignments.
+      *
+      * @param potentiallyAddedParticipants optionally, the specific participants that may have been added to the study.
+      * If null, all of the changedDatasets and specimens will be checked to see if they contain new participants
+      * @param potentiallyDeletedParticipants optionally, the specific participants that may have been removed from the
+      * study. If null, all participants will be checked to see if they are still in the study.
+      * @param participantVisitResyncRequired If true, will force an update of the ParticipantVisit mapping for this study
+    */
+    private void resyncStudy(User user, Container container, @Nullable Set<String> potentiallyAddedParticipants, @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired)
+    {
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
+        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singletonList(_dataset), potentiallyAddedParticipants, potentiallyDeletedParticipants, participantVisitResyncRequired);
     }
 
     @Override
