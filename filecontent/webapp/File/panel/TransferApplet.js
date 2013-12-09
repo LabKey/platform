@@ -227,14 +227,15 @@ Ext4.define('File.panel.TransferApplet', {
         var adds = [];
         for(var i = 0; i < records.length; i++){
             var update = records[i];
-            var id = update.id;
+            var id = update.getId();
             var record = store.getById(id);
 
             if(null == record){
                 adds.push(update);
             } else {
-                Ext4.apply(record.data, update);
-                this.fireEvent('progressRecordUpdate', store, record);
+                record.beginEdit();
+                record.set(update.data);
+                record.endEdit();
             }
         }
 

@@ -108,6 +108,7 @@ Ext4.define('File.panel.Upload', {
                     checked  : true,
                     handler  : function(cmp, checked) {
                         if(checked){
+                            this.transferApplet.setEnabled(false);
                             uploadsPanel.getLayout().setActiveItem(this.getSingleUpload());
                         }
                     },
@@ -153,10 +154,6 @@ Ext4.define('File.panel.Upload', {
 //            Ext4.getBody().on('dragexit', function(ev) { console.log('drag exit.'); });
 //        }
 
-
-//        Ext4.create('Ext.panel.Panel', {
-//            items: [this.getAppletStatusBar()]
-//        });
 
         var uploadsContainer = Ext4.create('Ext.container.Container', {
             layout: 'hbox',
@@ -316,9 +313,10 @@ Ext4.define('File.panel.Upload', {
     },
 
     onMultiUpload: function(){
-//        this.hideProgressBar(); // need to implement.
-//        this.lastSummary= {info:0, success:0, file:'', pct:0}; // need to implement
-//        this.progressRecord = null; // need to implement
+        this.hideProgressBar();
+        this.lastSummary= {info:0, success:0, file:'', pct:0};
+        this.progressRecord = null;
+
         if (!this.transferApplet) {
 
             this.transferApplet = Ext4.create('File.panel.TransferApplet',{
@@ -331,7 +329,8 @@ Ext4.define('File.panel.Upload', {
             });
 
             this.transferApplet.on('update', this.updateProgressBar, this);
-            this.transferApplet.on("progressRecordUpdate", this.updateProgressBarRecord, this);
+            this.transferApplet.getTransfers().on("update", this.updateProgressBarRecord, this);
+            this.fileSystem.on('transferstarted', function(result) {this.showProgressBar();}, this);
 
             // Not calling fireUploadEvents as it does not seem to be necessary. It was used to detect duplicate files
             // and display warnings, but that doesn't seem to actually work anymore.
@@ -384,22 +383,26 @@ Ext4.define('File.panel.Upload', {
 
     getAppletStatusBar: function(){
 
+        if (this.appletStatusBar)
+            return this.appletStatusBar;
+
         this.progressBar = Ext4.create('Ext.ProgressBar', {
-            width: 200,
+            width: 250,
             height: 25,
             border: false,
+            autoRender : true,
             hidden: true
         });
 
         this.progressBarContainer = Ext4.create('Ext.container.Container', {
-            width: 200,
+            flex: 1,
             items: [this.progressBar]
         });
 
         this.statusText = Ext4.create('Ext.form.Label', {
             text: '',
             margins: '0 0 0 10',
-            width: 150,
+            flex: 1,
             border: false
         });
 
@@ -407,16 +410,28 @@ Ext4.define('File.panel.Upload', {
             iconCls: 'iconClose',
             tooltip: 'Close the file upload panel',
             scope: this,
+            border : false,
             handler: function() {
                 this.fireEvent('closeUploadPanel');
             }
         });
+        this.appletStatusBar = Ext4.create('Ext.panel.Panel', {
+              width: 500,
+              border: false,
+              height: 25,
+              bodyStyle: this.bodyStyle,
+              layout: 'hbox',
+              items: [this.progressBarContainer, this.statusText, this.closeBtn]
+        });
 
-        return [{
-            xtype: 'toolbar',
+        return this.appletStatusBar;
+
+/*
+        return [{ xtype: 'toolbar',
             dock: 'top',
             items: [this.progressBarContainer, this.statusText, '->', this.closeBtn]
         }];
+*/
     },
 
     updateProgressBarRecord: function(store, record){
@@ -452,8 +467,7 @@ Ext4.define('File.panel.Upload', {
 
         if (record)
         {
-            if (!this.progressBar.isVisible())
-                this.progressBar.show();
+            this.showProgressBar();
             if (pct != this.lastSummary.pct || file != this.lastSummary.file)
                 this.progressBar.updateProgress(pct, file);
         }
@@ -469,6 +483,7 @@ Ext4.define('File.panel.Upload', {
                 });
 
                 // todo : need to add file & folder conflict handling
+                this.hideProgressBar();
                 this.fireEvent('transfercomplete', {fileRecords : fileRecords});
             }
         }
@@ -477,6 +492,20 @@ Ext4.define('File.panel.Upload', {
         this.lastSummary = summary;
         this.lastSummary.pct = pct;
         this.lastSummary.file = file;
+    },
+
+    showProgressBar : function()
+    {
+        if (this.progressBar)
+            this.progressBar.setVisible(true);
+    },
+
+    hideProgressBar : function()
+    {
+        if (this.progressBar)
+            this.progressBar.reset(true);
+        if (this.statusText)
+            this.statusText.setText('');
     },
 
     submitFileUploadForm : function(fb, v) {
