@@ -159,5 +159,4 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
         else
             return "*******"; //used fixed number to obscure num characters
     }
-
 }

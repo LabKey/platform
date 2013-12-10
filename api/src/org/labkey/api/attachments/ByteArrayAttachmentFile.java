@@ -28,9 +28,10 @@ import java.io.InputStream;
  */
 public class ByteArrayAttachmentFile implements AttachmentFile
 {
-    private String _contentType;
-    private byte[] _content;
-    private String _fileName;
+    private final String _contentType;
+    private final byte[] _content;
+    private final String _fileName;
+
     private InputStream _inputStream;
 
     public ByteArrayAttachmentFile(String fileName, byte[] content, String contentType)
@@ -73,10 +74,5 @@ public class ByteArrayAttachmentFile implements AttachmentFile
     public String getError()
     {
         return null;
-    }
-
-    public void setFilename(String filename)
-    {
-        _fileName = filename;
     }
 }

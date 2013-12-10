@@ -31,8 +31,6 @@ import java.util.Map;
  */
 public abstract class AbstractSettingsGroup
 {
-    private static Logger _log = Logger.getLogger(AbstractSettingsGroup.class);
-
     public static final User SITE_CONFIG_USER = new User("site settings", -1); // Historically, site settings have userd user id -1
 
     protected abstract String getGroupName();

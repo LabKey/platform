@@ -16,6 +16,7 @@
 
 package org.labkey.api.attachments;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.File;
@@ -31,16 +32,16 @@ import java.io.InputStream;
 public class FileAttachmentFile implements AttachmentFile
 {
     private final File _file;
+    private final String _filename;
+
     private InputStream _in;
-    private String _filename;
 
     public FileAttachmentFile(File file)
     {
-        _file = file;
-        _filename = file.getName();
+        this(file, null);
     }
 
-    public FileAttachmentFile(File file, String originalName)
+    public FileAttachmentFile(File file, @Nullable String originalName)
     {
         _file = file;
         _filename = null != originalName ? originalName : file.getName();
@@ -62,11 +63,6 @@ public class FileAttachmentFile implements AttachmentFile
     public String getFilename()
     {
         return _filename;
-    }
-
-    public void setFilename(String filename)
-    {
-        _filename = filename;
     }
 
     public InputStream openInputStream() throws IOException

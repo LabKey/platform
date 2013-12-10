@@ -738,8 +738,7 @@ public class AuthenticationManager
             if (!file.getContentType().startsWith("image/"))
                 throw new ServletException(file.getOriginalFilename() + " does not appear to be an image file");
 
-            AttachmentFile aFile = new SpringAttachmentFile(file);
-            aFile.setFilename(prefix + getProviderName());
+            AttachmentFile aFile = new SpringAttachmentFile(file, prefix + getProviderName());
             AttachmentService.get().addAttachments(ContainerManager.RootContainer.get(), Arrays.asList(aFile), getViewContext().getUser());
 
             return true;

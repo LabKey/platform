@@ -16,6 +16,7 @@
 
 package org.labkey.api.attachments;
 
+import org.jetbrains.annotations.Nullable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -32,23 +33,26 @@ import java.util.Map;
  */
 public class SpringAttachmentFile implements AttachmentFile
 {
-    private MultipartFile _file;
+    private final MultipartFile _file;
+    private final String _filename;
+
     private InputStream _in;
-    private String _filename = null;
 
     public SpringAttachmentFile(MultipartFile file)
     {
+        this(file, null);
+    }
+
+    public SpringAttachmentFile(MultipartFile file, @Nullable String newName)
+    {
         _file = file;
+        _filename = (null == newName ? _file.getOriginalFilename() : newName);
+
     }
 
     public String getFilename()
     {
-        return null != _filename ? _filename : _file.getOriginalFilename();
-    }
-
-    public void setFilename(String filename)
-    {
-        _filename = filename;
+        return _filename;
     }
 
     public String getContentType()

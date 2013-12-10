@@ -20,28 +20,20 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.FolderDisplayMode;
 
+import static org.labkey.api.settings.LookAndFeelProperties.*;
+
 /**
  * User: adam
  * Date: Aug 1, 2008
  * Time: 9:35:40 PM
  */
-public class WriteableLookAndFeelProperties extends LookAndFeelProperties
+
+// Handles all the properties that can be set at the project or site level
+public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelProperties
 {
     WriteableLookAndFeelProperties(Container c)
     {
         super(c);
-        makeWriteable(c);
-    }
-
-    // Make public
-    public void save()
-    {
-        super.save();
-    }
-
-    public void clear()
-    {
-        getProperties().clear();
     }
 
     public void setFolderDisplayMode(FolderDisplayMode folderDisplayMode)
@@ -59,6 +51,7 @@ public class WriteableLookAndFeelProperties extends LookAndFeelProperties
         storeStringValue(SUPPORT_EMAIL, email);
     }
 
+    // TODO: Remove this setting? There's no way to set it...
     public void setNavigationBarWidth(String width)
     {
         storeStringValue(NAVIGATION_BAR_WIDTH, width);
@@ -102,15 +95,5 @@ public class WriteableLookAndFeelProperties extends LookAndFeelProperties
     public void setReportAProblemPath(String reportAProblemPath)
     {
         storeStringValue(REPORT_A_PROBLEM_PATH_PROP, reportAProblemPath);
-    }
-
-    public void setDefaultDateFormat(String defaultDateFormat)
-    {
-        storeStringValue(DEFAULT_DATE_FORMAT, defaultDateFormat);
-    }
-
-    public void setDefaultNumberFormat(String defaultNumberFormat)
-    {
-        storeStringValue(DEFAULT_NUMBER_FORMAT, defaultNumberFormat);
     }
 }

@@ -26,9 +26,9 @@ import org.labkey.api.view.WebTheme;
  * Date: Aug 1, 2008
  * Time: 9:35:40 PM
  */
-public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
+public class LookAndFeelProperties extends LookAndFeelFolderProperties
 {
-    private static final String LOOK_AND_FEEL_SET_NAME = "LookAndFeel";
+    static final String LOOK_AND_FEEL_SET_NAME = "LookAndFeel";
 
     protected static final String SYSTEM_DESCRIPTION_PROP = "systemDescription";
     protected static final String SYSTEM_SHORT_NAME_PROP = "systemShortName";
@@ -44,20 +44,7 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
     protected static final String SUPPORT_EMAIL = "supportEmail";
     protected static final String REPORT_A_PROBLEM_PATH_PROP = "reportAProblemPath";
 
-    protected static final String DEFAULT_DATE_FORMAT = "defaultDateFormatString";
-    protected static final String DEFAULT_NUMBER_FORMAT = "defaultNumberFormatString";
-
-    private final Container _c;
-
-    protected String getType()
-    {
-        return "look and feel settings";
-    }
-
-    protected String getGroupName()
-    {
-        return LOOK_AND_FEEL_SET_NAME;
-    }
+    private final Container _settingsContainer;
 
     public static LookAndFeelProperties getInstance(Container c)
     {
@@ -66,36 +53,36 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
 
     public static WriteableLookAndFeelProperties getWriteableInstance(Container c)
     {
-        assert c.isProject() || c.isRoot();
-        return new WriteableLookAndFeelProperties(c);
+        if (c.isProject() || c.isRoot())
+            return new WriteableLookAndFeelProperties(getSettingsContainer(c));
+        else
+            throw new IllegalStateException("Valid only with root or project");
+    }
+
+    public static WriteableFolderLookAndFeelProperties getWriteableFolderInstance(Container c)
+    {
+        if (c.isProject() || c.isRoot())
+            throw new IllegalStateException("Not valid with root or project");
+        else
+            return new WriteableFolderLookAndFeelProperties(c);
     }
 
     protected LookAndFeelProperties(Container c)
     {
-        _c = getSettingsContainer(c);
+        super(c);
+        _settingsContainer = getSettingsContainer(c);
     }
 
+    @Override
+    protected String lookupStringValue(String name, @Nullable String defaultValue)
+    {
+        return lookupStringValue(_settingsContainer, name, defaultValue);
+    }
+
+    // TODO: Shouldn't this be static?
     public boolean hasProperties()
     {
         return !getProperties(_c).isEmpty();
-    }
-
-    protected String lookupStringValue(String name, @Nullable String defaultValue)
-    {
-        return lookupStringValue(_c, name, defaultValue);
-    }
-
-    protected String lookupStringValue(Container c, String name, @Nullable String defaultValue)
-    {
-        if (c.isRoot())
-            return super.lookupStringValue(c, name, defaultValue);
-
-        String value = super.lookupStringValue(c, name, null);
-
-        if (null == value)
-            value = lookupStringValue(c.getParent(), name, defaultValue);
-
-        return value;
     }
 
     public String getDescription()
@@ -130,7 +117,7 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
 
     public String getNavigationBarWidth()
     {
-        return lookupStringValue(NAVIGATION_BAR_WIDTH, "146");
+        return lookupStringValue(NAVIGATION_BAR_WIDTH, "146"); // TODO: Remove this property? There's no way to set it...
     }
 
     public String getLogoHref()
@@ -171,18 +158,6 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
         }
 
         return path.replace("${contextPath}", AppProps.getInstance().getContextPath());
-    }
-
-    public String getDefaultDateFormat()
-    {
-        // TODO: Inherit up the entire folder hierarchy
-        return lookupStringValue(DEFAULT_DATE_FORMAT, null);
-    }
-
-    public String getDefaultNumberFormat()
-    {
-        // TODO: Inherit up the entire folder hierarchy
-        return lookupStringValue(DEFAULT_NUMBER_FORMAT, null);
     }
 
     public boolean isMenuUIEnabled()

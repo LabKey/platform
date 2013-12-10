@@ -34,7 +34,4 @@ public interface AttachmentFile extends FileStream
     public String getContentType();
     public InputStream openInputStream() throws IOException;
     public void closeInputStream() throws IOException;
-
-    @Deprecated // remove from interface, add as (final) param to implementations' constructors
-    public void setFilename(String filename);
 }

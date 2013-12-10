@@ -31,7 +31,7 @@ import java.io.InputStream;
 public class InputStreamAttachmentFile implements AttachmentFile
 {
     private final InputStream _is;
-    private String _filename;      // TODO: Make final... once setFilename() is removed from interface
+    private final String _filename;
     private final byte[] _bytes;
     private final String _contentType;     // Null means infer from filename
 
@@ -80,12 +80,6 @@ public class InputStreamAttachmentFile implements AttachmentFile
     public String getFilename()
     {
         return _filename;
-    }
-
-    @Override
-    public void setFilename(String filename)
-    {
-        _filename = filename;
     }
 
     @Override
