@@ -43,6 +43,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -119,7 +120,8 @@ public class QueryWebPart extends VBox
             }
 
             TableInfo td = null;
-            try {
+            try
+            {
                 ArrayList<QueryException> errors = new ArrayList<>();
                 QueryDefinition qd = _settings.getQueryDef(_schema);
                 if (null != qd)
@@ -128,12 +130,14 @@ public class QueryWebPart extends VBox
                     if (_metadata != null && !_hasSql && td != null)
                     {
                         TableType type = QueryService.get().parseMetadata(_metadata, errors);
-                        td.overlayMetadata(type, _schema, errors);
+                        td.overlayMetadata(Collections.singleton(type), _schema, errors);
                     }
                 }
                 if (!errors.isEmpty())
                     td = null;
-            }catch(Exception x){}
+            }
+            catch (Exception x) { }
+
             if (null == td)
             {
                 url = _schema.urlSchemaDesigner();

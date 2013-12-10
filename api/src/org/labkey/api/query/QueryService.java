@@ -162,10 +162,11 @@ abstract public class QueryService
     abstract public List<FieldKey> getDefaultVisibleColumns(List<ColumnInfo> columns);
 
     /**
-     * Find a metadata override for the given schema and table by looking in the current folder,
-     * parent folders up to and including the project, the shared container, and finally in
-     * each module active in the current container for
-     * "<code>queries/&lt;schemaName&gt;/&lt;tableName&gt;.qview.xml</code>" metadata files.
+     * Finds metadata overrides for the given schema and table and returns them in application order.
+     * For now, a maximum of two metadata xml overrides will be returned, in application order:
+     *
+     * 1) The first metadata "<code>queries/&lt;schemaName&gt;/&lt;tableName&gt;.qview.xml</code>" file found from the set of active (or all) modules.
+     * 2) The first metadata xml found in the database searching up the container hierarchy plus shared.
      *
      * @param schema The schema.
      * @param tableName The table.
@@ -173,9 +174,9 @@ abstract public class QueryService
      * @param allModules True to search all modules; false to search active modules in the schema's container.
      * @param errors A collection of errors generated while parsing the metadata xml.
      * @param dir An alternate location to search for file-based query metadata (defaults to "<code>queries/&lt;schemaName&gt;</code>").  Be careful to only use valid file names.
-     * @return The metadata xml.
+     * @return A set of metadata xml in application order.
      */
-    abstract public TableType findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, boolean allModules, @NotNull Collection<QueryException> errors, @Nullable Path dir);
+    abstract public Collection<TableType> findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, boolean allModules, @NotNull Collection<QueryException> errors, @Nullable Path dir);
 
     abstract public TableType parseMetadata(String metadataXML, Collection<QueryException> errors);
 

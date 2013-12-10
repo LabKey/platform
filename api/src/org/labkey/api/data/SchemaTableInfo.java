@@ -50,7 +50,6 @@ import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -746,7 +745,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
     @Override
-    public void overlayMetadata(TableType metadata, UserSchema schema, Collection<QueryException> errors)
+    public void overlayMetadata(Collection<TableType> metadata, UserSchema schema, Collection<QueryException> errors)
     {
         checkLocked();
         // no-op, we don't support metadata overrides

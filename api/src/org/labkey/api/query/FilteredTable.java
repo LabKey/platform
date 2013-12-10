@@ -110,7 +110,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     }
 
     @Override
-    public void loadFromXML(QuerySchema schema, @Nullable TableType xmlTable, Collection<QueryException> errors)
+    public void loadFromXML(QuerySchema schema, @Nullable Collection<TableType> xmlTable, Collection<QueryException> errors)
     {
         if (_rootTable instanceof SchemaTableInfo)
         {

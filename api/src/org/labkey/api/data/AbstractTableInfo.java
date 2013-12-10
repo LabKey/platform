@@ -178,6 +178,7 @@ abstract public class AbstractTableInfo implements TableInfo
         return new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String, ColumnInfo>());
     }
 
+    // BUGBUG: This is suspect -- all other parts of LabKey expect column names to be case-insensitive including FieldKeys
     protected boolean isCaseSensitive()
     {
         return false;
@@ -453,6 +454,7 @@ abstract public class AbstractTableInfo implements TableInfo
 
     public void addMethod(String name, MethodInfo method)
     {
+        checkLocked();
         if (_methodMap == null)
         {
             _methodMap = new HashMap<>();
@@ -779,6 +781,15 @@ abstract public class AbstractTableInfo implements TableInfo
     }
 
 
+    public void loadFromXML(QuerySchema schema, @Nullable Collection<TableType> xmlTables, Collection<QueryException> errors)
+    {
+        checkLocked();
+
+        if (xmlTables != null)
+            for (TableType xmlTable : xmlTables)
+                loadFromXML(schema, xmlTable, errors);
+    }
+
     public void loadFromXML(QuerySchema schema, @Nullable TableType xmlTable, Collection<QueryException> errors)
     {
         checkLocked();
@@ -1076,12 +1087,12 @@ abstract public class AbstractTableInfo implements TableInfo
         checkLocked();
         if (isMetadataOverrideable())
         {
-            TableType metadata = QueryService.get().findMetadataOverride(schema, tableName, false, false, errors, null);
+            Collection<TableType> metadata = QueryService.get().findMetadataOverride(schema, tableName, false, false, errors, null);
             overlayMetadata(metadata, schema, errors);
         }
     }
 
-    public void overlayMetadata(TableType metadata, UserSchema schema, Collection<QueryException> errors)
+    public void overlayMetadata(Collection<TableType> metadata, UserSchema schema, Collection<QueryException> errors)
     {
         checkLocked();
         if (isMetadataOverrideable())
@@ -1392,6 +1403,7 @@ abstract public class AbstractTableInfo implements TableInfo
     @Override
     public void setAuditBehavior(AuditBehaviorType type)
     {
+        checkLocked();
         _auditBehaviorType = type;
     }
 

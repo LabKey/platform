@@ -267,9 +267,18 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     public ContainerFilter getContainerFilter();
 
+    /**
+     * Finds and applies the first metadata xml from active modules in the schema's container and then the first user-created metadata in the container hierarchy.
+     *
+     * @see QueryService#findMetadataOverride(UserSchema, String, boolean, boolean, Collection, Path)
+     *
+     * @param tableName
+     * @param schema
+     * @param errors
+     */
     public void overlayMetadata(String tableName, UserSchema schema, Collection<QueryException> errors);
 
-    public void overlayMetadata(TableType metadata, UserSchema schema, Collection<QueryException> errors);
+    public void overlayMetadata(Collection<TableType> metadata, UserSchema schema, Collection<QueryException> errors);
 
     public boolean isMetadataOverrideable();
 
