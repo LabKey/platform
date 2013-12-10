@@ -32,7 +32,7 @@ LABKEY.vis.internal.Axis = function() {
             gridLineFn = function(v) {v = -(Math.floor(scale(v)) - .5); return 'M0,' + v + 'L' + Math.abs(grid.leftEdge - grid.rightEdge) + ',' + v + 'Z';};
             border = 'M0.5,' + (-grid.bottomEdge + 1) + 'L0.5,' + -grid.topEdge + 'Z';
             // Don't overlap gridlines with x axis border.
-            if (scale(data[0]) == grid.bottomEdge) {
+            if (Math.floor(scale(data[0])) == Math.floor(grid.bottomEdge)) {
                 gridLineData = gridLineData.slice(1);
             }
         } else if (orientation == 'right') {
@@ -43,7 +43,7 @@ LABKEY.vis.internal.Axis = function() {
             gridLineFn = function(v) {v = -(Math.floor(scale(v)) - .5); return 'M0,' + v + 'L' + -(Math.abs(grid.leftEdge - grid.rightEdge)-1) + ',' + v + 'Z';};
             border = 'M-0.5,' + -(grid.bottomEdge) + 'L-0.5,' + -(grid.topEdge) + 'Z';
             // Don't overlap gridlines with x axis border.
-            if (scale(data[0]) == grid.bottomEdge) {
+            if (Math.floor(scale(data[0])) == Math.floor(grid.bottomEdge)) {
                 gridLineData = gridLineData.slice(1);
             }
         } else {
@@ -542,10 +542,6 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         pointsSel = layer.selectAll('.point').data(data);
         pointsSel.exit().remove();
 
-        if (plot.clipRect) {
-            applyClipRect.call(this, layer);
-        }
-
         if (geom.hoverTextAes) {
             pointsSel = pointsSel.enter().append('a')
                     .attr('class', 'point').attr('xlink:title', geom.hoverTextAes.getValue)
@@ -565,6 +561,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             pointsSel.on('click', function(data) {
                 geom.pointClickFnAes.value(d3.event, data);
             });
+        }
+
+        if (plot.clipRect) {
+            applyClipRect.call(this, layer);
         }
     };
 
@@ -645,28 +645,44 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return LABKEY.vis.makeLine(x - (width/2), y, x + (width/2), y);
         };
         tBarFn = function(d) {
-            var x, y;
-            y = Math.floor(-geom.yScale.scale(getTopWhisker(d.summary))) + .5;
+            var x, y, w;
+            w = getTopWhisker(d.summary);
+
+            if(w == null) {return null;}
+
+            y = Math.floor(-geom.yScale.scale(w)) + .5;
             x = geom.xScale.scale(d.name);
             return LABKEY.vis.makeLine(x - width / 4, y, x + width / 4, y);
         };
         tWhiskerFn = function(d) {
-            var x, yTop, yBottom;
-            yTop = Math.floor(-geom.yScale.scale(getTopWhisker(d.summary))) + .5;
+            var x, yTop, yBottom, w;
+            w = getTopWhisker(d.summary);
+
+            if(w == null) {return null;}
+
+            yTop = Math.floor(-geom.yScale.scale(w)) + .5;
             yBottom = Math.floor(-geom.yScale.scale(d.summary.Q3)) + .5;
             x = geom.xScale.scale(d.name);
             return LABKEY.vis.makeLine(x, yTop, x, yBottom);
         };
         bBarFn = function(d) {
-            var x, y;
-            y = Math.floor(-geom.yScale.scale(getBottomWhisker(d.summary))) + .5;
+            var x, y, w;
+            w = getBottomWhisker(d.summary);
+
+            if(w == null) {return null;}
+
+            y = Math.floor(-geom.yScale.scale(w)) + .5;
             x = geom.xScale.scale(d.name);
             return LABKEY.vis.makeLine(x - width / 4, y, x + width / 4, y);
         };
         bWhiskerFn = function(d) {
-            var x, yTop, yBottom;
+            var x, yTop, yBottom, w;
+            w = getBottomWhisker(d.summary);
+
+            if(w == null) {return null;}
+
             yTop = Math.floor(-geom.yScale.scale(d.summary.Q1)) + .5;
-            yBottom = Math.floor(-geom.yScale.scale(getBottomWhisker(d.summary))) + .5;
+            yBottom = Math.floor(-geom.yScale.scale(w)) + .5;
             x = geom.xScale.scale(d.name);
             return LABKEY.vis.makeLine(x, yTop, x, yBottom);
         };
