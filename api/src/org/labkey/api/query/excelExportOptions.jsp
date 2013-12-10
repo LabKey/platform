@@ -29,8 +29,10 @@
     String onClickScript = "var formText; " +
             "if (document.getElementById('" + xlsGUID + "').checked) { formText = " + PageFlowUtil.jsString(model.convertToForm(model.getXlsURL())) + ";} " +
             "else if (document.getElementById('" + xlsxGUID + "').checked) { formText = " + PageFlowUtil.jsString(model.convertToForm(model.getXlsxURL())) + ";} " +
-            // Excel Web Query doesn't work with POSTs, so always do it as a GET
-            "else { window.location = " + PageFlowUtil.jsString(model.getIqyURL().toString()) + "; return false; } " +
+            // Excel Web Query doesn't work with POSTs, so always do it as a GET.  It also is not supported for all tables
+            (model.getIqyURL() == null ? "" :
+                "else { window.location = " + PageFlowUtil.jsString(model.getIqyURL().toString()) + "; return false; } "
+            ) +
             "LABKEY.DataRegions['" + model.getDataRegionName() + "'].addMessage({html:'<div class=\"labkey-message\"><strong>" +
             "Excel export started.</strong></div>', part: 'excelExport', hideButtonPanel: true, duration:5000}); " +
             "var newForm = LABKEY.ExtAdapter.DomHelper.append(document.getElementsByTagName('body')[0], formText); " +
