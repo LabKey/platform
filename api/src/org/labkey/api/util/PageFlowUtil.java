@@ -1419,7 +1419,7 @@ public class PageFlowUtil
         return "<a class=\"labkey-menu-text-link\" style=\"" + (bold ? "font-weight: bold;" : "") + "\" href=\"" + filter(href) + "\"" +
                 " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
                 (id == null ? "" : " id=\"" + filter(id) + "PopupLink\"") + "><span" +
-                (id == null ? "" : " id=\"" + filter(id) + "PopupText\"") + ">" + text + "</span>&nbsp;<img src=\"" + HttpView.currentView().getViewContext().getContextPath() +
+                (id == null ? "" : " id=\"" + filter(id) + "PopupText\"") + ">" + filter(text) + "</span>&nbsp;<img src=\"" + HttpView.currentView().getViewContext().getContextPath() +
                 "/_images/text_link_arrow.gif\" style=\"position:relative; background-color:transparent; width:10px; height:auto; top:" + offset +"px; right:0;\"></a>";
     }
 
@@ -1428,7 +1428,7 @@ public class PageFlowUtil
     {
         return "<a href=\"" + filter(href) +"\"" +
             " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
-            "><img id=\"" + imageId + "\" title=\"" + text + "\"src=\"" + imageSrc + "\" " +
+            "><img id=\"" + imageId + "\" title=\"" + filter(text) + "\"src=\"" + imageSrc + "\" " +
             (imageHeight == null ? "" : " height=\"" + imageHeight + "\"") + (imageWidth == null ? "" : " width=\"" + imageWidth + "\"") + "/></a>";
     }
 
