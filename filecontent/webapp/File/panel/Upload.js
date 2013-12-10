@@ -426,13 +426,6 @@ Ext4.define('File.panel.Upload', {
         });
 
         return this.appletStatusBar;
-
-/*
-        return [{ xtype: 'toolbar',
-            dock: 'top',
-            items: [this.progressBarContainer, this.statusText, '->', this.closeBtn]
-        }];
-*/
     },
 
     updateProgressBarRecord: function(store, record){
