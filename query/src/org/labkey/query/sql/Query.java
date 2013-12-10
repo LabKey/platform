@@ -1173,6 +1173,8 @@ public class Query
         new MethodSqlTest("SELECT STARTSWITH('FRED ','FR')", JdbcType.BOOLEAN, true),
         new MethodSqlTest("SELECT STARTSWITH('FRED ','Z')", JdbcType.BOOLEAN, false),
         new MethodSqlTest("SELECT SUBSTRING('FRED ',2,3)", JdbcType.VARCHAR, "RED"),
+        new MethodSqlTest("SELECT SUBSTRING('FRED ',2,2)", JdbcType.VARCHAR, "RE"),
+        new MethodSqlTest("SELECT SUBSTRING('FRED',3)", JdbcType.VARCHAR, "ED"),
             // tan, timestampadd, week year
         new MethodSqlTest("SELECT USERID()", JdbcType.INTEGER, new Callable(){
             @Override

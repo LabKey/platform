@@ -337,7 +337,8 @@ public abstract class
                             SQLFragment[] argumentsThree = new SQLFragment[3];
                             argumentsThree[0] = arguments[0];
                             argumentsThree[1] = arguments[1];
-                            argumentsThree[2] = new SQLFragment(String.valueOf(Integer.MAX_VALUE));
+                            // 19187: Query error when using substring without 3rd parameter in LabKey SQL
+                            argumentsThree[2] = new SQLFragment(String.valueOf(Integer.MAX_VALUE/2));
                             arguments = argumentsThree;
                         }
                         return super.getSQL(query, schema, arguments);

@@ -96,10 +96,10 @@
 %>
 <p>This page is for troubleshooting custom grid views. It is not intended for general use.
 <% if (schemaName != null) { %>
-<br>Filtered by schema: <b><%= schemaName %></b>
+<br>Filtered by schema: <b><%= h(schemaName) %></b>
 <% } %>
 <% if (queryName != null) { %>
-<br>Filtered by query: <b><%= queryName %></b>
+<br>Filtered by query: <b><%= h(queryName) %></b>
 <% } %>
 </p>
 
@@ -137,12 +137,12 @@
         <td><%=h(view.getName())%>
         </td>
         <td><%=StringUtils.join(flags, ",")%></td>
-        <td><%=userIdToString(view.getCustomViewOwner(), user)%>
+        <td><%=h(userIdToString(view.getCustomViewOwner(), user))%>
         </td>
         <td><%=DateUtil.formatDateTime(view.getCreated()).replaceAll(" ", "&nbsp;")%></td>
-        <td><%=userIdToString(view.getCreatedBy(), user)%></td>
+        <td><%=h(userIdToString(view.getCreatedBy(), user))%></td>
         <td><%=DateUtil.formatDateTime(view.getModified()).replaceAll(" ", "&nbsp;")%></td>
-        <td><%=userIdToString(view.getModifiedBy(), user)%></td>
+        <td><%=h(userIdToString(view.getModifiedBy(), user))%></td>
         <td><% ActionURL urlDelete = new ActionURL(InternalDeleteView.class, c);
         urlDelete.addParameter("customViewId", Integer.toString(view.getCustomViewId())); %>
             <labkey:link href="<%=urlDelete%>" text="delete" />
