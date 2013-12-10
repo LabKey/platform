@@ -1361,13 +1361,17 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
-    public TableType findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, boolean allModules, @NotNull Collection<QueryException> errors, Path dir)
+    public Collection<TableType> findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, boolean allModules, @NotNull Collection<QueryException> errors, Path dir)
     {
-        QueryDef queryDef = findMetadataOverrideImpl(schema, tableName, customQuery, allModules, dir);
-        if (queryDef == null)
+        Collection<QueryDef> queryDefs = findMetadataOverrideImpl(schema, tableName, customQuery, allModules, dir);
+        if (queryDefs == null)
             return null;
 
-        return parseMetadata(queryDef.getMetaData(), errors);
+        Collection<TableType> tableTypes = new ArrayList<>();
+        for (QueryDef queryDef : queryDefs)
+            tableTypes.add(parseMetadata(queryDef.getMetaData(), errors));
+
+        return tableTypes;
     }
 
     public TableType parseMetadata(String metadataXML, Collection<QueryException> errors)
@@ -1400,7 +1404,7 @@ public class QueryServiceImpl extends QueryService
     // Use a WeakHashMap to cache QueryDefs. This means that the cache entries will only be associated directly
     // with the exact same UserSchema instance, regardless of whatever UserSchema.equals() returns. This means
     // that the scope of the cache is very limited, and this is a very conservative cache.
-    private Map<ObjectIdentityCacheKey, WeakReference<Map<String, QueryDef>>> _metadataCache = Collections.synchronizedMap(new WeakHashMap<ObjectIdentityCacheKey, WeakReference<Map<String, QueryDef>>>());
+    private Map<ObjectIdentityCacheKey, WeakReference<Map<String, List<QueryDef>>>> _metadataCache = Collections.synchronizedMap(new WeakHashMap<ObjectIdentityCacheKey, WeakReference<Map<String, List<QueryDef>>>>());
 
     /** Hides whatever the underlying key might do for .equals() and .hashCode() and instead relies on pointer equality */
     private static class ObjectIdentityCacheKey
@@ -1443,24 +1447,61 @@ public class QueryServiceImpl extends QueryService
         }
     }
 
+    /**
+     * Finds metadata overrides for the given schema and table and returns them in application order.
+     * For now, a maximum of two metadata xml overrides will be returned:
+     *
+     * 1) The first metadata "<code>queries/&lt;schemaName&gt;/&lt;tableName&gt;.qview.xml</code>" file found from the set of active (or all) modules.
+     * 2) The first metadata xml found in the database searching up the container hierarchy plus shared.
+     */
     // BUGBUG: Should we look in the session queries for metadata overrides?
-    public QueryDef findMetadataOverrideImpl(UserSchema schema, String tableName, boolean customQuery, boolean allModules, @Nullable Path dir)
+    @Nullable
+    public List<QueryDef> findMetadataOverrideImpl(UserSchema schema, String tableName, boolean customQuery, boolean allModules, @Nullable Path dir)
     {
         ObjectIdentityCacheKey schemaCacheKey = new ObjectIdentityCacheKey(schema, customQuery, allModules, dir);
-        WeakReference<Map<String, QueryDef>> ref = _metadataCache.get(schemaCacheKey);
-        Map<String, QueryDef> queryDefs = ref == null ? null : ref.get();
+        WeakReference<Map<String, List<QueryDef>>> ref = _metadataCache.get(schemaCacheKey);
+        Map<String, List<QueryDef>> queryDefs = ref == null ? null : ref.get();
         if (queryDefs == null)
         {
             queryDefs = new CaseInsensitiveHashMap<>();
             ref = new WeakReference<>(queryDefs);
             _metadataCache.put(schemaCacheKey, ref);
         }
+
         // Check if we've already cached the QueryDef for this specific UserSchema object
         if (queryDefs.containsKey(tableName))
         {
             return queryDefs.get(tableName);
         }
 
+        // Collect metadata xml in application order
+        List<QueryDef> defs = new ArrayList<>();
+
+        // 1) Module query metadata
+        QueryDef moduleQueryDef = findMetadataOverrideInModules(schema, tableName, allModules, dir);
+        if (moduleQueryDef != null)
+            defs.add(moduleQueryDef);
+
+        // 2) User created query metadata
+        QueryDef databaseQueryDef = findMetadataOverrideInDatabase(schema, tableName, customQuery);
+        if (databaseQueryDef != null)
+            defs.add(databaseQueryDef);
+
+        if (defs.isEmpty())
+        {
+            queryDefs.put(tableName, null);
+            return null;
+        }
+        else
+        {
+            List<QueryDef> ret = Collections.unmodifiableList(defs);
+            queryDefs.put(tableName, ret);
+            return ret;
+        }
+    }
+
+    private QueryDef findMetadataOverrideInDatabase(UserSchema schema, String tableName, boolean customQuery)
+    {
         String schemaName = schema.getSchemaPath().toString();
         Container container = schema.getContainer();
         QueryDef queryDef;
@@ -1470,7 +1511,6 @@ public class QueryServiceImpl extends QueryService
             queryDef = QueryManager.get().getQueryDef(container, schemaName, tableName, customQuery);
             if (queryDef != null && (customQuery || queryDef.getMetaData() != null))
             {
-                queryDefs.put(tableName, queryDef);
                 return queryDef;
             }
             container = container.getParent();
@@ -1481,9 +1521,15 @@ public class QueryServiceImpl extends QueryService
         queryDef = QueryManager.get().getQueryDef(ContainerManager.getSharedContainer(), schemaName, tableName, customQuery);
         if (queryDef != null && queryDef.getMetaData() != null)
         {
-            queryDefs.put(tableName, queryDef);
             return queryDef;
         }
+
+        return null;
+    }
+
+    private QueryDef findMetadataOverrideInModules(UserSchema schema, String tableName, boolean allModules, @Nullable Path dir)
+    {
+        String schemaName = schema.getSchemaPath().toString();
 
         if (dir == null)
         {
@@ -1493,7 +1539,7 @@ public class QueryServiceImpl extends QueryService
             dir = new Path(subDirs.toArray(new String[subDirs.size()]));
         }
 
-        // Finally, look for file-based definitions in modules
+        // Look for file-based definitions in modules
         Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : schema.getContainer().getActiveModules(schema.getUser());
         for (Module module : modules)
         {
@@ -1536,14 +1582,12 @@ public class QueryServiceImpl extends QueryService
                     {
                         QueryDef result = metadataDef.toQueryDef(schema.getContainer());
                         result.setSchema(schemaName);
-                        queryDefs.put(tableName, result);
                         return result;
                     }
                 }
             }
         }
 
-        queryDefs.put(tableName, null);
         return null;
     }
 

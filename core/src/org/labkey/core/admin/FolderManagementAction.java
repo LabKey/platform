@@ -1097,7 +1097,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                     assert !_container.isRoot() : "No import for the root folder";
                     return new JspView<>("/org/labkey/core/admin/importFolder.jsp", _form, _errors);
                 case "info":
-                    return AdminController.getContainerInfoView(_container);
+                    return AdminController.getContainerInfoView(_container, getViewContext().getUser());
                 case "props":
                     return new JspView<>("/org/labkey/core/project/modulePropertiesAdmin.jsp", _form, _errors);
                 case "settings":

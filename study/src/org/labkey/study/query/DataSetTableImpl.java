@@ -683,7 +683,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
             }
             else
             {   // Name and label different; try name, then label only if name not found
-                TableType metadata = QueryService.get().findMetadataOverride(schema, _dsd.getName(), false, false, errors, null);
+                Collection<TableType> metadata = QueryService.get().findMetadataOverride(schema, _dsd.getName(), false, false, errors, null);
                 if (null != metadata)
                 {
                     overlayMetadata(metadata, schema, errors);
@@ -703,7 +703,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
 
     private void overlayMetadataIfExists(String tableName, UserSchema schema, Collection<QueryException> errors)
     {
-        TableType metadata = QueryService.get().findMetadataOverride(schema, tableName, false, false, errors, null);
+        Collection<TableType> metadata = QueryService.get().findMetadataOverride(schema, tableName, false, false, errors, null);
         if (null != metadata)
             overlayMetadata(metadata, schema, errors);
     }

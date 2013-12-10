@@ -717,7 +717,7 @@ public class AdminController extends SpringActionController
         {
             Container c = getContainer();
 //            getPageConfig().setTemplate(Template.None);
-            HtmlView v = getContainerInfoView(c);
+            HtmlView v = getContainerInfoView(c, getUser());
             v.setTitle("Container details: " + StringUtils.defaultIfEmpty(c.getName(),"/"));
             return v;
         }
@@ -728,14 +728,17 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public static HtmlView getContainerInfoView(Container c)
+    public static HtmlView getContainerInfoView(Container c, User currentUser)
     {
+        User createdBy = UserManager.getUser(c.getCreatedBy());
         return new HtmlView(
             "<table>" +
             "<tr><td class='labkey-form-label'>Path</td><td>" + PageFlowUtil.filter(c.getPath()) + "</td></tr>" +
             "<tr><td class='labkey-form-label'>Name</td><td>" + PageFlowUtil.filter(c.getName()) + "</td></tr>" +
             "<tr><td class='labkey-form-label'>EntityId</td><td>" + c.getId() + "</td></tr>" +
             "<tr><td class='labkey-form-label'>RowId</td><td>" + c.getRowId() + "</td></tr>" +
+            "<tr><td class='labkey-form-label'>Created</td><td>" + c.getCreated() + "</td></tr>" +
+            "<tr><td class='labkey-form-label'>Created By</td><td>" + (createdBy != null ? createdBy.getDisplayName(currentUser) : "<" + c.getCreatedBy() + ">") + "</td></tr>" +
             "<tr><td class='labkey-form-label'>FolderType</td><td>" + PageFlowUtil.filter(c.getFolderType().getName()) + "</td></tr>" +
             "<tr><td class='labkey-form-label'>Description</td><td>" + PageFlowUtil.filter(c.getDescription()) + "</td></tr>" +
             "</table>"
