@@ -395,13 +395,13 @@ Ext4.define('File.panel.Upload', {
         });
 
         this.progressBarContainer = Ext4.create('Ext.container.Container', {
-            flex: 1,
+            width: 250,
             items: [this.progressBar]
         });
 
         this.statusText = Ext4.create('Ext.form.Label', {
             text: '',
-            margins: '0 0 0 10',
+            margins: '5 0 0 20',
             flex: 1,
             border: false
         });
@@ -409,6 +409,7 @@ Ext4.define('File.panel.Upload', {
         this.closeBtn = Ext4.create('Ext.button.Button', {
             iconCls: 'iconClose',
             tooltip: 'Close the file upload panel',
+            style: 'background-color: transparent;',
             scope: this,
             border : false,
             handler: function() {
