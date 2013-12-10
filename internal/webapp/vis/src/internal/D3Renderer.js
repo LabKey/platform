@@ -143,6 +143,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 .attr('text-anchor', 'middle')
                 .style('font', '18px verdana, arial, helvetica, sans-serif');
 
+        xLabel.dom = labels.append('text')
+                .attr('x', plot.grid.leftEdge + (plot.grid.rightEdge - plot.grid.leftEdge) / 2)
+                .attr('y', plot.grid.height - 10)
+                .attr('text-anchor', 'middle')
+                .style('font', '14px verdana, arial, helvetica, sans-serif');
+
         yLeftLabel.dom = labels.append('text')
                 .attr('text-anchor', 'middle')
                 .attr('transform', 'translate(' + (plot.grid.leftEdge - 55) + ',' + (plot.grid.height / 2) + ')rotate(270)')
@@ -151,12 +157,6 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         yRightLabel.dom = labels.append('text')
                 .attr('text-anchor', 'middle')
                 .attr('transform', 'translate(' + (plot.grid.rightEdge + 45) + ',' + (plot.grid.height / 2) + ')rotate(90)')
-                .style('font', '14px verdana, arial, helvetica, sans-serif');
-
-        xLabel.dom = labels.append('text')
-                .attr('x', plot.grid.leftEdge + (plot.grid.rightEdge - plot.grid.leftEdge) / 2)
-                .attr('y', plot.grid.height - 10)
-                .attr('text-anchor', 'middle')
                 .style('font', '14px verdana, arial, helvetica, sans-serif');
 
         labelElements.main = mainLabel;
@@ -374,10 +374,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
                 plot.labels[label].listeners[listenerName] = listenerFn;
                 // Add a .user to the listenerName to keep it scoped by itself. This way we can add our own listeners as well
-                // but we'll keep them scoped separately.
-                labelElements[label].dom.on(listenerName + '.user', listenerFn);
+                // but we'll keep them scoped separately. We have to wrap the listenerFn to we can pass it the event.
+                labelElements[label].dom.on(listenerName + '.user', function(){listenerFn(d3.event);});
                 if (labelElements[label].clickArea) {
-                    labelElements[label].clickArea.on(listenerName + '.user', listenerFn);
+                    labelElements[label].clickArea.on(listenerName + '.user', function(){listenerFn(d3.event);});
                 }
                 return true;
             } else {
@@ -427,15 +427,82 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
     
-    // TODO
-    var clearGrid = function() {};
-    // TODO
-    var renderLegend = function() {};
+    var clearGrid = function() {
+        this.canvas.selectAll('.layer').remove();
+        this.canvas.selectAll('.legend').remove();
+    };
+
+    var renderLegendItem = function(selection, plot){
+        var i, xPad, glyphX, textX, yAcc, textAcc, colorAcc, shapeAcc, foreignObjects, currentItem, cBBox, pBBox;
+
+        selection.attr('font-family', 'verdana, arial, helvetica, sans-serif').attr('font-size', '10px');
+
+        xPad = plot.scales.yRight && plot.scales.yRight.scale ? 40 : 0;
+        glyphX = plot.grid.rightEdge + 30 + xPad;
+        textX = glyphX + 15;
+        yAcc = function(d, i) {return (plot.grid.height - plot.grid.topEdge) + (i * 15);};
+        textAcc = function(d){return d.text};
+        colorAcc = function(d) {return d.color ? d.color : '#000';};
+        shapeAcc = function(d) {
+            if(d.shape) {
+                return d.shape(5);
+            }
+            return "M" + -5 + "," + -2.5 + "L" + 5 + "," + -2.5 + " " + 5 + "," + 2.5 + " " + -5 + "," + 2.5 + "Z";
+        };
+
+        // Append some foreign objects so we can insert HTML nodes.
+        foreignObjects = selection.append('foreignObject')
+                .attr('x', textX).attr('y', yAcc)
+                .attr('width', plot.grid.width - textX);
+
+        // Append the text.
+        foreignObjects.append('xhtml:p').html(textAcc)
+                .attr('font-family', 'verdana, arial, helvetica, sans-serif')
+                .attr('font-size', '10px');
+
+        // Set the height of the foreign object nodes to the height of the underlying <p> nodes otherwise they get cut off.
+        foreignObjects.attr('height', function(){
+            return this.childNodes[0].clientHeight;
+        });
+
+        // Now that we've rendered the paragraphs, iterate through them and adjust the y values so they no longer overlap.
+        for (i = 1; i < selection[0].length; i++) {
+            currentItem = selection[0][i];
+            cBBox = currentItem.getBBox();
+            pBBox = selection[0][i-1].getBBox();
+
+            if (pBBox.y + pBBox.height >= cBBox.y) {
+                var newY = parseInt(currentItem.childNodes[0].getAttribute('y')) + Math.abs((pBBox.y + pBBox.height + 3) - cBBox.y);
+                currentItem.childNodes[0].setAttribute('y', newY);
+            }
+        }
+
+        // Append the glyphs.
+        selection.append('path')
+                .attr('d', shapeAcc)
+                .attr('stroke', colorAcc)
+                .attr('fill', colorAcc)
+                .attr('transform', function(d){
+                    var sibling = this.parentElement.childNodes[0],
+                        y = Math.floor(parseInt(sibling.getAttribute('y')) + 5) + .5;
+                    return 'translate(' + glyphX + ',' + y + ')';
+                });
+    };
+
+    var renderLegend = function() {
+        var legendData = plot.getLegendData(), legendGroup, legendItems;
+        if(legendData.length > 0) {
+            legendGroup = this.canvas.append('g').attr('class', 'legend');
+            legendItems = legendGroup.selectAll('.legend-item').data(legendData);
+            legendItems.exit().remove();
+            legendItems.enter().append('g').attr('class', 'legend-item').call(renderLegendItem, plot);
+        }
+    };
 
     var renderPointGeom = function(data, geom) {
         var layer, pointsSel, xAcc, yAcc, xBinWidth = null, yBinWidth = null, defaultShape, translateAcc, colorAcc, sizeAcc, shapeAcc;
         // TODO: Make sure on re-render we just select this layer again, instead of re-creating it.
-        layer = this.canvas.append('g').attr('transform', 'translate(0,' + plot.grid.height + ')');
+        layer = this.canvas.append('g').attr('class', 'layer').attr('transform', 'translate(0,' + plot.grid.height + ')');
 
         data = data.filter(function(d) {
             if (geom.getX(d) == null && !geom.plotNullPoints) {return false;}
@@ -469,7 +536,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return circle(sizeAcc(row));
         };
         shapeAcc = geom.shapeAes && geom.shapeScale ? function(row) {
-            return geom.shapeScale.scale(geom.shapeAes.getValue(row))(sizeAcc(row));
+            return geom.shapeScale.scale(geom.shapeAes.getValue(row) + geom.layerName)(sizeAcc(row));
         } : defaultShape;
 
         pointsSel = layer.selectAll('.point').data(data);
@@ -533,9 +600,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         selection.append('path').attr('class', 'bar').attr('d', bottomFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
         selection.append('path').attr('class', 'bar').attr('d', middleFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
     };
+
     var renderErrorBarGeom = function(data, geom) {
         // TODO: Make sure on re-render we just select this layer again, instead of re-creating it.
-        var layer = this.canvas.append('g').attr('transform', 'translate(0,' + plot.grid.height + ')');
+        var layer = this.canvas.append('g').attr('class', 'layer').attr('transform', 'translate(0,' + plot.grid.height + ')');
         var errorBars = layer.selectAll('.error-bar').data(data);
 
         errorBars.enter().append('g').attr('class', 'error-bar').call(renderErrorBar, plot, geom);
@@ -688,7 +756,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
     var renderBoxPlotGeom = function(data, geom) {
         // TODO: Make sure on re-render we just select this layer again, instead of re-creating it.
-        var layer = this.canvas.append('g').attr('transform', 'translate(0,' + plot.grid.height + ')');
+        var layer = this.canvas.append('g').attr('class', 'layer').attr('transform', 'translate(0,' + plot.grid.height + ')');
         var groupName, groupedData, summary, summaries = [];
 
         if (geom.xScale.scaleType == 'continuous') {
@@ -698,7 +766,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         groupedData = LABKEY.vis.groupData(data, geom.xAes.getValue);
         for (groupName in groupedData) {
-            if (groupedData.hasOwnProperty(group)) {
+            if (groupedData.hasOwnProperty(groupName)) {
                 summary = LABKEY.vis.Stat.summary(groupedData[groupName], geom.yAes.getValue);
                 if (summary.sortedValues.length > 0) {
                     summaries.push({
@@ -752,7 +820,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
     var renderLineGeom = function(data, geom) {
         // TODO: Make sure on re-render we just select this layer again, instead of re-creating it.
-        var layer = this.canvas.append('g').attr('transform', 'translate(0,' + plot.grid.height + ')');
+        var layer = this.canvas.append('g').attr('class', 'layer').attr('transform', 'translate(0,' + plot.grid.height + ')');
 
         if (geom.groupAes) {
             var groupedData = LABKEY.vis.groupData(data, geom.groupAes.getValue);
