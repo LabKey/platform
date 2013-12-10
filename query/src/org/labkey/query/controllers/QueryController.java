@@ -4494,7 +4494,9 @@ public class QueryController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
+    // Issue 18870: Guest user can't revert unsaved custom view changes
+    // Permission will be checked inline (guests are allowed to delete their session custom views)
+    @RequiresNoPermission
     public class DeleteViewAction extends ApiAction<DeleteViewForm>
     {
         @Override
@@ -4510,11 +4512,26 @@ public class QueryController extends SpringActionController
             {
                 throw new NotFoundException();
             }
+
+            if (getUser().isGuest())
+            {
+                // Guests can only delete session custom views.
+                if (!view.isSession())
+                    throw new UnauthorizedException();
+            }
+            else
+            {
+                // Logged in users must have read permission
+                if (!getContainer().hasPermission(getUser(), ReadPermission.class))
+                    throw new UnauthorizedException();
+            }
+
             if (view.isShared())
             {
                 if (!getViewContext().getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
                     throw new UnauthorizedException();
             }
+
             view.delete(getUser(), getViewContext().getRequest());
 
             // Delete the first shadowed custom view, if available.
