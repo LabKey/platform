@@ -18,21 +18,20 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.FolderDisplayMode" %>
+<%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.util.Formats" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
@@ -43,11 +42,12 @@
 <%
     ProjectSettingsAction.LookAndFeelPropertiesBean bean = ((JspView<ProjectSettingsAction.LookAndFeelPropertiesBean>)HttpView.currentView()).getModelBean();
     Container c = getViewContext().getContainer();
+    boolean folder = !c.isRoot() && !c.isProject();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
 %>
 <%=formatMissedErrors("form")%>
 
-<form name="preferences" enctype="multipart/form-data" method="post" id="form-preferences">
+<form name="preferences" method="post" id="form-preferences">
 
 <table width="100%" cellpadding=0>
 
@@ -68,9 +68,15 @@
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>
-<% } %>
+<%
+   }
+
+   // If this is a folder then skip everything except default date & number formats
+   if (!folder)
+   {
+%>
 <tr>
-    <td colspan=2>Customize the look and feel of <%=h(c.isRoot() ? "your LabKey Server installation" : "the '" + c.getProject().getName() + "' project")%> (<%=bean.helpLink%>)</td>
+    <td colspan=2>Customize the look and feel of <%=h(c.isRoot() ? "your LabKey Server installation" : "the '" + c.getProject().getName() + "' project")%> (<%=text(bean.helpLink)%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -115,14 +121,14 @@
         <select name="themeFont">
             <% for (ThemeFont themeFont : bean.themeFonts)
                 {
-                out.print("<option value=\"" + themeFont.toString() + "\"" + (themeFont == bean.currentThemeFont ? " selected>" : ">") + themeFont.getFriendlyName() + "</option>\n");
+                    %><option value="<%=h(themeFont.toString())%>"<%=selected(themeFont == bean.currentThemeFont)%>><%=h(themeFont.getFriendlyName())%></option><%
                 }
             %>
         </select>
         Font Size Samples:
             <% for (ThemeFont themeFont : bean.themeFonts)
                 {
-                out.print("<span style=\"font-size:" + themeFont.getNormalSize() + "\">&nbsp;&nbsp;" + themeFont.toString() + "</span>");
+                    %><span style="font-size:<%=h(themeFont.getNormalSize())%>">&nbsp;&nbsp;<%=h(themeFont.toString())%></span><%
                 }
             %>
     </td>
@@ -132,8 +138,8 @@
     <td><%
             FolderDisplayMode currentMode = laf.getFolderDisplayMode();
         %>
-        <input type="radio" name="folderDisplayMode" value="<%=FolderDisplayMode.ALWAYS.toString()%>"<%=checked(currentMode == FolderDisplayMode.ALWAYS)%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%><br>
-        <input type="radio" name="folderDisplayMode" value="<%=FolderDisplayMode.ADMIN.toString()%>"<%=checked(currentMode == FolderDisplayMode.ADMIN)%>> <%=h(FolderDisplayMode.ADMIN.getDisplayString())%><br>
+        <input type="radio" name="folderDisplayMode" value="<%=h(FolderDisplayMode.ALWAYS.toString())%>"<%=checked(currentMode == FolderDisplayMode.ALWAYS)%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%><br>
+        <input type="radio" name="folderDisplayMode" value="<%=h(FolderDisplayMode.ADMIN.toString())%>"<%=checked(currentMode == FolderDisplayMode.ADMIN)%>> <%=h(FolderDisplayMode.ADMIN.getDisplayString())%><br>
     </td>
 </tr>
 
@@ -159,7 +165,7 @@
 </tr>
 
 <tr>
-    <td colspan=2>Customize settings used in system emails (<%=bean.helpLink%>)</td>
+    <td colspan=2>Customize settings used in system emails (<%=text(bean.helpLink)%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -175,6 +181,8 @@
 </tr>
 
 <%
+    }  // End of project/site only settings
+
     String decimalFormatHelp = "The format string for numbers must be compatible with the format that the java class " +
             "<code>DecimalFormat</code> understands. A valid <code>DecimalFormat</code> is a pattern " +
             "specifying a prefix, numeric part, and suffix. For more information see the " +
@@ -209,7 +217,7 @@
             "<tr class=\"labkey-alternate-row\"><td><code>h</code><td>Hour in am/pm (1-12)<td><code>12</code></tr></table>";
 %>
 <tr>
-    <td colspan=2>Customize default formats (<%=bean.helpLink%>)</td>
+    <td colspan=2>Customize default formats (<%=text(bean.helpLink)%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>

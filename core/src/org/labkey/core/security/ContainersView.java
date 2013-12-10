@@ -103,6 +103,4 @@ public class ContainersView extends WebPartView
                 html.append("</span>");
         }
     }
-
-    
 }

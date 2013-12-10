@@ -62,6 +62,8 @@ import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -167,6 +169,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             return handleExportPost(form, errors);
         else if (form.isImportTab())
             return handleImportPost(form, errors);
+        else if (form.isSettingsTab())
+            return handleSettingsPost(form, errors);
         else
             return handleFolderTreePost(form, errors);
     }
@@ -256,6 +260,18 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         // Cloud settings
         setEnabledCloudStores(getViewContext(), form.getEnabledCloudStore());
 
+        _successURL = getViewContext().getActionURL();
+
+        return true;
+    }
+
+    private boolean handleSettingsPost(FolderManagementForm form, BindException errors)
+    {
+        Container c = getContainer();
+        WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
+
+        if (!ProjectSettingsAction.saveFolderSettings(form, props, getUser(), errors))
+            return false;
         _successURL = getViewContext().getActionURL();
 
         return true;
@@ -503,7 +519,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                     FileUtil.copyData(is, zipFile);
 
                     ViewContext context = getViewContext();
-                    Container c = context.getContainer();
+                    Container c = getContainer();
                     if (!PipelineService.get().hasValidPipelineRoot(c))
                     {
                         return false;
@@ -555,7 +571,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                     }
                     zipFile.delete();
 
-                    User user = context.getUser();
+                    User user = getUser();
                     ActionURL url = context.getActionURL();
                     ImportOptions options = new ImportOptions(getContainer().getId());
                     options.setSkipQueryValidation(!form.isValidateQueries());
@@ -607,7 +623,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         return getViewContext().getUser();
     }
 
-    public static class FolderManagementForm extends SetupForm implements AdminController.FileManagementForm
+    public static class FolderManagementForm extends SetupForm implements AdminController.FileManagementForm, AdminController.DefaultFormatsForm
     {
         // folder type settings
         private String[] activeModules = new String[ModuleLoader.getInstance().getModules().size()];
@@ -646,6 +662,10 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
         // cloud settings
         private String[] _enabledCloudStore;
+
+        // default format settings
+        private String _defaultDateFormat;
+        private String _defaultNumberFormat;
 
         public String[] getActiveModules()
         {
@@ -748,6 +768,11 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         public boolean isInformationTab()
         {
             return "info".equals(getTabId());
+        }
+
+        public boolean isSettingsTab()
+        {
+            return "settings".equals(getTabId());
         }
 
         public boolean isInheritMvIndicators()
@@ -945,14 +970,34 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         {
             this.validateQueries = validateQueries;
         }
+
+        public String getDefaultDateFormat()
+        {
+            return _defaultDateFormat;
+        }
+
+        public void setDefaultDateFormat(String defaultDateFormat)
+        {
+            _defaultDateFormat = defaultDateFormat;
+        }
+
+        public String getDefaultNumberFormat()
+        {
+            return _defaultNumberFormat;
+        }
+
+        public void setDefaultNumberFormat(String defaultNumberFormat)
+        {
+            _defaultNumberFormat = defaultNumberFormat;
+        }
     }
 
 
     private static class FolderManagementTabStrip extends TabStripView
     {
         private final Container _container;
-        private FolderManagementForm _form;
-        private BindException _errors;
+        private final FolderManagementForm _form;
+        private final BindException _errors;
 
         private FolderManagementTabStrip(Container c, FolderManagementForm form, BindException errors)
         {
@@ -1002,6 +1047,13 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                     tabs.add(new TabInfo("Export", "export", url));
                     tabs.add(new TabInfo("Import", "import", url));
                     tabs.add(new TabInfo("Files", "files", url));
+
+                    // Projects allow editing via the projectSettings action, so only display these settings in non-project
+                    if (!_container.isProject())
+                    {
+                        // Use "settings" as ID since we will likely add other settings in the future
+                        tabs.add(new TabInfo("Formats", "settings", url));
+                    }
                 }
                 tabs.add(new TabInfo("Information", "info", url));
             }
@@ -1048,9 +1100,10 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                     return AdminController.getContainerInfoView(_container);
                 case "props":
                     return new JspView<>("/org/labkey/core/project/modulePropertiesAdmin.jsp", _form, _errors);
+                case "settings":
+                    return new ProjectSettingsAction.LookAndFeelView(_container, null, _errors);
                 default:
                     return null; // tabstrip.jsp will handle display for unknown tabIds
-
             }
         }
 

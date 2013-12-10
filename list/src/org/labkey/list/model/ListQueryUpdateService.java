@@ -661,7 +661,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                             throw new BatchValidationException(Collections.singletonList(new ValidationException("Could not find referenced file " + filename, p.domainProperty.getName())), null);
                         }
                         attachmentFile = new InputStreamAttachmentFile(aIS, filename);
-                        attachmentFile.setFilename(filename);
                     }
                     else if (attachmentValue instanceof AttachmentFile)
                     {

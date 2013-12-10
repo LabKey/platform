@@ -18,6 +18,7 @@ package org.labkey.core.admin;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.SpringActionController;
@@ -41,6 +42,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
+import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.HelpTopic;
@@ -114,12 +116,22 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     public ModelAndView getView(AdminController.ProjectSettingsForm form, boolean reshow, BindException errors) throws Exception
     {
+        Container c = getViewContext().getContainer();
+        validateContainer(c);
+
         return new ProjectSettingsTabStrip(form, reshow, errors);
+    }
+
+    private void validateContainer(Container c)
+    {
+        if (!c.isRoot() && !c.isProject())
+            throw new NotFoundException("Valid only from root or project");
     }
 
     public boolean handlePost(AdminController.ProjectSettingsForm form, BindException errors) throws Exception
     {
         Container c = getViewContext().getContainer();
+        validateContainer(c);
 
         if (form.isResourcesTab())
             return handleResourcesPost(c, errors);
@@ -203,40 +215,38 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         props.setFolderDisplayMode(folderDisplayMode);
         props.setHelpMenuEnabled(form.isEnableHelpMenu());
 
-        String defaultDateFormat = StringUtils.trimToNull(form.getDefaultDateFormat());
-        if (null != defaultDateFormat)
-        {
-            try
-            {
-                FastDateFormat.getInstance(defaultDateFormat);
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, "Invalid date format: " + e.getMessage());
-                return false;
-            }
-        }
-        props.setDefaultDateFormat(defaultDateFormat);
+        if (!saveFolderSettings(form, props, getViewContext().getUser(), errors))
+            return false;
 
-        String defaultNumberFormat = StringUtils.trimToNull(form.getDefaultNumberFormat());
-        if (null != defaultNumberFormat)
-        {
-            try
-            {
-                new DecimalFormat(defaultNumberFormat);
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, "Invalid number format: " + e.getMessage());
-                return false;
-            }
-        }
-        props.setDefaultNumberFormat(defaultNumberFormat);
-
-        props.save();
-
-        //write an audit log event
-        props.writeAuditLogEvent(getViewContext().getUser(), props.getOldProperties());
+//        String defaultDateFormat = StringUtils.trimToNull(form.getDefaultDateFormat());
+//        if (null != defaultDateFormat)
+//        {
+//            try
+//            {
+//                FastDateFormat.getInstance(defaultDateFormat);
+//            }
+//            catch (IllegalArgumentException e)
+//            {
+//                errors.reject(SpringActionController.ERROR_MSG, "Invalid date format: " + e.getMessage());
+//                return false;
+//            }
+//        }
+//        props.setDefaultDateFormat(defaultDateFormat);
+//
+//        String defaultNumberFormat = StringUtils.trimToNull(form.getDefaultNumberFormat());
+//        if (null != defaultNumberFormat)
+//        {
+//            try
+//            {
+//                new DecimalFormat(defaultNumberFormat);
+//            }
+//            catch (IllegalArgumentException e)
+//            {
+//                errors.reject(SpringActionController.ERROR_MSG, "Invalid number format: " + e.getMessage());
+//                return false;
+//            }
+//        }
+//        props.setDefaultNumberFormat(defaultNumberFormat);
 
         // Bump the look & feel revision so browsers retrieve the new theme stylesheet
         WriteableAppProps.incrementLookAndFeelRevisionAndSave();
@@ -369,8 +379,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         // Get rid of any existing logo
         AdminController.deleteExistingLogo(c, user);
 
-        AttachmentFile renamed = new SpringAttachmentFile(file);
-        renamed.setFilename(AttachmentCache.LOGO_FILE_NAME_PREFIX + uploadedFileName.substring(index));
+        AttachmentFile renamed = new SpringAttachmentFile(file, AttachmentCache.LOGO_FILE_NAME_PREFIX + uploadedFileName.substring(index));
         AttachmentService.get().addAttachments(parent, Collections.<AttachmentFile>singletonList(renamed), user);
         AttachmentCache.clearLogoCache();
     }
@@ -388,8 +397,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         AdminController.deleteExistingFavicon(c, user);
 
         ContainerManager.ContainerParent parent = new ContainerManager.ContainerParent(c);
-        AttachmentFile renamed = new SpringAttachmentFile(file);
-        renamed.setFilename(AttachmentCache.FAVICON_FILE_NAME);
+        AttachmentFile renamed = new SpringAttachmentFile(file, AttachmentCache.FAVICON_FILE_NAME);
         AttachmentService.get().addAttachments(parent, Collections.<AttachmentFile>singletonList(renamed), user);
         AttachmentCache.clearFavIconCache();
     }
@@ -401,8 +409,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         AdminController.deleteExistingCustomStylesheet(c, user);
 
         ContainerManager.ContainerParent parent = new ContainerManager.ContainerParent(c);
-        AttachmentFile renamed = new SpringAttachmentFile(file);
-        renamed.setFilename(AttachmentCache.STYLESHEET_FILE_NAME);
+        AttachmentFile renamed = new SpringAttachmentFile(file, AttachmentCache.STYLESHEET_FILE_NAME);
         AttachmentService.get().addAttachments(parent, Collections.<AttachmentFile>singletonList(renamed), user);
 
         // Don't need to clear cache -- lookAndFeelRevision gets checked on retrieval
@@ -440,90 +447,98 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         {
             Container c = getViewContext().getContainer();
 
-            if (c.isRoot() || c.isProject())
+            // Should have validated this in the action
+            assert c.isRoot() || c.isProject();
+
+            switch (tabId)
             {
-                switch (tabId)
+                case "resources":
                 {
-                    case "resources":
-                    {
-                        LookAndFeelResourcesBean bean = new LookAndFeelResourcesBean(c);
-                        return new JspView<>("/org/labkey/core/admin/lookAndFeelResources.jsp", bean, _errors);
-                    }
-                    case "properties":
-                    {
-                        LookAndFeelPropertiesBean bean = new LookAndFeelPropertiesBean(c, _form.getThemeName());
-                        return new JspView<>("/org/labkey/core/admin/lookAndFeelProperties.jsp", bean, _errors);
-                    }
-                    case "menubar":
-                        if (c.isRoot())
-                            throw new NotFoundException("Menu bar must be configured for each project separately.");
-                        WebPartView v = new JspView<Object>(AdminController.class, "editMenuBar.jsp", null);
-                        v.setView("menubar", new VBox());
-                        //TODO: propagate ClientDependencies
-                        Portal.populatePortalView(getViewContext(), Portal.DEFAULT_PORTAL_PAGE_ID, v, true);
-
-                        return v;
-                    case "files":
-                        if (c.isRoot())
-                            throw new NotFoundException("Files must be configured for each project separately.");
-
-                        if (!_reshow || _form.isPipelineRootForm())
-                        {
-                            try
-                            {
-                                FolderManagementAction.setConfirmMessage(getViewContext(), _form);
-                            }
-                            catch (IllegalArgumentException e)
-                            {
-                                _errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                            }
-                        }
-                        VBox box = new VBox();
-                        box.addView(new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", _form, _errors));
-
-                        // only site admins can configure the pipeline root
-                        if (getViewContext().getUser().isSiteAdmin())
-                        {
-                            box.addView(new HttpView()
-                            {
-                                protected void renderInternal(Object model, PrintWriter out) throws Exception
-                                {
-                                    WebPartView.startTitleFrame(out, "Configure Data Processing Pipeline");
-                                }
-                            });
-
-                            SetupForm form = SetupForm.init(c);
-                            form.setShowAdditionalOptionsLink(true);
-                            form.setErrors(_errors);
-                            PipeRoot pipeRoot = SetupForm.getPipelineRoot(c);
-
-                            if (pipeRoot != null)
-                            {
-                                for (String errorMessage : pipeRoot.validate())
-                                    _errors.addError(new LabkeyError(errorMessage));
-                            }
-                            box.addView(PipelineService.get().getSetupView(form));
-                            box.addView(new HttpView()
-                            {
-                                protected void renderInternal(Object model, PrintWriter out) throws Exception
-                                {
-                                    WebPartView.endTitleFrame(out);
-                                }
-                            });
-                        }
-
-                        // add the folder tree view to show all folders and file content settings for this project
-                        box.addView(new JspView<>("/org/labkey/core/admin/view/filesProjectSettingsSummary.jsp", _form, _errors));
-
-                        return box;
-                    default:
-                        throw new NotFoundException("Unknown tab id");
+                    LookAndFeelResourcesBean bean = new LookAndFeelResourcesBean(c);
+                    return new JspView<>("/org/labkey/core/admin/lookAndFeelResources.jsp", bean, _errors);
                 }
+                case "properties":
+                {
+                    return new LookAndFeelView(c, _form.getThemeName(), _errors);
+                }
+                case "menubar":
+                    if (c.isRoot())
+                        throw new NotFoundException("Menu bar must be configured for each project separately.");
+                    WebPartView v = new JspView<Object>(AdminController.class, "editMenuBar.jsp", null);
+                    v.setView("menubar", new VBox());
+                    //TODO: propagate ClientDependencies
+                    Portal.populatePortalView(getViewContext(), Portal.DEFAULT_PORTAL_PAGE_ID, v, true);
+
+                    return v;
+                case "files":
+                    if (c.isRoot())
+                        throw new NotFoundException("Files must be configured for each project separately.");
+
+                    if (!_reshow || _form.isPipelineRootForm())
+                    {
+                        try
+                        {
+                            FolderManagementAction.setConfirmMessage(getViewContext(), _form);
+                        }
+                        catch (IllegalArgumentException e)
+                        {
+                            _errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                        }
+                    }
+                    VBox box = new VBox();
+                    box.addView(new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", _form, _errors));
+
+                    // only site admins can configure the pipeline root
+                    if (getViewContext().getUser().isSiteAdmin())
+                    {
+                        box.addView(new HttpView()
+                        {
+                            protected void renderInternal(Object model, PrintWriter out) throws Exception
+                            {
+                                WebPartView.startTitleFrame(out, "Configure Data Processing Pipeline");
+                            }
+                        });
+
+                        SetupForm form = SetupForm.init(c);
+                        form.setShowAdditionalOptionsLink(true);
+                        form.setErrors(_errors);
+                        PipeRoot pipeRoot = SetupForm.getPipelineRoot(c);
+
+                        if (pipeRoot != null)
+                        {
+                            for (String errorMessage : pipeRoot.validate())
+                                _errors.addError(new LabkeyError(errorMessage));
+                        }
+                        box.addView(PipelineService.get().getSetupView(form));
+                        box.addView(new HttpView()
+                        {
+                            protected void renderInternal(Object model, PrintWriter out) throws Exception
+                            {
+                                WebPartView.endTitleFrame(out);
+                            }
+                        });
+                    }
+
+                    // add the folder tree view to show all folders and file content settings for this project
+                    box.addView(new JspView<>("/org/labkey/core/admin/view/filesProjectSettingsSummary.jsp", _form, _errors));
+
+                    return box;
+                default:
+                    throw new NotFoundException("Unknown tab id");
             }
-            else
-            {
-                throw new NotFoundException("Can only be called for root or project.");
-            }
+        }
+    }
+
+    public static class LookAndFeelView extends JspView<LookAndFeelPropertiesBean>
+    {
+        public LookAndFeelView(Container c, @Nullable String newThemeName, BindException errors)
+        {
+            super("/org/labkey/core/admin/lookAndFeelProperties.jsp", getBean(c, newThemeName), errors);
+        }
+
+        private static LookAndFeelPropertiesBean getBean(Container c, @Nullable String newThemeName)
+        {
+            return new LookAndFeelPropertiesBean(c, newThemeName);
         }
     }
 
@@ -552,22 +567,58 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         public List<ThemeFont> themeFonts = ThemeFont.getThemeFonts();
         public ThemeFont currentThemeFont;
         public WebTheme currentTheme;
-        public Attachment customLogo;
-        public Attachment customFavIcon;
-        public Attachment customStylesheet;
-        public WebTheme newTheme = null;
+        public @Nullable WebTheme newTheme = null;
 
-        private LookAndFeelPropertiesBean(Container c, String newThemeName)
+        private LookAndFeelPropertiesBean(Container c, @Nullable String newThemeName)
         {
-            customLogo = AttachmentCache.lookupLogoAttachment(c);
-            customFavIcon = AttachmentCache.lookupFavIconAttachment(new ContainerManager.ContainerParent(c));
             currentTheme = WebThemeManager.getTheme(c);
             currentThemeFont = ThemeFont.getThemeFont(c);
-            customStylesheet = AttachmentCache.lookupCustomStylesheetAttachment(new ContainerManager.ContainerParent(c));
 
             //if new color scheme defined, get new theme name from url
             if (newThemeName != null)
                 newTheme = WebThemeManager.getTheme(newThemeName);
         }
+    }
+
+
+    // Validate and populate the folder settings; save & log all changes
+    public static boolean saveFolderSettings(AdminController.DefaultFormatsForm form, WriteableFolderLookAndFeelProperties props, User user, BindException errors)
+    {
+        String defaultDateFormat = StringUtils.trimToNull(form.getDefaultDateFormat());
+        if (null != defaultDateFormat)
+        {
+            try
+            {
+                FastDateFormat.getInstance(defaultDateFormat);
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Invalid date format: " + e.getMessage());
+                return false;
+            }
+        }
+        props.setDefaultDateFormat(defaultDateFormat);
+
+        String defaultNumberFormat = StringUtils.trimToNull(form.getDefaultNumberFormat());
+        if (null != defaultNumberFormat)
+        {
+            try
+            {
+                new DecimalFormat(defaultNumberFormat);
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Invalid number format: " + e.getMessage());
+                return false;
+            }
+        }
+        props.setDefaultNumberFormat(defaultNumberFormat);
+
+        props.save();
+
+        //write an audit log event
+        props.writeAuditLogEvent(user, props.getOldProperties());
+
+        return true;
     }
 }

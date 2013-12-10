@@ -97,6 +97,7 @@ import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyCachable;
@@ -3065,6 +3066,18 @@ public class StudyManager
     private static final String STUDY_FORMAT_STRINGS = "DefaultStudyFormatStrings";
     private static final String DATE_FORMAT_STRING = "DateFormatString";
     private static final String NUMBER_FORMAT_STRING = "NumberFormatString";
+
+//    @Deprecated // No longer a study thing; use LookAndFeelProperties.getInstance(c) directly
+//    public String getDefaultDateFormatString(Container c)
+//    {
+//        return LookAndFeelProperties.getInstance(c).getDefaultDateFormat();
+//    }
+//
+//    @Deprecated // No longer a study thing; use LookAndFeelProperties.getInstance(c) directly
+//    public String getDefaultNumberFormatString(Container c)
+//    {
+//        return LookAndFeelProperties.getInstance(c).getDefaultNumerFormat();
+//    }
 
     public String getDefaultDateFormatString(Container c)
     {

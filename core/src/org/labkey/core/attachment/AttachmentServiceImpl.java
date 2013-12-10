@@ -528,8 +528,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     @Override
     public void copyAttachment(AttachmentParent parent, Attachment a, String newName, User auditUser) throws IOException
     {
+        a.setName(newName);
         DatabaseAttachmentFile file = new DatabaseAttachmentFile(a);
-        file.setFilename(newName);
         addAttachments(parent, Collections.singletonList((AttachmentFile)file), auditUser);
     }
 
@@ -1224,11 +1224,6 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                     public String getFilename()
                     {
                         return getName();
-                    }
-
-                    public void setFilename(String filename)
-                    {
-                        throw new IllegalStateException();
                     }
 
                     public String getContentType()

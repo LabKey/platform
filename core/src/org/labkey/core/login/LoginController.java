@@ -1112,7 +1112,7 @@ public class LoginController extends SpringActionController
                     SecurityManager.addMember(SecurityManager.getGroup(Group.groupAdministrators), newUserBean.getUser());
 
                     //set default "from" address for system emails to first registered user
-                    WriteableLookAndFeelProperties laf = WriteableLookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
+                    WriteableLookAndFeelProperties laf = LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
                     laf.setSystemEmailAddress(newUserBean.getEmail());
                     laf.save();
 

@@ -119,6 +119,7 @@ import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
+import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ConfigurationException;
@@ -472,23 +473,17 @@ public class AdminController extends SpringActionController
 
         public ActionURL getManageFoldersURL(Container c)
         {
-            ActionURL url = new ActionURL(FolderManagementAction.class, c);
-            url.addParameter("tabId", "folderTree");
-            return url;
+            return AdminController.getFolderManagementURL(c, "folderTree");
         }
 
         public ActionURL getExportFolderURL(Container c)
         {
-            ActionURL url = new ActionURL(FolderManagementAction.class, c);
-            url.addParameter("tabId", "export");
-            return url;
+            return AdminController.getFolderManagementURL(c, "export");
         }
 
         public ActionURL getImportFolderURL(Container c)
         {
-            ActionURL url = new ActionURL(FolderManagementAction.class, c);
-            url.addParameter("tabId", "import");
-            return url;
+            return AdminController.getFolderManagementURL(c, "import");
         }
 
         public ActionURL getCreateProjectURL()
@@ -520,9 +515,7 @@ public class AdminController extends SpringActionController
 
         public ActionURL getFolderManagementFileURL(Container c)
         {
-            ActionURL url = getFolderManagementURL(c);
-            url.addParameter("tabId", "files");
-            return url;
+            return AdminController.getFolderManagementURL(c, "files");
         }
 
         public ActionURL getInitialFolderSettingsURL(Container c)
@@ -550,6 +543,13 @@ public class AdminController extends SpringActionController
         {
             return new ActionURL(SessionLoggingAction.class, ContainerManager.getRoot());
         }
+    }
+
+    public static ActionURL getFolderManagementURL(Container c, String tabId)
+    {
+        ActionURL url = new ActionURL(FolderManagementAction.class, c);
+        url.addParameter("tabId", tabId);
+        return url;
     }
 
     public static class MaintenanceBean
@@ -1053,13 +1053,22 @@ public class AdminController extends SpringActionController
 
         public ActionURL getRedirectURL(Object o)
         {
-            WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(getContainer());
+            Container c = getContainer();
+            boolean folder = !(c.isRoot() || c.isProject());
+            WriteableFolderLookAndFeelProperties props = folder ? LookAndFeelProperties.getWriteableFolderInstance(c) : LookAndFeelProperties.getWriteableInstance(c);
             props.clear();
             props.save();
             // TODO: Audit log?
 
-            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-            return new AdminUrlsImpl().getProjectSettingsURL(getContainer());
+            if (!folder)
+            {
+                WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+                return new AdminUrlsImpl().getProjectSettingsURL(c);
+            }
+            else
+            {
+                return getFolderManagementURL(c, "settings");
+            }
         }
     }
 
@@ -1340,7 +1349,20 @@ public class AdminController extends SpringActionController
         public void setEnabledCloudStore(String[] enabledCloudStore);
     }
 
-    public static class ProjectSettingsForm extends SetupForm implements FileManagementForm
+    public interface DefaultFormatsForm
+    {
+        String getDefaultDateFormat();
+
+        @SuppressWarnings("UnusedDeclaration")
+        void setDefaultDateFormat(String defaultDateFormat);
+
+        String getDefaultNumberFormat();
+
+        @SuppressWarnings("UnusedDeclaration")
+        void setDefaultNumberFormat(String defaultNumberFormat);
+    }
+
+    public static class ProjectSettingsForm extends SetupForm implements FileManagementForm, DefaultFormatsForm
     {
         private boolean _shouldInherit; // new subfolders should inherit parent permissions
         private String _systemDescription;
@@ -1580,22 +1602,26 @@ public class AdminController extends SpringActionController
             _enabledCloudStore = enabledCloudStore;
         }
 
+        @Override
         public String getDefaultDateFormat()
         {
             return _defaultDateFormat;
         }
 
+        @Override
         @SuppressWarnings("UnusedDeclaration")
         public void setDefaultDateFormat(String defaultDateFormat)
         {
             _defaultDateFormat = defaultDateFormat;
         }
 
+        @Override
         public String getDefaultNumberFormat()
         {
             return _defaultNumberFormat;
         }
 
+        @Override
         @SuppressWarnings("UnusedDeclaration")
         public void setDefaultNumberFormat(String defaultNumberFormat)
         {

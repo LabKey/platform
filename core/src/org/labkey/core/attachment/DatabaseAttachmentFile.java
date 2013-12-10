@@ -39,12 +39,13 @@ import java.util.Map;
 public class DatabaseAttachmentFile implements AttachmentFile
 {
     private final Attachment _attachment;
-    private String _contentType;
-    private int _fileSize;
+    private final String _contentType;
+    private final int _fileSize;
+
     private ResultSet _rs = null;
     private InputStream _is = null;
 
-    private static CoreSchema core = CoreSchema.getInstance();
+    private static final CoreSchema core = CoreSchema.getInstance();
     private static final String _sqlDocumentTypeAndSize = "SELECT DocumentType, DocumentSize FROM " + core.getTableInfoDocuments() + " WHERE Parent = ? AND DocumentName = ?";
     private static final String _sqlDocument = "SELECT Document FROM " + core.getTableInfoDocuments() + " WHERE Parent = ? AND DocumentName = ?";
 
@@ -57,11 +58,10 @@ public class DatabaseAttachmentFile implements AttachmentFile
         if (null == map)
             throw new FileNotFoundException("Attachment could not be retrieved from database: " + attachment.getName());
 
-        setContentType((String) map.get("DocumentType"));
+        _contentType = (String) map.get("DocumentType");
 
         int size = (Integer)map.get("DocumentSize");
-        if (size > 0)
-            setSize(size);
+        _fileSize = (size > 0 ? size : 0);
     }
 
     public String getContentType()
@@ -69,19 +69,9 @@ public class DatabaseAttachmentFile implements AttachmentFile
         return _contentType;
     }
 
-    public void setContentType(String string)
-    {
-        _contentType = string;
-    }
-
     public long getSize()
     {
         return _fileSize;
-    }
-
-    private void setSize(int fileSize)
-    {
-        _fileSize = fileSize;
     }
 
     public String getError()
@@ -92,11 +82,6 @@ public class DatabaseAttachmentFile implements AttachmentFile
     public String getFilename()
     {
         return _attachment.getName();
-    }
-
-    public void setFilename(String filename)
-    {
-        _attachment.setName(filename);
     }
 
     // NOTE: ResultSet is left open to allow streaming attachment contents from the database.  closeInputStream() must be called when through.
