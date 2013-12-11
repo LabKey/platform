@@ -382,7 +382,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         }
         else if (selectorColumns.size() == 1)
         {
-            clause = new SimpleFilter.InClause(selectorColumns.get(0), selected, true);
+            clause = new SimpleFilter.InClause(FieldKey.fromString(selectorColumns.get(0)), selected, true);
         }
         else
         {

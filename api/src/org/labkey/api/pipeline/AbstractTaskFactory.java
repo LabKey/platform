@@ -15,11 +15,10 @@
  */
 package org.labkey.api.pipeline;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
-import org.apache.log4j.Logger;
 
 import java.io.IOException;
 
@@ -217,6 +216,10 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
         _join = join;
     }
 
+    /**
+     * Indicates that the inputs are too large to want to copy to the local file system if they're
+     * coming from a remote file system. This prevents us from filling up the local disk.
+     */
     public boolean isLargeWork()
     {
         return _largeWork;

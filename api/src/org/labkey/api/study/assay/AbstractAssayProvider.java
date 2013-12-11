@@ -274,7 +274,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 {
                     // Check to see if it already has the data rows that are being copied
                     TableInfo tableInfo = dataSet.getTableInfo(user, false);
-                    Filter datasetFilter = new SimpleFilter(new SimpleFilter.InClause(dataSet.getKeyPropertyName(), entry.getValue()));
+                    Filter datasetFilter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts(dataSet.getKeyPropertyName()), entry.getValue()));
                     long existingRowCount = new TableSelector(tableInfo, datasetFilter, null).getRowCount();
                     if (existingRowCount > 0)
                     {

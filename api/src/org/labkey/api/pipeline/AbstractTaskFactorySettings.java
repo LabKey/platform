@@ -100,6 +100,10 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
         return _largeWork != null;
     }
 
+    /**
+     * Indicates that the inputs are too large to want to copy to the local file system if they're
+     * coming from a remote file system. This prevents us from filling up the local disk.
+     */
     public boolean isLargeWork()
     {
         return isLargeWorkSet() && _largeWork.booleanValue();

@@ -545,32 +545,14 @@ public class SimpleFilter implements Filter
 
     public static class InClause extends MultiValuedFilterClause
     {
-        @Deprecated // Use FieldKey version instead.
-        public InClause(String colName, Collection<?> params)
-        {
-            this(colName, params, false);
-        }
-
         public InClause(FieldKey fieldKey, Collection<?> params)
         {
             this(fieldKey, params, false, false);
         }
 
-        @Deprecated // Use FieldKey version instead.
-        public InClause(String colName, Collection<?> params, boolean urlClause)
-        {
-            this(colName, params, urlClause, false);
-        }
-
         public InClause(FieldKey fieldKey, Collection<?> params, boolean urlClause)
         {
             this(fieldKey, params, urlClause, false);
-        }
-
-        @Deprecated // Use FieldKey version instead.
-        public InClause(String colName, Collection<?> params, boolean urlClause, boolean negated)
-        {
-            this(FieldKey.fromString(colName), params, urlClause, negated);
         }
 
         public InClause(FieldKey fieldKey, Collection<?> params, boolean urlClause, boolean negated)
@@ -1116,13 +1098,6 @@ public class SimpleFilter implements Filter
     public SimpleFilter addWhereClause(String fragment, Object[] paramVals, FieldKey... fieldKeys)
     {
         _clauses.add(new SQLClause(fragment, paramVals, fieldKeys));
-        return this;
-    }
-
-    @Deprecated // Use FieldKey version instead.
-    public SimpleFilter addInClause(String colName, Collection paramVals)
-    {
-        _clauses.add(new InClause(colName, paramVals));
         return this;
     }
 
