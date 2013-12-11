@@ -372,7 +372,7 @@ Ext4.define('File.panel.Browser', {
 
         // Attach listeners
         this.on('folderchange', this.onFolderChange, this);
-        Ext4.Ajax.timeout = 60000;
+        //Ext4.Ajax.timeout = 60000;
         File.panel.Browser._toggleActions(this.fileSystem, this.actions, []);
         this.callParent();
     },
