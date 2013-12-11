@@ -21,7 +21,9 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.Container;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 
 import javax.xml.bind.DatatypeConverter;
 import java.sql.Timestamp;
@@ -936,6 +938,13 @@ validNum:       {
     }
 
 
+    // Get the default date format string to use in this Container
+    public static String getDateFormatString(Container c)
+    {
+        return LookAndFeelProperties.getInstance(c).getDefaultDateFormat();
+    }
+
+
     // Format current date & time using standard date & time pattern
     public static String formatDateTime()
     {
@@ -961,7 +970,7 @@ validNum:       {
     }
 
 
-    static FastDateFormat jsonDateFormat = FastDateFormat.getInstance(getJsonDateTimeFormatString());
+    private static final FastDateFormat jsonDateFormat = FastDateFormat.getInstance(getJsonDateTimeFormatString());
 
     public static String formatJsonDateTime(Date date)
     {

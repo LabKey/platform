@@ -38,12 +38,12 @@ public class TableInfoWriter
     private final Collection<ColumnInfo> _columns;
     private final String _defaultDateFormat;
 
-    protected TableInfoWriter(Container c, TableInfo ti, Collection<ColumnInfo> columns, String defaultDateFormat)
+    protected TableInfoWriter(Container c, TableInfo ti, Collection<ColumnInfo> columns)
     {
         _c = c;
         _ti = ti;
         _columns = columns;
-        _defaultDateFormat = (null != defaultDateFormat ? defaultDateFormat : DateUtil.getStandardDateFormatString());
+        _defaultDateFormat = DateUtil.getDateFormatString(_c);
     }
 
     // Append a new table to the Tables document

@@ -171,8 +171,6 @@ public class StudyService
         DataIteratorBuilder wrapSampleMindedTransform(DataIteratorBuilder in, DataIteratorContext context, Study study, TableInfo target);
 
         ColumnInfo createAlternateIdColumn(TableInfo ti, ColumnInfo column, Container c);
-
-        String getDefaultDateFormatString(Container container);
     }
 
     public static void register(Service serviceImpl)

@@ -16,6 +16,9 @@
 
 package org.labkey.api.util;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.settings.LookAndFeelProperties;
+
 import java.text.DecimalFormat;
 
 /**
@@ -43,5 +46,11 @@ public class Formats
     public static String getDecimalFormatDocumentationURL()
     {
         return HelpTopic.getJDKJavaDocLink(DecimalFormat.class);
+    }
+
+    // Get the default number format string to use in this Container
+    public static String getNumberFormatString(Container c)
+    {
+        return LookAndFeelProperties.getInstance(c).getDefaultNumberFormat();
     }
 }

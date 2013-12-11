@@ -17,6 +17,7 @@ package org.labkey.api.settings;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.DateUtil;
 
 /**
  * User: adam
@@ -69,12 +70,24 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
     public String getDefaultDateFormat()
     {
         // Look up this value starting from the current container (unlike all the other look & feel settings)
-        return lookupStringValue(_c, DEFAULT_DATE_FORMAT, null);
+        return lookupStringValue(_c, DEFAULT_DATE_FORMAT, DateUtil.getStandardDateFormatString());
     }
 
     public String getDefaultNumberFormat()
     {
         // Look up this value starting from the current container (unlike all the other look & feel settings)
         return lookupStringValue(_c, DEFAULT_NUMBER_FORMAT, null);
+    }
+
+    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
+    public String getDefaultDateFormatStored()
+    {
+        return super.lookupStringValue(_c, DEFAULT_DATE_FORMAT, null);
+    }
+
+    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
+    public String getDefaultNumberFormatStored()
+    {
+        return super.lookupStringValue(_c, DEFAULT_NUMBER_FORMAT, null);
     }
 }

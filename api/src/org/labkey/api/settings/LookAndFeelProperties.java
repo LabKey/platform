@@ -61,8 +61,8 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public static WriteableFolderLookAndFeelProperties getWriteableFolderInstance(Container c)
     {
-        if (c.isProject() || c.isRoot())
-            throw new IllegalStateException("Not valid with root or project");
+        if (c.isRoot())
+            throw new IllegalStateException("Not valid with root");
         else
             return new WriteableFolderLookAndFeelProperties(c);
     }

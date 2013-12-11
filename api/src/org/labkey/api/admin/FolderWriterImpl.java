@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
@@ -101,6 +102,16 @@ public class FolderWriterImpl extends BaseFolderWriter
             folderXml.setTitle(c.getTitle());
         if (c.getDescription() != null)
             folderXml.setDescription(c.getDescription());
+
+        // Ask LookAndFeelProperties for actual stored values (we don't want inherited values)
+        LookAndFeelProperties props = LookAndFeelProperties.getInstance(ctx.getContainer());
+        String defaultDateFormat = props.getDefaultDateFormatStored();
+        if (null != defaultDateFormat)
+            folderXml.setDefaultDateFormat(defaultDateFormat);
+
+        String defaultNumberFormat = props.getDefaultNumberFormatStored();
+        if (null != defaultNumberFormat)
+            folderXml.setDefaultNumberFormat(defaultNumberFormat);
 
         // Save the folder.xml file.  This gets called last, after all other writers have populated the other sections.
         vf.saveXmlBean("folder.xml", ctx.getDocument());

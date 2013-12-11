@@ -15,7 +15,10 @@
  */
 package org.labkey.api.settings;
 
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.labkey.api.data.Container;
+
+import java.text.DecimalFormat;
 
 import static org.labkey.api.settings.LookAndFeelFolderProperties.DEFAULT_DATE_FORMAT;
 import static org.labkey.api.settings.LookAndFeelFolderProperties.DEFAULT_NUMBER_FORMAT;
@@ -56,13 +59,33 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
         getProperties().clear();
     }
 
-    public void setDefaultDateFormat(String defaultDateFormat)
+    // Validate inside the set method, since this is called from multiple places
+    public void setDefaultDateFormat(String defaultDateFormat) throws IllegalArgumentException
     {
+        FastDateFormat.getInstance(defaultDateFormat);
         storeStringValue(DEFAULT_DATE_FORMAT, defaultDateFormat);
     }
 
-    public void setDefaultNumberFormat(String defaultNumberFormat)
+    // Convenience method to support import: validate and save just this property
+    public static void saveDefaultDateFormat(Container c, String defaultDateFormat) throws IllegalArgumentException
     {
+        WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
+        props.setDefaultDateFormat(defaultDateFormat);
+        props.save();
+    }
+
+    // Validate inside the set method, since this is called from multiple places
+    public void setDefaultNumberFormat(String defaultNumberFormat) throws IllegalArgumentException
+    {
+        new DecimalFormat(defaultNumberFormat);
         storeStringValue(DEFAULT_NUMBER_FORMAT, defaultNumberFormat);
+    }
+
+    // Convenience method to support import: validate and save just this property
+    public static void saveDefaultNumberFormat(Container c, String defaultNumberFormat) throws IllegalArgumentException
+    {
+        WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
+        props.setDefaultNumberFormat(defaultNumberFormat);
+        props.save();
     }
 }
