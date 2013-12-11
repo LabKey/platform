@@ -39,7 +39,7 @@ public interface Selector
      * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
      * you must explicitly start your own transaction and commit it.
      */
-    Table.TableResultSet getResultSet();
+    TableResultSet getResultSet();
 
     long getRowCount();
 

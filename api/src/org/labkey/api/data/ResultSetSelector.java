@@ -80,7 +80,7 @@ public class ResultSetSelector extends BaseSelector
     }
 
     @Override
-    public Table.TableResultSet getResultSet()
+    public TableResultSet getResultSet()
     {
         return new ResultSetImpl(_rs);
     }

@@ -331,31 +331,31 @@ public class ResultsImpl implements Results
     @Override
     public boolean isComplete()
     {
-        return ((Table.TableResultSet) _rs).isComplete();
+        return ((TableResultSet) _rs).isComplete();
     }
 
     @Override
     public Map<String, Object> getRowMap() throws SQLException
     {
-        return ((Table.TableResultSet) _rs).getRowMap();
+        return ((TableResultSet) _rs).getRowMap();
     }
 
     @Override
     public Iterator<Map<String, Object>> iterator()
     {
-        return ((Table.TableResultSet) _rs).iterator();
+        return ((TableResultSet) _rs).iterator();
     }
 
     @Override
     public String getTruncationMessage(int maxRows)
     {
-        return ((Table.TableResultSet) _rs).getTruncationMessage(maxRows);
+        return ((TableResultSet) _rs).getTruncationMessage(maxRows);
     }
 
     @Override
     public int getSize()
     {
-        return ((Table.TableResultSet) _rs).getSize();
+        return ((TableResultSet) _rs).getSize();
     }
 
 

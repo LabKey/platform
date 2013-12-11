@@ -33,7 +33,7 @@ import java.util.Map;
 * Date: 10/2/12
 * Time: 9:36 PM
 */
-public class ResultSetImpl extends ResultSetWrapper implements Table.TableResultSet
+public class ResultSetImpl extends ResultSetWrapper implements TableResultSet
 {
     private static final Logger _log = Logger.getLogger(ResultSetImpl.class);
 

@@ -17,7 +17,6 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.etl.DataIterator;
 import org.labkey.api.query.FieldKey;
 
 import java.io.InputStream;
@@ -35,7 +34,7 @@ import java.util.Map;
  * Date: Nov 18, 2010
  * Time: 11:26:39 AM
  */
-public interface Results extends ResultSet, Table.TableResultSet
+public interface Results extends ResultSet, TableResultSet
 {
     @NotNull
     Map<FieldKey, ColumnInfo> getFieldMap();

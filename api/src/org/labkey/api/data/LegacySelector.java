@@ -63,17 +63,17 @@ abstract class LegacySelector<SELECTOR extends ExecutingSelector<? extends SqlFa
 
     // All the results-gathering methods are below
 
-    public Table.TableResultSet getResultSet() throws SQLException
+    public TableResultSet getResultSet() throws SQLException
     {
         return _selector.getResultSet();
     }
 
-    public Table.TableResultSet getResultSet(boolean cache) throws SQLException
+    public TableResultSet getResultSet(boolean cache) throws SQLException
     {
         return _selector.getResultSet(cache, false);
     }
 
-    public Table.TableResultSet getResultSet(boolean cache, boolean scrollable) throws SQLException
+    public TableResultSet getResultSet(boolean cache, boolean scrollable) throws SQLException
     {
         return _selector.getResultSet(cache, scrollable);
     }

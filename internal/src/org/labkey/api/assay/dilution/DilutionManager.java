@@ -29,6 +29,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableResultSet;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpData;
@@ -414,7 +415,8 @@ public class DilutionManager
 
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(dataTable, fieldKeys.values());
 
-        try (Table.TableResultSet resultSet = new TableSelector(dataTable, columns.values(), filter, null).getResultSet())
+        // TODO: use getMap() instead of getResultSet()
+        try (TableResultSet resultSet = new TableSelector(dataTable, columns.values(), filter, null).getResultSet())
         {
             // We're expecting only 1 row, but there could be 0 in some cases
             if (resultSet.getSize() > 0)

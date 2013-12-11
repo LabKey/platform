@@ -232,24 +232,17 @@ public class SecurityPolicyManager
 
     public static void removeAll(Container c)
     {
-        try
-        {
-            Table.execute(
-                    core.getSchema(),
-                    "DELETE FROM " + core.getTableInfoRoleAssignments() + " WHERE ResourceId IN (SELECT ResourceId FROM " +
-                    core.getTableInfoPolicies() + " WHERE Container = ?)",
-                    c.getId());
-            Table.execute(
-                    core.getSchema(),
-                    "DELETE FROM " + core.getTableInfoPolicies() + " WHERE Container = ?",
-                    c.getId());
+        SqlExecutor executor = new SqlExecutor(core.getSchema());
 
-            removeAll();
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        executor.execute(
+                "DELETE FROM " + core.getTableInfoRoleAssignments() + " WHERE ResourceId IN (SELECT ResourceId FROM " +
+                core.getTableInfoPolicies() + " WHERE Container = ?)",
+                c);
+        executor.execute(
+                "DELETE FROM " + core.getTableInfoPolicies() + " WHERE Container = ?",
+                c);
+
+        removeAll();
     }
 
 

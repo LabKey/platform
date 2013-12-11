@@ -211,7 +211,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     }
 
     @Override
-    public Table.TableResultSet getResultSet(boolean cache, boolean scrollable)
+    public TableResultSet getResultSet(boolean cache, boolean scrollable)
     {
         ensureStableColumnOrder("getResultSet()");
         return super.getResultSet(cache, scrollable);

@@ -67,7 +67,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -82,9 +81,6 @@ import java.util.TreeSet;
 
 public class Table
 {
-    @SuppressWarnings("UnusedDeclaration")  // For backward compatibility with external modules
-    public static final Set<String> ALL_COLUMNS = TableSelector.ALL_COLUMNS;
-
     public static final String SQLSTATE_TRANSACTION_STATE = "25000";
     public static final int ERROR_ROWVERSION = 10001;
     public static final int ERROR_DELETED = 10002;
@@ -109,12 +105,9 @@ public class Table
         return NO_ROWS == maxRows | ALL_ROWS == maxRows | maxRows > 0;
     }
 
-    public static boolean validOffset(long offset)
-    {
-        return offset >= 0;
-    }
+    // ================== These methods & members are no longer used by LabKey code ==================
 
-    // ================== These methods are no longer used by LabKey code ==================
+    public static final Set<String> ALL_COLUMNS = TableSelector.ALL_COLUMNS;
 
     @Deprecated /** Use TableSelector */
     public static <K> K selectObject(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
@@ -337,13 +330,16 @@ public class Table
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getObject(c);
     }
 
-    // ================== This method has been converted to SqlExecutor, but still has callers ==================
-
-    // 76 usages
     @Deprecated /** Use SqlExecutor */
     public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
     {
         return new LegacySqlExecutor(schema).execute(sql, parameters);
+    }
+
+    @Deprecated
+    private static SQLFragment fragment(String sql, @Nullable Object[] parameters)
+    {
+        return new SQLFragment(sql, null == parameters ? new Object[0] : parameters);
     }
 
     // ================== These methods have not been converted to Selector/Executor ==================
@@ -603,12 +599,6 @@ public class Table
         }
 
         if (null != conn) scope.releaseConnection(conn);
-    }
-
-
-    private static SQLFragment fragment(String sql, @Nullable Object[] parameters)
-    {
-        return new SQLFragment(sql, null == parameters ? new Object[0] : parameters);
     }
 
 
@@ -1143,23 +1133,6 @@ public class Table
     }
 
 
-    public interface TableResultSet extends ResultSet, Iterable<Map<String, Object>>
-    {
-        public boolean isComplete();
-
-//        public boolean supportsGetRowMap();
-        
-        public Map<String, Object> getRowMap() throws SQLException;
-
-        public Iterator<Map<String, Object>> iterator();
-
-        String getTruncationMessage(int maxRows);
-
-        /** @return the number of rows in the result set. -1 if unknown */
-        int getSize();
-    }
-
-
     public static class OptimisticConflictException extends SQLException
     {
         public OptimisticConflictException(String errorMessage, String sqlState, int error)
@@ -1664,11 +1637,9 @@ public class Table
 
     public static boolean checkColumn(TableInfo table, ColumnInfo column, String prefix)
     {
-        Logger log = Logger.getLogger(Table.class);
-
         if (column.getParentTable() != table)
         {
-            log.warn(prefix + ": Column " + column + " is from the wrong table: " + column.getParentTable() + " instead of " + table);
+            _log.warn(prefix + ": Column " + column + " is from the wrong table: " + column.getParentTable() + " instead of " + table);
             return false;
         }
         else
@@ -1778,18 +1749,18 @@ public class Table
 
     public static class TestDataIterator extends AbstractDataIterator
     {
-        final String guid = GUID.makeGUID();
-        final Date date = new Date();
+        private final String guid = GUID.makeGUID();
+        private final Date date = new Date();
 
         // TODO: guid values are ignored, since guidCallable gets used instead
-        final Object[][] _data = new Object[][]
+        private final Object[][] _data = new Object[][]
         {
             new Object[] {1, "One", 101, true, date, guid},
             new Object[] {2, "Two", 102, true, date, guid},
             new Object[] {3, "Three", 103, true, date, guid}
         };
 
-        static class _ColumnInfo extends ColumnInfo
+        private final static class _ColumnInfo extends ColumnInfo
         {
             _ColumnInfo(String name, JdbcType type)
             {
@@ -1798,7 +1769,7 @@ public class Table
             }
         }
 
-        static ColumnInfo[] _cols = new ColumnInfo[]
+        private final static ColumnInfo[] _cols = new ColumnInfo[]
         {
             new _ColumnInfo("_row", JdbcType.INTEGER),
             new _ColumnInfo("Text", JdbcType.VARCHAR),

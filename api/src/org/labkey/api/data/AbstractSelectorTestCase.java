@@ -93,7 +93,7 @@ public abstract class AbstractSelectorTestCase<SELECTOR extends Selector> extend
         verifyResultSet(selector.getResultSet(), expectedRowCount, expectedComplete);
     }
 
-    protected void verifyResultSet(Table.TableResultSet rs, int expectedRowCount, boolean expectedComplete) throws SQLException
+    protected void verifyResultSet(TableResultSet rs, int expectedRowCount, boolean expectedComplete) throws SQLException
     {
         try
         {

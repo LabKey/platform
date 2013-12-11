@@ -27,8 +27,8 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -129,7 +129,7 @@ public class GroupManager
         if (id != null)
             return id;
 
-        Table.execute(_core.getSchema(), _insertGroupSql, userId, name, type.getTypeChar());
+        new SqlExecutor(_core.getSchema()).execute(_insertGroupSql, userId, name, type.getTypeChar());
 
         return userId;
     }

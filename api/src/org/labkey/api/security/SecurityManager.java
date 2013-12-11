@@ -316,31 +316,25 @@ public class SecurityManager
 
     private static void scrubTables()
     {
-        try
-        {
-            Container root = ContainerManager.getRoot();
+        Container root = ContainerManager.getRoot();
+        SqlExecutor executor = new SqlExecutor(core.getSchema());
 
-            // missing container
-            new SqlExecutor(core.getSchema()).execute("DELETE FROM " + core.getTableInfoPrincipals() + "\n" +
-                    "WHERE Container NOT IN (SELECT EntityId FROM " + core.getTableInfoContainers() + ")");
+        // missing container
+        executor.execute("DELETE FROM " + core.getTableInfoPrincipals() + "\n" +
+                "WHERE Container NOT IN (SELECT EntityId FROM " + core.getTableInfoContainers() + ")");
 
-            // container is not a project (but should be)
-            Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoPrincipals() + "\n" +
-                    "WHERE Type='g' AND Container NOT IN (SELECT EntityId FROM " + core.getTableInfoContainers() + "\n" +
-                    "\tWHERE Parent=? OR Parent IS NULL)", root);
+        // container is not a project (but should be)
+        executor.execute("DELETE FROM " + core.getTableInfoPrincipals() + "\n" +
+                "WHERE Type='g' AND Container NOT IN (SELECT EntityId FROM " + core.getTableInfoContainers() + "\n" +
+                "\tWHERE Parent=? OR Parent IS NULL)", root);
 
-            // missing group
-            new SqlExecutor(core.getSchema()).execute("DELETE FROM " + core.getTableInfoMembers() + "\n" +
-                    "WHERE GroupId NOT IN (SELECT UserId FROM " + core.getTableInfoPrincipals() + ")");
+        // missing group
+        executor.execute("DELETE FROM " + core.getTableInfoMembers() + "\n" +
+                "WHERE GroupId NOT IN (SELECT UserId FROM " + core.getTableInfoPrincipals() + ")");
 
-            // missing user
-            new SqlExecutor(core.getSchema()).execute("DELETE FROM " + core.getTableInfoMembers() + "\n" +
-                    "WHERE UserId NOT IN (SELECT UserId FROM " + core.getTableInfoPrincipals() + ")");
-        }
-        catch (SQLException x)
-        {
-            _log.error(x);
-        }
+        // missing user
+        executor.execute("DELETE FROM " + core.getTableInfoMembers() + "\n" +
+                "WHERE UserId NOT IN (SELECT UserId FROM " + core.getTableInfoPrincipals() + ")");
     }
 
 
@@ -600,17 +594,10 @@ public class SecurityManager
 
     public static void setVerification(ValidEmail email, @Nullable String verification) throws UserManagementException
     {
-        try
-        {
-            int rows = Table.execute(core.getSchema(), "UPDATE " + core.getTableInfoLogins() + " SET Verification=? WHERE email=?", verification, email.getEmailAddress());
-            if (1 != rows)
-                throw new UserManagementException(email, "Unexpected number of rows returned when setting verification: " + rows);
-        }
-        catch (SQLException e)
-        {
-            _log.error("setVerification: ", e);
-            throw new UserManagementException(email, e);
-        }
+
+        int rows = new SqlExecutor(core.getSchema()).execute("UPDATE " + core.getTableInfoLogins() + " SET Verification=? WHERE email=?", verification, email.getEmailAddress());
+        if (1 != rows)
+            throw new UserManagementException(email, "Unexpected number of rows returned when setting verification: " + rows);
     }
 
 
@@ -892,50 +879,34 @@ public class SecurityManager
         String tempPassword = SecurityManager.createTempPassword();
         String verification = SecurityManager.createTempPassword();
 
-        try
-        {
-            String crypt = Crypt.MD5.digestWithPrefix(tempPassword);
+        String crypt = Crypt.MD5.digestWithPrefix(tempPassword);
 
-            // Don't need to set LastChanged -- it defaults to current date/time.
-            int rowCount = Table.execute(core.getSchema(), "INSERT INTO " + core.getTableInfoLogins() +
-                    " (Email, Crypt, LastChanged, Verification, PreviousCrypts) VALUES (?, ?, ?, ?, ?)",
-                    email.getEmailAddress(), crypt, new Date(), verification, crypt);
-            if (1 != rowCount)
-                throw new UserManagementException(email, "Login creation statement affected " + rowCount + " rows.");
+        // Don't need to set LastChanged -- it defaults to current date/time.
+        int rowCount = new SqlExecutor(core.getSchema()).execute("INSERT INTO " + core.getTableInfoLogins() +
+                " (Email, Crypt, LastChanged, Verification, PreviousCrypts) VALUES (?, ?, ?, ?, ?)",
+                email.getEmailAddress(), crypt, new Date(), verification, crypt);
+        if (1 != rowCount)
+            throw new UserManagementException(email, "Login creation statement affected " + rowCount + " rows.");
 
-            return verification;
-        }
-        catch (SQLException e)
-        {
-            _log.error("createLogin", e);
-            throw new UserManagementException(email, e);
-        }
+        return verification;
     }
 
 
     public static void setPassword(ValidEmail email, String password) throws UserManagementException
     {
-        try
-        {
-            String crypt = Crypt.BCrypt.digestWithPrefix(password);
-            List<String> history = new ArrayList<>(getCryptHistory(email.getEmailAddress()));
-            history.add(crypt);
+        String crypt = Crypt.BCrypt.digestWithPrefix(password);
+        List<String> history = new ArrayList<>(getCryptHistory(email.getEmailAddress()));
+        history.add(crypt);
 
-            // Remember only the last 10 password hashes
-            int itemsToDelete = Math.max(0, history.size() - MAX_HISTORY);
-            for (int i = 0; i < itemsToDelete; i++)
-                history.remove(i);
-            String cryptHistory = StringUtils.join(history, ",");
+        // Remember only the last 10 password hashes
+        int itemsToDelete = Math.max(0, history.size() - MAX_HISTORY);
+        for (int i = 0; i < itemsToDelete; i++)
+            history.remove(i);
+        String cryptHistory = StringUtils.join(history, ",");
 
-            int rows = Table.execute(core.getSchema(), "UPDATE " + core.getTableInfoLogins() + " SET Crypt=?, LastChanged=?, PreviousCrypts=? WHERE Email=?", crypt, new Date(), cryptHistory, email.getEmailAddress());
-            if (1 != rows)
-                throw new UserManagementException(email, "Password update statement affected " + rows + " rows.");
-        }
-        catch (SQLException e)
-        {
-            _log.error("setPassword", e);
-            throw new UserManagementException(email, e);
-        }
+        int rows = new SqlExecutor(core.getSchema()).execute("UPDATE " + core.getTableInfoLogins() + " SET Crypt=?, LastChanged=?, PreviousCrypts=? WHERE Email=?", crypt, new Date(), cryptHistory, email.getEmailAddress());
+        if (1 != rows)
+            throw new UserManagementException(email, "Password update statement affected " + rows + " rows.");
     }
 
 
@@ -1168,26 +1139,19 @@ public class SecurityManager
 
         String typeString = (null == type ? "%" : String.valueOf(type.getTypeChar()));
 
-        try
-        {
-            Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoRoleAssignments() + "\n"+
-                    "WHERE UserId in (SELECT UserId FROM " + core.getTableInfoPrincipals() +
-                    "\tWHERE Container=? and Type LIKE ?)", c, typeString);
-            Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoMembers() + "\n"+
-                    "WHERE GroupId in (SELECT UserId FROM " + core.getTableInfoPrincipals() +
-                    "\tWHERE Container=? and Type LIKE ?)", c, typeString);
-            Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoPrincipals() +
-                    "\tWHERE Container=? AND Type LIKE ?", c, typeString);
+        SqlExecutor executor = new SqlExecutor(core.getSchema());
+        executor.execute("DELETE FROM " + core.getTableInfoRoleAssignments() + "\n"+
+                "WHERE UserId in (SELECT UserId FROM " + core.getTableInfoPrincipals() +
+                "\tWHERE Container=? and Type LIKE ?)", c, typeString);
+        executor.execute("DELETE FROM " + core.getTableInfoMembers() + "\n"+
+                "WHERE GroupId in (SELECT UserId FROM " + core.getTableInfoPrincipals() +
+                "\tWHERE Container=? and Type LIKE ?)", c, typeString);
+        executor.execute("DELETE FROM " + core.getTableInfoPrincipals() +
+                "\tWHERE Container=? AND Type LIKE ?", c, typeString);
 
-            // Consider: query for groups in this container and uncache just those.
-            GroupCache.uncacheAll();
-            ProjectAndSiteGroupsCache.uncache(c);
-        }
-        catch (SQLException x)
-        {
-            _log.error("Delete group", x);
-            throw new RuntimeSQLException(x);
-        }
+        // Consider: query for groups in this container and uncache just those.
+        GroupCache.uncacheAll();
+        ProjectAndSiteGroupsCache.uncache(c);
     }
 
 

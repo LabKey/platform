@@ -459,29 +459,22 @@ public class UserManager
         if (null != getUser(newEmail))
             return newEmail + " already exists.";
 
-        try
-        {
-            Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoPrincipals() + " SET Name=? WHERE UserId=?", newEmail.getEmailAddress(), userId);
+        SqlExecutor executor = new SqlExecutor(CORE.getSchema());
+        executor.execute("UPDATE " + CORE.getTableInfoPrincipals() + " SET Name=? WHERE UserId=?", newEmail.getEmailAddress(), userId);
 
-            if (SecurityManager.loginExists(oldEmail))
+        if (SecurityManager.loginExists(oldEmail))
+        {
+            executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET Email=? WHERE Email=?", newEmail.getEmailAddress(), oldEmail);
+            addToUserHistory(getUser(userId), currentUser + " changed email from " + oldEmail + " to " + newEmail.getEmailAddress() + ".");
+            User userToBeEdited = getUser(userId);
+
+            if (userToBeEdited.getDisplayName(userToBeEdited).equals(oldEmail))
             {
-                Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoLogins() + " SET Email=? WHERE Email=?", newEmail.getEmailAddress(), oldEmail);
-                addToUserHistory(getUser(userId), currentUser + " changed email from " + oldEmail + " to " + newEmail.getEmailAddress() + ".");
-                User userToBeEdited = getUser(userId);
-
-                if (userToBeEdited.getDisplayName(userToBeEdited).equals(oldEmail))
-                {
-                    Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoUsersData() + " SET DisplayName=? WHERE UserId=?", newEmail.getEmailAddress(), userId);
-                }
+                executor.execute("UPDATE " + CORE.getTableInfoUsersData() + " SET DisplayName=? WHERE UserId=?", newEmail.getEmailAddress(), userId);
             }
+        }
 
-            clearUserList(userId);
-        }
-        catch (SQLException e)
-        {
-            LOG.error("changeEmail: " + e);
-            return (e.getMessage());
-        }
+        clearUserList(userId);
 
         return null;
     }
@@ -508,17 +501,18 @@ public class UserManager
 
         try
         {
-            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoRoleAssignments() + " WHERE UserId=?", userId);
-            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoMembers() + " WHERE UserId=?", userId);
+            SqlExecutor executor = new SqlExecutor(CORE.getSchema());
+            executor.execute("DELETE FROM " + CORE.getTableInfoRoleAssignments() + " WHERE UserId=?", userId);
+            executor.execute("DELETE FROM " + CORE.getTableInfoMembers() + " WHERE UserId=?", userId);
             addToUserHistory(user, user.getEmail() + " was deleted from the system");
 
-            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoUsersData() + " WHERE UserId=?", userId);
-            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoLogins() + " WHERE Email=?", user.getEmail());
-            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoPrincipals() + " WHERE UserId=?", userId);
+            executor.execute("DELETE FROM " + CORE.getTableInfoUsersData() + " WHERE UserId=?", userId);
+            executor.execute("DELETE FROM " + CORE.getTableInfoLogins() + " WHERE Email=?", user.getEmail());
+            executor.execute("DELETE FROM " + CORE.getTableInfoPrincipals() + " WHERE UserId=?", userId);
 
             OntologyManager.deleteOntologyObject(user.getEntityId().toString(), ContainerManager.getSharedContainer(), true);
         }
-        catch (SQLException e)
+        catch (Exception e)
         {
             LOG.error("deleteUser: " + e);
             throw new SecurityManager.UserManagementException(user.getEmail(), e);

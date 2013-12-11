@@ -65,7 +65,7 @@ import static java.lang.Math.min;
  * Date: Nov 29, 2005
  * Time: 12:52:06 PM
  */
-public class CachedResultSet implements ResultSet, Table.TableResultSet
+public class CachedResultSet implements ResultSet, TableResultSet
 {
     private static final Logger _log = Logger.getLogger(CachedResultSet.class);
 

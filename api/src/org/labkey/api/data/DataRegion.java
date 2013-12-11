@@ -817,9 +817,9 @@ public class DataRegion extends AbstractDataRegion
             colCount++;
 
 
-        if (rs instanceof Table.TableResultSet && ((Table.TableResultSet) rs).getSize() != -1)
+        if (rs instanceof TableResultSet && ((TableResultSet) rs).getSize() != -1)
         {
-            _rowCount = ((Table.TableResultSet) rs).getSize();
+            _rowCount = ((TableResultSet) rs).getSize();
             if (_complete && _totalRows == null)
                 _totalRows = getOffset() + _rowCount.intValue();
         }
@@ -851,9 +851,9 @@ public class DataRegion extends AbstractDataRegion
         if (filterMsg.length() > 0)
             messages.put(MessagePart.filter.name(), filterMsg.toString());
 
-        if (!_showPagination && rs instanceof Table.TableResultSet)
+        if (!_showPagination && rs instanceof TableResultSet)
         {
-            Table.TableResultSet tableRS = (Table.TableResultSet) rs;
+            TableResultSet tableRS = (TableResultSet) rs;
             if (!tableRS.isComplete())
             {
                 out.write("<span class=\"labkey-message\">");

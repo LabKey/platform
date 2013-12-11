@@ -84,7 +84,7 @@ public class VersionNumber implements Serializable
     {
         _major = major;
         _minor = minor;
-        _revision = new Integer(revision);
+        _revision = revision;
     }
 
     public VersionNumber(int major, int minor, String revision)

@@ -96,17 +96,17 @@ import java.util.concurrent.ConcurrentHashMap;
 public class QueryView extends WebPartView<Object>
 {
     public static final String EXPERIMENTAL_GENERIC_DETAILS_URL = "generic-details-url";
-    public  static final String EXCEL_WEB_QUERY_EXPORT_TYPE = "excelWebQuery";
-
-    private static Logger _log = Logger.getLogger(QueryView.class);
-
+    public static final String EXCEL_WEB_QUERY_EXPORT_TYPE = "excelWebQuery";
     public static final String DATAREGIONNAME_DEFAULT = "query";
+
+    private static final Logger _log = Logger.getLogger(QueryView.class);
+    private static final Map<String, ExportScriptFactory> _exportScriptFactories = new ConcurrentHashMap<>();
+
     protected DataRegion.ButtonBarPosition _buttonBarPosition = DataRegion.ButtonBarPosition.BOTH;
     private ButtonBarConfig _buttonBarConfig = null;
     private boolean _showDetailsColumn = true;
     private boolean _showUpdateColumn = true;
 
-    private static final Map<String, ExportScriptFactory> _exportScriptFactories = new ConcurrentHashMap<>();
     private String _linkTarget;
 
     // Overrides for any URLs that might already be set on the TableInfo
@@ -1007,10 +1007,10 @@ public class QueryView extends WebPartView<Object>
             @Override
             public boolean shouldRender(RenderContext ctx)
             {
-                ResultSet rs = ctx.getResults();
-                if (!(rs instanceof Table.TableResultSet))
+                Results rs = ctx.getResults();
+                if (rs == null)
                     return false;
-                if (((Table.TableResultSet) rs).isComplete() &&
+                if (rs.isComplete() &&
                         ctx.getCurrentRegion().getOffset() == 0 &&
                         !(showingAll || showingSelected || showingUnselected || maxRows > 0))
                     return false;
@@ -1032,7 +1032,7 @@ public class QueryView extends WebPartView<Object>
         String regionName = getDataRegionName();
         for (Integer pageSize : sizes)
         {
-            boolean checked = pageSize.intValue() == maxRows;
+            boolean checked = (pageSize == maxRows);
             NavTree item = pageSizeMenu.addMenuItem(String.valueOf(pageSize) + " per page", "#",
                     "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].setMaxRows(" + String.valueOf(pageSize) + ")", checked);
             item.setId("Page Size:" + pageSize);

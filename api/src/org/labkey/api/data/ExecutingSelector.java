@@ -17,7 +17,6 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Table.TableResultSet;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.util.ExceptionUtil;
@@ -69,9 +68,14 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
         return getThis();
     }
 
+    public static boolean validOffset(long offset)
+    {
+        return offset >= 0;
+    }
+
     public SELECTOR setOffset(long offset)
     {
-        assert Table.validOffset(offset) : offset + " is an illegal value for offset; should be positive or Table.NO_OFFSET";
+        assert validOffset(offset) : offset + " is an illegal value for offset; should be positive or Table.NO_OFFSET";
 
         _offset = offset;
         return getThis();
@@ -83,7 +87,7 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
         return getThis();
     }
 
-    protected Table.TableResultSet getResultSet(ResultSetFactory factory, boolean cache)
+    protected TableResultSet getResultSet(ResultSetFactory factory, boolean cache)
     {
         if (cache)
         {
@@ -111,12 +115,12 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
     }
 
     @Override
-    public Table.TableResultSet getResultSet()
+    public TableResultSet getResultSet()
     {
         return getResultSet(true);
     }
 
-    public Table.TableResultSet getResultSet(boolean cache)
+    public TableResultSet getResultSet(boolean cache)
     {
         return getResultSet(cache, false);
     }
@@ -129,7 +133,7 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
      * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
      * you must explicitly start your own transaction and commit it.
      */
-    public Table.TableResultSet getResultSet(boolean cache, boolean scrollable)
+    public TableResultSet getResultSet(boolean cache, boolean scrollable)
     {
         SqlFactory sqlFactory = getSqlFactory(true);
         ExecutingResultSetFactory factory = new ExecutingResultSetFactory(sqlFactory, cache, scrollable, true);

@@ -25,10 +25,10 @@ import java.sql.SQLException;
 public class ResultSetCollapser extends ResultSetImpl
 {
     private String _columnName;
-    private Table.TableResultSet _tableRS;
+    private TableResultSet _tableRS;
 
     // XXX: needs offset?
-    public ResultSetCollapser(Table.TableResultSet rs, String columnName, int maxRows)
+    public ResultSetCollapser(TableResultSet rs, String columnName, int maxRows)
     {
         super(rs);
         try

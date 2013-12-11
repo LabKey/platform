@@ -54,7 +54,7 @@ public class GroupedResultSet extends ResultSetImpl
             if (maxRows > 0)
             {
                 rs.last();
-                if (rs.getRow() > maxRows || (rs instanceof Table.TableResultSet && !((Table.TableResultSet)rs).isComplete()))
+                if (rs.getRow() > maxRows || (rs instanceof TableResultSet && !((TableResultSet)rs).isComplete()))
                 {
                     setComplete(false);
                     Object value = getObject(_columnIndex);
