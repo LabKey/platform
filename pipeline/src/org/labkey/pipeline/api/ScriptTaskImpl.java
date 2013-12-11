@@ -24,6 +24,7 @@ import org.labkey.api.pipeline.WorkDirectory;
 import org.labkey.api.pipeline.cmd.TaskPath;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.pipeline.analysis.CommandTaskImpl;
 
 import javax.script.Bindings;
@@ -35,6 +36,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
 
 /**
  * User: kevink
@@ -63,18 +65,21 @@ public class ScriptTaskImpl extends CommandTaskImpl
         for (String key : _factory.getInputPaths().keySet())
         {
             String[] inputPaths = getProcessPaths(WorkDirectory.Function.input, key);
-            if (inputPaths.length == 1)
-                replacements.put(key, inputPaths[0]);
+            if (inputPaths.length == 1 && inputPaths[0] != null)
+                replacements.put(key, Matcher.quoteReplacement(inputPaths[0].replaceAll("\\\\", "/")));
         }
 
         for (String key : _factory.getOutputPaths().keySet())
         {
             String[] outputPaths = getProcessPaths(WorkDirectory.Function.output, key);
-            if (outputPaths.length == 1)
-                replacements.put(key, outputPaths[0]);
+            if (outputPaths.length == 1 && outputPaths[0] != null)
+                replacements.put(key, Matcher.quoteReplacement(outputPaths[0].replaceAll("\\\\", "/")));
         }
 
-        replacements.putAll(getJob().getParameters());
+        for (Map.Entry<String, String> entry : getJob().getParameters().entrySet())
+        {
+            replacements.put(entry.getKey(), Matcher.quoteReplacement(entry.getValue()));
+        }
         return replacements;
     }
 
@@ -132,14 +137,15 @@ public class ScriptTaskImpl extends CommandTaskImpl
             bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, replacements);
 
             // Just output the replaced script, if debug mode is set.
-            if (_factory.isPreview())
+            if (AppProps.getInstance().isDevMode() || _factory.isPreview())
             {
                 // TODO: dump replaced script, for now just dump the replacements
                 getJob().header("replacements");
                 for (Map.Entry<String, String> entry : replacements.entrySet())
                     getJob().info(entry.getKey() + ": " + entry.getValue());
 
-                return false;
+                if (_factory.isPreview())
+                    return false;
             }
 
             // Execute the script
