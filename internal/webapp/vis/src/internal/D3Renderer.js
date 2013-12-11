@@ -432,8 +432,31 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         this.canvas.selectAll('.legend').remove();
     };
 
+    var appendTSpans = function(selection, width) {
+        var i, words = selection.datum().text.split(' '), segments = [], partial = '', start = 0;
+
+        for(i = 0; i < words.length; i++) {
+            partial = partial + words[i] + ' ';
+            selection.text(partial);
+            if(selection.node().getBBox().width > width) {
+                segments.push(words.slice(start, i).join(' '));
+                partial = words[i];
+                start = i;
+            }
+        }
+
+        selection.text('');
+
+        segments.push(words.slice(start, i).join(' '));
+
+        selection.selectAll('tspan').data(segments).enter().append('tspan')
+                .text(function(d){return d})
+                .attr('dy', function(d, i){return i * 12})
+                .attr('x', selection.attr('x'));
+    };
+
     var renderLegendItem = function(selection, plot){
-        var i, xPad, glyphX, textX, yAcc, textAcc, colorAcc, shapeAcc, foreignObjects, currentItem, cBBox, pBBox;
+        var i, xPad, glyphX, textX, yAcc, colorAcc, shapeAcc, textNodes, currentItem, cBBox, pBBox;
 
         selection.attr('font-family', 'verdana, arial, helvetica, sans-serif').attr('font-size', '10px');
 
@@ -441,7 +464,6 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         glyphX = plot.grid.rightEdge + 30 + xPad;
         textX = glyphX + 15;
         yAcc = function(d, i) {return (plot.grid.height - plot.grid.topEdge) + (i * 15);};
-        textAcc = function(d){return d.text};
         colorAcc = function(d) {return d.color ? d.color : '#000';};
         shapeAcc = function(d) {
             if(d.shape) {
@@ -449,23 +471,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             }
             return "M" + -5 + "," + -2.5 + "L" + 5 + "," + -2.5 + " " + 5 + "," + 2.5 + " " + -5 + "," + 2.5 + "Z";
         };
+        textNodes = selection.append('text').attr('x', textX).attr('y', yAcc);
+        textNodes.each(function(){d3.select(this).call(appendTSpans, plot.grid.width - textX);});
 
-        // Append some foreign objects so we can insert HTML nodes.
-        foreignObjects = selection.append('foreignObject')
-                .attr('x', textX).attr('y', yAcc)
-                .attr('width', plot.grid.width - textX);
-
-        // Append the text.
-        foreignObjects.append('xhtml:p').html(textAcc)
-                .attr('font-family', 'verdana, arial, helvetica, sans-serif')
-                .attr('font-size', '10px');
-
-        // Set the height of the foreign object nodes to the height of the underlying <p> nodes otherwise they get cut off.
-        foreignObjects.attr('height', function(){
-            return this.childNodes[0].clientHeight;
-        });
-
-        // Now that we've rendered the paragraphs, iterate through them and adjust the y values so they no longer overlap.
+        // Now that we've rendered the text, iterate through the nodes and adjust the y values so they no longer overlap.
+        // Instead of using selection.each we do this because we need access to the neighboring items.
         for (i = 1; i < selection[0].length; i++) {
             currentItem = selection[0][i];
             cBBox = currentItem.getBBox();
@@ -482,9 +492,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 .attr('d', shapeAcc)
                 .attr('stroke', colorAcc)
                 .attr('fill', colorAcc)
-                .attr('transform', function(d){
+                .attr('transform', function(){
                     var sibling = this.parentElement.childNodes[0],
-                        y = Math.floor(parseInt(sibling.getAttribute('y')) + 5) + .5;
+                        y = Math.floor(parseInt(sibling.getAttribute('y'))) - 3.5;
                     return 'translate(' + glyphX + ',' + y + ')';
                 });
     };
@@ -530,7 +540,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         } : geom.color;
         sizeAcc = geom.sizeAes && geom.sizeScale ? function(row) {
             return geom.sizeScale.scale(geom.sizeAes.getValue(row));
-        } : function(row) {return geom.size};
+        } : function() {return geom.size};
         defaultShape = function(row) {
             var circle = function(s) {return "M0," + s + "A" + s + "," + s + " 0 1,1 0," + -s + "A" + s + "," + s + " 0 1,1 0," + s + "Z";};
             return circle(sizeAcc(row));
@@ -708,7 +718,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var renderOutliers = function(selection, plot, geom) {
         var xAcc, yAcc, xBinWidth = null, yBinWidth = null, defaultShape, translateAcc, colorAcc, shapeAcc;
 
-        defaultShape = function(row) {
+        defaultShape = function() {
             var circle = function(s) {return "M0," + s + "A" + s + "," + s + " 0 1,1 0," + -s + "A" + s + "," + s + " 0 1,1 0," + s + "Z";};
             return circle(geom.outlierSize);
         };
@@ -814,8 +824,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var renderLine = function(data, geom, groupName, layerSelection) {
         var xAcc = function(d) {return geom.getX(d);},
             yAcc = function(d) {var val = geom.getY(d); return val == null ? null : -val;},
-            size = geom.sizeAes && geom.sizeScale ? geom.sizeScale.scale(geom.sizeAes.getValue(data)) : function(d) {return geom.size},
-            color = function(d) {return geom.color},
+            size = geom.sizeAes && geom.sizeScale ? geom.sizeScale.scale(geom.sizeAes.getValue(data)) : function() {return geom.size},
+            color = function() {return geom.color},
             line = function(d) {return LABKEY.vis.makePath(d, xAcc, yAcc);};
 
         if (groupName != null && geom.colorScale) {
@@ -823,13 +833,13 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             // the entire chunk of data then pass that value to the colorScale. This means colorAes for paths would always
             // need to be functions that expect an array of data. Making this change might break already existing charts,
             // so I'm going to leave this as is for now.
-            color = function(d) {return geom.colorScale.scale(groupName + geom.layerName);};
+            color = function() {return geom.colorScale.scale(groupName + geom.layerName);};
         }
 
         layerSelection.append('path').datum(data)
                 .attr('d', line)
                 .attr('stroke', color)
-                .attr('stroke-opacity', function(d) {return geom.opacity;})
+                .attr('stroke-opacity', function() {return geom.opacity;})
                 .attr('stroke-width', size)
                 .attr('fill', 'none');
     };
