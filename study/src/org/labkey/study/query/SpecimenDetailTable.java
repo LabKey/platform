@@ -179,8 +179,8 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                 return;
 
             SQLFragment joinSql = new SQLFragment();
-            joinSql.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoSpecimenComment()).append(" AS ");
-            joinSql.append(tableAlias).append(" ON ");
+            joinSql.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoSpecimenComment(), tableAlias);
+            joinSql.append(" ON ");
             joinSql.append(parentAlias).append(".GlobalUniqueId = ").append(tableAlias).append(".GlobalUniqueId AND ");
             joinSql.append(tableAlias).append(".Container = ").append(parentAlias).append(".Container");
 
@@ -226,8 +226,8 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                 return;
 
             SQLFragment joinSql = new SQLFragment();
-            joinSql.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoParticipantVisit()).append(" AS ");
-            joinSql.append(tableAlias).append(" ON ");
+            joinSql.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoParticipantVisit(), tableAlias);
+            joinSql.append(" ON ");
             joinSql.append(parentAlias).append(".ParticipantSequenceNum = ").append(tableAlias).append(".ParticipantSequenceNum");
             joinSql.append(" AND ").append(parentAlias).append(".Container = ").append(tableAlias).append(".Container");
 
@@ -288,11 +288,10 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         private String getNoSiteText(RenderContext ctx)
         {
             ColumnInfo inRequestColumn = getInRequestColumn();
-            boolean requested = false;
             if (inRequestColumn != null)
             {
                 Object inRequest = inRequestColumn.getValue(ctx);
-                requested = (inRequest instanceof Boolean && ((Boolean) inRequest).booleanValue()) ||
+                boolean requested = (inRequest instanceof Boolean && ((Boolean) inRequest).booleanValue()) ||
                     (inRequest instanceof Integer && ((Integer) inRequest).intValue() == 1);
                 return NO_SITE_DISPLAY_VALUE + (requested ? ": Requested" : "");
             }

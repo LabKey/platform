@@ -833,7 +833,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         }
 
         if (this.showCounts)
-            this.udpateSectionCount(cmp, newValue, oldValue);
+            this.updateSectionCount(cmp, newValue, oldValue);
 
         this.updateSubmitInfo();
     },
@@ -866,7 +866,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         }
     },
 
-    udpateSectionCount : function(cmp, newValue, oldValue) {
+    updateSectionCount : function(cmp, newValue, oldValue) {
 
         var sectionPanel = cmp.up('.panel[sectionPanel=true]');
         if (sectionPanel)

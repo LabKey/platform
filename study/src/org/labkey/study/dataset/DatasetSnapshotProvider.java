@@ -180,7 +180,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     ptids.addAll(Arrays.asList(group.getParticipantIds()));
                 }
             }
-            SimpleFilter.InClause inClause = new SimpleFilter.InClause(StudyService.get().getSubjectColumnName(qsDef.getContainer()), ptids);
+            SimpleFilter.InClause inClause = new SimpleFilter.InClause(FieldKey.fromParts(StudyService.get().getSubjectColumnName(qsDef.getContainer())), ptids);
             filter.addClause(inClause);
         }
         return filter;

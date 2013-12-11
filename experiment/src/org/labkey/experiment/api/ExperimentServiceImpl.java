@@ -1835,8 +1835,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         for (ExpData data : datas)
             ids.add(data.getRowId());
 
-        SimpleFilter.InClause in1 = new SimpleFilter.InClause("DataID", ids);
-        SimpleFilter.InClause in2 = new SimpleFilter.InClause("RowId", ids);
+        SimpleFilter.InClause in1 = new SimpleFilter.InClause(FieldKey.fromParts("DataID"), ids);
+        SimpleFilter.InClause in2 = new SimpleFilter.InClause(FieldKey.fromParts("RowId"), ids);
 
         SQLFragment sql = new SQLFragment("SELECT * FROM exp.ExperimentRun WHERE\n" +
                             "RowId IN (SELECT pa.RunId FROM exp.ProtocolApplication pa WHERE pa.RowId IN\n" +
@@ -2152,7 +2152,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         // use the outputs of this run.
         if (!outputMaterialMap.isEmpty())
         {
-            SimpleFilter.InClause in = new SimpleFilter.InClause("MaterialId", outputMaterialMap.keySet());
+            SimpleFilter.InClause in = new SimpleFilter.InClause(FieldKey.fromParts("MaterialId"), outputMaterialMap.keySet());
 
             SQLFragment sql = new SQLFragment();
             sql.append("SELECT TargetApplicationId, MaterialId, PA.RunId"
@@ -2896,7 +2896,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpProtocol[] getExpProtocols(Container... containers)
     {
-        SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause("Container", Arrays.asList(containers)));
+        SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts("Container"), Arrays.asList(containers)));
         return ExpProtocolImpl.fromProtocols(new TableSelector(getTinfoProtocol(), filter, null).getArray(Protocol.class));
     }
 

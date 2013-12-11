@@ -524,7 +524,7 @@ public class RequestabilityManager
                 Set<String> globalUniqueIds = new HashSet<>();
                 for (Specimen specimen : specimens)
                     globalUniqueIds.add(specimen.getGlobalUniqueId());
-                viewFilter.addCondition(new SimpleFilter.InClause("GlobalUniqueId", globalUniqueIds));
+                viewFilter.addCondition(new SimpleFilter.InClause(FieldKey.fromParts("GlobalUniqueId"), globalUniqueIds));
            }
 
             UserSchema schema = QueryService.get().getUserSchema(user, container, _schemaName);
