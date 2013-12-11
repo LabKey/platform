@@ -21,6 +21,8 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceLoadException;
 import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.pipeline.api.PipelineJobServiceImpl;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,8 +38,9 @@ public class PipelineModuleResourceLoader implements ModuleResourceLoader
     @Override
     public Set<String> getModuleDependencies(Module module, File explodedModuleDir)
     {
-        // if (explodedModuleDir contains a 'pipeline' directory)
-        // add PipelineModule as a dependency
+        File dir = new File(explodedModuleDir, PipelineJobServiceImpl.MODULE_PIPELINE_DIR);
+        if (dir.exists())
+            return Collections.singleton(PipelineService.MODULE_NAME);
         return Collections.emptySet();
     }
 

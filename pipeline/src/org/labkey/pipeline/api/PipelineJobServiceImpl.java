@@ -76,7 +76,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 public class PipelineJobServiceImpl extends PipelineJobService
 {
-    /* package */ static final String MODULE_PIPELINE_DIR = "pipeline";
+    public static final String MODULE_PIPELINE_DIR = "pipeline";
+
     private static final String MODULE_TASKS_DIR = "tasks";
     private static final String MODULE_PIPELINES_DIR = "pipelines";
 
