@@ -2921,7 +2921,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         if (null != groupedValues)
             return groupedValues;
 
-        Table.TableResultSet resultSet = null;
+        TableResultSet resultSet = null;
         try
         {
             groupedValues = new HashMap<>();

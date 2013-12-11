@@ -220,59 +220,41 @@ public class SavePaths implements DavCrawler.SavePaths
     {
         if (next == null)
             next = oldDate;
-        
-        try
+
+        SqlExecutor executor = new SqlExecutor(getSearchSchema());
+
+        if (forceIndex)
         {
-            if (forceIndex)
-            {
-                Table.execute(getSearchSchema(),
-                        "UPDATE search.CrawlResources SET LastIndexed=NULL " +
-                        "WHERE Parent IN (SELECT id FROM search.CrawlCollections " +
-                        "  WHERE Path LIKE ?)",
-                        toPathString(path) + "%");
-            }
-            Table.execute(getSearchSchema(),
-                    "UPDATE search.CrawlCollections " +
-                    "SET LastCrawled=NULL, NextCrawl=? " +
-                    "WHERE Path LIKE ?",
-                    // UNDONE LIKE ESCAPE
-                    next, toPathString(path) + "%");
+            executor.execute(
+                    "UPDATE search.CrawlResources SET LastIndexed=NULL " +
+                    "WHERE Parent IN (SELECT id FROM search.CrawlCollections " +
+                    "  WHERE Path LIKE ?)",
+                    toPathString(path) + "%");
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+
+        executor.execute(
+                "UPDATE search.CrawlCollections " +
+                "SET LastCrawled=NULL, NextCrawl=? " +
+                "WHERE Path LIKE ?",
+                // UNDONE LIKE ESCAPE
+                next, toPathString(path) + "%");
     }
 
     
     public void clearFailedDocuments()
     {
-        try
-        {
-            assert failDate.getTime() < oldDate.getTime();
-            Table.execute(getSearchSchema(),
-                    "UPDATE search.CrawlResources SET LastIndexed=NULL WHERE LastIndexed<?",
-                    oldDate);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        assert failDate.getTime() < oldDate.getTime();
+        new SqlExecutor(getSearchSchema()).execute(
+                "UPDATE search.CrawlResources SET LastIndexed=NULL WHERE LastIndexed<?",
+                oldDate);
     }
 
 
     public void deletePath(Path path)
     {
-        try
-        {
-            // UNDONE LIKE ESCAPE
-            Table.execute(getSearchSchema(), "DELETE FROM search.CrawlResources WHERE Parent IN (SELECT id FROM search.CrawlCollections WHERE Path LIKE ?)", toPathString(path) + "%");
-            Table.execute(getSearchSchema(), "DELETE FROM search.CrawlCollections WHERE Path LIKE ?", toPathString(path) + "%");
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeException(x);
-        }
+        // UNDONE LIKE ESCAPE
+        new SqlExecutor(getSearchSchema()).execute("DELETE FROM search.CrawlResources WHERE Parent IN (SELECT id FROM search.CrawlCollections WHERE Path LIKE ?)", toPathString(path) + "%");
+        new SqlExecutor(getSearchSchema()).execute("DELETE FROM search.CrawlCollections WHERE Path LIKE ?", toPathString(path) + "%");
     }
 
 

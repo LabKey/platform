@@ -677,24 +677,17 @@ public class IssueManager
 
     public static void setUserEmailPreferences(Container c, int userId, int emailPrefs, int currentUser)
     {
-        try
-        {
-            int ret = Table.execute(_issuesSchema.getSchema(),
-                    "UPDATE " + _issuesSchema.getTableInfoEmailPrefs() + " SET EmailOption=? WHERE Container=? AND UserId=?",
-                    emailPrefs, c.getId(), userId);
+        int ret = new SqlExecutor(_issuesSchema.getSchema()).execute(
+                "UPDATE " + _issuesSchema.getTableInfoEmailPrefs() + " SET EmailOption=? WHERE Container=? AND UserId=?",
+                emailPrefs, c, userId);
 
 
-            if (ret == 0)
-            {
-                // record doesn't exist yet...
-                Table.execute(_issuesSchema.getSchema(),
-                        "INSERT INTO " + _issuesSchema.getTableInfoEmailPrefs() + " (Container, UserId, EmailOption ) VALUES (?, ?, ?)",
-                        c.getId(), userId, emailPrefs);
-            }
-        }
-        catch (SQLException x)
+        if (ret == 0)
         {
-            throw new RuntimeSQLException(x);
+            // record doesn't exist yet...
+            new SqlExecutor(_issuesSchema.getSchema()).execute(
+                    "INSERT INTO " + _issuesSchema.getTableInfoEmailPrefs() + " (Container, UserId, EmailOption ) VALUES (?, ?, ?)",
+                    c, userId, emailPrefs);
         }
     }
 
@@ -817,16 +810,9 @@ public class IssueManager
 
     public static void setLastIndexed(String containerId, int issueId, long ms)
     {
-        try
-        {
-        Table.execute(_issuesSchema.getSchema(),
-                "UPDATE issues.issues SET lastIndexed=? WHERE container=? AND issueId=?",
-                new Timestamp(ms), containerId, issueId);
-        }
-        catch (SQLException sql)
-        {
-            throw new RuntimeSQLException(sql);
-        }
+        new SqlExecutor(_issuesSchema.getSchema()).execute(
+            "UPDATE issues.issues SET lastIndexed=? WHERE container=? AND issueId=?",
+            new Timestamp(ms), containerId, issueId);
     }
     
 

@@ -40,6 +40,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableResultSet;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -1591,7 +1592,7 @@ public class SpecimenImporter
             cols.addAll(getSpecimenCols(info.getAvailableColumns()));
 
             // Insert or update the specimens from in the temp table
-            try (Table.TableResultSet rs = new SqlSelector(info.getSchema(), insertSelectSql).getResultSet())
+            try (TableResultSet rs = new SqlSelector(info.getSchema(), insertSelectSql).getResultSet())
             {
                 if (VERBOSE_DEBUG)
                     ResultSetUtil.logData(rs, _logger);
@@ -1684,7 +1685,7 @@ public class SpecimenImporter
             cols.addAll(getVialCols(info.getAvailableColumns()));
 
             // Insert or update the vials from in the temp table.
-            try (Table.TableResultSet rs = new SqlSelector(info.getSchema(), insertSelectSql).getResultSet())
+            try (TableResultSet rs = new SqlSelector(info.getSchema(), insertSelectSql).getResultSet())
             {
                 if (VERBOSE_DEBUG)
                     ResultSetUtil.logData(rs, _logger);
@@ -1747,7 +1748,7 @@ public class SpecimenImporter
             }
 
             // Insert or update the vials from in the temp table.
-            try (Table.TableResultSet rs = new SqlSelector(info.getSchema(), insertSelectSql).getResultSet())
+            try (TableResultSet rs = new SqlSelector(info.getSchema(), insertSelectSql).getResultSet())
             {
                 if (VERBOSE_DEBUG)
                     ResultSetUtil.logData(rs, _logger);
@@ -2708,7 +2709,7 @@ public class SpecimenImporter
             _schema.dropTableIfExists(TABLE);
         }
 
-        private Table.TableResultSet selectValues() throws SQLException
+        private TableResultSet selectValues() throws SQLException
         {
             return new SqlSelector(_schema, "SELECT Container,id,s,i FROM " + _tableName + " ORDER BY id").getResultSet();
         }
@@ -2755,7 +2756,7 @@ public class SpecimenImporter
             assertEquals(3, pair.second.intValue());
             assertEquals(3, counter[0].intValue());
 
-            try (Table.TableResultSet rs = selectValues())
+            try (TableResultSet rs = selectValues())
             {
                 Iterator<Map<String, Object>> iter = rs.iterator();
                 Map<String, Object> row0 = iter.next();
@@ -2786,7 +2787,7 @@ public class SpecimenImporter
             assertEquals(3, pair.second.intValue());
             assertEquals(4, counter[0].intValue());
 
-            try (Table.TableResultSet rs = selectValues())
+            try (TableResultSet rs = selectValues())
             {
                 Iterator<Map<String, Object>> iter = rs.iterator();
                 Map<String, Object> row0 = iter.next();

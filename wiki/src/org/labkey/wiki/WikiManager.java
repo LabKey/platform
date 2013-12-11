@@ -590,28 +590,14 @@ public class WikiManager implements WikiService
 
     private void touch(Wiki wiki)
     {
-        try
-        {
-            // CONSIDER: Table.touch()?
-            Table.execute(comm.getSchema(), "UPDATE " + comm.getTableInfoPages() + " SET lastIndexed=null, modified=? WHERE container=? AND name=?", new Date(), wiki.getContainerId(), wiki.getName());
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        // CONSIDER: Table.touch()?
+        new SqlExecutor(comm.getSchema()).execute("UPDATE " + comm.getTableInfoPages() + " SET LastIndexed = NULL, Modified=? WHERE Container = ? AND Name = ?", new Date(), wiki.getContainerId(), wiki.getName());
     }
 
 
     public void setLastIndexed(Container c, String name, long ms)
     {
-        try
-        {
-            Table.execute(comm.getSchema(), "UPDATE comm.pages SET lastIndexed=? WHERE container=? AND name=?", new Timestamp(ms), c, name);
-        }
-        catch (SQLException sql)
-        {
-            throw new RuntimeSQLException(sql);
-        }
+        new SqlExecutor(comm.getSchema()).execute("UPDATE comm.pages SET LastIndexed = ? WHERE Container = ? AND Name = ?", new Timestamp(ms), c, name);
     }
 
     
