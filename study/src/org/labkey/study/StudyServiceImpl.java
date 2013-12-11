@@ -23,20 +23,17 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
-import org.labkey.api.etl.DataIteratorUtil;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.PipeRoot;
@@ -67,7 +64,6 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.importer.StudyImportJob;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.QCState;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -680,11 +676,5 @@ public class StudyServiceImpl implements StudyService.Service
         sql.add(c);
 
         return new ExprColumn(ti, column.getName(), sql, column.getJdbcType(), column);
-    }
-
-    @Override
-    public String getDefaultDateFormatString(Container container)
-    {
-        return StudyManager.getInstance().getDefaultDateFormatString(container);
     }
 }

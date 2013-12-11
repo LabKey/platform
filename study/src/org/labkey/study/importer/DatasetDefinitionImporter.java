@@ -16,13 +16,14 @@
 
 package org.labkey.study.importer;
 
-import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
+import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
@@ -36,7 +37,6 @@ import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -73,14 +73,12 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
             {
                 Container c = ctx.getContainer();
 
+                // This is only for backwards compatibility; we now export default formats to folder.xml
                 if (manifestDatasetsXml.isSetDefaultDateFormat())
                 {
-                    String dateFormat = manifestDatasetsXml.getDefaultDateFormat();
-
                     try
                     {
-                        FastDateFormat.getInstance(dateFormat);
-                        StudyManager.getInstance().setDefaultDateFormatString(c, manifestDatasetsXml.getDefaultDateFormat());
+                        WriteableFolderLookAndFeelProperties.saveDefaultDateFormat(c, manifestDatasetsXml.getDefaultDateFormat());
                     }
                     catch (IllegalArgumentException e)
                     {
@@ -88,14 +86,12 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
                     }
                 }
 
+                // This is only for backwards compatibility; we now export default formats to folder.xml
                 if (manifestDatasetsXml.isSetDefaultNumberFormat())
                 {
-                    String numberFormat =  manifestDatasetsXml.getDefaultNumberFormat();
-
                     try
                     {
-                        new DecimalFormat(numberFormat);
-                        StudyManager.getInstance().setDefaultNumberFormatString(c, numberFormat);
+                        WriteableFolderLookAndFeelProperties.saveDefaultNumberFormat(c, manifestDatasetsXml.getDefaultNumberFormat());
                     }
                     catch (IllegalArgumentException e)
                     {

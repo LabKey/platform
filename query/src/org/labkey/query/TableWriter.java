@@ -206,7 +206,7 @@ public class TableWriter
 
         protected TableTableInfoWriter(TableInfo tableInfo, QueryDefinition def, Collection<ColumnInfo> columns)
         {
-            super(def.getContainer(), tableInfo, columns, null);
+            super(def.getContainer(), tableInfo, columns);
             _tableInfo = tableInfo;
         }
 

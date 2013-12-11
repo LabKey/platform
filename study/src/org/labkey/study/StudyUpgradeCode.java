@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DeferredUpgrade;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableChange;
@@ -42,6 +43,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -355,6 +357,45 @@ public class StudyUpgradeCode implements UpgradeCode
             catch (Exception e)
             {
                 _log.error("An error occurred upgrading participant reports: ", e);
+            }
+        }
+    }
+
+    private static final String STUDY_FORMAT_STRINGS = "DefaultStudyFormatStrings";
+    private static final String DATE_FORMAT_STRING = "DateFormatString";
+    private static final String NUMBER_FORMAT_STRING = "NumberFormatString";
+
+    // TODO: This should work but is not yet invoked... need to add a 13.3x study script that calls it once specimen provisioning branch is merged into trunk
+    // Move the "default study format strings" to project/folder-level look & feel settings
+    @SuppressWarnings({"UnusedDeclaration"})
+    @DeferredUpgrade
+    public void moveDefaultFormatProperties(final ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        for (Container c : ContainerManager.getAllChildren(ContainerManager.getRoot()))
+        {
+            try
+            {
+                Map<String, String> props = PropertyManager.getProperties(c, STUDY_FORMAT_STRINGS);
+
+                if (!props.isEmpty())
+                {
+                    String dateFormat = props.get(DATE_FORMAT_STRING);
+
+                    if (null != dateFormat)
+                        WriteableLookAndFeelProperties.saveDefaultDateFormat(c, dateFormat);
+
+                    String numberFormat = props.get(NUMBER_FORMAT_STRING);
+
+                    if (null != numberFormat)
+                        WriteableLookAndFeelProperties.saveDefaultNumberFormat(c, numberFormat);
+                }
+            }
+            catch (Throwable e)
+            {
+                _log.error("Error migrating study format properties in " + c.toString(), e);
             }
         }
     }

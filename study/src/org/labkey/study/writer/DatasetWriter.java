@@ -96,13 +96,6 @@ public class DatasetWriter implements InternalStudyWriter
 
         DatasetsDocument manifestXml = DatasetsDocument.Factory.newInstance();
         DatasetsDocument.Datasets dsXml = manifestXml.addNewDatasets();
-        String defaultDateFormat = StudyManager.getInstance().getDefaultDateFormatString(ctx.getContainer());
-        String defaultNumberFormat = StudyManager.getInstance().getDefaultNumberFormatString(ctx.getContainer());
-        if (null != defaultDateFormat)
-            dsXml.setDefaultDateFormat(defaultDateFormat);
-        if (null != defaultNumberFormat)
-            dsXml.setDefaultNumberFormat(defaultNumberFormat);
-
         DatasetsDocument.Datasets.Datasets2 datasets2Xml = dsXml.addNewDatasets();
 
         for (DataSetDefinition def : datasets)
@@ -149,7 +142,7 @@ public class DatasetWriter implements InternalStudyWriter
         }
         else
         {
-            SchemaXmlWriter schemaXmlWriter = new SchemaXmlWriter(defaultDateFormat);
+            SchemaXmlWriter schemaXmlWriter = new SchemaXmlWriter();
             schemaXmlWriter.write(datasets, ctx, vf);
             dsXml.setMetaDataFile(SchemaXmlWriter.SCHEMA_FILENAME);
         }

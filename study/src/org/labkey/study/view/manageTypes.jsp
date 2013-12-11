@@ -16,13 +16,16 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
+<%@ page import="org.labkey.api.admin.AdminUrls"%>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.exp.property.Domain"%>
-<%@ page import="org.labkey.api.study.DataSet"%>
-<%@ page import="org.labkey.api.study.Study"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.reports.model.ViewCategory"%>
+<%@ page import="org.labkey.api.study.Cohort" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.DatasetController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
@@ -35,27 +38,8 @@
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.reports.model.ViewCategory" %>
-<%@ page import="org.labkey.api.study.Cohort" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
-<%@ page import="org.labkey.api.util.Formats" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
-<script type="text/javascript">
-    function resetDefaultFormats()
-    {
-        var dateFormat = document.getElementById('dateFormat');
-        if (dateFormat)
-            dateFormat.value = "";
-        var numberFormat = document.getElementById('numberFormat');
-        if (numberFormat)
-            numberFormat.value = "";
-
-        document.getElementById('manageTypesForm').submit();
-    }
-</script>
-
 <%
     Container c = getContainer();
     Study study = StudyManager.getInstance().getStudy(c);
@@ -68,41 +52,8 @@
         if (null == d || 0 == d.getProperties().length)
             countUndefined++;
     }
-    String dateFormat = StudyManager.getInstance().getDefaultDateFormatString(getContainer());
-    String numberFormat = StudyManager.getInstance().getDefaultNumberFormatString(getContainer());
-    String decimalFormatHelp = "The format string for numbers must be compatible with the format that the java class " +
-            "<code>DecimalFormat</code> understands. A valid <code>DecimalFormat</code> is a pattern " +
-            "specifying a prefix, numeric part, and suffix. For more information see the " +
-            "<a href=\"" + Formats.getDecimalFormatDocumentationURL() + "\" target=\"blank\">java&nbsp;documentation</a>. " +
-            "The following table has an abbreviated guide to pattern symbols:<br/>" +
-            "<table class=\"labkey-data-region labkey-show-borders\"><colgroup><col><col><col><col></colgroup>" +
-            "<tr class=\"labkey-frame\"><th align=left>Symbol<th align=left>Location<th align=left>Localized?<th align=left>Meaning</tr>" +
-            "<tr valign=top><td><code>0</code><td>Number<td>Yes<td>Digit</tr>" +
-            "<tr valign=top class=\"labkey-alternate-row\"><td><code>#</code><td>Number<td>Yes<td>Digit, zero shows as absent</tr>" +
-            "<tr valign=top><td><code>.</code><td>Number<td>Yes<td>Decimal separator or monetary decimal separator</tr>" +
-            "<tr valign=top class=\"labkey-alternate-row\"><td><code>-</code><td>Number<td>Yes<td>Minus sign</tr>" +
-            "<tr valign=top><td><code>,</code><td>Number<td>Yes<td>Grouping separator</tr></table>";
-    String dateFormatHelp = "The format string for dates must be compatible with the format that the java class " +
-            "<code>SimpleDateFormat</code> understands. For more information see the " +
-            "<a href=\"" + DateUtil.getSimpleDateFormatDocumentationURL() + "\" target=\"blank\">java&nbsp;documentation</a>. " +
-            "The following table has a partial guide to pattern symbols:<br/>" +
-            "<table class=\"labkey-data-region labkey-show-borders\"><colgroup><col><col><col></colgroup>" +
-            "<tr class=\"labkey-frame\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>" +
-            "<tr><td><code>G</code><td>Era designator<td><code>AD</code></tr>" +
-            "<tr class=\"labkey-alternate-row\"><td><code>y</code><td>Year<td><code>1996</code>; <code>96</code></tr>" +
-            "<tr><td><code>M</code><td>Month in year<td><code>July</code>; <code>Jul</code>; <code>07</code></tr>" +
-            "<tr class=\"labkey-alternate-row\"><td><code>w</code><td>Week in year<td><code>27</code></td></tr>" +
-            "<tr><td><code>W</code><td>Week in month<td><code>2</code></td></tr>" +
-            "<tr class=\"labkey-alternate-row\"><td><code>D</code><td>Day in year<td><code>189</code></td></tr>" +
-            "<tr><td><code>d</code><td>Day in month<td><code>10</code></tr>" +
-            "<tr class=\"labkey-alternate-row\"><td><code>F</code><td>Day of week in month<td><code>2</code></tr>" +
-            "<tr><td><code>E</code><td>Day in week<td><code>Tuesday</code>; <code>Tue</code></tr>" +
-            "<tr class=\"labkey-alternate-row\"><td><code>a</code><td>Am/pm marker<td><code>PM</code></tr>" +
-            "<tr><td><code>H</code><td>Hour in day (0-23)<td><code>0</code></tr>" +
-            "<tr class=\"labkey-alternate-row\"><td><code>k</code><td>Hour in day (1-24)<td><code>24</code></tr>" +
-            "<tr><td><code>K</code><td>Hour in am/pm (0-11)<td><code>0</code></tr>" +
-            "<tr class=\"labkey-alternate-row\"><td><code>h</code><td>Hour in am/pm (1-12)<td><code>12</code></tr></table>";
-
+    String dateFormat = DateUtil.getDateFormatString(getContainer());
+    String numberFormat = Formats.getNumberFormatString(getContainer());
 %>
 <table>
     <tr>
@@ -166,17 +117,16 @@
 </table>
 <% WebPartView.startTitleFrame(out, "Default Time/Date, Number Formats", null, null, null); %>
 <labkey:errors/>
-
+<%
+    AdminUrls urls = urlProvider(AdminUrls.class);
+    String name = c.isProject() ? "project" : "folder";
+    ActionURL url = c.isProject() ? urls.getProjectSettingsURL(c) : urls.getFolderManagementSettingsURL(c);
+%>
 <form id="manageTypesForm" action="<%=h(buildURL(ManageTypesAction.class))%>" method="POST">
     <table>
-        <tr><td>Default Study Date format string:<%=PageFlowUtil.helpPopup("Date format string", dateFormatHelp, true)%></td>
-            <td><input id="dateFormat" name="dateFormat" value="<%=h(StringUtils.trimToEmpty(dateFormat))%>"></td></tr>
-        <tr><td>Default Study Number format string:<%=PageFlowUtil.helpPopup("Number format string", decimalFormatHelp, true)%></td>
-            <td><input id="numberFormat" name="numberFormat" value="<%=h(StringUtils.trimToEmpty(numberFormat))%>"></td></tr>
-        <tr><td><%=generateSubmitButton("Submit")%>
-            &nbsp;<%=generateButton("Reset to Default", "javascript:resetDefaultFormats()")%>
-
-        </td></tr>
+        <tr><td>Default date format:</td><td><%=h(StringUtils.trimToEmpty(dateFormat))%></td></tr>
+        <tr><td>Default number format:</td><td><%=h(StringUtils.trimToEmpty(numberFormat))%></td></tr>
+        <tr><td colspan="2"><br>Default formats can be changed via the <%=textLink(name + " settings page", url)%></td></tr>
     </table>
 </form>
 <% WebPartView.endTitleFrame(out); %>

@@ -24,6 +24,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
+import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 import org.springframework.validation.BindException;
@@ -50,21 +51,46 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
         @Override
         public String getDescription()
         {
-            return "folder type and active modules";
+            return "folder properties (folder type, settings and active modules)";
         }
 
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             Container c = ctx.getContainer();
-            
-            if (ctx.getXml().isSetFolderType())
+            FolderDocument.Folder folderXml = ctx.getXml();
+
+            if (folderXml.isSetDefaultDateFormat())
+            {
+                try
+                {
+                    WriteableFolderLookAndFeelProperties.saveDefaultDateFormat(c, folderXml.getDefaultDateFormat());
+                }
+                catch (IllegalArgumentException e)
+                {
+                    ctx.getLogger().warn("Illegal default date format specified: " + e.getMessage());
+                }
+            }
+
+            if (folderXml.isSetDefaultNumberFormat())
+            {
+                try
+                {
+                    WriteableFolderLookAndFeelProperties.saveDefaultNumberFormat(c, folderXml.getDefaultNumberFormat());
+                }
+                catch (IllegalArgumentException e)
+                {
+                    ctx.getLogger().warn("Illegal default number format specified: " + e.getMessage());
+                }
+            }
+
+            if (folderXml.isSetFolderType())
             {
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
                 ctx.getLogger().info("Loading " + getDescription());
 
-                org.labkey.folder.xml.FolderType folderTypeXml = ctx.getXml().getFolderType();
+                org.labkey.folder.xml.FolderType folderTypeXml = folderXml.getFolderType();
                 FolderType folderType = ModuleLoader.getInstance().getFolderType(folderTypeXml.getName());
 
                 org.labkey.folder.xml.FolderType.Modules modulesXml = folderTypeXml.getModules();

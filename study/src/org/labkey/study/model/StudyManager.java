@@ -106,6 +106,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -3063,62 +3064,10 @@ public class StudyManager
         }
     }
 
-    private static final String STUDY_FORMAT_STRINGS = "DefaultStudyFormatStrings";
-    private static final String DATE_FORMAT_STRING = "DateFormatString";
-    private static final String NUMBER_FORMAT_STRING = "NumberFormatString";
-
-//    @Deprecated // No longer a study thing; use LookAndFeelProperties.getInstance(c) directly
-//    public String getDefaultDateFormatString(Container c)
-//    {
-//        return LookAndFeelProperties.getInstance(c).getDefaultDateFormat();
-//    }
-//
-//    @Deprecated // No longer a study thing; use LookAndFeelProperties.getInstance(c) directly
-//    public String getDefaultNumberFormatString(Container c)
-//    {
-//        return LookAndFeelProperties.getInstance(c).getDefaultNumerFormat();
-//    }
-
-    public String getDefaultDateFormatString(Container c)
-    {
-        return getFormatStrings(c).get(DATE_FORMAT_STRING);
-    }
-
-    public String getDefaultNumberFormatString(Container c)
-    {
-        return getFormatStrings(c).get(NUMBER_FORMAT_STRING);
-    }
-
-    private  Map<String, String> getFormatStrings(Container c)
-    {
-        return PropertyManager.getProperties(c, STUDY_FORMAT_STRINGS);
-    }
-
-    public void setDefaultDateFormatString(Container c, String format)
-    {
-        Map<String, String> props = PropertyManager.getWritableProperties(c, STUDY_FORMAT_STRINGS, true);
-
-        if (!StringUtils.isEmpty(format))
-            props.put(DATE_FORMAT_STRING, format);
-        else if (props.containsKey(DATE_FORMAT_STRING))
-            props.remove(DATE_FORMAT_STRING);
-        PropertyManager.saveProperties(props);
-    }
-
-    public void setDefaultNumberFormatString(Container c, String format)
-    {
-        Map<String, String> props = PropertyManager.getWritableProperties(c, STUDY_FORMAT_STRINGS, true);
-        if (!StringUtils.isEmpty(format))
-            props.put(NUMBER_FORMAT_STRING, format);
-        else if (props.containsKey(NUMBER_FORMAT_STRING))
-            props.remove(NUMBER_FORMAT_STRING);
-        PropertyManager.saveProperties(props);
-    }
-
     public void applyDefaultFormats(Container c, List<DisplayColumn> columns)
     {
-        final String defaultDate = StudyManager.getInstance().getDefaultDateFormatString(c);
-        final String defaultNumber = StudyManager.getInstance().getDefaultNumberFormatString(c);
+        final String defaultDate = DateUtil.getDateFormatString(c);
+        final String defaultNumber = Formats.getNumberFormatString(c);
 
         if (!StringUtils.isEmpty(defaultDate) || !StringUtils.isEmpty(defaultNumber))
         {

@@ -69,7 +69,9 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.SpecimenForeignKey;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
+import org.labkey.api.util.Formats;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -819,13 +821,13 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
     @Override
     public String getDefaultDateFormat()
     {
-        return StudyManager.getInstance().getDefaultDateFormatString(getContainer());
+        return DateUtil.getDateFormatString(getContainer());
     }
 
     @Override
     public String getDefaultNumberFormat()
     {
-        return StudyManager.getInstance().getDefaultNumberFormatString(getContainer());
+        return Formats.getNumberFormatString(getContainer());
     }
 
     @Override

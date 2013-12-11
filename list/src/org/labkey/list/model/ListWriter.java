@@ -39,7 +39,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
@@ -330,7 +329,7 @@ public class ListWriter
 
         protected ListTableInfoWriter(TableInfo ti, ListDefinition def, Collection<ColumnInfo> columns)
         {
-            super(def.getContainer(), ti, columns, null);
+            super(def.getContainer(), ti, columns);
             _def = def;
             _domain = _def.getDomain();
 

@@ -933,16 +933,9 @@ public class StudyController extends BaseStudyController
             {
                 sb.append("<br/><span><b>Data Cut Date:</b> ");
                 Object refreshDate = (ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "refreshDate"));
-                if(refreshDate instanceof Date)
+                if (refreshDate instanceof Date)
                 {
-                    if(StudyManager.getInstance().getDefaultDateFormatString(getContainer()) != null)
-                    {
-                        sb.append(DateUtil.formatDateTime((Date)refreshDate, StudyManager.getInstance().getDefaultDateFormatString(getContainer())));
-                    }
-                    else
-                    {
-                        sb.append(DateUtil.formatDateTime((Date)refreshDate, DateUtil.getStandardDateFormatString()));
-                    }
+                    sb.append(DateUtil.formatDateTime((Date)refreshDate, DateUtil.getDateFormatString(getContainer())));
                 }
                 else
                 {
@@ -1608,84 +1601,18 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class ManageTypesAction extends FormViewAction<ManageTypesForm>
+    public class ManageTypesAction extends SimpleViewAction<Object>
     {
-        public void validateCommand(ManageTypesForm target, Errors errors)
-        {
-        }
-
-        public ModelAndView getView(ManageTypesForm manageTypesForm, boolean reshow, BindException errors) throws Exception
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             return new StudyJspView<>(getStudyRedirectIfNull(), "manageTypes.jsp", this, errors);
-        }
-
-        public boolean handlePost(ManageTypesForm form, BindException errors) throws Exception
-        {
-            String dateFormat = form.getDateFormat();
-            String numberFormat = form.getNumberFormat();
-
-            try
-            {
-                if (!StringUtils.isEmpty(dateFormat))
-                {
-                    FastDateFormat.getInstance(dateFormat);
-                    StudyManager.getInstance().setDefaultDateFormatString(getContainer(), dateFormat);
-                }
-                else
-                    StudyManager.getInstance().setDefaultDateFormatString(getContainer(), null);
-
-                if (!StringUtils.isEmpty(numberFormat))
-                {
-                    new DecimalFormat(numberFormat);
-                    StudyManager.getInstance().setDefaultNumberFormatString(getContainer(), numberFormat);
-                }
-                else
-                    StudyManager.getInstance().setDefaultNumberFormatString(getContainer(), null);
-
-                return true;
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.reject("manageTypes", e.getMessage());
-                return false;
-            }
-        }
-
-        public ActionURL getSuccessURL(ManageTypesForm manageTypesForm)
-        {
-            return null;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             _appendManageStudy(root);
             return root.addChild("Manage Datasets");
-        }
-    }
-
-    public static class ManageTypesForm
-    {
-        private String _dateFormat;
-        private String _numberFormat;
-
-        public String getDateFormat()
-        {
-            return _dateFormat;
-        }
-
-        public void setDateFormat(String dateFormat)
-        {
-            _dateFormat = dateFormat;
-        }
-
-        public String getNumberFormat()
-        {
-            return _numberFormat;
-        }
-
-        public void setNumberFormat(String numberFormat)
-        {
-            _numberFormat = numberFormat;
         }
     }
 
@@ -1975,7 +1902,6 @@ public class StudyController extends BaseStudyController
     {
         public void validateCommand(VisitForm target, Errors errors)
         {
-
             try
             {
                 StudyImpl study = getStudyRedirectIfNull();

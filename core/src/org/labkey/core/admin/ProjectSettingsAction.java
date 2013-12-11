@@ -589,7 +589,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         {
             try
             {
-                FastDateFormat.getInstance(defaultDateFormat);
+                props.setDefaultDateFormat(defaultDateFormat);
             }
             catch (IllegalArgumentException e)
             {
@@ -597,14 +597,13 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                 return false;
             }
         }
-        props.setDefaultDateFormat(defaultDateFormat);
 
         String defaultNumberFormat = StringUtils.trimToNull(form.getDefaultNumberFormat());
         if (null != defaultNumberFormat)
         {
             try
             {
-                new DecimalFormat(defaultNumberFormat);
+                props.setDefaultNumberFormat(defaultNumberFormat);
             }
             catch (IllegalArgumentException e)
             {
@@ -612,7 +611,6 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                 return false;
             }
         }
-        props.setDefaultNumberFormat(defaultNumberFormat);
 
         props.save();
 

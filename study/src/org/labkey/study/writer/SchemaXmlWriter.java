@@ -49,13 +49,10 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportCo
 {
     public static final String SCHEMA_FILENAME = "datasets_metadata.xml";
 
-    private final String _defaultDateFormat;
     private final Set<String> _candidatePropertyURIs = new HashSet<>();   // Allows nulls
 
-    public SchemaXmlWriter(String defaultDateFormat)
+    public SchemaXmlWriter()
     {
-        _defaultDateFormat = defaultDateFormat;
-
         // We export only the standard study propertyURIs and the SystemProperty propertyURIs (special EHR properties,
         // etc.); see #12742.  We could have a registration mechanism for this... but this seems good enough for now.
         for (PropertyDescriptor pd : DataSetDefinition.getStandardPropertiesMap().values())
@@ -89,7 +86,7 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportCo
             else
             {
                 TableInfo ti = schema.getTable(def.getName());
-                DatasetTableInfoWriter w = new DatasetTableInfoWriter(ti, def, _defaultDateFormat, ctx.isRemoveProtected());
+                DatasetTableInfoWriter w = new DatasetTableInfoWriter(ti, def, ctx.isRemoveProtected());
                 w.writeTable(tableXml);
             }
         }
@@ -121,9 +118,9 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportCo
     {
         private final DataSetDefinition _def;
 
-        private DatasetTableInfoWriter(TableInfo ti, DataSetDefinition def, String defaultDateFormat, boolean removeProtected)
+        private DatasetTableInfoWriter(TableInfo ti, DataSetDefinition def, boolean removeProtected)
         {
-            super(def.getContainer(), ti, DatasetWriter.getColumnsToExport(ti, def, true, removeProtected), defaultDateFormat);
+            super(def.getContainer(), ti, DatasetWriter.getColumnsToExport(ti, def, true, removeProtected));
             _def = def;
         }
 

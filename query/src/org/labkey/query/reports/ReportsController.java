@@ -2648,13 +2648,7 @@ public class ReportsController extends SpringActionController
 
             response.put("types", new JSONArray(types.values()));
 
-            String dateFormat = null;
-
-            if (StudyService.get().getStudy(getContainer()) != null)
-                dateFormat = StudyService.get().getDefaultDateFormatString(getContainer());
-
-            if (dateFormat == null)
-                dateFormat = DateUtil.getStandardDateFormatString();
+            String dateFormat = DateUtil.getDateFormatString(getContainer());
 
             //The purpose of this flag is so LABKEY.Query.getDataViews() can omit additional information only used to render the
             //webpart.  this also leaves flexibility to change that metadata
@@ -2902,11 +2896,7 @@ public class ReportsController extends SpringActionController
                 }
             }
 
-            if (StudyService.get().getStudy(getContainer()) != null)
-                dateFormat = StudyService.get().getDefaultDateFormatString(getContainer());
-
-            if (dateFormat == null)
-                dateFormat = DateUtil.getStandardDateFormatString();
+            dateFormat = DateUtil.getDateFormatString(getContainer());
 
             return buildTree(views);
         }
