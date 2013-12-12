@@ -17,7 +17,10 @@ package org.labkey.api.reports.report;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryDefinition;
@@ -34,8 +37,10 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.thumbnail.Thumbnail;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -44,9 +49,12 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -176,6 +184,8 @@ public abstract class AbstractReport implements Report
 
         if (descriptor.getReportId() != null)
         {
+            serializeThumbnail(dir, new ReportThumbnailLarge(context.getContainer(), this));
+            serializeThumbnail(dir, new ReportThumbnailSmall(context.getContainer(), this));
             String filename = String.format("%s.%s.report.xml", descriptor.getReportName() != null ? descriptor.getReportName() : descriptor.getReportType(), descriptor.getReportId());
             serialize(context, dir, filename);
         }
@@ -191,6 +201,11 @@ public abstract class AbstractReport implements Report
     @Override
     public void afterSave(Container container, User user, VirtualFile root)
     {
+        if (root != null)
+        {
+            deserializeThumbnail(user, root, new ReportThumbnailLarge(container, this));
+            deserializeThumbnail(user, root, new ReportThumbnailSmall(container, this));
+        }
     }
 
     public void afterDeserializeFromFile(File reportFile) throws IOException
@@ -313,6 +328,74 @@ public abstract class AbstractReport implements Report
                 errors.add(new SimpleValidationError("You must be in the Editor role to delete a public report."));
         }
         return errors.isEmpty();
+    }
+
+    protected String getSerializedReportName()
+    {
+        ReportDescriptor descriptor = getDescriptor();
+        return FileUtil.makeLegalName(descriptor.getReportName());
+    }
+
+    protected void serializeThumbnail(VirtualFile dir, ReportThumbnail thumbnail) throws IOException
+    {
+        if (thumbnail.shouldSerialize())
+        {
+            Attachment attachment = AttachmentService.get().getAttachment(this, thumbnail.getFilename());
+            serializeAttachment(dir, attachment);
+
+            // if we had an auto-generated attachment then update the thumnailType property
+            // to AUTO for exporting if it wasn't already set.  On import, we'll look to see if it is set to know
+            // to read in the file.  Note that we don't need to do this for custom icons which is why ReportThumbnailSmall
+            // doesn't implement this function
+            if (attachment != null)
+                thumbnail.setAutoThumbnailType();
+        }
+    }
+
+    protected void serializeAttachment(VirtualFile parentDir, Attachment attachment) throws IOException
+    {
+        // for attachment reports and thumbnails, write the attachment to a subdirectory to avoid collisions
+        VirtualFile reportDir = parentDir.getDir(getSerializedReportName());
+        if (attachment != null && attachment.getName() != null)
+        {
+            try (InputStream is = AttachmentService.get().getInputStream(this, attachment.getName()); OutputStream os = reportDir.getOutputStream(attachment.getName()))
+            {
+                FileUtil.copyData(is, os);
+            }
+            catch (FileNotFoundException e)
+            {
+                throw new FileNotFoundException("Attachment report file not found: " + attachment.getName());
+            }
+        }
+    }
+
+    protected void deserializeThumbnail(User user, VirtualFile root, ReportThumbnail thumbnail)
+    {
+        if (thumbnail.shouldDeserialize())
+            deserializeAttachment(user, root, thumbnail.getFilename());
+    }
+
+    protected void deserializeAttachment(User user, VirtualFile root, String attachment)
+    {
+        VirtualFile reportDir = root.getDir(getSerializedReportName());
+        if (attachment != null)
+        {
+            try
+            {
+                InputStream is = reportDir.getInputStream(attachment);
+                // for older exported folders, thumbnail attachment files may not exist so be sure to check
+                // for that case
+                if (is != null)
+                {
+                    AttachmentFile attachmentFile = new InputStreamAttachmentFile(is, attachment);
+                    AttachmentService.get().addAttachments(this, new ArrayList<>(Collections.singleton(attachmentFile)), user);
+                }
+            }
+            catch (Exception e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
+        }
     }
 
     /**
