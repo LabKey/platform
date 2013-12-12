@@ -342,21 +342,8 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
         if (descriptor.getReportId() != null && descriptor.getReportName() != null)
         {
             // for attachment reports, write the attachment to a subdirectory to avoid collisions
-            VirtualFile reportDir = dir.getDir(getSerializedReportName());
             Attachment attachment = getLatestVersion();
-
-            if (attachment != null && attachment.getName() != null)
-            {
-                try (InputStream is = AttachmentService.get().getInputStream(this, attachment.getName()); OutputStream os = reportDir.getOutputStream(attachment.getName()))
-                {
-                    FileUtil.copyData(is, os);
-                }
-                catch (FileNotFoundException e)
-                {
-                    throw new FileNotFoundException("Attachment report file not found: " + attachment.getName());
-                }
-            }
-
+            serializeAttachment(dir, attachment);
             super.serializeToFolder(context, dir);
         }
         else
@@ -370,30 +357,10 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
         if (root != null)
         {
             VirtualFile reportDir = root.getDir(getSerializedReportName());
-            String[] attachments = reportDir.list();
-            if (attachments.length > 0)
-            {
-                if (attachments.length > 1)
-                    throw new IllegalStateException("Only one attachment file expected for an attachment report.");
-
-                try
-                {
-                    InputStream is = reportDir.getInputStream(attachments[0]);
-                    AttachmentFile attachmentFile = new InputStreamAttachmentFile(is, attachments[0]);
-                    AttachmentService.get().addAttachments(this, new ArrayList<>(Collections.singleton(attachmentFile)), user);
-                }
-                catch (Exception e)
-                {
-                    throw UnexpectedException.wrap(e);
-                }
-            }
+            String attachment = getAttachmentFile(reportDir);
+            deserializeAttachment(user, root, attachment);
+            super.afterSave(container, user, root);
         }
-    }
-
-    protected String getSerializedReportName()
-    {
-        ReportDescriptor descriptor = getDescriptor();
-        return FileUtil.makeLegalName(descriptor.getReportName());
     }
 
     @Override
@@ -423,6 +390,26 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
         catch (Throwable e)
         {
             ExceptionUtil.logExceptionToMothership(null, e);
+        }
+
+        return null;
+    }
+
+    // we may have up to 3 files (attachment file, Thumbnail, and SmallThumbnail)
+    // returns the name of the attachment file
+    private String getAttachmentFile(VirtualFile reportDir)
+    {
+        String[] attachments = reportDir.list();
+        if (attachments.length > 0)
+        {
+            if (attachments.length > 3)
+                throw new IllegalStateException("Only one attachment file expected for an attachment report.");
+
+            for (String attachment : attachments)
+            {
+                if (!ThumbnailService.ImageFilenames.contains(attachment))
+                    return attachment;
+            }
         }
 
         return null;

@@ -1775,7 +1775,21 @@ public class ReportsController extends SpringActionController
                 if (requireFile)
                 {
                     if (0 == formFiles.length || formFiles[0].isEmpty())
+                    {
                         errors.reject("filePath", "You must specify a file");
+                    }
+                    else
+                    {
+                        String filename = formFiles[0].getOriginalFilename();
+                        for (String reserved : ThumbnailService.ImageFilenames)
+                        {
+                            if (reserved.equalsIgnoreCase(filename))
+                            {
+                                errors.reject("filePath", "You may not specify a file named Thumbnail or SmallThumbnail");
+                                break;
+                            }
+                        }
+                    }
                 }
             }
             else
