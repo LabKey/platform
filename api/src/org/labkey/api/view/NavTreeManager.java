@@ -89,8 +89,11 @@ public class NavTreeManager
         //Each navtreeid has a set of expanded paths...
         Map<String, Set<String>> treeMap = (Map<String, Set<String>>)
                 SessionHelper.getAttribute(viewContext.getRequest(), EXPAND_CONTAINERS_KEY, allocTreeMap);
+        // treeMap should never be null, unless we can't create a session
+        if (null == treeMap)
+            return Collections.emptySet();
 
-        Set<String> expandedPaths = null==treeMap ? null : treeMap.get(navTreeId);
+        Set<String> expandedPaths = treeMap.get(navTreeId);
         if (null == expandedPaths)
         {
             expandedPaths = Collections.synchronizedSet(new HashSet<String>());
