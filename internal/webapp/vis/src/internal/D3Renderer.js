@@ -12,7 +12,7 @@ LABKEY.vis.internal.Axis = function() {
     // This emulates a lot of the d3.svg.axis() functionality, but adds in the ability for us to have tickHovers,
     // different colored tick & gridlines, etc.
     var scale, orientation, tickFormat = function(v) {return v}, tickHover, ticks, tickSize, tickPadding, gridLineColor,
-            tickLines, tickText, gridLines, grid;
+            tickLines, tickSel, tickText, gridLines, grid;
 
     var axis = function(selection) {
         var data, textAnchor, textXFn, textYFn, gridLineFn, tickFn, border, gridLineData, hasOverlap, bBoxA, bBoxB, i;
@@ -76,17 +76,17 @@ LABKEY.vis.internal.Axis = function() {
                 .attr('stroke', gridLineColor);
         gridLines.exit().remove();
 
-        tickText = selection.selectAll('.tick-text').data(data);
-        tickText.exit().remove();
+        tickSel = selection.selectAll('.tick-text').data(data);
+        tickSel.exit().remove();
 
         if (tickHover) {
-            ticks = tickText.enter().append('a')
+            tickText = tickSel.enter().append('a')
                     .attr('xlink:title', tickHover);
         } else {
-            ticks = tickText.enter();
+            tickText = tickSel.enter();
         }
 
-        ticks.append('text')
+        tickText = tickText.append('text')
                 .attr('x', textXFn)
                 .attr('y', textYFn)
                 .attr('text-anchor', textAnchor)
@@ -95,9 +95,9 @@ LABKEY.vis.internal.Axis = function() {
 
         if (orientation == 'bottom') {
             hasOverlap = false;
-            for (i = 0; i < tickText[0].length-1; i++) {
-                bBoxA = tickText[0][i].getBBox();
-                bBoxB = tickText[0][i+1].getBBox();
+            for (i = 0; i < tickSel[0].length-1; i++) {
+                bBoxA = tickSel[0][i].getBBox();
+                bBoxB = tickSel[0][i+1].getBBox();
                 if (bBoxA.x + bBoxA.width >= bBoxB.x) {
                     hasOverlap = true;
                     break;
@@ -514,27 +514,41 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         // TODO: Make sure on re-render we just select this layer again, instead of re-creating it.
         layer = this.canvas.append('g').attr('class', 'layer').attr('transform', 'translate(0,' + plot.grid.height + ')');
 
-        data = data.filter(function(d) {
-            if (geom.getX(d) == null && !geom.plotNullPoints) {return false;}
-            if (geom.getY(d) == null && !geom.plotNullPoints) {return false;}
-            return true;
-        }, this);
-
         if (geom.xScale.scaleType == 'discrete' && geom.position == 'jitter') {
             xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
-            xAcc = function(row) {return geom.getX(row) - (xBinWidth / 2) + (Math.random() * xBinWidth);};
+            xAcc = function(row) {
+                var value = geom.getX(row);
+                if(value == null) {return null;}
+                return value - (xBinWidth / 2) + (Math.random() * xBinWidth);
+            };
         } else {
             xAcc = function(row) {return geom.getX(row);};
         }
 
         if (geom.yScale.scaleType == 'discrete' && geom.position == 'jitter') {
             yBinWidth = ((plot.grid.topEdge - plot.grid.bottomEdge) / (geom.yScale.scale.domain().length)) / 2;
-            yAcc = function(row) {return -(geom.getY(row) - (yBinWidth / 2) + (Math.random() * yBinWidth));}
+            yAcc = function(row) {
+                var value = geom.getY(row);
+                if(value == null || isNaN(value)) {return null;}
+                return -(value - (yBinWidth / 2) + (Math.random() * yBinWidth));
+            }
         } else {
-            yAcc = function(row) {return -geom.getY(row);};
+            yAcc = function(row) {
+                var value = geom.getY(row);
+                if(value == null || isNaN(value)) {return null;}
+                return -value;
+            };
         }
 
-        translateAcc = function(row) {return 'translate(' + xAcc(row) + ',' + yAcc(row) + ')';};
+        translateAcc = function(row) {
+            var x = xAcc(row), y = yAcc(row);
+            if(x == null || isNaN(x) || y == null || isNaN(y)){
+                // Remove the dom node if x/y is null.
+                this.remove();
+                return null;
+            }
+            return 'translate(' + xAcc(row) + ',' + yAcc(row) + ')';
+        };
         colorAcc = geom.colorAes && geom.colorScale ? function(row) {
             return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);
         } : geom.color;
@@ -553,6 +567,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         pointsSel.exit().remove();
 
         if (geom.hoverTextAes) {
+            // NOTE: If x/y is null and plotNullPoints is false we don't render the path, but we do add <a> tags to the DOM.
+            // We might want to consider removing the <a> tags as well.
             pointsSel = pointsSel.enter().append('a')
                     .attr('class', 'point').attr('xlink:title', geom.hoverTextAes.getValue)
                     .append('path').attr('class', 'point');
@@ -589,6 +605,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
             y = -geom.yScale.scale(value + error);
+            if(x == null || isNaN(x) || y == null || isNaN(y) || value == null || isNaN(value) || y == null || isNaN(y)) {
+                // Remove the dom node if we can't actually render a path.
+                this.remove();
+                return null;
+            }
             return LABKEY.vis.makeLine(x - 6, y, x + 6, y);
         };
         bottomFn = function(d) {
@@ -597,6 +618,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
             y = -geom.yScale.scale(value - error);
+            if(x == null || isNaN(x) || y == null || isNaN(y) || value == null || isNaN(value) || y == null || isNaN(y)) {
+                // Remove the dom node if we can't actually render a path.
+                this.remove();
+                return null;
+            }
             return LABKEY.vis.makeLine(x - 6, y, x + 6, y);
         };
         middleFn = function(d) {
@@ -604,6 +630,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             x = geom.getX(d);
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
+            if(x == null || isNaN(x) || value == null || isNaN(value) || error == null || isNaN(error)) {
+                // Remove the dom node if we can't actually render a path.
+                this.remove();
+                return null;
+            }
             return LABKEY.vis.makeLine(x, -geom.yScale.scale(value + error), x, -geom.yScale.scale(value - error));
         };
         selection.append('path').attr('class', 'bar').attr('d', topFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
