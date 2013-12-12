@@ -263,11 +263,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     .ticks(10)
                     .gridLineColor(plot.gridLinecolor ? plot.gridLineColor : '#dddddd');
 
-            if (plot.scales.yLeft.tickFormat) {
+            if (plot.scales.yRight.tickFormat) {
                 axis.tickFormat(plot.scales.yRight.tickFormat);
             }
 
-            if (plot.scales.yLeft.tickHoverText) {
+            if (plot.scales.yRight.tickHoverText) {
                 axis.tickHover(plot.scales.yRight.tickHoverText);
             }
 
