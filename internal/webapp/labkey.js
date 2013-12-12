@@ -348,6 +348,7 @@ if (typeof LABKEY == "undefined")
                     "clientapi/core/Query.js",
                     "clientapi/core/WebPart.js",
                     "clientapi/core/Security.js",
+                    "clientapi/core/ParticipantGroup.js",
                     "clientapi/core/Specimen.js",
                     "clientapi/core/MultiRequest.js",
                     "clientapi/core/Form.js",
