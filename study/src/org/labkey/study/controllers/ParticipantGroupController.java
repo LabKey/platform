@@ -43,6 +43,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortImpl;
@@ -911,7 +912,7 @@ public class ParticipantGroupController extends BaseStudyController
             form.setContainerId(getContainer().getId());
             if(!form.getParticipantCategorySpecification().isNew())
             {
-                ParticipantGroup[] participantGroups  = ParticipantGroupManager.getInstance().getParticipantGroups(getContainer(), getUser(), form.getParticipantCategorySpecification());
+                ParticipantGroup[] participantGroups = ParticipantGroupManager.getInstance().getParticipantGroups(getContainer(), getUser(), form.getParticipantCategorySpecification());
                 Set<String> formParticipants = new HashSet<>(Arrays.asList(form.getParticipantIds()));
                 
                 for(ParticipantGroup group : participantGroups)
@@ -1045,6 +1046,117 @@ public class ParticipantGroupController extends BaseStudyController
             ApiSimpleResponse resp = new ApiSimpleResponse();
             ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroupFromGroupRowId(getContainer(), getUser(), form.getRowId());
             ParticipantGroupManager.getInstance().deleteParticipantGroup(getContainer(), getUser(), group);
+            return resp;
+        }
+    }
+
+    private static class UpdateParticipantGroupForm
+    {
+        private int _rowId;
+        private String _label;
+        private String _description;
+        private String[] _participantIds;
+        private String[] _ensureParticipantIds;
+        private String[] _deleteParticipantIds;
+
+        public int getRowId()
+        {
+            return _rowId;
+        }
+
+        public void setRowId(int rowId)
+        {
+            _rowId = rowId;
+        }
+
+        public String getLabel()
+        {
+            return _label;
+        }
+
+        public void setLabel(String label)
+        {
+            _label = label;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
+        }
+
+        public String[] getParticipantIds()
+        {
+            return _participantIds;
+        }
+
+        public void setParticipantIds(String[] participantIds)
+        {
+            _participantIds = participantIds;
+        }
+
+        public String[] getEnsureParticipantIds()
+        {
+            return _ensureParticipantIds;
+        }
+
+        public void setEnsureParticipantIds(String[] ensureParticipantIds)
+        {
+            _ensureParticipantIds = ensureParticipantIds;
+        }
+
+        public String[] getDeleteParticipantIds()
+        {
+            return _deleteParticipantIds;
+        }
+
+        public void setDeleteParticipantIds(String[] deleteParticipantIds)
+        {
+            _deleteParticipantIds = deleteParticipantIds;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
+    public class UpdateParticipantGroupAction extends MutatingApiAction<UpdateParticipantGroupForm>
+    {
+        @Override
+        public ApiResponse execute(UpdateParticipantGroupForm form, BindException errors) throws Exception
+        {
+            ParticipantGroup participantGroup = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), form.getRowId());
+            if (participantGroup == null)
+            {
+                throw new NotFoundException("Could not find participant group with rowId " + form.getRowId());
+            }
+            Set<String> participantIds = new HashSet<>(Arrays.asList(form.getParticipantIds() == null ? participantGroup.getParticipantIds() : form.getParticipantIds()));
+            if (form.getEnsureParticipantIds() != null)
+            {
+                participantIds.addAll(Arrays.asList(form.getEnsureParticipantIds()));
+            }
+            if (form.getDeleteParticipantIds() != null)
+            {
+                participantIds.removeAll(Arrays.asList(form.getDeleteParticipantIds()));
+            }
+            participantGroup.setParticipantSet(participantIds);
+
+            if (form.getDescription() != null)
+            {
+                participantGroup.setDescription(form.getDescription());
+            }
+            if (form.getLabel() != null)
+            {
+                participantGroup.setLabel(form.getLabel());
+            }
+
+            ParticipantGroupManager.getInstance().setParticipantGroup(getContainer(), getUser(), participantGroup);
+
+
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            resp.put("group", participantGroup.toJSON());
             return resp;
         }
     }
