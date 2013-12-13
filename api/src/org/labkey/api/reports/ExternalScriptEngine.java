@@ -52,10 +52,12 @@ public class ExternalScriptEngine extends AbstractScriptEngine
     private File _workingDirectory;
 
     protected ExternalScriptEngineDefinition _def;
+    protected Writer _originalWriter;
 
     public ExternalScriptEngine(ExternalScriptEngineDefinition def)
     {
         _def = def;
+        _originalWriter = getContext().getWriter();
     }
 
     public ScriptEngineFactory getFactory()
@@ -252,6 +254,12 @@ public class ExternalScriptEngine extends AbstractScriptEngine
                     "Must be on server path. (PATH=" + env.get("PATH") + ")", eio);
         }
 
+        // Write script process output to the provided writer
+        // if the writer isn't the original writer (a PrintWriter over the tomcat console).
+        Writer writer = context.getWriter();
+        if (writer == _originalWriter)
+            writer = null;
+
         BufferedReader procReader = null;
         try
         {
@@ -261,7 +269,16 @@ public class ExternalScriptEngine extends AbstractScriptEngine
             {
                 output.append(line);
                 output.append('\n');
+                if (writer != null)
+                {
+                    writer.write(line);
+                    writer.write('\n');
+                    // flush after every write so LogPrintWriter will forward the message to the Log4j Logger
+                    writer.flush();
+                }
             }
+            if (writer != null)
+                writer.flush();
         }
         catch (IOException eio)
         {
@@ -337,6 +354,12 @@ public class ExternalScriptEngine extends AbstractScriptEngine
 
     protected void appendConsoleOutput(ScriptContext context, StringBuffer sb)
     {
+        // Write script process output to the provided writer
+        // if the writer isn't the original writer (a PrintWriter over the tomcat console).
+        Writer writer = context.getWriter();
+        if (writer == _originalWriter)
+            writer = null;
+
         // if additional console output is written to a file, append it to the output string.
         BufferedReader br = null;
         try {
@@ -362,7 +385,15 @@ public class ExternalScriptEngine extends AbstractScriptEngine
                     {
                         sb.append(l);
                         sb.append('\n');
+                        if (writer != null)
+                        {
+                            writer.append(l);
+                            writer.append('\n');
+                        }
                     }
+
+                    if (writer != null)
+                        writer.flush();
                 }
             }
         }
