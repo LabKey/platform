@@ -15,7 +15,6 @@
  */
 package org.labkey.pipeline;
 
-import edu.emory.mathcs.backport.java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceLoadException;
@@ -26,6 +25,7 @@ import org.labkey.pipeline.api.PipelineJobServiceImpl;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Set;
 
 /**

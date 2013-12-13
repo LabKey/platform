@@ -17,6 +17,7 @@ package org.labkey.pipeline.api;
 
 import common.Logger;
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Level;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
@@ -25,6 +26,7 @@ import org.labkey.api.pipeline.cmd.TaskPath;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.LogPrintWriter;
 import org.labkey.pipeline.analysis.CommandTaskImpl;
 
 import javax.script.Bindings;
@@ -140,13 +142,19 @@ public class ScriptTaskImpl extends CommandTaskImpl
             if (AppProps.getInstance().isDevMode() || _factory.isPreview())
             {
                 // TODO: dump replaced script, for now just dump the replacements
-                getJob().header("replacements");
+                getJob().header("Replacements");
                 for (Map.Entry<String, String> entry : replacements.entrySet())
                     getJob().info(entry.getKey() + ": " + entry.getValue());
 
                 if (_factory.isPreview())
                     return false;
             }
+
+            // Script console output will be redirected to the job's log file as it is produced
+            getJob().header("Executing script");
+            LogPrintWriter writer = new LogPrintWriter(getJob().getLogger(), Level.INFO);
+            engine.getContext().setWriter(writer);
+            writer.flush();
 
             // Execute the script
             Object o = engine.eval(scriptSource);
