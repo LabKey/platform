@@ -15,8 +15,10 @@
  */
 package org.labkey.api.reports.model;
 
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
-import org.apache.log4j.Logger;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
@@ -34,6 +36,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 
 import java.beans.PropertyChangeEvent;
@@ -521,18 +524,26 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
         private static final String[] labels = {"Demographics", "Exam", "Discharge", "Final Exam"};
         private static final String[] subLabels = {"sub1", "sub&2", "sub3&", "sub &label", "sub_label&amp;", "&sub&label&"};
 
-        @Test
-        public void test() throws Exception
+        private static ViewCategoryManager mgr;
+        private static Container c;
+        private static User user;
+        private static ViewCategoryListener listener;
+
+        @BeforeClass
+        public static void setUp()
         {
-            ViewCategoryManager mgr = ViewCategoryManager.getInstance();
-            Container c = ContainerManager.getSharedContainer();
-            User user = TestContext.get().getUser();
+            mgr = ViewCategoryManager.getInstance();
+            c = JunitUtil.getTestContainer();
+            user = TestContext.get().getUser();
+        }
 
+        @Test
+        public void testCategoryCreation()
+        {
             final List<String> notifications = new ArrayList<>();
-            for (String label : labels)
-                notifications.add(label);
+            notifications.addAll(Arrays.asList(labels));
 
-            ViewCategoryListener listener = new ViewCategoryListener(){
+            listener = new ViewCategoryListener(){
                 @Override
                 public void categoryDeleted(User user, ViewCategory category)
                 {
@@ -638,6 +649,14 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
                 mgr.deleteCategory(c, user, cat);
             }
 
+            // make sure all the listeners were invoked correctly
+            assertTrue(notifications.isEmpty());
+            ViewCategoryManager.removeCategoryListener(listener);
+        }
+
+        @Test
+        public void testEnsureCategories()
+        {
             ViewCategory top = mgr.ensureViewCategory(c, user, "top");
 
             assertNotNull(top);
@@ -661,10 +680,20 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
             mgr.deleteCategory(c, user, top);
             mgr.deleteCategory(c, user, subBottom.getParent());
+        }
 
-            // make sure all the listeners were invoked correctly
-            assertTrue(notifications.isEmpty());
-            ViewCategoryManager.removeCategoryListener(listener);
+        @AfterClass
+        public static void tearDown()
+        {
+            ContainerManager.delete(c, user);
+
+            if (listener != null)
+                ViewCategoryManager.removeCategoryListener(listener);
+
+            listener = null;
+            mgr = null;
+            c = null;
+            user = null;
         }
     }
 

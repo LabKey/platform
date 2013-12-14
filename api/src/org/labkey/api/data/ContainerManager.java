@@ -60,6 +60,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
@@ -1972,7 +1973,7 @@ public class ContainerManager
         {
             if (null == _testRoot)
             {
-                Container junit = ContainerManager.ensureContainer("/Shared/_junit");
+                Container junit = JunitUtil.getTestContainer();
                 _testRoot = ContainerManager.ensureContainer(junit, "ContainerManager$TestCase-" + GUID.makeGUID());
                 ContainerManager.addContainerListener(this);
             }
