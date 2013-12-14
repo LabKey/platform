@@ -37,7 +37,7 @@
     {
         var selectElement = document.getElementById("protocolSelect");
         selectElement.options[0].text = "<New Protocol>";
-        allProtocols = new Object();
+        allProtocols = {};
         for (var i = 0; i < protocols.length; i++)
         {
             selectElement.options[i + 1] = new Option(protocols[i].name, protocols[i].name, protocols[i].name == defaultProtocolName);
@@ -55,13 +55,21 @@
 
     function startAnalysis()
     {
+        var protocolName = document.getElementById("protocolNameInput").value;
+        if (!protocolName)
+        {
+            alert("Protocol name required");
+            document.getElementById("protocolNameInput").focus();
+            return;
+        }
+
         var config =
         {
             taskId: taskId,
             path: path,
             files: selectedFileNames,
             saveProtocol: document.getElementById("saveProtocolInput").checked,
-            protocolName: document.getElementById("protocolNameInput").value,
+            protocolName: protocolName,
             successCallback: function() { window.location = LABKEY.ActionURL.buildURL("project", "start.view") }
         };
         if (document.getElementById("protocolSelect").selectedIndex == 0)

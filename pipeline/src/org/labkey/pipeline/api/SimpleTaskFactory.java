@@ -317,18 +317,9 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
 
         boolean dir = xfile.isSetDirectory() && xfile.getDirectory();
 
-        FileType.gzSupportLevel gz = FileType.gzSupportLevel.NO_GZ;
-        if (xfile.isSetGz())
-        {
-            if (xfile.getGz() == FileInputType.Gz.SUPPORTS)
-                gz = FileType.gzSupportLevel.SUPPORT_GZ;
-            else if (xfile.getGz() == FileInputType.Gz.PREFERS)
-                gz = FileType.gzSupportLevel.PREFER_GZ;
-        }
-
         String contentType = xfile.isSetContentType() ? xfile.getContentType() : null;
 
-        FileType ft = new FileType(suffixes, defaultSuffix, dir, gz, contentType);
+        FileType ft = new FileType(suffixes, defaultSuffix, dir, FileType.gzSupportLevel.NO_GZ, contentType);
         return ft;
     }
 
@@ -355,7 +346,7 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
      */
     private static List<TaskToCommandArgs> parseCommand(
             Module module, Path taskDir,
-            String command, String exeName,
+            @NotNull String command, @Nullable String exeName,
             Map<String, TaskPath> inputs,
             Map<String, JobParamToCommandArgs> params,
             Map<String, TaskPath> outputs)
@@ -380,7 +371,7 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
                 //
 
                 String key = part.substring("${".length(), part.length() - "}".length());
-                if (key.equals("exe") || key.equals(exeName))
+                if (exeName != null && (key.equals("exe") || key.equals(exeName)))
                 {
                     ExeToCommandArgs exe = new ExeToCommandArgs();
                     exe.setExePath(exeName);
@@ -444,20 +435,33 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
                 // Attempt to resolve the token to a resource within the module.
                 // For example, if "script.R" resolves to "pipeline/tasks/script.R", add it as a PathInLine argument.
                 Resource r = findResource(module, taskDir, part);
-                if (r != null)
+
+                // If we don't have an exe name yet, the first token MUST be the executable name
+                if (exeName == null)
                 {
-                    // Add a refernce to the path relative from the module root.
-                    PathInLine p = new PathInLine();
-                    p.setFunction(WorkDirectory.Function.module);
-                    p.setKey(r.getPath().toString());
-                    arg = p;
+                    // CONSIDER: If we resolved the part to a resource in the module, use it as the executable name.
+                    exeName = part;
+                    ExeToCommandArgs exe = new ExeToCommandArgs();
+                    exe.setExePath(exeName);
+                    arg = exe;
                 }
                 else
                 {
-                    // Add the part as a literal string.
-                    RequiredInLine literal = new RequiredInLine();
-                    literal.setValue(part);
-                    arg = literal;
+                    if (r != null)
+                    {
+                        // Add a refernce to the path relative from the module root.
+                        PathInLine p = new PathInLine();
+                        p.setFunction(WorkDirectory.Function.module);
+                        p.setKey(r.getPath().toString());
+                        arg = p;
+                    }
+                    else
+                    {
+                        // Add the part as a literal string.
+                        RequiredInLine literal = new RequiredInLine();
+                        literal.setValue(part);
+                        arg = literal;
+                    }
                 }
             }
 

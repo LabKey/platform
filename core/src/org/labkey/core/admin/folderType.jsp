@@ -314,22 +314,28 @@ function checkChangedType()
         <%WebPartView.startTitleFrame(out, "Modules", null, "100%", null);%>
 
 <%
-    int i = 0;
+int i = 0;
 
 for (Module module : allModules)
-    {
+{
     boolean active = activeModules.contains(module) || requiredModules.contains(module);
     boolean enabled = (module.getTabDisplayMode() == Module.TabDisplayMode.DISPLAY_USER_PREFERENCE ||
                 module.getTabDisplayMode() == Module.TabDisplayMode.DISPLAY_USER_PREFERENCE_DEFAULT) && !requiredModules.contains(module);
 
     if (active || enabled)
-        {
+    {
         %>
-        <input type="checkbox" name="activeModules[<%= i++ %>]" title="<%= h(module.getTabName(HttpView.currentContext()))%>" value="<%= h(module.getName())%>"
-        <%=disabled(!enabled)%><%=checked(active)%> onClick="return updateDefaultOptions(this);"><%= h(module.getTabName(HttpView.currentContext())) %><br>
+        <input type="checkbox" id="activeModules[<%= i %>]" name="activeModules[<%= i %>]"
+               title="<%= h(module.getTabName(HttpView.currentContext()))%>"
+               value="<%= h(module.getName())%>"
+               <%=disabled(!enabled)%><%=checked(active)%>
+               onClick="return updateDefaultOptions(this);">
+        <label for="activeModules[<%= i %>]"><%= h(module.getTabName(HttpView.currentContext())) %></label>
+        <br>
         <%
-        }
+        i++;
     }
+}
 %>
     <%WebPartView.endTitleFrame(out);%>
 </td></tr>

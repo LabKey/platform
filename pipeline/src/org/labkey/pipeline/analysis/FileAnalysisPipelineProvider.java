@@ -68,17 +68,19 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
     public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory, boolean includeAll)
     {
         if (!context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
-        {
             return;
-        }
 
+        // Unless showing all actions or including actions from disabled modules,
+        // only include piplines from active modules in the current container.
         Container c = context.getContainer();
+        if (includeAll || isShowActionsIfModuleInactive())
+            c = null;
 
-        Collection<FileAnalysisTaskPipeline> pipelines = PipelineJobService.get().getTaskPipelines(null, FileAnalysisTaskPipeline.class);
+        Collection<FileAnalysisTaskPipeline> pipelines = PipelineJobService.get().getTaskPipelines(c, FileAnalysisTaskPipeline.class);
         for (final FileAnalysisTaskPipeline tp : pipelines)
         {            
             String path = directory.cloneHref().getParameter(Params.path.toString());
-            String actionId = createActionId(this.getClass(), tp.getDescription());
+            String actionId = createActionId(this.getClass(), tp.getDescription()); // XXX: use task id instead so it's unique?
             addAction(actionId, tp.getAnalyzeURL(c, path), tp.getDescription(),
                     directory, directory.listFiles(tp.getInitialFileTypeFilter()), true, false, includeAll);
         }

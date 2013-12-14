@@ -164,15 +164,6 @@
         <xs:attribute name="suffixes" type="strings"/>
         <xs:attribute name="directory" type="xs:boolean"/>
         <xs:attribute name="contentType" type="xs:string"/>
-        <xs:attribute name="gz">
-            <xs:simpleType>
-                <xs:restriction base="xs:token">
-                    <xs:enumeration value="none"/>
-                    <xs:enumeration value="supports"/>
-                    <xs:enumeration value="prefers"/>
-                </xs:restriction>
-            </xs:simpleType>
-        </xs:attribute>
         <!-- TODO: other TaskPath settings: splitFiles, copyInput, forceToAnalysisDir ? -->
     </xs:attributeGroup>
 
