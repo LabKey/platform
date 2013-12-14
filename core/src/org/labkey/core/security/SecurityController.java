@@ -81,6 +81,7 @@ import org.labkey.api.util.DotRunner;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
@@ -1931,7 +1932,7 @@ public class SecurityController extends SpringActionController
                     UserManager.deleteUser(oldUser.getUserId());
             }
 
-            Container junit = ContainerManager.ensureContainer("/Shared/_junit");
+            Container junit = JunitUtil.getTestContainer();
             c = ContainerManager.createContainer(junit, "SecurityController-" + GUID.makeGUID());
 
             User site = TestContext.get().getUser();
