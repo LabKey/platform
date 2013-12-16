@@ -45,6 +45,7 @@
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
+            <!--<xs:element name="initialInputs"/>-->
             <xs:element name="tasks" type="TasksType"/>
         </xs:sequence>
         <xs:attribute name="name" type="xs:string" use="required"/>
@@ -55,6 +56,16 @@
     TODO: This isn't quite right.  We may want to allow defining tasks locally, but more
     important is refrencing an existing task and setting parameter values.
     Also, we may need a way to glue separate task inputs and outputs together.
+
+    <tasks>
+        <task id="1" ref="copy-task">
+        </task>
+        <task id="2" ref="process-task">
+            <inputmap>
+                <map task=1 output=foo.txt input=myinput.txt/>
+            </inputmap>
+        </task>
+    </tasks>
     -->
     <xs:complexType name="TasksType">
         <xs:choice minOccurs="1" maxOccurs="unbounded">
