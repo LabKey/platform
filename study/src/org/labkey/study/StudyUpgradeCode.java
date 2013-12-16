@@ -391,6 +391,9 @@ public class StudyUpgradeCode implements UpgradeCode
 
                     if (null != numberFormat)
                         WriteableLookAndFeelProperties.saveDefaultNumberFormat(c, numberFormat);
+
+                    // Now delete the old property set
+                    PropertyManager.getNormalStore().deletePropertySet(c, STUDY_FORMAT_STRINGS);
                 }
             }
             catch (Throwable e)
