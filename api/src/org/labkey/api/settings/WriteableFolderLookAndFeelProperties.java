@@ -48,10 +48,11 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
         return LOOK_AND_FEEL_SET_NAME;
     }
 
-    // Make public
+    // Make public plus clear out the folder settings cache on every save
     public void save()
     {
         super.save();
+        FolderSettingsCache.clear();
     }
 
     public void clear()

@@ -53,7 +53,7 @@ public abstract class DilutionGraphAction extends SimpleViewAction<GraphForm>
             throw new NotFoundException("Could not load Dilution results for run " + form.getRowId() + ".");
 
         NabGraph.Config config = getGraphConfig(form, assay);
-        NabGraph.renderChartPNG(getViewContext().getResponse(), assay, config);
+        NabGraph.renderChartPNG(getViewContext().getContainer(), getViewContext().getResponse(), assay, config);
         return null;
     }
 

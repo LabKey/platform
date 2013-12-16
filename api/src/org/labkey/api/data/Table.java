@@ -436,8 +436,7 @@ public class Table
 
 
     // Careful: Caller must track and clean up parameters (e.g., close InputStreams) after execution is complete
-    public static void batchExecute(DbSchema schema, String sql, Iterable<? extends Collection<?>> paramList)
-            throws SQLException
+    public static void batchExecute(DbSchema schema, String sql, Iterable<? extends Collection<?>> paramList) throws SQLException
     {
         Connection conn = schema.getScope().getConnection();
         PreparedStatement stmt = null;

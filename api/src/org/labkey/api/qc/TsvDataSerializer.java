@@ -18,7 +18,6 @@ package org.labkey.api.qc;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.util.DateUtil;
 
@@ -42,8 +41,8 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
     {
         if (data.size() > 0)
         {
-            PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runDataFile)));
-            try {
+            try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runDataFile))))
+            {
                 // write the column header
                 List<String> columns = new ArrayList<>(data.get(0).keySet());
                 String sep = "";
@@ -66,11 +65,11 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
                         if (o != null)
                         {
                             if (Date.class.isAssignableFrom(o.getClass()))
-                                pw.append(DateUtil.formatDateTime((Date)o));
+                                pw.append(DateUtil.formatDateTimeISO8601((Date) o));  // Always ISO? Or should we apply display format?
                             else if (Collection.class.isAssignableFrom(o.getClass()))
-                                pw.append(StringUtils.join((Collection)o, ","));
+                                pw.append(StringUtils.join((Collection) o, ","));
                             else if (Object[].class.isAssignableFrom(o.getClass()))
-                                pw.append(StringUtils.join((Object[])o, ","));
+                                pw.append(StringUtils.join((Object[]) o, ","));
                             else
                                 pw.append(String.valueOf(o));
                         }
@@ -78,10 +77,6 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
                     }
                     pw.println();
                 }
-            }
-            finally
-            {
-                pw.close();
             }
         }
     }

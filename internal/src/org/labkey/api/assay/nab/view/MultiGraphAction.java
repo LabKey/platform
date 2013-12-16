@@ -19,7 +19,6 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionAssayRun;
 import org.labkey.api.assay.dilution.DilutionSummary;
-import org.labkey.api.assay.nab.GraphForm;
 import org.labkey.api.assay.nab.NabGraph;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
@@ -59,7 +58,7 @@ public class MultiGraphAction<FormType extends GraphSelectedForm> extends Simple
         NabGraph.Config config = getGraphConfig(form);
 
         config.setCutoffs(cutoffs);
-        NabGraph.renderChartPNG(getViewContext().getResponse(), summaries, config);
+        NabGraph.renderChartPNG(getViewContext().getContainer(), getViewContext().getResponse(), summaries, config);
         return null;
     }
 

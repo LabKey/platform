@@ -868,14 +868,16 @@ public class StatementUtils
             f.append("{fn now()}");
             return;
         }
+        // TODO: Remove unnecessary branch... should be identical to java.util.Date
         if (value instanceof java.sql.Date)
         {
-            f.append("{ts '").append(DateUtil.formatDate((java.sql.Date)value).substring(0,10)).append("'}");
+            // TODO: Remove unnecessary substring? Should always be 10 characters.
+            f.append("{ts '").append(DateUtil.formatDateISO8601((java.sql.Date)value).substring(0,10)).append("'}");
             return;
         }
         else if (value instanceof java.util.Date)
         {
-            f.append("{ts '").append(DateUtil.formatDate((java.util.Date)value)).append("'}");
+            f.append("{ts '").append(DateUtil.formatDateISO8601((java.util.Date)value)).append("'}");
             return;
         }
         assert value instanceof String;

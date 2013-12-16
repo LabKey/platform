@@ -212,7 +212,7 @@ public class StandardDialectStringHandler implements DialectStringHandler
         }
         else if (value instanceof Date)
         {
-            return quoteStringLiteral(DateUtil.formatDateTime((Date)value));
+            return quoteStringLiteral(DateUtil.formatDateTimeISO8601((Date)value));
         }
         else if (value instanceof Boolean)
         {

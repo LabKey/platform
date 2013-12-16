@@ -139,7 +139,7 @@ public class QueryProfiler
             @Override
             String getFormattedPrimaryStatistic(QueryTracker qt)
             {
-                return PageFlowUtil.filter(DateUtil.formatDateTime(new Date(getPrimaryStatisticValue(qt))));
+                return PageFlowUtil.filter(DateUtil.formatDateTime(ContainerManager.getRoot(), new Date(getPrimaryStatisticValue(qt))));
             }
         }));
 

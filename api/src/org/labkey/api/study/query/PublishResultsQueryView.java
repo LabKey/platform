@@ -33,7 +33,6 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.UpdateColumn;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -55,7 +54,6 @@ import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
@@ -481,7 +479,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             if (result != null)
             {
                 Set<Study> studies = StudyService.get().findStudy(result, null);
-                if (studies != null && !studies.isEmpty())
+                if (!studies.isEmpty())
                     return studies.iterator().next().getContainer();
             }
 

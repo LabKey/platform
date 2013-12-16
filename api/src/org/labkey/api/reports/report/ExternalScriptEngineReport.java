@@ -405,16 +405,9 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
                             if (param.getId().equals(ConsoleOutput.ID))
                             {
-                                BufferedWriter bw = null;
-                                try
+                                try (BufferedWriter bw = new BufferedWriter(new FileWriter(dst, true)))
                                 {
-                                    bw = new BufferedWriter(new FileWriter(dst, true));
-                                    bw.write("\nLast cached update : " + DateUtil.formatDateTime() + "\n");
-                                }
-                                finally
-                                {
-                                    if (bw != null)
-                                        try {bw.close();} catch (IOException ioe) {}
+                                    bw.write("\nLast cached update : " + DateUtil.formatDateTime(context.getContainer()) + "\n");
                                 }
                             }
                             param.setFile(dst);

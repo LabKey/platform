@@ -197,7 +197,8 @@ public class JxlCell implements Cell
             String formatString = format.format(date);
             format.setTimeZone(TimeZone.getDefault());
 
-            try {
+            try
+            {
                 return format.parse(formatString);
             }
             catch (ParseException e)

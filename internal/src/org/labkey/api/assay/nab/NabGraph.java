@@ -28,14 +28,15 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import org.labkey.api.assay.dilution.DilutionAssayRun;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionMaterialKey;
 import org.labkey.api.assay.dilution.DilutionSummary;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.study.WellData;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.assay.dilution.DilutionAssayRun;
 
 import javax.servlet.http.HttpServletResponse;
 import java.awt.*;
@@ -44,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -184,21 +186,21 @@ public class NabGraph
         return materialKey.getDisplayString(longForm);
     }
 
-    private static String formatCaption(Object captionValue)
+    private static String formatCaption(Container c, Object captionValue)
     {
         if (captionValue instanceof Date)
         {
             Date date = (Date) captionValue;
             if (date.getHours() == 0 && date.getMinutes() == 0 && date.getSeconds() == 0)
-                return DateUtil.formatDate(date);
+                return DateUtil.formatDate(c, date);
             else
-                return DateUtil.formatDateTime(date);
+                return DateUtil.formatDateTime(c, date);
         }
         else
             return captionValue.toString();
     }
 
-    public static void renderChartPNG(HttpServletResponse response, Map<DilutionSummary, DilutionAssayRun> summaries, Config config) throws IOException, DilutionCurve.FitFailedException
+    public static void renderChartPNG(Container c, HttpServletResponse response, Map<DilutionSummary, DilutionAssayRun> summaries, Config config) throws IOException, DilutionCurve.FitFailedException
     {
         boolean longCaptions = false;
         Set<String> shortCaptions = new HashSet<>();
@@ -209,7 +211,7 @@ public class NabGraph
                 longCaptions = true;
             shortCaptions.add(shortCaption);
         }
-        java.util.List<Pair<String, DilutionSummary>> summaryMap = new ArrayList<>();
+        List<Pair<String, DilutionSummary>> summaryMap = new ArrayList<>();
         for (Map.Entry<DilutionSummary, DilutionAssayRun> sampleEntry : summaries.entrySet())
         {
             String caption = null;
@@ -218,14 +220,14 @@ public class NabGraph
             {
                 Object value = summary.getFirstWellGroup().getProperty(config.getCaptionColumn());
                 if (value != null)
-                    caption = formatCaption(value);
+                    caption = formatCaption(c, value);
                 else
                 {
                     Map<PropertyDescriptor, Object> runProperties = sampleEntry.getValue().getRunProperties();
                     for (Map.Entry<PropertyDescriptor, Object> runProperty : runProperties.entrySet())
                     {
                         if (config.getCaptionColumn().equals(runProperty.getKey().getName()) && runProperty.getValue() != null)
-                            caption = formatCaption(runProperty.getValue());
+                            caption = formatCaption(c, runProperty.getValue());
                     }
                 }
             }
@@ -236,7 +238,7 @@ public class NabGraph
         renderChartPNG(response, summaryMap, config);
     }
 
-    public static void renderChartPNG(HttpServletResponse response, DilutionAssayRun assay, Config config) throws IOException, DilutionCurve.FitFailedException
+    public static void renderChartPNG(Container c, HttpServletResponse response, DilutionAssayRun assay, Config config) throws IOException, DilutionCurve.FitFailedException
     {
         Map<DilutionSummary, DilutionAssayRun> samples = new LinkedHashMap<>();
         for (DilutionSummary summary : assay.getSummaries())
@@ -246,10 +248,10 @@ public class NabGraph
         }
         if (config.getCutoffs() == null)
             config.setCutoffs(assay.getCutoffs());
-        renderChartPNG(response, samples, config);
+        renderChartPNG(c, response, samples, config);
     }
 
-    public static void renderChartPNG(HttpServletResponse response, java.util.List<Pair<String, DilutionSummary>> dilutionSummaries, Config config) throws IOException, DilutionCurve.FitFailedException
+    public static void renderChartPNG(HttpServletResponse response, List<Pair<String, DilutionSummary>> dilutionSummaries, Config config) throws IOException, DilutionCurve.FitFailedException
     {
         XYSeriesCollection curvesDataset = new XYSeriesCollection();
         XYSeriesCollection pointDataset = new XYSeriesCollection();

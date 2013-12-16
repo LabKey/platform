@@ -99,6 +99,12 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return _viewContext.getUser();
     }
 
+    // Encoded version of the context path
+    public _HtmlString getContextPath()
+    {
+        return new _HtmlString(h(_viewContext.getContextPath()));
+    }
+
     /**
      * No-op encoding
      * Indicate that you explicitly want to include a string in the page WITHOUT encoding
@@ -401,14 +407,16 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return new _HtmlString(new HelpTopic(helpTopic).getSimpleLinkHtml(displayText));
     }
 
+    // Format date using the container-configured date format and HTML filter the result
     public _HtmlString formatDate(Date date)
     {
-        return new _HtmlString(null==date ? "" : DateUtil.formatDate(date));
+        return new _HtmlString(null == date ? "" : h(DateUtil.formatDate(getContainer(), date)));
     }
 
+    // Format date & time using the container-configured date & time format and HTML filter the result
     public _HtmlString formatDateTime(Date date)
     {
-        return new _HtmlString(null == date ? "" : DateUtil.formatDateTime(date));
+        return new _HtmlString(null == date ? "" : h(DateUtil.formatDateTime(getContainer(), date)));
     }
 
     public String getMessage(ObjectError e)
@@ -699,11 +707,13 @@ abstract public class JspBase extends JspContext implements HasViewContext
      */
     final protected static class _HtmlString
     {
-        final String s;
+        private final String s;
+
         _HtmlString(String s)
         {
             this.s = s;
         }
+
         @Override
         public String toString()
         {

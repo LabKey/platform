@@ -17,7 +17,7 @@
 package org.labkey.api.util;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.FolderSettingsCache;
 
 import java.text.DecimalFormat;
 
@@ -51,6 +51,6 @@ public class Formats
     // Get the default number format string to use in this Container
     public static String getNumberFormatString(Container c)
     {
-        return LookAndFeelProperties.getInstance(c).getDefaultNumberFormat();
+        return FolderSettingsCache.getDefaultNumberFormat(c);
     }
 }

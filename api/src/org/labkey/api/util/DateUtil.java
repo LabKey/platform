@@ -23,7 +23,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.FolderSettingsCache;
 
 import javax.xml.bind.DatatypeConverter;
 import java.sql.Timestamp;
@@ -57,9 +57,12 @@ public class DateUtil
     private static final int twoDigitCutoff = (currentYear - 80) % 100;
     private static final int defaultCentury = (currentYear - 80) - twoDigitCutoff;
 
-    private static final String _standardDateFormatString = "yyyy-MM-dd";
-    private static final String _standardDateTimeFormatString = "yyyy-MM-dd HH:mm";
+    private static final String ISO_DATE_FORMAT_STRING = "yyyy-MM-dd";
+    private static final String ISO_TIME_FORMAT_STRING = "HH:mm";
+    private static final String ISO_DATE_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_TIME_FORMAT_STRING;
 
+    @Deprecated
+    private static final String _standardDateTimeFormatString = ISO_DATE_TIME_FORMAT_STRING;
 
     /**
      * GregorianCalendar is expensive because it calls computeTime() in setTimeInMillis()
@@ -764,7 +767,7 @@ validNum:       {
     public static Date parseDateTime(String s, String pattern) throws ParseException
     {
         if (null == s)
-            throw new ParseException(s, 0);
+            throw new ParseException("Date string is empty", 0);
 
         return new SimpleDateFormat(pattern).parse(s);
     }
@@ -905,7 +908,7 @@ validNum:       {
 
     public static String getStandardDateFormatString()
     {
-        return _standardDateFormatString;
+        return ISO_DATE_FORMAT_STRING;
     }
 
 
@@ -924,38 +927,82 @@ validNum:       {
     }
 
 
-    // Format current date using standard pattern
-    public static String formatDate()
+    // Format date using hard-coded date pattern
+    @Deprecated
+    public static String formatDate(Date date)
     {
-        return formatDate(new Date());
+        return formatDateTime(date, ISO_DATE_FORMAT_STRING);
     }
 
 
-    // Format date using standard date pattern
-    public static String formatDate(Date date)
+    // TODO: Combine these format ISO methods with toISO() and nowISO()?
+
+    // Format current date using ISO 8601 pattern. This is appropriate only for persisting dates in machine-readable
+    // form, for example, for export or in filenames. Most callers should use formatDate(Container c) instead.
+    public static String formatDateISO8601()
     {
-        return formatDateTime(date, _standardDateFormatString);
+        return formatDateISO8601(new Date());
+    }
+
+
+    // Format date using ISO 8601 pattern. This is appropriate only for persisting dates in machine-readable
+    // form, for example, for export or in filenames. Most callers should use formatDate(Container c, Date d) instead.
+    public static String formatDateISO8601(Date date)
+    {
+        return formatDateTime(date, ISO_DATE_FORMAT_STRING);
+    }
+
+
+    // Format date and time using ISO 8601 pattern. This is appropriate only for persisting dates in machine-readable
+    // form, for example, for export or in filenames. Most callers should use formatDateTime(Container c, Date d) instead.
+    public static String formatDateTimeISO8601(Date date)
+    {
+        return formatDateTime(date, ISO_DATE_TIME_FORMAT_STRING);
+    }
+
+
+    // Format current date using folder-specified default pattern
+    public static String formatDate(Container c)
+    {
+        return formatDate(c, new Date());
+    }
+
+
+    // Format date using using folder-specified default pattern
+    public static String formatDate(Container c, Date date)
+    {
+        return formatDateTime(date, getDateFormatString(c));
     }
 
 
     // Get the default date format string to use in this Container
     public static String getDateFormatString(Container c)
     {
-        return LookAndFeelProperties.getInstance(c).getDefaultDateFormat();
-    }
-
-
-    // Format current date & time using standard date & time pattern
-    public static String formatDateTime()
-    {
-        return formatDateTime(new Date());
+        return FolderSettingsCache.getDefaultDateFormat(c);
     }
 
 
     // Format specified date using standard date & time pattern
+    @Deprecated
     public static String formatDateTime(Date date)
     {
         return formatDateTime(date, _standardDateTimeFormatString);
+    }
+
+
+    // Format current date & time using using folder-specified default date pattern plus standard time format
+    public static String formatDateTime(Container c)
+    {
+        return formatDateTime(c, new Date());
+    }
+
+
+    // Format date & time using using folder-specified default date pattern plus standard time format
+    // TODO: In the future, allow administrators to explicitly set a full date time format
+    public static String formatDateTime(Container c, Date date)
+    {
+        String pattern = getDateFormatString(c) + " " + ISO_TIME_FORMAT_STRING;
+        return formatDateTime(date, pattern);
     }
 
 

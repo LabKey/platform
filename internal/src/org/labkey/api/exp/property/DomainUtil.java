@@ -85,7 +85,7 @@ public class DomainUtil
             if (property.getFormat() != null)
                 return DateUtil.formatDateTime(defaultDate, property.getFormat());
             else
-                return DateUtil.formatDate(defaultDate);
+                return DateUtil.formatDate(property.getContainer(), defaultDate);
         }
         else if (property.getLookup() != null)
         {

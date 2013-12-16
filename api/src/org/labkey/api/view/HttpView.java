@@ -619,7 +619,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 
     public String toString()
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(this.getClass().getName()).append(" {");
         ViewContext ctx = getViewContext();
 

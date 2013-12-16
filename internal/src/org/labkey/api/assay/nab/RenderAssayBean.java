@@ -137,18 +137,20 @@ public class RenderAssayBean extends RenderAssayForm
                 value = value == null ? "" : format.format((Date) value);
             }
         }
-        else if (pd.getPropertyType() == PropertyType.DATE_TIME && value instanceof Date)
+        // Note: Changed this from (pd.getPropertyType() == PropertyType.DATE_TIME && value instanceof Date) because
+        // "Created" was showing up as PropertyType.RESOURCE (??). Change ensures that Created gets formatted correctly.
+        else if (value instanceof Date)
         {
             Date date = (Date) value;
             if (date.getHours() == 0 &&
                     date.getMinutes() == 0 &&
                     date.getSeconds() == 0)
             {
-                value = DateUtil.formatDate(date);
+                value = DateUtil.formatDate(pd.getContainer(), date);
             }
             else
             {
-                value = DateUtil.formatDateTime(date);
+                value = DateUtil.formatDateTime(pd.getContainer(), date);
             }
         }
         return value;
