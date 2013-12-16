@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -23,6 +24,7 @@
 <%
     JspView<Wiki> me = (JspView<Wiki>) HttpView.currentView();
     Wiki wiki = me.getModelBean();
+    Container c = me.getViewContext().getContainer();
 %>
 <div style="padding:10px;">
     <%  if (null == wiki.getLatestVersion())
@@ -34,10 +36,10 @@
             <table width="100%">
                 <tr>
                     <td align=left><h3 class="labkey-header-large"><%=h(wiki.getLatestVersion().getTitle())%></h3></td>
-                    <td align=right><%=DateUtil.formatDate()%></td>
+                    <td align=right><%=h(DateUtil.formatDate(c))%></td>
                 </tr>
             </table>
             <hr>
-            <%=wiki.getLatestVersion().getHtml(me.getViewContext().getContainer(),wiki)%>
+            <%=text(wiki.getLatestVersion().getHtml(c, wiki))%>
         <%}%>
 </div>

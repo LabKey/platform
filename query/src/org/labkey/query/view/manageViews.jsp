@@ -139,9 +139,9 @@
         <td><%=StringUtils.join(flags, ",")%></td>
         <td><%=h(userIdToString(view.getCustomViewOwner(), user))%>
         </td>
-        <td><%=DateUtil.formatDateTime(view.getCreated()).replaceAll(" ", "&nbsp;")%></td>
+        <td><%=h(DateUtil.formatDateTime(c, view.getCreated()).replaceAll(" ", "&nbsp;"))%></td>
         <td><%=h(userIdToString(view.getCreatedBy(), user))%></td>
-        <td><%=DateUtil.formatDateTime(view.getModified()).replaceAll(" ", "&nbsp;")%></td>
+        <td><%=h(DateUtil.formatDateTime(c, view.getModified()).replaceAll(" ", "&nbsp;"))%></td>
         <td><%=h(userIdToString(view.getModifiedBy(), user))%></td>
         <td><% ActionURL urlDelete = new ActionURL(InternalDeleteView.class, c);
         urlDelete.addParameter("customViewId", Integer.toString(view.getCustomViewId())); %>

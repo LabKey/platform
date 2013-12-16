@@ -16,9 +16,10 @@
  */
 %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.announcements.EmailNotificationPage" %>
 
-<%=text(announcementModel.getCreatedByName(includeGroups, recipient) + (announcementModel.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase())) %> at <%=formatDateTime(announcementModel.getCreated())%>.<%
+<%=text(announcementModel.getCreatedByName(includeGroups, recipient) + (announcementModel.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase())) %> at <%=text(DateUtil.formatDateTime(c, announcementModel.getCreated()))%>.<%
 
     StringBuilder sb = new StringBuilder();
     String separator = "";

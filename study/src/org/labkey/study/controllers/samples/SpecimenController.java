@@ -349,7 +349,7 @@ public class SpecimenController extends BaseStudyController
                     }
                     else if (study.getTimepointType() != TimepointType.VISIT && pd.getVisitDate() != null)
                     {
-                        ptidVisits.add(new Pair<>(pd.getParticipantId(), DateUtil.formatDate(pd.getVisitDate())));
+                        ptidVisits.add(new Pair<>(pd.getParticipantId(), DateUtil.formatDate(pd.getContainer(), pd.getVisitDate())));
                     }
                     else
                     {

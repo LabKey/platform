@@ -46,7 +46,7 @@ for (DataSetDefinition ds : bean.study.getDataSets())
     boolean selected = bean.form.getDatasetId().intValue() == ds.getDataSetId();
     if (selected)
         selectedDataset = ds;
-    %><option <%=text(selected?"selected ":"")%>value="<%=ds.getDataSetId()%>"><%=h(ds.getDisplayString())%></option><%
+    %><option<%=selected(selected)%> value="<%=ds.getDataSetId()%>"><%=h(ds.getDisplayString())%></option><%
 }
 %></select></td></tr>
 <%
@@ -73,7 +73,7 @@ if (selectedDataset != null)
 //        if (!visit.isRequired())            continue;
         if (null == visit)
             {%><!-- <%=vds.getVisitRowId()%> not found --><% continue;}
-        %><option <%=text(bean.form.getSequenceNum() == visit.getSequenceNumMin() ? "selected " : "")%>value="<%=visit.getSequenceNumMin()%>"><%=h(visit.getDisplayString())%></option><%
+        %><option<%=selected(bean.form.getSequenceNum() == visit.getSequenceNumMin())%> value="<%=visit.getSequenceNumMin()%>"><%=h(visit.getDisplayString())%></option><%
     }
     %></select></td></tr><%
     %>
@@ -90,7 +90,7 @@ if (selectedDataset != null)
                 if (bean.propertyType != null && bean.propertyType != pd.getPropertyType())
                     continue;
                 count++;
-                %><option <%=text((pd.getPropertyId() == bean.form.getPropertyId()) ? "selected " : "")%>value="<%=h(pd.getPropertyId())%>"><%=h(pd.getLabel())%></option><%
+                %><option<%=selected((pd.getPropertyId() == bean.form.getPropertyId()))%> value="<%=h(pd.getPropertyId())%>"><%=h(pd.getLabel())%></option><%
             }
             if (count==0 && error==null)
                 error = "No date fields found in this dataset.";

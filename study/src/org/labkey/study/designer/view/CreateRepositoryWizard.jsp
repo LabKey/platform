@@ -56,7 +56,7 @@ the vaccine study.
 
         <tr>
             <td>Study Begin Date</td>
-            <td><input name="beginDate" value="<%=h(DateUtil.formatDate(form.getBeginDate()))%>"></td>
+            <td><input name="beginDate" value="<%=formatDate(form.getBeginDate())%>"></td>
         </tr>
         <tr>
             <td>Subject Noun (Singular)</td>

@@ -91,21 +91,21 @@
         <td valign="top"><table>
             <tr><td class="labkey-form-label">Status</td><td><%=h(issue.getStatus())%></td></tr>
             <tr><td class="labkey-form-label">Assigned&nbsp;To</td><td><%=h(issue.getAssignedToName(user))%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.TYPE)%></td><td><%=h(issue.getType())%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.AREA)%></td><td><%=h(issue.getArea())%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.PRIORITY)%></td><td><%=h(issue.getPriority())%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.MILESTONE)%></td><td><%=h(issue.getMilestone())%></td></tr>
+            <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.TYPE))%></td><td><%=h(issue.getType())%></td></tr>
+            <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.AREA))%></td><td><%=h(issue.getArea())%></td></tr>
+            <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.PRIORITY))%></td><td><%=h(issue.getPriority())%></td></tr>
+            <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.MILESTONE))%></td><td><%=h(issue.getMilestone())%></td></tr>
         </table></td>
         <td valign="top"><table>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("Opened")%></td><td nowrap="true"><%=bean.writeDate(issue.getCreated())%> by <%=h(issue.getCreatedByName(user))%></td></tr>
-            <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=bean.writeDate(issue.getModified())%> by <%=h(issue.getModifiedByName(user))%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("Resolved")%></td><td nowrap="true"><%=bean.writeDate(issue.getResolved())%><%= issue.getResolvedBy() != null ? " by " : ""%> <%=h(issue.getResolvedByName(user))%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.RESOLUTION)%></td><td><%=h(issue.getResolution())%></td></tr><%
+            <tr><td class="labkey-form-label"><%=text(bean.getLabel("Opened"))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>
+            <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
+            <tr><td class="labkey-form-label"><%=text(bean.getLabel("Resolved"))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
+            <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.RESOLUTION))%></td><td><%=h(issue.getResolution())%></td></tr><%
             if (bean.isEditable("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
             {
                 %><tr><td class="labkey-form-label">Duplicate</td><td>
                 <% if (bean.isEditable("duplicate")) { %>
-                    <%=bean.writeInput("duplicate", String.valueOf(issue.getDuplicate()), 10)%>
+                    <%=text(bean.writeInput("duplicate", String.valueOf(issue.getDuplicate()), 10))%>
                 <% } else { %>
                     <a href="<%=IssuesController.getDetailsURL(context.getContainer(), issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a>
                 <% } %>
@@ -120,7 +120,7 @@
             <%=bean.writeCustomColumn(ColumnType.INT2, 10)%>
         </table></td>
         <td valign="top" width="33%"><table>
-            <tr><td class="labkey-form-label">Closed</td><td nowrap="true"><%=bean.writeDate(issue.getClosed())%><%= issue.getClosedBy() != null ? " by " : "" %><%=h(issue.getClosedByName(user))%></td></tr>
+            <tr><td class="labkey-form-label">Closed</td><td nowrap="true"><%=h(bean.writeDate(issue.getClosed()))%><%= issue.getClosedBy() != null ? " by " : "" %><%=h(issue.getClosedByName(user))%></td></tr>
 
             <%
                 if (hasUpdatePerms)
@@ -144,7 +144,7 @@
     for (Issue.Comment comment : issue.getComments())
     {
         %><hr><table width="100%"><tr><td align="left"><b>
-        <%=bean.writeDate(comment.getCreated())%>
+        <%=h(bean.writeDate(comment.getCreated()))%>
         </b></td><td align="right"><b>
         <%=h(comment.getCreatedByName(user))%>
         </b></td></tr></table>

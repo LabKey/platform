@@ -4739,12 +4739,11 @@ public class StudyController extends BaseStudyController
                 throw new IllegalArgumentException("name is a required attribute.");
 
             String folderName  = json.getString("name");
-            String startDateStr;
+            Date startDate;
             if (json.has("startDate"))
-                startDateStr = json.getString("startDate");
+                startDate = new Date(DateUtil.parseDateTime(json.getString("startDate")));
             else
-                startDateStr = DateUtil.formatDate();
-            Date startDate = new Date(DateUtil.parseDateTime(startDateStr));
+                startDate = new Date();
 
             String cohortDatasetName = json.getString("cohortDataset");
             String cohortProperty = json.getString("cohortProperty");

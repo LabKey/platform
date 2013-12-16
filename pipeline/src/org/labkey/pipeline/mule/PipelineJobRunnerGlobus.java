@@ -292,11 +292,11 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
                     }
                     catch (CertificateNotYetValidException e)
                     {
-                        result.add("Certificate is not valid until " + DateUtil.formatDate(x509Certificate.getNotBefore()) + ": " + x509Certificate.getSubjectX500Principal().getName());
+                        result.add("Certificate is not valid until " + DateUtil.formatDateISO8601(x509Certificate.getNotBefore()) + ": " + x509Certificate.getSubjectX500Principal().getName());
                     }
                     catch (CertificateExpiredException e)
                     {
-                        result.add("Certificate expired " + DateUtil.formatDate(x509Certificate.getNotAfter()) + ": " + x509Certificate.getSubjectX500Principal().getName());
+                        result.add("Certificate expired " + DateUtil.formatDateISO8601(x509Certificate.getNotAfter()) + ": " + x509Certificate.getSubjectX500Principal().getName());
                     }
 
                 }
@@ -305,7 +305,6 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             {
                 result.add("Problem getting key pair: " + e);
             }
-
         }
 
         try

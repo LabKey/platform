@@ -138,7 +138,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-
 /**
  * Shows a set of announcementModels or bulletin board items with replies.
  * Sends email to subscribers.
@@ -1103,7 +1102,7 @@ public class AnnouncementsController extends SpringActionController
                 cal.setTime(new Date());
                 cal.add(Calendar.MONTH, 1);
 
-                String expires = DateUtil.formatDate(cal.getTime());
+                String expires = DateUtil.formatDate(c, cal.getTime());
                 form.set("expires", expires);
                 currentRendererType = null != wikiService ? wikiService.getDefaultMessageRendererType() : null;
                 assignedTo = settings.getDefaultAssignedTo();
@@ -1116,7 +1115,7 @@ public class AnnouncementsController extends SpringActionController
 
                 form.set("title", latestPost.getTitle());
                 form.set("status", latestPost.getStatus());
-                form.setTypedValue("expires", DateUtil.formatDate(latestPost.getExpires()));
+                form.setTypedValue("expires", DateUtil.formatDate(c, latestPost.getExpires()));
 
                 assignedTo = latestPost.getAssignedTo();
                 currentRendererType = WikiRendererType.valueOf(latestPost.getRendererType());

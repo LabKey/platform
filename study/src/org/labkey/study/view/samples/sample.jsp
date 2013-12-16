@@ -55,7 +55,7 @@
     </tr>
     <tr>
         <th align="right">Collection Date</th>
-        <td><%= h(sample.getDrawTimestamp() != null ? formatDateTime(sample.getDrawTimestamp()) : "Unknown") %></td>
+        <td><%=sample.getDrawTimestamp() != null ? formatDateTime(sample.getDrawTimestamp()) : "Unknown"%></td>
     </tr>
     <tr>
         <th align="right">Collection Location</th>

@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.Set" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     DiscussionServiceImpl.PickerView me = (DiscussionServiceImpl.PickerView) HttpView.currentView();
     ViewContext context = me.getViewContext();
@@ -50,17 +51,17 @@
     if (me.allowMultipleDiscussions)
     {
         for (AnnouncementModel a : announcementModels)
-            longFormat |= !menuItems.add(a.getCreatedByName(user) + "|" + DateUtil.formatDate(a.getCreated()));
+            longFormat |= !menuItems.add(a.getCreatedByName(user) + "|" + DateUtil.formatDate(c, a.getCreated()));
     }
 %>
 <style><!--
 .discuss-discuss-icon
 {
-    background-image:url(<%=contextPath%>/_images/message.png);
+    background-image:url(<%=h(contextPath)%>/_images/message.png);
 }
 .discuss-email-icon
 {
-    background-image:url(<%=contextPath%>/_images/email.png);
+    background-image:url(<%=h(contextPath)%>/_images/email.png);
 }
 
 --></style>
@@ -88,8 +89,8 @@ var discussionMenu = {};
             for (AnnouncementModel a : announcementModels)
             {
                 String title = a.getTitle();
-                String help = a.getCreatedByName(user) + ' ' + (longFormat ? DateUtil.formatDateTime(a.getCreated()) : DateUtil.formatDate(a.getCreated()));
-                %><%=comma%>{text:<%=PageFlowUtil.jsString(title)%>,helptext:<%=PageFlowUtil.jsString(help)%>,href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'}<%
+                String help = a.getCreatedByName(user) + ' ' + (longFormat ? DateUtil.formatDateTime(c, a.getCreated()) : DateUtil.formatDate(c, a.getCreated()));
+                %><%=text(comma)%>{text:<%=PageFlowUtil.jsString(title)%>,helptext:<%=PageFlowUtil.jsString(help)%>,href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'}<%
                 comma = ",";
             }
         }
@@ -97,33 +98,33 @@ var discussionMenu = {};
         {
             if (me.isDiscussionVisible)
             {
-                %><%=comma%>{text:'Hide discussion',href:discussionMenu.hideUrl},<%
+                %><%=text(comma)%>{text:'Hide discussion',href:discussionMenu.hideUrl},<%
             }
             else
             {
                 AnnouncementModel a = announcementModels[0];
-                %><%=comma%>{text:'Show discussion',href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
+                %><%=text(comma)%>{text:'Show discussion',href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
             }
             comma = ",";
         }
         if ((me.allowMultipleDiscussions || announcementModels.length == 0) && canInsert)
         {
-            %><%=comma%>{text:'Start <%=me.allowMultipleDiscussions ? "new " : ""%>discussion',href:discussionMenu.pageUrl+'&discussion.start=true#discussionArea', iconCls:'discuss-discuss-icon'}<%
+            %><%=text(comma)%>{text:'Start <%=h(me.allowMultipleDiscussions ? "new " : "")%>discussion',href:discussionMenu.pageUrl+'&discussion.start=true#discussionArea', iconCls:'discuss-discuss-icon'}<%
             comma = ",";
         }
         // if (true)
         {
-            %><%=comma%>{text:'Start email discussion', href:discussionMenu.emailUrl, iconCls:'discuss-email-icon'}<%
+            %><%=text(comma)%>{text:'Start email discussion', href:discussionMenu.emailUrl, iconCls:'discuss-email-icon'}<%
             comma = ",'-',";
         }
         if (!isGuest)
         {
-            %><%=comma%>{text:'Email preferences',href:discussionMenu.emailPreferencesUrl}<%
+            %><%=text(comma)%>{text:'Email preferences',href:discussionMenu.emailPreferencesUrl}<%
             comma = ",";
         }
         if (isAdmin)
         {
-            %><%=comma%>{text:'Email admin',href:discussionMenu.adminEmailUrl}
+            %><%=text(comma)%>{text:'Email admin',href:discussionMenu.adminEmailUrl}
             ,{text:'Customize',href:discussionMenu.customizeUrl}<%
             comma = ",";
         }

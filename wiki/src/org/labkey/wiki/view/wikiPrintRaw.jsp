@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.DateUtil"%>
+<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.wiki.WikiController" %>
+<%@ page import="org.labkey.wiki.WikiSelectManager" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page import="org.labkey.wiki.model.WikiTree" %>
 <%@ page import="org.labkey.wiki.model.WikiVersion" %>
-<%@ page import="org.labkey.wiki.WikiSelectManager" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<WikiController.PrintRawBean> me = (JspView<WikiController.PrintRawBean>) HttpView.currentView();
@@ -37,7 +37,7 @@
 <table width="100%">
     <tr>
         <td align=left><h3 class="labkey-header-large">Table of Contents</h3></td>
-        <td align=right><%=h(bean.displayName)%><br><%=DateUtil.formatDate()%></td>
+        <td align=right><%=h(bean.displayName)%><br><%=h(DateUtil.formatDate(c))%></td>
     </tr>
 </table>
 

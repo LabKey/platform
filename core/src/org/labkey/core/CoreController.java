@@ -132,7 +132,6 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -1182,7 +1181,7 @@ public class CoreController extends SpringActionController
             {
                 //suggest a name
                 //per spec it should be "<user-display-name> YYYY-MM-DD"
-                bean.setTitle(getViewContext().getUser().getDisplayName(getUser()) + " " + DateUtil.formatDate(new Date()));
+                bean.setTitle(getViewContext().getUser().getDisplayName(getUser()) + " " + DateUtil.formatDateISO8601());
             }
 
             return new JspView<>("/org/labkey/core/workbook/createWorkbook.jsp", bean, errors);

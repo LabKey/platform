@@ -51,11 +51,11 @@
     </tr>
     <tr>
         <td class="labkey-form-label">Created</td>
-        <td><%=h(DateUtil.formatDateTime(run.getCreated())) %></td>
+        <td><%=formatDateTime(run.getCreated())%></td>
     </tr>
     <tr>
         <td class="labkey-form-label">Modified</td>
-        <td><%=h(DateUtil.formatDateTime(run.getModified())) %></td>
+        <td><%=formatDateTime(run.getModified())%></td>
     </tr>
     <tr>
         <td class="labkey-form-label">Comments</td>

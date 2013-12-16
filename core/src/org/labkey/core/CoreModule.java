@@ -86,6 +86,7 @@ import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -533,6 +534,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // This listener deletes all properties; make sure it executes after most of the other listeners
         ContainerManager.addContainerListener(new CoreContainerListener(), ContainerManager.ContainerListener.Order.Last);
+        ContainerManager.addContainerListener(new FolderSettingsCache.FolderSettingsCacheListener());
         SecurityManager.init();
         ModuleLoader.getInstance().registerFolderType(this, FolderType.NONE);
         AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();

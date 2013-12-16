@@ -86,7 +86,7 @@
                 }
             %>
         </div>
-        <span class="comment-created"><%=text(DateUtil.formatDateTime(comment.getCreated()))%></span>
+        <span class="comment-created"><%=formatDateTime(comment.getCreated())%></span>
         <span style="float:none;">&nbsp;</span>
     </div>
     <%--<hr>--%>

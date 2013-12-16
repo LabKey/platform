@@ -55,7 +55,7 @@ Summary of notifications of files at <%=form.getContainer().getPath()%>.
             {
                 User user = event.getCreatedBy();
         %>
-                <%=DateUtil.formatDateTime(event.getCreated())%>, <%=user.getDisplayName(user)%>, <%=event.getComment()%>
+                <%=DateUtil.formatDateTime(getContainer(), event.getCreated())%>, <%=user.getDisplayName(user)%>, <%=event.getComment()%>
         <%
             }
         %>

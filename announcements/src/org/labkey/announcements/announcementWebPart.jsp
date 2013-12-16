@@ -59,7 +59,7 @@
             out.print(" (" + a.getResponseCount() + (a.getResponseCount() == 1 ? "&nbsp;response)" : "&nbsp;responses)"));
         %></td>
         <td width="20%" align="center"><%=h(a.getCreatedByName(bean.includeGroups, user))%></td>
-        <td width="40%" align="right" nowrap><%=DateUtil.formatDateTime(a.getCreated())%></td>
+        <td width="40%" align="right" nowrap><%=formatDateTime(a.getCreated())%></td>
     </tr>
     <tr><td colspan=3 class="labkey-title-area-line"></td></tr>
     <tr><td colspan=3 class="labkey-force-word-break"><%=a.translateBody(c)%></td></tr>

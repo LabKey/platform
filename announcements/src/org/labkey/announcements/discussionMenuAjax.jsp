@@ -47,7 +47,7 @@
     if (me.allowMultipleDiscussions)
     {
         for (AnnouncementModel a : announcementModels)
-            longFormat |= !menuItems.add(a.getCreatedByName(user) + "|" + DateUtil.formatDate(a.getCreated()));
+            longFormat |= !menuItems.add(a.getCreatedByName(user) + "|" + DateUtil.formatDate(c, a.getCreated()));
     }
 
     String discussionAreaToggleId = "discussionAreaToggle" + getRequestScopedUID();
@@ -115,11 +115,11 @@
             for (AnnouncementModel a : announcementModels)
             {
                 String title = a.getTitle();
-                String help = a.getCreatedByName(user) + ' ' + (longFormat ? DateUtil.formatDateTime(a.getCreated()) : DateUtil.formatDate(a.getCreated()));
+                String help = a.getCreatedByName(user) + ' ' + (longFormat ? DateUtil.formatDateTime(c, a.getCreated()) : DateUtil.formatDate(c, a.getCreated()));
                 String href = pageURL.getLocalURIString() + "&discussion.id=" + a.getRowId() + "#discussionArea";
                 String hrefAjax = new ActionURL(AnnouncementsController.ThreadBareAction.class, c).addParameter("rowId", a.getRowId()).getLocalURIString();
                 String hashBang = "discussion.id=" + a.getRowId();
-                %><%=comma%>{text:<%=q(title)%>,helptext:<%=q(help)%>,href:<%=q(href)%>,hrefAjax:<%=q(hrefAjax)%>,hashBang:<%=q(hashBang)%>,listeners:{click:_showDiscussion}}<%
+                %><%=text(comma)%>{text:<%=q(title)%>,helptext:<%=q(help)%>,href:<%=q(href)%>,hrefAjax:<%=q(hrefAjax)%>,hashBang:<%=q(hashBang)%>,listeners:{click:_showDiscussion}}<%
                 comma = "\n,";
             }
         }
@@ -127,27 +127,27 @@
         {
             if (me.isDiscussionVisible)
             {
-                %><%=comma%>{text:'Hide discussion',href:discussionMenu.hideUrl}<%
+                %><%=text(comma)%>{text:'Hide discussion',href:discussionMenu.hideUrl}<%
                 comma = "\n,";
             }
             else
             {
                 AnnouncementModel a = announcementModels[0];
-                %><%=comma%>{text:'Show discussion',href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
+                %><%=text(comma)%>{text:'Show discussion',href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
                 comma = "\n,";
             }
         }
         if ((me.allowMultipleDiscussions || announcementModels.length == 0) && c.hasPermission(context.getUser(), InsertPermission.class))
         {
-            %><%=comma%>{text:'Start <%=me.allowMultipleDiscussions ? "new " : ""%>discussion',href:discussionMenu.pageUrl+'&discussion.start=true#discussionArea'},<%
+            %><%=text(comma)%>{text:'Start <%=text(me.allowMultipleDiscussions ? "new " : "")%>discussion',href:discussionMenu.pageUrl+'&discussion.start=true#discussionArea'},<%
             comma = "\n,";
         }
-        %>'-'<%=comma%>{text:'Email preferences',href:discussionMenu.emailPreferencesUrl}<%
+        %>'-'<%=text(comma)%>{text:'Email preferences',href:discussionMenu.emailPreferencesUrl}<%
         comma = "\n,";
         if (c.hasPermission(context.getUser(), AdminPermission.class))
         {
             %>
-            <%=comma%>{text:'Email admin',href:discussionMenu.adminEmailUrl},
+            <%=text(comma)%>{text:'Email admin',href:discussionMenu.adminEmailUrl},
             {text:'Customize',href:discussionMenu.customizeUrl}<%
             comma = "\n,";
         }
@@ -165,7 +165,7 @@
 
 })();
 </script>
-<span id="<%=discussionAreaToggleId%>"><%
+<span id="<%=h(discussionAreaToggleId)%>"><%
     if (announcementModels.length > 0 && me.allowMultipleDiscussions)
     {
         %><%=PageFlowUtil.textLink("see discussions (" + announcementModels.length + ")", "#", "return false;", "")%><%

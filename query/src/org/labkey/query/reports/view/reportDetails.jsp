@@ -130,7 +130,7 @@
             Data Cut Date:
         </td>
         <td>
-            <%=h(refreshDate != null && refreshDate.getTime() > 0 ? DateUtil.formatDateTime(refreshDate) : "")%>
+            <%=h(refreshDate != null && refreshDate.getTime() > 0 ? formatDateTime(refreshDate) : "")%>
         </td>
     </tr>
 
@@ -201,7 +201,7 @@
             Created:
         </td>
         <td>
-             <%=h(createdDate != null && createdDate.getTime() > 0 ? DateUtil.formatDateTime(createdDate) : "")%>
+             <%=h(createdDate != null && createdDate.getTime() > 0 ? formatDateTime(createdDate) : "")%>
         </td>
     </tr>
 
@@ -210,7 +210,7 @@
             Modified:
         </td>
         <td>
-            <%=h(modifiedDate != null && modifiedDate.getTime() > 0 ? DateUtil.formatDateTime(modifiedDate) : "")%>
+            <%=h(modifiedDate != null && modifiedDate.getTime() > 0 ? formatDateTime(modifiedDate) : "")%>
         </td>
     </tr>
 

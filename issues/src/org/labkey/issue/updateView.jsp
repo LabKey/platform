@@ -116,7 +116,7 @@
             if (0 == issue.getIssueId())
             {
 %>
-                <td class="labkey-form-label"><%=bean.getLabel("Title")%></td>
+                <td class="labkey-form-label"><%=text(bean.getLabel("Title"))%></td>
 <%
             } else {
 %>
@@ -125,16 +125,16 @@
             }
 %>
                 <td colspan="3">
-                <%=bean.writeInput("title", issue.getTitle(), "id=title tabindex=\"1\" style=\"width:100%;\"")%>
+                <%=text(bean.writeInput("title", issue.getTitle(), "id=title tabindex=\"1\" style=\"width:100%;\""))%>
                 </td></tr>
             <tr>
-                <td class="labkey-form-label"><%=bean.getLabel("Status")%></td><td><%=h(issue.getStatus())%></td>
+                <td class="labkey-form-label"><%=text(bean.getLabel("Status"))%></td><td><%=h(issue.getStatus())%></td>
                 <td rowspan="6" valign="top">
                     <table>
-                        <tr><td class="labkey-form-label"><%=bean.getLabel("Opened")%></td><td nowrap="true"><%=text(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>
-                        <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=text(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
-                        <tr><td class="labkey-form-label"><%=bean.getLabel("Resolved")%></td><td nowrap="true"><%=text(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
-                        <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.RESOLUTION)%></td><td><%=bean.writeSelect(ColumnType.RESOLUTION, 2)%></td></tr>
+                        <tr><td class="labkey-form-label"><%=text(bean.getLabel("Opened"))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>
+                        <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
+                        <tr><td class="labkey-form-label"><%=text(bean.getLabel("Resolved"))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
+                        <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.RESOLUTION))%></td><td><%=text(bean.writeSelect(ColumnType.RESOLUTION, 2))%></td></tr>
         <% if (bean.isEditable("resolution") || !"open".equals(issue.getStatus())) { %>
                         <tr><td class="labkey-form-label">Duplicate</td><td>
                         <% if (bean.isEditable("duplicate")) {
@@ -142,14 +142,14 @@
                                 {
                                     //Enabled duplicate field.
                         %>
-                                    <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "tabindex=\"2\"")%>
+                                    <%=text(bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "tabindex=\"2\""))%>
                         <%
                                 }
                                 else
                                 {
                                     //Disabled duplicate field.
                         %>
-                                    <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "tabindex=\"2\" disabled")%>
+                                    <%=text(bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "tabindex=\"2\" disabled"))%>
                         <%
                                 }
                         %>
@@ -198,7 +198,7 @@
                     </table>
                 </td>
                 <td valign="top" rowspan="6"><table>
-                    <tr><td class="labkey-form-label">Closed</td><td><%=text(bean.writeDate(issue.getClosed()))%><%=text(issue.getClosedBy() != null ? " by " : "")%><%=h(issue.getClosedByName(user))%></td></tr>
+                    <tr><td class="labkey-form-label">Closed</td><td><%=h(bean.writeDate(issue.getClosed()))%><%=text(issue.getClosedBy() != null ? " by " : "")%><%=h(issue.getClosedByName(user))%></td></tr>
     <%
                 if (bean.isEditable("notifyList"))
                 {
@@ -225,7 +225,7 @@
     <%
                 } else {
     %>
-                    <tr><td class="labkey-form-label">Notify</td><td><%=bean.getNotifyList()%></td></tr>
+                    <tr><td class="labkey-form-label">Notify</td><td><%=text(bean.getNotifyList())%></td></tr>
     <%
                 }
     %>
@@ -235,14 +235,14 @@
                     <%=text(bean.writeCustomColumn(ColumnType.STRING5, 3))%>
                 </table></td>
             </tr>
-        <tr><td class="labkey-form-label"><%=bean.getLabel("AssignedTo")%></td><td><%=bean.writeSelect("assignedTo", String.valueOf(issue.getAssignedTo()), issue.getAssignedToName(user), bean.getUserOptions(), 1)%></td></tr>
-        <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.TYPE)%></td><td><%=bean.writeSelect(ColumnType.TYPE, 1)%></td></tr>
-        <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.AREA)%></td><td><%=bean.writeSelect(ColumnType.AREA, 1)%></td></tr>
-        <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.PRIORITY)%></td><td><%=bean.writeSelect(ColumnType.PRIORITY, 1)%></td></tr>
-        <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.MILESTONE)%></td><td><%=bean.writeSelect(ColumnType.MILESTONE, 1)%></td></tr>
+        <tr><td class="labkey-form-label"><%=text(bean.getLabel("AssignedTo"))%></td><td><%=text(bean.writeSelect("assignedTo", String.valueOf(issue.getAssignedTo()), issue.getAssignedToName(user), bean.getUserOptions(), 1))%></td></tr>
+        <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.TYPE))%></td><td><%=text(bean.writeSelect(ColumnType.TYPE, 1))%></td></tr>
+        <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.AREA))%></td><td><%=text(bean.writeSelect(ColumnType.AREA, 1))%></td></tr>
+        <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.PRIORITY))%></td><td><%=text(bean.writeSelect(ColumnType.PRIORITY, 1))%></td></tr>
+        <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.MILESTONE))%></td><td><%=text(bean.writeSelect(ColumnType.MILESTONE, 1))%></td></tr>
         <tr><td class="labkey-form-label">Comment</td>
             <td colspan="3">
-                <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;" tabindex="1"><%=bean.getBody() != null ? h(bean.getBody()) : ""%></textarea>
+                <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;" tabindex="1"><%=h(bean.getBody())%></textarea>
             </td></tr>
         <tr>
             <td align="right" valign="top"><%=PageFlowUtil.generateSubmitButton("Save", null, "tabindex=\"5\" name=\"" + bean.getAction() + "\"", true, true)%><%= PageFlowUtil.generateButton("Cancel", cancelURL, null, "tabIndex=\"5\"")%></td>
@@ -266,7 +266,7 @@
     {
 %>
         <hr><table width="100%"><tr><td align="left"><b>
-        <%=text(bean.writeDate(comment.getCreated()))%>
+        <%=h(bean.writeDate(comment.getCreated()))%>
         </b></td><td align="right"><b>
         <%=h(comment.getCreatedByName(user))%>
         </b></td></tr></table>

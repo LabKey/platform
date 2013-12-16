@@ -80,34 +80,34 @@
             <tr><td class="labkey-form-label">Assigned&nbsp;To</td><td><%=h(issue.getAssignedToName(user))%></td></tr>
             <tr><td class="labkey-form-label">Type</td><td><%=h(issue.getType())%></td></tr>
             <tr><td class="labkey-form-label">Area</td><td><%=h(issue.getArea())%></td></tr>
-            <tr><td class="labkey-form-label">Priority</td><td><%=bean._toString(issue.getPriority())%></td></tr>
+            <tr><td class="labkey-form-label">Priority</td><td><%=h(issue.getPriority())%></td></tr>
             <tr><td class="labkey-form-label">Milestone</td><td><%=h(issue.getMilestone())%></td></tr>
         </table></td>
         <td valign="top" width="33%"><table>
             <tr><td class="labkey-form-label">Opened&nbsp;By</td><td><%=h(issue.getCreatedByName(user))%></td></tr>
-            <tr><td class="labkey-form-label">Opened</td><td><%=bean.writeDate(issue.getCreated())%></td></tr>
+            <tr><td class="labkey-form-label">Opened</td><td><%=h(bean.writeDate(issue.getCreated()))%></td></tr>
             <tr><td class="labkey-form-label">Resolved By</td><td><%=h(issue.getResolvedByName(user))%></td></tr>
-            <tr><td class="labkey-form-label">Resolved</td><td><%=bean.writeDate(issue.getResolved())%></td></tr>
+            <tr><td class="labkey-form-label">Resolved</td><td><%=h(bean.writeDate(issue.getResolved()))%></td></tr>
             <tr><td class="labkey-form-label">Resolution</td><td><%=h(issue.getResolution())%></td></tr>
 <%
             if (bean.isEditable("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
             {
 %>
                 <tr><td class="labkey-form-label">Duplicate</td><td>
-                <%=bean.writeInput("duplicate", String.valueOf(issue.getDuplicate()), 10)%>
+                <%=text(bean.writeInput("duplicate", String.valueOf(issue.getDuplicate()), 10))%>
                 </td></tr>
 <%
             }
 %>
-            <%=bean.writeCustomColumn(ColumnType.INT1, 10)%>
-            <%=bean.writeCustomColumn(ColumnType.INT2, 10)%>
-            <%=bean.writeCustomColumn(ColumnType.STRING1, 10)%>
+            <%=text(bean.writeCustomColumn(ColumnType.INT1, 10))%>
+            <%=text(bean.writeCustomColumn(ColumnType.INT2, 10))%>
+            <%=text(bean.writeCustomColumn(ColumnType.STRING1, 10))%>
         </table></td>
         <td valign="top" width="33%"><table>
             <tr><td class="labkey-form-label">Changed&nbsp;By</td><td><%=h(issue.getModifiedByName(user))%></td></tr>
-            <tr><td class="labkey-form-label">Changed</td><td><%=bean.writeDate(issue.getModified())%></td></tr>
+            <tr><td class="labkey-form-label">Changed</td><td><%=h(bean.writeDate(issue.getModified()))%></td></tr>
             <tr><td class="labkey-form-label">Closed&nbsp;By</td><td><%=h(issue.getClosedByName(user))%></td></tr>
-            <tr><td class="labkey-form-label">Closed</td><td><%=bean.writeDate(issue.getClosed())%></td></tr>
+            <tr><td class="labkey-form-label">Closed</td><td><%=h(bean.writeDate(issue.getClosed()))%></td></tr>
 
             <%=text(bean.writeCustomColumn(ColumnType.STRING2, 20))%>
             <%=text(bean.writeCustomColumn(ColumnType.STRING3, 20))%>
@@ -126,7 +126,7 @@
         {
 %>
         <hr><table width="100%"><tr><td align="left"><b>
-        <%=text(bean.writeDate(comment.getCreated()))%>
+        <%=h(bean.writeDate(comment.getCreated()))%>
         </b></td><td align="right"><b>
         <%=h(comment.getCreatedByName(user))%>
         </b></td></tr></table>

@@ -44,7 +44,7 @@
     if (null != form)
     {
         %><table><%
-        %><tr><td>d</td><td><input name="d" value="<%=h(DateUtil.formatDateTime(form.getD()))%>"></td><td><%=h(getMessage(errors.getFieldError("d")))%></td></tr><%
+        %><tr><td>d</td><td><input name="d" value="<%=formatDateTime(form.getD())%>"></td><td><%=h(getMessage(errors.getFieldError("d")))%></td></tr><%
         %><tr><td>i</td><td><input name="i" value="<%=h(form.getI())%>"></td><td><%=h(getMessage(errors.getFieldError("i")))%></td></tr><%
         %><tr><td>j</td><td><input name="j" value="<%=h(form.getJ())%>"></td><td><%=h(getMessage(errors.getFieldError("j")))%></td></tr><%
         %><tr><td>k</td><td><input name="k" value="<%=h(form.getK())%>"></td><td><%=h(getMessage(errors.getFieldError("k")))%></td></tr><%

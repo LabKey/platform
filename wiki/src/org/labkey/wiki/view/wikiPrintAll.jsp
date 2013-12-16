@@ -35,14 +35,14 @@
     <table width="100%">
         <tr>
             <td align=left><h3 class="labkey-header-large">Table of Contents</h3></td>
-            <td align=right><%=h(bean.displayName)%><br><%=DateUtil.formatDate()%></td>
+            <td align=right><%=h(bean.displayName)%><br><%=h(DateUtil.formatDate(c))%></td>
         </tr>
     </table>
 
 <%  //print list of page titles with anchors at top
     for (WikiTree tree : bean.wikiTrees)
     {
-        out.print(StringUtils.repeat("&nbsp;&nbsp;", tree.getDepth()));
+        out.print(text(StringUtils.repeat("&nbsp;&nbsp;", tree.getDepth())));
     %>
         <a href="#<%=h(tree.getName())%>"><%=h(tree.getTitle())%></a><br>
     <%
@@ -56,7 +56,7 @@
     %>
         <hr size=1>
         <h3><a name="<%=h(wiki.getName())%>"></a><%=h(version.getTitle())%></h3><br>
-        <%=version.getHtml(c, wiki)%><br><br>
+        <%=text(version.getHtml(c, wiki))%><br><br>
     <%}
 %>
 </div>

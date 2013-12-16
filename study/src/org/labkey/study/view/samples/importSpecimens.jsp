@@ -50,7 +50,7 @@
             <tr class="<%= h(row++ % 2 == 1 ? "labkey-row" : "labkey-alternate-row") %>">
                 <td><%= h(entry.getName()) %></td>
                 <td align="right"><%= entry.getSize() == 0 ? "0" : Math.max(1, entry.getSize() / 1000) %> kb</td>
-                <td><%= h(formatDateTime(entry.getDate())) %></td>
+                <td><%=formatDateTime(entry.getDate())%></td>
             </tr>
         <%
             }

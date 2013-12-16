@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
@@ -64,7 +63,7 @@
         </tr>
         <tr>
             <th style="text-align:left;width:18em">Start Date<%=helpPopup("Start Date", "A start date is required for studies that are date based.")%></th>
-            <td align="left"><input type="text" name="startDate" value="<%=h(DateUtil.formatDate(form.getStartDate()))%>">
+            <td align="left"><input type="text" name="startDate" value="<%=formatDate(form.getStartDate())%>">
             </td>
         </tr>
         <tr id="defaultDurationRow" style="display: <%= text(form.getTimepointType() != null && !form.getTimepointType().isVisitBased() ? "table-row" : "none") %>">
@@ -99,7 +98,7 @@
                         for (SecurityType securityType : SecurityType.values())
                         {
                             %>
-                            <option value="<%= securityType.name() %>"><%= securityType.getLabel() %></option>
+                            <option value="<%=h(securityType.name())%>"><%=h(securityType.getLabel())%></option>
                             <%
                         }
                     %>

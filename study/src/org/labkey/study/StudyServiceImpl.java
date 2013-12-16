@@ -365,6 +365,7 @@ public class StudyServiceImpl implements StudyService.Service
         return new ActionURL(StudyController.DatasetAction.class, container).addParameter("datasetId", datasetId);
     }
 
+    @NotNull
     public Set<Study> findStudy(@NotNull Object studyReference, @Nullable User user)
     {
         if (studyReference == null)

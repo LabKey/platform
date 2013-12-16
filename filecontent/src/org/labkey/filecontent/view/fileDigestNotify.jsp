@@ -73,7 +73,7 @@
                     String rowCls = (i % 2 == 0) ? "labkey-row" : "labkey-row";
                     User user = event.getCreatedBy();
             %>
-                    <tr class="<%=rowCls%>"><td><%=DateUtil.formatDateTime(event.getCreated())%></td><td><%=h(user.getDisplayName(user))%></td><td><%=event.getComment()%></td></tr>
+                    <tr class="<%=rowCls%>"><td><%=formatDateTime(event.getCreated())%></td><td><%=h(user.getDisplayName(user))%></td><td><%=event.getComment()%></td></tr>
             <%
                 }
             %>

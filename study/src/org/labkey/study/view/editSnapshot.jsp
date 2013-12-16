@@ -56,7 +56,7 @@
     <tr><td class="labkey-form-label">Created By</td><td><%=h(def.getCreatedBy())%></td>
     <tr><td class="labkey-form-label">Modified By</td><td><%=h(def.getModifiedBy())%></td>
     <tr><td class="labkey-form-label">Created</td><td><%=h(def.getCreated())%></td>
-    <tr><td class="labkey-form-label">Last Updated</td><td><%=StringUtils.trimToEmpty(DateUtil.formatDateTime(def.getLastUpdated()))%></td>
+    <tr><td class="labkey-form-label">Last Updated</td><td><%=formatDateTime(def.getLastUpdated())%></td>
     <tr><td class="labkey-form-label">Query Source</td><td><textarea rows="20" cols="65" readonly="true"><%=def.getQueryDefinition(context.getUser()).getSql()%></textarea></td>
 </table>
 <%  } %>

@@ -88,7 +88,7 @@ if (bean.perm.allowUpdate(announcementModel) && !bean.print)
     ActionURL update = AnnouncementsController.getUpdateURL(c, announcementModel.getEntityId(), bean.currentURL);
     %><%=textLink("edit", update)%><%
 }
-%>&nbsp;<%=h(DateUtil.formatDateTime(announcementModel.getCreated()))%></td>
+%>&nbsp;<%=formatDateTime(announcementModel.getCreated())%></td>
 </tr>
 <tr>
     <td colspan=3 class="labkey-title-area-line"></td>
@@ -111,7 +111,7 @@ if (settings.hasStatus() && null != announcementModel.getStatus())
 if (settings.hasExpires() && null != announcementModel.getExpires())
 { %>
 <tr>
-    <td align=left colspan="3">Expires: <%=h(DateUtil.formatDate(announcementModel.getExpires()))%>&nbsp;</td>
+    <td align=left colspan="3">Expires: <%=formatDate(announcementModel.getExpires())%>&nbsp;</td>
 </tr><%
 }
 
@@ -131,7 +131,7 @@ if (null != announcementModel.getBody())
 
 %>
 <tr>
-    <td colspan="3" class="labkey-force-word-break"><%=announcementModel.translateBody(c)%></td>
+    <td colspan="3" class="labkey-force-word-break"><%=text(announcementModel.translateBody(c))%></td>
 </tr><%
 
 if (0 < announcementModel.getAttachments().size())
@@ -165,7 +165,7 @@ if (0 < announcementModel.getResponses().size())
         for (AnnouncementModel r : announcementModel.getResponses())
         {%>
             <tr class="labkey-alternate-row">
-                <td class="labkey-bordered" style="border-right: 0 none"><a name="row:<%=r.getRowId()%>"></a><%=h(r.getCreatedByName(bean.includeGroups, user)) + " responded:"%></td>
+                <td class="labkey-bordered" style="border-right: 0 none"><a name="row:<%=r.getRowId()%>"></a><%=h(r.getCreatedByName(bean.includeGroups, user) + " responded:")%></td>
                 <td class="labkey-bordered" style="border-left: 0 none" align="right"><%
                 if (bean.perm.allowUpdate(r) && !bean.print)
                 {
@@ -177,7 +177,7 @@ if (0 < announcementModel.getResponses().size())
                         ActionURL deleteResponse = AnnouncementsController.getDeleteResponseURL(c, r.getEntityId(), bean.currentURL);
                 %>&nbsp;<%=textLink("delete", deleteResponse)%><%
                 }
-                %>&nbsp;<%=h(DateUtil.formatDateTime(r.getCreated()))%></td>
+                %>&nbsp;<%=formatDateTime(r.getCreated())%></td>
             </tr><%
 
             if (settings.hasMemberList() && !Objects.equals(r.getEmailList(), prev.getEmailList()))
@@ -197,7 +197,7 @@ if (0 < announcementModel.getResponses().size())
             if (settings.hasExpires() && !Objects.equals(r.getExpires(), prev.getExpires()))
             { %>
             <tr>
-                <td colspan="2">Expires: <%=h(DateUtil.formatDate(r.getExpires()))%></td>
+                <td colspan="2">Expires: <%=formatDate(r.getExpires())%></td>
             </tr><%
             }
 

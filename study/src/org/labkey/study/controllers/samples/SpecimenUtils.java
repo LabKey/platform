@@ -981,7 +981,7 @@ public class SpecimenUtils
     {
         StringBuilder filename = new StringBuilder();
         filename.append(getShortSiteLabel(srcLocation)).append("_to_").append(getShortSiteLabel(destLocation));
-        filename.append("_").append(DateUtil.formatDate());
+        filename.append("_").append(DateUtil.formatDateISO8601());
         return filename.toString();
     }
 

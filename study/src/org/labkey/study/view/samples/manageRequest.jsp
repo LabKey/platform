@@ -389,7 +389,7 @@
                     </tr>
                     <tr>
                         <th valign="top" align="right">Request Date</th>
-                        <td><%= h(formatDateTime(bean.getSampleRequest().getCreated())) %></td>
+                        <td><%=formatDateTime(bean.getSampleRequest().getCreated())%></td>
                     </tr>
                     <tr>
                         <th valign="top" align="right">Description</th>

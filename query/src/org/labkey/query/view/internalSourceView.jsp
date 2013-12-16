@@ -57,12 +57,12 @@
         <br>
         Inherit: <labkey:checkbox id="ff_inherit" name="ff_inherit" value="true" checked="<%=form.ff_inherit%>" /><br>
         Hidden: <labkey:checkbox id="ff_hidden" name="ff_hidden" value="true" checked="<%=form.ff_hidden%>" /><br>
-        Shared: <%=view.getCustomViewOwner() == null ? "yes" : "no"%><br>
+        Shared: <%=text(view.getCustomViewOwner() == null ? "yes" : "no")%><br>
         <br>
         Container: <%=h(view.getContainerPath())%><br>
-        Created: <%=h(DateUtil.formatDateTime(view.getCreated()))%><br>
+        Created: <%=formatDateTime(view.getCreated())%><br>
         Created By: <%=h(userIdToString(view.getCreatedBy()))%><br>
-        Modified: <%=h(DateUtil.formatDateTime(view.getModified()))%><br>
+        Modified: <%=formatDateTime(view.getModified())%><br>
         Modified: <%=h(userIdToString(view.getModifiedBy()))%><br>
     </p>
     <table><tr><th>Columns</th><th>Filter/Sort</th></tr>

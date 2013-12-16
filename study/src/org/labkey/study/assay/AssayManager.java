@@ -409,11 +409,12 @@ public class AssayManager implements AssayService.Interface
     {
         if (name == null)
         {
-            name = DateUtil.formatDate() + " batch";
+            name = DateUtil.formatDate(container) + " batch";
         }
+
         ExpExperiment batch = ExperimentService.get().createExpExperiment(container, name);
         // Make sure that our LSID is unique using a GUID.
-        // Outside the main transaction, we'll separately give it a uinque name
+        // Outside the main transaction, we'll separately give it a unique name
         batch.setLSID(ExperimentService.get().generateLSID(container, ExpExperiment.class, GUID.makeGUID()));
         batch.setBatchProtocol(protocol);
 

@@ -2707,7 +2707,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Memory usage -- " + DateUtil.formatDateTime(), this.getClass());
+            return appendAdminNavTrail(root, "Memory usage -- " + DateUtil.formatDateTime(getContainer()), this.getClass());
         }
     }
 
@@ -2829,7 +2829,7 @@ public class AdminController extends SpringActionController
             RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
             if (runtimeBean != null)
             {
-                systemProperties.add(new Pair<String,Object>("VM Start Time", DateUtil.formatDateTime(new Date(runtimeBean.getStartTime()))));
+                systemProperties.add(new Pair<String,Object>("VM Start Time", DateUtil.formatDateTimeISO8601(new Date(runtimeBean.getStartTime()))));
                 long upTime = runtimeBean.getUptime(); // round to sec
                 upTime = upTime - (upTime % 1000);
                 systemProperties.add(new Pair<String,Object>("VM Uptime", DateUtil.formatDuration(upTime)));

@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.pipeline.PipelineJobService" %>
 <%@ page import="org.labkey.api.pipeline.PipelineService" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.pipeline.view.SetupForm" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -34,16 +34,17 @@
 <%
     JspView<SetupForm> thisView = (JspView<SetupForm>) HttpView.currentView();
     SetupForm bean = thisView.getModelBean();
+    Container c = getContainer();
 
     // the default project pipeline root based on the site default root
     String projectDefaultRoot = "";
     String folderRadioBtnLabel = "Set a pipeline override";
-    boolean hasInheritedOverride = SetupForm.hasInheritedOverride(getViewContext().getContainer());
+    boolean hasInheritedOverride = SetupForm.hasInheritedOverride(c);
 
     File siteRoot = ServiceRegistry.get().getService(FileContentService.class).getSiteDefaultRoot();
     if (siteRoot != null)
     {
-        File projRoot = new File(siteRoot, getViewContext().getContainer().getProject().getName());
+        File projRoot = new File(siteRoot, c.getProject().getName());
         // Show the user the path that we'd point to if using the default location
         projectDefaultRoot = projRoot.getAbsolutePath();
     }
@@ -106,7 +107,7 @@
             to process, you can set a pipeline override to allow the data processing pipeline to operate on the
             files in your preferred directory instead of the one that LabKey creates for each folder.
 <%      if (bean.isShowAdditionalOptionsLink()) { %>
-            For additional pipeline options, <a href="<%=h(urlProvider(PipelineUrls.class).urlSetup(getViewContext().getContainer()))%>">click here</a>.
+            For additional pipeline options, <a href="<%=h(urlProvider(PipelineUrls.class).urlSetup(c))%>">click here</a>.
 <%      } %>
         </td></tr>
         <tr><td></td></tr>
@@ -188,7 +189,7 @@
                                         { %>
                                             <tr>
                                                 <td class="labkey-form-label">Existing Globus cert expiration</td>
-                                                <td><%= h(DateUtil.formatDate(certs[0].getNotAfter()))%></td>
+                                                <td><%=formatDate(certs[0].getNotAfter())%></td>
                                             </tr><%
                                             if (certs[0].getSubjectX500Principal() != null) { %>
                                                 <tr>

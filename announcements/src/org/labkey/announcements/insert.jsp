@@ -70,7 +70,7 @@ function validateForm(form)
   <tr><td class='labkey-form-label'>Title * <%= PageFlowUtil.helpPopup("Title", "This field is required.") %></td><td colspan="2"><input type='text' size='60' id="title" name='title' value="<%=h(form.get("title"))%>"></td></tr><%
     if (settings.hasStatus())
     {
-        %><tr><td class='labkey-form-label'>Status</td><td colspan="2"><%=bean.statusSelect%></td></tr><%
+        %><tr><td class='labkey-form-label'>Status</td><td colspan="2"><%=text(bean.statusSelect)%></td></tr><%
     }
     if (settings.hasAssignedTo())
     {
@@ -105,8 +105,7 @@ function validateForm(form)
             {
                 String value = type.name();
                 String displayName = type.getDisplayName();
-                String selected = type == bean.currentRendererType ? "selected " : "";
-        %><option <%=selected%>value="<%=h(value)%>"><%=h(displayName)%></option><%
+        %><option<%=selected(type == bean.currentRendererType)%> value="<%=h(value)%>"><%=h(displayName)%></option><%
             }
         %></select></td></tr><%
     }

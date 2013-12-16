@@ -67,7 +67,7 @@ Ext.onReady(function(){
 </script>
 <form method=post enctype="multipart/form-data" action="<%=respondUrl%>" onSubmit="return validateForm(this)">
 <input type="hidden" name="cancelUrl" value="<%=h(bean.cancelURL)%>">
-<%=generateReturnUrlFormField(bean.cancelURL)%>
+<%=text(generateReturnUrlFormField(bean.cancelURL))%>
 <input type="hidden" name="fromDiscussion" value="<%=bean.fromDiscussion%>">
 <div style="max-width: 1050px;"><table style="width: 100%;"><%
 
@@ -82,12 +82,12 @@ else
 
 if (settings.hasStatus())
 {
-    %><tr><td class="labkey-form-label">Status</td><td colspan="2"><%=bean.statusSelect%></td></tr><%
+    %><tr><td class="labkey-form-label">Status</td><td colspan="2"><%=text(bean.statusSelect)%></td></tr><%
 }
 
 if (settings.hasAssignedTo())
 {
-    %><tr><td class="labkey-form-label">Assigned&nbsp;To</td><td colspan="2"><%=bean.assignedToSelect%></td></tr><%
+    %><tr><td class="labkey-form-label">Assigned&nbsp;To</td><td colspan="2"><%=text(bean.assignedToSelect)%></td></tr><%
 }
 
 if (settings.hasMemberList())
@@ -95,13 +95,13 @@ if (settings.hasMemberList())
     %><tr><td class="labkey-form-label">Members</td><td><%=bean.memberList%></td><td width="100%"><i><%
     if (settings.isSecure())
     {
-        %> This <%=settings.getConversationName().toLowerCase()%> is private; only editors and the users on this list can view it.  These users will also<%
+        %> This <%=h(settings.getConversationName().toLowerCase())%> is private; only editors and the users on this list can view it.  These users will also<%
     }
     else
     {
         %> The users on the member list<%
     }
-    %> receive email notifications of new posts to this <%=settings.getConversationName().toLowerCase()%>.<br><br>Enter one or more email addresses, each on its own line.</i></td></tr><%
+    %> receive email notifications of new posts to this <%=h(settings.getConversationName().toLowerCase())%>.<br><br>Enter one or more email addresses, each on its own line.</i></td></tr><%
 }
 
 if (settings.hasExpires())
@@ -127,9 +127,8 @@ if (settings.hasFormatPicker())
                   {
                       String value = type.name();
                       String displayName = type.getDisplayName();
-                      String selected = type == bean.currentRendererType ? "selected " : "";
                   %>
-                      <option <%=selected%> value="<%=h(value)%>"><%=h(displayName)%></option>
+                      <option<%=selected(type == bean.currentRendererType)%> value="<%=h(value)%>"><%=h(displayName)%></option>
                   <%
               }%>
         </select>

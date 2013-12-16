@@ -15,27 +15,28 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.announcements.AnnouncementsController"%>
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementUpdateView"%>
-<%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementUpdateView.UpdateBean"%>
+<%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementUpdateView.UpdateBean" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     AnnouncementUpdateView me = (AnnouncementUpdateView) HttpView.currentView();
     UpdateBean bean = me.getModelBean();
+    Container c = getContainer();
 
     AnnouncementModel ann = bean.annModel;
     DiscussionService.Settings settings = bean.settings;
     ActionURL baseUrl = me.getViewContext().cloneActionURL().deleteParameters();
-    String completeUserUrl = new ActionURL(AnnouncementsController.CompleteUserAction.class, me.getViewContext().getContainer()).getLocalURIString();
+    ActionURL completeUserUrl = new ActionURL(AnnouncementsController.CompleteUserAction.class, me.getViewContext().getContainer());
 %>
 <%=formatMissedErrors("form")%>
 <script type="text/javascript">
@@ -105,7 +106,7 @@ Ext.onReady(function(){
 <input type="hidden" name="rowId" value="<%=ann.getRowId()%>">
 <input type="hidden" name="entityId" value="<%=h(ann.getEntityId())%>">
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(ann)%>">
-<%=generateReturnUrlFormField(bean.returnURL)%>
+<%=text(generateReturnUrlFormField(bean.returnURL))%>
 <table><%
 
 if (settings.isTitleEditable())
@@ -115,23 +116,23 @@ if (settings.isTitleEditable())
 
 if (settings.hasStatus())
 {
-    %><tr><td class='labkey-form-label'>Status</td><td colspan="2"><%=bean.statusSelect%></td></tr><%
+    %><tr><td class='labkey-form-label'>Status</td><td colspan="2"><%=text(bean.statusSelect)%></td></tr><%
 }
 
 if (settings.hasAssignedTo())
 {
-    %><tr><td class='labkey-form-label'>Assigned&nbsp;To</td><td colspan="2"><%=bean.assignedToSelect%></td></tr><%
+    %><tr><td class='labkey-form-label'>Assigned&nbsp;To</td><td colspan="2"><%=text(bean.assignedToSelect)%></td></tr><%
 }
 
 if (settings.hasMemberList())
 {
     %><tr>
         <td class="labkey-form-label">Members</td>
-        <td><labkey:autoCompleteTextArea name="emailList" id="emailList" rows="5" cols="30" url="<%=completeUserUrl%>" value="<%=bean.memberList%>"/></td>
+        <td><labkey:autoCompleteTextArea name="emailList" id="emailList" rows="5" cols="30" url="<%=h(completeUserUrl)%>" value="<%=h(bean.memberList)%>"/></td>
         <td width="100%"><i><%
     if (settings.isSecure())
     {
-        %> This <%=settings.getConversationName().toLowerCase()%> is private; only editors and the users on this list can view it.  These users will also<%
+        %> This <%=h(settings.getConversationName().toLowerCase())%> is private; only editors and the users on this list can view it.  These users will also<%
     }
     else
     {
@@ -142,7 +143,7 @@ if (settings.hasMemberList())
 
 if (settings.hasExpires())
 {
-    %><tr><td class="labkey-form-label">Expires</td><td><input name="expires" size="23" value="<%=h(DateUtil.formatDate(ann.getExpires()))%>"></td><td width="100%"><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
+    %><tr><td class="labkey-form-label">Expires</td><td><input name="expires" size="23" value="<%=formatDate(ann.getExpires())%>"></td><td width="100%"><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
 }
 
 %>
@@ -163,9 +164,8 @@ if (settings.hasExpires())
           {
               String value = type.name();
               String displayName = type.getDisplayName();
-              String selected = type == bean.currentRendererType ? "selected " : "";
       %>
-        <option <%=selected%>value="<%=h(value)%>"><%=h(displayName)%></option><%
+        <option<%=selected(type == bean.currentRendererType)%> value="<%=h(value)%>"><%=h(displayName)%></option><%
         } %>
       </select>
     </td>
@@ -182,7 +182,7 @@ if (settings.hasExpires())
                 {
                     x++;
                     %><tr id="attach-<%=x%>">
-                        <td><img src="<%=request.getContextPath() + att.getFileIcon()%>" alt="logo"/>&nbsp;<%= h(att.getName()) %></td>
+                        <td><img src="<%=h(request.getContextPath() + att.getFileIcon())%>" alt="logo"/>&nbsp;<%= h(att.getName()) %></td>
                         <td><a onclick="removeAnnouncementAttachment(<%=PageFlowUtil.jsString(ann.getEntityId())%>, <%=PageFlowUtil.jsString(att.getName())%>, 'attach-<%=x%>'); ">remove</a></td>
                     </tr><%
                 }
@@ -191,7 +191,7 @@ if (settings.hasExpires())
         </table>
         <table>
             <tbody>
-                <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=request.getContextPath()%>/_images/paperclip.gif">&nbsp;Attach a file</a></td></tr>
+                <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=getContextPath()%>/_images/paperclip.gif">&nbsp;Attach a file</a></td></tr>
             </tbody>
         </table>
 	</td>

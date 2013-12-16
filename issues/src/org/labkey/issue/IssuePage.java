@@ -374,7 +374,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         if (name != null && name.length() > 0)
         {
             String label = PageFlowUtil.filter(name).replaceAll(" ", "&nbsp;");
-            if (_requiredFields != null && _requiredFields.indexOf(columnName.toLowerCase()) != -1)
+            if (_requiredFields != null && _requiredFields.contains(columnName.toLowerCase()))
                 return label + "<span class=\"labkey-error\">*</span>";
             return label;
         }
@@ -382,15 +382,10 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return columnName;
     }
 
-    public String _toString(Object a)
-    {
-        return null == a ? "" : a.toString();
-    }
-
     public String writeDate(Date d)
     {
         if (null == d) return "";
-        return DateUtil.formatDate(d);
+        return DateUtil.formatDate(_c, d);
     }
 
     public String renderAttachments(ViewContext context, AttachmentParent parent)

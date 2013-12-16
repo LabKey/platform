@@ -178,7 +178,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
             _logFileDir.deleteOnExit();
             _logFile = new File(_logFileDir, "upload.xar.log");
             _logFile.deleteOnExit();
-            _uploadTime = DateUtil.formatDateTime();
+            _uploadTime = DateUtil.formatDateTime(job.getContainer());
         }
 
         public ExperimentArchiveDocument getDocument() throws XmlException, IOException
