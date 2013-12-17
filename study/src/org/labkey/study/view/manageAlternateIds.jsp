@@ -133,6 +133,10 @@
                         xtype: 'button',
                         text: 'Import',
                         handler: function() {window.location = LABKEY.ActionURL.buildURL("study", "importAlternateIdMapping.view");}
+                    },{
+                        xtype: 'button',
+                        text: 'Change or Merge <%= PageFlowUtil.filter(subjectNounColName) %>',
+                        handler: function() {window.location = LABKEY.ActionURL.buildURL("study", "mergeParticipants.view");}
                     }]
                 }]
             });

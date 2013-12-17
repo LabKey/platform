@@ -6709,6 +6709,29 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @RequiresPermissionClass(AdminPermission.class)
+    public class MergeParticipantsAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object form, BindException errors) throws Exception
+        {
+           return new JspView<>("/org/labkey/study/view/mergeParticipants.jsp");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            try
+            {
+                _appendManageStudy(root);
+                String subjectColumnName = getStudyRedirectIfNull().getSubjectColumnName();
+                root.addChild("Merge " + subjectColumnName + "s");
+            }
+            catch (ServletException e)
+            {
+            }
+            return root;
+        }
+    }
+
     @RequiresPermissionClass(ReadPermission.class)
     public class SubjectListAction extends SimpleViewAction
     {
