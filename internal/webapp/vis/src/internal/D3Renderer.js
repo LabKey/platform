@@ -544,7 +544,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             var x = xAcc(row), y = yAcc(row);
             if(x == null || isNaN(x) || y == null || isNaN(y)){
                 // Remove the dom node if x/y is null.
-                this.remove();
+                this.parentNode.removeChild(this);
                 return null;
             }
             return 'translate(' + xAcc(row) + ',' + yAcc(row) + ')';
@@ -607,7 +607,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             y = -geom.yScale.scale(value + error);
             if(x == null || isNaN(x) || y == null || isNaN(y) || value == null || isNaN(value) || y == null || isNaN(y)) {
                 // Remove the dom node if we can't actually render a path.
-                this.remove();
+                this.parentNode.removeChild(this);
                 return null;
             }
             return LABKEY.vis.makeLine(x - 6, y, x + 6, y);
@@ -620,7 +620,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             y = -geom.yScale.scale(value - error);
             if(x == null || isNaN(x) || y == null || isNaN(y) || value == null || isNaN(value) || y == null || isNaN(y)) {
                 // Remove the dom node if we can't actually render a path.
-                this.remove();
+                this.parentNode.removeChild(this);
                 return null;
             }
             return LABKEY.vis.makeLine(x - 6, y, x + 6, y);
@@ -632,7 +632,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             error = geom.errorAes.getValue(d);
             if(x == null || isNaN(x) || value == null || isNaN(value) || error == null || isNaN(error)) {
                 // Remove the dom node if we can't actually render a path.
-                this.remove();
+                this.parentNode.removeChild(this);
                 return null;
             }
             return LABKEY.vis.makeLine(x, -geom.yScale.scale(value + error), x, -geom.yScale.scale(value - error));
