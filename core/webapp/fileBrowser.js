@@ -2765,7 +2765,7 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
     // handler for a file upload complete event
     uploadSuccess : function(f, action)
     {
-        var txt = (action.response.responseText || "").trimLeft();
+        var txt = (action.response.responseText || "").trim();
         var json = {success : true};
         if (txt && txt.charAt(0) == '{' )
             json = Ext.util.JSON.decode(txt);
