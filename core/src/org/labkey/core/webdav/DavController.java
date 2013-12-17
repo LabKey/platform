@@ -3091,7 +3091,7 @@ public class DavController extends SpringActionController
                     {
                         if (null != tmp)
                             tmp.renameTo(destFile);
-                        throw new ConfigurationException("Could not move source:" + src.getPath());
+                        throw new ConfigurationException("Could not move source:" + src.getPath(), ex);
                     }
                 }
                 finally
