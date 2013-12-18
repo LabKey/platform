@@ -34,6 +34,8 @@ public interface Visit extends StudyEntity
 
     double getSequenceNumMax();
 
+    double getSequenceNumTarget();
+
     Integer getCohortId();
 
     Integer getId();

@@ -47,6 +47,10 @@ public interface Study extends StudyEntity
 
     List<? extends Cohort> getCohorts(User user);
 
+    List<? extends AssaySpecimenConfig> getAssaySpecimenConfigs();
+
+    List<? extends Visit> getVisitsForAssaySchedule();
+
     ParticipantCategory[] getParticipantCategories(User user);
 
     boolean isAdvancedCohorts();

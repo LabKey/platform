@@ -43,4 +43,12 @@ public interface Location extends StudyEntity
     String getDisplayName();
 
     String getTypeString();
+
+    String getDescription();
+
+    String getStreetAddress();
+    String getCity();
+    String getGoverningDistrict();
+    String getCountry();
+    String getPostalArea();
 }

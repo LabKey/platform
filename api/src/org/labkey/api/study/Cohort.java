@@ -26,4 +26,8 @@ public interface Cohort extends StudyEntity
     boolean isInUse();
     boolean isEnrolled();
     void    setEnrolled(boolean enrolled);
+    Integer getSubjectCount();
+    void    setSubjectCount(Integer subjectCount);
+    String  getDescription();
+    void    setDescription(String description);
 }
