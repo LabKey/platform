@@ -409,6 +409,7 @@ public class StudyUpgradeCode implements UpgradeCode
         }
     }
 
+
     public void migrateSpecimenTables(final ModuleContext context)
     {
         if (context.isNewInstall())
@@ -426,10 +427,6 @@ public class StudyUpgradeCode implements UpgradeCode
                 migrateSpecimenTables(study);
             }
             tx.commit();
-        }
-        catch (Exception e)
-        {
-            _log.error("An error occurred migrating specimen data.", e);
         }
     }
 
