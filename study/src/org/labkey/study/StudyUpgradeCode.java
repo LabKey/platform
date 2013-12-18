@@ -489,6 +489,16 @@ public class StudyUpgradeCode implements UpgradeCode
         {
             f.append("SET IDENTITY_INSERT ").append(to.getSelectName()).append(" OFF;");
         }
+        else if (to.getSqlDialect().isPostgreSQL() && hasIdentity)
+        {
+            SQLFragment resetSeq = new SQLFragment();
+            resetSeq.append("SELECT setval(\n");
+            resetSeq.append("  pg_get_serial_sequence('").append(to.getSelectName()).append("', 'rowid'),\n");
+            resetSeq.append("  (SELECT MAX(rowid) FROM ").append(to.getSelectName()).append(") + 1");
+            resetSeq.append(");\n");
+            f.append(resetSeq);
+        }
+
         new SqlExecutor(StudySchema.getInstance().getScope()).execute(f);
     }
 }
