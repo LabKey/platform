@@ -867,19 +867,24 @@ validNum:       {
         }
     }
 
+
     private static long parseYYYYMMDD(String s) throws ParseException
     {
-        DateFormat format = new SimpleDateFormat("yyyyMMdd");
-        format.setLenient(false);
-        Date date = format.parse(s);
-        Calendar cal = new GregorianCalendar();
-        cal.setTime(date);
-        int year = cal.get(Calendar.YEAR);
-        if (year >= 1800 && year <= 2200)
+        if (s.length() == 8)
         {
-            return date.getTime();
+            DateFormat format = new SimpleDateFormat("yyyyMMdd");
+            format.setLenient(false);
+            Date date = format.parse(s);
+            Calendar cal = new GregorianCalendar();
+            cal.setTime(date);
+            int year = cal.get(Calendar.YEAR);
+            if (year >= 1800 && year <= 2200)
+            {
+                return date.getTime();
+            }
+            throw new ParseException("Year out of range from 1800-2200: " + year, 0);
         }
-        throw new ParseException("Year out of range from 1800-2200: " + year, 0);
+        throw new ParseException("Not a date: " + s, 0);
     }
 
 
@@ -1413,6 +1418,8 @@ Parse:
             assertEquals(datetimeLocal, parseDateTimeUS("2001-02-03T04:05:06", DateTimeOption.DateTime, true));
             assertEquals(datetimeUTC, parseDateTimeUS("2001-02-03 04:05:06Z", DateTimeOption.DateTime, true));
             assertEquals(datetimeUTC, parseDateTimeUS("2001-02-03T04:05:06Z", DateTimeOption.DateTime, true));
+
+            assertIllegalDateTime("20131113_Guide Set plate 1.xls");
         }
 
 
