@@ -343,7 +343,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
                 participantId = participantId.trim();
 
             Container rowLevelTargetStudy = null;
-            if (targetStudies != null && targetStudies.length > index)
+            if (targetStudies != null && targetStudies.length > index && null != targetStudies[index])
             {
                 if (resolvedStudies.containsKey(targetStudies[index]))
                     rowLevelTargetStudy = resolvedStudies.get(targetStudies[index]);

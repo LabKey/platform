@@ -26,7 +26,6 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Collections;
 import java.io.File;
-import java.sql.SQLException;
 
 /**
  * User: migra
@@ -187,6 +186,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
                     this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
                 break;
             case DOUBLE:
+            case FLOAT:
                 if (value instanceof Double)
                     this.floatValue = (Double) value;
                 else if (null != value)
@@ -209,6 +209,20 @@ public class ObjectProperty extends OntologyManager.PropertyRow
                 else if (null != value)
                     this.stringValue = value.toString();
 
+                break;
+            case BIGINT:
+                if (value instanceof Long)
+                    this.floatValue = ((Long) value).doubleValue();
+                else if (null != value)
+                    this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
+                break;
+            case DECIMAL:
+                if (null != value)
+                    this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
+                break;
+            case BINARY:
+                if (null != value)
+                    this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown property type: " + propertyType);

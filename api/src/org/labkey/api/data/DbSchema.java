@@ -551,6 +551,10 @@ public class DbSchema
         return "DbSchema " + getDisplayName();
     }
 
+    public Map<String, TableType> getTableXmlMap()
+    {
+        return _tableXmlMap;
+    }
 
     @TestTimeout(120)
     public static class TestCase extends Assert

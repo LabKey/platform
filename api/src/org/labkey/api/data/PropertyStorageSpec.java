@@ -18,6 +18,9 @@ package org.labkey.api.data;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * User: newton
  * Date: Aug 24, 2010
@@ -30,6 +33,90 @@ import org.labkey.api.exp.PropertyDescriptor;
  */
 public class PropertyStorageSpec
 {
+    public static final int DEFAULT_SIZE = 4000;
+
+    public String getDescription()
+    {
+        return description;
+    }
+
+    public void setDescription(String description)
+    {
+        this.description = description;
+    }
+
+    public String getImportAliases()
+    {
+        return importAliases;
+    }
+
+    public void setImportAliases(String importAliases)
+    {
+        this.importAliases = importAliases;
+    }
+
+    public static class ForeignKey
+    {
+        private String _columnName;
+        private String _schemaName;     // Schema that provides table, even if table is provisioned to live elsewhere
+        private String _tableName;
+        private String _foreignColumnName;
+        private String _domainURI;      // URI of the domain the FK references, if it's provisioned
+        private boolean _isProvisioned;
+        private TableInfo _tableInfoProvisioned = null;
+
+        public ForeignKey(String columnName, String schemaName, String tableName, String foreignColumnName,
+                          String domainURI, boolean isProvisioned)
+        {
+            _columnName = columnName;
+            _schemaName = schemaName;
+            _tableName = tableName;
+            _foreignColumnName = foreignColumnName;
+            _domainURI = domainURI;
+            _isProvisioned = isProvisioned;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public String getTableName()
+        {
+            return _tableName;
+        }
+
+        public String getColumnName()
+        {
+            return _columnName;
+        }
+
+        public String getForeignColumnName()
+        {
+            return _foreignColumnName;
+        }
+
+        public boolean isProvisioned()
+        {
+            return _isProvisioned;
+        }
+
+        public TableInfo getTableInfoProvisioned()
+        {
+            return _tableInfoProvisioned;
+        }
+
+        public void setTableInfoProvisioned(TableInfo tableInfoProvisioned)
+        {
+            _tableInfoProvisioned = tableInfoProvisioned;
+        }
+
+        public String getDomainURI()
+        {
+            return _domainURI;
+        }
+    }
+
     String name;
     JdbcType jdbcType;
     boolean primaryKey = false;
@@ -37,15 +124,21 @@ public class PropertyStorageSpec
     boolean autoIncrement = false;
     boolean isMvEnabled = false;
     boolean entityId = false;
-    Integer size = 4000;
+    private String description;
+    private String importAliases;
+    Integer size = DEFAULT_SIZE;
+    private Object defaultValue = null;
 
     public PropertyStorageSpec(PropertyDescriptor propertyDescriptor)
     {
         setName(propertyDescriptor.getName());
         setJdbcType(propertyDescriptor.getJdbcType());
+        _setSize(propertyDescriptor.getScale(), propertyDescriptor.getJdbcType());
         setNullable(propertyDescriptor.isNullable());
         setAutoIncrement(propertyDescriptor.isAutoIncrement());
         setMvEnabled(propertyDescriptor.isMvEnabled());
+        setDescription(propertyDescriptor.getDescription());
+        setImportAliases(propertyDescriptor.getImportAliases());
     }
 
     /**
@@ -53,23 +146,57 @@ public class PropertyStorageSpec
      */
     public PropertyStorageSpec(String name, JdbcType jdbcType)
     {
-        this.name = name;
-        this.jdbcType = jdbcType;
+        this(name, jdbcType, DEFAULT_SIZE);
     }
 
     public PropertyStorageSpec(String name, JdbcType jdbcType, int size)
     {
-        this.jdbcType = jdbcType;
-        this.name = name;
-        this.size = size;
+        this(name, jdbcType, size, Special.None);
+    }
+
+    public PropertyStorageSpec(String name, JdbcType jdbcType, int size, String description)
+    {
+        this(name, jdbcType, size, Special.None, true, false, null, description, null);
+    }
+
+    public PropertyStorageSpec(String name, JdbcType jdbcType, int size, String description, String alias)
+    {
+        this(name, jdbcType, size, Special.None, true, false, null, description, alias);
+    }
+
+    public PropertyStorageSpec(String name, JdbcType jdbcType, int size, boolean nullable, Object defaultValue)
+    {
+        this(name, jdbcType, size, Special.None, nullable, false, defaultValue);
     }
 
     public PropertyStorageSpec(String name, JdbcType jdbcType, int size, Special specialness)
     {
+        this(name, jdbcType, size, specialness, true, false, null);
+    }
+
+    public PropertyStorageSpec(String name, JdbcType jdbcType, int size, Special specialness, boolean nullable,
+                               boolean autoIncrement, Object defaultValue)
+    {
+        this(name, jdbcType, size, specialness, nullable, autoIncrement, defaultValue, null, null);
+    }
+
+    public PropertyStorageSpec(String name, JdbcType jdbcType, int size, Special specialness, boolean nullable,
+                               boolean autoIncrement, Object defaultValue, String description, String alias)
+    {
         this.name = name;
         this.jdbcType = jdbcType;
-        this.primaryKey = specialness == Special.PrimaryKey;
-        this.size = size;
+        this.primaryKey = (specialness == Special.PrimaryKey);
+        _setSize(size, jdbcType);
+        this.nullable = nullable;
+        this.autoIncrement = autoIncrement;
+        this.defaultValue = defaultValue;
+        this.description = description;
+        if (null != alias)
+        {
+            Set<String> aliases = new HashSet<>();
+            aliases.add(alias);
+            setImportAliases(ColumnRenderProperties.convertToString(aliases));
+        }
     }
 
     public String getName()
@@ -166,9 +293,21 @@ public class PropertyStorageSpec
 
     public PropertyStorageSpec setSize(int size)
     {
-        this.size = size;
+        _setSize(size, jdbcType);
         return this;
     }
+
+
+    private void _setSize(int size, JdbcType type)
+    {
+        if (type == JdbcType.VARCHAR && size == 0)
+        {
+            // ignore for now, should probably throw IllegalState
+            return;
+        }
+        this.size = size;
+    }
+
 
     public boolean isMvEnabled()
     {
@@ -191,6 +330,16 @@ public class PropertyStorageSpec
         return rootName + "_" + MvColumn.MV_INDICATOR_SUFFIX;
     }
 
+    public Object getDefaultValue()
+    {
+        return defaultValue;
+    }
+
+    public void setDefaultValue(Object defaultValue)
+    {
+        this.defaultValue = defaultValue;
+    }
+
     public static class Index
     {
         final public String[] columnNames;
@@ -206,6 +355,7 @@ public class PropertyStorageSpec
 
     public enum Special
     {
+        None,
         PrimaryKey
     }
 

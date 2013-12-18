@@ -103,6 +103,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
         setMeasure(col.isMeasure());
         setLabel(col.getLabel());
         setFormat(col.getFormat());
+        setScale(col.getScale());
     }
 
     public PropertyDescriptor(String propertyURI, String rangeURI, String name, Container container)
@@ -118,6 +119,8 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
         this.name = name;
         this.label = caption;
         setContainer(container);
+        if (PropertyType.STRING.getTypeUri().equals(rangeURI))
+            setScale(PropertyStorageSpec.DEFAULT_SIZE);       // Make sure to det default scale
     }
 
     public int getPropertyId()
@@ -315,7 +318,22 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
     {
         return getPropertyType().getJdbcType();
     }
-    
+
+    public void setJdbcType(JdbcType jdbcType, Integer size)
+    {
+        String rangeUri;
+        if (jdbcType.isText())
+        {
+            rangeUri = PropertyType.STRING.getTypeUri();
+        }
+        else
+        {
+            rangeUri = PropertyType.getFromJdbcType(jdbcType).getTypeUri();
+        }
+        setRangeURI(rangeUri);
+        setScale(size);
+    }
+
     public boolean isMvEnabled()
     {
         return mvEnabled;

@@ -124,7 +124,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private ForeignKey fk = null;
     private String defaultValue = null;
     private String jdbcDefaultValue = null;  // TODO: Merge with defaultValue, see #17646
-    private int scale = 0;
     private boolean isAutoIncrement = false;
     private boolean isKeyField = false;
     private boolean isReadOnly = false;
@@ -232,7 +231,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         checkLocked();
         // Disallow changing the name completely -- fixing up the casing is allowed.
-        assert !_lockName || name.equalsIgnoreCase(this.name);
+//        assert !_lockName || name.equalsIgnoreCase(this.name);
         this.fieldKey = new FieldKey(null, name);
         this.name = null;
     }
@@ -676,11 +675,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         checkLocked();
         displayField = field;
-    }
-
-    public int getScale()
-    {
-        return scale;
     }
 
     public void setWidth(String width)
@@ -1749,7 +1743,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public void setScale(int scale)
     {
         checkLocked();
-        this.scale = scale;
+        super.setScale(scale);
     }
 
 

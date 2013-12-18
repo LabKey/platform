@@ -12,13 +12,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */ 
+ */
 
 package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -55,6 +56,7 @@ public interface Domain extends IPropertyType
 
     DomainProperty addPropertyOfPropertyDescriptor(PropertyDescriptor pd);
     DomainProperty addProperty();
+    DomainProperty addProperty(PropertyStorageSpec spec);
 
     List<ColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, Container container, User user);
 
@@ -73,4 +75,10 @@ public interface Domain extends IPropertyType
     @Nullable   // null if not provisioned
     String getStorageTableName();
     void setEnforceStorageProperties(boolean enforceStorageProperties);
+
+    /**
+     * To generate foreign keys in a provision table, we need container-specific info
+     */
+    void setPropertyForeignKeys(Set<PropertyStorageSpec.ForeignKey> foreignKeys);
+    Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys();
 }

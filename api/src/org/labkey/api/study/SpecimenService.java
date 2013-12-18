@@ -57,17 +57,17 @@ public class SpecimenService
     public interface Service
     {
         /** Does a search for matching GlobalUniqueIds  */
-        ParticipantVisit getSampleInfo(Container studyContainer, String globalUniqueId) throws SQLException;
+        ParticipantVisit getSampleInfo(Container studyContainer, User user, String globalUniqueId) throws SQLException;
 
-        Set<ParticipantVisit> getSampleInfo(Container studyContainer, String participantId, Date date) throws SQLException;
+        Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Date date) throws SQLException;
 
-        Set<ParticipantVisit> getSampleInfo(Container studyContainer, String participantId, Double visit) throws SQLException;
+        Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Double visit) throws SQLException;
 
         String getCompletionURLBase(Container studyContainer, CompletionType type);
 
-        Set<Pair<String, Date>> getSampleInfo(Container studyContainer, boolean truncateTime) throws SQLException;
+        Set<Pair<String, Date>> getSampleInfo(Container studyContainer, User user, boolean truncateTime) throws SQLException;
 
-        Set<Pair<String, Double>> getSampleInfo(Container studyContainer) throws SQLException;
+        Set<Pair<String, Double>> getSampleInfo(Container studyContainer, User user) throws SQLException;
 
         Lsid getSpecimenMaterialLsid(Container studyContainer, String id);
 

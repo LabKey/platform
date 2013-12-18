@@ -18,6 +18,7 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,6 +35,7 @@ public abstract class AbstractParticipantVisitResolver implements ParticipantVis
 {
     private Container _runContainer;
     private Container _targetStudyContainer;
+    private User _user;
     private Map<ParticipantVisit, ParticipantVisit> _cache = new HashMap<>();
 
     /**
@@ -41,15 +43,21 @@ public abstract class AbstractParticipantVisitResolver implements ParticipantVis
      * @param runContainer The Container containing the assay run data.
      * @param targetStudyContainer The TargetStudy Container discovered in the run or batch domain.
      */
-    public AbstractParticipantVisitResolver(Container runContainer, @Nullable Container targetStudyContainer)
+    public AbstractParticipantVisitResolver(Container runContainer, @Nullable Container targetStudyContainer, User user)
     {
         _runContainer = runContainer;
         _targetStudyContainer = targetStudyContainer;
+        _user = user;
     }
 
     protected Container getRunContainer()
     {
         return _runContainer;
+    }
+
+    public User getUser()
+    {
+        return _user;
     }
 
     /**

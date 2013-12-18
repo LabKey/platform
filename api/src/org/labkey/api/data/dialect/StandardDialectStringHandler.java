@@ -51,7 +51,7 @@ public class StandardDialectStringHandler implements DialectStringHandler
     // occasionally failed to return. So, we wrote this dumb little parser instead.
     public String substituteParameters(SQLFragment frag)
     {
-        CharSequence sql = frag.getSqlCharSequence();
+        String sql = frag.getSQL();
         StringBuilder ret = new StringBuilder();
         List<Object> params = new LinkedList<>(frag.getParams());
 

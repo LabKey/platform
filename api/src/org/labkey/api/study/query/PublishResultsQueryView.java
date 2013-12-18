@@ -500,7 +500,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             Set<Pair<String, Double>> visits = _validPtidVisits.get(container);
             if (visits == null)
             {
-                visits = SpecimenService.get().getSampleInfo(container);
+                visits = SpecimenService.get().getSampleInfo(container, getUser());
                 _validPtidVisits.put(container, visits);
             }
 
@@ -521,7 +521,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             Set<Pair<String, Date>> dates = _validPtidDates.get(container);
             if (dates == null)
             {
-                dates = SpecimenService.get().getSampleInfo(container, true);
+                dates = SpecimenService.get().getSampleInfo(container, getUser(), true);
                 _validPtidDates.put(container, dates);
             }
 

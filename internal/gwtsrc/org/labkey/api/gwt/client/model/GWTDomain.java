@@ -207,6 +207,9 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         return reservedFieldNames;
     }
 
+    /*
+     *  @param reservedFieldNames can't create new fields with these names
+     */
     public void setReservedFieldNames(Set<String> reservedFieldNames)
     {
         this.reservedFieldNames = reservedFieldNames;

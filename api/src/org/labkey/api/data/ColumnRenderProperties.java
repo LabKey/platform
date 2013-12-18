@@ -46,6 +46,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     protected String format;
     protected String excelFormatString;
     protected String tsvFormatString;
+    protected int scale = 0;
 
     // property descriptors default to nullable, while columninfos do not; PropertyDescriptor overrides this initializer
     // in its constructor:
@@ -97,6 +98,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         to.crosstabColumnMember = crosstabColumnMember;
         to.isProtected = isProtected;
         to.isExcludeFromShifting = isExcludeFromShifting;
+        to.scale = scale;
     }
 
     public Sort.SortDirection getSortDirection()
@@ -630,5 +632,15 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public void setExcludeFromShifting(boolean isExcludeFromShifting)
     {
         this.isExcludeFromShifting = isExcludeFromShifting;
+    }
+
+    public int getScale()
+    {
+        return scale;
+    }
+
+    public void setScale(int scale)
+    {
+        this.scale = scale;
     }
 }

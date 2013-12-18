@@ -19,6 +19,7 @@ package org.labkey.api.study.assay;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenService;
 
@@ -31,9 +32,9 @@ import java.util.Date;
  */
 public class StudyParticipantVisitResolver extends AbstractParticipantVisitResolver
 {
-    public StudyParticipantVisitResolver(Container runContainer, Container targetStudyContainer)
+    public StudyParticipantVisitResolver(Container runContainer, Container targetStudyContainer, User user)
     {
-        super(runContainer, targetStudyContainer);
+        super(runContainer, targetStudyContainer, user);
     }
 
     private ParticipantVisit mergeParticipantVisitInfo(ParticipantVisitImpl originalInfo, ParticipantVisit studyInfo)
@@ -66,7 +67,7 @@ public class StudyParticipantVisitResolver extends AbstractParticipantVisitResol
             {
                 if (specimenID != null)
                 {
-                    return mergeParticipantVisitInfo(originalInfo, SpecimenService.get().getSampleInfo(targetStudyContainer, specimenID));
+                    return mergeParticipantVisitInfo(originalInfo, SpecimenService.get().getSampleInfo(targetStudyContainer, getUser(), specimenID));
                 }
             }
             catch (SQLException e)

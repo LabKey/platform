@@ -26,6 +26,7 @@ import org.labkey.api.reader.ExcelFactory;
 
 import java.io.File;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -42,239 +43,326 @@ import java.util.TimeZone;
 public enum PropertyType
 {
     BOOLEAN("http://www.w3.org/2001/XMLSchema#boolean", "Boolean", 'f', JdbcType.BOOLEAN, 10, null, Cell.CELL_TYPE_BOOLEAN, Boolean.class, Boolean.TYPE)
-    {
-        protected Object convertExcelValue(Cell cell) throws ConversionException
-        {
-            return cell.getBooleanCellValue();
-        }
+            {
+                protected Object convertExcelValue(Cell cell) throws ConversionException
+                {
+                    return cell.getBooleanCellValue();
+                }
 
-        @Override
-        public Object convert(Object value) throws ConversionException
-        {
-            boolean boolValue = false;
-            if (value instanceof Boolean)
-                boolValue = (Boolean)value;
-            else if (null != value && !"".equals(value))
-                boolValue = (Boolean) ConvertUtils.convert(value.toString(), Boolean.class);
-            return boolValue;
-        }
+                @Override
+                public Object convert(Object value) throws ConversionException
+                {
+                    boolean boolValue = false;
+                    if (value instanceof Boolean)
+                        boolValue = (Boolean)value;
+                    else if (null != value && !"".equals(value))
+                        boolValue = (Boolean) ConvertUtils.convert(value.toString(), Boolean.class);
+                    return boolValue;
+                }
 
-        public SimpleTypeNames.Enum getXmlBeanType()
-        {
-            return SimpleTypeNames.BOOLEAN;
-        }
-    },
+                public SimpleTypeNames.Enum getXmlBeanType()
+                {
+                    return SimpleTypeNames.BOOLEAN;
+                }
+            },
     STRING("http://www.w3.org/2001/XMLSchema#string", "String", 's', JdbcType.VARCHAR, 100, null, Cell.CELL_TYPE_STRING, String.class)
-    {
-        protected Object convertExcelValue(Cell cell) throws ConversionException
-        {
-            return cell.getStringCellValue();
-        }
-        @Override
-        public Object convert(Object value) throws ConversionException
-        {
-            if (value instanceof String)
-                return value;
-            else
-                return ConvertUtils.convert(value);
-        }
+            {
+                protected Object convertExcelValue(Cell cell) throws ConversionException
+                {
+                    return cell.getStringCellValue();
+                }
+                @Override
+                public Object convert(Object value) throws ConversionException
+                {
+                    if (value instanceof String)
+                        return value;
+                    else
+                        return ConvertUtils.convert(value);
+                }
 
-        public SimpleTypeNames.Enum getXmlBeanType()
-        {
-            return SimpleTypeNames.STRING;
-        }
-    },
+                public SimpleTypeNames.Enum getXmlBeanType()
+                {
+                    return SimpleTypeNames.STRING;
+                }
+            },
     MULTI_LINE("http://www.w3.org/2001/XMLSchema#multiLine", "MultiLine", 's', JdbcType.VARCHAR, 1000, "textarea", Cell.CELL_TYPE_STRING, String.class)
-    {
-        protected Object convertExcelValue(Cell cell) throws ConversionException
-        {
-            return cell.getStringCellValue();
-        }
-        @Override
-        public Object convert(Object value) throws ConversionException
-        {
-            if (value instanceof String)
-                return value;
-            else
-                return ConvertUtils.convert(value);
-        }
+            {
+                protected Object convertExcelValue(Cell cell) throws ConversionException
+                {
+                    return cell.getStringCellValue();
+                }
+                @Override
+                public Object convert(Object value) throws ConversionException
+                {
+                    if (value instanceof String)
+                        return value;
+                    else
+                        return ConvertUtils.convert(value);
+                }
 
-        public SimpleTypeNames.Enum getXmlBeanType()
-        {
-            return SimpleTypeNames.STRING;
-        }
-    },
+                public SimpleTypeNames.Enum getXmlBeanType()
+                {
+                    return SimpleTypeNames.STRING;
+                }
+            },
     RESOURCE("http://www.w3.org/2000/01/rdf-schema#Resource", "PropertyURI", 's', JdbcType.VARCHAR, 100, null, Cell.CELL_TYPE_STRING, Identifiable.class)
-    {
-        protected Object convertExcelValue(Cell cell) throws ConversionException
-        {
-            return cell.getStringCellValue();
-        }
-        @Override
-        public Object convert(Object value) throws ConversionException
-        {
-            if (null == value)
-                return null;
-            if (value instanceof Identifiable)
-                return ((Identifiable) value).getLSID();
-            else
-                return value.toString();
-        }
+            {
+                protected Object convertExcelValue(Cell cell) throws ConversionException
+                {
+                    return cell.getStringCellValue();
+                }
+                @Override
+                public Object convert(Object value) throws ConversionException
+                {
+                    if (null == value)
+                        return null;
+                    if (value instanceof Identifiable)
+                        return ((Identifiable) value).getLSID();
+                    else
+                        return value.toString();
+                }
 
-        public SimpleTypeNames.Enum getXmlBeanType()
-        {
-            return SimpleTypeNames.STRING;
-        }
-    },
+                public SimpleTypeNames.Enum getXmlBeanType()
+                {
+                    return SimpleTypeNames.STRING;
+                }
+            },
     INTEGER("http://www.w3.org/2001/XMLSchema#int", "Integer", 'f', JdbcType.INTEGER, 10, null, Cell.CELL_TYPE_NUMERIC, Integer.class, Integer.TYPE, Long.class, Long.TYPE)
-    {
-        protected Object convertExcelValue(Cell cell) throws ConversionException
-        {
-            return (int)cell.getNumericCellValue();
-        }
-        @Override
-        public Object convert(Object value) throws ConversionException
-        {
-            if (null == value)
-                return null;
-            if (value instanceof Integer)
-                return value;
-            else
-                return ConvertUtils.convert(value.toString(), Integer.class);
-        }
+            {
+                protected Object convertExcelValue(Cell cell) throws ConversionException
+                {
+                    return (int)cell.getNumericCellValue();
+                }
+                @Override
+                public Object convert(Object value) throws ConversionException
+                {
+                    if (null == value)
+                        return null;
+                    if (value instanceof Integer)
+                        return value;
+                    else
+                        return ConvertUtils.convert(value.toString(), Integer.class);
+                }
 
-        public SimpleTypeNames.Enum getXmlBeanType()
-        {
-            return SimpleTypeNames.INTEGER;
-        }
-    },
-    /** Stored as a path to a file on the server's file system */
+                public SimpleTypeNames.Enum getXmlBeanType()
+                {
+                    return SimpleTypeNames.INTEGER;
+                }
+            },
+    BIGINT("http://www.w3.org/2001/XMLSchema#long", "Long", 'f', JdbcType.BIGINT, 10, null, Cell.CELL_TYPE_NUMERIC, Long.class, Long.TYPE)
+            {
+                protected Object convertExcelValue(Cell cell) throws ConversionException
+                {
+                    return (int)cell.getNumericCellValue();
+                }
+                @Override
+                public Object convert(Object value) throws ConversionException
+                {
+                    if (null == value)
+                        return null;
+                    if (value instanceof Long)
+                        return value;
+                    else
+                        return ConvertUtils.convert(value.toString(), Long.class);
+                }
+
+                public SimpleTypeNames.Enum getXmlBeanType()
+                {
+                    throw new UnsupportedOperationException();
+                }
+            },
+    BINARY("http://www.w3.org/2001/XMLSchema#binary", "Binary", 'f', JdbcType.BINARY, 10, null, Cell.CELL_TYPE_NUMERIC, ByteBuffer.class)
+            {
+                protected Object convertExcelValue(Cell cell) throws ConversionException
+                {
+                    return (int)cell.getNumericCellValue();
+                }
+                @Override
+                public Object convert(Object value) throws ConversionException
+                {
+                    if (null == value)
+                        return null;
+                    if (value instanceof ByteBuffer)
+                        return value;
+                    else
+                        return ConvertUtils.convert(value.toString(), ByteBuffer.class);
+                }
+
+                public SimpleTypeNames.Enum getXmlBeanType()
+                {
+                    throw new UnsupportedOperationException();
+                }
+            },    /** Stored as a path to a file on the server's file system */
     FILE_LINK("http://cpas.fhcrc.org/exp/xml#fileLink", "FileLink", 's', JdbcType.VARCHAR, 100, "file", Cell.CELL_TYPE_STRING, File.class)
-    {
-        protected Object convertExcelValue(Cell cell) throws ConversionException
-        {
-            return cell.getStringCellValue();
-        }
-        @Override
-        public Object convert(Object value) throws ConversionException
-        {
-            if (null == value)
-                return null;
-            if (value instanceof File)
-                return ((File) value).getPath();
-            else
-                return String.valueOf(value);
-        }
+            {
+                protected Object convertExcelValue(Cell cell) throws ConversionException
+                {
+                    return cell.getStringCellValue();
+                }
+                @Override
+                public Object convert(Object value) throws ConversionException
+                {
+                    if (null == value)
+                        return null;
+                    if (value instanceof File)
+                        return ((File) value).getPath();
+                    else
+                        return String.valueOf(value);
+                }
 
-        public SimpleTypeNames.Enum getXmlBeanType()
-        {
-            return SimpleTypeNames.FILE_LINK;
-        }
-    },
+                public SimpleTypeNames.Enum getXmlBeanType()
+                {
+                    return SimpleTypeNames.FILE_LINK;
+                }
+            },
     /** Stored in the database as a BLOB using AttachmentService */
     ATTACHMENT("http://www.labkey.org/exp/xml#attachment", "Attachment", 's', JdbcType.VARCHAR, 100, "file", Cell.CELL_TYPE_STRING, File.class)
-    {
-        protected Object convertExcelValue(Cell cell) throws ConversionException
-        {
-            return cell.getStringCellValue();
-        }
-        @Override
-        public Object convert(Object value) throws ConversionException
-        {
-            if (null == value)
-                return null;
-            if (value instanceof File)
-                return ((File) value).getPath();
-            else
-                return String.valueOf(value);
-        }
-
-        public SimpleTypeNames.Enum getXmlBeanType()
-        {
-            throw new UnsupportedOperationException();
-        }
-    },
-    DATE_TIME("http://www.w3.org/2001/XMLSchema#dateTime", "DateTime", 'd', JdbcType.TIMESTAMP, 100, null, Cell.CELL_TYPE_NUMERIC, Date.class)
-    {
-        protected Object convertExcelValue(Cell cell) throws ConversionException
-        {
-            Date date = cell.getDateCellValue();
-            if (date != null)
             {
-                DateFormat format = new SimpleDateFormat("MM/dd/yyyy GG HH:mm:ss.SSS");
-                format.setTimeZone(TimeZone.getDefault());
-                String s = format.format(date);
-                try
+                protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
-                    date = format.parse(s);
+                    return cell.getStringCellValue();
                 }
-                catch (ParseException e)
+                @Override
+                public Object convert(Object value) throws ConversionException
                 {
-                    throw new ConversionException(e);
+                    if (null == value)
+                        return null;
+                    if (value instanceof File)
+                        return ((File) value).getPath();
+                    else
+                        return String.valueOf(value);
                 }
+
+                public SimpleTypeNames.Enum getXmlBeanType()
+                {
+                    throw new UnsupportedOperationException();
+                }
+            },
+    DATE_TIME("http://www.w3.org/2001/XMLSchema#dateTime", "DateTime", 'd', JdbcType.TIMESTAMP, 100, null, Cell.CELL_TYPE_NUMERIC, Date.class)
+            {
+                protected Object convertExcelValue(Cell cell) throws ConversionException
+                {
+                    Date date = cell.getDateCellValue();
+                    if (date != null)
+                    {
+                        DateFormat format = new SimpleDateFormat("MM/dd/yyyy GG HH:mm:ss.SSS");
+                        format.setTimeZone(TimeZone.getDefault());
+                        String s = format.format(date);
+                        try
+                        {
+                            date = format.parse(s);
+                        }
+                        catch (ParseException e)
+                        {
+                            throw new ConversionException(e);
+                        }
 //                int offset = TimeZone.getDefault().getOffset(date.getTime());
 //                date.setTime(date.getTime() - offset);
-            }
-            return date;
-        }
-        @Override
-        public Object convert(Object value) throws ConversionException
-        {
-            if (null == value)
-                return null;
-            if (value instanceof Date)
-                return value;
-            else
-                return ConvertUtils.convert(value.toString(), Date.class);
-        }
+                    }
+                    return date;
+                }
+                @Override
+                public Object convert(Object value) throws ConversionException
+                {
+                    if (null == value)
+                        return null;
+                    if (value instanceof Date)
+                        return value;
+                    else
+                        return ConvertUtils.convert(value.toString(), Date.class);
+                }
 
-        public SimpleTypeNames.Enum getXmlBeanType()
-        {
-            return SimpleTypeNames.DATE_TIME;
-        }
-    },
+                public SimpleTypeNames.Enum getXmlBeanType()
+                {
+                    return SimpleTypeNames.DATE_TIME;
+                }
+            },
     DOUBLE("http://www.w3.org/2001/XMLSchema#double", "Double", 'f', JdbcType.DOUBLE, 20, null, Cell.CELL_TYPE_NUMERIC, Double.class, Double.TYPE, Float.class, Float.TYPE)
-    {
-        protected Object convertExcelValue(Cell cell) throws ConversionException
-        {
-            return cell.getNumericCellValue();
-        }
-        @Override
-        public Object convert(Object value) throws ConversionException
-        {
-            if (null == value)
-                return null;
-            if (value instanceof Double)
-                return value;
-            else
-                return ConvertUtils.convert(String.valueOf(value), Double.class);
-        }
+            {
+                protected Object convertExcelValue(Cell cell) throws ConversionException
+                {
+                    return cell.getNumericCellValue();
+                }
+                @Override
+                public Object convert(Object value) throws ConversionException
+                {
+                    if (null == value)
+                        return null;
+                    if (value instanceof Double)
+                        return value;
+                    else
+                        return ConvertUtils.convert(String.valueOf(value), Double.class);
+                }
 
-        public SimpleTypeNames.Enum getXmlBeanType()
-        {
-            return SimpleTypeNames.DOUBLE;
-        }
-    },
+                public SimpleTypeNames.Enum getXmlBeanType()
+                {
+                    return SimpleTypeNames.DOUBLE;
+                }
+            },
+    FLOAT("http://www.w3.org/2001/XMLSchema#float", "Float", 'f', JdbcType.REAL, 20, null, Cell.CELL_TYPE_NUMERIC, Float.class, Float.TYPE)
+            {
+                protected Object convertExcelValue(Cell cell) throws ConversionException
+                {
+                    return cell.getNumericCellValue();
+                }
+                @Override
+                public Object convert(Object value) throws ConversionException
+                {
+                    if (null == value)
+                        return null;
+                    if (value instanceof Float)
+                        return value;
+                    else
+                        return ConvertUtils.convert(String.valueOf(value), Float.class);
+                }
+
+                public SimpleTypeNames.Enum getXmlBeanType()
+                {
+                    throw new UnsupportedOperationException();
+                }
+            },
+    DECIMAL("http://www.w3.org/2001/XMLSchema#decimal", "Decimal", 'f', JdbcType.DECIMAL, 20, null, Cell.CELL_TYPE_NUMERIC, BigDecimal.class)
+            {
+                protected Object convertExcelValue(Cell cell) throws ConversionException
+                {
+                    return cell.getNumericCellValue();
+                }
+                @Override
+                public Object convert(Object value) throws ConversionException
+                {
+                    if (null == value)
+                        return null;
+                    if (value instanceof BigDecimal)
+                        return value;
+                    else
+                        return ConvertUtils.convert(String.valueOf(value), BigDecimal.class);
+                }
+
+                public SimpleTypeNames.Enum getXmlBeanType()
+                {
+                    throw new UnsupportedOperationException();
+                }
+            },
     XML_TEXT("http://cpas.fhcrc.org/exp/xml#text-xml", "XmlText", 's', JdbcType.LONGVARCHAR, 100, null, Cell.CELL_TYPE_STRING, null)
-    {
-        protected Object convertExcelValue(Cell cell) throws ConversionException
-        {
-            return cell.getStringCellValue();
-        }
-        @Override
-        public Object convert(Object value) throws ConversionException
-        {
-            if (value instanceof String)
-                return value;
-            else
-                return ConvertUtils.convert(value);
-        }
+            {
+                protected Object convertExcelValue(Cell cell) throws ConversionException
+                {
+                    return cell.getStringCellValue();
+                }
+                @Override
+                public Object convert(Object value) throws ConversionException
+                {
+                    if (value instanceof String)
+                        return value;
+                    else
+                        return ConvertUtils.convert(value);
+                }
 
-        public SimpleTypeNames.Enum getXmlBeanType()
-        {
-            throw new UnsupportedOperationException();
-        }
-    };
+                public SimpleTypeNames.Enum getXmlBeanType()
+                {
+                    throw new UnsupportedOperationException();
+                }
+            };
 
     private String typeURI;
     private String xarName;
@@ -329,7 +417,7 @@ public enum PropertyType
     {
         return jdbcType.sqlType;
     }
-    
+
     public JdbcType getJdbcType()
     {
         return jdbcType;
@@ -440,6 +528,18 @@ public enum PropertyType
             }
         }
         throw new IllegalArgumentException("No such class mapping: " + clazz.getName());
+    }
+
+    public static PropertyType getFromJdbcType(JdbcType jdbcType)
+    {
+        for (PropertyType t : values())
+        {
+            if (t.jdbcType == null)
+                continue;
+            if (t.jdbcType.equals(jdbcType))
+                return t;
+        }
+        throw new IllegalArgumentException("No such JdbcType mapping: " + (null != jdbcType ? jdbcType.getClass().toString() : "null"));
     }
 
     public abstract SimpleTypeNames.Enum getXmlBeanType();

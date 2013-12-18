@@ -325,4 +325,18 @@ public abstract class AbstractAuditDomainKind extends DomainKind
 
         return tables;
     }
+
+    @Nullable
+    @Override
+    public String getMetaDataSchemaName()
+    {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public String getMetaDataTableName()
+    {
+        return null;
+    }
 }

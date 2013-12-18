@@ -19,6 +19,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.data.PropertyStorageSpec.Index;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -35,6 +36,7 @@ public class TableChange
     final String tableName;
     Collection<PropertyStorageSpec> columns = new LinkedHashSet<>();
     Collection<Index> indices = new LinkedHashSet<>();
+    Collection<PropertyStorageSpec.ForeignKey> foreignKeys = Collections.emptySet();
     Map<String, String> columnRenames = new LinkedHashMap<>();
     Map<Index, Index> indexRenames = new LinkedHashMap<>();
 
@@ -126,6 +128,16 @@ public class TableChange
     public void setIndexedColumns(Collection<Index> indices)
     {
         this.indices = indices;
+    }
+
+    public Collection<PropertyStorageSpec.ForeignKey> getForeignKeys()
+    {
+        return foreignKeys;
+    }
+
+    public void setForeignKeys(Collection<PropertyStorageSpec.ForeignKey> foreignKeys)
+    {
+        this.foreignKeys = foreignKeys;
     }
 
     public enum ChangeType

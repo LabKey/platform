@@ -502,7 +502,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (isShownInUpdateView() != that.isShownInUpdateView()) return false;
         if (isMeasure() != that.isMeasure()) return false;
         if (isDimension() != that.isDimension()) return false;
-        if (getFacetingBehaviorType() != that.getFacetingBehaviorType()) return false;
+        if (!getFacetingBehaviorType().equals(that.getFacetingBehaviorType())) return false;
         if (isProtected() != that.isProtected()) return false;
         if (isExcludeFromShifting() != that.isExcludeFromShifting()) return false;
 

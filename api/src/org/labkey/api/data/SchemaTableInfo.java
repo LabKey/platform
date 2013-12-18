@@ -117,6 +117,11 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, String metaDataName, String selectName)
     {
+        this(parentSchema, tableType, tableName, metaDataName, selectName, null);
+    }
+
+    public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, String metaDataName, String selectName, @Nullable String title)
+    {
         _parentSchema = parentSchema;
         _metaDataSchemaName = parentSchema.getName();
         _name = tableName;
@@ -124,6 +129,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         _selectName = new SQLFragment(selectName);
         _tableType = tableType;
         _notificationKey = new Path(parentSchema.getClass().getName(), parentSchema.getName(), getClass().getName(), getName());
+        _title = title;
     }
 
 
@@ -504,11 +510,16 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
 
-    void loadTablePropertiesFromXml(TableType xmlTable)
+    public void loadTablePropertiesFromXml(TableType xmlTable)
+    {
+        loadTablePropertiesFromXml(xmlTable, false);
+    }
+    public void loadTablePropertiesFromXml(TableType xmlTable, boolean dontSetName)
     {
         checkLocked();
         //Override with the table name from the schema so casing is nice...
-        _name = xmlTable.getTableName();
+        if (!dontSetName)
+            _name = xmlTable.getTableName();
         _description = xmlTable.getDescription();
         _hidden = xmlTable.getHidden();
         _title = xmlTable.getTableTitle();

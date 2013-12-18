@@ -27,6 +27,7 @@ import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.Role;
@@ -171,6 +172,9 @@ public class StudyService
         DataIteratorBuilder wrapSampleMindedTransform(DataIteratorBuilder in, DataIteratorContext context, Study study, TableInfo target);
 
         ColumnInfo createAlternateIdColumn(TableInfo ti, ColumnInfo column, Container c);
+
+        TableInfo getSpecimenTableUnion(QuerySchema from, List<Container> containers);
+        TableInfo getVialTableUnion(QuerySchema from, List<Container> containers);
     }
 
     public static void register(Service serviceImpl)

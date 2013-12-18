@@ -37,7 +37,7 @@ public class StudyParticipantVisitResolverType implements ParticipantVisitResolv
 {
     public ParticipantVisitResolver createResolver(ExpRun run, Container targetStudyContainer, User user)
     {
-        return new StudyParticipantVisitResolver(run.getContainer(), targetStudyContainer);
+        return new StudyParticipantVisitResolver(run.getContainer(), targetStudyContainer, user);
     }
 
 
@@ -48,7 +48,7 @@ public class StudyParticipantVisitResolverType implements ParticipantVisitResolv
                                                    Container runContainer,
                                                    Container targetStudyContainer, User user) throws IOException, ExperimentException
     {
-        return new StudyParticipantVisitResolver(runContainer, targetStudyContainer);
+        return new StudyParticipantVisitResolver(runContainer, targetStudyContainer, user);
     }
 
     public String getName()

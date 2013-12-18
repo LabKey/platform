@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.property;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
@@ -195,5 +196,25 @@ public abstract class AbstractDomainKind extends DomainKind
     public PropertyStorageSpec getPropertySpec(PropertyDescriptor pd, Domain domain)
     {
         return new PropertyStorageSpec(pd);
+    }
+
+    @Nullable
+    @Override
+    public String getMetaDataSchemaName()
+    {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public String getMetaDataTableName()
+    {
+        return null;
+    }
+
+    @Override
+    public boolean hasPropertiesIncludeBaseProperties()
+    {
+        return true;
     }
 }

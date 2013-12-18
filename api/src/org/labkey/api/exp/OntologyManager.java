@@ -1396,7 +1396,7 @@ public class OntologyManager
                 "propertyuri, ontologyuri, name, description, rangeuri, concepturi, label, searchterms, semantictype, " +
                 "format, container, project, lookupcontainer, lookupschema, lookupquery, defaultvaluetype, hidden, " +
                 "mvenabled, importaliases, url, shownininsertview, showninupdateview, shownindetailsview, dimension, " +
-                "measure, createdby, created, modifiedby, modified, facetingbehaviortype, protected, excludefromshifting)\n");
+                "measure, scale, createdby, created, modifiedby, modified, facetingbehaviortype, protected, excludefromshifting)\n");
         sql.append("SELECT " +
                 "? as propertyuri, " +
                 "? as ontolotyuri, " +
@@ -1423,6 +1423,7 @@ public class OntologyManager
                 "? as shownindetailsview, " +
                 "? as dimension, " +
                 "? as measure, " +
+                "? as scale, " +
                 "cast(? as int)  as createdby, " +
                 "{fn now()} as created, " +
                 "cast(? as int) as modifiedby, " +
@@ -1457,6 +1458,7 @@ public class OntologyManager
         sql.add(pd.isShownInDetailsView());
         sql.add(pd.isDimension());
         sql.add(pd.isMeasure());
+        sql.add(pd.getScale());
         sql.add(user); // createdby
         // created
         sql.add(user); // modifiedby
@@ -2160,13 +2162,13 @@ public class OntologyManager
 
     static final String parameters = "propertyuri,ontologyuri,name,description,rangeuri,concepturi,label,searchterms," +
             "semantictype,format,container,project,lookupcontainer,lookupschema,lookupquery,defaultvaluetype,hidden," +
-            "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension";
+            "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale";
     static final String[] parametersArray = parameters.split(",");
     static final String insertSql;
     static final String updateSql;
     static
     {
-        insertSql = "INSERT INTO exp.propertydescriptor (" + parameters + ")\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        insertSql = "INSERT INTO exp.propertydescriptor (" + parameters + ")\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         StringBuilder sb = new StringBuilder("UPDATE exp.propertydescriptor SET");
         String comma = " ";
         for (String p : parametersArray)
@@ -2687,6 +2689,7 @@ public class OntologyManager
 
             boolean dimension = m.get("Dimension") != null && ((Boolean)m.get("Dimension")).booleanValue();
             boolean measure = m.get("Measure") != null && ((Boolean)m.get("Measure")).booleanValue();
+            int scale = m.get("Scale") != null ? (Integer)m.get("Scale") : PropertyStorageSpec.DEFAULT_SIZE;
 
             FacetingBehaviorType facetingBehavior = FacetingBehaviorType.AUTOMATIC;
             if (m.get("FacetingBehaviorType") != null)
@@ -2759,6 +2762,7 @@ public class OntologyManager
             pd.setShownInDetailsView(shownInDetailsView);
             pd.setDimension(dimension);
             pd.setMeasure(measure);
+            pd.setScale(scale);
             pd.setFormat(format);
             pd.setMvEnabled(mvEnabled);
             pd.setLookupContainer(lookupContainerId);

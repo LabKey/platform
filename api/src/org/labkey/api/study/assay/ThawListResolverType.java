@@ -92,7 +92,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
             throw new ExperimentException("Could not find a thaw list for run");
         }
 
-        ParticipantVisitResolver childResolver = new StudyParticipantVisitResolver(runContainer, targetStudyContainer);
+        ParticipantVisitResolver childResolver = new StudyParticipantVisitResolver(runContainer, targetStudyContainer, user);
 
         if (lsid.getNamespaceSuffix().startsWith(LIST_NAMESPACE_SUFFIX))
         {

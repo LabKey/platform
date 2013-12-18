@@ -16,6 +16,7 @@
 package org.labkey.api.exp.api;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
@@ -59,6 +60,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.data.xml.TableType;
 import org.springframework.validation.BindException;
 
 import java.sql.Connection;
@@ -122,7 +124,8 @@ public class StorageProvisioner
                 {
                     // apparently this is a case where the domain allows a propertydescriptor to be defined with the same
                     // name as a built-in column. e.g. to allow setting overrides?
-                    log.info("StorageProvisioner ignored property with name of built-in column: " + property.getPropertyURI());
+                    if (!kind.hasPropertiesIncludeBaseProperties())
+                        log.info("StorageProvisioner ignored property with name of built-in column: " + property.getPropertyURI());
                     continue;
                 }
 
@@ -138,6 +141,7 @@ public class StorageProvisioner
             }
 
             change.setIndexedColumns(kind.getPropertyIndices());
+            change.setForeignKeys(domain.getPropertyForeignKeys());
 
             execute(scope, scope.getConnection(), change);
 
@@ -464,8 +468,14 @@ public class StorageProvisioner
      *
      * @param parentSchema Schema to attach table to, should NOT be the physical db schema of the storage provider
      */
-
+    @NotNull
     public static SchemaTableInfo createTableInfo(Domain domain, DbSchema parentSchema)
+    {
+        return createTableInfo(domain, parentSchema, null);
+    }
+
+    @NotNull
+    public static SchemaTableInfo createTableInfo(Domain domain, DbSchema parentSchema, @Nullable String title)
     {
         DomainKind kind = domain.getDomainKind();
         if (null == kind)
@@ -482,8 +492,19 @@ public class StorageProvisioner
         if (null == tableName)
             tableName = _create(scope, kind, domain);
 
-        SchemaTableInfo ti =  new SchemaTableInfo(parentSchema, DatabaseTableType.TABLE, tableName, tableName, schemaName + ".\"" + tableName + "\"");
-        ti.setMetaDataSchemaName(schemaName);
+        SchemaTableInfo ti =  new SchemaTableInfo(parentSchema, DatabaseTableType.TABLE, tableName, tableName, schemaName + ".\"" + tableName + "\"", title);
+        // TODO: could DataSetDefinition use this mecahnism for metadata?
+        if (null != kind.getMetaDataSchemaName())
+        {
+            ti.setMetaDataSchemaName(schemaName);
+            TableType xmlTable = DbSchema.get(kind.getMetaDataSchemaName()).getTableXmlMap().get(kind.getMetaDataTableName());
+            ti.loadTablePropertiesFromXml(xmlTable, true);
+        }
+        else
+        {
+            ti.setMetaDataSchemaName(schemaName);
+
+        }
         fixupProvisionedDomain(ti, kind, domain, tableName);
 
         return ti;
@@ -495,9 +516,12 @@ public class StorageProvisioner
 
         int index = 0;
 
+        // Some domains have property descriptors for base properties
+        Set<String> basePropertyNames = new HashSet<>();
         for (PropertyStorageSpec s : kind.getBaseProperties())
         {
             ColumnInfo c = ti.getColumn(s.getName());
+            basePropertyNames.add(s.getName().toLowerCase());
 
             if (null == c)
             {
@@ -515,6 +539,9 @@ public class StorageProvisioner
 
         for (DomainProperty p : domain.getProperties())
         {
+            if (kind.hasPropertiesIncludeBaseProperties() && basePropertyNames.contains(p.getName().toLowerCase()))
+                continue;
+
             ColumnInfo c = ti.getColumn(p.getName());
 
             if (null == c)
@@ -769,8 +796,20 @@ public class StorageProvisioner
                         domainReport.getSchemaName(), domainReport.getTableName()));
                 continue;
             }
+
+            // Some domains have property descriptors for base properties
+            Set<String> basePropertyNames = new HashSet<>();
+            if (kind.hasPropertiesIncludeBaseProperties())
+            {
+                for (PropertyStorageSpec spec : kind.getBaseProperties())
+                    basePropertyNames.add(spec.getName().toLowerCase());
+            }
+
             for (DomainProperty domainProp : domain.getProperties())
             {
+                if (basePropertyNames.contains(domainProp.getName().toLowerCase()))
+                    continue;
+
                 ProvisioningReport.ColumnStatus status = new ProvisioningReport.ColumnStatus();
                 domainReport.columns.add(status);
                 status.prop = domainProp;

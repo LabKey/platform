@@ -106,6 +106,12 @@ abstract public class DomainKind implements Handler<String>
     abstract public Set<PropertyStorageSpec.Index> getPropertyIndices();
 
     /**
+     * If domain needs metadata, give the metadat schema and table names
+     */
+    abstract public String getMetaDataSchemaName();
+    abstract public String getMetaDataTableName();
+
+    /**
      * Need to be able to tell if a domain has rows.
      * Perhaps DomainKind should have getTableInfo() method.
      */
@@ -121,4 +127,12 @@ abstract public class DomainKind implements Handler<String>
     abstract public Set<String> getNonProvisionedTableNames();
 
     abstract public PropertyStorageSpec getPropertySpec(PropertyDescriptor pd, Domain domain);
+
+    /**
+     * @return true if we created property descriptors for base properties in the domain
+     */
+    public boolean hasPropertiesIncludeBaseProperties()
+    {
+        return false;
+    }
 }

@@ -17,6 +17,8 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.JdbcUtil;
@@ -26,7 +28,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: Matthew
@@ -38,23 +42,25 @@ public class SQLFragment implements Appendable, CharSequence
     String sql;
     StringBuilder sb = null;
     List<Object> params;          // TODO: Should be List<?>
+    Map<String,SQLFragment> commonTableExpressionsMap = null;
+
 
     public SQLFragment()
     {
         sql = "";
     }
 
-
     /**
      *
      * @param sql
      * @param params list may be modified so clone() before passing in if necessary
      */
-    public SQLFragment(CharSequence sql, List<Object> params)      // TODO: Should be List<?>
+    public SQLFragment(CharSequence sql, @Nullable List<Object> params)      // TODO: Should be List<?>
     {
         guard(sql);
         this.sql = sql.toString();
-        this.params = new ArrayList<>(params);
+        if (null != params)
+            this.params = new ArrayList<>(params);
     }
 
 
@@ -68,7 +74,21 @@ public class SQLFragment implements Appendable, CharSequence
 
     public SQLFragment(SQLFragment other)
     {
-        this(other.getSQL(), other.getParams());
+        this(other,false);
+    }
+
+
+    public SQLFragment(SQLFragment other, boolean deep)
+    {
+        this(other.getSqlCharSequence(), other.params);
+        if (null != other.commonTableExpressionsMap && !other.commonTableExpressionsMap.isEmpty())
+        {
+            for (Map.Entry<String,SQLFragment> e : other.commonTableExpressionsMap.entrySet())
+            {
+                SQLFragment cte = deep ? new SQLFragment(e.getValue()) : e.getValue();
+                this.addCommonTableExpression(e.getKey(), cte, true);
+            }
+        }
     }
 
 
@@ -80,18 +100,52 @@ public class SQLFragment implements Appendable, CharSequence
 
     public String getSQL()
     {
-        return null != sb ? sb.toString() : null != sql ? sql : "";
+        if (null == commonTableExpressionsMap || commonTableExpressionsMap.isEmpty())
+            return null != sb ? sb.toString() : null != sql ? sql : "";
+
+        // TODO: support CTE that in turn have CTE
+        StringBuilder ret = new StringBuilder();
+        String comma = "WITH\n\t";
+        for (Map.Entry<String,SQLFragment> e : commonTableExpressionsMap.entrySet())
+        {
+            String name = e.getKey();
+            SQLFragment expr = e.getValue();
+            if (null != expr.commonTableExpressionsMap && !expr.commonTableExpressionsMap.isEmpty())
+                throw new IllegalStateException("nested common table expressions are not supported");
+            ret.append(comma).append(name).append(" AS (").append(expr.getSQL()).append(")");
+            comma = ",\n\t";
+        }
+        ret.append("\n");
+        ret.append(null != sb ? sb.toString() : null != sql ? sql : "");
+        return ret.toString();
     }
 
+
+    // It is a little confusion ghat getString() does not return the same charsequence that this object purports to
+    // represent.  However, this is a good "display value" for this object.
+    // see getSqlCharSequence()
     public String toString()
     {
         return JdbcUtil.format(this);
     }
 
-
     public List<Object> getParams()
     {
-        return params == null ? Collections.emptyList() : params;
+        List<Object> ret;
+
+        if (null == commonTableExpressionsMap || commonTableExpressionsMap.isEmpty())
+            ret = params == null ? Collections.emptyList() : params;
+        else
+        {
+            ret = new ArrayList<>();
+            for (Map.Entry<String,SQLFragment> e : commonTableExpressionsMap.entrySet())
+                if (null != e.getValue().params)
+                    ret.addAll(e.getValue().params);
+            if (null != params)
+                ret.addAll(params);
+        }
+        assert null != (ret = Collections.unmodifiableList(ret));
+        return ret;
     }
 
 
@@ -122,6 +176,7 @@ public class SQLFragment implements Appendable, CharSequence
         return sb;
     }
 
+
     @Override
     public SQLFragment append(CharSequence s)
     {
@@ -137,6 +192,7 @@ public class SQLFragment implements Appendable, CharSequence
         append(csq.subSequence(start, end));
         return this;
     }
+
 
     public SQLFragment append(Object o)
     {
@@ -156,12 +212,14 @@ public class SQLFragment implements Appendable, CharSequence
         getModfiableParams().addAll(l);
     }
 
+
     public void addAll(Object[] values)
     {
         if (values == null)
             return;
         addAll(Arrays.asList(values));
     }
+
 
     public SQLFragment append(SQLFragment f)
     {
@@ -170,6 +228,7 @@ public class SQLFragment implements Appendable, CharSequence
         else
             append(f.sql);
         addAll(f.getParams());
+        mergeCommonTableExpressions(f);
         return this;
     }
 
@@ -179,10 +238,8 @@ public class SQLFragment implements Appendable, CharSequence
     {
         if (null == statement || statement.isEmpty())
             return this;
-        if (null != statement.sb)
-            dialect.appendStatement(this, statement.sb.toString());
-        else
-            dialect.appendStatement(this, statement.sql.toString());
+        // getSQL() flattens out common table expressions
+        dialect.appendStatement(this, statement.getSQL());
         addAll(statement.getParams());
         return this;
     }
@@ -262,14 +319,17 @@ public class SQLFragment implements Appendable, CharSequence
     {
         insert(0, sql.getSqlCharSequence().toString());
         getModfiableParams().addAll(0, sql.getParams());
+        mergeCommonTableExpressions(sql);
     }
+
 
     public int indexOf(String str)
     {
         return getStringBuilder().indexOf(str);
     }
 
-     // Display query in "English" (display SQL with params substituted)
+
+    // Display query in "English" (display SQL with params substituted)
     // with a little more work could probably be made to be SQL legal
     public String getFilterText()
     {
@@ -308,5 +368,63 @@ public class SQLFragment implements Appendable, CharSequence
     public CharSequence subSequence(int start, int end)
     {
         return getSqlCharSequence().subSequence(start, end);
+    }
+
+    public void addCommonTableExpression(String name, SQLFragment sqlf, boolean replace)
+    {
+        if (null == commonTableExpressionsMap)
+            commonTableExpressionsMap = new LinkedHashMap<>();
+        SQLFragment prev = commonTableExpressionsMap.put(name, sqlf);
+        if (!replace && null != prev)
+        {
+            if (!prev.getSQL().equals(sqlf.getSQL()))
+                throw new IllegalStateException("Value of common table expression changed");
+        }
+    }
+
+    private void mergeCommonTableExpressions(SQLFragment from)
+    {
+        if (null == from.commonTableExpressionsMap || from.commonTableExpressionsMap.isEmpty())
+            return;
+        for (Map.Entry<String,SQLFragment> e : from.commonTableExpressionsMap.entrySet())
+            addCommonTableExpression(e.getKey(), e.getValue(), false);
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void tests()
+        {
+            SQLFragment a = new SQLFragment("SELECT a FROM b WHERE x=?", 5);
+            assertEquals("SELECT a FROM b WHERE x=?", a.getSQL());
+            assertEquals("SELECT a FROM b WHERE x=5", a.toString());
+
+            SQLFragment b = new SQLFragment("SELECT * FROM CTE WHERE y=?","xxyzzy");
+            b.addCommonTableExpression("CTE", a, false);
+            assertEquals("WITH\n" +
+                    "\tCTE AS (SELECT a FROM b WHERE x=?)\n" +
+                    "SELECT * FROM CTE WHERE y=?", b.getSQL());
+            assertEquals("WITH\n" +
+                    "\tCTE AS (SELECT a FROM b WHERE x=5)\n" +
+                    "SELECT * FROM CTE WHERE y='xxyzzy'", b.toString());
+            List<Object> params = b.getParams();
+            assertEquals(2,params.size());
+            assertEquals(5, params.get(0));
+            assertEquals("xxyzzy", params.get(1));
+
+
+            SQLFragment c = new SQLFragment(b);
+            assertEquals("WITH\n" +
+                    "\tCTE AS (SELECT a FROM b WHERE x=?)\n" +
+                    "SELECT * FROM CTE WHERE y=?", c.getSQL());
+            assertEquals("WITH\n" +
+                    "\tCTE AS (SELECT a FROM b WHERE x=5)\n" +
+                    "SELECT * FROM CTE WHERE y='xxyzzy'", c.toString());
+            params = c.getParams();
+            assertEquals(2,params.size());
+            assertEquals(5, params.get(0));
+            assertEquals("xxyzzy", params.get(1));
+        }
     }
 }

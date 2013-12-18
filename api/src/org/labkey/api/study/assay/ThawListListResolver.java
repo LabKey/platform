@@ -51,7 +51,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
     public ThawListListResolver(Container runContainer, @Nullable Container targetStudyContainer,
                                 Container listContainer, String schemaName, String queryName, User user, ParticipantVisitResolver childResolver) throws ExperimentException
     {
-        super(runContainer, targetStudyContainer);
+        super(runContainer, targetStudyContainer, user);
         _childResolver = childResolver;
         UserSchema schema = QueryService.get().getUserSchema(user, listContainer, schemaName);
         if (schema == null)
