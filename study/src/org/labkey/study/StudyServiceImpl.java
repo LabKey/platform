@@ -723,7 +723,7 @@ public class StudyServiceImpl implements StudyService.Service
                 tables.add(t);
             }
         }
-        return createUnionTable(schemaDefault, tables);
+        return createUnionTable(schemaDefault, tables, "SpecimensUnion");
     }
 
 
@@ -757,11 +757,11 @@ public class StudyServiceImpl implements StudyService.Service
                 tables.add(t);
             }
         }
-        return createUnionTable(schemaDefault, tables);
+        return createUnionTable(schemaDefault, tables, "VialsUnion");
     }
 
 
-    TableInfo createUnionTable(StudyQuerySchema schemaDefault, List<TableInfo> terms)
+    TableInfo createUnionTable(StudyQuerySchema schemaDefault, List<TableInfo> terms, String tableName)
     {
         if (null == terms || terms.isEmpty())
             return null;
@@ -828,7 +828,7 @@ public class StudyServiceImpl implements StudyService.Service
                 sqlf.append(" ").append(j);
             union = "\nUNION ALL\n";
         }
-        return new _UnionTable(schemaDefault, cols, sqlf);
+        return new _UnionTable(schemaDefault, tableName, cols, sqlf);
     }
 
 
@@ -837,9 +837,10 @@ public class StudyServiceImpl implements StudyService.Service
         StudyQuerySchema _studyQuerySchema;
         SQLFragment _sqlInner;
 
-        _UnionTable(StudyQuerySchema studyQuerySchema, List<ColumnInfo> cols, SQLFragment sqlf)
+        _UnionTable(StudyQuerySchema studyQuerySchema, String tableName, List<ColumnInfo> cols, SQLFragment sqlf)
         {
             super(studyQuerySchema.getDbSchema());
+            setName(tableName);
             _studyQuerySchema = studyQuerySchema;
             for (ColumnInfo col : cols)
             {
