@@ -418,20 +418,31 @@ public class StudyUpgradeCode implements UpgradeCode
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         List<String> containerIds = new SqlSelector(scope, "SELECT Container FROM study.specimen UNION SELECT Container FROM study.vial UNION SELECT Container FROM study.specimenevent").getArrayList(String.class);
 
-        try (DbScope.Transaction tx = scope.ensureTransaction())
+//        try (DbScope.Transaction tx = scope.ensureTransaction())
         {
             for (String containerId : containerIds)
             {
                 Container c = ContainerManager.getForId(containerId);
                 Study study = StudyManager.getInstance().getStudy(c);
-                migrateSpecimenTables(study);
+                migrateSpecimenTables(study, true);
             }
-            tx.commit();
+//            tx.commit();
+        }
+
+//        try (DbScope.Transaction tx = scope.ensureTransaction())
+        {
+            for (String containerId : containerIds)
+            {
+                Container c = ContainerManager.getForId(containerId);
+                Study study = StudyManager.getInstance().getStudy(c);
+                migrateSpecimenTables(study, false);
+            }
+//            tx.commit();
         }
     }
 
 
-    public void migrateSpecimenTables(Study study)
+    public void migrateSpecimenTables(Study study, boolean createTablesOnly)
     {
         DbSchema db = DbSchema.get("study");
         TableInfo specimenOld = db.getTable("specimen");
@@ -441,6 +452,9 @@ public class StudyUpgradeCode implements UpgradeCode
         TableInfo specimenNew = StudySchema.getInstance().getTableInfoSpecimen(study.getContainer(), null);
         TableInfo vialNew = StudySchema.getInstance().getTableInfoVial(study.getContainer(), null);
         TableInfo specimeneventNew = StudySchema.getInstance().getTableInfoSpecimenEvent(study.getContainer(), null);
+
+        if (createTablesOnly)
+            return;
 
         _copy(study, specimenOld, specimenNew);
         _copy(study, vialOld, vialNew);
