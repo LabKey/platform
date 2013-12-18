@@ -372,12 +372,16 @@ public class RequestabilityManager
 
         public int updateRequestability(User user, List<Specimen> specimens) throws InvalidRuleException
         {
+            TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(_container);
+            if (null == tableInfoVial)
+                throw new IllegalStateException("Expected Vial table to exist.");
+
             String reason = getAvailabilityReason();
-            SQLFragment updateSQL = new SQLFragment("UPDATE " + StudySchema.getInstance().getTableInfoVial() + " SET ");
+            SQLFragment updateSQL = new SQLFragment("UPDATE ");
+            updateSQL.append(tableInfoVial.getSelectName()).append(" SET ");
             updateSQL.append(getAvailableAssignmentSQL());
-            updateSQL.append(", AvailabilityReason = ? WHERE Container = ? AND ");
+            updateSQL.append(", AvailabilityReason = ? WHERE ");
             updateSQL.add(reason);
-            updateSQL.add(_container.getId());
             updateSQL.append(getFilterSQL(_container, user, specimens));
             return new SqlExecutor(StudySchema.getInstance().getSchema()).execute(updateSQL);
         }
@@ -661,19 +665,25 @@ public class RequestabilityManager
         @Override
         public SQLFragment getFilterSQL(Container container, User user, List<Specimen> specimens) throws InvalidRuleException
         {
+            TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(_container);
+            if (null == tableInfoVial)
+                throw new IllegalStateException("Expected Vial table to exist.");
+
             SQLFragment sql = new SQLFragment();
             if (specimens != null && specimens.size() > 0)
                 sql.append(getGlobalUniqueIdInSQL(specimens)).append(" AND ");
 
-            sql.append(" RowId IN (SELECT SV.RowId FROM " + StudySchema.getInstance().getTableInfoVial() + " SV");
-            sql.append(" LEFT OUTER JOIN (SELECT Container, SampleRequestId, SpecimenGlobalUniqueId FROM " + StudySchema.getInstance().getTableInfoSampleRequestSpecimen() +
-                    ") SRS ON (GlobalUniqueId = SpecimenGlobalUniqueId)");
-            sql.append(" LEFT OUTER JOIN (SELECT RowId, StatusId FROM " + StudySchema.getInstance().getTableInfoSampleRequest() +
-                    ") SR ON (SR.RowId = SRS.SampleRequestId)");
-            sql.append(" LEFT OUTER JOIN (SELECT RowId, FinalState FROM " + StudySchema.getInstance().getTableInfoSampleRequestStatus() +
-                    ") SRST ON (SRST.RowId = SR.StatusId)");
-            sql.append(" WHERE SV.Container = ? AND SRS.Container = ? AND SRST.FinalState = ?");
-            sql.add(container.getId());
+            sql.append(" RowId IN (SELECT SV.RowId FROM ").append(tableInfoVial.getSelectName()).append(" SV")
+                .append(" LEFT OUTER JOIN (SELECT Container, SampleRequestId, SpecimenGlobalUniqueId FROM ")
+                .append(StudySchema.getInstance().getTableInfoSampleRequestSpecimen().getSelectName())
+                .append(") SRS ON (GlobalUniqueId = SpecimenGlobalUniqueId)")
+                .append(" LEFT OUTER JOIN (SELECT RowId, StatusId FROM ")
+                .append(StudySchema.getInstance().getTableInfoSampleRequest().getSelectName())
+                .append(") SR ON (SR.RowId = SRS.SampleRequestId)")
+                .append(" LEFT OUTER JOIN (SELECT RowId, FinalState FROM ")
+                .append(StudySchema.getInstance().getTableInfoSampleRequestStatus().getSelectName())
+                .append(") SRST ON (SRST.RowId = SR.StatusId)")
+                .append(" WHERE SRS.Container = ? AND SRST.FinalState = ?");
             sql.add(container.getId());
             sql.add(false);
             if (specimens != null && specimens.size() > 0)
@@ -752,13 +762,20 @@ public class RequestabilityManager
 
         if (resetToAvailable)
         {
+            TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(container);
+            if (null == tableInfoVial)
+                throw new IllegalStateException("Expected Vial table to exist.");
+
             if (logger != null)
                 logger.info("\tResetting vials to default available state.");
-            SQLFragment updateSQL = new SQLFragment("UPDATE " + StudySchema.getInstance().getTableInfoVial() +
-                " SET Available = ?, AvailabilityReason = ? WHERE ", Boolean.TRUE, null);
+            SQLFragment updateSQL = new SQLFragment("UPDATE ");
+            updateSQL.append(tableInfoVial.getSelectName())
+                     .append(" SET Available = ?, AvailabilityReason = ? ");
+            updateSQL.add(Boolean.TRUE);
+            updateSQL.add(null);
             if (specimens != null && specimens.size() > 0)
             {
-                updateSQL.append("RowId IN (");
+                updateSQL.append("WHERE RowId IN (");
                 String sep = "";
                 for (Specimen specimen : specimens)
                 {
@@ -766,10 +783,8 @@ public class RequestabilityManager
                     sep = ", ";
                     updateSQL.add(specimen.getRowId());
                 }
-                updateSQL.append(") AND ");
+                updateSQL.append(")");
             }
-            updateSQL.append("Container = ?");
-            updateSQL.add(container.getId());
             new SqlExecutor(schema).execute(updateSQL);
 
             if (logger != null)

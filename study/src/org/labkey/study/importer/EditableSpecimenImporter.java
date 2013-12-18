@@ -47,21 +47,22 @@ public class EditableSpecimenImporter extends SpecimenImporter
     private static final String GUID_COLNAME = "GlobalUniqueId";
     private boolean _insert = false;
 
-    public EditableSpecimenImporter(boolean insert)
+    public EditableSpecimenImporter(Container container, User user, boolean insert)
     {
+        super(container, user);
         _insert = insert;
     }
 
-    public void process(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException
+    public void process(List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException
     {
-        _process(user, container, rows, merge, Logger.getLogger(getClass()));
+        _process(rows, merge, Logger.getLogger(getClass()));
     }
 
-    private void _process(User user, Container container, List<Map<String, Object>> rows, boolean merge, Logger logger) throws SQLException, IOException, ValidationException
+    private void _process(List<Map<String, Object>> rows, boolean merge, Logger logger) throws SQLException, IOException, ValidationException
     {
         if (merge)
         {
-            int noGuidRowCount = markEventsObsolete(container, rows);
+            int noGuidRowCount = markEventsObsolete(rows);
             _generateGlobalUniqueIds = noGuidRowCount;            // Generate this many new ids (needed if not present)
         }
 
@@ -76,13 +77,13 @@ public class EditableSpecimenImporter extends SpecimenImporter
             specimenRows.add(specimenRow);
         }
 
-        SpecimenImportStrategy strategy = new StandardSpecimenImportStrategy(container);
+        SpecimenImportStrategy strategy = new StandardSpecimenImportStrategy(getContainer());
         Map<SpecimenTableType, SpecimenImportFile> sifMap = new EnumMap<>(SpecimenTableType.class);
         addSpecimenImportFile(sifMap, SpecimenTableType.Specimens, specimenRows, strategy);
 
         try
         {
-            super.process(user, container, sifMap, merge, logger);
+            super.process(sifMap, merge, logger);
         }
         catch (SQLException | ValidationException ex)
         {
@@ -171,30 +172,36 @@ public class EditableSpecimenImporter extends SpecimenImporter
     }
 
     @Override
-    protected void remapTempTableLookupIndexes(DbSchema schema, Container container, String tempTable, List<SpecimenColumn> loadedColumns)
+    protected void remapTempTableLookupIndexes(DbSchema schema, String tempTable, List<SpecimenColumn> loadedColumns)
             throws SQLException
     {
         // do nothing
     }
 
     @Override
-    protected void checkForConflictingSpecimens(DbSchema schema, Container container, String tempTable, List<SpecimenColumn> loadedColumns)
+    protected void checkForConflictingSpecimens(DbSchema schema, String tempTable, List<SpecimenColumn> loadedColumns)
             throws SQLException
     {
         // Only check if inserting
         if (_insert)
-            super.checkForConflictingSpecimens(schema, container, tempTable, loadedColumns);
+            super.checkForConflictingSpecimens(schema, tempTable, loadedColumns);
     }
 
-    private int markEventsObsolete(Container container, List<Map<String, Object>> rows)
+    private int markEventsObsolete(List<Map<String, Object>> rows)
     {
+        Container container = getContainer();
         boolean seenAtLeastOneGuid = false;
-        TableInfo specimenEventTable = StudySchema.getInstance().getTableInfoSpecimenEvent();
-        SQLFragment sql = new SQLFragment("UPDATE " + specimenEventTable.getSelectName() + " SET Obsolete = " +
-                specimenEventTable.getSqlDialect().getBooleanTRUE() + " WHERE Container = ? AND VialId IN ");
-        sql.add(container);
-        sql.append("(SELECT RowId FROM " + StudySchema.getInstance().getTableInfoVial() + " WHERE Container = ? ").add(container);
-        sql.append(" AND Obsolete = " + specimenEventTable.getSqlDialect().getBooleanFALSE() + " AND " + GUID_COLNAME + " IN (");
+        TableInfo tableInfoSpecimenEvent = StudySchema.getInstance().getTableInfoSpecimenEvent(container);
+        TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(container);
+        if (null == tableInfoSpecimenEvent || null == tableInfoVial)
+            throw new IllegalStateException("Expected Vial and SpecimenEvent table to already exist.");
+
+        SQLFragment sql = new SQLFragment("UPDATE ");
+        sql.append(tableInfoSpecimenEvent.getSelectName()).append(" SET Obsolete = ")
+            .append(tableInfoSpecimenEvent.getSqlDialect().getBooleanTRUE()).append(" WHERE VialId IN ")
+            .append("(SELECT RowId FROM ").append(tableInfoVial.getSelectName())
+            .append(" WHERE Obsolete = ").append(tableInfoSpecimenEvent.getSqlDialect().getBooleanFALSE())
+            .append(" AND " + GUID_COLNAME + " IN (");
 
         int noGuidRowCount = 0;
         for (Map<String, Object> row : rows)

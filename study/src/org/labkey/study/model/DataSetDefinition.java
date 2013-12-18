@@ -1257,7 +1257,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         @Override
         public DomainKind getDomainKind()
         {
-            return DataSetDefinition.this.getDomainKind();    //To change body of overridden methods use File | Settings | File Templates.
+            return DataSetDefinition.this.getDomainKind();
         }
 
         @Override

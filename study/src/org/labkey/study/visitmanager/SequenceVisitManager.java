@@ -17,6 +17,7 @@
 package org.labkey.study.visitmanager;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
@@ -128,6 +129,7 @@ public class SequenceVisitManager extends VisitManager
     protected void updateParticipantVisitTable(@Nullable User user)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
+        Container container = getStudy().getContainer();
         TableInfo tableVisit = StudySchema.getInstance().getTableInfoVisit();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
         TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
@@ -141,13 +143,13 @@ public class SequenceVisitManager extends VisitManager
         sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit.getSelectName());
         sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
         sqlInsertParticipantVisit.append("SELECT ?, ParticipantId, SequenceNum,\n");
-        sqlInsertParticipantVisit.add(getStudy().getContainer());
+        sqlInsertParticipantVisit.add(container);
         sqlInsertParticipantVisit.append("MIN(").append(getParticipantSequenceNumExpr(schema, "ParticipantId", "SequenceNum")).append(") AS ParticipantSequenceNum\n");
         sqlInsertParticipantVisit.append("FROM ").append(tableStudyData, "SD").append("\n");
         sqlInsertParticipantVisit.append("WHERE NOT EXISTS (SELECT ParticipantId, SequenceNum FROM ");
         sqlInsertParticipantVisit.append(tableParticipantVisit, "PV").append("\n");
         sqlInsertParticipantVisit.append("WHERE Container = ? AND SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum)\n");
-        sqlInsertParticipantVisit.add(getStudy().getContainer());
+        sqlInsertParticipantVisit.add(container);
         sqlInsertParticipantVisit.append("GROUP BY ParticipantId, SequenceNum");
         SqlExecutor executor = new SqlExecutor(schema);
         executor.execute(sqlInsertParticipantVisit);
@@ -155,8 +157,14 @@ public class SequenceVisitManager extends VisitManager
         //
         // Delete ParticipantVisit where the participant does not exist anymore
         //
-        String sqlDeleteParticiapantVisit = "DELETE FROM " + tableParticipantVisit + " WHERE Container = ? AND ParticipantId NOT IN (SELECT ParticipantId FROM " + tableParticipant + " WHERE Container= ?)";
-        executor.execute(sqlDeleteParticiapantVisit, getStudy().getContainer(), getStudy().getContainer());
+        SQLFragment sqlDeleteParticiapantVisit = new SQLFragment("DELETE FROM ");
+        sqlDeleteParticiapantVisit.append(tableParticipantVisit.getSelectName())
+                .append(" WHERE Container = ? AND ParticipantId NOT IN (SELECT ParticipantId FROM ")
+                .append(tableParticipant.getSelectName())
+                .append(" WHERE Container= ?)");
+        sqlDeleteParticiapantVisit.add(container);
+        sqlDeleteParticiapantVisit.add(container);
+        executor.execute(sqlDeleteParticiapantVisit);
 
         // after assigning visit dates to all study data-generated visits, we insert any extra ptid/sequencenum/date combinations
         // that are found in the specimen archives.  We simply trust the specimen draw date in this case, rather than relying on the
@@ -164,15 +172,15 @@ public class SequenceVisitManager extends VisitManager
         sqlInsertParticipantVisit = new SQLFragment();
         sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit.getSelectName());
         sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
-        sqlInsertParticipantVisit.append("SELECT Container, Ptid AS ParticipantId, VisitValue AS SequenceNum,\n");
+        sqlInsertParticipantVisit.append("SELECT ? As Container, Ptid AS ParticipantId, VisitValue AS SequenceNum,\n");
         sqlInsertParticipantVisit.append("MIN(").append(getParticipantSequenceNumExpr(schema, "Ptid", "VisitValue")).append(") AS ParticipantSequenceNum\n");
         sqlInsertParticipantVisit.append("FROM ").append(tableSpecimen, "Specimen").append("\n");
-        sqlInsertParticipantVisit.append("WHERE Container = ? AND Ptid IS NOT NULL AND VisitValue IS NOT NULL AND NOT EXISTS (");
-        sqlInsertParticipantVisit.add(getStudy().getContainer());
+        sqlInsertParticipantVisit.append("WHERE Ptid IS NOT NULL AND VisitValue IS NOT NULL AND NOT EXISTS (");
+        sqlInsertParticipantVisit.add(container);
         sqlInsertParticipantVisit.append("SELECT ParticipantId, SequenceNum FROM ").append(tableParticipantVisit, "PV").append("\n");
         sqlInsertParticipantVisit.append("WHERE Container = ? AND Specimen.Ptid = PV.ParticipantId AND Specimen.VisitValue = PV.SequenceNum)\n");
-        sqlInsertParticipantVisit.add(getStudy().getContainer());
-        sqlInsertParticipantVisit.append("GROUP BY Container, Ptid, VisitValue");
+        sqlInsertParticipantVisit.add(container);
+        sqlInsertParticipantVisit.append("GROUP BY Ptid, VisitValue");
         executor.execute(sqlInsertParticipantVisit);
 
         //
@@ -198,8 +206,8 @@ public class SequenceVisitManager extends VisitManager
         if (schema.getSqlDialect().isSqlServer()) // for SQL Server 2000
             sqlUpdateVisitDates.append("FROM " + tableParticipantVisit + " ParticipantVisit\n");
         sqlUpdateVisitDates.append("WHERE Container=?");
-        sqlUpdateVisitDates.add(getStudy().getContainer());
-        sqlUpdateVisitDates.add(getStudy().getContainer());
+        sqlUpdateVisitDates.add(container);
+        sqlUpdateVisitDates.add(container);
 
         executor.execute(sqlUpdateVisitDates);
 

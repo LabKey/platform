@@ -405,7 +405,7 @@ public class DesignerController extends SpringActionController
         public void export(CreateRepositoryForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             //Search for a template in all folders up to root.
-            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(TimepointType.DATE, "Subject");
+            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getContainer(), getUser(), TimepointType.DATE, "Subject");
             List<Map<String,Object>> defaultSpecimens = StudyDesignManager.get().generateSampleList(getStudyDefinition(form), getParticipants(), form.getBeginDate());
             MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
             for (ExcelColumn col : xlWriter.getColumns())
@@ -726,7 +726,7 @@ public class DesignerController extends SpringActionController
         Map<String, String> columnAliases = new HashMap();
         Map<String, String> labels = new HashMap();
         //Make sure we accept the labels
-        SimpleSpecimenImporter importer = new SimpleSpecimenImporter();
+        SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getContainer(), getUser());
         for (Map.Entry<String, String> entry : importer.getColumnLabels().entrySet())
         {
             columnAliases.put(entry.getValue(), entry.getKey());

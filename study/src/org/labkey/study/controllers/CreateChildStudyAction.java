@@ -29,6 +29,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
@@ -170,10 +171,10 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
             {
                 String[] specimenIds = form.getSpecimenIds();
                 ArrayList<Specimen> list = new ArrayList<>(specimenIds.length);
-
+                User user = getViewContext().getUser();
                 for (String specimenId : specimenIds)
                 {
-                    Specimen specimen = sm.getSpecimen(sourceContainer, specimenId);
+                    Specimen specimen = sm.getSpecimen(sourceContainer, user, specimenId);
 
                     if (null == specimen)
                         LOG.error("Specimen ID " + specimenId + " not found!!");

@@ -268,6 +268,11 @@
         <td><%=textLink("Change Repository Type", new ActionURL(SpecimenController.ShowManageRepositorySettingsAction.class, c))%></td>
     </tr>
     <tr>
+        <th align="left">Specimen Properties</th>
+        <td>Customize specimen properties for this repository</td>
+        <td><%=textLink("Edit specimen properties", new ActionURL(SpecimenController.DesignerAction.class, c))%></td>
+    </tr>
+    <tr>
         <th align="left">Display and Behavior</th>
         <td>Manage warnings, comments, and workflow</td>
         <td><%= textLink("Manage Display and Behavior",

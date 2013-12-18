@@ -678,7 +678,7 @@ public class SpecimenUtils
             List<Specimen> specimens = new ArrayList<>();
             for (int requestedSampleId : requestedSampleIds)
             {
-                Specimen current = SampleManager.getInstance().getSpecimen(getContainer(), requestedSampleId);
+                Specimen current = SampleManager.getInstance().getSpecimen(getContainer(), getUser(), requestedSampleId);
                 if (current != null)
                     specimens.add(current);
             }
@@ -690,13 +690,15 @@ public class SpecimenUtils
 
     public List<Specimen> getSpecimensFromGlobalUniqueIds(Set<String> globalUniqueIds)
     {
+        User user = getUser();
+        Container container = getContainer();
         List<Specimen> requestedSpecimens = null;
         if (globalUniqueIds != null)
         {
             List<Specimen> specimens = new ArrayList<>();
             for (String globalUniqueId : globalUniqueIds)
             {
-                Specimen match = SampleManager.getInstance().getSpecimen(getContainer(), globalUniqueId);
+                Specimen match = SampleManager.getInstance().getSpecimen(container, user, globalUniqueId);
                 if (match != null)
                     specimens.add(match);
             }
@@ -724,7 +726,7 @@ public class SpecimenUtils
         if (fromGroupedView)
         {
             Map<String, List<Specimen>> keyToVialMap =
-                    SampleManager.getInstance().getVialsForSampleHashes(getContainer(), formValues, onlyAvailable);
+                    SampleManager.getInstance().getVialsForSampleHashes(getContainer(), getUser(),  formValues, onlyAvailable);
             List<Specimen> vials = new ArrayList<>();
             for (List<Specimen> vialList : keyToVialMap.values())
                 vials.addAll(vialList);
@@ -827,7 +829,7 @@ public class SpecimenUtils
 
     public RequestedSpecimens getRequestableBySampleHash(Set<String> formValues, Integer preferredLocation) throws AmbiguousLocationException
     {
-        Map<String, List<Specimen>> vialsByHash = SampleManager.getInstance().getVialsForSampleHashes(getContainer(), formValues, true);
+        Map<String, List<Specimen>> vialsByHash = SampleManager.getInstance().getVialsForSampleHashes(getContainer(), getUser(), formValues, true);
 
         if (vialsByHash == null || vialsByHash.isEmpty())
             return new RequestedSpecimens(Collections.<Specimen>emptyList());

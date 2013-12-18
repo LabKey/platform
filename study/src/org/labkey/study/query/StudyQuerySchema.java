@@ -71,6 +71,7 @@ public class StudyQuerySchema extends UserSchema
     public static final String SCHEMA_DESCRIPTION = "Contains all data related to the study, including subjects, cohorts, visits, datasets, specimens, etc.";
     public static final String SIMPLE_SPECIMEN_TABLE_NAME = "SimpleSpecimen";
     public static final String SPECIMEN_DETAIL_TABLE_NAME = "SpecimenDetail";
+    public static final String SPECIMEN_WRAP_TABLE_NAME = "SpecimenWrap";
     public static final String PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME = "ParticipantGroupCohortUnion";
     public static final String LOCATION_SPECIMEN_LIST_TABLE_NAME = "LocationSpecimenList";
 
@@ -104,6 +105,14 @@ public class StudyQuerySchema extends UserSchema
     static StudyQuerySchema createSchemaWithoutStudy(Container c, User u)
     {
         return new StudyQuerySchema(c, u);
+    }
+
+
+    public String getSubjectColumnName()
+    {
+        if (null != _study)
+            return _study.getSubjectColumnName();
+        return "ParticipantId";
     }
 
 
@@ -307,12 +316,20 @@ public class StudyQuerySchema extends UserSchema
         // want to set a container filter to look at specimens across the entire site
         if (SIMPLE_SPECIMEN_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return createSimpleSpecimenTable();
+            return new SimpleSpecimenTable(this, !_mustCheckPermissions);
         }
+//        if ("Specimen-AllContainers".equalsIgnoreCase(name))    // TODO: restrict so external users can't get
+//        {
+//            return new SpecimenTable(this, !_mustCheckPermissions, true);
+//        }
         if ("Vial".equalsIgnoreCase(name))
         {
             return new VialTable(this);
         }
+//        if ("Vial-AllContainers".equalsIgnoreCase(name))        // TODO: restrict so external users can't get
+//        {
+//            return new VialTable(this, true);
+//        }
         if ("Site".equalsIgnoreCase(name) || "Location".equalsIgnoreCase(name))
         {
             LocationTable ret = new LocationTable(this);
@@ -399,6 +416,11 @@ public class StudyQuerySchema extends UserSchema
         if (SPECIMEN_DETAIL_TABLE_NAME.equalsIgnoreCase(name))
         {
             SpecimenDetailTable ret = new SpecimenDetailTable(this);
+            return ret;
+        }
+        if (SPECIMEN_WRAP_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            SpecimenWrapTable ret = new SpecimenWrapTable(this);
             return ret;
         }
         if ("SpecimenVialCount".equalsIgnoreCase(name))
@@ -594,11 +616,6 @@ public class StudyQuerySchema extends UserSchema
             }
         }
         return super.createView(context, settings, errors);
-    }
-
-    public SimpleSpecimenTable createSimpleSpecimenTable()
-    {
-        return new SimpleSpecimenTable(this, !_mustCheckPermissions);
     }
 
     @Nullable

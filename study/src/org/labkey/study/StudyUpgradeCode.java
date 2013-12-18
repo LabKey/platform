@@ -21,14 +21,20 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableChange;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
@@ -401,5 +407,68 @@ public class StudyUpgradeCode implements UpgradeCode
                 _log.error("Error migrating study format properties in " + c.toString(), e);
             }
         }
+    }
+
+    public void migrateSpecimenTables(final ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        List<String> containerIds = new SqlSelector(scope, "SELECT Container FROM study.specimen UNION SELECT Container FROM study.vial UNION SELECT Container FROM study.specimenevent").getArrayList(String.class);
+
+        try (DbScope.Transaction tx = scope.ensureTransaction())
+        {
+            for (String containerId : containerIds)
+            {
+                Container c = ContainerManager.getForId(containerId);
+                Study study = StudyManager.getInstance().getStudy(c);
+                migrateSpecimenTables(study);
+            }
+            tx.commit();
+        }
+        catch (Exception e)
+        {
+            _log.error("An error occurred migrating specimen data.", e);
+        }
+    }
+
+
+    public void migrateSpecimenTables(Study study)
+    {
+        DbSchema db = DbSchema.get("study");
+        TableInfo specimenOld = db.getTable("specimen");
+        TableInfo vialOld = db.getTable("vial");
+        TableInfo specimeneventOld = db.getTable("specimenevent");
+
+        TableInfo specimenNew = StudySchema.getInstance().getTableInfoSpecimen(study.getContainer(), null);
+        TableInfo vialNew = StudySchema.getInstance().getTableInfoVial(study.getContainer(), null);
+        TableInfo specimeneventNew = StudySchema.getInstance().getTableInfoSpecimenEvent(study.getContainer(), null);
+
+        _copy(study, specimenOld, specimenNew);
+        _copy(study, vialOld, vialNew);
+        _copy(study, specimeneventOld, specimeneventNew);
+    }
+
+
+    private void _copy(Study study, TableInfo from, TableInfo to)
+    {
+        SQLFragment sqlfCols = new SQLFragment();
+        String comma = "";
+        for (ColumnInfo col : to.getColumns())
+        {
+            // TODO inputhash is broken
+//            if ("inputhash".equalsIgnoreCase(col.getName()))
+//                continue;
+            sqlfCols.append(comma);
+            sqlfCols.append(col.getSelectName());
+            comma = ",";
+        }
+        SQLFragment f = new SQLFragment();
+        f.append("INSERT INTO ").append(to.getSelectName()).append(" (").append(sqlfCols).append(")\n");
+        f.append("SELECT ").append(sqlfCols).append(" FROM ").append(from.getFromSQL("x")).append("\n");
+        f.append("WHERE Container=?");
+        f.add(study.getContainer());
+        new SqlExecutor(StudySchema.getInstance().getScope()).execute(f);
     }
 }

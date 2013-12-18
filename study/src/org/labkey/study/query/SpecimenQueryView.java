@@ -26,6 +26,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -437,12 +438,12 @@ public class SpecimenQueryView extends BaseStudyQueryView
     {
         String showRequestedByEnrollmentSite = StringUtils.trimToNull((String) context.get(PARAMS.showRequestedByEnrollmentSite.name()));
         if (null != showRequestedByEnrollmentSite)
-            addPreviouslyRequestedEnrollmentClause(filter, context.getContainer(), Integer.parseInt(showRequestedByEnrollmentSite), false);
+            addPreviouslyRequestedEnrollmentClause(filter, context.getContainer(), context.getUser(), Integer.parseInt(showRequestedByEnrollmentSite), false);
         else
         {
             showRequestedByEnrollmentSite = StringUtils.trimToNull((String) context.get(PARAMS.showCompleteRequestedByEnrollmentSite.name()));
             if (null != showRequestedByEnrollmentSite)
-                addPreviouslyRequestedEnrollmentClause(filter, context.getContainer(), Integer.parseInt(showRequestedByEnrollmentSite), true);
+                addPreviouslyRequestedEnrollmentClause(filter, context.getContainer(), context.getUser(), Integer.parseInt(showRequestedByEnrollmentSite), true);
         }
     }
 
@@ -599,13 +600,19 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
     protected static SimpleFilter addNotPreviouslyRequestedClause(SimpleFilter filter, Container container, int locationId)
     {
-        String sql = "SpecimenHash NOT IN (" +
+        TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(container);
+        if (null == tableInfoVial)
+            throw new IllegalStateException("Vial table not found.");
+        SQLFragment sql = new SQLFragment("SpecimenHash NOT IN (" +
                 "SELECT v.SpecimenHash from study.SampleRequestSpecimen rs join study.SampleRequest r on rs.SamplerequestId=r.RowId "
-                + "join study.Vial v on rs.SpecimenGlobalUniqueId=v.GlobalUniqueId "
+                + "join ");
+        sql.append(tableInfoVial.getFromSQL("v")).append(" on rs.SpecimenGlobalUniqueId=v.GlobalUniqueId "
                 + "join study.SamplerequestStatus status ON r.StatusId=status.RowId "
-                + "where r.DestinationSiteId=? AND v.Container=? AND status.SpecimensLocked=?)";
+                + "where r.DestinationSiteId=? AND AND status.SpecimensLocked=?)");
+        sql.add(locationId);
+        sql.add(Boolean.TRUE);
 
-        filter.addWhereClause(sql, new Object[]{locationId, container.getId(), Boolean.TRUE}, FieldKey.fromParts("SpecimenHash"));
+        filter.addWhereClause(sql.toString(), null, FieldKey.fromParts("SpecimenHash"));
 
         return filter;
     }
@@ -629,9 +636,34 @@ public class SpecimenQueryView extends BaseStudyQueryView
         return filter;
     }
 
-    protected static SimpleFilter addPreviouslyRequestedEnrollmentClause(SimpleFilter filter, Container container, int locationId, boolean completedRequestsOnly)
+    protected static SimpleFilter addPreviouslyRequestedEnrollmentClause(SimpleFilter filter, Container container, User user, int locationId, boolean completedRequestsOnly)
     {
-        String sql = "GlobalUniqueId IN (SELECT Specimen.GlobalUniqueId FROM study.SpecimenDetail AS Specimen,\n" +
+        SQLFragment sql = getBaseRequestedEnrollmentSql(container, user, completedRequestsOnly);
+        if (locationId == -1)
+        {
+            sql.append("IS NULL)");
+        }
+        else
+        {
+            sql.append("= ?)");
+            sql.add(locationId);
+        }
+
+        filter.addWhereClause(sql.toString(), null, FieldKey.fromParts("GlobalUniqueId"));
+
+        return filter;
+    }
+
+    public static SQLFragment getBaseRequestedEnrollmentSql(Container container, User user, boolean isCompleteRequestsOnly)
+    {
+        StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), user, true);
+        TableInfo tableInfoSpecimenDetail = schema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
+        if (null == tableInfoSpecimenDetail)
+            throw new IllegalStateException("SpecimenDetail table not found.");
+        String tableInfoAlias = "Specimen";
+
+        SQLFragment baseSql = new SQLFragment("GlobalUniqueId IN (SELECT Specimen.GlobalUniqueId FROM ");
+        baseSql.append(tableInfoSpecimenDetail.getFromSQL(tableInfoAlias)).append(",\n" +
                 "study.SampleRequestSpecimen AS RequestSpecimen,\n" +
                 "study.SampleRequest AS Request, study.SampleRequestStatus AS Status,\n" +
                 "study.Participant AS Participant\n" +
@@ -644,31 +676,14 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 "     Participant.Container = Specimen.Container AND\n" +
                 "     Participant.ParticipantId = Specimen.Ptid AND\n" +
                 "     Status.SpecimensLocked = ? AND\n" +
-                (completedRequestsOnly ? "     Status.FinalState = ? AND\n" : "") +
+                (isCompleteRequestsOnly ? "     Status.FinalState = ? AND\n" : "") +
                 "     Specimen.Container = ? AND\n" +
-                "     Participant.EnrollmentSiteId ";
-
-        Object[] params;
-        if (locationId == -1)
-        {
-            sql += "IS NULL)";
-            if (completedRequestsOnly)
-                params = new Object[]{Boolean.TRUE, Boolean.TRUE, container.getId()};
-            else
-                params = new Object[]{Boolean.TRUE, container.getId()};
-        }
-        else
-        {
-            sql += "= ?)";
-            if (completedRequestsOnly)
-                params = new Object[]{Boolean.TRUE, Boolean.TRUE, container.getId(), locationId};
-            else
-                params = new Object[]{Boolean.TRUE, container.getId(), locationId};
-        }
-
-        filter.addWhereClause(sql, params, FieldKey.fromParts("GlobalUniqueId"));
-
-        return filter;
+                "     Participant.EnrollmentSiteId ");
+        baseSql.add(Boolean.TRUE);
+        if (isCompleteRequestsOnly)
+            baseSql.add(Boolean.TRUE);
+        baseSql.add(container);
+        return baseSql;
     }
 
     protected static SimpleFilter addPreviouslyRequestedClause(SimpleFilter filter, Container container, boolean showRequested, boolean completedRequestsOnly)

@@ -15,6 +15,7 @@
  */
 package org.labkey.study.samples.report.request;
 
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.Location;
@@ -24,6 +25,7 @@ import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
+import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 
 import java.util.ArrayList;
@@ -67,7 +69,7 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
             locations = Collections.singleton(StudyManager.getInstance().getLocation(getContainer(), getEnrollmentSiteId()));
         else
         {
-            locations = SampleManager.getInstance().getEnrollmentSitesWithRequests(getContainer());
+            locations = SampleManager.getInstance().getEnrollmentSitesWithRequests(getContainer(), getUser());
             // add null to the set so we can search for ptid without an enrollment site:
             locations.add(null);
         }
@@ -75,40 +77,22 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
             return Collections.emptyList();
         List<SpecimenVisitReport> reports = new ArrayList<>();
         List<VisitImpl> visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
+
+        SQLFragment baseSql = SpecimenQueryView.getBaseRequestedEnrollmentSql(getContainer(), getUser(), isCompletedRequestsOnly());
+
         for (LocationImpl location : locations)
         {
             SimpleFilter filter = new SimpleFilter();
-            String sql = "GlobalUniqueId IN (SELECT Specimen.GlobalUniqueId FROM study.SpecimenDetail AS Specimen,\n" +
-                    "study.SampleRequestSpecimen AS RequestSpecimen,\n" +
-                    "study.SampleRequest AS Request, study.SampleRequestStatus AS Status,\n" +
-                    "study.Participant AS Participant\n" +
-                    "WHERE Request.Container = Status.Container AND\n" +
-                    "     Request.StatusId = Status.RowId AND\n" +
-                    "     RequestSpecimen.SampleRequestId = Request.RowId AND\n" +
-                    "     RequestSpecimen.Container = Request.Container AND\n" +
-                    "     Specimen.Container = RequestSpecimen.Container AND\n" +
-                    "     Specimen.GlobalUniqueId = RequestSpecimen.SpecimenGlobalUniqueId AND\n" +
-                    "     Participant.Container = Specimen.Container AND\n" +
-                    "     Participant.ParticipantId = Specimen.Ptid AND\n" +
-                    "     Status.SpecimensLocked = ? AND\n" +
-                    (isCompletedRequestsOnly() ? "     Status.FinalState = ? AND\n" : "") +
-                    "     Specimen.Container = ? AND\n" +
-                    "     Participant.EnrollmentSiteId ";
-            List<Object> paramList = new ArrayList<>();
-            paramList.add(Boolean.TRUE);
-            if (isCompletedRequestsOnly())
-                paramList.add(Boolean.TRUE);
-            paramList.add(getContainer().getId());
-
+            SQLFragment sql = new SQLFragment(baseSql);
             if (location == null)
-                sql += "IS NULL)";
+                sql.append("IS NULL)");
             else
             {
-                sql += "= ?)";
-                paramList.add(location.getRowId());
+                sql.append("= ?)");
+                sql.add(location.getRowId());
             }
 
-            filter.addWhereClause(sql, paramList.toArray(new Object[paramList.size()]), FieldKey.fromParts("GlobalUniqueId"));
+            filter.addWhereClause(sql.toString(), null, FieldKey.fromParts("GlobalUniqueId"));
             addBaseFilters(filter);
             reports.add(new RequestEnrollmentLocationReport(location == null ? "[Unassigned enrollment location]" : location.getLabel(),
                     filter, this, visits, location != null ? location.getRowId() : -1, isCompletedRequestsOnly()));
@@ -124,7 +108,7 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
     public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
         List<Pair<String, String>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
-        Set<LocationImpl> locations = SampleManager.getInstance().getEnrollmentSitesWithRequests(getContainer());
+        Set<LocationImpl> locations = SampleManager.getInstance().getEnrollmentSitesWithRequests(getContainer(), getUser());
         // add null to the set so we can search for ptid without an enrollment site:
         locations.add(null);
         inputs.add(getEnrollmentSitePicker("enrollmentSiteId", locations, _enrollmentSiteId));

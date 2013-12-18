@@ -62,11 +62,19 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         List<ColumnInfo> selectColumns = new ArrayList<>(columns.size());
         String comma = "";
 
+        TableInfo tableInfoSpecimenDetail = querySchema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
+        TableInfo tableInfoSpecimenEvent = schema.getTableInfoSpecimenEvent(c);
+        TableInfo queryTableSpecimenDetail = querySchema.getTable("SpecimenDetail");
+        TableInfo queryTableSpecimenEvent = querySchema.getTable("SpecimenEvent");
+        if (null == tableInfoSpecimenDetail || null == tableInfoSpecimenEvent ||
+                null == queryTableSpecimenDetail || null == queryTableSpecimenEvent)
+            throw new IllegalStateException("TableInfos not found.");
+
         for (SpecimenColumn column : columns)
         {
             SpecimenImporter.TargetTable tt = column.getTargetTable();
-            TableInfo tinfo = tt.isEvents() ? schema.getTableInfoSpecimenEvent() : schema.getTableInfoSpecimenDetail();
-            TableInfo queryTable = tt.isEvents() ? querySchema.getTable("SpecimenEvent") : querySchema.getTable("SpecimenDetail");
+            TableInfo tinfo = tt.isEvents() ? tableInfoSpecimenEvent : tableInfoSpecimenDetail;
+            TableInfo queryTable = tt.isEvents() ? queryTableSpecimenEvent : queryTableSpecimenDetail;
             ColumnInfo ci = tinfo.getColumn(column.getDbColumnName());
             DataColumn dc = new DataColumn(ci);
             selectColumns.add(dc.getDisplayColumn());
@@ -119,7 +127,8 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             comma = ", ";
         }
 
-        sql.append("\nFROM ").append(schema.getTableInfoSpecimenEvent()).append(" se JOIN ").append(schema.getTableInfoSpecimenDetail()).append(" s ON se.VialId = s.RowId");
+        sql.append("\nFROM ").append(tableInfoSpecimenEvent.getFromSQL("se")).append(" JOIN ")
+                .append(tableInfoSpecimenDetail.getFromSQL("s")).append(" ON se.VialId = s.RowId");
 
         for (SpecimenColumn column : columns)
         {
@@ -139,7 +148,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         // add join to study.Participant table if we are using alternate IDs or shifting dates
         if (ctx.isAlternateIds() || ctx.isShiftDates())
         {
-            sql.append("\n    LEFT JOIN study.Participant AS ParticipantLookup ON (se.Ptid = ParticipantLookup.ParticipantId AND se.Container = ParticipantLookup.Container)");
+            sql.append("\n    LEFT JOIN study.Participant AS ParticipantLookup ON (s.Ptid = ParticipantLookup.ParticipantId AND s.Container = ParticipantLookup.Container)");
         }
         // add join to study.ParticipantVisit table if we are filtering by visit IDs
         if (ctx.getVisitIds() != null && !ctx.getVisitIds().isEmpty())
@@ -147,25 +156,29 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             sql.append("\n    LEFT JOIN study.ParticipantVisit AS ParticipantVisitLookup ON (s.Ptid = ParticipantVisitLookup.ParticipantId AND s.ParticipantSequenceNum = ParticipantVisitLookup.ParticipantSequenceNum AND s.Container = ParticipantVisitLookup.Container)");
         }
 
-        sql.append("\nWHERE se.Container = ? ");
+        sql.append("\n");
 
         // add filter for selected participant IDs and Visits IDs
+        String conjunction = "WHERE ";
         if (ctx.getVisitIds() != null && !ctx.getVisitIds().isEmpty())
         {
-            sql.append("\n AND ParticipantVisitLookup.VisitRowId IN (");
+            sql.append(conjunction).append("\n ParticipantVisitLookup.VisitRowId IN (");
             sql.append(convertListToString(new ArrayList<>(ctx.getVisitIds()), false));
             sql.append(")");
+            conjunction = " AND ";
         }
 
         if (!ctx.getParticipants().isEmpty())
         {
+            sql.append(conjunction);
             if (ctx.isAlternateIds())
-                sql.append("\n AND ParticipantLookup.AlternateId IN (");
+                sql.append("\n ParticipantLookup.AlternateId IN (");
             else
-                sql.append("\n AND se.Ptid IN (");
+                sql.append("\n se.Ptid IN (");
 
             sql.append(convertListToString(ctx.getParticipants(), true));
             sql.append(")");
+            conjunction = " AND ";
         }
 
         if (null != ctx.getSpecimens() && !ctx.getSpecimens().isEmpty())
@@ -176,13 +189,13 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             for (Specimen specimen : specimens)
                 uniqueIds.add(specimen.getGlobalUniqueId());
 
-            sql.append("\n AND s.GlobalUniqueId IN (");
+            sql.append(conjunction).append("\n s.GlobalUniqueId IN (");
             sql.append(convertListToString(uniqueIds, true));
             sql.append(")");
+            conjunction = " AND";
         }
 
         sql.append("\nORDER BY se.ExternalId");
-        sql.add(c);
 
         ResultSet rs = null;
         TSVGridWriter gridWriter = null;

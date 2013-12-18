@@ -91,13 +91,14 @@ public class SimpleSpecimenImporter extends SpecimenImporter
     private Map<String, String> _columnLabels;
     private final TimepointType _timepointType;
 
-    public SimpleSpecimenImporter()
+    public SimpleSpecimenImporter(Container container, User user)
     {
-        this(TimepointType.DATE, "Subject");
+        this(container, user, TimepointType.DATE, "Subject");
     }
 
-    public SimpleSpecimenImporter(TimepointType timepointType, String participantIdLabel)
+    public SimpleSpecimenImporter(Container container, User user, TimepointType timepointType, String participantIdLabel)
     {
+        super(container, user);
         _timepointType = timepointType;
         _columnLabels = new HashMap<>(DEFAULT_COLUMN_LABELS);
         _columnLabels.put(PARTICIPANT_ID, participantIdLabel + " Id");
@@ -119,13 +120,13 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         return _columnLabels;
     }
 
-    public void process(User user, Container container, File tsvFile, boolean merge, Logger logger) throws SQLException, IOException, ConversionException, ValidationException
+    public void process(File tsvFile, boolean merge, Logger logger) throws SQLException, IOException, ConversionException, ValidationException
     {
         TabLoader tl = new TabLoader(tsvFile);
         tl.setThrowOnErrors(true);
         fixupSpecimenColumns(tl);
 
-        _process(user, container, tl.load(), merge, logger);
+        _process(tl.load(), merge, logger);
     }
 
     public void fixupSpecimenColumns(TabLoader tl) throws IOException
@@ -204,15 +205,16 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         return cols;
     }
 
-    public void process(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException
+    public void process(List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException
     {
-        _process(user, container, rows, merge, Logger.getLogger(getClass()));
+        _process(rows, merge, Logger.getLogger(getClass()));
     }
 
     // Avoid conflict with SpecimenImporter.process() (has similar signature)
-    private void _process(User user, Container container, List<Map<String, Object>> rows, boolean merge, Logger logger) throws SQLException, IOException, ValidationException
+    private void _process(List<Map<String, Object>> rows, boolean merge, Logger logger) throws SQLException, IOException, ValidationException
     {
         //Map from column name to
+        Container container = getContainer();
         Study study = StudyManager.getInstance().getStudy(container);
         Map<String, LookupTable> lookupTables = new HashMap<>();
         lookupTables.put("additive_type", new LookupTable(StudySchema.getInstance().getTableInfoAdditiveType(), container, SpecimenTableType.Additives, "additive_type_id", "additive_id", "additive", "Additive"));
@@ -256,7 +258,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
 
         try
         {
-            super.process(user, container, sifMap, merge, logger);
+            super.process(sifMap, merge, logger);
         }
         catch (SQLException | ValidationException ex)
         {

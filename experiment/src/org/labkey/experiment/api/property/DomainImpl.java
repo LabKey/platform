@@ -26,6 +26,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.MVDisplayColumnFactory;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
@@ -71,7 +72,7 @@ public class DomainImpl implements Domain
     DomainDescriptor _ddOld;
     DomainDescriptor _dd;
     List<DomainPropertyImpl> _properties;
-
+    private Set<PropertyStorageSpec.ForeignKey> _propertyForeignKeys = Collections.emptySet();
 
     public DomainImpl(DomainDescriptor dd)
     {
@@ -226,7 +227,7 @@ public class DomainImpl implements Domain
         {
             throw new IllegalArgumentException("The property is not part of this domain");
         }
-        _properties.add(index, (DomainPropertyImpl)prop);
+        _properties.add(index, (DomainPropertyImpl) prop);
     }
 
     public ActionURL urlShowData(ContainerUser context)
@@ -427,6 +428,24 @@ public class DomainImpl implements Domain
         PropertyDescriptor pd = new PropertyDescriptor();
         pd.setContainer(getContainer());
         pd.setRangeURI(PropertyType.STRING.getTypeUri());
+        pd.setScale(PropertyType.STRING.getScale());
+        DomainPropertyImpl ret = new DomainPropertyImpl(this, pd);
+        _properties.add(ret);
+        return ret;
+    }
+
+    public DomainProperty addProperty(PropertyStorageSpec spec)
+    {
+        PropertyDescriptor pd = new PropertyDescriptor();
+        pd.setContainer(getContainer());
+        pd.setName(spec.getName());
+        pd.setJdbcType(spec.getJdbcType(), spec.getSize());
+        pd.setNullable(spec.isNullable());
+//        pd.setAutoIncrement(spec.isAutoIncrement());      // always false in PropertyDescriptor
+        pd.setMvEnabled(spec.isMvEnabled());
+        pd.setPropertyURI(getTypeURI() + ":field-" + spec.getName());
+        pd.setDescription(spec.getDescription());
+        pd.setImportAliases(spec.getImportAliases());
         DomainPropertyImpl ret = new DomainPropertyImpl(this, pd);
         _properties.add(ret);
         return ret;
@@ -520,5 +539,15 @@ public class DomainImpl implements Domain
     public String toString()
     {
         return getTypeURI();
+    }
+
+    public Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys()
+    {
+        return _propertyForeignKeys;
+    }
+
+    public void setPropertyForeignKeys(Set<PropertyStorageSpec.ForeignKey> propertyForeignKeys)
+    {
+        _propertyForeignKeys = propertyForeignKeys;
     }
 }

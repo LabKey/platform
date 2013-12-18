@@ -17,6 +17,7 @@ package org.labkey.study.query;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.study.StudyService;
 
 import java.util.Map;
@@ -38,8 +39,9 @@ public class SpecimenPivotByRequestingLocation extends BaseSpecimenPivotTable
 
         try
         {
-            Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(getContainer());
-            Map<Integer, NameLabelPair> derivativeTypeMap = getDerivativeTypeMap(getContainer());
+            Container container = getContainer();
+            Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(container);
+            Map<Integer, NameLabelPair> derivativeTypeMap = getDerivativeTypeMap(container);
             Map<Integer, NameLabelPair> locationMap = getSiteMap(getContainer());
 
             for (ColumnInfo col : getRealTable().getColumns())

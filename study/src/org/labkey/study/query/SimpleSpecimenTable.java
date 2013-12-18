@@ -19,19 +19,15 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.study.StudySchema;
 import org.labkey.api.study.StudyService;
 
-/**
- * User: jeckels
- * Date: May 8, 2009
- */
 public class SimpleSpecimenTable extends AbstractSpecimenTable
 {
     public SimpleSpecimenTable(StudyQuerySchema schema, boolean skipPermissionChecks)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimen(), skipPermissionChecks);
+        super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), skipPermissionChecks, true);
 
         getColumn(StudyService.get().getSubjectColumnName(getContainer())).setFk(null);
 
-        addSpecimenVisitColumn(TimepointType.DATE);
+        addSpecimenVisitColumn(TimepointType.DATE, true);
 
         addSpecimenTypeColumns();
     }

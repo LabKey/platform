@@ -653,11 +653,10 @@
       </ns:column>
     </ns:columns>
   </ns:table>
-    <ns:table tableName="Vial" tableDbType="TABLE">
+    <ns:table tableName="Vial" tableDbType="NOT_IN_DB">
       <ns:description>One row per vial in the specimen tracking system.</ns:description>
       <ns:columns>
         <ns:column columnName="RowId"/>
-        <ns:column columnName="Container"/>
         <ns:column columnName="SpecimenHash">
           <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including subject, visit, and specimen type.</ns:description>
         </ns:column>
@@ -705,51 +704,21 @@
           <ns:description>The total cell count for each vial.</ns:description>
           <ns:formatString>0.####</ns:formatString>
         </ns:column>
-        <ns:column columnName="TubeType">
-          <ns:description>The type of vial.</ns:description>
-        </ns:column>
-          <ns:column columnName="LatestComments">
-              <ns:description>Additional comments on processing quality from latest event.</ns:description>
-          </ns:column>
-          <ns:column columnName="LatestQualityComments">
+        <ns:column columnName="LatestComments">
           <ns:description>Additional comments on processing quality from latest event.</ns:description>
-         </ns:column>
-          <ns:column columnName="LatestDeviationCode1">
-              <ns:description>Site-defined deviation code from latest event.</ns:description>
-          </ns:column>
-          <ns:column columnName="LatestDeviationCode2">
-              <ns:description>Site-defined deviation code from latest event.</ns:description>
-          </ns:column>
-          <ns:column columnName="LatestDeviationCode3">
-              <ns:description>Site-defined deviation code from latest event.</ns:description>
-          </ns:column>
-          <ns:column columnName="LatestConcentration">
-              <ns:description>Processing concentration value from latest event.</ns:description>
-          </ns:column>
-          <ns:column columnName="LatestIntegrity">
-              <ns:description>Processing integrity value from latest event.</ns:description>
-          </ns:column>
-          <ns:column columnName="LatestRatio">
-              <ns:description>Processing ratio value from latest event.</ns:description>
-          </ns:column>
-          <ns:column columnName="LatestYield">
-              <ns:description>Processing yield value from latest event.</ns:description>
-          </ns:column>
-          <ns:column columnName="freezer" />
-          <ns:column columnName="fr_container" />
-          <ns:column columnName="fr_position" />
-          <ns:column columnName="fr_level1" />
-          <ns:column columnName="fr_level2" />
+        </ns:column>
+        <ns:column columnName="LatestQualityComments">
+          <ns:description>Additional comments on processing quality from latest event.</ns:description>
+        </ns:column>
       </ns:columns>
     </ns:table>
-  <ns:table tableName="Specimen" tableDbType="TABLE">
+  <ns:table tableName="Specimen" tableDbType="NOT_IN_DB">
     <ns:description>Contains one row per primary specimen collection/draw.</ns:description>
     <ns:columns>
       <ns:column columnName="RowId"/>
       <ns:column columnName="ParticipantSequenceNum">
         <ns:description>A string value uniquely identfying the subject/visit combination for each specimen row.</ns:description>
       </ns:column>
-      <ns:column columnName="Container"/>
       <ns:column columnName="Ptid">
         <ns:description>The ID of the subject providing each specimen.</ns:description>
       </ns:column>
@@ -831,7 +800,7 @@
       </ns:column>
     </ns:columns>
   </ns:table>
-  <ns:table tableName="SpecimenDetail" tableDbType="VIEW">
+  <ns:table tableName="SpecimenDetail" tableDbType="NOT_IN_DB">
     <ns:description>Contains one row per vial in the specimen tracking system.</ns:description>
     <ns:columns>
       <ns:column columnName="RowId">
@@ -967,7 +936,7 @@
       </ns:column>
       <ns:column columnName="AvailableVolume">
           <ns:description>The total volume of all vials from each specimen that are currently available for request.</ns:description>
-          <ns:datatype>int</ns:datatype>
+          <ns:datatype>double</ns:datatype>
           <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
       <ns:column columnName="ExpectedAvailableCount">
@@ -992,7 +961,7 @@
       </ns:column>
       <ns:column columnName="Volume">
           <ns:description>The volume of each vial.</ns:description>
-          <ns:datatype>int</ns:datatype>
+          <ns:datatype>double</ns:datatype>
           <ns:formatString>#,###.0#</ns:formatString>
       </ns:column>
       <ns:column columnName="requestable">
@@ -1089,7 +1058,7 @@
         </ns:column>
     </ns:columns>
   </ns:table>
-  <ns:table tableName="SpecimenSummary" tableDbType="VIEW">
+  <ns:table tableName="SpecimenSummary" tableDbType="NOT_IN_DB">
     <ns:description>Contains one row per primary specimen collection/draw.</ns:description>
     <ns:columns>
       <ns:column columnName="Container">
@@ -1267,13 +1236,12 @@
       </ns:column>
     </ns:columns>
   </ns:table>
-  <ns:table tableName="SpecimenEvent" tableDbType="TABLE">
+  <ns:table tableName="SpecimenEvent" tableDbType="NOT_IN_DB">
     <ns:description>Contains one row per specimen event.  An event is a logged storage location for a vial, generally corresponding to one event per clinic, repository, and/or laboratory.</ns:description>
     <ns:columns>
       <ns:column columnName="RowId">
         <ns:description>The unique ID of each event.</ns:description>
       </ns:column>
-      <ns:column columnName="Container"/>
       <ns:column columnName="ExternalId">
           <ns:description>The external identifier for each event, if imported from an external data source.</ns:description>
       </ns:column>
@@ -1346,21 +1314,6 @@
       </ns:column>
       <ns:column columnName="RecordSource">
         <ns:description>The LIMS system responsible for each event.  Generally used when multiple LIMS (LDMS and Labware, for example) are providing loading data into a single repository.</ns:description>
-      </ns:column>
-      <ns:column columnName="fr_container">
-        <ns:description>The container location within the storage freezer.</ns:description>
-      </ns:column>
-      <ns:column columnName="fr_level1">
-        <ns:description>The level 1 location within the storage freezer.</ns:description>
-      </ns:column>
-      <ns:column columnName="fr_level2">
-        <ns:description>The level 2 location within the storage freezer.</ns:description>
-      </ns:column>
-      <ns:column columnName="fr_position">
-        <ns:description>The storage position within the storage freezer.</ns:description>
-      </ns:column>
-      <ns:column columnName="freezer">
-        <ns:description>The ID of the storage freezer.</ns:description>
       </ns:column>
       <ns:column columnName="SpecimenNumber">
           <ns:description>A text identifier of the collection/draw.  This value may vary by location/LIMS, so it should not be used to group events cross-location.</ns:description>
@@ -1440,33 +1393,6 @@
       <ns:column columnName="TotalCellCount">
         <ns:description>The total cell count for each vial.</ns:description>
         <ns:formatString>0.####</ns:formatString>
-      </ns:column>
-      <ns:column columnName="TubeType">
-        <ns:description>The type of vial.</ns:description>
-      </ns:column>
-      <ns:column columnName="QualityComments">
-        <ns:description>Additional comments on processing quality.</ns:description>
-      </ns:column>
-      <ns:column columnName="DeviationCode1">
-        <ns:description>Site-defined deviation code.</ns:description>
-      </ns:column>
-      <ns:column columnName="DeviationCode2">
-        <ns:description>Site-defined deviation code.</ns:description>
-      </ns:column>
-      <ns:column columnName="DeviationCode3">
-        <ns:description>Site-defined deviation code.</ns:description>
-      </ns:column>
-      <ns:column columnName="Concentration">
-        <ns:description>Processing concentration value.</ns:description>
-      </ns:column>
-      <ns:column columnName="Integrity">
-        <ns:description>Processing integrity value.</ns:description>
-      </ns:column>
-      <ns:column columnName="Ratio">
-        <ns:description>Processing ratio value.</ns:description>
-      </ns:column>
-      <ns:column columnName="Yield">
-        <ns:description>Processing yield value.</ns:description>
       </ns:column>
       <ns:column columnName="InputHash"/>
       <ns:column columnName="Obsolete">
@@ -1861,7 +1787,7 @@
       </ns:column>
       </ns:columns>
   </ns:table>
-  <ns:table tableName="VialCounts" tableDbType="VIEW">
+  <ns:table tableName="VialCounts" tableDbType="NOT_IN_DB">
     <ns:description>Contains one row per primary specimen, allowing dynamic (non-cached) calculation of typical vial counts.</ns:description>
     <ns:columns>
       <ns:column columnName="Container"/>

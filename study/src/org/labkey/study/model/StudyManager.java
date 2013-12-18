@@ -389,7 +389,9 @@ public class StudyManager
 
     public StudyImpl createStudy(User user, StudyImpl study) throws SQLException
     {
-        assert null != study.getContainer();
+        Container container = study.getContainer();
+        assert null != container;
+        assert null != user;
         if (study.getLsid() == null)
             study.initLsid();
 
@@ -405,6 +407,10 @@ public class StudyManager
         //instead, we let it inherit the container's policy until the security type
         //is changed to one of the advanced options. 
 
+        // Force provisioned specimen tables to be created
+        StudySchema.getInstance().getTableInfoSpecimen(container, user);
+        StudySchema.getInstance().getTableInfoVial(container, user);
+        StudySchema.getInstance().getTableInfoSpecimenEvent(container, user);
         return study;
     }
 
@@ -2216,7 +2222,8 @@ public class StudyManager
 
         for (String tableName : StudySchema.getInstance().getSchema().getTableNames())
         {
-            if (!deletedTableNames.contains(tableName))
+            if (!deletedTableNames.contains(tableName) &&
+                    !"specimen".equalsIgnoreCase(tableName) && !"vial".equalsIgnoreCase(tableName) && !"specimenevent".equalsIgnoreCase(tableName))
             {
                 missed.append(" ");
                 missed.append(tableName);

@@ -1054,6 +1054,21 @@ class PostgreSql84Dialect extends SqlDialect
             }
         }
 
+        for (PropertyStorageSpec.ForeignKey foreignKey : change.getForeignKeys())
+        {
+            StringBuilder fkString = new StringBuilder("CONSTRAINT ");
+            DbSchema schema = DbSchema.get(foreignKey.getSchemaName());
+            TableInfo tableInfo = foreignKey.isProvisioned() ?
+                    foreignKey.getTableInfoProvisioned() :
+                    schema.getTable(foreignKey.getTableName());
+            String constraintName = "fk_" + foreignKey.getColumnName() + "_" + change.getTableName() + "_" + tableInfo.getName();
+            fkString.append(constraintName).append(" FOREIGN KEY (")
+                    .append(foreignKey.getColumnName()).append(") REFERENCES ")
+                    .append(tableInfo.getSelectName()).append(" (")
+                    .append(foreignKey.getForeignColumnName()).append(")");
+            createTableSqlParts.add(fkString.toString());
+        }
+
         statements.add(String.format("CREATE TABLE %s (%s)", makeTableIdentifier(change), StringUtils.join(createTableSqlParts, ", ")));
         if (null != pkColumn)
             statements.add(String.format("ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY(%s)",
@@ -1087,8 +1102,21 @@ class PostgreSql84Dialect extends SqlDialect
             colSpec.add("(" + prop.getSize() + ")");
         else if (prop.getJdbcType() == JdbcType.DECIMAL)
             colSpec.add("(15,4)");
-        if (prop.isPrimaryKey())
+        if (prop.isPrimaryKey() || !prop.isNullable())
             colSpec.add("NOT NULL");
+        if (null != prop.getDefaultValue())
+        {
+            if (prop.getJdbcType().sqlType == Types.BOOLEAN)
+            {
+                String defaultClause = " DEFAULT " +
+                        ((Boolean)prop.getDefaultValue() ? getBooleanTRUE() : getBooleanFALSE());
+                colSpec.add(defaultClause);
+            }
+            else
+            {
+                throw new IllegalArgumentException("Default value on type " + prop.getJdbcType().name() + " is not supported.");
+            }
+        }
         return StringUtils.join(colSpec, ' ');
     }
 
@@ -1106,6 +1134,10 @@ class PostgreSql84Dialect extends SqlDialect
             if (prop.getJdbcType().sqlType == Types.INTEGER)
             {
                 return "SERIAL";
+            }
+            else if (prop.getJdbcType().sqlType == Types.BIGINT)
+            {
+                return "BIGSERIAL";
             }
             else
             {

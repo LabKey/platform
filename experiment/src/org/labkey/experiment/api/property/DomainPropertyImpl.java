@@ -407,7 +407,7 @@ public class DomainPropertyImpl implements DomainProperty
 
     public int getScale()
     {
-        return _pd.getPropertyType().getScale();
+        return _pd.getScale();
     }
 
     public String getInputType()

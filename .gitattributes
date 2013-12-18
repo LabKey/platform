@@ -942,6 +942,7 @@ experiment/resources/schemas/dbscripts/postgresql/exp-12.10-12.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-12.20-12.30.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-12.30-13.10.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-13.10-13.20.sql -text
+experiment/resources/schemas/dbscripts/postgresql/exp-13.30-13.31.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-create.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/deleteOrphans.sql -text
@@ -1081,6 +1082,7 @@ experiment/resources/schemas/dbscripts/sqlserver/exp-12.10-12.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-12.20-12.30.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-12.30-13.10.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-13.10-13.20.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/exp-13.30-13.31.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-create.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/deleteOrphans.sql -text
@@ -2726,6 +2728,11 @@ study/gwtsrc/gwt/client/org/labkey/plate/designer/client/WellGroupPropertyPanel.
 study/gwtsrc/gwt/client/org/labkey/plate/designer/client/model/GWTPlate.java -text
 study/gwtsrc/gwt/client/org/labkey/plate/designer/client/model/GWTPosition.java -text
 study/gwtsrc/gwt/client/org/labkey/plate/designer/client/model/GWTWellGroup.java -text
+study/gwtsrc/gwt/client/org/labkey/specimen/client/SpecimenDesigner.java -text
+study/gwtsrc/gwt/client/org/labkey/specimen/client/SpecimenDesignerMainPanel.java -text
+study/gwtsrc/gwt/client/org/labkey/specimen/client/SpecimenException.java -text
+study/gwtsrc/gwt/client/org/labkey/specimen/client/SpecimenService.java -text
+study/gwtsrc/gwt/client/org/labkey/specimen/client/SpecimenServiceAsync.java -text
 study/gwtsrc/gwt/client/org/labkey/study/StudyApplication.java -text
 study/gwtsrc/gwt/client/org/labkey/study/chart/client/StudyChartDesigner.java -text
 study/gwtsrc/gwt/client/org/labkey/study/chart/client/StudyChartService.java -text
@@ -2983,6 +2990,8 @@ study/resources/schemas/dbscripts/postgresql/study-13.21-13.22.sql -text
 study/resources/schemas/dbscripts/postgresql/study-13.22-13.23.sql -text
 study/resources/schemas/dbscripts/postgresql/study-13.23-13.24.sql -text
 study/resources/schemas/dbscripts/postgresql/study-13.30-13.31.sql -text
+study/resources/schemas/dbscripts/postgresql/study-13.31-13.32.sql -text
+study/resources/schemas/dbscripts/postgresql/study-13.32-13.33.sql -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-0.00-1.11.sql -text
@@ -3195,6 +3204,8 @@ study/resources/schemas/dbscripts/sqlserver/study-13.21-13.22.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-13.22-13.23.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-13.23-13.24.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-13.30-13.31.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-13.31-13.32.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-13.32-13.33.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-create.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
@@ -3282,6 +3293,7 @@ study/src/org/labkey/study/controllers/samples/ShowSearchAction.java -text
 study/src/org/labkey/study/controllers/samples/ShowUploadSpecimensAction.java -text
 study/src/org/labkey/study/controllers/samples/SpecimenApiController.java -text
 study/src/org/labkey/study/controllers/samples/SpecimenController.java -text
+study/src/org/labkey/study/controllers/samples/SpecimenServiceImpl.java -text
 study/src/org/labkey/study/controllers/samples/SpecimenUtils.java -text
 study/src/org/labkey/study/controllers/security/SecurityController.java -text
 study/src/org/labkey/study/dataset/DatasetAuditProvider.java -text
@@ -3347,6 +3359,7 @@ study/src/org/labkey/study/importer/VisitMapParseException.java -text
 study/src/org/labkey/study/importer/VisitMapReader.java -text
 study/src/org/labkey/study/importer/VisitMapRecord.java -text
 study/src/org/labkey/study/importer/XmlVisitMapReader.java -text
+study/src/org/labkey/study/model/AbstractSpecimenDomainKind.java -text
 study/src/org/labkey/study/model/AbstractStudyCachable.java -text
 study/src/org/labkey/study/model/AbstractStudyEntity.java -text
 study/src/org/labkey/study/model/AdditiveType.java -text
@@ -3364,6 +3377,7 @@ study/src/org/labkey/study/model/DatasetImportHelper.java -text
 study/src/org/labkey/study/model/DatasetManager.java -text
 study/src/org/labkey/study/model/DatasetReorderer.java -text
 study/src/org/labkey/study/model/DateDatasetDomainKind.java -text
+study/src/org/labkey/study/model/DefaultSpecimenTablesTemplate.java -text
 study/src/org/labkey/study/model/DerivativeType.java -text
 study/src/org/labkey/study/model/ExtendedSpecimenRequestView.java -text
 study/src/org/labkey/study/model/ExtensibleStudyEntity.java -text
@@ -3390,7 +3404,9 @@ study/src/org/labkey/study/model/SecurityType.java -text
 study/src/org/labkey/study/model/SequenceNumImportHelper.java -text
 study/src/org/labkey/study/model/Specimen.java -text
 study/src/org/labkey/study/model/SpecimenComment.java -text
+study/src/org/labkey/study/model/SpecimenDomainKind.java -text
 study/src/org/labkey/study/model/SpecimenEvent.java -text
+study/src/org/labkey/study/model/SpecimenEventDomainKind.java -text
 study/src/org/labkey/study/model/SpecimenTypeSummary.java -text
 study/src/org/labkey/study/model/SpecimenTypeSummaryRow.java -text
 study/src/org/labkey/study/model/StudyDomainKind.java -text
@@ -3400,6 +3416,7 @@ study/src/org/labkey/study/model/StudyManager.java -text
 study/src/org/labkey/study/model/StudySnapshot.java -text
 study/src/org/labkey/study/model/TestDatasetDomainKind.java -text
 study/src/org/labkey/study/model/UploadLog.java -text
+study/src/org/labkey/study/model/VialDomainKind.java -text
 study/src/org/labkey/study/model/VisitDataSet.java -text
 study/src/org/labkey/study/model/VisitDataSetType.java -text
 study/src/org/labkey/study/model/VisitDatasetDomainKind.java -text
@@ -3461,6 +3478,7 @@ study/src/org/labkey/study/query/DerivativeTypeTable.java -text
 study/src/org/labkey/study/query/ExtensibleObjectQueryView.java -text
 study/src/org/labkey/study/query/LocationSpecimenListTable.java -text
 study/src/org/labkey/study/query/LocationTable.java -text
+study/src/org/labkey/study/query/OuterAliasedColumn.java -text
 study/src/org/labkey/study/query/ParticipantCategoryTable.java -text
 study/src/org/labkey/study/query/ParticipantDataSetTable.java -text
 study/src/org/labkey/study/query/ParticipantGroupCohortUnionTable.java -text
@@ -3488,8 +3506,11 @@ study/src/org/labkey/study/query/SpecimenRequestQueryView.java -text
 study/src/org/labkey/study/query/SpecimenRequestStatusTable.java -text
 study/src/org/labkey/study/query/SpecimenRequestTable.java -text
 study/src/org/labkey/study/query/SpecimenSummaryTable.java -text
+study/src/org/labkey/study/query/SpecimenTable.java -text
+study/src/org/labkey/study/query/SpecimenTablesProvider.java -text
 study/src/org/labkey/study/query/SpecimenUpdateService.java -text
 study/src/org/labkey/study/query/SpecimenVialCountTable.java -text
+study/src/org/labkey/study/query/SpecimenWrapTable.java -text
 study/src/org/labkey/study/query/StudyDataTable.java -text
 study/src/org/labkey/study/query/StudyPropertiesQueryView.java -text
 study/src/org/labkey/study/query/StudyPropertiesTable.java -text
@@ -3679,7 +3700,6 @@ study/src/org/labkey/study/view/reportPermission.jsp -text
 study/src/org/labkey/study/view/requirePipeline.jsp -text
 study/src/org/labkey/study/view/samples/SpecimenRequestNotificationEmailTemplate.java -text
 study/src/org/labkey/study/view/samples/addSamplesToRequest.jsp -text
-study/src/org/labkey/study/view/samples/advancedSearch.jsp -text
 study/src/org/labkey/study/view/samples/autoReportList.jsp -text
 study/src/org/labkey/study/view/samples/configRequestabilityRules.jsp -text
 study/src/org/labkey/study/view/samples/configurationRequired.jsp -text

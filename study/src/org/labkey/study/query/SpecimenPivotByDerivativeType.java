@@ -17,6 +17,7 @@ package org.labkey.study.query;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.study.StudyService;
 import java.util.Map;
 
@@ -35,8 +36,9 @@ public class SpecimenPivotByDerivativeType extends BaseSpecimenPivotTable
         setDescription("Contains up to one row of Specimen Primary/Derivative Type totals for each " + StudyService.get().getSubjectNounSingular(getContainer()) +
             "/visit combination.");
 
-        Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(getContainer());
-        Map<Integer, NameLabelPair> derivativeTypeMap = getDerivativeTypeMap(getContainer());
+        Container container = getContainer();
+        Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(container);
+        Map<Integer, NameLabelPair> derivativeTypeMap = getDerivativeTypeMap(container);
 
         for (ColumnInfo col : getRealTable().getColumns())
         {

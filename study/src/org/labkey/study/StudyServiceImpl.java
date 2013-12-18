@@ -25,6 +25,7 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -32,6 +33,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -39,8 +41,11 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.SecurableResource;
@@ -70,7 +75,10 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
 import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.query.DataSetTableImpl;
+import org.labkey.study.query.SimpleSpecimenTable;
+import org.labkey.study.query.SpecimenTable;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.query.VialTable;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
 import org.springframework.validation.BindException;
@@ -84,6 +92,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -677,5 +686,186 @@ public class StudyServiceImpl implements StudyService.Service
         sql.add(c);
 
         return new ExprColumn(ti, column.getName(), sql, column.getJdbcType(), column);
+    }
+
+
+    /**
+     * This is in the Service because SpecimenForeignKey is in API.  Otherwise, this would just be something like
+     * StudyQuerySchema.createVialUnionTable() and StudyQuerySchema.createSpecimenUnionTable()
+     */
+
+    @Override
+    public TableInfo getSpecimenTableUnion(QuerySchema qsDefault, List<Container> containers)
+    {
+        if (!(qsDefault instanceof StudyQuerySchema))
+            throw new IllegalArgumentException("expceted study schema");
+        StudyQuerySchema schemaDefault = (StudyQuerySchema)qsDefault;
+        User user = schemaDefault.getUser();
+
+        List<TableInfo> tables = new ArrayList<>();
+        if (null == containers || containers.isEmpty())
+        {
+            // TODO: what if current container doesn't have a vial table?  use template?
+            SimpleSpecimenTable t = new SimpleSpecimenTable(schemaDefault, true);
+            t.setPublic(false);
+            return t;
+        }
+        else
+        {
+            for (Container c : containers)
+            {
+                Study s = StudyManager.getInstance().getStudy(c);
+                StudyQuerySchema schema = schemaDefault;
+                if (null != s)
+                    schema = new StudyQuerySchema((StudyImpl)s, user, false);
+                SimpleSpecimenTable t = new SimpleSpecimenTable(schema, true);
+                t.setPublic(false);
+                tables.add(t);
+            }
+        }
+        return createUnionTable(schemaDefault, tables);
+    }
+
+
+    @Override
+    public TableInfo getVialTableUnion(QuerySchema qsDefault, List<Container> containers)
+    {
+        if (!(qsDefault instanceof StudyQuerySchema))
+            throw new IllegalArgumentException("expceted study schema");
+        StudyQuerySchema schemaDefault = (StudyQuerySchema)qsDefault;
+        User user = schemaDefault.getUser();
+
+        List<TableInfo> tables = new ArrayList<>();
+
+        if (null == containers || containers.isEmpty())
+        {
+            // TODO: what if current container doesn't have a vial table?  use template?
+            VialTable t = new VialTable(schemaDefault);
+            t.setPublic(false);
+            return t;
+        }
+        else
+        {
+            for (Container c : containers)
+            {
+                Study s = StudyManager.getInstance().getStudy(c);
+                StudyQuerySchema schema = schemaDefault;
+                if (null != s)
+                    schema = new StudyQuerySchema((StudyImpl)s, user, false);
+                VialTable t = new VialTable(schema);
+                t.setPublic(false);
+                tables.add(t);
+            }
+        }
+        return createUnionTable(schemaDefault, tables);
+    }
+
+
+    TableInfo createUnionTable(StudyQuerySchema schemaDefault, List<TableInfo> terms)
+    {
+        if (null == terms || terms.isEmpty())
+            return null;
+
+        // NOTE: we don't optimize this case, because we always want to return consistent column names
+        //if (terms.size() == 1)
+        //    return terms.get(0);
+
+        // TODO: we're assuming all tables are identical
+        TableInfo template = terms.get(0);
+        SqlDialect dialect = template.getSqlDialect();
+        AliasManager aliasManager = new AliasManager(template.getSchema());
+
+        List<ColumnInfo> cols = new ArrayList<>(template.getColumns().size());
+        for (ColumnInfo col : template.getColumns())
+        {
+            String subjectColumnName =  ((StudyQuerySchema)template.getUserSchema()).getSubjectColumnName();
+            String name = col.getColumnName();
+            if (name.equalsIgnoreCase(subjectColumnName) || name.equalsIgnoreCase("participantid"))
+                name = "ParticipantId";
+            ColumnInfo colUnion = new AliasedColumn(null,new FieldKey(null,name),col,true)
+            {
+                @Override
+                public SQLFragment getValueSql(String tableAlias)
+                {
+                    return new SQLFragment(tableAlias + "." + getAlias());
+                }
+            };
+            colUnion.setAlias(aliasManager.decideAlias(name));
+            cols.add(colUnion);
+        }
+
+        SQLFragment sqlf = new SQLFragment();
+        String union = "";
+        int counter = 1;
+        for (TableInfo t : terms)
+        {
+            LinkedHashMap<String,SQLFragment> joins = new LinkedHashMap<>();
+            String tableAlias = "_" + (counter++);
+            sqlf.append(union);
+            sqlf.append("SELECT ");
+            String comma = "";
+            for (ColumnInfo colUnion : cols)
+            {
+                ColumnInfo col = t.getColumn(colUnion.getName());
+                sqlf.append(comma);
+                if (null == col && colUnion.getName().equalsIgnoreCase("ParticipantId"))
+                    col = t.getColumn(((StudyQuerySchema)t.getUserSchema()).getSubjectColumnName());
+                if (null == col)
+                {
+                    sqlf.append("CAST(NULL AS ").append(dialect.sqlTypeNameFromJdbcType(colUnion.getJdbcType())).append(")");
+                }
+                else
+                {
+                    sqlf.append(col.getValueSql(tableAlias));
+                    col.declareJoins(tableAlias,joins);
+                }
+                sqlf.append(" AS ").append(colUnion.getAlias());
+                comma = ", ";
+            }
+            sqlf.append("\nFROM ");
+            sqlf.append(t.getFromSQL(tableAlias));
+            for (SQLFragment j : joins.values())
+                sqlf.append(" ").append(j);
+            union = "\nUNION ALL\n";
+        }
+        return new _UnionTable(schemaDefault, cols, sqlf);
+    }
+
+
+    private static class _UnionTable extends AbstractTableInfo
+    {
+        StudyQuerySchema _studyQuerySchema;
+        SQLFragment _sqlInner;
+
+        _UnionTable(StudyQuerySchema studyQuerySchema, List<ColumnInfo> cols, SQLFragment sqlf)
+        {
+            super(studyQuerySchema.getDbSchema());
+            _studyQuerySchema = studyQuerySchema;
+            for (ColumnInfo col : cols)
+            {
+                col.setParentTable(this);
+                addColumn(col);
+            }
+            _sqlInner = sqlf;
+        }
+
+        @Override
+        public boolean isPublic()
+        {
+            return false;
+        }
+
+        @Override
+        protected SQLFragment getFromSQL()
+        {
+            return _sqlInner;
+        }
+
+        @Nullable
+        @Override
+        public UserSchema getUserSchema()
+        {
+            return _studyQuerySchema;
+        }
     }
 }

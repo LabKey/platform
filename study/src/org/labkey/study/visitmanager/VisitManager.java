@@ -608,13 +608,13 @@ public abstract class VisitManager
         // If this is an ancillary study, the specimen table may be subject to special filtering, so we need to use
         // the query table, rather than the underlying database table.  We don't do this in all cases for performance
         // reasons.
-        if (study.isAncillaryStudy())
+        if (study.isAncillaryStudy())       // TODO: maybe we can always use SimpleSpecimen
         {
             StudyQuerySchema studyQuerySchema = new StudyQuerySchema(study, null, false);
             return studyQuerySchema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
         }
         else
-            return StudySchema.getInstance().getTableInfoSpecimen();
+            return StudySchema.getInstance().getTableInfoSpecimen(study.getContainer());
     }
 
 
@@ -646,8 +646,6 @@ public abstract class VisitManager
                 }
                 ptids.append("SELECT DISTINCT ptid FROM ");
                 ptids.append(tableSpecimen, "spec");
-                ptids.append(" WHERE spec.container=?");
-                ptids.add(study.getContainer().getId());
 
                 SQLFragment del = new SQLFragment();
                 del.append("DELETE FROM ").append(tableParticipant.getSelectName()).append(" WHERE container=? ");

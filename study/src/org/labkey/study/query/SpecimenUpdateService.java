@@ -81,7 +81,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             else
                 throw new IllegalArgumentException("RowId not found for a row.");
         }
-        List<Specimen> specimens = SampleManager.getInstance().getSpecimens(container, rowIds);
+        List<Specimen> specimens = SampleManager.getInstance().getSpecimens(container, user, rowIds);
         if (specimens.size() != keys.size())
             throw new IllegalStateException("Specimens should be same size as rows.");
 
@@ -120,7 +120,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         int rowId = keyFromMap(oldRow);
-        Specimen specimen = SampleManager.getInstance().getSpecimen(container, rowId);
+        Specimen specimen = SampleManager.getInstance().getSpecimen(container, user, rowId);
 
         if (null == specimen)
             throw new IllegalArgumentException("No specimen found for rowId: " + rowId);
@@ -303,7 +303,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             int rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
             rowIds.add(new Long(rowId));
         }
-        List<Specimen> specimens = SampleManager.getInstance().getSpecimens(container, rowIds);
+        List<Specimen> specimens = SampleManager.getInstance().getSpecimens(container, user, rowIds);
         if (specimens.size() != rows.size())
             throw new IllegalStateException("Specimens should be same size as rows.");
 
@@ -360,7 +360,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         int rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
-        Specimen specimen = SampleManager.getInstance().getSpecimen(container, rowId);
+        Specimen specimen = SampleManager.getInstance().getSpecimen(container, user, rowId);
         if (specimen == null)
             throw new IllegalArgumentException("No specimen found for rowId: " + rowId);
 
@@ -437,9 +437,9 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
     private void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge, boolean insert) throws SQLException, IOException, ValidationException
     {
-        EditableSpecimenImporter importer = new EditableSpecimenImporter(insert);
+        EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, insert);
         rows = importer.mapColumnNamesToTsvColumnNames(rows);
-        importer.process(user, container, rows, merge);
+        importer.process(rows, merge);
     }
 
     private void checkEditability(Container container, Specimen specimen) throws ValidationException
@@ -480,11 +480,14 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         SpecimenEvent specimenEvent = SampleManager.getInstance().getLastEvent(SampleManager.getInstance().getSpecimenEvents(specimens, false));
         if (null == specimenEvent)
             throw new IllegalStateException("Expected at least one event for specimen.");
+        TableInfo tableInfoSpecimenEvent = StudySchema.getInstance().getTableInfoSpecimenEvent(container);
+        if (null == tableInfoSpecimenEvent)
+            throw new IllegalStateException("Expected SpecimenEvent table to already exist.");
 
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromString("Container"), container);
+        SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromString("VialId"), specimen.getRowId());
         filter.addCondition(FieldKey.fromString("ExternalId"), specimenEvent.getExternalId());
-        return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenEvent(), filter, null).getMap();
+        return new TableSelector(tableInfoSpecimenEvent, filter, null).getMap();
     }
 }
 

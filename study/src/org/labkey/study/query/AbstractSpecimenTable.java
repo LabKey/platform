@@ -16,7 +16,6 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.TableInfo;
 
 /**
@@ -26,12 +25,7 @@ import org.labkey.api.data.TableInfo;
  */
 public abstract class AbstractSpecimenTable extends BaseStudyTable
 {
-    public AbstractSpecimenTable(StudyQuerySchema schema, TableInfo realTable)
-    {
-        this(schema, realTable, false);
-    }
-
-    public AbstractSpecimenTable(StudyQuerySchema schema, TableInfo realTable, boolean skipPermissionChecks)
+    public AbstractSpecimenTable(StudyQuerySchema schema, TableInfo realTable, boolean skipPermissionChecks, boolean isProvisioned)
     {
         super(schema, realTable, true, skipPermissionChecks);
 
@@ -41,7 +35,8 @@ public abstract class AbstractSpecimenTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("SpecimenHash")).setHidden(true);
         addWrapParticipantColumn("PTID");
         // Don't setKeyField. Use addQueryFieldKeys where needed
-        addContainerColumn();
+
+        addContainerColumn(isProvisioned);
     }
 
     @Override

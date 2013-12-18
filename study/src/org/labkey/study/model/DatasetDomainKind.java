@@ -25,6 +25,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.view.ActionURL;
@@ -34,6 +35,7 @@ import org.labkey.study.controllers.StudyController;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -218,5 +220,11 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     {
         super.invalidate(domain);
         StudyManager.getInstance().uncache(getDatasetDefinition(domain.getTypeURI()));
+    }
+
+    @Override
+    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user)
+    {
+        return super.createDomain(domain, arguments, container, user);
     }
 }

@@ -17,6 +17,7 @@
 package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -30,6 +31,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -56,6 +58,7 @@ import org.labkey.study.model.VisitImpl;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -115,7 +118,8 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     protected ColumnInfo addWrapParticipantColumn(String rootTableColumnName)
     {
         final String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
-        ColumnInfo participantColumn = new AliasedColumn(this, subjectColName, _rootTable.getColumn(rootTableColumnName));
+        ColumnInfo participantColumn =
+                new AliasedColumn(this, subjectColName, _rootTable.getColumn(rootTableColumnName));
         LookupForeignKey lfk = new LookupForeignKey(StudyService.get().getSubjectTableName(getContainer()), subjectColName, null)
         {
             @Override
@@ -192,7 +196,23 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
     protected ColumnInfo addContainerColumn()
     {
-        ColumnInfo containerCol = new AliasedColumn(this, "Container", _rootTable.getColumn("Container"));
+        return  addContainerColumn(false);
+    }
+
+    protected ColumnInfo addContainerColumn(boolean isProvisioned)
+    {
+        ColumnInfo containerCol;
+        if (isProvisioned)
+        {
+            SQLFragment sql = new SQLFragment("CAST (");
+            sql.append(getSqlDialect().getStringHandler().quoteStringLiteral(getContainer().getId()));
+            sql.append(" AS ").append(getSchema().getSqlDialect().getGuidType()).append(")");
+            containerCol = new ExprColumn(this, "Container", sql, JdbcType.GUID);
+        }
+        else
+        {
+            containerCol = new AliasedColumn(this, "Container", _rootTable.getColumn("Container"));
+        }
         containerCol = ContainerForeignKey.initColumn(containerCol, _userSchema);
         containerCol.setHidden(true);
         return addColumn(containerCol);
@@ -224,28 +244,34 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     }
 
 
-    protected ColumnInfo addSpecimenVisitColumn(TimepointType timepointType)
+    protected ColumnInfo addSpecimenVisitColumn(TimepointType timepointType, boolean isProvisioned)
+    {
+        ColumnInfo aliasVisitColumn = new AliasedColumn(this, "SequenceNum", _rootTable.getColumn("VisitValue"));
+        return addSpecimenVisitColumn(timepointType, aliasVisitColumn, isProvisioned);
+    }
+
+    protected ColumnInfo addSpecimenVisitColumn(TimepointType timepointType, ColumnInfo aliasVisitColumn, boolean isProvisioned)
     {
         ColumnInfo visitColumn = null;
         ColumnInfo visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
 
         // add the sequenceNum column so we have it for later queries
         // Make it visible by default since it's useful in scenarios like specimen lookups from assay data
-        addColumn(new AliasedColumn(this, "SequenceNum", _rootTable.getColumn("VisitValue")));
+        addColumn(aliasVisitColumn);
 
         if (timepointType == TimepointType.DATE || timepointType == TimepointType.CONTINUOUS)
         {
             //consider:  use SequenceNumMin for visit-based studies too (in visit-based studies VisitValue == SequenceNumMin)
             // could change to visitrowid but that changes datatype and displays rowid
             // instead of sequencenum when label is null
-            visitColumn = addColumn(new ParticipantVisitColumn(this));
+            visitColumn = addColumn(new ParticipantVisitColumn(this, isProvisioned ? getContainer() : null));
             visitColumn.setLabel("Timepoint");
 
             visitDescriptionColumn.setHidden(true);
         }
-        else if (timepointType == TimepointType.VISIT)
+        else    // if (timepointType == TimepointType.VISIT)     // only other choice
         {
-            visitColumn = addColumn(new ParticipantVisitColumn(this));
+            visitColumn = addColumn(new ParticipantVisitColumn(this, isProvisioned ? getContainer() : null));
         }
 
         LookupForeignKey visitFK = new LookupForeignKey(null, (String) null, "RowId", null)
@@ -327,9 +353,12 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
     private static class ParticipantVisitColumn extends ExprColumn
     {
-        public ParticipantVisitColumn(TableInfo parent)
+        Container container;
+
+        public ParticipantVisitColumn(TableInfo parent, @Nullable Container container)
         {
             super(parent, "Visit", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$PV" + ".VisitRowId"), JdbcType.INTEGER);
+            this.container = container;
         }
 
         @Override
@@ -340,7 +369,11 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
             join.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoParticipantVisit(), pvAlias).append(" ON\n");
             join.append(parentAlias).append(".ParticipantSequenceNum = ").append(pvAlias).append(".ParticipantSequenceNum AND\n");
-            join.append(parentAlias).append(".Container = ").append(pvAlias).append(".Container");
+            if (null == container)
+                join.append(parentAlias).append(".Container = ").append(pvAlias).append(".Container");
+            else
+                join.append(getSqlDialect().getStringHandler().quoteStringLiteral(container.getId()))
+                        .append(" = ").append(pvAlias).append(".Container");
 
             map.put(pvAlias, join);
         }
@@ -700,5 +733,117 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     {
         return ReadPermission.class == perm && _userSchema.getContainer().hasPermission(user, perm) ||
                 _userSchema.getContainer().hasPermission(user, AdminPermission.class);
+    }
+
+
+    protected class InnerUnionTable extends BaseStudyTable
+    {
+        ColumnInfo _containerColumn;
+        public InnerUnionTable(final StudyQuerySchema schema, TableInfo realTable)
+        {
+            super(schema, realTable, true);
+            _containerColumn = addContainerColumn(true);
+        }
+
+        public SQLFragment getSelectSQL(List<ColumnInfo> innerTableColumns)
+        {
+            TableInfo realTable = getRealTable();
+            SQLFragment sql = new SQLFragment("(SELECT ");
+            if (null == innerTableColumns)
+            {
+                sql.append("*, ");
+            }
+            else
+            {
+                for (ColumnInfo column : innerTableColumns)
+                {
+                    sql.append(column.getSelectName()).append(", ");
+                }
+            }
+            sql.append(_containerColumn.getValueSql(ExprColumn.STR_TABLE_ALIAS)).append(" AS Container FROM ")
+                    .append(realTable.getFromSQL("")).append(") ");
+            return sql;
+        }
+
+        public ColumnInfo getContainerColumn()
+        {
+            return _containerColumn;
+        }
+    }
+
+    protected SQLFragment getFromSqlForUnion(List<InnerUnionTable> tables, List<ColumnInfo> innerTableColumns, String alias)
+    {
+        String tableAlias = "union$" + alias;
+        SqlDialect dialect = getSqlDialect();
+        SQLFragment sql = new SQLFragment("(SELECT ");
+
+        String strComma = "";
+        Map<String, SQLFragment> joins = new HashMap<>();
+        List<ColumnInfo> columns = getColumns();
+        if (columns.isEmpty())
+        {
+            sql.append("*");
+            strComma = ",\n\t\t";
+        }
+        for (ColumnInfo column : columns)
+        {
+            column.declareJoins(tableAlias, joins);
+            sql.append(strComma);
+            if (column instanceof AliasedColumn)
+                sql.append(((AliasedColumn)column).getColumn().getValueSql(tableAlias));
+            else
+                sql.append(column.getValueSql(tableAlias));
+            sql.append(" AS " );
+            sql.append(dialect.makeLegalIdentifier(column.getAlias()));
+            strComma = ",\n\t\t";
+        }
+
+        sql.append("\n\tFROM (");
+
+        if (null == tables || tables.isEmpty())
+        {
+            InnerUnionTable table = new InnerUnionTable(getUserSchema(), getRealTable());
+            sql.append(table.getSelectSQL(null));
+        }
+        else
+        {
+            String conjunction = " ";
+            for (InnerUnionTable table : tables)
+            {
+                sql.append(conjunction).append("(").append(table.getSelectSQL(innerTableColumns)).append(")");
+                conjunction = " UNION\n\t\t";
+            }
+        }
+        sql.append(") ").append(tableAlias);
+        for (SQLFragment joinFrag : joins.values())
+            sql.append(" ").append(joinFrag);
+        sql.append(")\n\t\t").append(alias);
+        return sql;
+    }
+
+    protected List<ColumnInfo> getUnionColumns(List<InnerUnionTable> tables)
+    {
+        // Since tables may have different column sets, we need the set of columns that is in every table
+        assert tables.size() > 0;
+        List<ColumnInfo> columnsInAll = new ArrayList<>();
+        InnerUnionTable firstTable = tables.get(0);
+        if (tables.size() < 2)
+            return firstTable.getRealTable().getColumns();
+
+        for (ColumnInfo column : firstTable.getRealTable().getColumns())
+        {
+            boolean allHaveColumn = true;
+            for (int i = 1; i < tables.size(); i += 1)
+            {
+                if (null == tables.get(i).getRealTable().getColumn(column.getFieldKey()))
+                {
+                    allHaveColumn = false;
+                    break;
+                }
+            }
+            if (allHaveColumn)
+                columnsInAll.add(column);
+        }
+        return columnsInAll;
     }
 }

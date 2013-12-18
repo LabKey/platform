@@ -16,6 +16,7 @@
 
 package org.labkey.study.model;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.study.StudyCachable;
 import org.labkey.api.util.MemTracker;
 
@@ -70,4 +71,6 @@ public abstract class AbstractStudyCachable<T> implements StudyCachable<T>, Clon
             throw new RuntimeException(e);
         }
     }
+
+    public abstract void setContainer(Container container);
 }

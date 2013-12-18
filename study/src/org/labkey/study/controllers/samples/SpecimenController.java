@@ -16,6 +16,7 @@
 
 package org.labkey.study.controllers.samples;
 
+import gwt.client.org.labkey.study.StudyApplication;
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
@@ -23,6 +24,7 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.RedirectAction;
@@ -39,6 +41,7 @@ import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
@@ -49,7 +52,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
@@ -161,6 +164,7 @@ import org.labkey.study.security.permissions.ManageSpecimenActorsPermission;
 import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.security.permissions.SetSpecimenCommentsPermission;
+import org.labkey.study.view.StudyGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -667,7 +671,7 @@ public class SpecimenController extends BaseStudyController
         public ModelAndView getView(ViewEventForm viewEventForm, BindException errors) throws Exception
         {
             _showingSelectedSamples = viewEventForm.isSelected();
-            Specimen specimen = SampleManager.getInstance().getSpecimen(getContainer(), viewEventForm.getId());
+            Specimen specimen = SampleManager.getInstance().getSpecimen(getContainer(), getUser(), viewEventForm.getId());
             if (specimen == null)
                 throw new NotFoundException("Specimen " + viewEventForm.getId() + " does not exist.");
 
@@ -802,7 +806,7 @@ public class SpecimenController extends BaseStudyController
             for (int id : ids)
             {
                 if (!currentSpecimenIds.contains(id))
-                    specimensToAdd.add(SampleManager.getInstance().getSpecimen(getContainer(), id));
+                    specimensToAdd.add(SampleManager.getInstance().getSpecimen(getContainer(), getUser(), id));
             }
 
             SampleManager.getInstance().createRequestSampleMapping(getUser(), request, specimensToAdd, true, true);
@@ -1757,6 +1761,8 @@ public class SpecimenController extends BaseStudyController
                     return false;
                 }
 
+                User user = getUser();
+                Container container = getContainer();
                 _sampleRequest = SampleManager.getInstance().createRequest(getUser(), _sampleRequest, true);
                 List<Specimen> samples;
                 if (sampleIds != null && sampleIds.length > 0)
@@ -1764,7 +1770,7 @@ public class SpecimenController extends BaseStudyController
                     samples = new ArrayList<>();
                     for (int sampleId : sampleIds)
                     {
-                        Specimen specimen = SampleManager.getInstance().getSpecimen(getContainer(), sampleId);
+                        Specimen specimen = SampleManager.getInstance().getSpecimen(container, user, sampleId);
                         if (specimen != null)
                         {
                             boolean isAvailable = specimen.isAvailable();
@@ -1778,7 +1784,7 @@ public class SpecimenController extends BaseStudyController
                         else
                         {
                             ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(),
-                                    new IllegalStateException("Specimen ID " + sampleId + " was not found in container " + getContainer().getId()));
+                                    new IllegalStateException("Specimen ID " + sampleId + " was not found in container " + container.getId()));
                         }
                     }
                     if (errors.getErrorCount() == 0)
@@ -2848,6 +2854,8 @@ public class SpecimenController extends BaseStudyController
                         SampleRequestEvent event = SampleManager.getInstance().createRequestEvent(getUser(), request,
                             SampleManager.RequestEventType.SPECIMEN_LIST_GENERATED, header + "\n" + content.toString(), formFiles);
 
+                        final Container container = getContainer();
+                        final User user = getUser();
                         List<ActorNotificationRecipientSet> emailRecipients = notifications.get(originatingOrProvidingLocation);
                             DefaultRequestNotification notification = new DefaultRequestNotification(request, emailRecipients,
                                 header, event, content.toString(), null, getViewContext())
@@ -2856,7 +2864,8 @@ public class SpecimenController extends BaseStudyController
                             protected List<Specimen> getSpecimenList()
                             {
                                 SimpleFilter filter = getUtils().getSpecimenListFilter(getSampleRequest(), originatingOrProvidingLocation, type);
-                                return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenDetail(), filter, null).getArrayList(Specimen.class);
+                                return SampleManager.getInstance().getSpecimens(container, user, filter);
+//                                return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenDetail(container), filter, null).getArrayList(Specimen.class);
                             }
 
                         };
@@ -3715,7 +3724,7 @@ public class SpecimenController extends BaseStudyController
                 int[] rowId = specimenCommentsForm.getRowId();
                 if (rowId != null && rowId.length > 0)
                 {
-                    List<Specimen> specimens = SampleManager.getInstance().getSpecimens(getContainer(), rowId);
+                    List<Specimen> specimens = SampleManager.getInstance().getSpecimens(getContainer(), getUser(), rowId);
                     selectedVials = new ArrayList<>(specimens);
                 }
                 if (selectedVials == null || selectedVials.size() == 0)
@@ -3730,9 +3739,12 @@ public class SpecimenController extends BaseStudyController
         {
             if (commentsForm.getRowId() == null)
                 return false;
+
+            User user = getUser();
+            Container container = getContainer();
             List<Specimen> vials = new ArrayList<>();
             for (int rowId : commentsForm.getRowId())
-                vials.add(SampleManager.getInstance().getSpecimen(getContainer(), rowId));
+                vials.add(SampleManager.getInstance().getSpecimen(container, user, rowId));
 
             Map<Specimen, SpecimenComment> currentComments = SampleManager.getInstance().getSpecimenComments(vials);
 
@@ -3741,10 +3753,10 @@ public class SpecimenController extends BaseStudyController
             {
                 if (commentsForm.getCopySampleId() != -1)
                 {
-                    Specimen vial = SampleManager.getInstance().getSpecimen(getContainer(), commentsForm.getCopySampleId());
+                    Specimen vial = SampleManager.getInstance().getSpecimen(container, user, commentsForm.getCopySampleId());
                     if (vial != null)
                     {
-                        _successUrl = new ActionURL(CopyParticipantCommentAction.class, getContainer()).
+                        _successUrl = new ActionURL(CopyParticipantCommentAction.class, container).
                                 addParameter(ParticipantCommentForm.params.participantId, vial.getPtid()).
                                 addParameter(ParticipantCommentForm.params.visitId, String.valueOf(vial.getVisitValue())).
                                 addParameter(ParticipantCommentForm.params.comment, commentsForm.getComments()).
@@ -3753,7 +3765,7 @@ public class SpecimenController extends BaseStudyController
                 }
                 else
                 {
-                    _successUrl = new ActionURL(CopyParticipantCommentAction.class, getContainer()).
+                    _successUrl = new ActionURL(CopyParticipantCommentAction.class, container).
                             addParameter(ParticipantCommentForm.params.participantId, commentsForm.getCopyParticipantId()).
                             addParameter(ParticipantCommentForm.params.comment, commentsForm.getComments()).
                             addReturnURL(new URLHelper(commentsForm.getReferrer()));
@@ -3780,7 +3792,7 @@ public class SpecimenController extends BaseStudyController
 
                 boolean newConflictState;
                 boolean newForceState;
-                if (commentsForm.isQualityControlFlag() != null && SampleManager.getInstance().getDisplaySettings(getContainer()).isEnableManualQCFlagging())
+                if (commentsForm.isQualityControlFlag() != null && SampleManager.getInstance().getDisplaySettings(container).isEnableManualQCFlagging())
                 {
                     // if a state has been specified in the post, we consider this to be 'forcing' the state:
                     newConflictState = commentsForm.isQualityControlFlag().booleanValue();
@@ -3848,7 +3860,7 @@ public class SpecimenController extends BaseStudyController
             }
 
             ImportSpecimensBean bean = new ImportSpecimensBean(getContainer(), archives, form.getPath(), form.getFile(), errors);
-            boolean isEmpty = SampleManager.getInstance().isSpecimensEmpty(getContainer());
+            boolean isEmpty = SampleManager.getInstance().isSpecimensEmpty(getContainer(), getUser());
             if (isEmpty)
             {
                 bean.setNoSpecimens(true);
@@ -4868,7 +4880,8 @@ public class SpecimenController extends BaseStudyController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             List<Map<String,Object>> defaultSpecimens = new ArrayList<>();
-            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getStudyRedirectIfNull().getTimepointType(),  StudyService.get().getSubjectNounSingular(getContainer()));
+            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getViewContext().getContainer(), getViewContext().getUser(),
+                    getStudyRedirectIfNull().getTimepointType(),  StudyService.get().getSubjectNounSingular(getContainer()));
             MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
             for (ExcelColumn col : xlWriter.getColumns())
                 col.setCaption(importer.label(col.getName()));
@@ -5462,7 +5475,7 @@ public class SpecimenController extends BaseStudyController
                 try
                 {
                     SampleRequest request = sampleManager.getRequest(getContainer(), _requestId);
-                    List<Specimen> specimens = sampleManager.getSpecimens(getContainer(), globalIds);
+                    List<Specimen> specimens = sampleManager.getSpecimens(getContainer(), getUser(), globalIds);
 
                     if (specimens != null && specimens.size() == globalIds.length)
                     {
@@ -5506,7 +5519,7 @@ public class SpecimenController extends BaseStudyController
                     boolean hasSpecimenError = false;
                     for (String id : globalIds)
                     {
-                        Specimen specimen = sampleManager.getSpecimen(getContainer(), id);
+                        Specimen specimen = sampleManager.getSpecimen(getContainer(), getUser(), id);
                         if (specimen == null)
                         {
                             errorList.add("Specimen " + id + " not found.");
@@ -5758,6 +5771,51 @@ public class SpecimenController extends BaseStudyController
         TableInfo tableInfo = tableForm.getTable(); //TODO: finish fixing bug
         if (tableInfo instanceof SpecimenDetailTable)
             ((SpecimenDetailTable)tableInfo).changeRequestableColumn();
+    }
+
+
+    public static class DesignerForm extends ReturnUrlForm
+    {
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class DesignerAction extends SimpleViewAction<DesignerForm>
+    {
+        private DesignerForm _form;
+
+        public ModelAndView getView(DesignerForm form, BindException errors) throws Exception
+        {
+            _form = form;
+            Map<String, String> properties = new HashMap<>();
+
+            if (form.getReturnUrl() != null)
+            {
+                properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl().getSource());
+            }
+
+            // hack for 4404 : Lookup picker performance is terrible when there are many containers
+            ContainerManager.getAllChildren(ContainerManager.getRoot());
+
+            return new StudyGWTView(new StudyApplication.SpecimenDesigner(), properties);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            root.addChild("Specimen Properties");
+            return root;
+        }
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ServiceAction extends GWTServiceAction
+    {
+        protected BaseRemoteService createService()
+        {
+            return new SpecimenServiceImpl(getViewContext());
+        }
     }
 
 }

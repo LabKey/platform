@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExperimentService;
@@ -143,20 +144,20 @@ public class SpecimenServiceImpl implements SpecimenService.Service
         }
     }
 
-    public ParticipantVisit getSampleInfo(Container studyContainer, String sampleId) throws SQLException
+    public ParticipantVisit getSampleInfo(Container studyContainer, User user, String sampleId) throws SQLException
     {
-        Specimen match = SampleManager.getInstance().getSpecimen(studyContainer, sampleId);
+        Specimen match = SampleManager.getInstance().getSpecimen(studyContainer, user, sampleId);
         if (match != null)
             return new StudyParticipantVisit(studyContainer, sampleId, match.getPtid(), match.getVisitValue(), match.getDrawTimestamp());
         else
             return new StudyParticipantVisit(studyContainer, sampleId, null, null, null);
     }
 
-    public Set<ParticipantVisit> getSampleInfo(Container studyContainer, String participantId, Date date) throws SQLException
+    public Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Date date) throws SQLException
     {
         if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != date)
         {
-            List<Specimen> matches = SampleManager.getInstance().getSpecimens(studyContainer, participantId, date);
+            List<Specimen> matches = SampleManager.getInstance().getSpecimens(studyContainer, user, participantId, date);
             if (matches.size() > 0)
             {
                 Set<ParticipantVisit> result = new HashSet<>();
@@ -171,11 +172,11 @@ public class SpecimenServiceImpl implements SpecimenService.Service
         return Collections.<ParticipantVisit>singleton(new StudyParticipantVisit(studyContainer, null, participantId, null, date));
     }
 
-    public Set<ParticipantVisit> getSampleInfo(Container studyContainer, String participantId, Double visit) throws SQLException
+    public Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Double visit) throws SQLException
     {
         if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != visit)
         {
-            List<Specimen> matches = SampleManager.getInstance().getSpecimens(studyContainer, participantId, visit);
+            List<Specimen> matches = SampleManager.getInstance().getSpecimens(studyContainer, user, participantId, visit);
             if (matches.size() > 0)
             {
                 Set<ParticipantVisit> result = new HashSet<>();
@@ -199,11 +200,15 @@ public class SpecimenServiceImpl implements SpecimenService.Service
         return url.getLocalURIString() + "&prefix=";
     }
 
-    public Set<Pair<String, Date>> getSampleInfo(Container studyContainer, boolean truncateTime) throws SQLException
+    public Set<Pair<String, Date>> getSampleInfo(Container studyContainer, User user, boolean truncateTime) throws SQLException
     {
+        TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(studyContainer);
+        if (null == tableInfoSpecimen)
+            return Collections.EMPTY_SET;
+
         String dateExpr = truncateTime ? StudySchema.getInstance().getSqlDialect().getDateTimeToDateCast("DrawTimestamp") : "DrawTimestamp";
-        SQLFragment sql = new SQLFragment("SELECT DISTINCT PTID, " + dateExpr + " AS DrawTimestamp FROM " +
-            StudySchema.getInstance().getTableInfoSpecimen() + " WHERE Container = ?;", studyContainer.getId());
+        SQLFragment sql = new SQLFragment("SELECT DISTINCT PTID, " + dateExpr + " AS DrawTimestamp FROM ");
+        sql.append(tableInfoSpecimen.getSelectName()).append(";");
 
         final Set<Pair<String, Date>> sampleInfo = new HashSet<>();
 
@@ -221,10 +226,14 @@ public class SpecimenServiceImpl implements SpecimenService.Service
         return sampleInfo;
     }
 
-    public Set<Pair<String, Double>> getSampleInfo(Container studyContainer) throws SQLException
+    public Set<Pair<String, Double>> getSampleInfo(Container studyContainer, User user) throws SQLException
     {
-        SQLFragment sql = new SQLFragment("SELECT DISTINCT PTID, VisitValue FROM " +
-            StudySchema.getInstance().getTableInfoSpecimen() + " WHERE Container = ?;", studyContainer.getId());
+        TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(studyContainer);
+        if (null == tableInfoSpecimen)
+            return Collections.EMPTY_SET;
+
+        SQLFragment sql = new SQLFragment("SELECT DISTINCT PTID, VisitValue FROM ");
+        sql.append(tableInfoSpecimen.getSelectName()).append(";");
 
         final Set<Pair<String, Double>> sampleInfo = new HashSet<>();
 
@@ -251,9 +260,9 @@ public class SpecimenServiceImpl implements SpecimenService.Service
     public void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException
     {
         // CONSIDER: move ShowUploadSpecimensAction validation to importer.process()
-        SimpleSpecimenImporter importer = new SimpleSpecimenImporter();
+        SimpleSpecimenImporter importer = new SimpleSpecimenImporter(container, user);
         rows = importer.fixupSpecimenRows(rows);
-        importer.process(user, container, rows, merge);
+        importer.process(rows, merge);
     }
 
     @Override

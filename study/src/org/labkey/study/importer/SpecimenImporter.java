@@ -16,6 +16,7 @@
 
 package org.labkey.study.importer;
 
+import com.google.common.collect.Maps;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -34,7 +35,6 @@ import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -45,8 +45,11 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
@@ -65,6 +68,7 @@ import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.TimeOnlyDate;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.SampleManager;
@@ -77,6 +81,7 @@ import org.labkey.study.model.SpecimenComment;
 import org.labkey.study.model.SpecimenEvent;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.SpecimenTablesProvider;
 import org.labkey.study.visitmanager.VisitManager;
 
 import java.io.BufferedReader;
@@ -515,6 +520,54 @@ public class SpecimenImporter
         }
     }
 
+    /**
+     * Rollups from one table to another. Patterns specify what the To table must be to match,
+     * where '%' is the full name of the From field name.
+     */
+    private enum Rollup
+    {
+        EventVialLatest
+        {
+            public TargetTable getFromTable() {return TargetTable.SPECIMEN_EVENTS;}
+            public TargetTable getToTable() {return TargetTable.VIALS;}
+            public List<String> getPatterns()
+            {
+                return Arrays.asList("%", "Latest%");
+            }
+        },
+        EventVialFirst
+        {
+            public TargetTable getFromTable() {return TargetTable.SPECIMEN_EVENTS;}
+            public TargetTable getToTable() {return TargetTable.VIALS;}
+            public List<String> getPatterns()
+            {
+                return Arrays.asList("First%");
+            }
+        },
+        VialSpecimenCount
+        {
+            public TargetTable getFromTable() {return TargetTable.VIALS;}
+            public TargetTable getToTable() {return TargetTable.SPECIMENS;}
+            public List<String> getPatterns()
+            {
+                return Arrays.asList("Count%", "%Count");
+            }
+        },
+        VialSpecimenTotal
+        {
+            public TargetTable getFromTable() {return TargetTable.VIALS;}
+            public TargetTable getToTable() {return TargetTable.SPECIMENS;}
+            public List<String> getPatterns()
+            {
+                return Arrays.asList("Total%", "%Total", "SumOf%");
+            }
+        };
+
+        abstract public TargetTable getFromTable();
+        abstract public TargetTable getToTable();
+        abstract public List<String> getPatterns();
+    }
+
     private static final String DATETIME_TYPE = "SpecimenImporter/DateTime";
     private static final String DURATION_TYPE = "SpecimenImporter/TimeOnlyDate";
     private static final String NUMERIC_TYPE = "NUMERIC(15,4)";
@@ -632,6 +685,22 @@ public class SpecimenImporter
             new ImportableColumn("primary_type", "PrimaryType", "VARCHAR(100)")
     );
 
+    private static final Map<JdbcType, String> JDBCtoIMPORTER_TYPE = new HashMap<>();
+    static
+    {
+        JDBCtoIMPORTER_TYPE.put(JdbcType.DATE, DATETIME_TYPE);
+        JDBCtoIMPORTER_TYPE.put(JdbcType.TIMESTAMP, DATETIME_TYPE);
+        JDBCtoIMPORTER_TYPE.put(JdbcType.TIME, DURATION_TYPE);
+        JDBCtoIMPORTER_TYPE.put(JdbcType.DECIMAL, NUMERIC_TYPE);
+        JDBCtoIMPORTER_TYPE.put(JdbcType.BOOLEAN, BOOLEAN_TYPE);
+        JDBCtoIMPORTER_TYPE.put(JdbcType.BINARY, BINARY_TYPE);
+        JDBCtoIMPORTER_TYPE.put(JdbcType.BIGINT, "BIGINT");
+        JDBCtoIMPORTER_TYPE.put(JdbcType.INTEGER, "INT");
+        JDBCtoIMPORTER_TYPE.put(JdbcType.REAL, "FLOAT");
+        JDBCtoIMPORTER_TYPE.put(JdbcType.DOUBLE, "DOUBLE");
+        JDBCtoIMPORTER_TYPE.put(JdbcType.VARCHAR, "VARCHAR");
+    }
+
     private List<SpecimenColumn> _specimenCols;
     private List<SpecimenColumn> _vialCols;
     private List<SpecimenColumn> _vialEventCols;
@@ -688,29 +757,117 @@ public class SpecimenImporter
         }
     }
 
-    private void resyncStudy(User user, Container container) throws SQLException
+    private String getTypeName(PropertyDescriptor property)
+    {
+        StudySchema.getInstance().getScope().getSqlDialect();
+        String typeName = JDBCtoIMPORTER_TYPE.get(property.getJdbcType());
+        if (null == typeName)
+            throw new UnsupportedOperationException("Unsupported JdbcType: " + property.getJdbcType().toString());
+        if ("VARCHAR".equals(typeName))
+            typeName = String.format("VARCHAR(%d)", property.getScale());
+        return typeName;
+    }
+
+    // Provisioned specimen tables
+    private TableInfo _tableInfoSpecimen = null;
+    private TableInfo _tableInfoVial = null;
+    private TableInfo _tableInfoSpecimenEvent = null;
+    private Container _container = null;
+    private User _user = null;
+
+    private Collection<SpecimenColumn> _allColumns = new ArrayList<>();
+
+    protected TableInfo getTableInfoSpecimen()
+    {
+        if (null == _tableInfoSpecimen)
+            _tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(_container);
+        return _tableInfoSpecimen;
+    }
+
+    protected TableInfo getTableInfoVial()
+    {
+        if (null == _tableInfoVial)
+            _tableInfoVial = StudySchema.getInstance().getTableInfoVial(_container);
+        return _tableInfoVial;
+    }
+
+    protected TableInfo getTableInfoSpecimenEvent()
+    {
+        if (null == _tableInfoSpecimenEvent)
+            _tableInfoSpecimenEvent = StudySchema.getInstance().getTableInfoSpecimenEvent(_container);
+        return _tableInfoSpecimenEvent;
+    }
+
+    protected Container getContainer()
+    {
+        return _container;
+    }
+
+    protected User getUser()
+    {
+        return _user;
+    }
+
+
+    public SpecimenImporter(Container container, User user)
+    {
+        _container = container;
+        _user = user;
+//        addOptionalColumns();
+    }
+
+    private void addOptionalColumns()
+    {
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(_container, _user, null);
+        Domain vialDomain = specimenTablesProvider.getDomain("Vial", false);
+        if (null == vialDomain)
+            throw new IllegalStateException("Expected Vial table to already be created.");
+
+        Map<String, PropertyDescriptor> vialProperties = new HashMap<>();
+        for (DomainProperty domainProperty : vialDomain.getProperties())
+            vialProperties.put(domainProperty.getName(), domainProperty.getPropertyDescriptor());
+
+        Domain specimenEventDomain = specimenTablesProvider.getDomain("SpecimenEvent", false);
+        if (null == specimenEventDomain)
+            throw new IllegalStateException("Expected SpecimenEvent table to already be created.");
+
+        for (DomainProperty domainProperty : specimenEventDomain.getProperties())       // TODO: getNonBaseProperties()
+        {
+            PropertyDescriptor property = domainProperty.getPropertyDescriptor();
+            String name = property.getName();
+            String alias = name.toLowerCase();
+            Set<String> aliases = property.getImportAliasSet();
+            if (null != aliases && !aliases.isEmpty())
+                alias = (String)(aliases.toArray()[0]);
+            SpecimenColumn specimenColumn = new SpecimenColumn(alias, name, getTypeName(property), TargetTable.SPECIMEN_EVENTS);
+            _allColumns.add(specimenColumn);
+        }
+
+    }
+
+    private void resyncStudy() throws SQLException
     {
         TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
-        TableInfo tableSpecimen = StudySchema.getInstance().getTableInfoSpecimen();
+        TableInfo tableSpecimen = getTableInfoSpecimen();
 
         executeSQL(tableParticipant.getSchema(), "INSERT INTO " + tableParticipant.getSelectName() + " (Container, ParticipantId)\n" +
                 "SELECT DISTINCT ?, ptid AS ParticipantId\n" +
-                "FROM " + tableSpecimen + "\n" +
-                "WHERE Container = ? AND ptid IS NOT NULL AND " +
-                "ptid NOT IN (SELECT ParticipantId FROM " + tableParticipant.getSelectName() + " WHERE Container = ?)", container, container, container);
+                "FROM " + tableSpecimen.getSelectName() + "\n" +
+                "WHERE ptid IS NOT NULL AND " +
+                "ptid NOT IN (SELECT ParticipantId FROM " + tableParticipant.getSelectName() + " WHERE Container = ?)", _container, _container);
 
-        StudyImpl study = StudyManager.getInstance().getStudy(container);
+        StudyImpl study = StudyManager.getInstance().getStudy(_container);
         info("Updating study-wide subject/visit information...");
-        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.<DataSetDefinition>emptyList());
+        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(_user, Collections.<DataSetDefinition>emptyList());
         info("Subject/visit update complete.");
     }
 
     private void updateAllStatistics() throws SQLException
     {
         updateStatistics(ExperimentService.get().getTinfoMaterial());
-        updateStatistics(StudySchema.getInstance().getTableInfoSpecimen());
-        updateStatistics(StudySchema.getInstance().getTableInfoVial());
-        updateStatistics(StudySchema.getInstance().getTableInfoSpecimenEvent());
+        updateStatistics(getTableInfoSpecimen());
+        updateStatistics(getTableInfoVial());
+        updateStatistics(getTableInfoSpecimenEvent());
     }
 
     private boolean updateStatistics(TableInfo tinfo) throws SQLException
@@ -724,14 +881,14 @@ public class SpecimenImporter
         return updated;
     }
 
-    public void process(User user, Container c, VirtualFile specimensDir, boolean merge, Logger logger) throws SQLException, IOException, ValidationException
+    public void process(VirtualFile specimensDir, boolean merge, Logger logger) throws SQLException, IOException, ValidationException
     {
-        Map<SpecimenTableType, SpecimenImportFile> sifMap = populateFileMap(c, specimensDir, new EnumMap<SpecimenTableType, SpecimenImportFile>(SpecimenTableType.class));
+        Map<SpecimenTableType, SpecimenImportFile> sifMap = populateFileMap(specimensDir, new EnumMap<SpecimenTableType, SpecimenImportFile>(SpecimenTableType.class));
 
-        process(user, c, sifMap, merge, logger);
+        process(sifMap, merge, logger);
     }
 
-    protected void process(User user, Container container, Map<SpecimenTableType, SpecimenImportFile> sifMap, boolean merge, Logger logger) throws SQLException, IOException, ValidationException
+    protected void process(Map<SpecimenTableType, SpecimenImportFile> sifMap, boolean merge, Logger logger) throws SQLException, IOException, ValidationException
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         _logger = logger;
@@ -743,31 +900,31 @@ public class SpecimenImporter
                 scope.ensureTransaction();
 
             if (null != sifMap.get(SpecimenTableType.Labs))
-                mergeTable(schema, container, sifMap.get(SpecimenTableType.Labs), true);
+                mergeTable(schema, sifMap.get(SpecimenTableType.Labs), true, true);
 
             if (merge)
             {
                 if (null != sifMap.get(SpecimenTableType.Additives))
-                    mergeTable(schema, container, sifMap.get(SpecimenTableType.Additives), false);
+                    mergeTable(schema, sifMap.get(SpecimenTableType.Additives), false, true);
                 if (null != sifMap.get(SpecimenTableType.Derivatives))
-                    mergeTable(schema, container, sifMap.get(SpecimenTableType.Derivatives), false);
+                    mergeTable(schema, sifMap.get(SpecimenTableType.Derivatives), false, true);
                 if (null != sifMap.get(SpecimenTableType.PrimaryTypes))
-                    mergeTable(schema, container, sifMap.get(SpecimenTableType.PrimaryTypes), false);
+                    mergeTable(schema, sifMap.get(SpecimenTableType.PrimaryTypes), false, true);
             }
             else
             {
                 if (null != sifMap.get(SpecimenTableType.Additives))
-                    replaceTable(schema, container, sifMap.get(SpecimenTableType.Additives), false);
+                    replaceTable(schema, sifMap.get(SpecimenTableType.Additives), false, true);
                 if (null != sifMap.get(SpecimenTableType.Derivatives))
-                    replaceTable(schema, container, sifMap.get(SpecimenTableType.Derivatives), false);
+                    replaceTable(schema, sifMap.get(SpecimenTableType.Derivatives), false, true);
                 if (null != sifMap.get(SpecimenTableType.PrimaryTypes))
-                    replaceTable(schema, container, sifMap.get(SpecimenTableType.PrimaryTypes), false);
+                    replaceTable(schema, sifMap.get(SpecimenTableType.PrimaryTypes), false, true);
             }
 
             // Specimen temp table must be populated AFTER the types tables have been reloaded, since the SpecimenHash
             // calculated in the temp table relies on the new RowIds for the types:
             SpecimenImportFile specimenFile = sifMap.get(SpecimenTableType.Specimens);
-            SpecimenLoadInfo loadInfo = populateTempSpecimensTable(user, schema, container, specimenFile, merge);
+            SpecimenLoadInfo loadInfo = populateTempSpecimensTable(schema, specimenFile, merge);
 
             // NOTE: if no rows were loaded in the temp table, don't remove existing materials/specimens/vials/events.
             if (loadInfo.getRowCount() > 0)
@@ -776,16 +933,16 @@ public class SpecimenImporter
                 info("Specimens: 0 rows found in input");
 
             cpuCurrentLocations.start();
-            updateCalculatedSpecimenData(container, user, merge, _logger);
+            updateCalculatedSpecimenData(merge, _logger);
             cpuCurrentLocations.stop();
             info("Time to determine locations: " + cpuCurrentLocations.toString());
 
-            resyncStudy(user, container);
+            resyncStudy();
 
             // Set LastSpecimenLoad to now... we'll check this before snapshot study specimen refresh
-            StudyImpl study = StudyManager.getInstance().getStudy(container).createMutable();
+            StudyImpl study = StudyManager.getInstance().getStudy(_container).createMutable();
             study.setLastSpecimenLoad(new Date());
-            StudyManager.getInstance().updateStudy(user, study);
+            StudyManager.getInstance().updateStudy(_user, study);
 
             // Drop the temp table within the transaction; otherwise, we may get a different connection object,
             // where the table is no longer available.  Note that this means that the temp table will stick around
@@ -800,8 +957,8 @@ public class SpecimenImporter
         finally
         {
             schema.getScope().closeConnection();
-            StudyManager.getInstance().clearCaches(container, false);
-            SampleManager.getInstance().clearCaches(container);
+            StudyManager.getInstance().clearCaches(_container, false);
+            SampleManager.getInstance().clearCaches(_container);
         }
         dumpTimers();
     }
@@ -820,11 +977,11 @@ public class SpecimenImporter
         logDebug.debug(cpuPopulateTempTable);
     }
 
-    private SpecimenLoadInfo populateTempSpecimensTable(User user, DbSchema schema, Container container, SpecimenImportFile file, boolean merge) throws SQLException, IOException
+    private SpecimenLoadInfo populateTempSpecimensTable(DbSchema schema, SpecimenImportFile file, boolean merge) throws SQLException, IOException
     {
         String tableName = createTempTable(schema);
-        Pair<List<SpecimenColumn>, Integer> pair = populateTempTable(schema, container, tableName, file, merge);
-        return new SpecimenLoadInfo(user, container, schema, pair.first, pair.second, tableName);
+        Pair<List<SpecimenColumn>, Integer> pair = populateTempTable(schema, tableName, file, merge);
+        return new SpecimenLoadInfo(_user, _container, schema, pair.first, pair.second, tableName);
     }
 
 
@@ -832,15 +989,15 @@ public class SpecimenImporter
     {
         if (!merge)
         {
-            SimpleFilter containerFilter = SimpleFilter.createContainerFilter(info.getContainer());
+//            SimpleFilter containerFilter = SimpleFilter.createContainerFilter(info.getContainer());
             info("Deleting old data from Specimen Event table...");
-            Table.delete(StudySchema.getInstance().getTableInfoSpecimenEvent(), containerFilter);
+            Table.delete(getTableInfoSpecimenEvent());
             info("Complete.");
             info("Deleting old data from Vial table...");
-            Table.delete(StudySchema.getInstance().getTableInfoVial(), containerFilter);
+            Table.delete(getTableInfoVial());
             info("Complete.");
             info("Deleting old data from Specimen table...");
-            Table.delete(StudySchema.getInstance().getTableInfoSpecimen(), containerFilter);
+            Table.delete(getTableInfoSpecimen());
             info("Complete.");
         }
 
@@ -852,9 +1009,8 @@ public class SpecimenImporter
         if (merge)
         {
             // Delete any orphaned specimen rows without vials
-            executeSQL(StudySchema.getInstance().getSchema(), "DELETE FROM " + StudySchema.getInstance().getTableInfoSpecimen() +
-                    " WHERE Container=? " +
-                    " AND RowId NOT IN (SELECT SpecimenId FROM " + StudySchema.getInstance().getTableInfoVial() + ")", info.getContainer());
+            executeSQL(StudySchema.getInstance().getSchema(), "DELETE FROM " + getTableInfoSpecimen().getSelectName() +
+                    " WHERE RowId NOT IN (SELECT SpecimenId FROM " + getTableInfoVial().getSelectName() + ")");
         }
     }
 
@@ -896,10 +1052,10 @@ public class SpecimenImporter
         return conflicts;
     }
 
-    private static void clearConflictingVialColumns(Specimen specimen, Set<String> conflicts)
+    private void clearConflictingVialColumns(Specimen specimen, Set<String> conflicts)
     {
         SQLFragment sql = new SQLFragment();
-        sql.append("UPDATE ").append(StudySchema.getInstance().getTableInfoVial()).append(" SET\n  ");
+        sql.append("UPDATE ").append(getTableInfoVial().getSelectName()).append(" SET\n  ");
 
         boolean hasConflict = false;
         String sep = "";
@@ -920,17 +1076,16 @@ public class SpecimenImporter
         if (!hasConflict)
             return;
 
-        sql.append("\nWHERE Container = ? AND GlobalUniqueId = ?");
-        sql.add(specimen.getContainer().getId());
+        sql.append("\nWHERE GlobalUniqueId = ?");
         sql.add(specimen.getGlobalUniqueId());
 
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
     }
 
-    private static void clearConflictingSpecimenColumns(Specimen specimen, Set<String> conflicts)
+    private void clearConflictingSpecimenColumns(Specimen specimen, Set<String> conflicts)
     {
         SQLFragment sql = new SQLFragment();
-        sql.append("UPDATE ").append(StudySchema.getInstance().getTableInfoSpecimen()).append(" SET\n  ");
+        sql.append("UPDATE ").append(getTableInfoSpecimen().getSelectName()).append(" SET\n  ");
 
         boolean hasConflict = false;
         String sep = "";
@@ -951,30 +1106,32 @@ public class SpecimenImporter
         if (!hasConflict)
             return;
 
-        sql.append("\nWHERE Container = ? AND RowId = ?");
-        sql.add(specimen.getContainer().getId());
+        sql.append("\nWHERE AND RowId = ?");
         sql.add(specimen.getSpecimenId());
 
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
     }
 
-    private static void updateCommentSpecimenHashes(Container container, Logger logger)
+    private void updateCommentSpecimenHashes(Logger logger)
     {
         SQLFragment sql = new SQLFragment();
         TableInfo commentTable = StudySchema.getInstance().getTableInfoSpecimenComment();
-        TableInfo specimenTable = StudySchema.getInstance().getTableInfoSpecimenDetail();
-        sql.append("UPDATE ").append(commentTable).append(" SET SpecimenHash = (\n");
-        sql.append("SELECT SpecimenHash FROM ").append(specimenTable).append(" WHERE ").append(specimenTable);
-        sql.append(".GlobalUniqueId = ").append(commentTable).append(".GlobalUniqueId AND ");
-        sql.append(specimenTable).append(".Container = ?)\nWHERE ").append(commentTable).append(".Container = ?");
-        sql.add(container.getId());
-        sql.add(container.getId());
+        String commentTableSelectName = commentTable.getSelectName();
+        TableInfo vialTable = getTableInfoVial();
+        String vialTableSelectName = vialTable.getSelectName();
+
+        sql.append("UPDATE ").append(commentTableSelectName).append(" SET SpecimenHash = (\n")
+                .append("SELECT SpecimenHash FROM ").append(vialTableSelectName).append(" WHERE ")
+                .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName)).append(" = ")
+                .append(commentTable.getColumn("GlobalUniqueId").getValueSql(commentTableSelectName))
+                .append(")\nWHERE ").append(commentTable.getColumn("Container").getValueSql(commentTableSelectName)).append(" = ?");
+        sql.add(_container.getId());
         logger.info("Updating hash codes for existing comments...");
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
         logger.info("Complete.");
     }
 
-    private static void prepareQCComments(Container container, User user, Logger logger)
+    private void prepareQCComments(Logger logger)
     {
         StringBuilder columnList = new StringBuilder();
         columnList.append("VialId");
@@ -988,22 +1145,20 @@ public class SpecimenImporter
         }
 
         // find the global unique ID for those vials with conflicts:
-        TableInfo specimenEventTable = StudySchema.getInstance().getTableInfoSpecimenEvent();
+        TableInfo specimenEventTable = StudySchema.getInstance().getTableInfoSpecimenEvent(getContainer());
         SQLFragment conflictedGUIDs = new SQLFragment("SELECT GlobalUniqueId FROM ");
-        conflictedGUIDs.append(StudySchema.getInstance().getTableInfoVial(), "vial");
+        conflictedGUIDs.append(getTableInfoVial(), "vial");
         conflictedGUIDs.append(" WHERE RowId IN (\n");
         conflictedGUIDs.append("SELECT VialId FROM\n");
-        conflictedGUIDs.append("(SELECT DISTINCT\n").append(columnList).append("\nFROM ").append(specimenEventTable);
-        conflictedGUIDs.append("\nWHERE Container = ?");
-        conflictedGUIDs.append(" AND Obsolete = " + specimenEventTable.getSqlDialect().getBooleanFALSE());
+        conflictedGUIDs.append("(SELECT DISTINCT\n").append(columnList).append("\nFROM ").append(specimenEventTable.getSelectName());
+        conflictedGUIDs.append("\nWHERE Obsolete = " + specimenEventTable.getSqlDialect().getBooleanFALSE());
         conflictedGUIDs.append("\nGROUP BY\n").append(columnList).append(") ");
         conflictedGUIDs.append("AS DupCheckView\nGROUP BY VialId HAVING Count(VialId) > 1");
-        conflictedGUIDs.add(container.getId());
         conflictedGUIDs.append("\n)");
 
         // Delete comments that were holding QC state (and nothing more) for vials that do not currently have any conflicts
         SQLFragment deleteClearedVials = new SQLFragment("DELETE FROM study.SpecimenComment WHERE Container = ? ");
-        deleteClearedVials.add(container.getId());
+        deleteClearedVials.add(_container.getId());
         deleteClearedVials.append("AND Comment IS NULL AND QualityControlFlag = ? ");
         deleteClearedVials.add(Boolean.TRUE);
         deleteClearedVials.append("AND QualityControlFlagForced = ? ");
@@ -1019,32 +1174,37 @@ public class SpecimenImporter
         SQLFragment insertPlaceholderQCComments = new SQLFragment("INSERT INTO study.SpecimenComment ");
         insertPlaceholderQCComments.append("(GlobalUniqueId, Container, QualityControlFlag, QualityControlFlagForced, Created, CreatedBy, Modified, ModifiedBy) ");
         insertPlaceholderQCComments.append("SELECT GlobalUniqueId, ?, ?, ?, ?, ?, ?, ? ");
-        insertPlaceholderQCComments.add(container.getId());
+        insertPlaceholderQCComments.add(_container.getId());
         insertPlaceholderQCComments.add(Boolean.TRUE);
         insertPlaceholderQCComments.add(Boolean.FALSE);
         insertPlaceholderQCComments.add(new Date());
-        insertPlaceholderQCComments.add(user.getUserId());
+        insertPlaceholderQCComments.add(_user.getUserId());
         insertPlaceholderQCComments.add(new Date());
-        insertPlaceholderQCComments.add(user.getUserId());
+        insertPlaceholderQCComments.add(_user.getUserId());
         insertPlaceholderQCComments.append(" FROM (\n").append(conflictedGUIDs).append(") ConflictedVials\n");
         insertPlaceholderQCComments.append("WHERE GlobalUniqueId NOT IN ");
         insertPlaceholderQCComments.append("(SELECT GlobalUniqueId FROM study.SpecimenComment WHERE Container = ?);");
-        insertPlaceholderQCComments.add(container.getId());
+        insertPlaceholderQCComments.add(_container.getId());
         logger.info("Setting QC flags for vials that have new history conflicts...");
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(insertPlaceholderQCComments);
         logger.info("Complete.");
     }
 
-    private static void markOrphanedRequestVials(Container container, Logger logger) throws SQLException
+    private void markOrphanedRequestVials(Logger logger) throws SQLException
     {
         // Mark those global unique IDs that are in requests but are no longer found in the vial table:
-        SQLFragment orphanMarkerSql = new SQLFragment("UPDATE study.SampleRequestSpecimen SET Orphaned = ? WHERE RowId IN (\n" +
-                "\tSELECT study.SampleRequestSpecimen.RowId FROM study.SampleRequestSpecimen\n" +
-                "\tLEFT OUTER JOIN study.Vial ON\n" +
-                "\t\tstudy.Vial.GlobalUniqueId = study.SampleRequestSpecimen.SpecimenGlobalUniqueId AND\n" +
-                "\t\tstudy.Vial.Container = study.SampleRequestSpecimen.Container\n" +
-                "\tWHERE study.Vial.GlobalUniqueId IS NULL AND\n" +
-                "\t\tstudy.SampleRequestSpecimen.Container = ?);", Boolean.TRUE, container.getId());
+        TableInfo vialTable = getTableInfoVial();
+        String vialTableSelectName = vialTable.getSelectName();
+        SQLFragment orphanMarkerSql = new SQLFragment();
+        orphanMarkerSql.append("UPDATE study.SampleRequestSpecimen SET Orphaned = ? WHERE RowId IN (\n")
+                .append("\tSELECT study.SampleRequestSpecimen.RowId FROM study.SampleRequestSpecimen\n")
+                .append("\tLEFT OUTER JOIN ").append(vialTableSelectName).append(" ON\n\t\t")
+                .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName))
+                .append(" = study.SampleRequestSpecimen.SpecimenGlobalUniqueId\n")
+                .append("\tWHERE ").append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName)).append(" IS NULL AND\n")
+                .append("\t\tstudy.SampleRequestSpecimen.Container = ?);");
+        orphanMarkerSql.add(Boolean.TRUE);
+        orphanMarkerSql.add(_container.getId());
         logger.info("Marking requested vials that have been orphaned...");
 
         SqlExecutor executor = new SqlExecutor(StudySchema.getInstance().getSchema());
@@ -1052,57 +1212,65 @@ public class SpecimenImporter
         logger.info("Complete.");
 
         // un-mark those global unique IDs that were previously marked as orphaned but are now found in the vial table:
-        SQLFragment deorphanMarkerSql = new SQLFragment("UPDATE study.SampleRequestSpecimen SET Orphaned = ? WHERE RowId IN (\n" +
-                "\tSELECT study.SampleRequestSpecimen.RowId FROM study.SampleRequestSpecimen\n" +
-                "\tLEFT OUTER JOIN study.Vial ON\n" +
-                "\t\tstudy.Vial.GlobalUniqueId = study.SampleRequestSpecimen.SpecimenGlobalUniqueId AND\n" +
-                "\t\tstudy.Vial.Container = study.SampleRequestSpecimen.Container\n" +
-                "\tWHERE study.Vial.GlobalUniqueId IS NOT NULL AND\n" +
-                "\t\tstudy.SampleRequestSpecimen.Orphaned = ? AND\n" +
-                "\t\tstudy.SampleRequestSpecimen.Container = ?);", Boolean.FALSE, Boolean.TRUE, container.getId());
+        SQLFragment deorphanMarkerSql = new SQLFragment();
+        deorphanMarkerSql.append("UPDATE study.SampleRequestSpecimen SET Orphaned = ? WHERE RowId IN (\n")
+                .append("\tSELECT study.SampleRequestSpecimen.RowId FROM study.SampleRequestSpecimen\n")
+                .append("\tLEFT OUTER JOIN ").append(vialTableSelectName).append(" ON\n\t\t")
+                .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName))
+                .append(" = study.SampleRequestSpecimen.SpecimenGlobalUniqueId\n")
+                .append("\tWHERE ").append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName)).append(" IS NOT NULL AND\n")
+                .append("\t\tstudy.SampleRequestSpecimen.Orphaned = ? AND\n")
+                .append("\t\tstudy.SampleRequestSpecimen.Container = ?);");
+        deorphanMarkerSql.add(Boolean.FALSE);
+        deorphanMarkerSql.add(Boolean.TRUE);
+        deorphanMarkerSql.add(_container.getId());
         logger.info("Marking requested vials that have been de-orphaned...");
         executor.execute(deorphanMarkerSql);
         logger.info("Complete.");
     }
 
-    private static void setLockedInRequestStatus(Container container, Logger logger) throws SQLException
+    private void setLockedInRequestStatus(Logger logger) throws SQLException
     {
-        SQLFragment lockedInRequestSql = new SQLFragment("UPDATE " + StudySchema.getInstance().getTableInfoVial() +
-                " SET LockedInRequest = ? WHERE RowId IN (SELECT study.Vial.RowId FROM study.Vial, study.LockedSpecimens " +
-                "WHERE study.Vial.Container = ? AND study.LockedSpecimens.Container = ? AND " +
-                "study.Vial.GlobalUniqueId = study.LockedSpecimens.GlobalUniqueId)");
+        TableInfo vialTable = getTableInfoVial();
+        String vialTableSelectName = vialTable.getSelectName();
+        SQLFragment lockedInRequestSql = new SQLFragment("UPDATE ").append(vialTableSelectName).append(
+                " SET LockedInRequest = ? WHERE RowId IN (SELECT ").append(vialTable.getColumn("RowId").getValueSql(vialTableSelectName))
+                .append(" FROM ").append(vialTableSelectName).append(", study.LockedSpecimens " +
+                "WHERE study.LockedSpecimens.Container = ? AND ")
+                .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName)).append(" = study.LockedSpecimens.GlobalUniqueId)");
 
         lockedInRequestSql.add(Boolean.TRUE);
-        lockedInRequestSql.add(container.getId());
-        lockedInRequestSql.add(container.getId());
+        lockedInRequestSql.add(_container.getId());
 
         logger.info("Setting Specimen Locked in Request status...");
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(lockedInRequestSql);
         logger.info("Complete.");
     }
 
-    private static void updateSpecimenProcessingInfo(Container container, Logger logger) throws SQLException
+    private void updateSpecimenProcessingInfo(Logger logger) throws SQLException
     {
-        SQLFragment sql = new SQLFragment("UPDATE study.Specimen SET ProcessingLocation = (\n" +
+        TableInfo specimenTable = getTableInfoSpecimen();
+        String specimenTableSelectName = specimenTable.getSelectName();
+        TableInfo vialTable = getTableInfoVial();
+        String vialTableSelectName = vialTable.getSelectName();
+        SQLFragment sql = new SQLFragment("UPDATE ").append(specimenTableSelectName).append(" SET ProcessingLocation = (\n" +
                 "\tSELECT MAX(ProcessingLocation) AS ProcessingLocation FROM \n" +
-                "\t\t(SELECT DISTINCT SpecimenId, ProcessingLocation FROM study.Vial WHERE SpecimenId = study.Specimen.RowId AND Container = ?) Locations\n" +
+                "\t\t(SELECT DISTINCT SpecimenId, ProcessingLocation FROM ").append(vialTableSelectName).append(
+                " WHERE SpecimenId = ").append(specimenTable.getColumn("RowId").getValueSql(specimenTableSelectName)).append(") Locations\n" +
                 "\tGROUP BY SpecimenId\n" +
                 "\tHAVING COUNT(ProcessingLocation) = 1\n" +
-                ") WHERE Container = ?");
-        sql.add(container.getId());
-        sql.add(container.getId());
+                ")");
         logger.info("Updating processing locations on the specimen table...");
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
         logger.info("Complete.");
 
-        sql = new SQLFragment("UPDATE study.Specimen SET FirstProcessedByInitials = (\n" +
+        sql = new SQLFragment("UPDATE ").append(specimenTableSelectName).append(" SET FirstProcessedByInitials = (\n" +
                 "\tSELECT MAX(FirstProcessedByInitials) AS FirstProcessedByInitials FROM \n" +
-                "\t\t(SELECT DISTINCT SpecimenId, FirstProcessedByInitials FROM study.Vial WHERE SpecimenId = study.Specimen.RowId AND Container = ?) Locations\n" +
+                "\t\t(SELECT DISTINCT SpecimenId, FirstProcessedByInitials FROM ").append(vialTableSelectName).append(
+                " WHERE SpecimenId = ").append(specimenTable.getColumn("RowId").getValueSql(specimenTableSelectName)).append(") Locations\n" +
                 "\tGROUP BY SpecimenId\n" +
                 "\tHAVING COUNT(FirstProcessedByInitials) = 1\n" +
-                ") WHERE Container = ?");
-        sql.add(container.getId());
-        sql.add(container.getId());
+                ")");
         logger.info("Updating first processed by initials on the specimen table...");
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
         logger.info("Complete.");
@@ -1110,23 +1278,22 @@ public class SpecimenImporter
     }
 
     // UNDONE: add vials in-clause to only update data for rows that changed
-    private static void updateCalculatedSpecimenData(Container container, User user, boolean merge, Logger logger) throws SQLException
+    private void updateCalculatedSpecimenData(boolean merge, Logger logger) throws SQLException
     {
         // delete unnecessary comments and create placeholders for newly discovered errors:
-        prepareQCComments(container, user, logger);
+        prepareQCComments(logger);
 
-        updateCommentSpecimenHashes(container, logger);
+        updateCommentSpecimenHashes(logger);
 
-        markOrphanedRequestVials(container, logger);
-        setLockedInRequestStatus(container, logger);
+        markOrphanedRequestVials(logger);
+        setLockedInRequestStatus(logger);
 
         // clear caches before determining current sites:
-        SimpleFilter containerFilter = SimpleFilter.createContainerFilter(container);
-        SampleManager.getInstance().clearCaches(container);
+        SampleManager.getInstance().clearCaches(_container);
         List<Specimen> specimens;
         int offset = 0;
         Map<Integer, LocationImpl> siteMap = new HashMap<>();
-        String vialPropertiesSql = "UPDATE " + StudySchema.getInstance().getTableInfoVial() +
+        String vialPropertiesSql = "UPDATE " + getTableInfoVial().getSelectName() +
                 " SET CurrentLocation = CAST(? AS INTEGER), ProcessingLocation = CAST(? AS INTEGER), " +
                 "FirstProcessedByInitials = ?, AtRepository = ?, " +
                 "LatestComments = ?, LatestQualityComments = ?, LatestDeviationCode1 = ?, LatestDeviationCode2 = ?, LatestDeviationCode3 = ?, " +
@@ -1140,7 +1307,9 @@ public class SpecimenImporter
             if (logger != null)
                 logger.info("Determining current locations for vials " + (offset + 1) + " through " + (offset + CURRENT_SITE_UPDATE_SIZE) + ".");
 
-            specimens = new TableSelector(StudySchema.getInstance().getTableInfoVial(), containerFilter, null).setMaxRows(CURRENT_SITE_UPDATE_SIZE).setOffset(offset).getArrayList(Specimen.class);
+            specimens = SampleManager.fillInContainer(
+                    new TableSelector(getTableInfoVial()).setMaxRows(CURRENT_SITE_UPDATE_SIZE).setOffset(offset).getArrayList(Specimen.class),
+                    _container);
 
             List<List<?>> vialPropertiesParams = new ArrayList<>();
             List<List<?>> commentParams = new ArrayList<>();
@@ -1161,7 +1330,7 @@ public class SpecimenImporter
                     LocationImpl location;
                     if (!siteMap.containsKey(currentLocation))
                     {
-                        location = StudyManager.getInstance().getLocation(specimen.getContainer(), currentLocation);
+                        location = StudyManager.getInstance().getLocation(_container, currentLocation);
                         if (location != null)
                             siteMap.put(currentLocation, location);
                     }
@@ -1261,11 +1430,11 @@ public class SpecimenImporter
         while (specimens.size() > 0);
 
         // finally, after all other data has been updated, we can update our cached specimen counts and processing locations:
-        updateSpecimenProcessingInfo(container, logger);
+        updateSpecimenProcessingInfo(logger);
 
         try
         {
-            RequestabilityManager.getInstance().updateRequestability(container, user, false, logger);
+            RequestabilityManager.getInstance().updateRequestability(_container, _user, false, logger);
         }
         catch (RequestabilityManager.InvalidRuleException e)
         {
@@ -1273,16 +1442,16 @@ public class SpecimenImporter
         }
         if (logger != null)
             logger.info("Updating cached vial counts...");
-        SampleManager.getInstance().updateSpecimenCounts(container, user);
+        SampleManager.getInstance().updateSpecimenCounts(_container, _user);
         if (logger != null)
             logger.info("Vial count update complete.");
     }
     
-    private Map<SpecimenTableType, SpecimenImportFile> populateFileMap(Container c, VirtualFile dir, Map<SpecimenTableType, SpecimenImportFile> fileNameMap) throws IOException
+    private Map<SpecimenTableType, SpecimenImportFile> populateFileMap(VirtualFile dir, Map<SpecimenTableType, SpecimenImportFile> fileNameMap) throws IOException
     {
         for (String dirName : dir.listDirs())
         {
-            populateFileMap(c, dir.getDir(dirName), fileNameMap);
+            populateFileMap(dir.getDir(dirName), fileNameMap);
         }
 
         for (String fileName : dir.list())
@@ -1303,7 +1472,7 @@ public class SpecimenImporter
                 SpecimenTableType type = SpecimenTableType.getForName(canonicalName);
 
                 if (null != type)
-                    fileNameMap.put(type, getSpecimenImportFile(c, dir, fileName, type));
+                    fileNameMap.put(type, getSpecimenImportFile(_container, dir, fileName, type));
             }
         }
 
@@ -1577,12 +1746,14 @@ public class SpecimenImporter
         SQLFragment insertSelectSql = new SQLFragment();
         insertSelectSql.append("SELECT ");
         insertSelectSql.append(participantSequenceNumExpr).append(" AS ParticipantSequenceNum");
-        insertSelectSql.append(", Container, SpecimenHash, ");
+        insertSelectSql.append(", SpecimenHash, ");
         insertSelectSql.append(getSpecimenColsSql(info.getAvailableColumns())).append(" FROM (\n");
         insertSelectSql.append(getVialListFromTempTableSql(info)).append(") VialList\n");
-        insertSelectSql.append("GROUP BY ").append("Container, SpecimenHash, ");
+        insertSelectSql.append("GROUP BY ").append("SpecimenHash, ");
         insertSelectSql.append(getSpecimenColsSql(info.getAvailableColumns()));
 
+        TableInfo specimenTable = getTableInfoSpecimen();
+        String specimenTableSelectName = specimenTable.getSelectName();
         if (merge)
         {
             // Create list of specimen columns, including unique columns not found in SPECIMEN_COLUMNS.
@@ -1596,14 +1767,14 @@ public class SpecimenImporter
             {
                 if (VERBOSE_DEBUG)
                     ResultSetUtil.logData(rs, _logger);
-                mergeTable(info.getSchema(), info.getContainer(), "study.Specimen", cols, rs, false);
+                mergeTable(info.getSchema(), specimenTableSelectName, cols, rs, false, false);
             }
         }
         else
         {
             // Insert all specimens from in the temp table.
             SQLFragment insertSql = new SQLFragment();
-            insertSql.append("INSERT INTO study.Specimen \n(").append("ParticipantSequenceNum, Container, SpecimenHash, ");
+            insertSql.append("INSERT INTO ").append(specimenTableSelectName).append("\n(").append("ParticipantSequenceNum, SpecimenHash, ");
             insertSql.append(getSpecimenColsSql(info.getAvailableColumns())).append(")\n");
             insertSql.append(insertSelectSql);
 
@@ -1624,8 +1795,8 @@ public class SpecimenImporter
         SQLFragment vialListSql = new SQLFragment();
         vialListSql.append("SELECT ").append(info.getTempTableName()).append(".LSID AS LSID");
         vialListSql.append(prefix).append("SpecimenHash");
-        vialListSql.append(prefix).append("? AS Container");
-        vialListSql.add(info.getContainer().getId());
+//        vialListSql.append(prefix).append("? AS Container");
+//        vialListSql.add(info.getContainer().getId());
         for (SpecimenColumn col : info.getAvailableColumns())
         {
             if (col.getTargetTable().isVials() || col.getTargetTable().isSpecimens())
@@ -1637,7 +1808,7 @@ public class SpecimenImporter
         vialListSql.append("\nFROM ").append(info.getTempTableName());
         vialListSql.append("\nGROUP BY\n");
         vialListSql.append(info.getTempTableName()).append(".LSID,\n    ");
-        vialListSql.append(info.getTempTableName()).append(".Container,\n    ");
+//        vialListSql.append(info.getTempTableName()).append(".Container,\n    ");
         vialListSql.append(info.getTempTableName()).append(".SpecimenHash,\n    ");
         vialListSql.append(info.getTempTableName()).append(".GlobalUniqueId");
         return vialListSql;
@@ -1645,12 +1816,17 @@ public class SpecimenImporter
 
     private void populateVials(SpecimenLoadInfo info, boolean merge) throws SQLException, ValidationException
     {
+        TableInfo specimenTable = getTableInfoSpecimen();
+        String specimenTableSelectName = specimenTable.getSelectName();
+        TableInfo vialTable = getTableInfoVial();
+        String vialTableSelectName = vialTable.getSelectName();
+
         String prefix = ",\n    ";
         SQLFragment insertSelectSql = new SQLFragment();
         insertSelectSql.append("SELECT exp.Material.RowId");
-        insertSelectSql.append(prefix).append("study.Specimen.RowId AS SpecimenId");
-        insertSelectSql.append(prefix).append("study.Specimen.SpecimenHash");
-        insertSelectSql.append(prefix).append("VialList.Container");
+        insertSelectSql.append(prefix).append(specimenTable.getColumn("RowId").getValueSql(specimenTableSelectName)).append(" AS SpecimenId");
+        insertSelectSql.append(prefix).append(specimenTable.getColumn("SpecimenHash").getValueSql(specimenTableSelectName));
+//        insertSelectSql.append(prefix).append("VialList.Container");
         insertSelectSql.append(prefix).append("? AS Available");
         // Set a default value of true for the 'Available' column:
         insertSelectSql.add(Boolean.TRUE);
@@ -1667,9 +1843,9 @@ public class SpecimenImporter
         insertSelectSql.add(info.getContainer().getId());
 
         // join to specimen:
-        insertSelectSql.append("\n    JOIN study.Specimen ON study.Specimen.Container = ? ");
-        insertSelectSql.add(info.getContainer().getId());
-        insertSelectSql.append("AND study.Specimen.SpecimenHash = VialList.SpecimenHash");
+        insertSelectSql.append("\n    JOIN ").append(specimenTableSelectName).append(" ON ");
+        insertSelectSql.append(specimenTable.getColumn("SpecimenHash").getValueSql(specimenTableSelectName)).
+                append(" = VialList.SpecimenHash");
 
 
         if (merge)
@@ -1689,14 +1865,14 @@ public class SpecimenImporter
             {
                 if (VERBOSE_DEBUG)
                     ResultSetUtil.logData(rs, _logger);
-                mergeTable(info.getSchema(), info.getContainer(), "study.Vial", cols, rs, false);
+                mergeTable(info.getSchema(), vialTableSelectName, cols, rs, false, false);
             }
         }
         else
         {
             // Insert all vials from in the temp table.
             SQLFragment insertSql = new SQLFragment();
-            insertSql.append("INSERT INTO study.Vial \n(RowId, SpecimenId, SpecimenHash, Container, Available, ");
+            insertSql.append("INSERT INTO ").append(vialTableSelectName).append("\n(RowId, SpecimenId, SpecimenHash, Available, ");
             insertSql.append(getVialColsSql(info.getAvailableColumns())).append(")\n");
             insertSql.append(insertSelectSql);
 
@@ -1721,13 +1897,18 @@ public class SpecimenImporter
 
     private void populateVialEvents(SpecimenLoadInfo info, boolean merge) throws SQLException, ValidationException
     {
+        TableInfo specimenEventTable = getTableInfoSpecimenEvent();
+        String specimenEventTableSelectName = specimenEventTable.getSelectName();
+        TableInfo vialTable = getTableInfoVial();
+        String vialTableSelectName = vialTable.getSelectName();
+
         SQLFragment insertSelectSql = new SQLFragment();
-        insertSelectSql.append("SELECT study.Vial.Container, study.Vial.RowId AS VialId, \n");
+        insertSelectSql.append("SELECT ").append(vialTable.getColumn("RowId").getValueSql(vialTableSelectName)).append(" AS VialId, \n");
         insertSelectSql.append(getSpecimenEventTempTableColumns(info));
         insertSelectSql.append(" FROM ");
-        insertSelectSql.append(info.getTempTableName()).append("\nJOIN study.Vial ON ");
-        insertSelectSql.append(info.getTempTableName()).append(".GlobalUniqueId = study.Vial.GlobalUniqueId AND study.Vial.Container = ?");
-        insertSelectSql.add(info.getContainer().getId());
+        insertSelectSql.append(info.getTempTableName()).append("\nJOIN ").append(vialTableSelectName).append(" ON ");
+        insertSelectSql.append(info.getTempTableName()).append(".GlobalUniqueId = ")
+                .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName));
 
         if (merge)
         {
@@ -1752,15 +1933,15 @@ public class SpecimenImporter
             {
                 if (VERBOSE_DEBUG)
                     ResultSetUtil.logData(rs, _logger);
-                mergeTable(info.getSchema(), info.getContainer(), "study.SpecimenEvent", cols, rs, false);
+                mergeTable(info.getSchema(), specimenEventTableSelectName, cols, rs, false, false);
             }
         }
         else
         {
             // Insert all events from the temp table
             SQLFragment insertSql = new SQLFragment();
-            insertSql.append("INSERT INTO study.SpecimenEvent\n");
-            insertSql.append("(Container, VialId, ").append(getSpecimenEventColsSql(info.getAvailableColumns())).append(")\n");
+            insertSql.append("INSERT INTO ").append(specimenEventTableSelectName).append("\n");
+            insertSql.append("(VialId, ").append(getSpecimenEventColsSql(info.getAvailableColumns())).append(")\n");
             insertSql.append(insertSelectSql);
 
             if (DEBUG)
@@ -1786,8 +1967,8 @@ public class SpecimenImporter
     }
 
     private <T extends ImportableColumn> Pair<List<T>, Integer> mergeTable(
-            DbSchema schema, Container container, String tableName,
-            Collection<T> potentialColumns, Iterable<Map<String, Object>> values, boolean addEntityId)
+            DbSchema schema, String tableName,
+            Collection<T> potentialColumns, Iterable<Map<String, Object>> values, boolean addEntityId, boolean hasContainerColumn)
             throws SQLException, ValidationException
     {
         ComputedColumn entityIdCol = null;
@@ -1796,10 +1977,10 @@ public class SpecimenImporter
             entityIdCol = new EntityIdComputedColumn();
         }
 
-        return mergeTable(schema, container, tableName, potentialColumns, values, entityIdCol);
+        return mergeTable(schema, tableName, potentialColumns, values, entityIdCol, hasContainerColumn);
     }
 
-    private void mergeTable(DbSchema schema, Container container, SpecimenImportFile file, boolean addEntityId)
+    private void mergeTable(DbSchema schema, SpecimenImportFile file, boolean addEntityId, boolean hasContainerColumn)
             throws SQLException, ValidationException, IOException
     {
         SpecimenTableType type = file.getTableType();
@@ -1813,7 +1994,7 @@ public class SpecimenImporter
 
         try (DataLoader loader = loadTsv(file))
         {
-            mergeTable(schema, container, type.getTableName(), type.getColumns(), loader, entityIdCol);
+            mergeTable(schema, type.getTableName(), type.getColumns(), loader, entityIdCol, hasContainerColumn);
         }
         finally
         {
@@ -1837,16 +2018,15 @@ public class SpecimenImporter
      * NOTE: The idCol is used only during insert -- the value won't be updated if the row already exists.
      *
      * @param schema The dbschema.
-     * @param container The container.
      * @param idCol The computed column.
      * @return A pair of the columns actually found in the data values and a total row count.
      * @throws SQLException
      * @throws org.labkey.api.query.ValidationException
      */
     private <T extends ImportableColumn> Pair<List<T>, Integer> mergeTable(
-            DbSchema schema, Container container, String tableName,
+            DbSchema schema, String tableName,
             Collection<T> potentialColumns, Iterable<Map<String, Object>> values,
-            ComputedColumn idCol)
+            ComputedColumn idCol, boolean hasContainerColumn)
         throws SQLException, ValidationException
     {
         if (values == null)
@@ -1856,6 +2036,7 @@ public class SpecimenImporter
         }
         Iterator<Map<String, Object>> iter = values.iterator();
 
+        assert !SpecimenTableType.Specimens.getTableName().equalsIgnoreCase(tableName);
         assert cpuMergeTable.start();
         info(tableName + ": Starting merge of data...");
 
@@ -1901,12 +2082,19 @@ public class SpecimenImporter
                             uniqueCols.add(col);
                     }
 
-                    selectSql.append("SELECT * FROM ").append(tableName).append(" WHERE Container = ? ");
+                    String fromConjunction = " WHERE";
+                    selectSql.append("SELECT * FROM ").append(tableName);
+                    if (hasContainerColumn)
+                    {
+                        selectSql.append(fromConjunction).append(" Container = ?");
+                        fromConjunction = " AND";
+                    }
                     for (ImportableColumn col : uniqueCols)
                     {
-                        selectSql.append(" AND (");
+                        selectSql.append(fromConjunction).append(" (");
                         appendEqualCheck(schema, selectSql, col);
                         selectSql.append(")\n");
+                        fromConjunction = " AND";
                     }
                     if (DEBUG)
                     {
@@ -1915,23 +2103,34 @@ public class SpecimenImporter
                     }
 
                     int p = 1;
-                    insertSql.append("INSERT INTO ").append(tableName).append(" (Container");
-                    parametersInsert.add(new Parameter("Container", p++, JdbcType.VARCHAR));
+                    String insertConjunction = "";
+                    StringBuilder insertValuesPortion = new StringBuilder();
+                    insertSql.append("INSERT INTO ").append(tableName).append(" (");
+                    insertValuesPortion.append(") VALUES (");
+                    if (hasContainerColumn)
+                    {
+                        insertSql.append("Container");
+                        parametersInsert.add(new Parameter("Container", p++, JdbcType.VARCHAR));
+                        insertValuesPortion.append("?");
+                        insertConjunction = ", ";
+                    }
                     if (idCol != null)
                     {
-                        insertSql.append(", ").append(idCol.getName());
+                        insertSql.append(insertConjunction).append(idCol.getName());
                         parametersInsert.add(new Parameter(idCol.getName(), p++, JdbcType.VARCHAR));
+                        insertValuesPortion.append(insertConjunction).append(" ?");
+                        insertConjunction = ", ";
                     }
                     for (ImportableColumn col : availableColumns)
                     {
-                        insertSql.append(", ").append(col.getDbColumnName());
+                        insertSql.append(insertConjunction).append(col.getDbColumnName());
                         parametersInsert.add(new Parameter(col.getDbColumnName(), p++, col.getSQLType()));
+                        insertValuesPortion.append(insertConjunction).append(" ?");
+                        insertConjunction = ", ";
                     }
-                    insertSql.append(") VALUES (?");
-                    if (idCol != null)
-                        insertSql.append(", ?");
-                    insertSql.append(StringUtils.repeat(", ?", availableColumns.size()));
-                    insertSql.append(")");
+                    insertValuesPortion.append(")");
+                    insertSql.append(insertValuesPortion);
+
                     stmtInsert = conn.prepareStatement(insertSql.toString());
                     parameterMapInsert = new Parameter.ParameterMap(schema.getScope(), stmtInsert, parametersInsert);
                     if (DEBUG)
@@ -1952,16 +2151,22 @@ public class SpecimenImporter
                             parametersUpdate.add(new Parameter(col.getDbColumnName(), p++, col.getSQLType()));
                         }
                     }
-                    updateSql.append(" WHERE Container = ?\n");
-                    parametersUpdate.add(new Parameter("Container", p++, JdbcType.VARCHAR));
+                    String updateConjunction = " WHERE";
+                    if (hasContainerColumn)
+                    {
+                        updateSql.append(updateConjunction).append(" Container = ?\n");
+                        parametersUpdate.add(new Parameter("Container", p++, JdbcType.VARCHAR));
+                        updateConjunction = " AND";
+                    }
                     for (ImportableColumn col : availableColumns)
                     {
                         if (col.isUnique())
                         {
-                            updateSql.append(" AND (");
+                            updateSql.append(updateConjunction).append(" (");
                             appendEqualCheck(schema, updateSql, col);
                             updateSql.append(")\n");
                             parametersUpdate.add(new Parameter(col.getDbColumnName(), new int[] { p++, p++ }, col.getSQLType()));
+                            updateConjunction = " AND";
                         }
                     }
                     stmtUpdate = conn.prepareStatement(updateSql.toString());
@@ -1976,9 +2181,13 @@ public class SpecimenImporter
                 boolean rowExists = false;
                 if (!uniqueCols.isEmpty())
                 {
-                    Object[] params = new Object[(2*uniqueCols.size()) + 1];
+                    int paramsSize = (2*uniqueCols.size());
+                    if (hasContainerColumn)
+                        paramsSize += 1;
+                    Object[] params = new Object[paramsSize];
                     int colIndex = 0;
-                    params[colIndex++] = container.getId();
+                    if (hasContainerColumn)
+                        params[colIndex++] = _container.getId();
                     for (ImportableColumn col : uniqueCols)
                     {
                         // Each unique col has two parameters in the null-equals check.
@@ -1995,7 +2204,8 @@ public class SpecimenImporter
                 if (!rowExists)
                 {
                     parameterMapInsert.clearParameters();
-                    parameterMapInsert.put("Container", container.getId());
+                    if (hasContainerColumn)
+                        parameterMapInsert.put("Container", _container.getId());
                     if (idCol != null)
                         parameterMapInsert.put(idCol.getName(), idCol.getValue(row));
                     for (ImportableColumn col : availableColumns)
@@ -2013,7 +2223,8 @@ public class SpecimenImporter
                         Object value = getValueParameter(col, row);
                         parameterMapUpdate.put(col.getDbColumnName(), value);
                     }
-                    parameterMapUpdate.put("Container", container.getId());
+                    if (hasContainerColumn)
+                        parameterMapUpdate.put("Container", _container.getId());
                     if (VERBOSE_DEBUG)
                         info(stmtUpdate.toString());
                     stmtUpdate.execute();
@@ -2035,7 +2246,7 @@ public class SpecimenImporter
     }
 
 
-    private void replaceTable(DbSchema schema, Container container, SpecimenImportFile file, boolean addEntityId)
+    private void replaceTable(DbSchema schema, SpecimenImportFile file, boolean addEntityId, boolean hasContainerColumn)
         throws IOException, SQLException
     {
         ComputedColumn entityIdCol = null;
@@ -2044,14 +2255,13 @@ public class SpecimenImporter
             entityIdCol = new EntityIdComputedColumn();
         }
 
-        replaceTable(schema, container, file, file.getTableType().getTableName(), false, entityIdCol);
+        replaceTable(schema, file, file.getTableType().getTableName(), false, hasContainerColumn, entityIdCol);
     }
 
     /**
      * Deletes the target table and inserts new rows.
      *
      * @param schema The dbschema
-     * @param container The container
      * @param file SpecimenImportFile
      * @param tableName Fully qualified table name, e.g., "study.Vials"
      * @param generateGlobaluniqueIds Generate globalUniqueIds if any needed
@@ -2061,8 +2271,8 @@ public class SpecimenImporter
      * @throws IOException
      */
     public <T extends ImportableColumn> Pair<List<T>, Integer> replaceTable(
-            DbSchema schema, Container container, SpecimenImportFile file, String tableName, boolean generateGlobaluniqueIds,
-            ComputedColumn... computedColumns)
+            DbSchema schema, SpecimenImportFile file, String tableName, boolean generateGlobaluniqueIds,
+            boolean hasContainerColumn, ComputedColumn... computedColumns)
         throws IOException, SQLException
     {
         if (file == null)
@@ -2074,7 +2284,11 @@ public class SpecimenImporter
         assert cpuMergeTable.start();
         info(tableName + ": Starting replacement of all data...");
 
-        executeSQL(schema, "DELETE FROM " + tableName + " WHERE Container = ?", container.getId());
+        assert !SpecimenTableType.Specimens.getTableName().equalsIgnoreCase(tableName);
+        if (hasContainerColumn)
+            executeSQL(schema, "DELETE FROM " + tableName + " WHERE Container = ?", _container.getId());
+        else
+            executeSQL(schema, "DELETE FROM " + tableName);
 
         // boundColumns is the same as availableColumns, skipping any columns that are computed
         List<T> availableColumns = new ArrayList<>();
@@ -2091,7 +2305,7 @@ public class SpecimenImporter
         Collection<T> columns = (Collection<T>)file.getTableType().getColumns();
 
         List<String> newUniqueIds = (generateGlobaluniqueIds && _generateGlobalUniqueIds > 0) ?
-                getValidGlobalUniqueIds(container, _generateGlobalUniqueIds) : null;
+                getValidGlobalUniqueIds(_generateGlobalUniqueIds) : null;
 
         try (CloseableIterator<Map<String, Object>> iter = loadTsv(file).iterator())
         {
@@ -2106,6 +2320,7 @@ public class SpecimenImporter
                     row.put(GLOBAL_UNIQUE_ID_TSV_COL, newUniqueIds.get(idCount++));
                 }
 
+                int paramCount = 0;
                 if (1 == rowCount)
                 {
                     for (T column : columns)
@@ -2118,21 +2333,35 @@ public class SpecimenImporter
                         }
                     }
 
-                    insertSql.append("INSERT INTO ").append(tableName).append(" (Container");
+                    String conjunction = "";
+                    insertSql.append("INSERT INTO ").append(tableName).append(" (");
+                    if (hasContainerColumn)
+                    {
+                        insertSql.append("Container");
+                        conjunction = ", ";
+                    }
                     for (ComputedColumn cc : computedColumnsMap.values())
-                        insertSql.append(", ").append(cc.getName());
+                    {
+                        insertSql.append(conjunction).append(cc.getName());
+                        conjunction = ", ";
+                    }
                     for (ImportableColumn col : boundColumns)
-                        insertSql.append(", ").append(col.getDbColumnName());
+                    {
+                        insertSql.append(conjunction).append(col.getDbColumnName());
+                        conjunction = ", ";
+                    }
+                    paramCount = computedColumnsMap.size() + boundColumns.size() + (hasContainerColumn ? 1 : 0);
                     insertSql.append(") VALUES (?");
-                    insertSql.append(StringUtils.repeat(", ?", computedColumnsMap.size() + boundColumns.size()));
+                    insertSql.append(StringUtils.repeat(", ?", paramCount - 1));
                     insertSql.append(")");
 
                     if (DEBUG)
                         info(insertSql.toString());
                 }
 
-                List<Object> params = new ArrayList<>(computedColumnsMap.size() + boundColumns.size() + 1);
-                params.add(container.getId());
+                List<Object> params = new ArrayList<>(paramCount);
+                if (hasContainerColumn)
+                    params.add(_container.getId());
 
                 for (ComputedColumn cc : computedColumns)
                     if (null != cc) params.add(cc.getValue(row));
@@ -2209,7 +2438,7 @@ public class SpecimenImporter
 
 
     private Pair<List<SpecimenColumn>, Integer> populateTempTable(
-            DbSchema schema, final Container container, String tempTable,
+            DbSchema schema, final String tempTable,
             SpecimenImportFile file, boolean merge)
         throws SQLException, IOException
     {
@@ -2228,7 +2457,7 @@ public class SpecimenImporter
                 if (id == null)
                     id = (String) row.get(SPEC_NUMBER_TSV_COL);
 
-                Lsid lsid = SpecimenService.get().getSpecimenMaterialLsid(container, id);
+                Lsid lsid = SpecimenService.get().getSpecimenMaterialLsid(_container, id);
                 return lsid.toString();
             }
         };
@@ -2246,7 +2475,7 @@ public class SpecimenImporter
                 _dateCol = sc;
         }
 
-        Study study = StudyManager.getInstance().getStudy(container);
+        Study study = StudyManager.getInstance().getStudy(_container);
         final SequenceNumImportHelper h = new SequenceNumImportHelper(study, null);
         final SpecimenColumn visitCol = _visitCol;
         final SpecimenColumn dateCol = _dateCol;
@@ -2281,7 +2510,7 @@ public class SpecimenImporter
         {
             try
             {
-                pair = replaceTable(schema, container, file, tempTable, true, lsidCol, sequencenumCol);
+                pair = replaceTable(schema, file, tempTable, true, false, lsidCol, sequencenumCol);
 
                 loadedColumns = pair.first;
                 rowCount = pair.second;
@@ -2292,13 +2521,13 @@ public class SpecimenImporter
                     return pair;
                 }
 
-                remapTempTableLookupIndexes(schema, container, tempTable, loadedColumns);
+                remapTempTableLookupIndexes(schema, tempTable, loadedColumns);
 
-                updateTempTableVisits(schema, container, tempTable);
+                updateTempTableVisits(schema, tempTable);
 
                 if (merge)
                 {
-                    checkForConflictingSpecimens(schema, container, tempTable, loadedColumns);
+                    checkForConflictingSpecimens(schema, tempTable, loadedColumns);
                 }
             }
             catch (Table.OptimisticConflictException e)
@@ -2312,13 +2541,13 @@ public class SpecimenImporter
                 break;
         }
 
-        updateTempTableSpecimenHash(schema, container, tempTable, loadedColumns);
+        updateTempTableSpecimenHash(schema, tempTable, loadedColumns);
 
         info("Specimen temp table populated.");
         return pair;
     }
 
-    protected void remapTempTableLookupIndexes(DbSchema schema, Container container, String tempTable, List<SpecimenColumn> loadedColumns)
+    protected void remapTempTableLookupIndexes(DbSchema schema, String tempTable, List<SpecimenColumn> loadedColumns)
             throws SQLException
     {
         String sep = "";
@@ -2337,7 +2566,7 @@ public class SpecimenImporter
                 innerTableJoinSql.append("(").append(tempTable).append(".");
                 innerTableJoinSql.append(col.getDbColumnName()).append(" = ").append(col.getFkTableAlias()).append(".").append(col.getFkColumn());
                 innerTableJoinSql.append(" AND ").append(col.getFkTableAlias()).append(".Container").append(" = ?)");
-                innerTableJoinSql.add(container.getId());
+                innerTableJoinSql.add(_container.getId());
 
                 sep = ",\n\t";
             }
@@ -2352,9 +2581,9 @@ public class SpecimenImporter
         info("Update complete.");
     }
 
-    private void updateTempTableVisits(DbSchema schema, Container container, String tempTable)
+    private void updateTempTableVisits(DbSchema schema, String tempTable)
     {
-        Study study = StudyManager.getInstance().getStudy(container);
+        Study study = StudyManager.getInstance().getStudy(_container);
         if (study.getTimepointType() != TimepointType.VISIT)
         {
             info("Updating visit values to match draw timestamps (date-based studies only)...");
@@ -2369,10 +2598,10 @@ public class SpecimenImporter
         }
     }
 
-    protected void checkForConflictingSpecimens(DbSchema schema, Container container, String tempTable, List<SpecimenColumn> loadedColumns)
+    protected void checkForConflictingSpecimens(DbSchema schema, String tempTable, List<SpecimenColumn> loadedColumns)
             throws SQLException
     {
-        if (!StudyManager.getInstance().getStudy(container).getRepositorySettings().isSpecimenDataEditable())
+        if (!StudyManager.getInstance().getStudy(_container).getRepositorySettings().isSpecimenDataEditable())
         {
             info("Checking for conflicting specimens before merging...");
 
@@ -2388,15 +2617,14 @@ public class SpecimenImporter
             }
             hashCols.append("\n");
 
-            SQLFragment existingEvents = new SQLFragment("SELECT Vial.Container, GlobalUniqueId");
+            SQLFragment existingEvents = new SQLFragment("SELECT GlobalUniqueId");
             existingEvents.append(hashCols);
-            existingEvents.append("FROM ").append(StudySchema.getInstance().getTableInfoVial(), "Vial").append("\n");
-            existingEvents.append("JOIN ").append(StudySchema.getInstance().getTableInfoSpecimen(), "Specimen").append("\n");
+            existingEvents.append("FROM ").append(getTableInfoVial(), "Vial").append("\n");
+            existingEvents.append("JOIN ").append(getTableInfoSpecimen(), "Specimen").append("\n");
             existingEvents.append("ON Vial.SpecimenId = Specimen.RowId\n");
-            existingEvents.append("WHERE Vial.Container=?\n").add(container.getId());
-            existingEvents.append("AND Vial.GlobalUniqueId IN (SELECT GlobalUniqueId FROM ").append(tempTable).append(")\n");
+            existingEvents.append("WHERE Vial.GlobalUniqueId IN (SELECT GlobalUniqueId FROM ").append(tempTable).append(")\n");
 
-            SQLFragment tempTableEvents = new SQLFragment("SELECT Container, GlobalUniqueId");
+            SQLFragment tempTableEvents = new SQLFragment("SELECT GlobalUniqueId");
             tempTableEvents.append(hashCols);
             tempTableEvents.append("FROM ").append(tempTable);
 
@@ -2406,7 +2634,7 @@ public class SpecimenImporter
             allEventsByHashCols.append("UNION ALL\n");
             allEventsByHashCols.append("(\n").append(tempTableEvents).append("\n)\n");
             allEventsByHashCols.append(") U\n");
-            allEventsByHashCols.append("GROUP BY Container, GlobalUniqueId");
+            allEventsByHashCols.append("GROUP BY GlobalUniqueId");
             allEventsByHashCols.append(hashCols);
 
             Map<String, List<Map<String, Object>>> rowsByGUID = new HashMap<>();
@@ -2470,12 +2698,9 @@ public class SpecimenImporter
         {
             // Check if any incoming vial is already present in the vial table; this is not allowed
             info("Checking for conflicting specimens in editable repsoitory...");
-            SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM " + StudySchema.getInstance().getTableInfoVial() +
-                    " WHERE Container = ?");
-            sql.add(container);
-            sql.append(" AND GlobalUniqueId IN " + "(SELECT GlobalUniqueId FROM ");
-            sql.append(tempTable);
-            sql.append(" WHERE Container = ?)").add(container);
+            SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ").append(getTableInfoVial().getSelectName());
+            sql.append(" WHERE GlobalUniqueId IN " + "(SELECT GlobalUniqueId FROM ");
+            sql.append(tempTable).append(")");
             ArrayList<Integer> counts = new SqlSelector(schema, sql).getArrayList(Integer.class);
             if (1 != counts.size())
             {
@@ -2495,7 +2720,7 @@ public class SpecimenImporter
         }
     }
 
-    private void updateTempTableSpecimenHash(DbSchema schema, Container container, String tempTable, List<SpecimenColumn> loadedColumns)
+    private void updateTempTableSpecimenHash(DbSchema schema, String tempTable, List<SpecimenColumn> loadedColumns)
             throws SQLException
     {
         // NOTE: In merge case, we've already checked the specimen hash columns are not in conflict.
@@ -2536,7 +2761,7 @@ public class SpecimenImporter
         updateHashSql.append("UPDATE ").append(tempTable).append(" SET SpecimenHash = ");
         ArrayList<String> hash = new ArrayList<>(loadedColumns.size());
         hash.add("?");
-        updateHashSql.add("Fld-" + container.getRowId());
+        updateHashSql.add("Fld-" + _container.getRowId());
         String strType = schema.getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR);
 
         for (SpecimenColumn col : loadedColumns)
@@ -2623,7 +2848,7 @@ public class SpecimenImporter
             }
             String strType = dialect.sqlTypeNameFromSqlType(Types.VARCHAR);
             sql.append("\n(\n    RowId ").append(dialect.getUniqueIdentType()).append(", ");
-            sql.append("Container ").append(strType).append("(300) NOT NULL, ");
+//            sql.append("Container ").append(strType).append("(300) NOT NULL, ");
             sql.append("LSID ").append(strType).append("(300) NOT NULL, ");
             sql.append("SpecimenHash ").append(strType).append("(300)");
             for (SpecimenColumn col : SPECIMEN_COLUMNS)
@@ -2657,18 +2882,17 @@ public class SpecimenImporter
     }
 
     private static final String SPECIMEN_SEQUENCE_NAME = "org.labkey.study.samples";
-    private static List<String> getValidGlobalUniqueIds(Container container, int count)
+    private List<String> getValidGlobalUniqueIds(int count)
     {
         List<String> uniqueIds = new ArrayList<>();
-        DbSequence sequence = DbSequenceManager.get(container, SPECIMEN_SEQUENCE_NAME);
+        DbSequence sequence = DbSequenceManager.get(_container, SPECIMEN_SEQUENCE_NAME);
         sequence.ensureMinimum(70000);
 
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromString("Container"), container);
         Sort sort = new Sort();
         sort.appendSortColumn(FieldKey.fromString("GlobalUniqueId"), Sort.SortDirection.DESC, false);
         Set<String> columns = new HashSet<>();
         columns.add("GlobalUniqueId");
-        List<String> currentIds = new TableSelector(StudySchema.getInstance().getTableInfoVial(), columns, filter, sort).getArrayList(String.class);
+        List<String> currentIds = new TableSelector(getTableInfoVial(), columns, null, sort).getArrayList(String.class);
 
         for (int i = 0; i < count; i += 1)
         {
@@ -2738,7 +2962,7 @@ public class SpecimenImporter
                     row(null, 300)
             );
 
-            SpecimenImporter importer = new SpecimenImporter();
+            SpecimenImporter importer = new SpecimenImporter(c, null);      // TODO: don't have user here
             final Integer[] counter = new Integer[] { 0 };
             ComputedColumn idCol = new ComputedColumn()
             {
@@ -2750,7 +2974,7 @@ public class SpecimenImporter
             };
 
             // Insert rows
-            Pair<List<ImportableColumn>, Integer> pair = importer.mergeTable(_schema, c, _tableName, cols, values, idCol);
+            Pair<List<ImportableColumn>, Integer> pair = importer.mergeTable(_schema, _tableName, cols, values, idCol, true);
             assertNotNull(pair);
             assertEquals(pair.first.size(), cols.size());
             assertEquals(3, pair.second.intValue());
@@ -2782,7 +3006,7 @@ public class SpecimenImporter
                     row(null, 305),
                     row("Jimmy", 405)
             );
-            pair = importer.mergeTable(_schema, c, _tableName, cols, values, idCol);
+            pair = importer.mergeTable(_schema, _tableName, cols, values, idCol, true);
             assertEquals(pair.first.size(), cols.size());
             assertEquals(3, pair.second.intValue());
             assertEquals(4, counter[0].intValue());
@@ -2816,14 +3040,29 @@ public class SpecimenImporter
         @Test
         public void tempTableConsistencyTest() throws Exception
         {
+            Container c = JunitUtil.getTestContainer();
             DbSchema schema = StudySchema.getInstance().getSchema();
+
+            // Provisioned specimen tables need to be created in this order
+            StudySchema.getInstance().getTableInfoSpecimen(c, TestContext.get().getUser());
+            StudySchema.getInstance().getTableInfoVial(c, TestContext.get().getUser());
+            StudySchema.getInstance().getTableInfoSpecimenEvent(c, TestContext.get().getUser());
+
             for (SpecimenColumn specimenColumn : SPECIMEN_COLUMNS)
             {
                 TargetTable targetTable = specimenColumn.getTargetTable();
                 List<String> tableNames = targetTable.getTableNames();
                 for (String tableName : tableNames)
                 {
-                    checkConsistency(schema, tableName, specimenColumn);
+                    TableInfo tableInfo = null;
+                    if ("SpecimenEvent".equalsIgnoreCase(tableName))
+                        tableInfo = StudySchema.getInstance().getTableInfoSpecimenEvent(c);
+                    else if ("Specimen".equalsIgnoreCase(tableName))
+                        tableInfo = StudySchema.getInstance().getTableInfoSpecimen(c);
+                    else if ("Vial".equalsIgnoreCase(tableName))
+                        tableInfo = StudySchema.getInstance().getTableInfoVial(c);
+                    if (null != tableInfo)
+                        checkConsistency(tableInfo, tableName, specimenColumn);
                 }
             }
             for (ImportableColumn importableColumn : ADDITIVE_COLUMNS)
@@ -2846,8 +3085,13 @@ public class SpecimenImporter
 
         private void checkConsistency(DbSchema schema, String tableName, ImportableColumn importableColumn)
         {
-            String columnName = importableColumn.getDbColumnName();
             TableInfo tableInfo = schema.getTable(tableName);
+            checkConsistency(tableInfo, tableName, importableColumn);
+        }
+
+        private void checkConsistency(TableInfo tableInfo, String tableName, ImportableColumn importableColumn)
+        {
+            String columnName = importableColumn.getDbColumnName();
             ColumnInfo columnInfo = tableInfo.getColumn(columnName);
             JdbcType jdbcType = columnInfo.getJdbcType();
 

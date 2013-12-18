@@ -621,7 +621,10 @@ public class VisualizationController extends SpringActionController
                             }
 
                             SQLFragment sql = QueryService.get().getSelectSQL(tinfo, Collections.singleton(col), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
-                            SQLFragment distinctSql = new SQLFragment(sql.getSQL().replaceFirst("SELECT", "SELECT DISTINCT"), sql.getParams());
+                            SQLFragment distinctSql = new SQLFragment(sql);
+                            int i = StringUtils.indexOf(sql.getSqlCharSequence(), "SELECT");
+                            if (i >= 0)
+                                distinctSql.insert(i + "SELECT".length(), " DISTINCT");
 
                             new SqlSelector(schema.getDbSchema(), distinctSql).forEach(new Selector.ForEachBlock<ResultSet>()
                             {

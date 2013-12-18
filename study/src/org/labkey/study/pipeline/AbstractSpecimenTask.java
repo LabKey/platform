@@ -126,8 +126,8 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                 if (job != null)
                     job.setStatus("PROCESSING SPECIMENS");
                 ctx.getLogger().info("Starting specimen import...");
-                SpecimenImporter importer = new SpecimenImporter();
-                importer.process(ctx.getUser(), ctx.getContainer(), specimenDir, merge, ctx.getLogger());
+                SpecimenImporter importer = new SpecimenImporter(ctx.getContainer(), ctx.getUser());
+                importer.process(specimenDir, merge, ctx.getLogger());
             }
 
             // perform any tasks after the transform and import has been completed

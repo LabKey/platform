@@ -17,8 +17,10 @@
 package org.labkey.study.controllers.samples;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.DataView;
@@ -60,15 +62,17 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Specim
         if (super.handlePost(form, errors))
         {
             // clear any vial comments specified
+            User user = getViewContext().getUser();
+            Container container = getViewContext().getContainer();
             for (int rowId : form.getVialCommentsToClear())
             {
-                Specimen specimen = SampleManager.getInstance().getSpecimen(getViewContext().getContainer(), rowId);
+                Specimen specimen = SampleManager.getInstance().getSpecimen(container, user, rowId);
                 if (specimen != null)
                 {
                     SpecimenComment comment = SampleManager.getInstance().getSpecimenCommentForVial(specimen);
                     if (comment != null)
                     {
-                        SampleManager.getInstance().setSpecimenComment(getViewContext().getUser(), specimen, null,
+                        SampleManager.getInstance().setSpecimenComment(user, specimen, null,
                                 comment.isQualityControlFlag(), comment.isQualityControlFlagForced());
                     }
                 }

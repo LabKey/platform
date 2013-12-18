@@ -16,9 +16,21 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.query.AliasedColumn;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: klum
@@ -28,7 +40,7 @@ public class SpecimenVialCountTable extends BaseStudyTable
 {
     public SpecimenVialCountTable(StudyQuerySchema schema)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenVialCount());
+/*        super(schema, StudySchema.getInstance().getTableInfoSpecimenVialCount());
 
         addWrapColumn(_rootTable.getColumn("Container")).setHidden(true);
         addWrapColumn(_rootTable.getColumn("SpecimenHash")).setHidden(true);
@@ -41,5 +53,71 @@ public class SpecimenVialCountTable extends BaseStudyTable
         addColumn(new AliasedColumn(this, "AtRepository", _rootTable.getColumn("AtRepositoryCount")));
         addColumn(new AliasedColumn(this, "Available", _rootTable.getColumn("AvailableCount"))).setHidden(!enableSpecimenRequest);
         addColumn(new AliasedColumn(this, "ExpectedAvailable", _rootTable.getColumn("ExpectedAvailableCount"))).setHidden(!enableSpecimenRequest);
+*/
+        super(schema, StudySchema.getInstance().getTableInfoVial(schema.getContainer()));
+        setTitle("VialCounts");
+
+        addContainerColumn(true).setHidden(true);
+        addWrapColumn(_rootTable.getColumn("SpecimenHash")).setHidden(true);
+
+        addColumn(new ExprColumn(this, "TotalCount", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + "VialCount"), JdbcType.INTEGER));
+
+        boolean enableSpecimenRequest = SampleManager.getInstance().getRepositorySettings(getContainer()).isEnableRequests();
+
+        addColumn(new ExprColumn(this, "LockedInRequest", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + "LockedInRequestCount"), JdbcType.INTEGER)).setHidden(!enableSpecimenRequest);
+        addColumn(new ExprColumn(this, "AtRepository", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + "AtRepositoryCount"), JdbcType.INTEGER));
+        addColumn(new ExprColumn(this, "Available", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + "AvailableCount"), JdbcType.INTEGER)).setHidden(!enableSpecimenRequest);
+        addColumn(new ExprColumn(this, "ExpectedAvailable", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + "ExpectedAvailableCount"), JdbcType.INTEGER)).setHidden(!enableSpecimenRequest);
+    }
+
+    @NotNull
+    @Override
+    public SQLFragment getFromSQL(String alias)
+    {
+        TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(getContainer());
+        if (null == tableInfoVial)
+            throw new IllegalStateException("Vial table not found.");
+
+        SQLFragment sql = new SQLFragment("(SELECT ? As Container, Vial.specimenhash, sum(Vial.volume) AS totalvolume,\n" +
+                "        sum(CASE Vial.available\n" +
+                "            WHEN ? THEN Vial.volume\n" +
+                "            ELSE 0\n" +
+                "        END) AS availablevolume, count(Vial.globaluniqueid) AS vialcount, sum(\n" +
+                "        CASE Vial.lockedinrequest\n" +
+                "            WHEN ? THEN 1\n" +
+                "            ELSE 0\n" +
+                "        END) AS lockedinrequestcount, sum(\n" +
+                "        CASE Vial.atrepository\n" +
+                "            WHEN ? THEN 1\n" +
+                "            ELSE 0\n" +
+                "        END) AS atrepositorycount, sum(\n" +
+                "        CASE Vial.available\n" +
+                "            WHEN ? THEN 1\n" +
+                "            ELSE 0\n" +
+                "        END) AS availablecount, count(Vial.globaluniqueid) - sum(\n" +
+                "        CASE \n" +
+                "            CASE Vial.lockedinrequest\n" +
+                "                WHEN ? THEN 1\n" +
+                "                ELSE 0\n" +
+                "            END | \n" +
+                "            CASE Vial.requestable\n" +
+                "                WHEN ? THEN 1\n" +
+                "                ELSE 0\n" +
+                "            END\n" +
+                "            WHEN 1 THEN 1\n" +
+                "            ELSE 0\n" +
+                "        END) AS expectedavailablecount\n" +
+                "   FROM ");
+        sql.append(tableInfoVial.getFromSQL("Vial"))
+                .append("\n  GROUP BY Vial.specimenhash) ")
+                .append(alias);
+        sql.add(getContainer());
+        sql.add(Boolean.TRUE);
+        sql.add(Boolean.TRUE);
+        sql.add(Boolean.TRUE);
+        sql.add(Boolean.TRUE);
+        sql.add(Boolean.TRUE);
+        sql.add(Boolean.FALSE);
+        return sql;
     }
 }

@@ -28,7 +28,7 @@ public class SpecimenEventTable extends BaseStudyTable
 {
     public SpecimenEventTable(StudyQuerySchema schema)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenEvent(), true);
+        super(schema, StudySchema.getInstance().getTableInfoSpecimenEvent(schema.getContainer()), true);
 
         ColumnInfo vid = addWrapColumn(_rootTable.getColumn("VialId"));
         vid.setDisplayColumnFactory(ColumnInfo.NOWRAP_FACTORY);
@@ -89,7 +89,7 @@ public class SpecimenEventTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("ParentSpecimenId"));
         ColumnInfo obsoleteColumn = addWrapColumn(_rootTable.getColumn("Obsolete"));
         obsoleteColumn.setHidden(true);
-        addContainerColumn();
+        addContainerColumn(true);
     }
 
     @Override

@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlSelector;
@@ -46,9 +47,11 @@ public class AutoCompleteAction extends ApiAction<AutoCompleteAction.AutoComplet
     @Override
     public ApiResponse execute(AutoCompletionForm form, BindException errors) throws Exception
     {
+        Container container = getViewContext().getContainer();
         String column;
         TableInfo tinfo;
         boolean insensitiveCompare = false;
+        boolean hasContainerColumn = true;
         if (SpecimenService.CompletionType.ParticipantId.name().equals(form.getType()))
         {
             tinfo = StudySchema.getInstance().getTableInfoParticipantVisit();
@@ -57,9 +60,10 @@ public class AutoCompleteAction extends ApiAction<AutoCompleteAction.AutoComplet
         }
         else if (SpecimenService.CompletionType.SpecimenGlobalUniqueId.name().equals(form.getType()))
         {
-            tinfo = StudySchema.getInstance().getTableInfoVial();
+            tinfo = StudySchema.getInstance().getTableInfoVial(container);
             column = "GlobalUniqueId";
             insensitiveCompare = true;
+            hasContainerColumn = false;
         }
         else if (SpecimenService.CompletionType.VisitId.name().equals(form.getType()))
         {
@@ -75,6 +79,9 @@ public class AutoCompleteAction extends ApiAction<AutoCompleteAction.AutoComplet
         else
             throw new IllegalArgumentException("Completion type " + form.getType() + " not recognized.");
 
+        ApiSimpleResponse response = new ApiSimpleResponse();
+        if (null == tinfo)      // theorectically possible from getTableInfoVial
+            return response;
         final List<AjaxCompletion> completions = new ArrayList<>();
 
         SQLFragment sql = new SQLFragment();
@@ -82,8 +89,11 @@ public class AutoCompleteAction extends ApiAction<AutoCompleteAction.AutoComplet
         sql.append(column);
         sql.append(" FROM ");
         sql.append(tinfo.getSchema().getName()).append(".").append(tinfo.getName());
-        sql.append(" WHERE Container = ?");
-        sql.add(getViewContext().getContainer().getId());
+        if (hasContainerColumn)
+        {
+            sql.append(" WHERE Container = ?");
+            sql.add(container.getId());
+        }
         sql.append(" ORDER BY ").append(column);
         tinfo.getSqlDialect().limitRows(sql, 50);
 
@@ -96,7 +106,6 @@ public class AutoCompleteAction extends ApiAction<AutoCompleteAction.AutoComplet
             }
         });
 
-        ApiSimpleResponse response = new ApiSimpleResponse();
         List<JSONObject> jsonCompletions = new ArrayList<>();
         for (AjaxCompletion completion : completions)
             jsonCompletions.add(completion.toJSON());

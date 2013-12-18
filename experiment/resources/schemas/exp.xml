@@ -400,6 +400,7 @@
       <ns:column columnName="CreatedBy"/>
       <ns:column columnName="Modified"/>
       <ns:column columnName="ModifiedBy"/>
+      <ns:column columnName="Scale"/>
   </ns:columns>
   </ns:table>
   <ns:table tableName="DomainDescriptor" tableDbType="TABLE">

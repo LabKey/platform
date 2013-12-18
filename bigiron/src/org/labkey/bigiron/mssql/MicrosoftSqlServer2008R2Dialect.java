@@ -131,6 +131,10 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
             {
                 return "INT IDENTITY (1, 1)";
             }
+            else if (prop.getJdbcType().sqlType == Types.BIGINT)
+            {
+                return "BIGINT IDENTITY (1, 1)";
+            }
             else
             {
                 throw new IllegalArgumentException("AutoIncrement is not supported for SQL type " + prop.getJdbcType().sqlType + " (" + sqlTypeNameFromSqlType(prop.getJdbcType().sqlType) + ")");
@@ -256,7 +260,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
                 outputSql.append(" ");
             }
 
-            int idx = StringUtils.indexOfIgnoreCase(sql.getSqlCharSequence(), "WHERE");
+            int idx = StringUtils.indexOfIgnoreCase(sql, "WHERE");
 
             if (idx > -1)
                 sql.insert(idx, outputSql.toString());
@@ -850,6 +854,21 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
             }
         }
 
+        for (PropertyStorageSpec.ForeignKey foreignKey : change.getForeignKeys())
+        {
+            StringBuilder fkString = new StringBuilder("CONSTRAINT ");
+            DbSchema schema = DbSchema.get(foreignKey.getSchemaName());
+            TableInfo tableInfo = foreignKey.isProvisioned() ?
+                    foreignKey.getTableInfoProvisioned() :
+                    schema.getTable(foreignKey.getTableName());
+            String constraintName = "fk_" + foreignKey.getColumnName() + "_" + change.getTableName() + "_" + tableInfo.getName();
+            fkString.append(constraintName).append(" FOREIGN KEY (")
+                    .append(foreignKey.getColumnName()).append(") REFERENCES ")
+                    .append(tableInfo.getSelectName()).append(" (")
+                    .append(foreignKey.getForeignColumnName()).append(")");
+            createTableSqlParts.add(fkString.toString());
+        }
+
         statements.add(String.format("CREATE TABLE %s (%s)", makeTableIdentifier(change), StringUtils.join(createTableSqlParts, ",\n")));
 
         if (null != pkColumn)
@@ -954,9 +973,22 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         else if (prop.getJdbcType() == JdbcType.DECIMAL)
             colSpec.add("(15,4)");
 
-        if (prop.isPrimaryKey())
+        if (prop.isPrimaryKey() || !prop.isNullable())
             colSpec.add("NOT NULL");
 
+        if (null != prop.getDefaultValue())
+        {
+            if (prop.getJdbcType().sqlType == Types.BOOLEAN)
+            {
+                String defaultClause = " DEFAULT " +
+                        ((Boolean)prop.getDefaultValue() ? getBooleanTRUE() : getBooleanFALSE());
+                colSpec.add(defaultClause);
+            }
+            else
+            {
+                throw new IllegalArgumentException("Default value on type " + prop.getJdbcType().name() + " is not supported.");
+            }
+        }
         return StringUtils.join(colSpec, ' ');
     }
 

@@ -313,7 +313,7 @@ public class SpecimenApiController extends BaseStudyController
     {
         public ApiResponse execute(GetProvidingLocationsForm form, BindException errors) throws Exception
         {
-            Map<String, List<Specimen>> vialsByHash = SampleManager.getInstance().getVialsForSampleHashes(getContainer(),
+            Map<String, List<Specimen>> vialsByHash = SampleManager.getInstance().getVialsForSampleHashes(getContainer(), getUser(),
                     PageFlowUtil.set(form.getSpecimenHashes()), true);
             Collection<Integer> preferredLocations = SpecimenUtils.getPreferredProvidingLocations(vialsByHash.values());
             final Map<String, Object> response = new HashMap<>();
@@ -342,7 +342,7 @@ public class SpecimenApiController extends BaseStudyController
             List<Map<String, Object>> vialList;
             if (form.getRowIds() != null && form.getRowIds().length > 0)
             {
-                List<Specimen> vials = SampleManager.getInstance().getSpecimens(container, form.getRowIds());
+                List<Specimen> vials = SampleManager.getInstance().getSpecimens(container, form.getViewContext().getUser(), form.getRowIds());
                 vialList = getSpecimenListResponse(vials);
             }
             else
@@ -478,13 +478,13 @@ public class SpecimenApiController extends BaseStudyController
     {
         Specimen vial;
         if (VialRequestForm.IdTypes.GlobalUniqueId.name().equals(idType))
-            vial = SampleManager.getInstance().getSpecimen(getContainer(), vialId);
+            vial = SampleManager.getInstance().getSpecimen(getContainer(), getUser(), vialId);
         else if (VialRequestForm.IdTypes.RowId.name().equals(idType))
         {
             try
             {
                 int id = Integer.parseInt(vialId);
-                vial = SampleManager.getInstance().getSpecimen(getContainer(), id);
+                vial = SampleManager.getInstance().getSpecimen(getContainer(), getUser(), id);
             }
             catch (NumberFormatException e)
             {
@@ -699,7 +699,7 @@ public class SpecimenApiController extends BaseStudyController
             SampleManager sampleManager = SampleManager.getInstance();
             List<Map<String, Object>> groupingsJSON = new ArrayList<>();
 
-            Map<String, Map<String, Object>> groupingMap = sampleManager.getGroupedValuesForColumn(getContainer(), groupings);
+            Map<String, Map<String, Object>> groupingMap = sampleManager.getGroupedValuesForColumn(getContainer(), getUser(), groupings);
             for (String[] grouping: groupings)
             {
                 if (null != StringUtils.trimToNull(grouping[0]))        // Do nothing if no columns were specified
@@ -715,7 +715,7 @@ public class SpecimenApiController extends BaseStudyController
                 String[] dummyGrouping = new String[1];
                 dummyGrouping[0] = "Primary Type";
                 groupings.add(dummyGrouping);
-                groupingMap = sampleManager.getGroupedValuesForColumn(getContainer(), groupings);
+                groupingMap = sampleManager.getGroupedValuesForColumn(getContainer(), getUser(), groupings);
                 Map<String, Object> groupingJSON = groupingMap.get(dummyGrouping[0]);
                 groupingJSON.put("dummy", true);
                 groupingsJSON.add(groupingJSON);

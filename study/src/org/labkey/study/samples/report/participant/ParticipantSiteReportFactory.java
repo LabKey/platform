@@ -47,7 +47,7 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
         Set<LocationImpl> enrollmentLocations;
         if (_enrollmentSiteId == null)
         {
-            enrollmentLocations = SampleManager.getInstance().getEnrollmentSitesWithSpecimens(getContainer());
+            enrollmentLocations = SampleManager.getInstance().getEnrollmentSitesWithSpecimens(getContainer(), getUser());
             // add null to the set so we can search for ptid without an enrollment site:
             enrollmentLocations.add(null);
         }
@@ -88,7 +88,7 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
     public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
         List<Pair<String, String>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
-        Set<LocationImpl> locations = SampleManager.getInstance().getEnrollmentSitesWithSpecimens(getContainer());
+        Set<LocationImpl> locations = SampleManager.getInstance().getEnrollmentSitesWithSpecimens(getContainer(), getUser());
         // add null to the set so we can search for ptid without an enrollment site:
         locations.add(null);
         inputs.add(getEnrollmentSitePicker("enrollmentSiteId", locations, _enrollmentSiteId));

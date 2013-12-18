@@ -15,10 +15,12 @@
  */
 package org.labkey.study.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.study.StudySchema;
@@ -31,7 +33,7 @@ public class VialTable extends BaseStudyTable
 {
     public VialTable(final StudyQuerySchema schema)
     {
-        super(schema, StudySchema.getInstance().getTableInfoVial(), true);
+        super(schema, StudySchema.getInstance().getTableInfoVial(schema.getContainer()), true);
 
         addWrapColumn(getRealTable().getColumn("RowID")).setHidden(true);
 
@@ -47,17 +49,33 @@ public class VialTable extends BaseStudyTable
             public TableInfo getLookupTableInfo()
             {
                 TableInfo tableInfo = schema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
-                ((ContainerFilterable)tableInfo).setContainerFilter(ContainerFilter.EVERYTHING);
+                ((ContainerFilterable)tableInfo).setContainerFilter(ContainerFilter.EVERYTHING);    // TODO: what would this do without provisioned?
                 return tableInfo;
             }
         });
         addColumn(specimenCol);
 
-        ColumnInfo containerCol = addWrapColumn(getRealTable().getColumn("Container"));
+//        ColumnInfo containerCol = addWrapColumn(getRealTable().getColumn("Container"));
+        ColumnInfo containerCol = addContainerColumn(true);
         containerCol.setFk(new ContainerForeignKey(schema));
         containerCol.setHidden(true);
 
         // Must add this after the container column so that we can use the container in the FK join for the comments
         addVialCommentsColumn(false);
+    }
+
+    // don't really _need_ this because containerCol works (see above), however this simplifies SpecimenForeignKey sql generation a little
+    @Override @NotNull
+    public SQLFragment getFromSQL(String alias)
+    {
+        SQLFragment ret = new SQLFragment();
+        ret.appendComment("<org.labkey.study.query.VialTable>",getSqlDialect());
+        ret.append("(SELECT ");
+        ret.append(getColumn("Container").getValueSql("_")).append(" AS Container, *");
+        ret.append(" FROM ");
+        ret.append(_rootTable.getFromSQL("_"));
+        ret.append(") ").append(alias);
+        ret.appendComment("</org.labkey.study.query.VialTable>",getSqlDialect());
+        return ret;
     }
 }

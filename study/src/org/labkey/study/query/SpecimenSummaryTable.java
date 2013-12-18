@@ -59,11 +59,12 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
     public SpecimenSummaryTable(StudyQuerySchema schema)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenSummary(), true);
+//        super(schema, StudySchema.getInstance().getTableInfoSpecimenSummary(), true);
+        super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), true);
         _participantidColumn = addWrapParticipantColumn("PTID");
-        addContainerColumn();
+        addContainerColumn(true);
 
-        _sequencenumColumn = addSpecimenVisitColumn(_userSchema.getStudy().getTimepointType());
+        _sequencenumColumn = addSpecimenVisitColumn(_userSchema.getStudy().getTimepointType(), true);
 
         _participantSequenceNumColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
                 _rootTable.getColumn("ParticipantSequenceNum"));//addWrapColumn(baseColumn);

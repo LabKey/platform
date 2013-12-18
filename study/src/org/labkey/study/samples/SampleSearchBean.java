@@ -153,7 +153,7 @@ public class SampleSearchBean
         visitInfo.setOrderBy("DisplayOrder");
         _defaultDetailCols.put("Visit", visitInfo);
         StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(_container), context.getUser(), true);
-        TableInfo simpleSpecimenTable = schema.createSimpleSpecimenTable();
+        TableInfo simpleSpecimenTable = schema.createTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
 
         DisplayColumnInfo participantColInfo = new DisplayColumnInfo(true, true, true, DemoMode.isDemoMode(context), simpleSpecimenTable);
         participantColInfo.setOrderBy("PTID");
@@ -195,7 +195,7 @@ public class SampleSearchBean
         return _dataRegionName;
     }
 
-    private @Nullable DisplayColumnInfo getDisplayColumnInfo(ColumnInfo info)
+/*    private @Nullable DisplayColumnInfo getDisplayColumnInfo(ColumnInfo info)
     {
         Map<String, DisplayColumnInfo> defaultColumns = isDetailsView() ? _defaultDetailCols : _defaultSummaryCols;
         return defaultColumns.get(info.getName());
@@ -226,7 +226,7 @@ public class SampleSearchBean
         assert colInfo != null : info.getName() + " is not a picklist column.";
         return colInfo.shouldObfuscate();
     }
-
+*/
     public boolean isInWebPart()
     {
         return _inWebPart;

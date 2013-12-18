@@ -26,6 +26,7 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
@@ -63,7 +64,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         if (!settings.isSimple())
             return HttpView.redirect(PageFlowUtil. urlProvider(PipelineUrls.class).urlBrowse(container));
 
-        boolean isEmpty = SampleManager.getInstance().isSpecimensEmpty(container);
+        boolean isEmpty = SampleManager.getInstance().isSpecimensEmpty(container, getViewContext().getUser());
         if (isEmpty)
         {
             form.setNoSpecimens(true);
@@ -74,7 +75,9 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
 
     public boolean handlePost(UploadSpecimensForm form, BindException errors) throws Exception
     {
-        SimpleSpecimenImporter importer = new SimpleSpecimenImporter();
+        Container container = getViewContext().getContainer();
+        User user = getViewContext().getUser();
+        SimpleSpecimenImporter importer = new SimpleSpecimenImporter(container, user);
 
         TabLoader loader = new TabLoader(form.getTsv(), true);
         Map<String, String> columnAliases = new CaseInsensitiveHashMap<>();
@@ -82,8 +85,8 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         for (Map.Entry<String, String> entry : importer.getColumnLabels().entrySet())
             columnAliases.put(entry.getValue(), entry.getKey());
         //And a few more aliases
-        columnAliases.put(StudyService.get().getSubjectColumnName(getViewContext().getContainer()), SimpleSpecimenImporter.PARTICIPANT_ID);
-        columnAliases.put(StudyService.get().getSubjectNounSingular(getViewContext().getContainer()), SimpleSpecimenImporter.PARTICIPANT_ID);
+        columnAliases.put(StudyService.get().getSubjectColumnName(container), SimpleSpecimenImporter.PARTICIPANT_ID);
+        columnAliases.put(StudyService.get().getSubjectNounSingular(container), SimpleSpecimenImporter.PARTICIPANT_ID);
         columnAliases.put("ParticipantId", SimpleSpecimenImporter.PARTICIPANT_ID);
         columnAliases.put("Participant Id", SimpleSpecimenImporter.PARTICIPANT_ID);
         columnAliases.put("Participant", SimpleSpecimenImporter.PARTICIPANT_ID);
@@ -154,7 +157,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
 
         Set<String> participants = new HashSet<>();
         Set<Object> vialIds = new HashSet<>();
-        Study study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
+        Study study = StudyManager.getInstance().getStudy(container);
         Map<Object, Pair<Object,Object>> sampleIdMap = new HashMap<>();
         String visitKey = study.getTimepointType() == TimepointType.VISIT ? SimpleSpecimenImporter.VISIT : SimpleSpecimenImporter.DRAW_TIMESTAMP;
 
@@ -174,7 +177,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             if (null == participant)
             {
                 errors.reject(SpringActionController.ERROR_MSG, "Error in row " + rowNum + ": required field " + (null == labels.get(SimpleSpecimenImporter.PARTICIPANT_ID) ?
-                        StudyService.get().getSubjectNounSingular(getViewContext().getContainer()) :
+                        StudyService.get().getSubjectNounSingular(container) :
                         labels.get(SimpleSpecimenImporter.PARTICIPANT_ID)) + " was not supplied");
             }
             else
@@ -193,7 +196,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
                 {
                     if (!participantVisit.equals(sampleIdMap.get(sampleId)))
                         errors.reject(SpringActionController.ERROR_MSG, "Error in row " + rowNum + ": the same sample id has multiple " +
-                                StudyService.get().getSubjectNounSingular(getViewContext().getContainer()) + "/visits.");
+                                StudyService.get().getSubjectNounSingular(container) + "/visits.");
                 }
                 else
                     sampleIdMap.put(sampleId, participantVisit);
@@ -233,7 +236,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         try
         {
             if (!errors.hasErrors())
-                importer.process(getViewContext().getUser(), study.getContainer(), specimenRows, form.isMerge());
+                importer.process(specimenRows, form.isMerge());
         }
         catch (IllegalStateException e)
         {

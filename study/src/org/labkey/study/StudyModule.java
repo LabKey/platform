@@ -126,11 +126,14 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.DateDatasetDomainKind;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.SecurityType;
+import org.labkey.study.model.SpecimenDomainKind;
+import org.labkey.study.model.SpecimenEventDomainKind;
 import org.labkey.study.model.StudyDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyLsidHandler;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.TestDatasetDomainKind;
+import org.labkey.study.model.VialDomainKind;
 import org.labkey.study.model.VisitDatasetDomainKind;
 import org.labkey.study.pipeline.SampleMindedTransform;
 import org.labkey.study.pipeline.SampleMindedTransformTask;
@@ -230,7 +233,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 13.31;
+        return 13.33;
     }
 
     protected void init()
@@ -267,6 +270,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new PlateBasedAssaySampleSetDomainKind());
         PropertyService.get().registerDomainKind(new CohortDomainKind());
         PropertyService.get().registerDomainKind(new StudyDomainKind());
+        PropertyService.get().registerDomainKind(new SpecimenDomainKind());
+        PropertyService.get().registerDomainKind(new VialDomainKind());
+        PropertyService.get().registerDomainKind(new SpecimenEventDomainKind());
 
         EnumConverter.registerEnum(SecurityType.class);
         EnumConverter.registerEnum(TimepointType.class);

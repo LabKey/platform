@@ -17,6 +17,7 @@ package org.labkey.study.query;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.study.StudyService;
 
 import java.sql.SQLException;
@@ -38,7 +39,8 @@ public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
             "/visit combination.");
 
         try {
-            Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(getContainer());
+            Container container = getContainer();
+            Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(container);
             Map<Integer, NameLabelPair> allPrimaryTypes = getAllPrimaryTypesMap(getContainer());
             
             for (ColumnInfo col : getRealTable().getColumns())
