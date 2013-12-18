@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -32,6 +33,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RowIdForeignKey;
@@ -124,30 +126,6 @@ public class SpecimenForeignKey extends LookupForeignKey
     }
 
 
-/*
-    private SpecimenForeignKey(SpecimenForeignKey vialSFK)
-    {
-        vialSFK._initAssayColumns();
-        _joinToSpecimen = true;
-
-        _schema = vialSFK._schema;
-        _provider = vialSFK._provider;
-        _protocol = vialSFK._protocol;
-        _tableMetadata = vialSFK._tableMetadata;
-        _studyContainerFilter = vialSFK._studyContainerFilter;
-        _targetStudyOverride = vialSFK._targetStudyOverride;
-        _specimenFilter = vialSFK._specimenFilter;
-
-        _assayDataTable = vialSFK._assayDataTable;
-        _assayParticipantIdCol = vialSFK._assayParticipantIdCol;
-        _assayVisitIdCol = vialSFK._assayVisitIdCol;
-        _assayDateCol = vialSFK._assayDateCol;
-        _assayTargetStudyCol = vialSFK._assayTargetStudyCol;
-        _assaySpecimenIdCol = vialSFK._assaySpecimenIdCol;
-        _assayColumns = vialSFK._assayColumns;
-    }
-*/
-
     boolean initialized = false;
 
     /*
@@ -225,20 +203,21 @@ public class SpecimenForeignKey extends LookupForeignKey
         }
 
         TableInfo vialTableInfo = getVialTableInfo();
-//        FilteredTable ft = new FilteredTable(vialTableInfo)
-//        {
-//            @NotNull
-//            @Override
-//            public SQLFragment getFromSQL(String alias)
-//            {
-//                throw new IllegalStateException("should not be using this table...");
-//            }
-//        };
-//        ft.wrapAllColumns(true);
-//        ft.getColumn("Specimen").setFk(new _SpecimenUnionForeignKey());
-        vialTableInfo.getColumn("Specimen").setFk(new _SpecimenUnionForeignKey());
-        vialTableInfo.setLocked(true);
-        return vialTableInfo;
+        FilteredTable ft = new FilteredTable(vialTableInfo)
+        {
+            @NotNull
+            @Override
+            public SQLFragment getFromSQL(String alias)
+            {
+                throw new IllegalStateException("should not be using this table...");
+            }
+        };
+        ft.wrapAllColumns(true);
+        ft.addColumn(new ColumnInfo(new FieldKey(null,AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME),ft,JdbcType.BOOLEAN));
+        ft.getColumn("Specimen").setFk(new _SpecimenUnionForeignKey());
+        ft.setPublic(false);
+        ft.setLocked(true);
+        return ft;
     }
 
 
