@@ -436,6 +436,8 @@ public class StudyUpgradeCode implements UpgradeCode
             for (String containerId : containerIds)
             {
                 Container c = ContainerManager.getForId(containerId);
+                if (null == c)
+                    continue;
                 Study study = StudyManager.getInstance().getStudy(c);
                 migrateSpecimenTables(study, false);
             }
