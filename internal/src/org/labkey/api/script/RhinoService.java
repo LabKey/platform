@@ -19,6 +19,7 @@ import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
@@ -32,6 +33,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
@@ -104,6 +106,12 @@ public final class RhinoService
 
     public static class TestCase extends Assert
     {
+        @BeforeClass
+        public static void setUp()
+        {
+            JunitUtil.getTestContainer(); // Just to make sure the folder exists
+        }
+
         @Test
         public void exportsTest() throws Exception
         {
