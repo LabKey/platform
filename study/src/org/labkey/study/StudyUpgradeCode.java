@@ -460,30 +460,35 @@ public class StudyUpgradeCode implements UpgradeCode
         if (createTablesOnly)
             return;
 
-        _copy(study, specimenOld, specimenNew);
-        _copy(study, vialOld, vialNew);
-        _copy(study, specimeneventOld, specimeneventNew);
+        _copy(study, specimenOld, specimenNew, true);
+        _copy(study, vialOld, vialNew, false);
+        _copy(study, specimeneventOld, specimeneventNew, true);
     }
 
 
-    private void _copy(Study study, TableInfo from, TableInfo to)
+    private void _copy(Study study, TableInfo from, TableInfo to, boolean hasIdentity)
     {
         SQLFragment sqlfCols = new SQLFragment();
         String comma = "";
         for (ColumnInfo col : to.getColumns())
         {
-            // TODO inputhash is broken
-//            if ("inputhash".equalsIgnoreCase(col.getName()))
-//                continue;
             sqlfCols.append(comma);
             sqlfCols.append(col.getSelectName());
             comma = ",";
         }
         SQLFragment f = new SQLFragment();
+        if (to.getSqlDialect().isSqlServer() && hasIdentity)
+        {
+            f.append("SET IDENTITY_INSERT ").append(to.getSelectName()).append(" ON;");
+        }
         f.append("INSERT INTO ").append(to.getSelectName()).append(" (").append(sqlfCols).append(")\n");
         f.append("SELECT ").append(sqlfCols).append(" FROM ").append(from.getFromSQL("x")).append("\n");
-        f.append("WHERE Container=?");
+        f.append("WHERE Container=?;");
         f.add(study.getContainer());
+        if (to.getSqlDialect().isSqlServer() && hasIdentity)
+        {
+            f.append("SET IDENTITY_INSERT ").append(to.getSelectName()).append(" OFF;");
+        }
         new SqlExecutor(StudySchema.getInstance().getScope()).execute(f);
     }
 }
