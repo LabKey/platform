@@ -36,6 +36,9 @@
       <ns:column columnName="StartDate">
         <ns:description>The start date of each study.  Note that subjects can also have start dates.</ns:description>
       </ns:column>
+      <ns:column columnName="EndDate">
+        <ns:description>The end date of each study.</ns:description>
+      </ns:column>
       <ns:column columnName="DefaultTimepointDuration">
         <ns:description>The number of days an automatically created timepoint should span.</ns:description>
       </ns:column>
@@ -121,6 +124,9 @@
       <ns:column columnName="Grant">
         <ns:description>The grant for the study.</ns:description>
       </ns:column>
+      <ns:column columnName="Species">
+        <ns:description>The species of the subjects in the study.</ns:description>
+      </ns:column>
       <ns:column columnName="AlternateIdPrefix">
         <ns:description>Optional prefix to use when generating random alternate participant IDs.</ns:description>
       </ns:column>
@@ -153,6 +159,9 @@
       </ns:column>
       <ns:column columnName="ParticipantAliasProperty">
         <ns:description>Name of the column in the selected participant alias dataset that contains the alias value.</ns:description>
+      </ns:column>
+      <ns:column columnName="AssayPlan">
+        <ns:description>The description of the assay plan for the study.</ns:description>
       </ns:column>
     </ns:columns>
   </ns:table>
@@ -189,6 +198,24 @@
       </ns:column>
       <ns:column columnName="Label">
         <ns:description>The long/friendly name of each location.</ns:description>
+      </ns:column>
+      <ns:column columnName="Description">
+        <ns:description>A short description of each location.</ns:description>
+      </ns:column>
+      <ns:column columnName="StreetAddress">
+        <ns:description>The street address of each location.</ns:description>
+      </ns:column>
+      <ns:column columnName="City">
+        <ns:description>The city or town of each location.</ns:description>
+      </ns:column>
+      <ns:column columnName="GoverningDistrict">
+        <ns:description>The governing district (i.e. state, province, federal district) of each location.</ns:description>
+      </ns:column>
+      <ns:column columnName="Country">
+        <ns:description>The country of each location.</ns:description>
+      </ns:column>
+      <ns:column columnName="PostalArea">
+        <ns:description>The postal area code (i.e. zip, postcode) of each location.</ns:description>
       </ns:column>
       <ns:column columnName="Container" />
       <ns:column columnName="EntityId">
@@ -231,7 +258,10 @@
         <ns:description>The maximum sequence number associated with each visit.</ns:description>
       </ns:column>
       <ns:column columnName="SequenceNumMin">
-        <ns:description>The minim sequence number associated with each visit.</ns:description>
+        <ns:description>The minimum sequence number associated with each visit.</ns:description>
+      </ns:column>
+      <ns:column columnName="SequenceNumTarget">
+        <ns:description>The target sequence number associated with the sequence range for this visit, used for study alignment.</ns:description>
       </ns:column>
       <ns:column columnName="cohortid">
         <ns:description>The ID of each visit's cohort, if it is cohort specific.</ns:description>
@@ -1726,6 +1756,12 @@
       <ns:column columnName="enrolled">
           <ns:description>Determines whether participants belonging to this cohort are considered enrolled in the study.</ns:description>
       </ns:column>
+      <ns:column columnName="subjectCount">
+          <ns:description>The expected or target number of subjects for a given cohorts in the study.</ns:description>
+      </ns:column>
+      <ns:column columnName="description">
+          <ns:description>A short description for the cohort.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenComment" tableDbType="TABLE">
@@ -1899,6 +1935,101 @@
       <ns:column columnName="Created"/>
       <ns:column columnName="Refresh"/>
       <ns:column columnName="Settings"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="AssaySpecimen" tableDbType="TABLE">
+    <ns:description>Contains one row per expected assay in the study, describing which lab will run the assay and which specimen type will be used.</ns:description>
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="Modified"/>
+      <ns:column columnName="ModifiedBy"/>
+      <ns:column columnName="AssayName"/>
+      <ns:column columnName="Description"/>
+      <ns:column columnName="LocationId">
+        <ns:fk>
+          <ns:fkDbSchema>study</ns:fkDbSchema>
+          <ns:fkTable>Site</ns:fkTable>
+          <ns:fkColumnName>RowId</ns:fkColumnName>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Source"/>
+      <ns:column columnName="TubeType"/>
+      <ns:column columnName="PrimaryTypeId">
+        <ns:fk>
+          <ns:fkColumnName>RowId</ns:fkColumnName>
+          <ns:fkTable>SpecimenPrimaryType</ns:fkTable>
+          <ns:fkDbSchema>study</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="DerivativeTypeId">
+        <ns:fk>
+          <ns:fkColumnName>RowId</ns:fkColumnName>
+          <ns:fkTable>SpecimenDerivative</ns:fkTable>
+          <ns:fkDbSchema>study</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="AssaySpecimenVisit" tableDbType="TABLE">
+    <ns:description>Contains one row per assay/visit combination, used to define the assay expectations for this study.</ns:description>
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="Modified"/>
+      <ns:column columnName="ModifiedBy"/>
+      <ns:column columnName="VisitId">
+        <ns:fk>
+          <ns:fkDbSchema>study</ns:fkDbSchema>
+          <ns:fkTable>Visit</ns:fkTable>
+          <ns:fkColumnName>RowId</ns:fkColumnName>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="AssaySpecimenId">
+        <ns:fk>
+          <ns:fkDbSchema>study</ns:fkDbSchema>
+          <ns:fkTable>AssaySpecimen</ns:fkTable>
+          <ns:fkColumnName>RowId</ns:fkColumnName>
+        </ns:fk>
+      </ns:column>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="TreatmentVisitMap" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="CohortId"/>
+      <ns:column columnName="TreatmentId"/>
+      <ns:column columnName="VisitId"/>
+      <ns:column columnName="Container"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Objective" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Label"/>
+      <ns:column columnName="Type"/>
+      <ns:column columnName="Description"/>
+      <ns:column columnName="DescriptionRendererType"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="Modified"/>
+      <ns:column columnName="ModifiedBy"/>
+      <ns:column columnName="Container"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="VisitTag" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="VisitRowId"/>
+      <ns:column columnName="Tag"/>
+      <ns:column columnName="Description"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="Modified"/>
+      <ns:column columnName="ModifiedBy"/>
+      <ns:column columnName="Container"/>
     </ns:columns>
   </ns:table>
 </ns:tables>

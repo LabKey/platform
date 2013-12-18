@@ -98,6 +98,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyCachable;
@@ -133,7 +134,12 @@ import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.StudyReload;
 import org.labkey.study.query.DataSetTableImpl;
+import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.query.studydesign.StudyProductAntigenDomainKind;
+import org.labkey.study.query.studydesign.StudyProductDomainKind;
+import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
+import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.visitmanager.AbsoluteDateVisitManager;
 import org.labkey.study.visitmanager.RelativeDateVisitManager;
@@ -181,6 +187,7 @@ public class StudyManager
     private final QueryHelper<StudyImpl> _studyHelper;
     private final QueryHelper<VisitImpl> _visitHelper;
     private final QueryHelper<LocationImpl> _locationHelper;
+    private final QueryHelper<AssaySpecimenConfigImpl> _assaySpecimenHelper;
     private final DatasetHelper _datasetHelper;
     private final QueryHelper<CohortImpl> _cohortHelper;
     private final BlockingCache<Container, Set<PropertyDescriptor>> _sharedProperties;
@@ -237,6 +244,14 @@ public class StudyManager
                     return StudySchema.getInstance().getTableInfoSite();
                 }
             }, LocationImpl.class);
+
+        _assaySpecimenHelper = new QueryHelper<>(new TableInfoGetter()
+        {
+            public TableInfo getTableInfo()
+            {
+                return StudySchema.getInstance().getTableInfoAssaySpecimen();
+            }
+        }, AssaySpecimenConfigImpl.class);
 
         _cohortHelper = new QueryHelper<>(new TableInfoGetter()
             {
@@ -635,6 +650,9 @@ public class StudyManager
 
         if (visit.getSequenceNumMin() > visit.getSequenceNumMax())
             throw new VisitCreationException("SequenceNumMin must be less than or equal to SequenceNumMax");
+
+        if (visit.getSequenceNumTarget() < visit.getSequenceNumMin() || visit.getSequenceNumTarget() > visit.getSequenceNumMax())
+            throw new VisitCreationException("SequenceNumTarget must be within the min and max range");
 
         if (null == existingVisits)
             existingVisits = getVisits(study, Visit.Order.SEQUENCE_NUM);
@@ -1169,6 +1187,39 @@ public class StudyManager
     public void updateSite(User user, LocationImpl location) throws SQLException
     {
         _locationHelper.update(user, location);
+    }
+
+    public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(Container container)
+    {
+        return _assaySpecimenHelper.get(container, "RowId");
+    }
+
+    public List<VisitImpl> getVisitsForAssaySchedule(Container container)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        List<Integer> visitRowIds = new TableSelector(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(),
+                Collections.singleton("VisitId"), filter, new Sort("VisitId")).getArrayList(Integer.class);
+
+        List<VisitImpl> visits = new ArrayList<>();
+        Study study = getStudy(container);
+        if (study != null)
+        {
+            for (VisitImpl v : getVisits(study, Visit.Order.DISPLAY))
+            {
+                if (visitRowIds.contains(v.getRowId()))
+                    visits.add(v);
+            }
+        }
+        return visits;
+    }
+
+    public List<Integer> getAssaySpecimenVisitIds(Container container, AssaySpecimenConfig assaySpecimenConfig)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("AssaySpecimenId"), assaySpecimenConfig.getRowId());
+
+        return new TableSelector(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(),
+                Collections.singleton("VisitId"), filter, new Sort("VisitId")).getArrayList(Integer.class);
     }
 
     public void createVisitDataSetMapping(User user, Container container, int visitId,
@@ -2096,6 +2147,14 @@ public class StudyManager
             SampleManager.getInstance().deleteAllSampleData(c, deletedTables);
 
             //
+            // assay schedule
+            //
+            Table.delete(SCHEMA.getTableInfoAssaySpecimenVisit(), containerFilter);
+            assert deletedTables.add(SCHEMA.getTableInfoAssaySpecimenVisit());
+            Table.delete(_assaySpecimenHelper.getTableInfo(), containerFilter);
+            assert deletedTables.add(_assaySpecimenHelper.getTableInfo());
+
+            //
             // metadata
             //
             Table.delete(SCHEMA.getTableInfoVisitMap(), containerFilter);
@@ -2161,6 +2220,15 @@ public class StudyManager
             Table.delete(StudySchema.getInstance().getTableInfoSpecimenComment(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoSpecimenComment());
 
+            // study data provisioned tables
+            // deleteStudyDataProvisionedTables(c, user); // NOTE: this looks to be handled by the OntologyManager
+            Table.delete(StudySchema.getInstance().getTableInfoTreatmentVisitMap(), containerFilter);
+            assert deletedTables.add(StudySchema.getInstance().getTableInfoTreatmentVisitMap());
+            Table.delete(StudySchema.getInstance().getTableInfoObjective(), containerFilter);
+            assert deletedTables.add(StudySchema.getInstance().getTableInfoObjective());
+            Table.delete(StudySchema.getInstance().getTableInfoVisitTag(), containerFilter);
+            assert deletedTables.add(StudySchema.getInstance().getTableInfoVisitTag());
+
             // dataset tables
             for (DataSetDefinition dsd : dsds)
             {
@@ -2190,6 +2258,35 @@ public class StudyManager
         //
 
         assert verifyAllTablesWereDeleted(deletedTables);
+    }
+
+    /**
+     * Drops the domains for the provisioned study data tables : Product, Treatment, ProductAntigen
+     * TreatmentProductMap, TreatmentVisitMap...
+     * @param c
+     * @param user
+     */
+    private void deleteStudyDataProvisionedTables(Container c, User user)
+    {
+        StudyProductDomainKind productDomainKind = new StudyProductDomainKind();
+        String productDomainURI = productDomainKind.generateDomainURI(StudyQuerySchema.SCHEMA_NAME, StudyQuerySchema.PRODUCT_TABLE_NAME, c, null);
+        StorageProvisioner.drop(PropertyService.get().getDomain(c, productDomainURI));
+
+        StudyProductAntigenDomainKind productAntigenDomainKind = new StudyProductAntigenDomainKind();
+        String productAntigenDomainURI = productAntigenDomainKind.generateDomainURI(StudyQuerySchema.SCHEMA_NAME, StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME, c, null);
+        StorageProvisioner.drop(PropertyService.get().getDomain(c, productAntigenDomainURI));
+
+        StudyTreatmentProductDomainKind studyTreatmentProductDomainKind = new StudyTreatmentProductDomainKind();
+        String treatmentProductDomainURI = studyTreatmentProductDomainKind.generateDomainURI(StudyQuerySchema.SCHEMA_NAME, StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME, c, null);
+        StorageProvisioner.drop(PropertyService.get().getDomain(c, treatmentProductDomainURI));
+
+        StudyTreatmentDomainKind studyTreatmentDomainKind = new StudyTreatmentDomainKind();
+        String treatmentDomainURI = studyTreatmentDomainKind.generateDomainURI(StudyQuerySchema.SCHEMA_NAME, StudyQuerySchema.TREATMENT_TABLE_NAME, c, null);
+        StorageProvisioner.drop(PropertyService.get().getDomain(c, treatmentDomainURI));
+
+        StudyPersonnelDomainKind studyPersonnelDomainKind = new StudyPersonnelDomainKind();
+        String personnelDomainURI = studyPersonnelDomainKind.generateDomainURI(StudyQuerySchema.SCHEMA_NAME, StudyQuerySchema.PERSONNEL_TABLE_NAME, c, null);
+        StorageProvisioner.drop(PropertyService.get().getDomain(c, personnelDomainURI));
     }
 
     private SQLFragment getStudySnapshotUpdateSql(Container c, String columnName)

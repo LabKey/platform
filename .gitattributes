@@ -2992,6 +2992,7 @@ study/resources/schemas/dbscripts/postgresql/study-13.23-13.24.sql -text
 study/resources/schemas/dbscripts/postgresql/study-13.30-13.31.sql -text
 study/resources/schemas/dbscripts/postgresql/study-13.31-13.32.sql -text
 study/resources/schemas/dbscripts/postgresql/study-13.32-13.33.sql -text
+study/resources/schemas/dbscripts/postgresql/study-13.33-13.34.sql -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-0.00-1.11.sql -text
@@ -3206,6 +3207,7 @@ study/resources/schemas/dbscripts/sqlserver/study-13.23-13.24.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-13.30-13.31.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-13.31-13.32.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-13.32-13.33.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-13.33-13.34.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-create.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
@@ -3363,6 +3365,7 @@ study/src/org/labkey/study/model/AbstractSpecimenDomainKind.java -text
 study/src/org/labkey/study/model/AbstractStudyCachable.java -text
 study/src/org/labkey/study/model/AbstractStudyEntity.java -text
 study/src/org/labkey/study/model/AdditiveType.java -text
+study/src/org/labkey/study/model/AssaySpecimenConfigImpl.java -text
 study/src/org/labkey/study/model/BaseStudyDomainKind.java -text
 study/src/org/labkey/study/model/ChildStudyDefinition.java -text
 study/src/org/labkey/study/model/CohortDomainKind.java -text
@@ -3461,6 +3464,8 @@ study/src/org/labkey/study/plate/view/plateTemplate.jsp -text
 study/src/org/labkey/study/plate/view/plateTemplateList.jsp -text
 study/src/org/labkey/study/query/AbstractSpecimenTable.java -text
 study/src/org/labkey/study/query/AdditiveTypeTable.java -text
+study/src/org/labkey/study/query/AssaySpecimenTable.java -text
+study/src/org/labkey/study/query/AssaySpecimenVisitTable.java -text
 study/src/org/labkey/study/query/BaseSpecimenPivotTable.java -text
 study/src/org/labkey/study/query/BaseStudyQueryView.java -text
 study/src/org/labkey/study/query/BaseStudyTable.java -text
@@ -3512,6 +3517,9 @@ study/src/org/labkey/study/query/SpecimenUpdateService.java -text
 study/src/org/labkey/study/query/SpecimenVialCountTable.java -text
 study/src/org/labkey/study/query/SpecimenWrapTable.java -text
 study/src/org/labkey/study/query/StudyDataTable.java -text
+study/src/org/labkey/study/query/StudyObjectiveTable.java -text
+study/src/org/labkey/study/query/StudyPersonnelDomainKind.java -text
+study/src/org/labkey/study/query/StudyPersonnelTable.java -text
 study/src/org/labkey/study/query/StudyPropertiesQueryView.java -text
 study/src/org/labkey/study/query/StudyPropertiesTable.java -text
 study/src/org/labkey/study/query/StudyPropertiesUpdateService.java -text
@@ -3521,6 +3529,8 @@ study/src/org/labkey/study/query/StudySchemaProvider.java -text
 study/src/org/labkey/study/query/VialRequestTable.java -text
 study/src/org/labkey/study/query/VialTable.java -text
 study/src/org/labkey/study/query/VisitTable.java -text
+study/src/org/labkey/study/query/studydesign/AbstractStudyDesignDomainKind.java -text
+study/src/org/labkey/study/query/studydesign/DefaultStudyDesignTable.java -text
 study/src/org/labkey/study/query/studydesign/StudyDesignAssaysTable.java -text
 study/src/org/labkey/study/query/studydesign/StudyDesignGenesTable.java -text
 study/src/org/labkey/study/query/studydesign/StudyDesignImmunogenTypesTable.java -text
@@ -3530,6 +3540,14 @@ study/src/org/labkey/study/query/studydesign/StudyDesignRoutesTable.java -text
 study/src/org/labkey/study/query/studydesign/StudyDesignSampleTypesTable.java -text
 study/src/org/labkey/study/query/studydesign/StudyDesignSubTypesTable.java -text
 study/src/org/labkey/study/query/studydesign/StudyDesignUnitsTable.java -text
+study/src/org/labkey/study/query/studydesign/StudyProductAntigenDomainKind.java -text
+study/src/org/labkey/study/query/studydesign/StudyProductAntigenTable.java -text
+study/src/org/labkey/study/query/studydesign/StudyProductDomainKind.java -text
+study/src/org/labkey/study/query/studydesign/StudyProductTable.java -text
+study/src/org/labkey/study/query/studydesign/StudyTreatmentDomainKind.java -text
+study/src/org/labkey/study/query/studydesign/StudyTreatmentProductDomainKind.java -text
+study/src/org/labkey/study/query/studydesign/StudyTreatmentProductTable.java -text
+study/src/org/labkey/study/query/studydesign/StudyTreatmentTable.java -text
 study/src/org/labkey/study/reports/AbstractReportView.java -text
 study/src/org/labkey/study/reports/BaseStudyView.java -text
 study/src/org/labkey/study/reports/ChartReportView.java -text
@@ -3628,6 +3646,7 @@ study/src/org/labkey/study/view/AssayList2WebPartFactory.java -text
 study/src/org/labkey/study/view/AssayListWebPartFactory.java -text
 study/src/org/labkey/study/view/AssayResultsWebPartFactory.java -text
 study/src/org/labkey/study/view/AssayRunsWebPartFactory.java -text
+study/src/org/labkey/study/view/AssayScheduleWebpartFactory.java -text
 study/src/org/labkey/study/view/BaseStudyPage.java -text
 study/src/org/labkey/study/view/DatasetsWebPartView.java -text
 study/src/org/labkey/study/view/StudyGWTView.java -text
@@ -3642,6 +3661,7 @@ study/src/org/labkey/study/view/SubjectDetailsWebPartFactory.java -text
 study/src/org/labkey/study/view/SubjectsWebPart.java -text
 study/src/org/labkey/study/view/VaccineStudyWebPart.java -text
 study/src/org/labkey/study/view/assayList2.jsp -text
+study/src/org/labkey/study/view/assayScheduleWebpart.jsp -text
 study/src/org/labkey/study/view/bulkDatasetDelete.jsp -text
 study/src/org/labkey/study/view/bulkImportDataTypes.jsp -text
 study/src/org/labkey/study/view/columnPicker.jsp -text
@@ -3673,6 +3693,7 @@ study/src/org/labkey/study/view/importDataset.jsp -text
 study/src/org/labkey/study/view/importStudyBatch.jsp -text
 study/src/org/labkey/study/view/importVisitAliases.jsp -text
 study/src/org/labkey/study/view/manageAlternateIds.jsp -text
+study/src/org/labkey/study/view/manageAssaySpecimen.jsp -text
 study/src/org/labkey/study/view/manageCohortsBottom.jsp -text
 study/src/org/labkey/study/view/manageCohortsTop.jsp -text
 study/src/org/labkey/study/view/manageComments.jsp -text
@@ -3793,6 +3814,7 @@ study/webapp/study/ReportFilterPanel.js -text
 study/webapp/study/SpecimenSearchPanel.js -text
 study/webapp/study/StudySchedule.css -text
 study/webapp/study/StudyScheduleGrid.js -text
+study/webapp/study/StudyVaccineDesign.css -text
 study/webapp/study/StudyWizard.js -text
 study/webapp/study/assay/SampleLookupTemplate.xls -text
 study/webapp/study/redesignUtils.js -text

@@ -140,8 +140,13 @@ import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.plate.PlateManager;
 import org.labkey.study.plate.query.PlateSchema;
+import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudySchemaProvider;
+import org.labkey.study.query.studydesign.StudyProductAntigenDomainKind;
+import org.labkey.study.query.studydesign.StudyProductDomainKind;
+import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
+import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
 import org.labkey.study.reports.ChartReportView;
 import org.labkey.study.reports.EnrollmentReport;
 import org.labkey.study.reports.ExportExcelReport;
@@ -168,6 +173,7 @@ import org.labkey.study.view.AssayList2WebPartFactory;
 import org.labkey.study.view.AssayListWebPartFactory;
 import org.labkey.study.view.AssayResultsWebPartFactory;
 import org.labkey.study.view.AssayRunsWebPartFactory;
+import org.labkey.study.view.AssayScheduleWebpartFactory;
 import org.labkey.study.view.DatasetsWebPartView;
 import org.labkey.study.view.StudyListWebPartFactory;
 import org.labkey.study.view.StudySummaryWebPartFactory;
@@ -225,6 +231,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final WebPartFactory specimenToolsWideWebPartFactory = new StudyToolsWebPartFactory.Specimens(HttpView.BODY);
     public static final WebPartFactory specimenToolsWebPartFactory = new StudyToolsWebPartFactory.Specimens(WebPartFactory.LOCATION_RIGHT);
     public static final WebPartFactory specimenReportWebPartFactory = new SpecimenController.SpecimenReportWebPartFactory();
+    public static final WebPartFactory assayScheduleWebPartFactory = new AssayScheduleWebpartFactory();
 
     public String getName()
     {
@@ -233,7 +240,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 13.33;
+        return 13.34;
     }
 
     protected void init()
@@ -273,6 +280,13 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new SpecimenDomainKind());
         PropertyService.get().registerDomainKind(new VialDomainKind());
         PropertyService.get().registerDomainKind(new SpecimenEventDomainKind());
+        PropertyService.get().registerDomainKind(new StudyPersonnelDomainKind());
+
+        // study design domains
+        PropertyService.get().registerDomainKind(new StudyProductDomainKind());
+        PropertyService.get().registerDomainKind(new StudyProductAntigenDomainKind());
+        PropertyService.get().registerDomainKind(new StudyTreatmentProductDomainKind());
+        PropertyService.get().registerDomainKind(new StudyTreatmentDomainKind());
 
         EnumConverter.registerEnum(SecurityType.class);
         EnumConverter.registerEnum(TimepointType.class);
@@ -314,7 +328,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 subjectDetailsWebPartFactory, assayList2WebPartFactory, studyListWebPartFactory, sampleSearchPartFactory,
                 subjectsWebPartFactory, subjectsWideWebPartFactory, dataToolsWebPartFactory,
                 dataToolsWideWebPartFactory, specimenToolsWebPartFactory, specimenToolsWideWebPartFactory,
-                specimenReportWebPartFactory, studyScheduleWebPartFactory));
+                specimenReportWebPartFactory, studyScheduleWebPartFactory, assayScheduleWebPartFactory));
     }
 
     @NotNull
@@ -463,14 +477,14 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<String> getSchemaNames()
     {
-        return PageFlowUtil.set(StudySchema.getInstance().getSchemaName(), "studydataset", "assayresult");
+        return PageFlowUtil.set(StudySchema.getInstance().getSchemaName(), "studydataset", "assayresult", "studydesign");
     }
 
     @Override
     @NotNull
     public Set<DbSchema> getSchemasToTest()
     {
-        // Don't test studydataset and assayresult since they're dynamically generated
+        // Don't test studydataset, assayresult and studydesign since they're dynamically generated
         return PageFlowUtil.set(StudySchema.getInstance().getSchema());
     }
 

@@ -24,7 +24,6 @@ import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.json.JSONArray;
@@ -223,7 +222,6 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -308,6 +306,12 @@ public class StudyController extends BaseStudyController
         public ActionURL getManageReportPermissions(Container container)
         {
             return new ActionURL(SecurityController.ReportPermissionsAction.class, container);
+        }
+
+        @Override
+        public ActionURL getManageAssaySpecimenURL(Container container)
+        {
+            return new ActionURL(ManageAssaySpecimenAction.class, container);
         }
     }
 
@@ -1348,16 +1352,19 @@ public class StudyController extends BaseStudyController
             study = new StudyImpl(c, form.getLabel());
             study.setTimepointType(form.getTimepointType());
             study.setStartDate(form.getStartDate());
+            study.setEndDate(form.getEndDate());
             study.setSecurityType(form.getSecurityType());
             study.setSubjectNounSingular(form.getSubjectNounSingular());
             study.setSubjectNounPlural(form.getSubjectNounPlural());
             study.setSubjectColumnName(form.getSubjectColumnName());
+            study.setAssayPlan(form.getAssayPlan());
             study.setDescription(form.getDescription());
             study.setDefaultTimepointDuration(form.getDefaultTimepointDuration() < 1 ? 1 : form.getDefaultTimepointDuration());
             if(form.getDescriptionRendererType() != null)
                 study.setDescriptionRendererType(form.getDescriptionRendererType());
             study.setGrant(form.getGrant());
             study.setInvestigator(form.getInvestigator());
+            study.setSpecies(form.getSpecies());
             study.setAlternateIdPrefix(form.getAlternateIdPrefix());
             study.setAlternateIdDigits(form.getAlternateIdDigits());
             study.setAllowReqLocRepository(form.isAllowReqLocRepository());
@@ -1617,38 +1624,48 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class ManageLocationsAction extends FormViewAction<BulkEditForm>
+    public class ManageLocationsAction extends FormViewAction<LocationEditForm>
     {
-        public void validateCommand(BulkEditForm target, Errors errors)
+        public void validateCommand(LocationEditForm target, Errors errors)
         {
         }
 
-        public ModelAndView getView(BulkEditForm bulkEditForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(LocationEditForm form, boolean reshow, BindException errors) throws Exception
         {
             return new StudyJspView<>(getStudyRedirectIfNull(), "manageLocations.jsp", getStudyRedirectIfNull(), errors);
         }
 
-        public boolean handlePost(BulkEditForm form, BindException errors) throws Exception
+        public boolean handlePost(LocationEditForm form, BindException errors) throws Exception
         {
             int[] ids = form.getIds();
             if (ids != null && ids.length > 0)
             {
-                String[] labels = form.getLabels();
-                Map<Integer, String> labelLookup = new HashMap<>();
+                Map<Integer, LocationImpl> locationFormLookup = new HashMap<>();
                 for (int i = 0; i < ids.length; i++)
-                    labelLookup.put(ids[i], labels[i]);
+                {
+                    LocationImpl loc = new LocationImpl(getContainer(), form.getLabels()[i]);
+                    if (form.getDescriptions() != null)
+                        loc.setDescription(form.getDescriptions()[i]);
+
+                    locationFormLookup.put(ids[i], loc);
+                }
 
                 boolean emptyLabel = false;
                 for (LocationImpl location : getStudyThrowIfNull().getLocations())
                 {
-                    String label = labelLookup.get(location.getRowId());
-                    if (label == null)
-                        emptyLabel = true;
-                    else if (!label.equals(location.getLabel()))
+                    LocationImpl formLocation = locationFormLookup.get(location.getRowId());
+                    if (formLocation != null)
                     {
-                        location = location.createMutable();
-                        location.setLabel(label);
-                        StudyManager.getInstance().updateSite(getUser(), location);
+                        if (formLocation.getLabel() == null)
+                            emptyLabel = true;
+                        else if (!StringUtils.equals(formLocation.getLabel(), location.getLabel())
+                            || !StringUtils.equals(formLocation.getDescription(), location.getDescription()))
+                        {
+                            location = location.createMutable();
+                            location.setLabel(formLocation.getLabel());
+                            location.setDescription(formLocation.getDescription());
+                            StudyManager.getInstance().updateSite(getUser(), location);
+                        }
                     }
                 }
                 if (emptyLabel)
@@ -1657,7 +1674,7 @@ public class StudyController extends BaseStudyController
                 }
 
             }
-            if (form.getNewId() != null || form.getNewLabel() != null)
+            if (form.getNewId() != null || form.getNewLabel() != null || form.getNewDescription() != null)
             {
                 if (form.getNewId() == null)
                     errors.reject("manageLocations", "Unable to create location: an ID is required for all locations.");
@@ -1670,6 +1687,7 @@ public class StudyController extends BaseStudyController
                         LocationImpl location = new LocationImpl();
                         location.setLabel(form.getNewLabel());
                         location.setLdmsLabCode(Integer.parseInt(form.getNewId()));
+                        location.setDescription(form.getNewDescription());
                         location.setContainer(getContainer());
                         StudyManager.getInstance().createSite(getUser(), location);
                     }
@@ -1682,7 +1700,7 @@ public class StudyController extends BaseStudyController
             return errors.getErrorCount() == 0;
         }
 
-        public ActionURL getSuccessURL(BulkEditForm bulkEditForm)
+        public ActionURL getSuccessURL(LocationEditForm form)
         {
             return null;
         }
@@ -1691,6 +1709,32 @@ public class StudyController extends BaseStudyController
         {
             _appendManageStudy(root);
             return root.addChild("Manage Locations");
+        }
+    }
+
+    public static class LocationEditForm extends BulkEditForm
+    {
+        private String _newDescription;
+        private String[] _descriptions;
+
+        public String getNewDescription()
+        {
+            return _newDescription;
+        }
+
+        public void setNewDescription(String newDescription)
+        {
+            _newDescription = newDescription;
+        }
+
+        public String[] getDescriptions()
+        {
+            return _descriptions;
+        }
+
+        public void setDescriptions(String[] descriptions)
+        {
+            _descriptions = descriptions;
         }
     }
 
@@ -1712,13 +1756,16 @@ public class StudyController extends BaseStudyController
                 if (errors.getErrorCount() > 0)
                     return;
 
-                //check for overlapping visits
+                VisitImpl visitBean = target.getBean();
 
+                //check for overlapping visits that the target num is within the range
                 VisitManager visitMgr = StudyManager.getInstance().getVisitManager(study);
                 if (null != visitMgr)
                 {
-                    if (visitMgr.isVisitOverlapping(target.getBean()))
+                    if (visitMgr.isVisitOverlapping(visitBean))
                         errors.reject(null, "Visit range overlaps an existing visit in this study. Please enter a different range.");
+                    else if (visitBean.getSequenceNumTarget() < visitBean.getSequenceNumMin() || visitBean.getSequenceNumTarget() > visitBean.getSequenceNumMax())
+                        errors.reject(null, "Visit target sequence number must be within the sequence range. Please enter a different target.");
                 }
             }
             catch(ServletException | SQLException e)
@@ -2887,6 +2934,7 @@ public class StudyController extends BaseStudyController
         private String[] _dataSetStatus;
         private Double _sequenceNumMin;
         private Double _sequenceNumMax;
+        private Double _sequenceNumTarget;
         private Character _typeCode;
         private boolean _showByDefault;
         private Integer _cohortId;
@@ -2924,12 +2972,15 @@ public class StudyController extends BaseStudyController
             if (null == getSequenceNumMax() && null == getSequenceNumMin())
                 errors.reject(null, "You must specify at least a minimum or a maximum value for the visit range.");
 
-            //if min is null but max is not, set min to max
-            //and vice-versa
+            //if min is null but max is not, set min to max and vice-versa
             if (null == getSequenceNumMin() && null != getSequenceNumMax())
                 setSequenceNumMin(getSequenceNumMax());
             if (null == getSequenceNumMax() && null != getSequenceNumMin())
                 setSequenceNumMax(getSequenceNumMin());
+
+            // if target sequence num is null, set to min
+            if (null == getSequenceNumTarget())
+                setSequenceNumTarget(getSequenceNumMin());
 
             VisitImpl visit = getBean();
             if (visit.getSequenceNumMin() > visit.getSequenceNumMax())
@@ -2959,6 +3010,8 @@ public class StudyController extends BaseStudyController
                 _visit.setSequenceNumMax(getSequenceNumMax());
             if (null != getSequenceNumMin())
                 _visit.setSequenceNumMin(getSequenceNumMin());
+            if (null != getSequenceNumTarget())
+                _visit.setSequenceNumTarget(getSequenceNumTarget());
 
             _visit.setCohortId(getCohortId());
             _visit.setVisitDateDatasetId(getVisitDateDatasetId());
@@ -2975,6 +3028,8 @@ public class StudyController extends BaseStudyController
                 setSequenceNumMax(bean.getSequenceNumMax());
             if (0 != bean.getSequenceNumMin())
                 setSequenceNumMin(bean.getSequenceNumMin());
+            if (0 != bean.getSequenceNumTarget())
+                setSequenceNumTarget(bean.getSequenceNumTarget());
             if (null != bean.getType())
                 setTypeCode(bean.getTypeCode());
             setLabel(bean.getLabel());
@@ -3020,6 +3075,16 @@ public class StudyController extends BaseStudyController
         public void setSequenceNumMax(Double sequenceNumMax)
         {
             _sequenceNumMax = sequenceNumMax;
+        }
+
+        public Double getSequenceNumTarget()
+        {
+            return _sequenceNumTarget;
+        }
+
+        public void setSequenceNumTarget(Double sequenceNumTarget)
+        {
+            _sequenceNumTarget = sequenceNumTarget;
         }
 
         public Character getTypeCode()
@@ -5546,16 +5611,19 @@ public class StudyController extends BaseStudyController
         private String _label;
         private TimepointType _timepointType;
         private Date _startDate;
+        private Date _endDate;
         private boolean _simpleRepository = true;
         private SecurityType _securityType;
         private String _subjectNounSingular = "Participant";
         private String _subjectNounPlural = "Participants";
         private String _subjectColumnName = "ParticipantId";
         private String _returnURL;
+        private String _assayPlan;
         private String _description;
         private String _descriptionRendererType;
         private String _grant;
         private String _investigator;
+        private String _species;
         private int _defaultTimepointDuration = 0;
         private String _alternateIdPrefix;
         private int _alternateIdDigits;
@@ -5772,6 +5840,36 @@ public class StudyController extends BaseStudyController
         public void setAllowReqLocEndpoint(boolean allowReqLocEndpoint)
         {
             _allowReqLocEndpoint = allowReqLocEndpoint;
+        }
+
+        public Date getEndDate()
+        {
+            return _endDate;
+        }
+
+        public void setEndDate(Date endDate)
+        {
+            _endDate = endDate;
+        }
+
+        public String getAssayPlan()
+        {
+            return _assayPlan;
+        }
+
+        public void setAssayPlan(String assayPlan)
+        {
+            _assayPlan = assayPlan;
+        }
+
+        public String getSpecies()
+        {
+            return _species;
+        }
+
+        public void setSpecies(String species)
+        {
+            _species = species;
         }
     }
 
@@ -6682,6 +6780,21 @@ public class StudyController extends BaseStudyController
             {
             }
             return root;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ManageAssaySpecimenAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/study/view/manageAssaySpecimen.jsp", o);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            return root.addChild("Manage Assay/Specimen Configurations");
         }
     }
 

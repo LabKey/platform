@@ -231,6 +231,7 @@ public class VisitMapImporter
             if (visit == null)
             {
                 visit = new VisitImpl(study.getContainer(), record.getSequenceNumMin(), record.getSequenceNumMax(), record.getVisitLabel(), record.getVisitType());
+                visit.setSequenceNumTarget(record.getSequenceNumTarget());
                 visit.setDescription(record.getVisitDescription());
                 visit.setVisitDateDatasetId(record.getVisitDatePlate());
                 visit.setShowByDefault(record.isShowByDefault());
@@ -257,6 +258,11 @@ public class VisitMapImporter
                 {
                     visit = _ensureMutable(visit);
                     visit.setSequenceNumMax(record.getSequenceNumMax());
+                }
+                if (visit.getSequenceNumTarget() != record.getSequenceNumTarget())
+                {
+                    visit = _ensureMutable(visit);
+                    visit.setSequenceNumTarget(record.getSequenceNumTarget());
                 }
                 if (visit.isShowByDefault() != record.isShowByDefault())
                 {

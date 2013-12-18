@@ -137,6 +137,9 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             if (studyXml.isSetStartDate())
                 study.setStartDate(studyXml.getStartDate().getTime());
 
+            if (studyXml.isSetEndDate())
+                study.setEndDate(studyXml.getEndDate().getTime());
+
             if (studyXml.getSubjectColumnName() != null)
                 study.setSubjectColumnName(studyXml.getSubjectColumnName());
 
@@ -151,6 +154,12 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
             if (studyXml.isSetGrant())
                 study.setGrant(studyXml.getGrant());
+
+            if (studyXml.isSetSpecies())
+                study.setSpecies(studyXml.getSpecies());
+
+            if (studyXml.isSetAssayPlan())
+                study.setAssayPlan(studyXml.getAssayPlan());
 
             if (studyXml.isSetDescription())
                 study.setDescription(studyXml.getDescription());

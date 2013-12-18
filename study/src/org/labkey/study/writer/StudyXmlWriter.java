@@ -61,6 +61,7 @@ class StudyXmlWriter implements InternalStudyWriter
         studyXml.setSubjectColumnName(study.getSubjectColumnName());
         studyXml.setInvestigator(study.getInvestigator());
         studyXml.setGrant(study.getGrant());
+        studyXml.setSpecies(study.getSpecies());
         studyXml.setAlternateIdPrefix(study.getAlternateIdPrefix());
         studyXml.setAlternateIdDigits(study.getAlternateIdDigits());
         studyXml.setDefaultTimepointDuration(study.getDefaultTimepointDuration());
@@ -78,11 +79,23 @@ class StudyXmlWriter implements InternalStudyWriter
         descriptionXml.setRendererType(study.getDescriptionRendererType());
         descriptionXml.setDescription(study.getDescription());
 
+        if (null != study.getAssayPlan())
+        {
+            studyXml.setAssayPlan(study.getAssayPlan());
+        }
+
         if (null != study.getStartDate())
         {
             Calendar startDate = Calendar.getInstance();
             startDate.setTime(study.getStartDate());
             studyXml.setStartDate(startDate);        // TODO: TimeZone?
+        }
+
+        if (null != study.getEndDate())
+        {
+            Calendar endDate = Calendar.getInstance();
+            endDate.setTime(study.getEndDate());
+            studyXml.setEndDate(endDate);        // TODO: TimeZone?
         }
 
         studyXml.setSecurityType(SecurityType.Enum.forString(study.getSecurityType().name()));

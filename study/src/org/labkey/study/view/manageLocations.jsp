@@ -31,9 +31,10 @@
     <table id="manageLocationsTable">
         <tr>
             <th>&nbsp;</th>
-            <th>Location Id</th>
-            <th>Location Name</th>
-            <th>Location Type</th>
+            <th>Id</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Type</th>
         </tr>
         <%
             for (LocationImpl location : study.getLocations())
@@ -49,6 +50,9 @@
                     <input type="text" name="labels" size="40" value="<%= text(location.getLabel() != null ? h(location.getLabel()) : "") %>">
                 </td>
                 <td>
+                    <input type="text" name="descriptions" size="40" value="<%= text(location.getDescription() != null ? h(location.getDescription()) : "") %>">
+                </td>
+                <td>
                     <%= h(location.getTypeString()) %>
                 </td>
             </tr>
@@ -59,6 +63,8 @@
             <th>Add Location:</th>
             <td><input type="text" size="8" name="newId"></td>
             <td><input type="text" size="40" name="newLabel"></td>
+            <td><input type="text" size="40" name="newDescription"></td>
+            <td>&nbsp;</td>
         </tr>
         <tr>
             <td>&nbsp;</td>

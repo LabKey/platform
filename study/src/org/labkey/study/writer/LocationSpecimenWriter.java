@@ -24,6 +24,7 @@ import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.xml.StudyDocument;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * User: cnathe
@@ -44,12 +45,11 @@ public class LocationSpecimenWriter extends StandardSpecimenWriter
         {
             sql.append(comma);
 
-            // when masking, use generic label for clinics
+            // when masking, use generic label for clinics and remove the LabwareLabCode, Description, and Address fields for clinics
             if (ctx.isMaskClinic() && column.getDbColumnName().toLowerCase().equals("label"))
                 sql.append("CASE WHEN Clinic = " + d.getBooleanTRUE() + " THEN ").appendStringLiteral("Clinic").append(" ELSE Label END AS Label");
-            // when masking, remove the LabwareLabCode for clinics
-            else if (ctx.isMaskClinic() && column.getDbColumnName().toLowerCase().equals("labwarelabcode"))
-                sql.append("CASE WHEN Clinic = " + d.getBooleanTRUE() + " THEN NULL ELSE LabwareLabCode END AS LabwareLabCode");
+            else if (ctx.isMaskClinic() && column.isMaskOnExport())
+                sql.append(getMaskClinicSql(d, column.getDbColumnName()));
             else
                 sql.append(column.getDbColumnName());
 
@@ -61,6 +61,18 @@ public class LocationSpecimenWriter extends StandardSpecimenWriter
         sql.append(" WHERE Container = ? ORDER BY ExternalId");
 
         sql.add(ctx.getContainer());
+        return sql;
+    }
+
+    private SQLFragment getMaskClinicSql(SqlDialect d, String colName)
+    {
+        SQLFragment sql = new SQLFragment();
+        sql.append("CASE WHEN Clinic = ");
+        sql.append(d.getBooleanTRUE());
+        sql.append(" THEN NULL ELSE ");
+        sql.append(colName);
+        sql.append(" END AS ");
+        sql.append(colName);
         return sql;
     }
 }

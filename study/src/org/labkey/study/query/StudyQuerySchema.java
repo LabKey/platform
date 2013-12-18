@@ -19,7 +19,9 @@ package org.labkey.study.query;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FilteredTable;
@@ -55,6 +57,14 @@ import org.labkey.study.query.studydesign.StudyDesignRoutesTable;
 import org.labkey.study.query.studydesign.StudyDesignSampleTypesTable;
 import org.labkey.study.query.studydesign.StudyDesignSubTypesTable;
 import org.labkey.study.query.studydesign.StudyDesignUnitsTable;
+import org.labkey.study.query.studydesign.StudyProductAntigenDomainKind;
+import org.labkey.study.query.studydesign.StudyProductAntigenTable;
+import org.labkey.study.query.studydesign.StudyProductDomainKind;
+import org.labkey.study.query.studydesign.StudyProductTable;
+import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
+import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
+import org.labkey.study.query.studydesign.StudyTreatmentProductTable;
+import org.labkey.study.query.studydesign.StudyTreatmentTable;
 import org.springframework.validation.BindException;
 
 import java.util.Collection;
@@ -74,6 +84,19 @@ public class StudyQuerySchema extends UserSchema
     public static final String SPECIMEN_WRAP_TABLE_NAME = "SpecimenWrap";
     public static final String PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME = "ParticipantGroupCohortUnion";
     public static final String LOCATION_SPECIMEN_LIST_TABLE_NAME = "LocationSpecimenList";
+
+    public static final String OBJECTIVE_TABLE_NAME = "Objective";
+    public static final String PERSONNEL_TABLE_NAME = "Personnel";
+    public static final String VISIT_TAG_TABLE_NAME = "VisitTag";
+    public static final String ASSAY_SPECIMEN_TABLE_NAME = "AssaySpecimen";
+    public static final String ASSAY_SPECIMEN_VISIT_TABLE_NAME = "AssaySpecimenVisit";
+
+    // extensible study data tables
+    public static final String STUDY_DESIGN_SCHEMA_NAME = "studydesign";
+    public static final String PRODUCT_TABLE_NAME = "Product";
+    public static final String PRODUCT_ANTIGEN_TABLE_NAME = "ProductAntigen";
+    public static final String TREATMENT_TABLE_NAME = "Treatment";
+    public static final String TREATMENT_PRODUCT_MAP_TABLE_NAME = "TreatmentProductMap";
 
     @Nullable // if no study defined in this container
     final StudyImpl _study;
@@ -232,6 +255,10 @@ public class StudyQuerySchema extends UserSchema
 
             ret.add(LOCATION_SPECIMEN_LIST_TABLE_NAME);
 
+            // assay schedule tables
+            ret.add(ASSAY_SPECIMEN_TABLE_NAME);
+            ret.add(ASSAY_SPECIMEN_VISIT_TABLE_NAME);
+
             // Add only datasets that the user can read
             User user = getUser();
             for (DataSetDefinition dsd : _study.getDataSets())
@@ -241,6 +268,15 @@ public class StudyQuerySchema extends UserSchema
                     continue;
                 ret.add(dsd.getName());
             }
+
+            // study designs
+            ret.add(PRODUCT_TABLE_NAME);
+            ret.add(PRODUCT_ANTIGEN_TABLE_NAME);
+            ret.add(TREATMENT_PRODUCT_MAP_TABLE_NAME);
+            ret.add(TREATMENT_TABLE_NAME);
+
+            ret.add(OBJECTIVE_TABLE_NAME);
+            ret.add(PERSONNEL_TABLE_NAME);
         }
         return ret;
     }
@@ -493,6 +529,34 @@ public class StudyQuerySchema extends UserSchema
             FilteredTable ret = new VialRequestTable(this);
             return ret;
         }
+        if (PRODUCT_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            StudyProductDomainKind domainKind = new StudyProductDomainKind();
+            Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PRODUCT_TABLE_NAME);
+
+            return new StudyProductTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this);
+        }
+        if (PRODUCT_ANTIGEN_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            StudyProductAntigenDomainKind domainKind = new StudyProductAntigenDomainKind();
+            Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PRODUCT_ANTIGEN_TABLE_NAME);
+
+            return new StudyProductAntigenTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this);
+        }
+        if (TREATMENT_PRODUCT_MAP_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            StudyTreatmentProductDomainKind domainKind = new StudyTreatmentProductDomainKind();
+            Domain domain = domainKind.ensureDomain(getContainer(), getUser(), TREATMENT_PRODUCT_MAP_TABLE_NAME);
+
+            return new StudyTreatmentProductTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this);
+        }
+        if (TREATMENT_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            StudyTreatmentDomainKind domainKind = new StudyTreatmentDomainKind();
+            Domain domain = domainKind.ensureDomain(getContainer(), getUser(), TREATMENT_TABLE_NAME);
+
+            return new StudyTreatmentTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this);
+        }
         if (SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE.equalsIgnoreCase(name))
         {
             return new SpecimenPivotByPrimaryType(this);
@@ -509,6 +573,25 @@ public class StudyQuerySchema extends UserSchema
         {
             FilteredTable ret = new LocationSpecimenListTable(this);
             return ret;
+        }
+        if (PERSONNEL_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            StudyPersonnelDomainKind domainKind = new StudyPersonnelDomainKind();
+            Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PERSONNEL_TABLE_NAME);
+
+            return new StudyPersonnelTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this);
+        }
+        if (OBJECTIVE_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            return new StudyObjectiveTable(this);
+        }
+        if (ASSAY_SPECIMEN_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            return new AssaySpecimenTable(this);
+        }
+        if (ASSAY_SPECIMEN_VISIT_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            return new AssaySpecimenVisitTable(this);
         }
 
         // Might be a dataset

@@ -20,6 +20,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.gwt.client.util.PropertyUtil;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.InvalidKeyException;
@@ -114,11 +116,15 @@ public class CohortUpdateService extends AbstractQueryUpdateService
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
 
-            // label and enrolled are in the hard table so handle separately
+            // hard table columns handled separately
             String newLabel = (String)row.get("label");
             boolean newEnrolled = (Boolean)row.get("enrolled");
+            Integer newSubjectCount = (Integer)row.get("subjectCount");
+            String newDescription = (String)row.get("description");
 
-            if (!cohort.getLabel().equals(newLabel) || (cohort.isEnrolled() != newEnrolled))
+            if (!cohort.getLabel().equals(newLabel) || (cohort.isEnrolled() != newEnrolled)
+                || !PropertyUtil.nullSafeEquals(cohort.getSubjectCount(), newSubjectCount)
+                || !StringUtils.equals(cohort.getDescription(), newDescription))
             {
                 cohort = cohort.createMutable();
 
@@ -126,11 +132,19 @@ public class CohortUpdateService extends AbstractQueryUpdateService
                 {
                     cohort.setEnrolled(newEnrolled);
                 }
-
                 if (!cohort.getLabel().equals(newLabel))
                 {
                     cohort.setLabel(newLabel);
                 }
+                if (!PropertyUtil.nullSafeEquals(cohort.getSubjectCount(), newSubjectCount))
+                {
+                    cohort.setSubjectCount(newSubjectCount);
+                }
+                if (!StringUtils.equals(cohort.getDescription(), newDescription))
+                {
+                    cohort.setDescription(newDescription);
+                }
+
                 StudyManager.getInstance().updateCohort(user, cohort);
             }
 

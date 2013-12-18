@@ -163,7 +163,7 @@ function onSaveSuccess_updateRows()
     // if you want to stay on page, you need to refresh anyway to udpate attachments
     var msgbox = Ext4.Msg.show({
         title:'Status',
-        msg: '<span class="labkey-message">Changes saved</span>',
+        msg: '<span class="labkey-message">Changes saved successfully.</span>',
         buttons: false
     });
     var el = msgbox.getDialog().el;
@@ -177,7 +177,7 @@ function onSaveSuccess_formSubmit()
     LABKEY.setSubmit(true);
     var msgbox = Ext4.Msg.show({
         title:'Status',
-        msg: '<span class="labkey-message">Changes saved</span>',
+        msg: '<span class="labkey-message">Changes saved successfully.</span>',
         buttons: false
     });
     window.location = <%=q(cancelLink)%>;
@@ -337,7 +337,18 @@ function renderFormPanel(data, editable){
         var fields = data.metaData.fields;
         for(var i = 0; i < fields.length; i++){
             if(fields[i].caption == searchString && !fields[i].lookup)
-                return LABKEY.ext4.Util.getFormEditorConfig(data.metaData.fields[i]);
+            {
+                var config = LABKEY.ext4.Util.getFormEditorConfig(data.metaData.fields[i]);
+
+                // textarea size doesn't reflect the form defaults
+                if (config.xtype == 'textarea')
+                {
+                    config.height = 150;
+                    config.width = 500;
+                }
+
+                return config;
+            }
         }
         return undefined;
     };
@@ -345,6 +356,7 @@ function renderFormPanel(data, editable){
         getConfig('Label'),
         getConfig('Investigator'),
         getConfig('Grant'),
+        getConfig('Species'),
         getConfig('Description')
     ];
 
@@ -352,11 +364,13 @@ function renderFormPanel(data, editable){
         Label: true,
         Investigator: true,
         Grant: true,
+        Species: true,
         Description: true,
 
         // Don't show these fields, they have a special UI for editing them
         ParticipantAliasDatasetId: true,
         ParticipantAliasSourceProperty: true,
+        ParticipantAliasProperty: true,
 
         DescriptionRendererType: true,
 
@@ -368,7 +382,7 @@ function renderFormPanel(data, editable){
         items.push({
             fieldLabel : 'Render Type',
             xtype : 'combo',
-            labelWidth : 150,
+            labelWidth : 160,
             height : 22,
             padding : 5,
             hiddenName : 'DescriptionRendererType',
@@ -400,7 +414,7 @@ function renderFormPanel(data, editable){
         xtype: 'label',
         text : 'Protocol Documents:',
         style : 'float: left;',
-        width : 150
+        width : 160
     });
     items.push({
         xtype: 'panel',
@@ -432,8 +446,7 @@ function renderFormPanel(data, editable){
     items.push({
         xtype : 'radiogroup',
         fieldLabel : "Timepoint Type",
-        style : 'margin: 0px 5px;',
-        labelWidth : 150,
+        labelWidth : 160,
         width : 500,
         columns : 2,
         vertical : true,
@@ -464,7 +477,8 @@ function renderFormPanel(data, editable){
     items[0].value = info.Label.value;
     items[1].value = info.Investigator.value;
     items[2].value = info.Grant.value;
-    items[3].value = info.Description.value;
+    items[3].value = info.Species.value;
+    items[4].value = info.Description.value;
 
     var cm = data.columnModel,
         col,
@@ -480,7 +494,7 @@ function renderFormPanel(data, editable){
         }
     }
 
-    for(i = 8; i < items.length; i++){
+    for(i = 9; i < items.length; i++){
 
         // initialize the form elements
         var value = data.rows[0][items[i].name].value;
@@ -508,10 +522,15 @@ function renderFormPanel(data, editable){
         padding : 10,
         border : false,
         bodyStyle : 'background-color: transparent;',
-        defaults : {labelWidth: 150, width: 500, height : 30, padding : '5px', disabled : !editableFormPanel},
+        defaults : {labelWidth: 160, width: 500, height : 30, padding : '5px', disabled : !editableFormPanel},
         items: items,
-        buttons : buttons,
-        buttonAlign : 'left',
+        dockedItems: [{
+            xtype: 'toolbar',
+            dock: 'bottom',
+            ui: 'footer',
+            style : 'background-color: transparent;',
+            items: buttons
+        }],
         renderTo : 'testZone'
     });
 }

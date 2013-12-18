@@ -54,28 +54,42 @@
                 <input type="text" size="50" name="label" value="<%= h(visit.getLabel()) %>">
             </td>
         </tr>
+<%
+    if (isDateBased)
+    {
+%>
         <tr>
-            <td class="labkey-form-label">
-                <%=h(isDateBased ? "Day Range" : "VisitId/Sequence Range")%>
-                <%=(isDateBased ? helpPopup("Day Range", "Days from start date encompassing this visit. E.g. 11-17 for Week 2") : "")%>
-            </td>
+            <td class="labkey-form-label">Day Range&nbsp;<%=helpPopup("Day Range", "Days from start date encompassing this visit. E.g. 11-17 for Week 2")%></td>
             <td>
-                <%
-                    if (isDateBased)
-                    {
-                %>
-                        <input type="text" size="26" name="sequenceNumMin" value="<%=(int) visit.getSequenceNumMin()%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=(int) visit.getSequenceNumMax()%>">
-                <%
-                    }
-                    else
-                    {
-                %>
-                        <input type="text" size="26" name="sequenceNumMin" value="<%=visit.getSequenceNumMin()%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=visit.getSequenceNumMax()%>">
-                <%
-                    }
-                %>
+                <input type="text" size="26" name="sequenceNumMin" value="<%=(int) visit.getSequenceNumMin()%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=(int) visit.getSequenceNumMax()%>">
             </td>
         </tr>
+        <tr>
+            <td class="labkey-form-label">Target Day Number&nbsp;<%=helpPopup("Target Day Number", "The target sequence number associated with the sequence range for this visit, used for study alignment.")%></td>
+            <td>
+                <input type="text" size="26" name="sequenceNumTarget" value="<%=(int) visit.getSequenceNumTarget()%>">
+            </td>
+        </tr>
+<%
+    }
+    else
+    {
+%>
+        <tr>
+            <td class="labkey-form-label">VisitId/Sequence Range</td>
+            <td>
+                <input type="text" size="26" name="sequenceNumMin" value="<%=visit.getSequenceNumMin()%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=visit.getSequenceNumMax()%>">
+            </td>
+        </tr>
+        <tr>
+            <td class="labkey-form-label">Target Sequence Number&nbsp;<%=helpPopup("Target Sequence Number", "The target sequence number associated with the sequence range for this visit, used for study alignment.")%></td>
+            <td>
+                <input type="text" size="26" name="sequenceNumTarget" value="<%=visit.getSequenceNumTarget()%>">
+            </td>
+        </tr>
+<%
+    }
+%>
         <tr>
             <td class="labkey-form-label">Description&nbsp;<%=helpPopup("Description", "A short description of the visit, appears as hovertext on visit headers in study navigator and visit column in datasets.")%></td>
             <td>

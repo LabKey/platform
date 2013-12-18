@@ -180,24 +180,29 @@
     </tr>
     <tr>
         <th align="left">Datasets</th>
-        <td>This study defines <%= numDatasets %> Datasets</td>
+        <td>This study defines <%= numDatasets %> datasets</td>
         <td><%= textLink("Manage Datasets", ManageTypesAction.class) %></td>
     </tr>
     <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
     <tr>
         <th align="left"><%= h(visitLabel) %></th>
-        <td>This study defines <%= getVisits(Visit.Order.DISPLAY).size()%> <%=h(visitLabel)%></td>
+        <td>This study defines <%= getVisits(Visit.Order.DISPLAY).size()%> <%=h(visitLabel.toLowerCase())%></td>
         <td><%= textLink("Manage " + visitLabel, ManageVisitsAction.class) %></td>
     </tr>
     <% } %>
      <tr>
         <th align="left">Study Schedule</th>
-         <td>This study defines <%= numDatasets %> Datasets
+         <td>This study defines <%= numDatasets %> datasets
              <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
-             and <%= getVisits(Visit.Order.DISPLAY).size() %> <%=h(visitLabel)%>
+             and <%= getVisits(Visit.Order.DISPLAY).size() %> <%=h(visitLabel.toLowerCase())%>
              <% } %>
          </td>
         <td><%= textLink("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
+    </tr>
+    <tr>
+        <th align="left">Assay Schedule</th>
+        <td>This study defines <%= getAssaySpecimenConfigs().size() %> assay/specimen configurations</td>
+        <td><%= textLink("Manage Assay Schedule", StudyController.ManageAssaySpecimenAction.class) %></td>
     </tr>
     <tr>
         <th align="left">Locations</th>
@@ -227,7 +232,7 @@
     </tr>
     <tr>
         <th align="left">Security</th>
-        <td>Manage access to Study datasets and samples</td>
+        <td>Manage access to study datasets and samples</td>
         <% ActionURL url = new ActionURL(SecurityController.BeginAction.class, c);%>
         <td><%= textLink("Manage Security", url) %></td>
     </tr>
@@ -238,7 +243,7 @@
     </tr>
     <tr>
         <th align="left">Quality Control States</th>
-        <td>Manage QC states for datasets in this Study</td>
+        <td>Manage QC states for datasets in this study</td>
         <td><%=textLink("Manage Dataset QC States", new ActionURL(StudyController.ManageQCStatesAction.class, c)) %></td>
     </tr>
     <tr>

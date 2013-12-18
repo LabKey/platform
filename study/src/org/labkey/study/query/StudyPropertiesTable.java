@@ -65,6 +65,7 @@ public class StudyPropertiesTable extends BaseStudyTable
         DetailsURL detailsURL = new DetailsURL(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(schema.getContainer()));
         labelColumn.setURL(detailsURL);
         addRootColumn("startDate", true, true);
+        addRootColumn("endDate", true, true);
 
         ColumnInfo containerColumn = addRootColumn("container", false, false);
         containerColumn.setFk(new ContainerForeignKey(schema));
@@ -76,9 +77,11 @@ public class StudyPropertiesTable extends BaseStudyTable
         addRootColumn("subjectColumnName", false, true);
         addRootColumn("grant", true, true);
         addRootColumn("investigator", true, true);
+        addRootColumn("species", true, true);
         addRootColumn("participantAliasDatasetId", true, true);
         addRootColumn("participantAliasProperty", true, true);
         addRootColumn("participantAliasSourceProperty", true, true);
+        addRootColumn("assayPlan", true, true);
         ColumnInfo descriptionColumn = addRootColumn("description", true, true);
         final ColumnInfo descriptionRendererTypeColumn = addRootColumn("descriptionRendererType", false, true);
         descriptionRendererTypeColumn.setFk(new LookupForeignKey("Value")

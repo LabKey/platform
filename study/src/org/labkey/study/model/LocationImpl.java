@@ -36,6 +36,12 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
     private Boolean _repository = Boolean.FALSE; // Bit,
     private Boolean _endpoint = Boolean.FALSE; // Bit,
     private String _label;
+    private String _description;
+    private String _streetAddress;
+    private String _city;
+    private String _governingDistrict;
+    private String _country;
+    private String _postalArea;
 
     public LocationImpl()
     {
@@ -213,5 +219,71 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
     protected boolean supportsPolicyUpdate()
     {
         return true;
+    }
+
+    public String getDescription()
+    {
+        return _description;
+    }
+
+    public void setDescription(String description)
+    {
+        verifyMutability();
+        _description = description;
+    }
+
+    public String getStreetAddress()
+    {
+        return _streetAddress;
+    }
+
+    public void setStreetAddress(String streetAddress)
+    {
+        verifyMutability();
+        _streetAddress = streetAddress;
+    }
+
+    public String getCity()
+    {
+        return _city;
+    }
+
+    public void setCity(String city)
+    {
+        verifyMutability();
+        _city = city;
+    }
+
+    public String getGoverningDistrict()
+    {
+        return _governingDistrict;
+    }
+
+    public void setGoverningDistrict(String governingDistrict)
+    {
+        verifyMutability();
+        _governingDistrict = governingDistrict;
+    }
+
+    public String getCountry()
+    {
+        return _country;
+    }
+
+    public void setCountry(String country)
+    {
+        verifyMutability();
+        _country = country;
+    }
+
+    public String getPostalArea()
+    {
+        return _postalArea;
+    }
+
+    public void setPostalArea(String postalArea)
+    {
+        verifyMutability();
+        _postalArea = postalArea;
     }
 }

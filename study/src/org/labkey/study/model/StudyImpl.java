@@ -47,6 +47,7 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
@@ -96,6 +97,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private String _label;
     private TimepointType _timepointType;
     private Date _startDate;
+    private Date _endDate;
     private SecurityType _securityType = SecurityType.BASIC_READ; // Default value. Not allowed to be null
     private String _participantCohortProperty;
     private Integer _participantCohortDataSetId;
@@ -118,12 +120,14 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private String _subjectNounSingular;
     private String _subjectNounPlural;
     private String _subjectColumnName;
+    private String _assayPlan;
     private String _description;
     private String _descriptionRendererType = WikiRendererType.TEXT_WITH_LINKS.name();
     private String _protocolDocumentEntityId;
     private String _sourceStudyContainerId;
     private String _investigator;
     private String _grant;
+    private String _species;
     private int _defaultTimepointDuration = 1;
     private String _alternateIdPrefix;
     private int _alternateIdDigits;
@@ -267,6 +271,18 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public List<CohortImpl> getCohorts(User user)
     {
         return StudyManager.getInstance().getCohorts(getContainer(), user);
+    }
+
+    @Override
+    public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs()
+    {
+        return StudyManager.getInstance().getAssaySpecimenConfigs(getContainer());
+    }
+
+    @Override
+    public List<VisitImpl> getVisitsForAssaySchedule()
+    {
+        return StudyManager.getInstance().getVisitsForAssaySchedule(getContainer());
     }
 
     @Override
@@ -826,6 +842,37 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public void setLastSpecimenRequest(Integer lastSpecimenRequest)
     {
         _lastSpecimenRequest = lastSpecimenRequest;
+    }
+
+    public Date getEndDate()
+    {
+        return _endDate;
+    }
+
+    public void setEndDate(Date endDate)
+    {
+        verifyMutability();
+        _endDate = endDate;
+    }
+
+    public String getSpecies()
+    {
+        return _species;
+    }
+
+    public void setSpecies(String species)
+    {
+        _species = species;
+    }
+
+    public String getAssayPlan()
+    {
+        return _assayPlan;
+    }
+
+    public void setAssayPlan(String assayPlan)
+    {
+        _assayPlan = assayPlan;
     }
 
     public static class ProtocolDocumentAttachmentParent extends AttachmentParentEntity

@@ -102,7 +102,7 @@ public abstract class EditableGrid extends FlexTable
             else
                 widget =  getCellWidget(row - getHeaderRows(), col);
 
-            getCellFormatter().setStyleName(row, col + 1, isReadOnly() ? "cavd-row-padded-view" : "cavd-row-padded");
+            getCellFormatter().setStyleName(row, col + 1, isReadOnly() ? "assay-row-padded-view" : "assay-row-padded");
             setWidget(row, col + 1, widget);
         }
     }

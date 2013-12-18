@@ -97,6 +97,12 @@ public class CohortWriter implements InternalStudyWriter
             CohortsDocument.Cohorts.Cohort cohortXml = cohortAssignmentXml.addNewCohort();
             cohortXml.setLabel(cohort.getLabel());
             cohortXml.setEnrolled(cohort.isEnrolled());
+
+            if (cohort.getSubjectCount() != null)
+                cohortXml.setSubjectCount(cohort.getSubjectCount());
+            if (cohort.getDescription() != null)
+                cohortXml.setDescription(cohort.getDescription());
+
             Collection<String> ids = participantsInEachCohort.get(cohort.getRowId());
 
             if (null != ids)

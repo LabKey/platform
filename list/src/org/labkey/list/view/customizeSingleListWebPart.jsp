@@ -72,7 +72,8 @@ If you want to let users change the list that's displayed or customize the view 
         var title = Ext4.create('Ext.form.field.Text', {
             name : 'title',
             value :  <%=PageFlowUtil.jsString(props.get("title"))%>,
-            fieldLabel : 'Title'
+            fieldLabel : 'Title',
+            width: 400
         });
         var queryCombo = ('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
             defaultSchema : 'lists',
@@ -80,12 +81,14 @@ If you want to let users change the list that's displayed or customize the view 
             includeUserQueries: false,
             fieldLabel : 'List',
             name: 'listName',
-            initialValue : <%=PageFlowUtil.jsString(listName)%>
+            initialValue : <%=PageFlowUtil.jsString(listName)%>,
+            width: 400
         }));
 
         var viewCombo = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeViewComboConfig({
             name : 'viewName',
-            initialValue : <%=PageFlowUtil.jsString(props.get("viewName"))%>
+            initialValue : <%=PageFlowUtil.jsString(props.get("viewName"))%>,
+            width: 400
         }));
 
         var submitButton = Ext4.create('Ext.button.Button', {

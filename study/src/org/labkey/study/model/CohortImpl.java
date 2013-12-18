@@ -33,6 +33,8 @@ public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Coh
     private int _rowId = 0;
     private String _lsid;
     private boolean _enrolled = true;
+    private Integer _subjectCount;
+    private String _description;
 
     public Object getPrimaryKey()
     {
@@ -104,5 +106,27 @@ public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Coh
             ptids.add(p.getParticipantId());
         }
         return ptids;
+    }
+
+    public Integer getSubjectCount()
+    {
+        return _subjectCount;
+    }
+
+    public void setSubjectCount(Integer subjectCount)
+    {
+        verifyMutability();
+        _subjectCount = subjectCount;
+    }
+
+    public String getDescription()
+    {
+        return _description;
+    }
+
+    public void setDescription(String description)
+    {
+        verifyMutability();
+        _description = description;
     }
 }

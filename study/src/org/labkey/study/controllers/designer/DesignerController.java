@@ -263,6 +263,7 @@ public class DesignerController extends SpringActionController
                             "Discussion of " + info.getLabel() + " revision " + revision,
                             true, false);
                     VBox vbox = new VBox();
+                    vbox.addView(new HtmlView("<script type='text/javascript'>LABKEY.requiresCss('study/StudyVaccineDesign.css');</script>"));
                     if (null != HttpView.currentRequest().getParameter("discussion.start") || null != HttpView.currentRequest().getParameter("discussion.id"))
                         vbox.addView(new HtmlView("Study information is on this page below the discussion."));
                     vbox.addView(discussion);

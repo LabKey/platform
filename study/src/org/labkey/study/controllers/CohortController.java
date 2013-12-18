@@ -24,6 +24,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.gwt.client.util.PropertyUtil;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -365,6 +367,8 @@ public class CohortController extends BaseStudyController
             CohortImpl cohort;
             String newLabel = (String)dataMap.remove("label"); // remove and handle label, as it isn't an ontology object
             boolean newEnrolled = (Boolean) dataMap.remove("enrolled"); // same with enrolled
+            Integer newSubjectCount = (Integer)dataMap.remove("subjectCount"); // same with subjectCount;
+            String newDescription = (String)dataMap.remove("description"); // same with description;
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
             try (DbScope.Transaction transaction = scope.ensureTransaction())
@@ -372,7 +376,7 @@ public class CohortController extends BaseStudyController
                 if (isInsert())
                 {
                     Study study = getStudyThrowIfNull();
-                    cohort = CohortManager.getInstance().createCohort(study, getUser(), newLabel, newEnrolled);
+                    cohort = CohortManager.getInstance().createCohort(study, getUser(), newLabel, newEnrolled, newSubjectCount, newDescription);
                 }
                 else
                 {
@@ -394,8 +398,10 @@ public class CohortController extends BaseStudyController
 
                     boolean labelChanged = (newLabel != null && !cohort.getLabel().equals(newLabel));
                     boolean enrolledChanged = cohort.isEnrolled() != newEnrolled;
+                    boolean subjectCountChanged = !PropertyUtil.nullSafeEquals(cohort.getSubjectCount(), newSubjectCount);
+                    boolean desciprtionChanged = !StringUtils.equals(cohort.getDescription(), newDescription);
 
-                    if (labelChanged || enrolledChanged)
+                    if (labelChanged || enrolledChanged || subjectCountChanged || desciprtionChanged)
                     {
                         cohort = cohort.createMutable();
 
@@ -412,6 +418,8 @@ public class CohortController extends BaseStudyController
                         }
 
                         cohort.setEnrolled(newEnrolled);
+                        cohort.setSubjectCount(newSubjectCount);
+                        cohort.setDescription(newDescription);
 
                         StudyManager.getInstance().updateCohort(getUser(), cohort);
                     }

@@ -127,7 +127,7 @@ public class Designer implements EntryPoint
     {
         definition = def;
         VerticalPanel mainPanel = new VerticalPanel();
-        mainPanel.setStylePrimaryName("cavd-study");
+        mainPanel.setStylePrimaryName("study-vaccine-design");
         mainPanel.add(label);
 
         if (null == panelName || panelName.toLowerCase().equals("overview"))

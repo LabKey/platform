@@ -277,7 +277,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
             // create any cohorts that don't exist or get the cohort RowId if one does exist in the study
             for (GWTCohort defGroup : studyDefinition.getGroups())
             {
-                CohortImpl cohort = CohortManager.getInstance().ensureCohort(study, getUser(), defGroup.getName(), true);
+                CohortImpl cohort = CohortManager.getInstance().ensureCohort(study, getUser(), defGroup.getName(), true, defGroup.getCount(), null);
                 defGroup.setCohortId(cohort.getRowId());
             }
         }

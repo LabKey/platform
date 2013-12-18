@@ -138,6 +138,7 @@ public class SpecimenImporter
         private Class _javaType = null;
         private final boolean _unique;
         private int _size = -1;
+        private boolean _maskOnExport;
 
         public ImportableColumn(String tsvColumnName, String dbColumnName, String databaseType)
         {
@@ -146,9 +147,15 @@ public class SpecimenImporter
 
         public ImportableColumn(String tsvColumnName, String dbColumnName, String databaseType, boolean unique)
         {
+            this(tsvColumnName, dbColumnName, databaseType, unique, false);
+        }
+
+        public ImportableColumn(String tsvColumnName, String dbColumnName, String databaseType, boolean unique, boolean maskOnExport)
+        {
             _tsvColumnName = tsvColumnName;
             _dbColumnName = dbColumnName;
             _unique = unique;
+            _maskOnExport = maskOnExport;
             if (DURATION_TYPE.equals(databaseType))
             {
                 _dbType = StudySchema.getInstance().getSqlDialect().getDefaultDateTimeDataType();
@@ -239,6 +246,16 @@ public class SpecimenImporter
         public int getMaxSize()
         {
             return _size;
+        }
+
+        public boolean isMaskOnExport()
+        {
+            return _maskOnExport;
+        }
+
+        public void setMaskOnExport(boolean maskOnExport)
+        {
+            _maskOnExport = maskOnExport;
         }
     }
 
@@ -669,13 +686,19 @@ public class SpecimenImporter
     public static final Collection<ImportableColumn> SITE_COLUMNS = Arrays.asList(
             new ImportableColumn("lab_id", "ExternalId", "INT NOT NULL", true),
             new ImportableColumn("ldms_lab_code", "LdmsLabCode", "INT"),
-            new ImportableColumn("labware_lab_code", "LabwareLabCode", "VARCHAR(20)"),
-            new ImportableColumn("lab_name", "Label", "VARCHAR(200)"),
+            new ImportableColumn("labware_lab_code", "LabwareLabCode", "VARCHAR(20)", false, true),
+            new ImportableColumn("lab_name", "Label", "VARCHAR(200)", false, true),
             new ImportableColumn("lab_upload_code", "LabUploadCode", "VARCHAR(10)"),
             new ImportableColumn("is_sal", "Sal", BOOLEAN_TYPE),
             new ImportableColumn("is_repository", "Repository", BOOLEAN_TYPE),
             new ImportableColumn("is_clinic", "Clinic", BOOLEAN_TYPE),
-            new ImportableColumn("is_endpoint", "Endpoint", BOOLEAN_TYPE)
+            new ImportableColumn("is_endpoint", "Endpoint", BOOLEAN_TYPE),
+            new ImportableColumn("street_address", "StreetAddress", "VARCHAR(200)", false, true),
+            new ImportableColumn("city", "City", "VARCHAR(200)", false, true),
+            new ImportableColumn("govering_district", "GoverningDistrict", "VARCHAR(200)", false, true),
+            new ImportableColumn("country", "Country", "VARCHAR(200)", false, true),
+            new ImportableColumn("postal_area", "PostalArea", "VARCHAR(50)", false, true),
+            new ImportableColumn("description", "Description", "VARCHAR(500)", false, true)
     );
 
     public static final Collection<ImportableColumn> PRIMARYTYPE_COLUMNS = Arrays.asList(

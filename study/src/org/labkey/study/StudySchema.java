@@ -76,6 +76,10 @@ public class StudySchema
         return "studydataset";
     }
 
+    public String getStudyDesignSchemaName()
+    {
+        return "studydesign";
+    }
 
     public SqlDialect getSqlDialect()
     {
@@ -386,5 +390,30 @@ public class StudySchema
     public TableInfo getTableInfoStudyDesignLabs()
     {
         return getSchema().getTable("StudyDesignLabs");
+    }
+
+    public TableInfo getTableInfoTreatmentVisitMap()
+    {
+        return getSchema().getTable("TreatmentVisitMap");
+    }
+
+    public TableInfo getTableInfoObjective()
+    {
+        return getSchema().getTable("Objective");
+    }
+
+    public TableInfo getTableInfoVisitTag()
+    {
+        return getSchema().getTable("VisitTag");
+    }
+
+    public TableInfo getTableInfoAssaySpecimen()
+    {
+        return getSchema().getTable("AssaySpecimen");
+    }
+
+    public TableInfo getTableInfoAssaySpecimenVisit()
+    {
+        return getSchema().getTable("AssaySpecimenVisit");
     }
 }

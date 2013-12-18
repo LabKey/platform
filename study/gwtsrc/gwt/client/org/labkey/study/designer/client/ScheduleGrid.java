@@ -58,7 +58,7 @@ public abstract class ScheduleGrid extends EditableGrid
     {
         super.updateAll();
         getFlexCellFormatter().setColSpan(0, 1 + getCategoryColumnCount(), schedule.getTimepoints().size() + 1);
-        getFlexCellFormatter().setStyleName(0, 1 + getCategoryColumnCount(), "labkey-col-header cavd-schedule-header");
+        getFlexCellFormatter().setStyleName(0, 1 + getCategoryColumnCount(), "labkey-col-header assay-schedule-header");
         if (!designer.isReadOnly())
         {
             //Timepoint headers are clickable
@@ -147,7 +147,7 @@ public abstract class ScheduleGrid extends EditableGrid
             if (column == getCategoryColumnCount())
             {
                 Label label = new Label(timelineTitle);
-                label.setStyleName("cavd-schedule-header");
+                label.setStyleName("assay-schedule-header");
                 return label;
             }
             else

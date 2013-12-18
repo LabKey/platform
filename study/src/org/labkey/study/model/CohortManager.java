@@ -161,7 +161,7 @@ public class CohortManager
     }
 
     // TODO: Check for null label here?
-    public CohortImpl createCohort(Study study, User user, String newLabel, boolean enrolled) throws ServletException, SQLException
+    public CohortImpl createCohort(Study study, User user, String newLabel, boolean enrolled, Integer subjectCount, String description) throws ServletException, SQLException
     {
         CohortImpl cohort = new CohortImpl();
 
@@ -173,19 +173,21 @@ public class CohortManager
 
         cohort.setLabel(newLabel);
         cohort.setEnrolled(enrolled);
+        cohort.setSubjectCount(subjectCount);
+        cohort.setDescription(description);
 
         StudyManager.getInstance().createCohort(study, user, cohort);
 
         return cohort;
     }
 
-    public CohortImpl ensureCohort(Study study, User user, String newLabel, boolean enrolled) throws ServletException, SQLException
+    public CohortImpl ensureCohort(Study study, User user, String newLabel, boolean enrolled, Integer subjectCount, String description) throws ServletException, SQLException
     {
         CohortImpl existingCohort = StudyManager.getInstance().getCohortByLabel(study.getContainer(), user, newLabel);
         if (existingCohort != null)
             return existingCohort;
         else
-            return createCohort(study, user, newLabel, enrolled);
+            return createCohort(study, user, newLabel, enrolled, subjectCount, description);
     }
 
 //    public ActionButton createCohortButton(ViewContext context, CohortFilter currentCohortFilter) throws ServletException

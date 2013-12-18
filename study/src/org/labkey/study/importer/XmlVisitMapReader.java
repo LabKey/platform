@@ -89,6 +89,7 @@ public class XmlVisitMapReader implements VisitMapReader
         for (VisitMapDocument.VisitMap.Visit visitXml : visitsXml)
         {
             double maxSequenceNum = visitXml.isSetMaxSequenceNum() ? visitXml.getMaxSequenceNum() : visitXml.getSequenceNum();
+            double targetSequenceNum = visitXml.isSetTargetSequenceNum() ? visitXml.getTargetSequenceNum() : visitXml.getSequenceNum();
 
             List<Integer> required = new ArrayList<>();
             List<Integer> optional = new ArrayList<>();
@@ -104,7 +105,7 @@ public class XmlVisitMapReader implements VisitMapReader
                 }
             }
 
-            VisitMapRecord record = new VisitMapRecord(visitXml.getSequenceNum(), maxSequenceNum, visitXml.getTypeCode(),
+            VisitMapRecord record = new VisitMapRecord(visitXml.getSequenceNum(), maxSequenceNum, targetSequenceNum, visitXml.getTypeCode(),
                     visitXml.getLabel(), visitXml.getDescription(), visitXml.getCohort(), visitXml.getVisitDateDatasetId(),
                     ArrayUtils.toPrimitive(required.toArray(new Integer[required.size()])),
                     ArrayUtils.toPrimitive(optional.toArray(new Integer[optional.size()])), visitXml.getShowByDefault(),

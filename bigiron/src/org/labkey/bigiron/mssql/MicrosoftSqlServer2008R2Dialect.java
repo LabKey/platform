@@ -984,6 +984,10 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
                         ((Boolean)prop.getDefaultValue() ? getBooleanTRUE() : getBooleanFALSE());
                 colSpec.add(defaultClause);
             }
+            else if (prop.getJdbcType().sqlType == Types.VARCHAR)
+            {
+                colSpec.add(" DEFAULT '" + prop.getDefaultValue().toString() + "'");
+            }
             else
             {
                 throw new IllegalArgumentException("Default value on type " + prop.getJdbcType().name() + " is not supported.");

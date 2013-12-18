@@ -1,0 +1,185 @@
+
+table.study-vaccine-design {
+    font-family: Verdana, Arial, Helvetica, sans serif;
+    border: none;
+}
+
+table.study-vaccine-design h2 {
+    font-family: Arial, Helvetica, sans serif;
+    margin-top: 20px;
+}
+
+table.study-vaccine-design td {
+    padding: 0 5px;
+    border: none; /* clears borders before it */
+}
+
+table.study-vaccine-design input[type="text"]  {
+    border: 1px solid #999;
+    background-color: #fff;
+    padding: 3px;
+    font-size: 99%;
+}
+
+table.study-vaccine-design select {
+    border: 1px solid #999;
+    background-color: #fff;
+    padding: 2px;
+    font-family: Verdana, Arial, Helvetica, sans serif;
+    font-size: 99%;
+}
+
+table.study-vaccine-design .gwt-Label {
+    font-weight: normal;
+}
+
+table.study-vaccine-design .labkey-col-header {
+    border: none; /* clears borders before it */
+    border-left: 1px solid #fff; /* now lets put in some new ones */
+    border-bottom: 1px solid #fff;
+    padding: 2px 5px 6px 5px;
+    font-weight: normal;
+}
+
+table.study-vaccine-design .labkey-col-header-active {
+    border: none; /* clears borders before it */
+    border-left: 1px solid #fff; /* now lets put in some new ones */
+    border-bottom: 1px solid #fff;
+    padding: 2px 5px 6px 5px;
+}
+
+table.study-vaccine-design .labkey-col-header-active .gwt-Label {
+    font-weight: bold;
+}
+
+table.study-vaccine-design table {
+    margin-top:8px;
+}
+
+table.study-vaccine-design td.assay-row-padded table,  table.study-vaccine-design td.assay-row-padded-view table {
+    margin-top:0;
+}
+
+table.study-vaccine-design li {
+    display: list-item;
+    margin-left: 30px;
+}
+table.study-vaccine-design ul {
+    list-style-type: disc;
+}
+table.study-vaccine-design .labkey-col-header-active .gwt-Label:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.assay-schedule-header {
+    font-weight: bold;
+    text-align: center;
+}
+
+.assay-schedule-header .gwt-label {
+    font-weight: bold;
+}
+
+table.study-vaccine-design .labkey-row-header {
+    border: none;
+    border-right: 1px solid #fff; /* now lets put in some new ones */
+    border-bottom: 1px solid #fff;
+}
+
+table.study-vaccine-design .labkey-row {
+    border-bottom: 1px solid #fff;
+    border-right: 1px solid #fff;
+    background-color: #fafafa;
+}
+
+table.study-vaccine-design .labkey-row-active {
+    border-bottom: 1px solid #fff;
+    border-right: 1px solid #fff;
+    padding: 3px 20px 3px 5px;
+}
+
+table.study-vaccine-design .labkey-row-active .gwt-Label, table.study-vaccine-design .labkey-row-header .gwt-Label {
+    cursor: pointer;
+}
+
+table.study-vaccine-design .labkey-row-active .gwt-Label:hover, table.study-vaccine-design .labkey-row-header .gwt-Label:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+table.study-vaccine-design .assay-row-bottom {
+    background-color: #fafafa;
+}
+
+table.study-vaccine-design .assay-corner {
+    border: none;
+    border-bottom: 1px solid #fff;
+}
+
+table.study-vaccine-design .assay-row table, table.study-vaccine-design .assay-row-bottom table {
+    margin: 4px 0;
+}
+
+table.study-vaccine-design .assay-row-padded {
+    border-bottom: 1px solid #fff;
+    border-right: 1px solid #fff;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    background-color: #fafafa;
+}
+
+table.study-vaccine-design .assay-row-padded-view {
+    border-bottom: 1px solid #fff;
+    border-right: 1px solid #fff;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    background-color: #fafafa;
+}
+
+a.labkey-button, a.labkey-button:visited, a.gwt-Anchor {
+    padding: 2px 5px;
+    margin-right: 5px;
+    border: 1px solid #ddd;
+    background-color: #FFFFFF;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-family: Verdana, Arial, Helvetica, sans serif;
+    font-weight: bold;
+    white-space: nowrap;
+
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+
+    background: -moz-linear-gradient(center top , #FFFFFF, #E5E5E5);
+
+    *padding: 1px 5px 0px 5px;
+}
+
+a.labkey-button:hover, a.gwt-Anchor:hover
+{
+    padding: 2px 5px;
+    border: 1px solid #676767;
+    background-color: #ffffff;
+    color: #000000;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-family: Verdana, Arial, Helvetica, sans serif;
+    font-weight: bold;
+    cursor: pointer;
+
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+
+    background: -moz-linear-gradient(center top , #FFFFFF, #E5E5E5);
+    background: -moz-linear-gradient(center top , #FFFFFF, #E5E5E5);
+
+    *padding: 1px 5px 0px 5px;
+}
+
+table.assay-buttons .empty, table.assay-buttons .gwt-Label {
+    padding: 10px;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+}

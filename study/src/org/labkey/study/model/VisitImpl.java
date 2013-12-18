@@ -47,9 +47,9 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     public static final double DEMOGRAPHICS_VISIT = -1;
 
     private int _rowId = 0;
-//    private String _name = null;
     private double _sequenceMin = 0;
     private double _sequenceMax = 0;
+    private double _sequenceTarget = 0;
     private Character _typeCode;
     private Integer _visitDateDatasetid = 0;
     private Integer _cohortId;
@@ -85,23 +85,11 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         setContainer(container);
         _sequenceMin = seqMin;
         _sequenceMax = seqMax;
-//        _name = name;
+        _sequenceTarget = seqMin;
         _label = name;
         _typeCode = typeCode;
         _showByDefault = true;
     }
-
-
-//    public String getName()
-//    {
-//        if (_name == null && _label == null)
-//        {
-//            if (_sequenceMax == 0 && _sequenceMin == 0)
-//                return null;
-//            return getSequenceString();
-//        }
-//        return _name == null ? _label : _name;
-//    }
 
 
     @Override
@@ -112,12 +100,6 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         else
             return VisitImpl.formatSequenceNum(_sequenceMin) + "-" + VisitImpl.formatSequenceNum(_sequenceMax);
     }
-
-
-//    public void setName(String name)
-//    {
-//        _name = name;
-//    }
 
 
     @Override
@@ -208,6 +190,16 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     public void setSequenceNumMax(double sequenceMax)
     {
         this._sequenceMax = sequenceMax;
+    }
+
+    public double getSequenceNumTarget()
+    {
+        return _sequenceTarget;
+    }
+
+    public void setSequenceNumTarget(double sequenceTarget)
+    {
+        this._sequenceTarget = sequenceTarget;
     }
 
     public int getRowId()
