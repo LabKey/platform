@@ -1805,7 +1805,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                 .append("LEFT OUTER JOIN ").append(tableInfoSpecimen.getFromSQL(tableInfoSpecimenAlias)).append(" ON\n\t")
                 .append(tableInfoVial.getColumn("SpecimenId").getValueSql(tableInfoVialAlias)).append(" = ")
                 .append(tableInfoSpecimen.getColumn("RowId").getValueSql(tableInfoSpecimenAlias))
-                .append("\n WHERE ").append(getVisitRangeSql(visit));
+                .append("\n WHERE ").append(getVisitRangeSql(visit, tableInfoSpecimen, tableInfoSpecimenAlias));
         List<Integer> results = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArrayList(Integer.class);
         if (1 != results.size())
             throw new IllegalStateException("Expected value from Select Count(*)");
@@ -1826,7 +1826,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         String tableInfoSpecimenEventSelectName = tableInfoSpecimenEvent.getSelectName();
         String tableInfoVialSelectName = tableInfoVial.getSelectName();
 
-        SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " + tableInfoSpecimen + " WHERE ").append(getVisitRangeSql(visit));
+        SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " + tableInfoSpecimen + " WHERE ").append(getVisitRangeSql(visit, tableInfoSpecimen, tableInfoSpecimenSelectName));
 
         SQLFragment deleteEventSql = new SQLFragment("DELETE FROM ");
         deleteEventSql.append(tableInfoSpecimenEventSelectName)
@@ -1859,17 +1859,15 @@ public class SampleManager implements ContainerManager.ContainerListener
         clearCaches(visit.getContainer());
     }
 
-    private SQLFragment getVisitRangeSql(VisitImpl visit)
+    private SQLFragment getVisitRangeSql(VisitImpl visit, TableInfo tinfoSpecimen, String specimenAlias)
     {
-        TableInfo tinfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(visit.getContainer());
         Study study = StudyService.get().getStudy(visit.getContainer());
-        if (null == study || null == tinfoSpecimen)
-            throw new IllegalStateException("No study found or specimen table not found.");
+        if (null == study)
+            throw new IllegalStateException("No study found.");
 
-        String tinfoSpecimenSelectName = tinfoSpecimen.getSelectName();
         SQLFragment sqlVisitRange = new SQLFragment();
-        sqlVisitRange.append(tinfoSpecimen.getColumn("VisitValue").getValueSql(tinfoSpecimenSelectName)).append(" >= ? AND ")
-                .append(tinfoSpecimen.getColumn("VisitValue").getValueSql(tinfoSpecimenSelectName)).append(" <= ?");
+        sqlVisitRange.append(tinfoSpecimen.getColumn("VisitValue").getValueSql(specimenAlias)).append(" >= ? AND ")
+                .append(tinfoSpecimen.getColumn("VisitValue").getValueSql(specimenAlias)).append(" <= ?");
 
         SQLFragment sql = new SQLFragment();
         if (TimepointType.VISIT == study.getTimepointType())
