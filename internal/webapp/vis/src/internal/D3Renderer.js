@@ -493,7 +493,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 .attr('stroke', colorAcc)
                 .attr('fill', colorAcc)
                 .attr('transform', function(){
-                    var sibling = this.parentElement.childNodes[0],
+                    var sibling = this.parentNode.childNodes[0],
                         y = Math.floor(parseInt(sibling.getAttribute('y'))) - 3.5;
                     return 'translate(' + glyphX + ',' + y + ')';
                 });

@@ -340,6 +340,9 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
         GEOM STUFF BELOW HERE
      */
     var applyTransform = function(geomSet, plot) {
+        // NOTE: If you change this function make sure to update the transforms applied to box plot rectangles. There
+        // is a bug in Raphael that prevents us from using the '...' transform syntax to transform rectangles so we have
+        // to special case it in the renderBoxPlotGeom function :-(
         if (plot.clipRect) {
             geomSet.attr('clip-rect', (plot.grid.leftEdge - 10) + ", " + (plot.grid.height - plot.grid.topEdge) + ", " + (plot.grid.rightEdge - plot.grid.leftEdge  + 20) + ", " + (plot.grid.topEdge - plot.grid.bottomEdge + 12));
         }
@@ -509,10 +512,17 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
                 .attr('stroke', geom.color)
                 .attr('stroke-width', geom.lineWidth);
 
+        if (plot.clipRect) {
+            box.attr('clip-rect', (plot.grid.leftEdge - 10) + ", " + (plot.grid.height - plot.grid.topEdge) + ", " + (plot.grid.rightEdge - plot.grid.leftEdge  + 20) + ", " + (plot.grid.topEdge - plot.grid.bottomEdge + 12));
+        }
+
+        box.transform('t0,' + plot.grid.height);
+
         if (hoverText) {
             box.attr('title', hoverText);
         }
 
+        this.paper.setStart();
         this.paper.path(LABKEY.vis.makeLine(leftX, boxMiddle, leftX + width, boxMiddle))
                 .attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
 
@@ -531,6 +541,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             this.paper.path(LABKEY.vis.makeLine(whiskerLeft, topWhisker, whiskerRight, topWhisker))
                     .attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
         }
+        applyTransform(this.paper.setFinish(), plot);
     };
 
     var renderOutliers = function(geom, group, summary, data) {
@@ -545,6 +556,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             };
 
         if (geom.showOutliers) {
+            this.paper.setStart();
             for (i = 0; i < data.length; i++) {
                 y = geom.yAes.getValue(data[i]);
                 if (y != null && (y > largestNotOutlier || y < smallestNotOutlier)) {
@@ -572,6 +584,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
                     }
                 }
             }
+            applyTransform(this.paper.setFinish(), plot);
         }
     };
 
@@ -585,8 +598,6 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
 
         groupedData = LABKEY.vis.groupData(data, geom.xAes.getValue);
 
-        this.paper.setStart();
-
         for (group in groupedData) {
             if (groupedData.hasOwnProperty(group)) {
                 summary = LABKEY.vis.Stat.summary(groupedData[group], geom.yAes.getValue);
@@ -597,7 +608,8 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             }
         }
 
-        applyTransform(this.paper.setFinish(), plot);
+        // Note: We do not apply a transform here like in the other geoms because there is a bug in Raphael when using
+        // the '...t' syntax with rect objects. Instead the transform is applied within renderBox and renderOutliers.
     };
 
     /*
