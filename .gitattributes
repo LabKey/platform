@@ -935,7 +935,6 @@ experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleSetServiceAsy
 experiment/module.properties -text
 experiment/resources/queries/exp/RunGroups/NameOnly.qview.xml -text
 experiment/resources/queries/exp/SampleSets/NameOnly.qview.xml -text
-experiment/resources/schemas/dbscripts/postgresql/exp-0.00-11.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-0.00-11.30.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-11.30-12.10.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-12.10-12.20.sql -text
@@ -954,6 +953,7 @@ experiment/resources/schemas/dbscripts/postgresql/obsolete/exp-0.00-1.40.sql -te
 experiment/resources/schemas/dbscripts/postgresql/obsolete/exp-0.00-10.10.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/exp-0.00-10.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/exp-0.00-10.30.sql -text
+experiment/resources/schemas/dbscripts/postgresql/obsolete/exp-0.00-11.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/exp-0.00-2.00.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/exp-0.00-2.30.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/exp-0.00-8.20.sql -text
@@ -1075,7 +1075,6 @@ experiment/resources/schemas/dbscripts/postgresql/obsolete/exp-9.30-10.10.sql -t
 experiment/resources/schemas/dbscripts/postgresql/obsolete/exp-9.30-9.31.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/exp_drop.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/findOrphans.sql -text
-experiment/resources/schemas/dbscripts/sqlserver/exp-0.00-11.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-0.00-11.30.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-11.30-12.10.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-12.10-12.20.sql -text
@@ -1095,6 +1094,7 @@ experiment/resources/schemas/dbscripts/sqlserver/obsolete/exp-0.00-1.40.sql -tex
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/exp-0.00-10.10.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/exp-0.00-10.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/exp-0.00-10.30.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/obsolete/exp-0.00-11.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/exp-0.00-2.00.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/exp-0.00-2.30.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/exp-0.00-8.20.sql -text
