@@ -206,7 +206,16 @@ function onSaveFailure_formSubmit(form, action)
             Ext4.Msg.alert('Failure', 'Ajax communication failed');
             break;
         case Ext4.form.Action.SERVER_INVALID:
-            Ext4.Msg.alert('Failure', action.result.msg);
+        {
+            var msg = action.result.msg || action.result.exception || "";
+            if (action.result.errors)
+            {
+                for (var prop in action.result.errors)
+                    msg += action.result.errors[prop] + "<br/>";
+            }
+
+            Ext4.Msg.show({title: 'Failure', msg: msg, buttons: Ext4.Msg.OK, icon: Ext4.Msg.ERROR});
+        }
     }
 }
 

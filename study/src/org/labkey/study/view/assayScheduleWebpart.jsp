@@ -85,75 +85,86 @@
 <%
     if (study != null)
     {
+        List<AssaySpecimenConfigImpl> assaySpecimenConfigs = study.getAssaySpecimenConfigs();
         List<VisitImpl> visits = StudyManager.getInstance().getVisitsForAssaySchedule(c);
+
+        if (assaySpecimenConfigs.size() == 0)
+        {
 %>
-    <table class="labkey-read-only labkey-data-region labkey-show-borders study-vaccine-design" style="border: solid #ddd 1px;">
-        <tr>
-            <td class="labkey-col-header">Assay</td>
-            <td class="labkey-col-header">Lab</td>
-            <td class="labkey-col-header">Sample Type</td>
+            <p>No assays have been scheduled.</p>
 <%
-    for (VisitImpl visit : visits)
-    {
+        }
+        else
+        {
 %>
-            <td class="labkey-col-header">
-                <%=h(visit.getDisplayString())%>
-                <%=(visit.getDescription() != null ? PageFlowUtil.helpPopup("Description", visit.getDescription()) : "")%>
-            </td>
+            <table class="labkey-read-only labkey-data-region labkey-show-borders study-vaccine-design" style="border: solid #ddd 1px;">
+                <tr>
+                    <td class="labkey-col-header">Assay</td>
+                    <td class="labkey-col-header">Lab</td>
+                    <td class="labkey-col-header">Sample Type</td>
+<%
+            for (VisitImpl visit : visits)
+            {
+%>
+                    <td class="labkey-col-header">
+                        <%=h(visit.getDisplayString())%>
+                        <%=(visit.getDescription() != null ? PageFlowUtil.helpPopup("Description", visit.getDescription()) : "")%>
+                    </td>
 <%
     }
 %>
-        </tr>
+                </tr>
 <%
-        for (AssaySpecimenConfigImpl assaySpecimen : study.getAssaySpecimenConfigs())
-        {
-            // concatenate sample type (i.e. primary, derivative, tube type)
-            String sampleType = "";
-            String sep = "";
-            if (assaySpecimen.getPrimaryTypeId() != null)
+            for (AssaySpecimenConfigImpl assaySpecimen : assaySpecimenConfigs)
             {
-                PrimaryType pt = SampleManager.getInstance().getPrimaryType(c, assaySpecimen.getPrimaryTypeId());
-                sampleType += (pt != null ? pt.getPrimaryType() : assaySpecimen.getPrimaryTypeId());
-                sep = " / ";
-            }
-            if (assaySpecimen.getDerivativeTypeId() != null)
-            {
-                DerivativeType dt = SampleManager.getInstance().getDerivativeType(c, assaySpecimen.getDerivativeTypeId());
-                sampleType += sep + (dt != null ? dt.getDerivative() : assaySpecimen.getDerivativeTypeId());
-                sep = " / ";
-            }
-            if (assaySpecimen.getTubeType() != null)
-            {
-                sampleType += sep + assaySpecimen.getTubeType();
-            }
+                // concatenate sample type (i.e. primary, derivative, tube type)
+                String sampleType = "";
+                String sep = "";
+                if (assaySpecimen.getPrimaryTypeId() != null)
+                {
+                    PrimaryType pt = SampleManager.getInstance().getPrimaryType(c, assaySpecimen.getPrimaryTypeId());
+                    sampleType += (pt != null ? pt.getPrimaryType() : assaySpecimen.getPrimaryTypeId());
+                    sep = " / ";
+                }
+                if (assaySpecimen.getDerivativeTypeId() != null)
+                {
+                    DerivativeType dt = SampleManager.getInstance().getDerivativeType(c, assaySpecimen.getDerivativeTypeId());
+                    sampleType += sep + (dt != null ? dt.getDerivative() : assaySpecimen.getDerivativeTypeId());
+                    sep = " / ";
+                }
+                if (assaySpecimen.getTubeType() != null)
+                {
+                    sampleType += sep + assaySpecimen.getTubeType();
+                }
 
-            String locationLabel = "";
-            if (assaySpecimen.getLocationId() != null)
-            {
-                LocationImpl location = StudyManager.getInstance().getLocation(c, assaySpecimen.getLocationId());
-                locationLabel = location != null ? location.getLabel() : "";
-            }
+                String locationLabel = "";
+                if (assaySpecimen.getLocationId() != null)
+                {
+                    LocationImpl location = StudyManager.getInstance().getLocation(c, assaySpecimen.getLocationId());
+                    locationLabel = location != null ? location.getLabel() : "";
+                }
 
 %>
-            <tr>
-                <td class="assay-row-padded-view"><%=h(assaySpecimen.getAssayName())%>
-                    <%=(assaySpecimen.getDescription() != null ? PageFlowUtil.helpPopup("Description", assaySpecimen.getDescription()) : "")%>
-                </td>
-                <td class="assay-row-padded-view"><%=h(locationLabel)%></td>
-                <td class="assay-row-padded-view"><%=h(sampleType)%></td>
+                <tr>
+                    <td class="assay-row-padded-view"><%=h(assaySpecimen.getAssayName())%>
+                        <%=(assaySpecimen.getDescription() != null ? PageFlowUtil.helpPopup("Description", assaySpecimen.getDescription()) : "")%>
+                    </td>
+                    <td class="assay-row-padded-view"><%=h(locationLabel)%></td>
+                    <td class="assay-row-padded-view"><%=h(sampleType)%></td>
 <%
-            List<Integer> assaySpecimenVisits = StudyManager.getInstance().getAssaySpecimenVisitIds(c, assaySpecimen);
-            for (VisitImpl visit : visits)
-            {
-                %><td class="assay-row-padded-view" align="center"><%=h(assaySpecimenVisits.contains(visit.getRowId()) ? "[x]" : " ")%></td><%
+                List<Integer> assaySpecimenVisits = StudyManager.getInstance().getAssaySpecimenVisitIds(c, assaySpecimen);
+                for (VisitImpl visit : visits)
+                {
+                    %><td class="assay-row-padded-view" align="center"><%=h(assaySpecimenVisits.contains(visit.getRowId()) ? "[x]" : " ")%></td><%
+                }
+%>
+                </tr>
+<%
             }
 %>
-            </tr>
+            </table>
 <%
         }
-%>
-    </table>
-<%
     }
     else
     {
