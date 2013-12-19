@@ -122,6 +122,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.savedChartInfo = Ext4.encode(this.chartInfo);
         }
 
+        var params = LABKEY.ActionURL.getParameters();
+        this.useRaphael = params.useRaphael != null ? params.useRaphael : false;
+
         // hold on to the x and y axis measure index
         var xAxisIndex = LABKEY.vis.TimeChartHelper.getAxisIndex(this.chartInfo.axis, "x-axis");
         var leftAxisIndex = LABKEY.vis.TimeChartHelper.getAxisIndex(this.chartInfo.axis, "y-axis", "left");
@@ -1179,6 +1182,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             height: chartHeight - 20, // -20 prevents vertical scrollbars in cases with one chart.
             data: individualData ? individualData : aggregateData
         };
+
+        if(this.supportedBrowser && !this.useRaphael) {
+            plotConfig.rendererType = 'd3';
+        }
 
         var plot = new LABKEY.vis.Plot(plotConfig);
         plot.render();

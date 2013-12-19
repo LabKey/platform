@@ -98,6 +98,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.editMode = (LABKEY.ActionURL.getParameter("edit") == "true" || !this.reportId) && this.allowEditMode;
 
+        var params = LABKEY.ActionURL.getParameters();
+        this.useRaphael = params.useRaphael != null ? params.useRaphael : false;
+
         var typeConvert = function(value, record){
             // We take the displayFieldJSONType if available because if the column is a look up the record.type will
             // always be INT. The displayFieldJSONType is the actual type of the lookup.
@@ -1748,6 +1751,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 layers: layers,
                 data: this.chartData.rows
             };
+        }
+
+        if(this.supportedBrowser && !this.useRaphael) {
+            plotConfig.rendererType = 'd3';
         }
 
         var plot = new LABKEY.vis.Plot(plotConfig);
