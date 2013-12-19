@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
@@ -59,7 +60,7 @@ import java.util.Set;
  * User: jeckels
  * Date: May 7, 2009
  *
- * If you touch this file, run FlowSpecimenTest and TargetStudyTest
+ * If you touch this file, run AssayTest, FlowSpecimenTest, and TargetStudyTest
  */
 public class SpecimenForeignKey extends LookupForeignKey
 {
@@ -154,6 +155,10 @@ public class SpecimenForeignKey extends LookupForeignKey
             _assayDataTable = assaySchema.createDataTable();
         }
 
+        // set container filter BEFORE we call getColumns(), it affects the filters on the join tables
+        // TODO could the caller pass in the container filter at construction time, or is that too early?
+        ((ContainerFilterable)_assayDataTable).setContainerFilter(ContainerFilter.EVERYTHING);
+
         FieldKey specimenFK = _tableMetadata.getSpecimenIDFieldKey();
         FieldKey targetStudyFK = _tableMetadata.getTargetStudyFieldKey();
         FieldKey participantFK = _tableMetadata.getParticipantIDFieldKey();
@@ -187,6 +192,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         HashSet<FieldKey> ret = new HashSet<>();
         for (String name : _assayDataTable.getPkColumnNames())
             ret.add(new FieldKey(null,name));
+        ret.add(new FieldKey(null,"Container"));
         Set<FieldKey> superColumns = super.getSuggestedColumns();
         if (null != superColumns)
             ret.addAll(superColumns);
@@ -329,6 +335,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             sql.append(" LEFT OUTER JOIN (");
 
             // Select all the assay-side specimen columns that we'll need to do the comparison
+            ((ContainerFilterable)_assayDataTable).setContainerFilter(foreignKey.getParentTable().getContainerFilter());
             SQLFragment targetStudySQL = QueryService.get().getSelectSQL(_assayDataTable, _assayColumns.values(), null, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
             sql.append(targetStudySQL);
 
@@ -686,9 +693,9 @@ public class SpecimenForeignKey extends LookupForeignKey
             Set<String> filterIds = null;
             if (null != _studyContainerFilter)
             {
-                Collection<String> ids = ((StudyContainerFilter)_studyContainerFilter).getIds(_schema.getContainer());
-                if (null != ids)
-                    filterIds = new HashSet<>(ids);
+                Collection<String> studyContainerFilterIds = ((StudyContainerFilter)_studyContainerFilter).getIds(_schema.getContainer());
+                if (null != studyContainerFilterIds)
+                    filterIds = new HashSet<>(studyContainerFilterIds);
             }
 
             ArrayList<String> ids = new SqlSelector(s,sqlf).getArrayList(String.class);
