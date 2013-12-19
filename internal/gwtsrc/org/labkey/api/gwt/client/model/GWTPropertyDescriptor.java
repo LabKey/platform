@@ -23,6 +23,7 @@ import org.labkey.api.gwt.client.util.IPropertyWrapper;
 import org.labkey.api.gwt.client.util.IntegerProperty;
 import org.labkey.api.gwt.client.util.StringProperty;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -502,7 +503,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (isShownInUpdateView() != that.isShownInUpdateView()) return false;
         if (isMeasure() != that.isMeasure()) return false;
         if (isDimension() != that.isDimension()) return false;
-        if (!getFacetingBehaviorType().equals(that.getFacetingBehaviorType())) return false;
+        if (!StringUtils.equals(getFacetingBehaviorType(), that.getFacetingBehaviorType())) return false;
         if (isProtected() != that.isProtected()) return false;
         if (isExcludeFromShifting() != that.isExcludeFromShifting()) return false;
 
