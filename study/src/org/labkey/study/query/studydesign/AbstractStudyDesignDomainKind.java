@@ -133,20 +133,18 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
         return new SQLFragment("NULL");
     }
 
-    protected static Container getDomainContainer()
+    protected static Container getDomainContainer(Container c)
     {
-        return ContainerManager.getSharedContainer();
+        // for now create the domains per folder, override to root the domains at
+        // a higher level
+        return c;
+        //return ContainerManager.getSharedContainer();
     }
 
     @Override
     public String generateDomainURI(String schemaName, String tableName, Container c, User u)
     {
-        return getDomainURI(schemaName, tableName, getNamespacePrefix(), getDomainContainer(), u);
-    }
-
-    public String getDomainURI()
-    {
-        return getDomainURI(AbstractAuditTypeProvider.SCHEMA_NAME, getTableName(), getNamespacePrefix(), getDomainContainer(), null);
+        return getDomainURI(schemaName, tableName, getNamespacePrefix(), getDomainContainer(c), u);
     }
 
     public static String getDomainURI(String schemaName, String tableName, String namespacePrefix, Container c, User u)
@@ -164,11 +162,6 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
         {
             return null;
         }
-    }
-
-    private String generatePropertyURI(String propertyName)
-    {
-        return getDomainURI() + "#" + propertyName;
     }
 
     @Override
@@ -232,30 +225,6 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
         Lsid lsid = new Lsid(domainURI);
 
         return lsid.getNamespacePrefix() != null && lsid.getNamespacePrefix().startsWith(getNamespacePrefix()) ? Handler.Priority.MEDIUM : null;
-    }
-
-    protected PropertyDescriptor createPropertyDescriptor(@NotNull String name, @NotNull PropertyType type)
-    {
-        return createPropertyDescriptor(name, type, null, null, false);
-    }
-
-    protected PropertyDescriptor createPropertyDescriptor(
-            @NotNull String name, @NotNull PropertyType type,
-            @Nullable String caption, @Nullable String description,
-            boolean required)
-    {
-        Container domainContainer = getDomainContainer();
-
-        String propertyURI = generatePropertyURI(name);
-
-        PropertyDescriptor pd = new PropertyDescriptor(propertyURI, type.getTypeUri(), name, domainContainer);
-        if (caption != null)
-            pd.setLabel(caption);
-        if (description != null)
-            pd.setDescription(description);
-        pd.setRequired(required);
-
-        return pd;
     }
 
     @Override
