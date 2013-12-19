@@ -482,7 +482,7 @@ public class IssuesController extends SpringActionController
 
             if (_issue.getAssignedTo() != null)
             {
-                User user = UserManager.getUser(_issue.getAssignedTo().intValue());
+                User user = UserManager.getUser(_issue.getAssignedTo());
 
                 if (user != null)
                 {
@@ -641,7 +641,7 @@ public class IssuesController extends SpringActionController
 
             // clear resolution, resolvedBy, and duplicate fields
             if (ReopenAction.class.equals(form.getAction()))
-                issue.beforeReOpen();
+                issue.beforeReOpen(getContainer());
 
             Issue duplicateOf = null;
             if (ResolveAction.class.equals(form.getAction()) &&
@@ -649,7 +649,7 @@ public class IssuesController extends SpringActionController
                     issue.getDuplicate() != null &&
                     !issue.getDuplicate().equals(prevIssue.getDuplicate()))
             {
-                if (issue.getDuplicate().intValue() == issue.getIssueId())
+                if (issue.getDuplicate() == issue.getIssueId())
                 {
                     errors.rejectValue("Duplicate", ERROR_MSG, "An issue may not be a duplicate of itself");
                     return false;
@@ -889,7 +889,7 @@ public class IssuesController extends SpringActionController
             User user = getUser();
             requiresUpdatePermission(user, _issue);
 
-            _issue.beforeResolve(user);
+            _issue.beforeResolve(getContainer(), user);
 
             if (_issue.getResolution() == null || _issue.getResolution().isEmpty())
             {
@@ -992,7 +992,7 @@ public class IssuesController extends SpringActionController
             User user = getUser();
             requiresUpdatePermission(user, _issue);
 
-            _issue.beforeReOpen(true);
+            _issue.beforeReOpen(getContainer(), true);
             _issue.open(getContainer(), user);
 
             IssuePage page = new IssuePage(getContainer(), user);

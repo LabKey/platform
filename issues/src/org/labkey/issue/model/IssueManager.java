@@ -499,12 +499,12 @@ public class IssueManager
     {
         Collection<User> initialAssignedTo = getInitialAssignedToList(c);
 
-        // If this is an existing issue, add the user who opened the issue, unless they are a guest, inactive, or already in the list.
+        // If this is an existing issue, add the user who opened the issue, unless they are a guest, inactive, already in the list, or don't have permissions.
         if (issue != null && 0 != issue.getIssueId())
         {
             User createdByUser = UserManager.getUser(issue.getCreatedBy());
 
-            if (createdByUser != null && !createdByUser.isGuest() && createdByUser.isActive() && !initialAssignedTo.contains(createdByUser))
+            if (createdByUser != null && !createdByUser.isGuest() && !initialAssignedTo.contains(createdByUser) && canAssignTo(c, createdByUser))
             {
                 Set<User> modifiedAssignedTo = new TreeSet<>(USER_COMPARATOR);
                 modifiedAssignedTo.addAll(initialAssignedTo);
@@ -529,35 +529,12 @@ public class IssueManager
             @Override
             public Set<User> load(String key, @Nullable Object argument)
             {
-                Set<User> initialAssignedTo = new TreeSet<>(USER_COMPARATOR);
                 Group group = getAssignedToGroup(c);
 
                 if (null != group)
-                {
-                    Set<User> groupMembers = SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS);
-                    if (!groupMembers.isEmpty())
-                        initialAssignedTo.addAll(groupMembers);
-                }
+                    return createAssignedToList(c, SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_USERS));
                 else
-                {
-                    List<User> projectUsers = SecurityManager.getProjectUsers(c.getProject());
-                    if (!projectUsers.isEmpty())
-                        initialAssignedTo.addAll(projectUsers);
-                }
-
-                Iterator it = initialAssignedTo.iterator();
-
-                while (it.hasNext())
-                {
-                    User user = (User)it.next();
-                    if (!user.isActive())
-                    {
-                        it.remove();
-                    }
-                }
-
-                // Cache an unmodifiable version
-                return Collections.unmodifiableSet(initialAssignedTo);
+                    return createAssignedToList(c, SecurityManager.getProjectUsers(c.getProject()));
             }
         });
     }
@@ -568,6 +545,40 @@ public class IssueManager
         String key = "AssignedTo";
         return null != c ? key + c.getId() : key;
     }
+
+
+    private static Set<User> createAssignedToList(Container c, Collection<User> candidates)
+    {
+        Set<User> assignedTo = new TreeSet<>(USER_COMPARATOR);
+
+        for (User candidate : candidates)
+            if (canAssignTo(c, candidate))
+                assignedTo.add(candidate);
+
+        // Cache an unmodifiable version
+        return Collections.unmodifiableSet(assignedTo);
+    }
+
+
+    private static boolean canAssignTo(Container c, @NotNull User user)
+    {
+        return user.isActive() && c.hasPermission(user, ReadPermission.class);  // TODO: Check for UpdatePermission instead?
+    }
+
+
+    static @Nullable Integer validateAssignedTo(Container c, Integer candidate)
+    {
+        if (null != candidate)
+        {
+            User user = UserManager.getUser(candidate);
+
+            if (null != user && canAssignTo(c, user))
+                return candidate;
+        }
+
+        return null;
+    }
+
 
     public static int getUserEmailPreferences(Container c, int userId)
     {
@@ -640,7 +651,7 @@ public class IssueManager
         if (null == groupId)
             return null;
 
-        return SecurityManager.getGroup(Integer.valueOf(groupId).intValue());
+        return SecurityManager.getGroup(Integer.valueOf(groupId));
     }
 
     public static void saveAssignedToGroup(Container c, @Nullable Group group)

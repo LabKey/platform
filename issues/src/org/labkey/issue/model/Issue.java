@@ -100,9 +100,9 @@ public class Issue extends Entity implements Serializable, Cloneable
         status = statusOPEN;
     }
 
-    public void beforeReOpen()
+    public void beforeReOpen(Container c)
     {
-        beforeReOpen(false);
+        beforeReOpen(c, false);
     }
 
     /**
@@ -111,26 +111,26 @@ public class Issue extends Entity implements Serializable, Cloneable
      * and once during handlePost. If we change assignedTo during handlePost then we overwrite the user's choice,
      * beforeView prevents that from happening.
      */
-    public void beforeReOpen(boolean beforeView)
+    public void beforeReOpen(Container c, boolean beforeView)
     {
         resolution = null;
         resolved = null;
         duplicate = null;
 
         if (resolvedBy != null && beforeView)
-            assignedTo = resolvedBy;
+            assignedTo = IssueManager.validateAssignedTo(c, resolvedBy);
 
         resolvedBy = null;
     }
 
-    public void beforeResolve(User u)
+    public void beforeResolve(Container c, User u)
     {
         status = statusRESOLVED;
 
         resolvedBy = u.getUserId(); // Current user
         resolved = new Date();      // Current date
 
-        assignedTo = getCreatedBy();
+        assignedTo = IssueManager.validateAssignedTo(c, getCreatedBy());
         if (getTitle().startsWith("**"))
         {
             setTitle(getTitle().substring(2));
@@ -158,7 +158,7 @@ public class Issue extends Entity implements Serializable, Cloneable
         // UNDONE: assignedTo is not nullable in database
         // UNDONE: let application enforce non-null for open/resolved bugs
         // UNDONE: currently AssignedTo list defaults to Guest (user 0)
-        assignedTo = new Integer(0);
+        assignedTo = 0;
     }
 
 
@@ -205,7 +205,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public void setAssignedTo(Integer assignedTo)
     {
-        if (null != assignedTo && assignedTo.intValue() == 0) assignedTo = null;
+        if (null != assignedTo && assignedTo == 0) assignedTo = null;
         this.assignedTo = assignedTo;
     }
 
