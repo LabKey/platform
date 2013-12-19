@@ -5082,6 +5082,7 @@ public class StudyController extends BaseStudyController
                 String additionalKey = null;
                 DataSetDefinition.KeyManagementType keyManagementType = DataSet.KeyManagementType.None;
                 boolean isDemographicData = false;
+                List<ColumnInfo> columnsToProvision = new ArrayList<>();
 
                 if (datasetId != -1)
                 {
@@ -5091,6 +5092,15 @@ public class StudyController extends BaseStudyController
                         additionalKey = sourceDef.getKeyPropertyName();
                         keyManagementType = sourceDef.getKeyManagementType();
                         isDemographicData = sourceDef.isDemographicData();
+
+                        // make sure we provision any managed key fields
+                        if ((additionalKey != null) && (keyManagementType != DataSet.KeyManagementType.None))
+                        {
+                            TableInfo sourceTable = sourceDef.getTableInfo(getUser());
+                            ColumnInfo col = sourceTable.getColumn(FieldKey.fromParts(additionalKey));
+                            if (col != null)
+                                columnsToProvision.add(col);
+                        }
                     }
                 }
                 DataSetDefinition def = AssayPublishManager.getInstance().createAssayDataset(getUser(),
@@ -5110,17 +5120,20 @@ public class StudyController extends BaseStudyController
                     // NOTE getDisplayColumns() indirectly causes a query of the datasets,
                     // Do this before provisionTable() so we don't query the dataset we are about to create
                     // causes a problem on postgres (bug 11153)
-                    List<DisplayColumn> displayColumns = QuerySnapshotService.get(form.getSchemaName()).getDisplayColumns(form, errors);
+                    for (DisplayColumn dc : QuerySnapshotService.get(form.getSchemaName()).getDisplayColumns(form, errors))
+                    {
+                        ColumnInfo col = dc.getColumnInfo();
+                        if (col != null && !DataSetDefinition.isDefaultFieldName(col.getName(), study))
+                            columnsToProvision.add(col);
+                    }
 
                     // def may not be provisioned yet, create before we start adding properties
                     def.provisionTable();
                     Domain d = def.getDomain();
 
-                    for (DisplayColumn dc : displayColumns)
+                    for (ColumnInfo col : columnsToProvision)
                     {
-                        ColumnInfo col = dc.getColumnInfo();
-                        if (col != null && !DataSetDefinition.isDefaultFieldName(col.getName(), study))
-                            DatasetSnapshotProvider.addAsDomainProperty(d, col);
+                        DatasetSnapshotProvider.addAsDomainProperty(d, col);
                     }
                     d.save(getUser());
                     //def.saveDomain(d, getUser());
