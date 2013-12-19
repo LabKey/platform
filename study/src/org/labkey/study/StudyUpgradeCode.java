@@ -371,8 +371,6 @@ public class StudyUpgradeCode implements UpgradeCode
     private static final String DATE_FORMAT_STRING = "DateFormatString";
     private static final String NUMBER_FORMAT_STRING = "NumberFormatString";
 
-    // TODO: This should work but is not yet invoked... need to add a 13.3x study script that calls it once specimen provisioning branch is merged into trunk
-    // Move the "default study format strings" to project/folder-level look & feel settings
     @SuppressWarnings({"UnusedDeclaration"})
     @DeferredUpgrade
     public void moveDefaultFormatProperties(final ModuleContext context)
@@ -391,12 +389,26 @@ public class StudyUpgradeCode implements UpgradeCode
                     String dateFormat = props.get(DATE_FORMAT_STRING);
 
                     if (null != dateFormat)
-                        WriteableLookAndFeelProperties.saveDefaultDateFormat(c, dateFormat);
+                        try
+                        {
+                            WriteableLookAndFeelProperties.saveDefaultDateFormat(c, dateFormat);
+                        }
+                        catch (IllegalArgumentException e)
+                        {
+                            _log.error("Study date format " + dateFormat + " in " + c.getPath() + " will not be migrated to new folder date format: " + e.getMessage());
+                        }
 
                     String numberFormat = props.get(NUMBER_FORMAT_STRING);
 
                     if (null != numberFormat)
-                        WriteableLookAndFeelProperties.saveDefaultNumberFormat(c, numberFormat);
+                        try
+                        {
+                            WriteableLookAndFeelProperties.saveDefaultNumberFormat(c, numberFormat);
+                        }
+                        catch (IllegalArgumentException e)
+                        {
+                            _log.error("Study number format " + numberFormat + " in " + c.getPath() + " will not be migrated to new folder number format: " + e.getMessage());
+                        }
 
                     // Now delete the old property set
                     PropertyManager.getNormalStore().deletePropertySet(c, STUDY_FORMAT_STRINGS);
