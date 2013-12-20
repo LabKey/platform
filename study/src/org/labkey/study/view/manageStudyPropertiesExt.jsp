@@ -380,7 +380,7 @@ function renderFormPanel(data, editable){
         ParticipantAliasDatasetId: true,
         ParticipantAliasSourceProperty: true,
         ParticipantAliasProperty: true,
-
+        AssayPlan: true,
         DescriptionRendererType: true,
 
         TimepointType: true,

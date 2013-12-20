@@ -31,6 +31,7 @@
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
       resources.add(ClientDependency.fromFilePath("Ext4ClientApi"));
+      resources.add(ClientDependency.fromFilePath("dataview/DataViewsPanel.css"));
       return resources;
   }
 %>
@@ -54,13 +55,25 @@
    {
        background-color: #EEEEEE;
    }
+
+   .x4-panel-header-default
+   {
+       background-color: transparent;
+       background-image: none !important;
+       border: none;
+   }
+   .x4-panel-header-text-container-default
+   {
+       font-size: 15px;
+       color: black;
+   }
 </style>
 
 <script type="text/javascript">
 (function()
 {
     var X = Ext4;
-    var _gridSC, _storeSC, _panelSV,  _storeSV, _storeV;
+    var _gridSC, _storeSC, _panelSV,  _storeSV, _storeV, _panelAP;
     var _configVisitMap = {};
 
     X.onReady(function(){
@@ -102,24 +115,32 @@
         title: 'Assay/Specimen Configurations',
         editable: true,
         emptyText: 'No assay/specimen configurations',
-        tbar: [
+        dockedItems: [{
+            xtype: 'toolbar',
+            dock: 'top',
+            border: false,
+            items: [
             {
-            text: 'Insert New',
-            handler : function(){ showUpdateConfigurationDialog(); }
+                text: 'Insert New',
+                handler : function(){ showUpdateConfigurationDialog(); }
             },
             {
-            itemId: 'removeAssaySpecimen',
-            text: 'Delete',
-            handler: function()
+                itemId: 'removeAssaySpecimen',
+                text: 'Delete',
+                handler: function()
                 {
-                    Ext4.Msg.confirm("Confirm Deletion",
-                            "Are you sure you want to delete the selected assay/specimen configuration and all of its related <%=h(visitDisplayName.toLowerCase())%> mapping information?",
-                            function(button){
+                    X.Msg.show({
+                        cls: 'data-window',
+                        title: "Confirm Deletion",
+                        msg: "Are you sure you want to delete the selected assay/specimen configuration and all of its related <%=h(visitDisplayName.toLowerCase())%> mapping information?",
+                        icon: X.Msg.QUESTION,
+                        buttons: X.Msg.YESNO,
+                        fn: function(button){
                                 if (button === 'yes') {
                                     removeAssaySpecimen();
                                 }
                             }
-                    );
+                    });
 
                     function removeAssaySpecimen()
                     {
@@ -134,7 +155,7 @@
                             if (_configVisitMap[scRowId])
                             {
                                 var rowsToDelete = [];
-                                Ext4.each(_configVisitMap[scRowId], function(visit){
+                                X.each(_configVisitMap[scRowId], function(visit){
                                     rowsToDelete.push({RowId:visit.rowId, container:LABKEY.container.id});
                                 });
 
@@ -158,8 +179,8 @@
                     }
                 },
                 disabled: true
-            }
-        ],
+            }]
+        }],
         listeners:
         {
             'selectionchange': function(view, records)
@@ -171,7 +192,7 @@
 
     _gridSC.on("columnmodelcustomize", function(grid, columnModel)
     {
-        Ext4.each(columnModel, function(column){
+        X.each(columnModel, function(column){
             if (column.dataIndex.toLowerCase() == "rowid")
                 column.hidden = true;
         });
@@ -185,15 +206,67 @@
         renderTo : 'AssaySpecimenVisitPanel',
         title : 'Assay/Specimen <%=h(visitDisplayName)%> Mapping',
         bodyCls: "x-panel",
-        bodyStyle: "background-color: transparent;",
-        hidden: true
+        bodyStyle: "background-color: transparent;"
+    });
+
+    // query the StudyProperties table for the initial assay plan value
+    LABKEY.Query.selectRows({
+        schemaName: 'study',
+        queryName: 'StudyProperties',
+        columns: 'AssayPlan',
+        success: function(data) {
+            if (data.rows.length == 1)
+                createAssayPlanPanel(data.rows[0]["AssayPlan"]);
+        }
     });
 });
+
+function createAssayPlanPanel(value)
+{
+    _panelAP = X.create('Ext.form.Panel', {
+        renderTo : 'AssayPlanPanel',
+        title : 'Assay Plan',
+        bodyStyle: "background-color: transparent; padding-top: 5px;",
+        width: 500,
+        border: false,
+        items: [{
+            xtype: 'textarea',
+            name: 'AssayPlan',
+            value: value,
+            width: 500,
+            height: 100,
+            listeners: {
+                change: function() {
+                    _panelAP.down('.button').enable();
+                }
+            }
+        }],
+        dockedItems: [{
+            xtype: 'toolbar',
+            dock: 'bottom',
+            ui: 'footer',
+            style : 'background-color: transparent;',
+            items: [{
+                xtype: 'button',
+                text: 'Save',
+                disabled: true,
+                handler: function() {
+                    var form = _panelAP.getForm();
+                    form.submit({
+                        url     : LABKEY.ActionURL.buildURL('study', 'manageStudyProperties.view'),
+                        success : function(response) { window.location.reload(); },
+                        failure : function(response) { console.log(arguments); }
+                    });
+                }
+            }]
+        }]
+    });
+}
 
 function showUpdateConfigurationDialog(grid, record, item, index)
 {
     var formItems = [];
-    Ext4.each(_gridSC.columns, function(column){
+    X.each(_gridSC.columns, function(column){
         var formItem;
         if (column.editor)
         {
@@ -206,7 +279,8 @@ function showUpdateConfigurationDialog(grid, record, item, index)
         }
     });
 
-    var win = Ext4.create('Ext.window.Window', {
+    var win = X.create('Ext.window.Window', {
+        cls: 'data-window',
         border: false,
         modal: true,
         bodyStyle: 'padding: 5px;',
@@ -228,7 +302,7 @@ function showUpdateConfigurationDialog(grid, record, item, index)
                 var values = win.down('#recordWindowFormPanel').getForm().getValues();
                 if (record)
                 {
-                    Ext4.each(values, function(val) {
+                    X.each(values, function(val) {
                         record.set(val, values[val]);
                     });
                     commands.push({
@@ -303,7 +377,7 @@ function _renderVisitGrid()
 
     var html = [];
 
-    html.push("<table class=\"x4-grid-table rotated_table\">");
+    html.push("<table id='assaySpecimenVisitMappingTable' class='x4-grid-table rotated_table'>");
     html.push("<tr><td>&nbsp;</td><td>&nbsp;</td>");
 
     var maxChars = 10;
@@ -365,8 +439,7 @@ function _renderVisitGrid()
     {
         _panelSV.show();
         _panelSV.body.update(html.join(''));
-        _panelSV.setHeight(height + 75*rowcount);
-        _panelSV.doLayout();
+        _panelSV.setHeight(X.get('assaySpecimenVisitMappingTable').getHeight() + 30);
 
         // add handlers
         var nodes = X.dom.Query.select("input.scvCheckbox", _panelSV.body.dom);
@@ -456,6 +529,8 @@ function removeSVC(el, scRowId, vRowId)
 
 <div id="AssaySpecimenConfigGrid"></div>
 <span style='font-style: italic; font-size: smaller;'>* Double click to edit an assay/specimen configuration</span>
-<p>&nbsp;</p>
+<br/><br/><br/>
 <div id="AssaySpecimenVisitPanel"></div>
 <%=textLink("Manage " + visitDisplayName + "s", StudyController.ManageVisitsAction.class)%>
+<br/><br/><br/>
+<div id="AssayPlanPanel"></div>

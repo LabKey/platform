@@ -37,6 +37,10 @@
     User user = me.getViewContext().getUser();
     boolean canManageStudy  = c.hasPermission(user, ManageStudyPermission.class);
 
+    String assayPlan = "";
+    if (study != null && study.getAssayPlan() != null)
+        assayPlan = h(study.getAssayPlan()).replaceAll("\n", "<br/>");
+
     WebTheme theme = WebThemeManager.getTheme(c);
     String link        = theme.getLinkColor();
     String grid        = theme.getGridColor();
@@ -87,6 +91,10 @@
     {
         List<AssaySpecimenConfigImpl> assaySpecimenConfigs = study.getAssaySpecimenConfigs();
         List<VisitImpl> visits = StudyManager.getInstance().getVisitsForAssaySchedule(c);
+
+%>
+        <p><%=assayPlan%></p>
+<%
 
         if (assaySpecimenConfigs.size() == 0)
         {
