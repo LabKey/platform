@@ -341,11 +341,12 @@ public class ViewServlet extends HttpServlet
             // recover from duplicated controller (e.g. /project/home/announcements-begin.view)
             if (null != url.getController() && path.size() > 0 && null != ModuleLoader.getInstance().getModuleForController(path.get(0).toLowerCase()))
             {
-                Path shortened = path.subpath(1,path.size());
-                c = ContainerManager.getForPath(shortened);
-                if (null != c)
+                String controllerPart = path.get(0);
+                Path pathPart = path.subpath(1,path.size());
+                c = ContainerManager.getForPath(pathPart);
+                if (null != c && ("GET".equals(request.getMethod()) || controllerPart.equalsIgnoreCase(url.getController())))
                 {
-                    path = shortened;
+                    path = pathPart;
                     url.setPath(path);
                     if ("GET".equals(request.getMethod()))
                         throw new RedirectException(url.getLocalURIString());
