@@ -123,6 +123,13 @@ public class Issue extends Entity implements Serializable, Cloneable
         resolvedBy = null;
     }
 
+    public void beforeUpdate(Container c)
+    {
+        // Make sure assigned to user still has permission
+        assignedTo = IssueManager.validateAssignedTo(c, assignedTo);
+    }
+
+
     public void beforeResolve(Container c, User u)
     {
         status = statusRESOLVED;

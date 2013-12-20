@@ -814,6 +814,8 @@ public class IssuesController extends SpringActionController
             User user = getUser();
             requiresUpdatePermission(user, _issue);
 
+            _issue.beforeUpdate(getContainer());
+
             IssuePage page = new IssuePage(getContainer(), user);
             JspView v = new JspView<>("/org/labkey/issue/updateView.jsp", page);
 
