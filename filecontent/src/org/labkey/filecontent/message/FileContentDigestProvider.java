@@ -17,7 +17,6 @@ package org.labkey.filecontent.message;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.CompareType;
@@ -27,7 +26,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.files.FileContentDefaultEmailPref;
 import org.labkey.api.message.digest.MessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
@@ -35,7 +33,6 @@ import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
@@ -216,6 +213,8 @@ public class FileContentDigestProvider implements MessageDigest.Provider
                     EmailMessage msg = svc.createMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(),
                             new String[]{user.getEmail()}, subject);
 
+                    // TODO: This approach means normal context isn't set on the JSPs, e.g., getContainer() returns null.
+                    // Perhaps we should use a mock ViewContext, like we do with email notifications
                     msg.addContent(EmailMessage.contentType.HTML, request,
                             new JspView<>("/org/labkey/filecontent/view/fileDigestNotify.jsp", form));
                     msg.addContent(EmailMessage.contentType.PLAIN, request,

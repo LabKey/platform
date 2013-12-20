@@ -47,7 +47,7 @@
     </head>
     <body>
         <table width="100%">
-            <tr><td>Summary of notifications of files at <a href="<%=fileBrowser.getURIString()%>"><%=form.getContainer().getPath()%></a>.</td></tr>
+            <tr><td>Summary of notifications of files at <a href="<%=h(fileBrowser.getURIString())%>"><%=h(form.getContainer().getPath())%></a>.</td></tr>
         </table>
         <hr size="1"/>
         <br>
@@ -59,21 +59,22 @@
             {
                 Path path = record.getKey();
                 WebdavResource resource = WebdavService.get().getResolver().lookup(path);
-                
+
         %>
             <%  if (resource.exists()) { %>
-                <tr><td class="labkey-alternate-row" colspan="3"><%=resource.isCollection() ? "Folder: " : " File: "%><a href="<%=resource.getLocalHref(getViewContext())%>"><%=h(resource.getName())%></a></td></tr>
+                <tr><td class="labkey-alternate-row" colspan="3"><%=h(resource.isCollection() ? "Folder: " : " File: ")%><a href="<%=resource.getLocalHref(getViewContext())%>"><%=h(resource.getName())%></a></td></tr>
             <%  } else { %>
-                <tr><td class="labkey-alternate-row" colspan="3"><%=resource.isCollection() ? "Folder: " : " File: "%><span class="labkey-strong"><%=h(resource.getName())%></span></td></tr>
+                <tr><td class="labkey-alternate-row" colspan="3"><%=h(resource.isCollection() ? "Folder: " : " File: ")%><span class="labkey-strong"><%=h(resource.getName())%></span></td></tr>
             <%  }
 
                 int i=0;
                 for (AuditLogEvent event : record.getValue())
                 {
+                    // TODO: Just hard-code rowCls? It's always the same
                     String rowCls = (i % 2 == 0) ? "labkey-row" : "labkey-row";
                     User user = event.getCreatedBy();
             %>
-                    <tr class="<%=rowCls%>"><td><%=formatDateTime(event.getCreated())%></td><td><%=h(user.getDisplayName(user))%></td><td><%=event.getComment()%></td></tr>
+                    <tr class="<%=text(rowCls)%>"><td><%=h(DateUtil.formatDateTime(form.getContainer(), event.getCreated()))%></td><td><%=h(user.getDisplayName(user))%></td><td><%=h(event.getComment())%></td></tr>
             <%
                 }
             %>
@@ -90,8 +91,8 @@
                 {
                     case FileContentEmailPref.FOLDER_DEFAULT:
                     case FileContentEmailPref.INDIVIDUAL: %>
-                    you are signed up to receive notifications about updates to files at <a href="<%=fileBrowser.getURIString()%>"><%= PageFlowUtil.filter(form.getContainer().getPath()) %></a>.
-                    If you no longer wish to receive these notifications you can <a href="<%=emailPrefs.getURIString()%>">change your email preferences</a>. <%
+                    you are signed up to receive notifications about updates to files at <a href="<%=h(fileBrowser.getURIString())%>"><%= h(form.getContainer().getPath()) %></a>.
+                    If you no longer wish to receive these notifications you can <a href="<%=h(emailPrefs.getURIString())%>">change your email preferences</a>. <%
                     break;
                 } %>
             </td></tr>

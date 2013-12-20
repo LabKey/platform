@@ -17,30 +17,32 @@
 %>
 <%@ page import="org.labkey.api.audit.AuditLogEvent"%>
 <%@ page import="org.labkey.api.files.FileContentEmailPref" %>
+<%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.Path" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
+<%@ page import="org.labkey.api.webdav.WebdavService" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
-<%@ page import="org.labkey.api.util.Path" %>
-<%@ page import="org.labkey.api.webdav.WebdavService" %>
-<%@ page import="org.labkey.api.files.FileUrls" %>
+<%@ page import="org.labkey.filecontent.message.FileContentDigestProvider" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
 <%
-    org.labkey.filecontent.message.FileContentDigestProvider.FileDigestForm form = ((JspView<org.labkey.filecontent.message.FileContentDigestProvider.FileDigestForm>)HttpView.currentView()).getModelBean();
+    // Note: This is a plain text email, so we don't encode any content.
+
+    FileContentDigestProvider.FileDigestForm form = ((JspView<org.labkey.filecontent.message.FileContentDigestProvider.FileDigestForm>)HttpView.currentView()).getModelBean();
     int pref = FileContentEmailPref.FOLDER_DEFAULT;//NumberUtils.stringToInt(EmailService.get().getEmailPref(user, c, new FileContentEmailPref()), -1);
 
     ActionURL emailPrefs = PageFlowUtil.urlProvider(FileUrls.class).urlFileEmailPreference(form.getContainer());
-    ActionURL fileBrowser = PageFlowUtil.urlProvider(FileUrls.class).urlBegin(form.getContainer());
+//    ActionURL fileBrowser = PageFlowUtil.urlProvider(FileUrls.class).urlBegin(form.getContainer());
 %>
 
-Summary of notifications of files at <%=form.getContainer().getPath()%>.
+Summary of notifications of files at <%=text(form.getContainer().getPath())%>.
 
     <%
         for (Map.Entry<Path, List<AuditLogEvent>> record : form.getRecords().entrySet())
@@ -49,13 +51,13 @@ Summary of notifications of files at <%=form.getContainer().getPath()%>.
             WebdavResource resource = WebdavService.get().getResolver().lookup(path);
 
     %>
-        <%=resource.isCollection() ? "Folder: " : " File: "%><%=h(resource.getName())%>
+        <%=text(resource.isCollection() ? "Folder: " : " File: ")%><%=text(resource.getName())%>
         <%
             for (AuditLogEvent event : record.getValue())
             {
                 User user = event.getCreatedBy();
         %>
-                <%=DateUtil.formatDateTime(getContainer(), event.getCreated())%>, <%=user.getDisplayName(user)%>, <%=event.getComment()%>
+                <%=text(DateUtil.formatDateTime(form.getContainer(), event.getCreated()))%>, <%=text(user.getDisplayName(user))%>, <%=text(event.getComment())%>
         <%
             }
         %>
@@ -68,7 +70,7 @@ Summary of notifications of files at <%=form.getContainer().getPath()%>.
         {
             case FileContentEmailPref.FOLDER_DEFAULT:
             case FileContentEmailPref.INDIVIDUAL: %>
-            you are signed up to receive notifications about updates to files at <%=form.getContainer().getPath()%>.
-            If you no longer wish to receive these notifications you can change your email preferences here: <%=emailPrefs.getURIString()%>. <%
+            you are signed up to receive notifications about updates to files at <%=text(form.getContainer().getPath())%>.
+            If you no longer wish to receive these notifications you can change your email preferences here: <%=text(emailPrefs.getURIString())%>.<%
             break;
         } %>
