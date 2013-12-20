@@ -5,6 +5,7 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
     Container c =  HttpView.currentView().getViewContext().getContainer();
@@ -13,8 +14,6 @@
     String subjectNounColumnName = s.getSubjectColumnName();
 %>
 
-
-
 <div style="max-width: 1000px">
     <p>
         If a(n) <%= PageFlowUtil.filter(subjectNounSingular) %>  in your study has been loaded with an incorrect <%= PageFlowUtil.filter(subjectNounColumnName) %>,
@@ -22,54 +21,87 @@
         to an existing <%= PageFlowUtil.filter(subjectNounColumnName) %>, data will be merged into a single <%= PageFlowUtil.filter(subjectNounSingular) %>.
     </p>
 </div>
-<div id="mergeParticipantsPanel"></div>
-<div id="previewPanel"></div>
-
-
+<div id="mergeParticipantsPanel-div"></div>
+<div>
+    <p/>
+</div>
+<div id="mergeResults-div"></div>
+<div id="previewPanel-div" class="labkey-data-region-wrap"></div>
 <script type="text/javascript">
     (function(){
 
-        // All of the datasets that might need updating
-        var datasets;
+        // All of the "tables" that might need updating.  This includes datasets and the specimen table
+        var tables = {};
+        var datasetsToProcess;
+        var numDatasets;
+
+        var jsSubjectNounColumnName = '<%= PageFlowUtil.filter(subjectNounColumnName) %>';
+        var oldIdField;
+        var newIdField;
+
+        var mergeButton = {};
 
         var init = function()
         {
             Ext4.QuickTips.init();
 
-            // TODO: Config these fields so they're on one line, or use a different pattern
-            var oldIdField = Ext4.create('Ext.form.field.Text', {
-                fieldLabel: 'Change <%= PageFlowUtil.filter(subjectNounColumnName) %>',
+            // prepopulate the id fields if we are returning from a filtered data view
+            // currently this doesn't work
+            var params = LABKEY.ActionURL.getParameters();
+
+            oldIdField = Ext4.create('Ext.form.field.Text', {
+                id : 'oldIdField',
+                fieldLabel: 'Change ' + jsSubjectNounColumnName,
                 labelSeparator: '',
-                value:"",
-                width : 310,
-                labelWidth: 200,
+                value: params.oldId || "",
+//                width : 310,
+                labelWidth: 140,
                 maxLength: 20,
-                enforceMaxLength: true
+                enforceMaxLength: true,
+                listeners : {
+                    change : function() {resetPreview(true);}
+                }
             });
 
-            var newIdField = Ext4.create('Ext.form.field.Text', {
+            newIdField = Ext4.create('Ext.form.field.Text', {
+                id : 'newIdField',
                 fieldLabel: 'to',
                 labelSeparator: '',
-                value:"",
-                width : 220,
-                labelWidth: 130,
+                value: params.newId || "",
+//                width : 220,
+                labelWidth: 40,
                 maxLength: 20,
-                enforceMaxLength: true
+                enforceMaxLength: true,
+                listeners : {
+                    change : function() { resetPreview(true); }
+                }
+
+            });
+
+            mergeButton = Ext4.create('Ext.Button', {
+                xtype: 'button',
+                text: 'Merge',
+                disabled : true,
+                handler: function() {commitMerge(oldIdField.getValue(), newIdField.getValue());}
             });
 
             // TODO: var Create Alias checkbox, enabled conditional on Alias dataset being defined
-
-            var controls = [oldIdField, newIdField];
-
             var form = Ext4.create('Ext.form.FormPanel', {
-                renderTo: 'mergeParticipantsPanel',
+                renderTo: 'mergeParticipantsPanel-div',
                 bodyPadding: 10,
                 bodyStyle: 'background: none',
                 frame: false,
                 border: false,
                 width: 600,
                 buttonAlign : 'left',
-                items: controls,
+                items: [{
+                    xtype : 'fieldcontainer',
+                    layout : {
+                        type : 'hbox',
+                        defaultMargins : '2 25 2 0'
+                    },
+                    items : [oldIdField, newIdField]
+                }],
                 dockedItems: [{
                     xtype: 'toolbar',
                     dock: 'bottom',
@@ -80,15 +112,12 @@
                         xtype: 'button',
                         text: 'Preview',
                         handler: function() {previewMerge(oldIdField.getValue(), newIdField.getValue());}
-                    },{
-                    // TODO: Merge should be disabled until preview is performed and conflicts dealt with
-                        xtype: 'button',
-                        text: 'Merge',
-                        handler: function() {commitMerge(oldIdField.getValue(), newIdField.getValue());}
-                    },{
+                    },
+                    mergeButton,
+                    {
                         xtype: 'button',
                         text: 'Cancel',
-                        handler: function() {}
+                        handler: function() {window.history.back();}
                     }]
                 }]
             });
@@ -100,61 +129,385 @@
             columns: 'Name',
             success : function(details){
                 var rows = details.rows;
-                this.datasets = {};
+                this.tables = {};
+                this.numDatasets = rows.length;
                 for (var i = 0; i < rows.length; i++) {
                     var name = rows[i].Name;
-                    this.datasets[name] = { name: name };
+                    this.tables[name] = {
+                        name: name,
+                        htmlName: Ext4.util.Format.htmlEncode(name),
+                        datasetId : rows[i].DataSetId,
+                        oldIds : [],
+                        newIds : []
+                    };
                 }
+                // add in the specimen detail table for status reporting, note that it does not have a datasetId
+                // and that numDatasets does not include this
+                this.tables['SpecimenDetail'] = {
+                    name : 'SpecimenDetail',
+                    htmlName : 'SpecimenDetail',
+                    oldIds : [],
+                    newIds : [],
+                    isEditable : true}
             },
             scope : this
         });
 
+        var resetPreview = function(resetPreviewPanel)
+        {
+            mergeButton.setDisabled(true);
+            emptyPreviewTableStatus();
+            document.getElementById('mergeResults-div').innerHTML = "";
+            if (resetPreviewPanel) {
+                document.getElementById('previewPanel-div').innerHTML = "";
+            }
+        }
+
+        var emptyPreviewTableStatus = function() {
+            for (var tableName in this.tables) {
+                var table = this.tables[tableName];
+                table.oldIds = [];
+                table.newIds = [];
+                table.hasConflict = null;
+            }
+        }
+
+        // gather the ids for either a dataset or the specimen
+        // details table
+        var gatherIds = function(table, rows, oldId, newId){
+            var idColumn = table.datasetId ? 'lsid' : 'RowId';
+            for (var i = 0; i < rows.length; i++) {
+                // Figure out which participant the rows belong to
+                var row = rows[i];
+                if (row[jsSubjectNounColumnName] == oldId) {
+                    table.oldIds.push(row[idColumn]);
+                }
+                if (row[jsSubjectNounColumnName] == newId) {
+                    table.newIds.push(row[idColumn]);
+                }
+            }
+        }
+
         var previewMerge = function(oldId, newId) {
-
             var filters = [ LABKEY.Filter.create(<%= PageFlowUtil.jsString(subjectNounColumnName)%>, oldId + ';' + newId, LABKEY.Filter.Types.IN) ];
+            var jsSubjectNounColumnName = <%= PageFlowUtil.jsString(subjectNounColumnName)%>;
+            this.datasetsToProcess = this.numDatasets;
 
-            // Iterate on datasets.
-            for (var datasetName in this.datasets) {
+            // wipe away our status
+            resetPreview(false);
+            renderPreviewTable(oldId, newId);
+
+            // Iterate on datasets and skip the specimen detail table
+            for (var tableName in this.tables) {
+
+                if (!this.tables[tableName].datasetId)
+                    continue;
+
                 LABKEY.Query.selectRows( {
                     schemaName: 'study',
-                    queryName: datasetName,
+                    queryName: tableName,
                     scope: this,
+                    filterArray : filters,
+                    columns : jsSubjectNounColumnName + ', lsid',
                     success: function(data) {
-                        var oldLsids = [];
-                        var newLsids = [];
-                        for (var i = 0; i < data.rows.length; i++) {
-                            // Figure out which participant the rows belong to
-                            var row = data.rows[i];
-                            if (row[<%= PageFlowUtil.jsString(subjectNounColumnName)%>] == oldId) {
-                                oldLsids.push(row.lsid);
-                            }
-                            if (row[<%= PageFlowUtil.jsString(subjectNounColumnName)%>] == newId) {
-                                newLsids.push(row.lsid);
-                            }
+                        var table = this.tables[data.queryName];
+                        gatherIds(table, data.rows, oldId, newId);
+                        //
+                        // if table has both new and old ids, then make an update clause
+                        // and check to see if we have any conflict errors
+                        //
+                        if (table.oldIds.length > 0 && table.newIds.length > 0) {
+                            LABKEY.Query.saveRows({
+                                commands : [buildUpdateCommand(table, newId)],
+                                validateOnly : true,
+                                success : function(data) {
+                                    checkMoveToSpecimenDetail(table, false, oldId, newId, filters);
+                                },
+                                failure : function(errorInfo, response) {
+                                    checkMoveToSpecimenDetail(table, true, oldId, newId, filters);
+                                }
+                            });
                         }
-                        // Remember the keys for the data rows
-                        var dataset = this.datasets[data.queryName];
-                        dataset.oldLsids = oldLsids;
-                        dataset.newLsids = newLsids;
+                        else {
+                            checkMoveToSpecimenDetail(table, false, oldId, newId, filters);
+                        }
 
-                        document.getElementById('previewPanel').innerHTML +=
-                                "<div>" + Ext4.util.Format.htmlEncode(data.queryName) + ": " + (oldLsids.length > 0 && newLsids.length > 0 ? 'Potential Conflicts!' : 'No conflicts') + "</div>";
-
-                        // If no data for either, or only old, ignore dataset
-                        // If only data for oldId, no conflict
-                        // If data for both, test saveRows() validateOnly = true
-                        // Iterate on results
-                        // Show form of affected datasets, conflict status, and input for action
+                        // update progress
+                        renderPreviewTable(oldId, newId);
                     }
                 });
             }
         };
 
+        var checkMoveToSpecimenDetail = function(table, hasConflict, oldId, newId, filters) {
+            table.hasConflict = hasConflict;
+            this.datasetsToProcess--;
+            if (this.datasetsToProcess == 0)
+                checkSpecimenDetail(oldId, newId, filters);
+        }
+
+        var checkSpecimenDetail = function(oldId, newId, filters) {
+            var specimenDetail = this.tables['SpecimenDetail'];
+            // now check the specimen details table
+            LABKEY.Query.selectRows( {
+                schemaName: 'study',
+                queryName: 'SpecimenDetail',
+                scope: this,
+                filterArray : filters,
+                columns : jsSubjectNounColumnName + ', RowId',
+                success: function(data) {
+                    gatherIds(specimenDetail, data.rows, oldId, newId);
+                    //
+                    // For the specimenDetail table we want to check to see if it is editable
+                    // or whether conflicts exist.  Kill two birds with one stone if we detect that
+                    // we need to update it because it has values for the oldId
+                    //
+                    if (specimenDetail.oldIds.length > 0) {
+                        // add the SpecimenDetail to our list of tables since we need to update it
+                        this.tables['SpecimenDetail'] = specimenDetail;
+                        LABKEY.Query.saveRows({
+                            commands : [buildUpdateCommand(specimenDetail, newId)],
+                            validateOnly : true,
+                            success : function(data) {
+                                specimenDetail.hasConflict = false;
+                                renderPreviewTable(oldId, newId);
+                            },
+                            failure : function(errorInfo, response) {
+                                specimenDetail.hasConflict = true;
+                                // we get an internal server error if the item is not editable
+                                // consider: better way to check?
+                                // we get a bad request error for a validation failure
+                                if (response.status == 500){
+                                    specimenDetail.isEditable = false;
+                                }
+                                renderPreviewTable(oldId, newId);
+                            }
+                        });
+                    }
+                    else {
+                        specimenDetail.hasConflict = false;
+                        renderPreviewTable(oldId, newId);
+                    }
+                },
+              failure : function(response) {
+                  // it's okay if no specimen details exist
+                  specimenDetail.hasConflict = false;
+                  renderPreviewTable(oldId, newId);
+              }
+            });
+        }
+
+        // TODO: add the alias to the old ID in the alias table
+        var buildInsertCommand = function(table) {
+        }
+
+        var buildUpdateCommand = function(table, newId) {
+            var rowsToUpdate = [];
+            var idColumnName = (table.datasetId ? 'lsid' :'RowId');
+            for (var i = 0; i < table.oldIds.length; i++) {
+                var row = {};
+                row[idColumnName] = table.oldIds[i];
+                row[jsSubjectNounColumnName] = newId;
+                rowsToUpdate.push(row);
+            }
+            return {schemaName : 'study', queryName : table.name, command : 'update', rows : rowsToUpdate};
+        }
+
+        var buildDeleteCommand = function(table, ids) {
+            var rowsToDelete = [];
+            var idColumnName = (table.datasetId ? 'lsid' :'RowId');
+            for (var i = 0; i < ids.length; i++) {
+                var row = {};
+                row[idColumnName] = ids[i];
+                rowsToDelete.push(row);
+            }
+            return {schemaName : 'study',queryName : table.name, command : 'delete', rows : rowsToDelete};
+        }
+
+        var getConflictHintGroupName = function(table) {
+            return "conflict_" + table.htmlName;
+        }
+
+        // old if we should use the old ids (delete new)
+        // new if we should use the new ids (delete old)
+        // null if the user didn't pick a conflict hint yet
+        var getConflictHint = function(table){
+            if (table.hasConflict) {
+                var values = document.getElementsByName(getConflictHintGroupName(table));
+                for (var i = 0; i < values.length; i++) {
+                    if (values[i].checked) {
+                        return values[i].value;
+                    }
+                }
+            }
+            return null;
+        }
+
+        var updateMergeResults = function(message, isError)
+        {
+            var statusEl = document.getElementById('mergeResults-div');
+            if (isError)
+                statusEl.innerHTML = "<span style='color:red;padding-top: 8px; font-weight: bold;'>" + Ext4.util.Format.htmlEncode(message) + "<br/></span>";
+            else
+                statusEl.innerHTML = "<span style='padding-top: 8px; font-weight: bold;'>" + Ext4.util.Format.htmlEncode(message) + "<br/></span>";
+        }
 
         var commitMerge = function(oldId, newId){
-            // Bundled save rows
+            var saveRowsCommands = [];
+            for (var tableName in this.tables) {
+                var table = this.tables[tableName];
+                if (false == table.isEditable)
+                    continue;
+                //
+                // dataset had both old and new values (this is a conflict that we have to resolve)
+                // dataset had only old values (we need to update these to the new values)
+                // dataset had only new values (no need to do anything)
+                // dataset had neither old or new values (no need to do anything)
+                //
+                if (table.hasConflict) {
+                    // a conflict means that a dataset had both old and new values in the dataset
+                    var hint = getConflictHint(table);
+                    if (null == hint) {
+                        updateMergeResults("You must choose whether to use old or new id values for every conflict", true);
+                        return;
+                    }
+                    if (hint == 'old') {
+                        // the user wants to use the old values which means we need to first delete values attached to the new
+                        // id and then update the old id to the new id
+                        saveRowsCommands.push(buildDeleteCommand(table, table.newIds));
+                        saveRowsCommands.push(buildUpdateCommand(table, newId));
+                    }
+                    else {
+                        // user wants to use the new values so just delete the old ones
+                        saveRowsCommands.push(buildDeleteCommand(table, table.oldIds));
+                    }
+                }
+                else
+                if (table.oldIds.length > 0){
+                    // just update the old values to the new value
+                    saveRowsCommands.push(buildUpdateCommand(table, newId));
+                }
+            }
+            resetPreview(true);
+            updateMergeResults("Merging " + jsSubjectNounColumnName + " from " + oldId + " to " + newId + " ...", false);
+            LABKEY.Query.saveRows({
+                commands : saveRowsCommands,
+                success : function(data) {
+                    oldIdField.setValue = "";
+                    newIdField.setValue = "";
+                    resetPreview(true);
+                    updateMergeResults("Successfully merged " + jsSubjectNounColumnName + " from " + oldId + " to " + newId, false);
+                },
+                failure : function(response) {
+                    updateMergeResults(response.exception, true);
+                }
+            });
         };
 
+        var enableMerge = function() {
+            mergeButton.setDisabled(false);
+        }
+
+        // build links to filtered datasets
+        // if both old and new ids are specified, use an in-clause
+        // if only one id is used, use an equal clause
+        var buildDataURL = function(table, oldId, newId) {
+            var filter;
+            if (oldId && newId) {
+                filter = LABKEY.Filter.create(<%= PageFlowUtil.jsString(subjectNounColumnName)%>, oldId + ';' + newId, LABKEY.Filter.Types.IN);
+            }
+            else {
+                filter = LABKEY.Filter.create(<%= PageFlowUtil.jsString(subjectNounColumnName)%>, oldId ? oldId : newId, LABKEY.Filter.Types.EQUAL);
+            }
+
+            var url;
+
+            // TODO:   the back button doesn't appear to respect the returnUrl property.  I wanted to do this so that
+            // if the user clicked on the datasource to investigate the conflict and then hit back he wouldn't have
+            // to retype in the participant ids
+            // var returnUrl = LABKEY.ActionURL.buildURL('study', 'mergeParticipants.view', null, {oldId : oldId, newId : newId});
+            // params['returnUrl'] = returnUrl;
+
+            if (table.datasetId) {
+                var params = {datasetId: table.datasetId};
+                params[filter.getURLParameterName().replace('query.', 'Dataset.')] = filter.getURLParameterValue();
+                url = LABKEY.ActionURL.buildURL('study', 'dataset.view', null, params);
+            }
+            else {
+                // SpecimenDetail table
+                var params = {};
+                params[filter.getURLParameterName()] = filter.getURLParameterValue();
+                params.schemaName = 'study';
+                params.queryName = 'SpecimenDetail';
+                url = LABKEY.ActionURL.buildURL("query", 'executeQuery.view', null, params);
+            }
+            return url;
+        }
+
+        var renderPreviewTable = function(oldId, newId){
+            var html = [];
+
+            html.push("<table class='labkey-data-region labkey-show-borders'>");
+            html.push("<tr><td class='labkey-column-header'>Data Source</td>");
+            html.push("<td class='labkey-column-header'>OldId Row Count</td>");
+            html.push("<td class='labkey-column-header'>NewId Row Count</td>");
+            html.push("<td class='labkey-column-header'>Status</td>");
+            html.push("<td class='labkey-column-header'>&nbsp;</td></tr>");
+
+            var row = 0;
+            var hasOldValues = false;
+            var stillChecking = false;
+
+            for (var tableName in this.tables) {
+                var table = this.tables[tableName];
+                var rowStyle = (1==row%2) ? "labkey-alternate-row" : "labkey-row";
+                html.push("<tr name='" + tableName + "' class='" + rowStyle + "'>");
+                // provide links to filtered data views for the columns
+                var bothIdURL = buildDataURL(table, oldId, newId);
+                var oldIdURL = buildDataURL(table, oldId, null);
+                var newIdURL = buildDataURL(table, null, newId);
+                html.push("<td><a href='" + bothIdURL + "'/>" + tableName + "</td>");
+                html.push("<td><a href='" + oldIdURL + "'/>" + table.oldIds.length + "</td>");
+                html.push("<td><a href='" + newIdURL + "'/>" + table.newIds.length + "</td>");
+                if (null == table.hasConflict) {
+                    html.push("<td>Checking...</td>");
+                    html.push("<td>&nbsp;</td></tr>");
+                    stillChecking = true;
+                }
+                else
+                if (true == table.hasConflict) {
+                    if (false == table.isEditable) {
+                        html.push("<td><span style='color:red;'>Warning:  Specimen data is not editable</span></td>");
+                    }
+                    else {
+                        //
+                        // build a radio group to allow the user to select old or new id values when merging
+                        // TODO: is there a robust way to get a change notification on when these are clicked?  We only
+                        // want to enable the merge button if the user has selected whether to keep old or new
+                        // id values.  Right now we do this when the user hits an enabled merge button
+                        //
+                        var group = getConflictHintGroupName(table);
+                        html.push("<td><a href='" + bothIdURL + "'/>Conflict!</td>");
+                        html.push("<td>");
+                        html.push("<input type='radio' name='" + group + "' value='old'>Use old Id values ");
+                        html.push("<input type='radio' name='" + group + "' value='new'>Use new Id values ");
+                        html.push("</td>");
+                    }
+                } else {
+                    html.push("<td><a href='" + bothIdURL + "'/>No conflicts</td>");
+                    html.push("<td>&nbsp;</td></tr>");
+                }
+                // if any editable dataset has any rows with the old value then there is work to do
+                if ((table.oldIds.length > 0) && (false != table.isEditable))
+                    hasOldValues = true;
+                row++;
+            }
+            html.push("</table>");
+            document.getElementById('previewPanel-div').innerHTML = html.join("");
+            if (hasOldValues && !stillChecking)
+                enableMerge();
+            return 0;
+        }
 
         Ext4.onReady(init);
 
