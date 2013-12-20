@@ -6,9 +6,6 @@
 </div>
 <table width="500px">
     <tr>
-
-    </tr>
-    <tr>
         <td valign="top"><b>Request&nbsp;Details</b></td>
     </tr>
     <tr>
