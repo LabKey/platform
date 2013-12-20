@@ -90,6 +90,11 @@ public class JunitUtil
         return ContainerManager.ensureContainer(ContainerManager.getSharedContainer().getParsedPath().append("_junit"));
     }
 
+    public static void deleteTestContainer()
+    {
+        ContainerManager.delete(ContainerManager.getForPath(
+                ContainerManager.getSharedContainer().getParsedPath().append("_junit")), TestContext.get().getUser());
+    }
 
     // Simulate a race condition by starting the specified number of threads and invoking the runnable the specified
     // number of times, using a CountDownLatch to synchronize task execution. This method does not wait for termination
