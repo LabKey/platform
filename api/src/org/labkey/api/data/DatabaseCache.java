@@ -58,7 +58,8 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
 
     public DatabaseCache(DbScope scope, int maxSize, String debugName)
     {
-        this(scope, maxSize, -1, debugName);
+        // TODO: UNLIMITED default TTL seems aggressive, but that's what we've used for years...
+        this(scope, maxSize, CacheManager.UNLIMITED, debugName);
     }
 
     protected StringKeyCache<ValueType> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
