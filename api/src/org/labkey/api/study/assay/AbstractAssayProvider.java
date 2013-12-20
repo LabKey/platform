@@ -544,7 +544,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     if (inputDatas.length == 1)
                     {
                         // There's exactly one input, so just use it
-                        reusableFiles.put(AssayDataCollector.PRIMARY_FILE, inputDatas[0].getFile());
+                        addReusableData(reusableFiles, inputDatas[0]);
                     }
                     else if (inputDatas.length > 1)
                     {
@@ -560,7 +560,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                                 {
                                     throw new IllegalStateException("More than " + getMaxFileInputs() + " primary data file(s) associated with run: " + context.getReRun().getRowId() + "(\"" + reusableFiles.values() + "\" and \"" + inputData + "\")");
                                 }
-                                reusableFiles.put(AssayDataCollector.PRIMARY_FILE + (reusableFiles.size() == 0 ? "" : Integer.toString(reusableFiles.size())), inputData.getFile());
+                                addReusableData(reusableFiles, inputData);
                             }
                         }
                     }
@@ -608,6 +608,15 @@ public abstract class AbstractAssayProvider implements AssayProvider
             }
         }
         return result;
+    }
+
+    private void addReusableData(Map<String, File> reusableFiles, ExpData inputData)
+    {
+        // Not all datas are associated with a file
+        if (inputData.getFile() != null)
+        {
+            reusableFiles.put(AssayDataCollector.PRIMARY_FILE + (reusableFiles.size() == 0 ? "" : Integer.toString(reusableFiles.size())), inputData.getFile());
+        }
     }
 
     @Override
