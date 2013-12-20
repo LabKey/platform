@@ -1096,8 +1096,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @NotNull
     protected List<File> getResourceDirectories()
     {
-        Set<File> dirs = new LinkedHashSet<>(3);
-
         if (AppProps.getInstance().isDevMode())
         {
             String sourcePath = getSourcePath();
@@ -1107,31 +1105,29 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 File sourceDir = new File(sourcePath);
 
                 if (sourceDir.isDirectory())
-                {
-                    File resourcesDir = new File(new File(sourcePath), "resources");
-
-                    // If we have a "resources" directory then look for resources there (Java module layout)
-                    // If not, treat all top-level directories as resource directories (simple module layout)
-                    if (resourcesDir.isDirectory())
-                        dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(resourcesDir));
-                    else
-                        dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(sourceDir));
-                }
+                    return getResourceDirectory(sourceDir);
             }
         }
 
-        if (dirs.isEmpty())
-        {
-            File exploded = getExplodedPath();
+        File exploded = getExplodedPath();
 
-            // TODO: In 14.1, check "resources" or top-level directories, as above
-            if (exploded != null && exploded.isDirectory())
-            {
-                dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(exploded));
-            }
-        }
+        if (exploded != null && exploded.isDirectory())
+            return getResourceDirectory(exploded);
 
-        return new LinkedList<>(dirs);
+        return Collections.emptyList();
+    }
+
+
+    private List<File> getResourceDirectory(File dir)
+    {
+        File resourcesDir = new File(dir, "resources");
+
+        // If we have a "resources" directory then look for resources there (Java module layout)
+        // If not, treat all top-level directories as resource directories (simple module layout)
+        if (resourcesDir.isDirectory())
+            return Collections.singletonList(FileUtil.getAbsoluteCaseSensitiveFile(resourcesDir));
+        else
+            return Collections.singletonList(FileUtil.getAbsoluteCaseSensitiveFile(dir));
     }
 
 
