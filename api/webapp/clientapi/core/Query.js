@@ -761,7 +761,7 @@ LABKEY.Query = new function()
         * should be done in a single transaction, so they all succeed or all fail. Defaults to true
         * @param {boolean} [config.validateOnly] Whether or not the server should attempt proceed through all of the
         * commands, but not actually commit them to the database. Useful for scenarios like giving incremental
-        * validation feedback as auser fills out a UI form, but not actually save anything until they explicitly request
+        * validation feedback as a user fills out a UI form, but not actually save anything until they explicitly request
         * a save.
         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
@@ -779,6 +779,7 @@ LABKEY.Query = new function()
             var dataObject = {
                 commands: config.commands,
                 containerPath: config.containerPath,
+                validateOnly : config.validateOnly,
                 transacted : config.transacted,
                 extraContext : config.extraContext
             };
