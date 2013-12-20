@@ -211,7 +211,10 @@ public class SampleManager implements ContainerManager.ContainerListener
     {
 //        return _specimenDetailHelper.get(container, rowId);
         SimpleFilter filter = new SimpleFilter("RowId", rowId);
-        return getSpecimens(container, user, filter).get(0);
+        List<Specimen> specimens = getSpecimens(container, user, filter);
+        if (specimens.isEmpty())
+            return null;
+        return specimens.get(0);
     }
 
     /** Looks for any specimens that have the given id as a globalUniqueId  */
@@ -1827,6 +1830,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         String tableInfoVialSelectName = tableInfoVial.getSelectName();
 
         SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " + tableInfoSpecimen + " WHERE ").append(getVisitRangeSql(visit, tableInfoSpecimen, tableInfoSpecimenSelectName));
+        SQLFragment specimenRowIdWhereSql = new SQLFragment(" WHERE ").append(getVisitRangeSql(visit, tableInfoSpecimen, "Specimen"));
 
         SQLFragment deleteEventSql = new SQLFragment("DELETE FROM ");
         deleteEventSql.append(tableInfoSpecimenEventSelectName)
@@ -1837,7 +1841,8 @@ public class SampleManager implements ContainerManager.ContainerListener
                 .append("\tEvent.VialId = Vial.RowId\n")
                 .append("LEFT OUTER JOIN ").append(tableInfoSpecimenSelectName).append(" AS Specimen ON\n")
                 .append("\tVial.SpecimenId = Specimen.RowId\n")
-                .append("WHERE Specimen.RowId IN (SELECT RowId ").append(specimenRowIdSelectSql).append("))");
+//                .append("WHERE Specimen.RowId IN (SELECT RowId ").append(specimenRowIdSelectSql).append("))");     // TODO simplify this WHERE
+                .append(specimenRowIdWhereSql).append(")");
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(deleteEventSql);
 
         SQLFragment deleteVialSql = new SQLFragment("DELETE FROM ");
@@ -1847,7 +1852,8 @@ public class SampleManager implements ContainerManager.ContainerListener
                 .append(tableInfoVialSelectName).append(" AS Vial\n")
                 .append("LEFT OUTER JOIN ").append(tableInfoSpecimenSelectName).append(" AS Specimen ON\n")
                 .append("\tVial.SpecimenId = Specimen.RowId\n")
-                .append("WHERE Specimen.RowId IN (SELECT RowId ").append(specimenRowIdSelectSql).append("))");
+//                .append("WHERE Specimen.RowId IN (SELECT RowId ").append(specimenRowIdSelectSql).append("))");      // TODO simplify this WHERE
+                .append(specimenRowIdWhereSql).append(")");
 
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(deleteVialSql);
 
