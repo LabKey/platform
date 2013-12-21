@@ -1558,10 +1558,7 @@ public class DavController extends SpringActionController
         public void beginResponse(WebdavResponse response)
         {
             response.setStatus(WebdavStatus.SC_MULTI_STATUS);
-            response.setContentType("application/xhtml+xml; charset=UTF-8");
-
-            //response.setContentType("text/xml; charset=UTF-8");
-
+            response.setContentType("text/xml; charset=UTF-8");
 
             xml.writeXMLHeader();
             xml.writeElement(null, "multistatus" + generateNamespaceDeclarations(), XMLWriter.OPENING);
