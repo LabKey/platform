@@ -161,11 +161,11 @@ if (typeof LABKEY == "undefined")
             }
         };
 
-        var beforeunload = function (dirtyCallback, scope)
+        var beforeunload = function (dirtyCallback, scope, msg)
         {
             return function () {
                 if (!getSubmit() && (isDirty() || (dirtyCallback && dirtyCallback.call(scope)))) {
-                    return configs.unloadMessage;
+                    return msg || configs.unloadMessage;
                 }
             };
         };
