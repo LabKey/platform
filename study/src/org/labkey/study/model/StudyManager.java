@@ -2221,7 +2221,7 @@ public class StudyManager
             assert deletedTables.add(StudySchema.getInstance().getTableInfoSpecimenComment());
 
             // study data provisioned tables
-            // deleteStudyDataProvisionedTables(c, user); // NOTE: this looks to be handled by the OntologyManager
+            //deleteStudyDataProvisionedTables(c, user); // NOTE: this looks to be handled by the OntologyManager
             Table.delete(StudySchema.getInstance().getTableInfoTreatmentVisitMap(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoTreatmentVisitMap());
             Table.delete(StudySchema.getInstance().getTableInfoObjective(), containerFilter);

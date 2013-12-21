@@ -1749,10 +1749,13 @@ Ext4.define('File.panel.Browser', {
                 selectionchange : this.onSelection,
                 itemdblclick : function(g, rec) {
                     if (rec && rec.data) {
-                        if (rec.data.collection)
-                            this.changeFolder(rec);
-                        else if (rec.data.href)
-                            window.location = rec.data.href;
+                        if (this.fireEvent('doubleclick', rec)) {
+
+                            if (rec.data.collection)
+                                this.changeFolder(rec);
+                            else if (rec.data.href)
+                                window.location = rec.data.href;
+                        }
                     }
                 },
                 afterrender : function() {

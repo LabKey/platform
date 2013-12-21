@@ -42,6 +42,22 @@ Ext4.define('File.panel.Upload', {
         this.items = this.getItems();
 
         this.callParent();
+        var scope = this;
+        window.onbeforeunload = LABKEY.beforeunload(this.beforeUnload, this, 'an operation is still pending, please wait until it is complete.');
+    },
+
+    beforeUnload : function() {
+        if (this.isBusy()) {
+            return 'an operation is still pending, please wait until it is complete.';
+        }
+    },
+
+    isBusy : function() {
+        return this.busy;
+    },
+
+    setBusy : function(busy) {
+        this.busy = busy;
     },
 
     // From FileSystem.js
@@ -330,7 +346,9 @@ Ext4.define('File.panel.Upload', {
 
             this.transferApplet.on('update', this.updateProgressBar, this);
             this.transferApplet.getTransfers().on("update", this.updateProgressBarRecord, this);
-            this.fileSystem.on('transferstarted', function(result) {this.showProgressBar();}, this);
+
+            // this event doesn't actually get fired
+            //this.fileSystem.on('transferstarted', function(result) {this.showProgressBar();}, this);
 
             // Not calling fireUploadEvents as it does not seem to be necessary. It was used to detect duplicate files
             // and display warnings, but that doesn't seem to actually work anymore.
@@ -446,6 +464,10 @@ Ext4.define('File.panel.Upload', {
         var file = record ? record.get('name') : '';
 
         var summary = this.transferApplet.getSummary();
+        if (!this.isBusy()) {
+            this.getEl().mask("Uploading files");
+            this.setBusy(true);
+        }
 
         if (summary.info != this.lastSummary.info)
         {
@@ -478,7 +500,9 @@ Ext4.define('File.panel.Upload', {
 
                 // todo : need to add file & folder conflict handling
                 this.hideProgressBar();
+                this.setBusy(false);
                 this.fireEvent('transfercomplete', {fileRecords : fileRecords});
+                this.getEl().unmask();
             }
         }
 
