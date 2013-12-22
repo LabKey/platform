@@ -48,7 +48,7 @@ public class SpecimenDomainKind extends AbstractSpecimenDomainKind
     private final static String ORIGINATINGLOCATIONID = "OriginatingLocationId";
     private final static String TOTALVOLUME = "TotalVolume";
     private final static String AVAILABLEVOLUME = "AvailableVolume";
-    private final static String VIALCOUNT = "vialcount";
+    private final static String VIALCOUNT = "VialCount";
     private final static String LOCKEDINREQUESTCOUNT = "LockedInRequestCount";
     private final static String ATREPOSITORYCOUNT = "AtRepositoryCount";
     private final static String AVAILABLECOUNT = "AvailableCount";

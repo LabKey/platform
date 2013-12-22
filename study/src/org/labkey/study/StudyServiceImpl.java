@@ -76,7 +76,10 @@ import org.labkey.study.model.UploadLog;
 import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.SimpleSpecimenTable;
+import org.labkey.study.query.SpecimenDetailTable;
+import org.labkey.study.query.SpecimenSummaryTable;
 import org.labkey.study.query.SpecimenTable;
+import org.labkey.study.query.SpecimenWrapTable;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.VialTable;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
@@ -697,12 +700,20 @@ public class StudyServiceImpl implements StudyService.Service
     @Override
     public TableInfo getSpecimenTableUnion(QuerySchema qsDefault, List<Container> containers)
     {
+        return getSpecimenTableUnion(qsDefault, containers, new HashMap<Container, SQLFragment>(), false, true);
+    }
+
+    @Override
+    public TableInfo getSpecimenTableUnion(QuerySchema qsDefault, List<Container> containers,
+                        @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName)
+    {
         if (!(qsDefault instanceof StudyQuerySchema))
             throw new IllegalArgumentException("expceted study schema");
         StudyQuerySchema schemaDefault = (StudyQuerySchema)qsDefault;
         User user = schemaDefault.getUser();
 
         List<TableInfo> tables = new ArrayList<>();
+        Map<TableInfo, SQLFragment> filterFragmentMap = new HashMap<>();
         if (null == containers || containers.isEmpty())
         {
             // TODO: what if current container doesn't have a vial table?  use template?
@@ -721,9 +732,11 @@ public class StudyServiceImpl implements StudyService.Service
                 SimpleSpecimenTable t = new SimpleSpecimenTable(schema, true);
                 t.setPublic(false);
                 tables.add(t);
+                if (filterFragments.containsKey(c))
+                    filterFragmentMap.put(t, filterFragments.get(c));
             }
         }
-        return createUnionTable(schemaDefault, tables, "SpecimensUnion");
+        return createUnionTable(schemaDefault, tables, "SpecimensUnion", filterFragmentMap, dontAliasColumns, useParticipantIdName);
     }
 
 
@@ -757,11 +770,119 @@ public class StudyServiceImpl implements StudyService.Service
                 tables.add(t);
             }
         }
-        return createUnionTable(schemaDefault, tables, "VialsUnion");
+        return createUnionTable(schemaDefault, tables, "VialsUnion", new HashMap<TableInfo, SQLFragment>(), false, true);
     }
 
+    @Override
+    public TableInfo getSpecimenDetailTableUnion(QuerySchema qsDefault, List<Container> containers,
+                        @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName)
+    {
+        if (!(qsDefault instanceof StudyQuerySchema))
+            throw new IllegalArgumentException("expceted study schema");
+        StudyQuerySchema schemaDefault = (StudyQuerySchema)qsDefault;
+        User user = schemaDefault.getUser();
 
-    TableInfo createUnionTable(StudyQuerySchema schemaDefault, List<TableInfo> terms, String tableName)
+        List<TableInfo> tables = new ArrayList<>();
+        Map<TableInfo, SQLFragment> filterFragmentMap = new HashMap<>();
+        if (null == containers || containers.isEmpty())
+        {
+            // TODO: what if current container doesn't have a vial table?  use template?
+            SpecimenDetailTable t = new SpecimenDetailTable(schemaDefault);
+            t.setPublic(false);
+            return t;
+        }
+        else
+        {
+            for (Container c : containers)
+            {
+                Study s = StudyManager.getInstance().getStudy(c);
+                StudyQuerySchema schema = schemaDefault;
+                if (null != s)
+                    schema = new StudyQuerySchema((StudyImpl)s, user, false);
+                SpecimenDetailTable t = new SpecimenDetailTable(schema);
+                t.setPublic(false);
+                tables.add(t);
+                if (filterFragments.containsKey(c))
+                    filterFragmentMap.put(t, filterFragments.get(c));
+            }
+        }
+        return createUnionTable(schemaDefault, tables, "SpecimensUnion", filterFragmentMap, dontAliasColumns, useParticipantIdName);
+    }
+
+    @Override
+    public TableInfo getSpecimenWrapTableUnion(QuerySchema qsDefault, List<Container> containers,
+                        @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName)
+    {
+        if (!(qsDefault instanceof StudyQuerySchema))
+            throw new IllegalArgumentException("expceted study schema");
+        StudyQuerySchema schemaDefault = (StudyQuerySchema)qsDefault;
+        User user = schemaDefault.getUser();
+
+        List<TableInfo> tables = new ArrayList<>();
+        Map<TableInfo, SQLFragment> filterFragmentMap = new HashMap<>();
+        if (null == containers || containers.isEmpty())
+        {
+            // TODO: what if current container doesn't have a vial table?  use template?
+            SpecimenWrapTable t = new SpecimenWrapTable(schemaDefault);
+            t.setPublic(false);
+            return t;
+        }
+        else
+        {
+            for (Container c : containers)
+            {
+                Study s = StudyManager.getInstance().getStudy(c);
+                StudyQuerySchema schema = schemaDefault;
+                if (null != s)
+                    schema = new StudyQuerySchema((StudyImpl)s, user, false);
+                SpecimenWrapTable t = new SpecimenWrapTable(schema);
+                t.setPublic(false);
+                tables.add(t);
+                if (filterFragments.containsKey(c))
+                    filterFragmentMap.put(t, filterFragments.get(c));
+            }
+        }
+        return createUnionTable(schemaDefault, tables, "SpecimensUnion", filterFragmentMap, dontAliasColumns, useParticipantIdName);
+    }
+
+    @Override
+    public TableInfo getSpecimenSummaryTableUnion(QuerySchema qsDefault, List<Container> containers,
+                        @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName)
+    {
+        if (!(qsDefault instanceof StudyQuerySchema))
+            throw new IllegalArgumentException("expceted study schema");
+        StudyQuerySchema schemaDefault = (StudyQuerySchema)qsDefault;
+        User user = schemaDefault.getUser();
+
+        List<TableInfo> tables = new ArrayList<>();
+        Map<TableInfo, SQLFragment> filterFragmentMap = new HashMap<>();
+        if (null == containers || containers.isEmpty())
+        {
+            // TODO: what if current container doesn't have a vial table?  use template?
+            SpecimenSummaryTable t = new SpecimenSummaryTable(schemaDefault);
+            t.setPublic(false);
+            return t;
+        }
+        else
+        {
+            for (Container c : containers)
+            {
+                Study s = StudyManager.getInstance().getStudy(c);
+                StudyQuerySchema schema = schemaDefault;
+                if (null != s)
+                    schema = new StudyQuerySchema((StudyImpl)s, user, false);
+                SpecimenSummaryTable t = new SpecimenSummaryTable(schema);
+                t.setPublic(false);
+                tables.add(t);
+                if (filterFragments.containsKey(c))
+                    filterFragmentMap.put(t, filterFragments.get(c));
+            }
+        }
+        return createUnionTable(schemaDefault, tables, "SpecimensUnion", filterFragmentMap, dontAliasColumns, useParticipantIdName);
+    }
+
+    TableInfo createUnionTable(StudyQuerySchema schemaDefault, List<TableInfo> terms, String tableName,
+                     @NotNull Map<TableInfo, SQLFragment> filterFragmentMap, boolean dontAliasColumns, boolean useParticipantIdName)
     {
         if (null == terms || terms.isEmpty())
             return null;
@@ -778,10 +899,13 @@ public class StudyServiceImpl implements StudyService.Service
         List<ColumnInfo> cols = new ArrayList<>(template.getColumns().size());
         for (ColumnInfo col : template.getColumns())
         {
-            String subjectColumnName =  ((StudyQuerySchema)template.getUserSchema()).getSubjectColumnName();
             String name = col.getColumnName();
-            if (name.equalsIgnoreCase(subjectColumnName) || name.equalsIgnoreCase("participantid"))
-                name = "ParticipantId";
+            if (useParticipantIdName)
+            {
+                String subjectColumnName =  ((StudyQuerySchema)template.getUserSchema()).getSubjectColumnName();
+                if (name.equalsIgnoreCase(subjectColumnName) || name.equalsIgnoreCase("participantid"))
+                    name = "ParticipantId";
+            }
             ColumnInfo colUnion = new AliasedColumn(null,new FieldKey(null,name),col,true)
             {
                 @Override
@@ -819,13 +943,17 @@ public class StudyServiceImpl implements StudyService.Service
                     sqlf.append(col.getValueSql(tableAlias));
                     col.declareJoins(tableAlias,joins);
                 }
-                sqlf.append(" AS ").append(colUnion.getAlias());
+                if (!dontAliasColumns)
+                    sqlf.append(" AS ").append(colUnion.getAlias());
                 comma = ", ";
             }
             sqlf.append("\nFROM ");
             sqlf.append(t.getFromSQL(tableAlias));
             for (SQLFragment j : joins.values())
                 sqlf.append(" ").append(j);
+            if (filterFragmentMap.containsKey(t))
+                sqlf.append(" WHERE ").append(filterFragmentMap.get(t));
+
             union = "\nUNION ALL\n";
         }
         return new _UnionTable(schemaDefault, tableName, cols, sqlf);
@@ -868,5 +996,12 @@ public class StudyServiceImpl implements StudyService.Service
         {
             return _studyQuerySchema;
         }
+
+        @Override
+        public boolean needsContainerClauseAdded()
+        {
+            return false;
+        }
+
     }
 }

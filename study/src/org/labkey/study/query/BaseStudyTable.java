@@ -86,25 +86,38 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             // that relate to subjects in the ancillary study.  This filter will have no effect on samples uploaded
             // directly in this this study folder (since all local specimens should have an associated subject ID
             // already in the participant table.
-            Study currentStudy = StudyManager.getInstance().getStudy(schema.getContainer());
+            StudyImpl currentStudy = StudyManager.getInstance().getStudy(schema.getContainer());
             if (currentStudy != null && currentStudy.isAncillaryStudy())
             {
                 String[] ptids = ParticipantGroupManager.getInstance().getAllGroupedParticipants(schema.getContainer());
                 if (ptids.length > 0)
                 {
-                    Study sourceStudy = currentStudy.getSourceStudy();
-                    SQLFragment condition = new SQLFragment("(Container = ? AND " + getParticipantColumnName() + " IN (");
-                    condition.add(sourceStudy.getContainer());
-                    String comma = "";
-                    for (String ptid : ptids)
+                    StudyImpl sourceStudy = currentStudy.getSourceStudy();
+                    if ("specimentables".equalsIgnoreCase(getRealTable().getSchema().getName()) ||
+                            StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME.equalsIgnoreCase(getName()) ||
+                            StudyQuerySchema.SPECIMEN_SUMMARY_TABLE_NAME.equalsIgnoreCase(getName()) ||
+                            StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME.equalsIgnoreCase(getName()) ||
+                            StudyQuerySchema.SPECIMEN_DETAIL_TABLE_NAME.equalsIgnoreCase(getName()))
                     {
-                        condition.append(comma).append("?");
-                        condition.add(ptid);
-                        comma = ", ";
+                        // Do nothing
+                        int i = 1;
                     }
-                    condition.append(")) OR Container = ?");
-                    condition.add(currentStudy.getContainer());
-                    addCondition(condition, FieldKey.fromParts("Container"), FieldKey.fromParts(getParticipantColumnName()));
+                    else
+                    {   // TODO: are there cases here?
+                        SQLFragment condition = new SQLFragment("(Container = ? AND " + getParticipantColumnName() + " IN (");
+                        condition.add(sourceStudy.getContainer());
+                        String comma = "";
+                        for (String ptid : ptids)
+                        {
+                            condition.append(comma).append("?");
+                            condition.add(ptid);
+                            comma = ", ";
+                        }
+                        condition.append(")) OR Container = ?");
+                        condition.add(currentStudy.getContainer());
+                        addCondition(condition, FieldKey.fromParts("Container"), FieldKey.fromParts(getParticipantColumnName()));
+                    }
+
                 }
             }
         }

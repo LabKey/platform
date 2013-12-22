@@ -1445,14 +1445,14 @@ public class SampleManager implements ContainerManager.ContainerListener
     public SpecimenTypeSummary getSpecimenTypeSummary(Container container)
     {
         StudyQuerySchema studyQuerySchema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), null, false);
-        SpecimenWrapTable tableInfoSpecimenWrap = (SpecimenWrapTable)studyQuerySchema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
+        TableInfo tableInfoSpecimenWrap = studyQuerySchema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
         if (null == tableInfoSpecimenWrap)
             throw new IllegalStateException("SpecimenDetail table not found.");
 
         String tableInfoSelectName = "SpecimenWrap";
 
         String cacheKey = container.getId() + "/SpecimenTypeSummary";
-        SpecimenTypeSummary summary = (SpecimenTypeSummary) DbCache.get(tableInfoSpecimenWrap, cacheKey);
+        SpecimenTypeSummary summary = null; // (SpecimenTypeSummary) DbCache.get(tableInfoSpecimenWrap, cacheKey);   // TODO: different cache
 
         if (summary != null)
             return summary;
@@ -1483,7 +1483,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         SQLFragment sqlPtidFilter = new SQLFragment();
         if (study.isAncillaryStudy())
         {
-            StudyQuerySchema sourceStudySchema = new StudyQuerySchema(study.getSourceStudy(), null, false);
+/*            StudyQuerySchema sourceStudySchema = new StudyQuerySchema(study.getSourceStudy(), null, false);
             SpecimenWrapTable sourceStudyTableInfo = (SpecimenWrapTable)sourceStudySchema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
             tableInfoSpecimenWrap.setUnionTable(sourceStudyTableInfo);
 
@@ -1501,7 +1501,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                     comma = ", ";
                 }
             }
-            sqlPtidFilter.append(")\n");
+            sqlPtidFilter.append(")\n");  */
         }
 
         specimenTypeSummarySQL.append("\t\t(SELECT ")
@@ -1530,7 +1530,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         SpecimenTypeSummaryRow[] rows = new SqlSelector(StudySchema.getInstance().getSchema(), specimenTypeSummarySQL).getArray(SpecimenTypeSummaryRow.class);
 
         summary = new SpecimenTypeSummary(container, rows);
-        DbCache.put(tableInfoSpecimenWrap, cacheKey, summary, 8 * CacheManager.HOUR);
+//        DbCache.put(tableInfoSpecimenWrap, cacheKey, summary, 8 * CacheManager.HOUR);
         return summary;
     }
 
@@ -3009,7 +3009,7 @@ public class SampleManager implements ContainerManager.ContainerListener
             return null;
 
         StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), user, true);
-        SpecimenWrapTable tableInfo = (SpecimenWrapTable)schema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
+        TableInfo tableInfo = schema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
         String cacheKey = getGroupedValuesCacheKey(container);
         Map<String, Map<String, Object>> groupedValues;
         if (null != _groupedValuesCache)
@@ -3051,7 +3051,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                 Filter filter = null;
                 if (study.isAncillaryStudy())
                 {
-                    StudyQuerySchema sourceStudySchema = new StudyQuerySchema(study.getSourceStudy(), user, true);
+/*                    StudyQuerySchema sourceStudySchema = new StudyQuerySchema(study.getSourceStudy(), user, true);
                     SpecimenWrapTable sourceStudyTableInfo = (SpecimenWrapTable)sourceStudySchema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
                     tableInfo.setUnionTable(sourceStudyTableInfo)
                     ;
@@ -3066,7 +3066,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                         Collections.addAll(participantIds, ptids);
                     }
                     SimpleFilter.FilterClause inClause1 = new SimpleFilter.InClause(FieldKey.fromString("PTID"), participantIds);
-                    filter = new SimpleFilter(inClause1);
+                    filter = new SimpleFilter(inClause1);       */
                 }
 
                 SQLFragment sql = queryService.getSelectSQL(tableInfo, columnMap.values(), filter, null, -1, 0, false);

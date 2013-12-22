@@ -611,6 +611,7 @@ public abstract class VisitManager
         if (study.isAncillaryStudy())       // TODO: maybe we can always use SimpleSpecimen
         {
             StudyQuerySchema studyQuerySchema = new StudyQuerySchema(study, null, false);
+            studyQuerySchema.setDontAliasColumns(true);
             return studyQuerySchema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
         }
         else

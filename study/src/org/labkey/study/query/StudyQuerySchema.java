@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.module.Module;
@@ -46,6 +47,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
@@ -67,6 +69,7 @@ import org.labkey.study.query.studydesign.StudyTreatmentProductTable;
 import org.labkey.study.query.studydesign.StudyTreatmentTable;
 import org.springframework.validation.BindException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -82,6 +85,8 @@ public class StudyQuerySchema extends UserSchema
     public static final String SIMPLE_SPECIMEN_TABLE_NAME = "SimpleSpecimen";
     public static final String SPECIMEN_DETAIL_TABLE_NAME = "SpecimenDetail";
     public static final String SPECIMEN_WRAP_TABLE_NAME = "SpecimenWrap";
+    public static final String SPECIMEN_EVENT_TABLE_NAME = "SpecimenEvent";
+    public static final String SPECIMEN_SUMMARY_TABLE_NAME = "SpecimenSummary";
     public static final String PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME = "ParticipantGroupCohortUnion";
     public static final String LOCATION_SPECIMEN_LIST_TABLE_NAME = "LocationSpecimenList";
 
@@ -102,6 +107,7 @@ public class StudyQuerySchema extends UserSchema
     final StudyImpl _study;
 
     final boolean _mustCheckPermissions;
+    private boolean _dontAliasColumns = false;
 
     private Map<Integer, List<Double>> _datasetSequenceMap;
     public static final String STUDY_DATA_TABLE_NAME = "StudyData";
@@ -220,9 +226,9 @@ public class StudyQuerySchema extends UserSchema
             if (_study.getTimepointType() != TimepointType.CONTINUOUS)
                 ret.add(StudyService.get().getSubjectVisitTableName(getContainer()));
 
-            ret.add("SpecimenEvent");
+            ret.add(SPECIMEN_EVENT_TABLE_NAME);
             ret.add(SPECIMEN_DETAIL_TABLE_NAME);
-            ret.add("SpecimenSummary");
+            ret.add(SPECIMEN_SUMMARY_TABLE_NAME);
             ret.add("SpecimenVialCount");
             ret.add(SIMPLE_SPECIMEN_TABLE_NAME);
             ret.add("SpecimenRequest");
@@ -352,20 +358,24 @@ public class StudyQuerySchema extends UserSchema
         // want to set a container filter to look at specimens across the entire site
         if (SIMPLE_SPECIMEN_TABLE_NAME.equalsIgnoreCase(name))
         {
+            if (_study.isAncillaryStudy())
+            {
+                List<Container> containers = new ArrayList<>();
+                containers.add(_study.getContainer());
+                Container sourceStudyContainer = _study.getSourceStudy().getContainer();
+                containers.add(sourceStudyContainer);
+
+                Map<Container, SQLFragment> filterFragments = getAncillaryStudyFilterFragments(sourceStudyContainer);
+                return StudyService.get().getSpecimenTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
+            }
             return new SimpleSpecimenTable(this, !_mustCheckPermissions);
         }
-//        if ("Specimen-AllContainers".equalsIgnoreCase(name))    // TODO: restrict so external users can't get
-//        {
-//            return new SpecimenTable(this, !_mustCheckPermissions, true);
-//        }
+
         if ("Vial".equalsIgnoreCase(name))
         {
             return new VialTable(this);
         }
-//        if ("Vial-AllContainers".equalsIgnoreCase(name))        // TODO: restrict so external users can't get
-//        {
-//            return new VialTable(this, true);
-//        }
+
         if ("Site".equalsIgnoreCase(name) || "Location".equalsIgnoreCase(name))
         {
             LocationTable ret = new LocationTable(this);
@@ -444,18 +454,48 @@ public class StudyQuerySchema extends UserSchema
             ParticipantGroupCohortUnionTable ret = new ParticipantGroupCohortUnionTable(this);
             return ret;
         }
-        if ("SpecimenSummary".equalsIgnoreCase(name))
+        if (SPECIMEN_SUMMARY_TABLE_NAME.equalsIgnoreCase(name))
         {
+            if (_study.isAncillaryStudy())
+            {
+                List<Container> containers = new ArrayList<>();
+                containers.add(_study.getContainer());
+                Container sourceStudyContainer = _study.getSourceStudy().getContainer();
+                containers.add(sourceStudyContainer);
+
+                Map<Container, SQLFragment> filterFragments = getAncillaryStudyFilterFragments(sourceStudyContainer);
+                return StudyService.get().getSpecimenSummaryTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
+            }
             SpecimenSummaryTable ret = new SpecimenSummaryTable(this);
             return ret;
         }
         if (SPECIMEN_DETAIL_TABLE_NAME.equalsIgnoreCase(name))
         {
+            if (_study.isAncillaryStudy())
+            {
+                List<Container> containers = new ArrayList<>();
+                containers.add(_study.getContainer());
+                Container sourceStudyContainer = _study.getSourceStudy().getContainer();
+                containers.add(sourceStudyContainer);
+
+                Map<Container, SQLFragment> filterFragments = getAncillaryStudyFilterFragments(sourceStudyContainer);
+                return StudyService.get().getSpecimenDetailTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
+            }
             SpecimenDetailTable ret = new SpecimenDetailTable(this);
             return ret;
         }
         if (SPECIMEN_WRAP_TABLE_NAME.equalsIgnoreCase(name))
         {
+            if (_study.isAncillaryStudy())
+            {
+                List<Container> containers = new ArrayList<>();
+                containers.add(_study.getContainer());
+                Container sourceStudyContainer = _study.getSourceStudy().getContainer();
+                containers.add(sourceStudyContainer);
+
+                Map<Container, SQLFragment> filterFragments = getAncillaryStudyFilterFragments(sourceStudyContainer);
+                return StudyService.get().getSpecimenWrapTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
+            }
             SpecimenWrapTable ret = new SpecimenWrapTable(this);
             return ret;
         }
@@ -464,7 +504,7 @@ public class StudyQuerySchema extends UserSchema
             SpecimenVialCountTable ret = new SpecimenVialCountTable(this);
             return ret;
         }
-        if ("SpecimenEvent".equalsIgnoreCase(name))
+        if (SPECIMEN_EVENT_TABLE_NAME.equalsIgnoreCase(name))
         {
             SpecimenEventTable ret = new SpecimenEventTable(this);
             return ret;
@@ -623,6 +663,26 @@ public class StudyQuerySchema extends UserSchema
         return StudyManager.getInstance().getDatasetDefinitionByQueryName(_study, queryName);
     }
 
+    private Map<Container, SQLFragment> getAncillaryStudyFilterFragments(Container sourceStudyContainer)
+    {
+        assert _study.isAncillaryStudy();       // Don't call if it's not
+        Map<Container, SQLFragment> filterFragments = new HashMap<>();
+        String[] ptids = ParticipantGroupManager.getInstance().getAllGroupedParticipants(_study.getContainer());
+        if (ptids.length > 0)
+        {
+            SQLFragment condition = new SQLFragment("(" + "PTID" + " IN (");
+            String comma = "";
+            for (String ptid : ptids)
+            {
+                condition.append(comma).append("?");
+                condition.add(ptid);
+                comma = ", ";
+            }
+            condition.append(")) ");
+            filterFragments.put(sourceStudyContainer, condition);
+        }
+        return filterFragments;
+    }
 
     // Null if there's no alias dataset configured, otherwise a "skinny" table with just Participant, Source, and Alias,
     // in that order but having the configured names.
@@ -764,4 +824,13 @@ public class StudyQuerySchema extends UserSchema
         return !getContainer().getActiveModules().contains(studyModule);
     }
 
+    public boolean getDontAliasColumns()
+    {
+        return _dontAliasColumns;
+    }
+
+    public void setDontAliasColumns(boolean dontAliasColumns)
+    {
+        _dontAliasColumns = dontAliasColumns;
+    }
 }
