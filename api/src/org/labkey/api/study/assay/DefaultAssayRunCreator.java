@@ -316,6 +316,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                         }
                     }, DbScope.CommitTaskOption.POSTCOMMIT);
                 }
+                else
+                {
+                    throw new ExperimentException("Unable to find run to be replaced (RowId " + context.getReRunId() + ")");
+                }
             }
 
             transaction.commit();

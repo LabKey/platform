@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -41,7 +42,7 @@ import java.io.IOException;
 public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends PipelineJob
 {
     private int _batchId;
-    private AssayRunAsyncContext _context;
+    private AssayRunAsyncContext<ProviderType> _context;
     private File _primaryFile;
     private boolean _forceSaveBatchProps;
     private ExpRun _run;
@@ -57,13 +58,25 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
         {
             baseName = baseName.substring(0, baseName.lastIndexOf("."));
         }
-        setLogFile(FT_LOG.newFile(primaryFile.getParentFile(), baseName));
+        findUniqueLogFile(primaryFile, baseName);
         _forceSaveBatchProps = forceSaveBatchProps;
 
         context.logProperties(getLogger());
         _context = context;
         _batchId = batch.getRowId();
         _primaryFile = primaryFile;
+    }
+
+    /** Finds a file name that hasn't been used yet, appending ".2", ".3", etc as needed */
+    private void findUniqueLogFile(File primaryFile, String baseName)
+    {
+        File fileLog = FT_LOG.newFile(primaryFile.getParentFile(), baseName);
+        int index = 1;
+        while (NetworkDrive.exists(fileLog))
+        {
+            fileLog = FT_LOG.newFile(primaryFile.getParentFile(), baseName + "." + (index++));
+        }
+        setLogFile(fileLog);
     }
 
     @Override
@@ -94,14 +107,24 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
     @Override
     public void run()
     {
-        // Create the basic run
-        _run = AssayService.get().createExperimentRun(_context.getName(), getContainer(), _context.getProtocol(), _primaryFile);
-        _run.setComments(_context.getComments());
-
         try
         {
             setStatus("RUNNING");
             getLogger().info("Starting assay upload");
+
+            if (_context.getReRunId() != null)
+            {
+                // Check that the run to be replaced still exists before attempting to do all of the work
+                ExpRun expRun = ExperimentService.get().getExpRun(_context.getReRunId().intValue());
+                if (expRun == null)
+                {
+                    throw new ExperimentException("Unable to find referenced run. It may have been deleted or otherwise replaced already. (RowId " + _context.getReRunId() + ")");
+                }
+            }
+
+            // Create the basic run
+            _run = AssayService.get().createExperimentRun(_context.getName(), getContainer(), _context.getProtocol(), _primaryFile);
+            _run.setComments(_context.getComments());
 
             // Find a batch for the run
             ExpExperiment batch = ExperimentService.get().getExpExperiment(_batchId);
