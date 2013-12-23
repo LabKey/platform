@@ -279,15 +279,14 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         this.updateSubmitInfo();
     },
 
-    saveSurvey : function(btn, evt, toSubmit, successUrl, idParamName) {
-
+    beforeSaveSurvey : function(btn, evt, toSubmit, successUrl, idParamName) {
         // check to make sure the survey label is not null, it is required
         if (!this.surveyLabel)
         {
             if (successUrl || idParamName)
                 Ext4.MessageBox.alert('Error', 'The ' + this.labelCaption + ' is required.');
 
-            return;
+            return false;
         }
 
         // check to see if there is anything to be saved (or submitted)
@@ -301,14 +300,15 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                 window.location = successUrl + "&" + LABKEY.ActionURL.queryString(params);
             }
 
-            return;
+            return false;
         }
 
         this.toggleSaveBtn(false, false);
+        return true;
+    },
 
-        // get the dirty form values which are also valid and to be submitted
-        this.submitValues = this.getFormDirtyValues();
-
+    updateSurveyResponse : function(btn, evt, toSubmit, successUrl, idParamName, navigateOnSave)
+    {
         // send the survey rowId, surveyDesignId, and responsesPk as params to the API call
         Ext4.Ajax.request({
             url     : LABKEY.ActionURL.buildURL('survey', 'updateSurveyResponse.api'),
@@ -349,7 +349,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                         bodyStyle: 'padding: 20px;'
                     });
 
-                    if (toSubmit)
+                    if (toSubmit || navigateOnSave)
                     {
                         // since the user clicked the submit button, navigate back to the srcUrl
                         msgBox.show();

@@ -173,7 +173,6 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             }
         }
         // sections can be defined as an extAlias
-        // TODO: is there a way to not have to import the JS for each defined ext alias?
         else if (section.extAlias)
         {
             sectionPanel.add({
@@ -953,7 +952,25 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         return values;
     },
 
+    /*
+     * return false if the call to saveSurvey should return without calling updateSurveyResponse
+     */
+    beforeSaveSurvey : function(btn, evt, toSubmit, successUrl, idParamName) {
+        return true;
+    },
+
     saveSurvey : function(btn, evt, toSubmit, successUrl, idParamName) {
+
+        if (!this.beforeSaveSurvey(btn, evt, toSubmit, successUrl, idParamName))
+            return;
+
+        // get the dirty form values which are also valid and to be submitted
+        this.submitValues = this.getFormDirtyValues();
+
+        this.updateSurveyResponse(btn, evt, toSubmit, successUrl, idParamName, false);
+    },
+
+    updateSurveyResponse : function(btn, evt, toSubmit, successUrl, idParamName, navigateOnSave) {
         // default, do nothing
     },
 
