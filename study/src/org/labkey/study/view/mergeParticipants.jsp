@@ -15,20 +15,35 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
     Container c =  HttpView.currentView().getViewContext().getContainer();
-    Study s = StudyManager.getInstance().getStudy(c);
+    StudyImpl s = StudyManager.getInstance().getStudy(c);
     String subjectNounSingular = s.getSubjectNounSingular();
     String subjectNounColumnName = s.getSubjectColumnName();
+    Integer aliasDatasetId = s.getParticipantAliasDatasetId();
+    String aliasDatasetName = null;
+    String aliasColumn = s.getParticipantAliasProperty();
+    String aliasSourceColumn = s.getParticipantAliasSourceProperty();
+
+    if (aliasDatasetId != null)
+    {
+        DataSetDefinition ds = s.getDataSet(aliasDatasetId);
+        if (ds != null)
+        {
+            aliasDatasetName = ds.getName();
+        }
+    }
+    // For first implementation, auto creation of alias records is only supported for date based studies.
+    // We autofill the date field with today's date.
+    boolean allowAliasCreation = aliasDatasetName != null && !s.getTimepointType().isVisitBased();
 %>
 
 <div style="max-width: 1000px">
@@ -52,10 +67,15 @@
         var datasetsToProcess;
         var numDatasets;
 
-        var jsSubjectNounColumnName = '<%= PageFlowUtil.filter(subjectNounColumnName) %>';
+        var jsSubjectNounColumnName = <%= PageFlowUtil.jsString(subjectNounColumnName) %>;
         var oldIdField;
         var newIdField;
-
+        var createAliasCB;
+        var aliasSourceField;
+        var aliasDatasetName = <%= PageFlowUtil.jsString(aliasDatasetName) %>;
+        var aliasColumn = <%= PageFlowUtil.jsString(aliasColumn) %>;
+        var aliasSourceColumn = <%= PageFlowUtil.jsString(aliasSourceColumn) %>;
+        var allowAliasCreation = <%= allowAliasCreation %>;
         var mergeButton = {};
 
         var init = function()
@@ -95,14 +115,32 @@
 
             });
 
+            createAliasCB = Ext4.create('Ext.form.field.Checkbox', {
+                boxLabel: 'Create an Alias for the old ' + jsSubjectNounColumnName,
+                listeners : {
+                    change : function() {aliasSourceField.setDisabled(!createAliasCB.getValue());}
+                }
+            });
+
+            aliasSourceField = Ext4.create('Ext.form.field.Text', {
+                id : 'aliasSourceField',
+                fieldLabel: 'Source',
+                labelSeparator: ' ',
+                value: "",
+                margin: "0 0 0 40",
+                labelWidth: 40,
+                maxLength: 20,
+                enforceMaxLength: true,
+                disabled: true
+            });
+
             mergeButton = Ext4.create('Ext.Button', {
                 xtype: 'button',
                 text: 'Merge',
                 disabled : true,
-                handler: function() {commitMerge(oldIdField.getValue(), newIdField.getValue());}
+                handler: function() {commitMerge(oldIdField.getValue(), newIdField.getValue(), createAliasCB.getValue(), aliasSourceField.getValue());}
             });
 
-            // TODO: var Create Alias checkbox, enabled conditional on Alias dataset being defined
             var form = Ext4.create('Ext.form.FormPanel', {
                 renderTo: 'mergeParticipantsPanel-div',
                 bodyPadding: 10,
@@ -118,7 +156,15 @@
                         defaultMargins : '2 25 2 0'
                     },
                     items : [oldIdField, newIdField]
-                }],
+                },
+                    {xtype : 'fieldcontainer',
+                        hidden : !allowAliasCreation,
+                        layout : {
+                            type : 'hbox'
+                        },
+                        items: [createAliasCB, aliasSourceField]
+                    }
+                ],
                 dockedItems: [{
                     xtype: 'toolbar',
                     dock: 'bottom',
@@ -128,7 +174,7 @@
                     items: [{
                         xtype: 'button',
                         text: 'Preview',
-                        handler: function() {previewMerge(oldIdField.getValue(), newIdField.getValue());}
+                        handler: function() {previewMerge(oldIdField.getValue(), newIdField.getValue(), createAliasCB.getValue(), aliasSourceField.getValue());}
                     },
                     mergeButton,
                     {
@@ -205,9 +251,8 @@
             }
         }
 
-        var previewMerge = function(oldId, newId) {
-            var filters = [ LABKEY.Filter.create(<%= PageFlowUtil.jsString(subjectNounColumnName)%>, oldId + ';' + newId, LABKEY.Filter.Types.IN) ];
-            var jsSubjectNounColumnName = <%= PageFlowUtil.jsString(subjectNounColumnName)%>;
+        var previewMerge = function(oldId, newId, createAlias, aliasSource) {
+            var filters = [ LABKEY.Filter.create(jsSubjectNounColumnName, oldId + ';' + newId, LABKEY.Filter.Types.IN) ];
             this.datasetsToProcess = this.numDatasets;
 
             // wipe away our status
@@ -252,6 +297,17 @@
                         // update progress
                         renderPreviewTable(oldId, newId);
                     }
+                });
+            }
+
+            if (createAlias) {
+                LABKEY.Query.saveRows({
+                    commands : [buildInsertCommand(oldId, newId, aliasSource)],
+                    validateOnly : true,
+                    success : function() {},
+                    failure : function(response) {
+                        updateMergeResults(response.exception, true);
+                }
                 });
             }
         };
@@ -314,8 +370,17 @@
             });
         }
 
-        // TODO: add the alias to the old ID in the alias table
-        var buildInsertCommand = function(table) {
+        var buildInsertCommand = function(oldId, newId, aliasSource) {
+            var rowsToInsert = [];
+            var row = {};
+            row[jsSubjectNounColumnName] = newId;
+            row[aliasColumn] = oldId;
+            row[aliasSourceColumn] = aliasSource;
+            row['date'] =  new Date();
+            rowsToInsert.push(row);
+
+            return {schemaName : 'study', queryName : aliasDatasetName, command : 'insert', rows : rowsToInsert};
+
         }
 
         var buildUpdateCommand = function(table, newId) {
@@ -369,7 +434,7 @@
                 statusEl.innerHTML = "<span style='padding-top: 8px; font-weight: bold;'>" + Ext4.util.Format.htmlEncode(message) + "<br/></span>";
         }
 
-        var commitMerge = function(oldId, newId){
+        var commitMerge = function(oldId, newId, createAlias, aliasSource){
             var saveRowsCommands = [];
             for (var tableName in this.tables) {
                 var table = this.tables[tableName];
@@ -405,13 +470,18 @@
                     saveRowsCommands.push(buildUpdateCommand(table, newId));
                 }
             }
+            if (createAlias) {
+                saveRowsCommands.push(buildInsertCommand(oldId, newId, aliasSource));
+            }
             resetPreview(true);
             updateMergeResults("Merging " + jsSubjectNounColumnName + " from " + oldId + " to " + newId + " ...", false);
             LABKEY.Query.saveRows({
                 commands : saveRowsCommands,
                 success : function(data) {
-                    oldIdField.setValue = "";
-                    newIdField.setValue = "";
+                    oldIdField.setValue("");
+                    newIdField.setValue("");
+                    createAliasCB.setValue(false);
+                    aliasSourceField.setValue("");
                     resetPreview(true);
                     updateMergeResults("Successfully merged " + jsSubjectNounColumnName + " from " + oldId + " to " + newId, false);
                 },
