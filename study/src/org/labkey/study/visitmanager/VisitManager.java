@@ -396,9 +396,8 @@ public abstract class VisitManager
      *
      * @param visit The visit to check
      * @return True if the visit overlaps existing visits in the same container
-     * @throws SQLException thrown if there's a database error
      */
-    public boolean isVisitOverlapping(VisitImpl visit) throws SQLException
+    public boolean isVisitOverlapping(VisitImpl visit)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo visitTable = StudySchema.getInstance().getTableInfoVisit();

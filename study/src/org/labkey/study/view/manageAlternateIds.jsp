@@ -18,13 +18,14 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.study.Study"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 
@@ -128,15 +129,15 @@
                     },{
                         xtype: 'button',
                         text: 'Export',
-                        handler: function() {window.location = LABKEY.ActionURL.buildURL("study", "exportParticipantTransforms");}
+                        handler: function() {window.location = <%= PageFlowUtil.jsString(new ActionURL(StudyController.ExportParticipantTransformsAction.class, getContainer()).toString())%>;}
                     },{
                         xtype: 'button',
                         text: 'Import',
-                        handler: function() {window.location = LABKEY.ActionURL.buildURL("study", "importAlternateIdMapping.view");}
+                        handler: function() {window.location = <%= PageFlowUtil.jsString(new ActionURL(StudyController.ImportAlternateIdMappingAction.class, getContainer()).toString())%>;}
                     },{
                         xtype: 'button',
-                        text: 'Change or Merge <%= PageFlowUtil.filter(subjectNounColName) %>',
-                        handler: function() {window.location = LABKEY.ActionURL.buildURL("study", "mergeParticipants.view");}
+                        text: 'Change or Merge ' + <%= PageFlowUtil.jsString(subjectNounColName) %>,
+                        handler: function() {window.location = <%= PageFlowUtil.jsString(new ActionURL(StudyController.MergeParticipantsAction.class, getContainer()).toString())%>;}
                     }]
                 }]
             });

@@ -4991,41 +4991,33 @@ public class SpecimenController extends BaseStudyController
         public void validateCommand(ManageCommentsForm form, Errors errors)
         {
             String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
-            try
+            final Study study = BaseStudyController.getStudyRedirectIfNull(getContainer());
+            if (form.getParticipantCommentDataSetId() != null && form.getParticipantCommentDataSetId() != -1)
             {
-                final Study study = BaseStudyController.getStudyRedirectIfNull(getContainer());
-                if (form.getParticipantCommentDataSetId() != null && form.getParticipantCommentDataSetId() != -1)
+                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getParticipantCommentDataSetId());
+                if (def != null && !def.isDemographicData())
                 {
-                    DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getParticipantCommentDataSetId());
-                    if (def != null && !def.isDemographicData())
-                    {
-                        errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + " comments must be a demographics dataset.");
-                    }
-
-                    if (form.getParticipantCommentProperty() == null)
-                        errors.reject(ERROR_MSG, "A Comment field name must be specified for the " + subjectNoun + " Comment Assignment.");
+                    errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + " comments must be a demographics dataset.");
                 }
 
-                if (study.getTimepointType() != TimepointType.CONTINUOUS)
-                {
-                    if (form.getParticipantVisitCommentDataSetId() != null && form.getParticipantVisitCommentDataSetId() != -1)
-                    {
-                        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getParticipantVisitCommentDataSetId());
-                        if (def != null && def.isDemographicData())
-                        {
-                            errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + "/Visit comments cannot be a demographics dataset.");
-                        }
+                if (form.getParticipantCommentProperty() == null)
+                    errors.reject(ERROR_MSG, "A Comment field name must be specified for the " + subjectNoun + " Comment Assignment.");
+            }
 
-                        if (form.getParticipantVisitCommentProperty() == null)
-                            errors.reject(ERROR_MSG, "A Comment field name must be specified for the " + subjectNoun + "/Visit Comment Assignment.");
+            if (study.getTimepointType() != TimepointType.CONTINUOUS)
+            {
+                if (form.getParticipantVisitCommentDataSetId() != null && form.getParticipantVisitCommentDataSetId() != -1)
+                {
+                    DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getParticipantVisitCommentDataSetId());
+                    if (def != null && def.isDemographicData())
+                    {
+                        errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + "/Visit comments cannot be a demographics dataset.");
                     }
+
+                    if (form.getParticipantVisitCommentProperty() == null)
+                        errors.reject(ERROR_MSG, "A Comment field name must be specified for the " + subjectNoun + "/Visit Comment Assignment.");
                 }
             }
-            catch (ServletException e)
-            {
-                errors.reject(ERROR_MSG, "You cannot call this from outside of a study.");
-            }
-
         }
 
         public ModelAndView getView(ManageCommentsForm form, boolean reshow, BindException errors) throws Exception

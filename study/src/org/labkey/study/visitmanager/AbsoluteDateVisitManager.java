@@ -70,7 +70,7 @@ public class AbsoluteDateVisitManager extends RelativeDateVisitManager
         return null;
     }
 
-    public boolean isVisitOverlapping(VisitImpl visit) throws SQLException
+    public boolean isVisitOverlapping(VisitImpl visit)
     {
         throw new UnsupportedOperationException("Study has no timepoints");
     }

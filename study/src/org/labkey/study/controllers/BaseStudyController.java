@@ -83,7 +83,7 @@ public abstract class BaseStudyController extends SpringActionController
     }
 
     @NotNull
-    public static StudyImpl getStudyRedirectIfNull(Container c) throws ServletException
+    public static StudyImpl getStudyRedirectIfNull(Container c)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(c);
         if (null == study)
@@ -96,7 +96,7 @@ public abstract class BaseStudyController extends SpringActionController
     }
 
     @NotNull
-    public StudyImpl getStudyRedirectIfNull() throws ServletException
+    public StudyImpl getStudyRedirectIfNull()
     {
         return getStudyRedirectIfNull(getContainer());
     }

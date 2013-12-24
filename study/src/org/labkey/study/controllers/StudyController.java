@@ -125,7 +125,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -293,7 +292,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ActionURL getDatasetsURL(Container container)
         {
-            return new ActionURL(StudyController.DatasetsAction.class, container);
+            return new ActionURL(DatasetsAction.class, container);
         }
 
         @Override
@@ -1745,32 +1744,24 @@ public class StudyController extends BaseStudyController
 
         public void validateCommand(VisitForm target, Errors errors)
         {
+            StudyImpl study = getStudyRedirectIfNull();
+            if (study.getTimepointType() == TimepointType.CONTINUOUS)
+                errors.reject(null, "Unsupported operation for continuous date study");
 
-            try
+            target.validate(errors, study);
+            if (errors.getErrorCount() > 0)
+                return;
+
+            VisitImpl visitBean = target.getBean();
+
+            //check for overlapping visits that the target num is within the range
+            VisitManager visitMgr = StudyManager.getInstance().getVisitManager(study);
+            if (null != visitMgr)
             {
-                StudyImpl study = getStudyRedirectIfNull();
-                if (study.getTimepointType() == TimepointType.CONTINUOUS)
-                    errors.reject(null, "Unsupported operation for continuous date study");
-
-                target.validate(errors, study);
-                if (errors.getErrorCount() > 0)
-                    return;
-
-                VisitImpl visitBean = target.getBean();
-
-                //check for overlapping visits that the target num is within the range
-                VisitManager visitMgr = StudyManager.getInstance().getVisitManager(study);
-                if (null != visitMgr)
-                {
-                    if (visitMgr.isVisitOverlapping(visitBean))
-                        errors.reject(null, "Visit range overlaps an existing visit in this study. Please enter a different range.");
-                    else if (visitBean.getSequenceNumTarget() < visitBean.getSequenceNumMin() || visitBean.getSequenceNumTarget() > visitBean.getSequenceNumMax())
-                        errors.reject(null, "Visit target sequence number must be within the sequence range. Please enter a different target.");
-                }
-            }
-            catch(ServletException | SQLException e)
-            {
-                errors.reject(null, e.getMessage());
+                if (visitMgr.isVisitOverlapping(visitBean))
+                    errors.reject(null, "Visit range overlaps an existing visit in this study. Please enter a different range.");
+                else if (visitBean.getSequenceNumTarget() < visitBean.getSequenceNumMin() || visitBean.getSequenceNumTarget() > visitBean.getSequenceNumMax())
+                    errors.reject(null, "Visit target sequence number must be within the sequence range. Please enter a different target.");
             }
         }
 
@@ -1949,27 +1940,20 @@ public class StudyController extends BaseStudyController
     {
         public void validateCommand(VisitForm target, Errors errors)
         {
-            try
-            {
-                StudyImpl study = getStudyRedirectIfNull();
-                if (study.getTimepointType() == TimepointType.CONTINUOUS)
-                    errors.reject(null, "Unsupported operation for continuous date study");
+            StudyImpl study = getStudyRedirectIfNull();
+            if (study.getTimepointType() == TimepointType.CONTINUOUS)
+                errors.reject(null, "Unsupported operation for continuous date study");
 
-                target.validate(errors, study);
-                if (errors.getErrorCount() > 0)
-                    return;
+            target.validate(errors, study);
+            if (errors.getErrorCount() > 0)
+                return;
 
-                //check for overlapping visits
-                VisitManager visitMgr = StudyManager.getInstance().getVisitManager(study);
-                if (null != visitMgr)
-                {
-                    if (visitMgr.isVisitOverlapping(target.getBean()))
-                        errors.reject(null, "Visit range overlaps an existing visit in this study. Please enter a different range.");
-                }
-            }
-            catch(ServletException | SQLException e)
+            //check for overlapping visits
+            VisitManager visitMgr = StudyManager.getInstance().getVisitManager(study);
+            if (null != visitMgr)
             {
-                errors.reject(null, e.getMessage());
+                if (visitMgr.isVisitOverlapping(target.getBean()))
+                    errors.reject(null, "Visit range overlaps an existing visit in this study. Please enter a different range.");
             }
         }
 
@@ -3993,16 +3977,9 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            try
-            {
-                root.addChild(getStudyRedirectIfNull().getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
-                root.addChild("Import Study Batch - " + path);
-                return root;
-            }
-            catch (ServletException se)
-            {
-                throw UnexpectedException.wrap(se);
-            }
+            root.addChild(getStudyRedirectIfNull().getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
+            root.addChild("Import Study Batch - " + path);
+            return root;
         }
     }
 
@@ -5543,27 +5520,23 @@ public class StudyController extends BaseStudyController
 
     private String getVisitLabel()
     {
-        try
+        StudyImpl study = getStudy();
+        if (study != null)
         {
             return StudyManager.getInstance().getVisitManager(getStudyRedirectIfNull()).getLabel();
         }
-        catch (ServletException e)
-        {
-            return "Visit";
-        }
+        return "Visit";
     }
 
 
     private String getVisitLabelPlural()
     {
-        try
+        StudyImpl study = getStudy();
+        if (study != null)
         {
             return StudyManager.getInstance().getVisitManager(getStudyRedirectIfNull()).getPluralLabel();
         }
-        catch (ServletException e)
-        {
-            return "Visits";
-        }
+        return "Visits";
     }
 
     public static class ParticipantForm extends ViewForm implements StudyManager.ParticipantViewConfig
@@ -6784,14 +6757,8 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            try
-            {
-                _appendManageStudy(root);
-                root.addChild("Manage " + getStudyRedirectIfNull().getSubjectNounSingular() + " Groups");
-            }
-            catch (ServletException e)
-            {
-            }
+            _appendManageStudy(root);
+            root.addChild("Manage " + getStudyRedirectIfNull().getSubjectNounSingular() + " Groups");
             return root;
         }
     }
@@ -6822,15 +6789,10 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            try
-            {
-                _appendManageStudy(root);
-                String subjectNoun = getStudyRedirectIfNull().getSubjectNounSingular();
-                root.addChild("Manage Alternate " + subjectNoun + " IDs and " + subjectNoun + " Aliases");
-            }
-            catch (ServletException e)
-            {
-            }
+            _appendManageStudy(root);
+            String subjectNoun = getStudyRedirectIfNull().getSubjectNounSingular();
+            root.addChild("Manage Alternate " + subjectNoun + " IDs and " + subjectNoun + " Aliases");
+
             return root;
         }
     }
@@ -6845,15 +6807,9 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            try
-            {
-                _appendManageStudy(root);
-                String subjectColumnName = getStudyRedirectIfNull().getSubjectColumnName();
-                root.addChild("Merge " + subjectColumnName + "s");
-            }
-            catch (ServletException e)
-            {
-            }
+            _appendManageStudy(root);
+            String subjectColumnName = getStudyRedirectIfNull().getSubjectColumnName();
+            root.addChild("Merge " + subjectColumnName + "s");
             return root;
         }
     }
