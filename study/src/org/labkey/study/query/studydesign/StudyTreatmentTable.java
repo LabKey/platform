@@ -54,26 +54,33 @@ public class StudyTreatmentTable extends DefaultStudyDesignTable
 
         setName(StudyQuerySchema.TREATMENT_TABLE_NAME);
         setDescription("Contains one row per study treatment");
+    }
 
-        final ColumnInfo descriptionRendererTypeColumn = getColumn("DescriptionRendererType");
-        descriptionRendererTypeColumn.setFk(new LookupForeignKey("Value")
+    @Override
+    protected void initColumn(ColumnInfo col)
+    {
+        if ("Description".equalsIgnoreCase(col.getName()))
         {
-            @Override
-            public TableInfo getLookupTableInfo()
+            col.setDisplayColumnFactory(new DisplayColumnFactory()
             {
-                return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), WikiService.SCHEMA_NAME).getTable(WikiService.RENDERER_TYPE_TABLE_NAME);
-            }
-        });
-
-        ColumnInfo descriptionColumn = getColumn("Description");
-        descriptionColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+                @Override
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new WikiRendererDisplayColumn(colInfo, "DescriptionRendererType", WikiRendererType.TEXT_WITH_LINKS);
+                }
+            });
+        }
+        else if ("DescriptionRendererType".equalsIgnoreCase(col.getName()))
         {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            col.setFk(new LookupForeignKey("Value")
             {
-                return new WikiRendererDisplayColumn(colInfo, descriptionRendererTypeColumn.getName(), WikiRendererType.TEXT_WITH_LINKS);
-            }
-        });
+                @Override
+                public TableInfo getLookupTableInfo()
+                {
+                    return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), WikiService.SCHEMA_NAME).getTable(WikiService.RENDERER_TYPE_TABLE_NAME);
+                }
+            });
+        }
     }
 
     @Override

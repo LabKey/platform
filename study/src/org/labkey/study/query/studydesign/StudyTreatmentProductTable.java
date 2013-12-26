@@ -49,26 +49,34 @@ public class StudyTreatmentProductTable extends DefaultStudyDesignTable
         super(domain, dbSchema, schema);
 
         setName(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+        setDescription("Contains one row per study treatment product");
+    }
 
-        ColumnInfo productIdCol = getColumn("ProductId");
-        productIdCol.setFk(new LookupForeignKey("RowId")
+    @Override
+    protected void initColumn(ColumnInfo col)
+    {
+        if ("ProductId".equalsIgnoreCase(col.getName()))
         {
-            @Override
-            public TableInfo getLookupTableInfo()
+            col.setFk(new LookupForeignKey("RowId")
             {
-                return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
-            }
-        });
-
-        ColumnInfo treatmentIdCol = getColumn("TreatmentId");
-        treatmentIdCol.setFk(new LookupForeignKey("RowId")
+                @Override
+                public TableInfo getLookupTableInfo()
+                {
+                    return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
+                }
+            });
+        }
+        else if ("TreatmentId".equalsIgnoreCase(col.getName()))
         {
-            @Override
-            public TableInfo getLookupTableInfo()
+            col.setFk(new LookupForeignKey("RowId")
             {
-                return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
-            }
-        });
+                @Override
+                public TableInfo getLookupTableInfo()
+                {
+                    return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
+                }
+            });
+        }
     }
 
     @Override

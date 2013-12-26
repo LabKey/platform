@@ -50,17 +50,23 @@ public class StudyProductAntigenTable extends DefaultStudyDesignTable
         super(domain, dbSchema, schema);
 
         setName(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
-        setDescription("Contains one row per study antigen");
+        setDescription("Contains one row per study product antigen");
+    }
 
-        ColumnInfo productIdCol = getColumn("ProductId");
-        productIdCol.setFk(new LookupForeignKey("RowId")
+    @Override
+    protected void initColumn(ColumnInfo col)
+    {
+        if ("ProductId".equalsIgnoreCase(col.getName()))
         {
-            @Override
-            public TableInfo getLookupTableInfo()
+            col.setFk(new LookupForeignKey("RowId")
             {
-                return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
-            }
-        });
+                @Override
+                public TableInfo getLookupTableInfo()
+                {
+                    return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
+                }
+            });
+        }
     }
 
     @Override
