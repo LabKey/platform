@@ -55,25 +55,19 @@
 </div>
 <div id="mergeParticipantsPanel-div"></div>
 <div>
-    <p/>
+    <p></p>
 </div>
 <div id="mergeResults-div"></div>
 <div id="previewPanel-div" class="labkey-data-region-wrap"></div>
 <script type="text/javascript">
     (function(){
-
-        // All of the "tables" that might need updating.  This includes datasets and the specimen table
-        var tables = {};
-        var datasetsToProcess;
-        var numDatasets;
-
         var jsSubjectNounColumnName = <%= PageFlowUtil.jsString(subjectNounColumnName) %>;
         var oldIdField;
         var newIdField;
         var createAliasCB;
         var aliasSourceField;
-        var aliasDatasetName = <%= PageFlowUtil.jsString(aliasDatasetName) %>;
-        var aliasColumn = <%= PageFlowUtil.jsString(aliasColumn) %>;
+        var aliasDatasetName =<%= PageFlowUtil.jsString(aliasDatasetName) %>;
+        var aliasColumn =<%= PageFlowUtil.jsString(aliasColumn) %>;
         var aliasSourceColumn = <%= PageFlowUtil.jsString(aliasSourceColumn) %>;
         var allowAliasCreation = <%= allowAliasCreation %>;
         var mergeButton = {};
@@ -82,15 +76,11 @@
         {
             Ext4.QuickTips.init();
 
-            // prepopulate the id fields if we are returning from a filtered data view
-            // currently this doesn't work
-            var params = LABKEY.ActionURL.getParameters();
-
             oldIdField = Ext4.create('Ext.form.field.Text', {
                 id : 'oldIdField',
                 fieldLabel: 'Change ' + jsSubjectNounColumnName,
                 labelSeparator: '',
-                value: params.oldId || "",
+                value: "",
 //                width : 310,
                 labelWidth: 140,
                 maxLength: 20,
@@ -104,7 +94,7 @@
                 id : 'newIdField',
                 fieldLabel: 'to',
                 labelSeparator: '',
-                value: params.newId || "",
+                value: "",
 //                width : 220,
                 labelWidth: 40,
                 maxLength: 20,
@@ -224,7 +214,7 @@
             if (resetPreviewPanel) {
                 document.getElementById('previewPanel-div').innerHTML = "";
             }
-        }
+        };
 
         var emptyPreviewTableStatus = function() {
             for (var tableName in this.tables) {
@@ -233,7 +223,7 @@
                 table.newIds = [];
                 table.hasConflict = null;
             }
-        }
+        };
 
         // gather the ids for either a dataset or the specimen
         // details table
@@ -249,7 +239,7 @@
                     table.newIds.push(row[idColumn]);
                 }
             }
-        }
+        };
 
         var previewMerge = function(oldId, newId, createAlias, aliasSource) {
             var filters = [ LABKEY.Filter.create(jsSubjectNounColumnName, oldId + ';' + newId, LABKEY.Filter.Types.IN) ];
@@ -368,7 +358,7 @@
                   renderPreviewTable(oldId, newId);
               }
             });
-        }
+        };
 
         var buildInsertCommand = function(oldId, newId, aliasSource) {
             var rowsToInsert = [];
@@ -381,7 +371,7 @@
 
             return {schemaName : 'study', queryName : aliasDatasetName, command : 'insert', rows : rowsToInsert};
 
-        }
+        };
 
         var buildUpdateCommand = function(table, newId) {
             var rowsToUpdate = [];
@@ -393,7 +383,7 @@
                 rowsToUpdate.push(row);
             }
             return {schemaName : 'study', queryName : table.name, command : 'update', rows : rowsToUpdate};
-        }
+        };
 
         var buildDeleteCommand = function(table, ids) {
             var rowsToDelete = [];
@@ -404,11 +394,11 @@
                 rowsToDelete.push(row);
             }
             return {schemaName : 'study',queryName : table.name, command : 'delete', rows : rowsToDelete};
-        }
+        };
 
         var getConflictHintGroupName = function(table) {
             return "conflict_" + table.htmlName;
-        }
+        };
 
         // old if we should use the old ids (delete new)
         // new if we should use the new ids (delete old)
@@ -423,7 +413,7 @@
                 }
             }
             return null;
-        }
+        };
 
         var updateMergeResults = function(message, isError)
         {
@@ -432,7 +422,7 @@
                 statusEl.innerHTML = "<span style='color:red;padding-top: 8px; font-weight: bold;'>" + Ext4.util.Format.htmlEncode(message) + "<br/></span>";
             else
                 statusEl.innerHTML = "<span style='padding-top: 8px; font-weight: bold;'>" + Ext4.util.Format.htmlEncode(message) + "<br/></span>";
-        }
+        };
 
         var commitMerge = function(oldId, newId, createAlias, aliasSource){
             var saveRowsCommands = [];
@@ -493,7 +483,7 @@
 
         var enableMerge = function() {
             mergeButton.setDisabled(false);
-        }
+        };
 
         // build links to filtered datasets
         // if both old and new ids are specified, use an in-clause
@@ -501,19 +491,13 @@
         var buildDataURL = function(table, oldId, newId) {
             var filter;
             if (oldId && newId) {
-                filter = LABKEY.Filter.create(<%= PageFlowUtil.jsString(subjectNounColumnName)%>, oldId + ';' + newId, LABKEY.Filter.Types.IN);
+                filter = LABKEY.Filter.create(jsSubjectNounColumnName, oldId + ';' + newId, LABKEY.Filter.Types.IN);
             }
             else {
-                filter = LABKEY.Filter.create(<%= PageFlowUtil.jsString(subjectNounColumnName)%>, oldId ? oldId : newId, LABKEY.Filter.Types.EQUAL);
+                filter = LABKEY.Filter.create(jsSubjectNounColumnName, oldId ? oldId : newId, LABKEY.Filter.Types.EQUAL);
             }
 
             var url;
-
-            // TODO:   the back button doesn't appear to respect the returnUrl property.  I wanted to do this so that
-            // if the user clicked on the datasource to investigate the conflict and then hit back he wouldn't have
-            // to retype in the participant ids
-            // var returnUrl = LABKEY.ActionURL.buildURL('study', 'mergeParticipants.view', null, {oldId : oldId, newId : newId});
-            // params['returnUrl'] = returnUrl;
 
             if (table.datasetId) {
                 var params = {datasetId: table.datasetId};
@@ -529,15 +513,15 @@
                 url = LABKEY.ActionURL.buildURL("query", 'executeQuery.view', null, params);
             }
             return url;
-        }
+        };
 
         var renderPreviewTable = function(oldId, newId){
             var html = [];
 
             html.push("<table class='labkey-data-region labkey-show-borders'>");
             html.push("<tr><td class='labkey-column-header'>Data Source</td>");
-            html.push("<td class='labkey-column-header'>OldId Row Count</td>");
-            html.push("<td class='labkey-column-header'>NewId Row Count</td>");
+            html.push("<td class='labkey-column-header'>'" + oldId + "' Row Count</td>");
+            html.push("<td class='labkey-column-header'>'" + newId + "' Row Count</td>");
             html.push("<td class='labkey-column-header'>Status</td>");
             html.push("<td class='labkey-column-header'>&nbsp;</td></tr>");
 
@@ -548,12 +532,12 @@
             for (var tableName in this.tables) {
                 var table = this.tables[tableName];
                 var rowStyle = (1==row%2) ? "labkey-alternate-row" : "labkey-row";
-                html.push("<tr name='" + tableName + "' class='" + rowStyle + "'>");
+                html.push("<tr class='" + rowStyle + "'>");
                 // provide links to filtered data views for the columns
                 var bothIdURL = buildDataURL(table, oldId, newId);
                 var oldIdURL = buildDataURL(table, oldId, null);
                 var newIdURL = buildDataURL(table, null, newId);
-                html.push("<td><a href='" + bothIdURL + "'/>" + tableName + "</td>");
+                html.push("<td><a href='" + bothIdURL + "'/>" + table.htmlName + "</td>");
                 html.push("<td><a href='" + oldIdURL + "'/>" + table.oldIds.length + "</td>");
                 html.push("<td><a href='" + newIdURL + "'/>" + table.newIds.length + "</td>");
                 if (null == table.hasConflict) {
@@ -576,8 +560,8 @@
                         var group = getConflictHintGroupName(table);
                         html.push("<td><a href='" + bothIdURL + "'/>Conflict!</td>");
                         html.push("<td>");
-                        html.push("<input type='radio' name='" + group + "' value='old'>Use old Id values ");
-                        html.push("<input type='radio' name='" + group + "' value='new'>Use new Id values ");
+                        html.push("<input type='radio' name='" + group + "' value='old'>Retain '" + oldId + "' rows ");
+                        html.push("<input type='radio' name='" + group + "' value='new'>Retain '" + newId + "' rows ");
                         html.push("</td>");
                     }
                 } else {
@@ -594,7 +578,7 @@
             if (hasOldValues && !stillChecking)
                 enableMerge();
             return 0;
-        }
+        };
 
         Ext4.onReady(init);
 
