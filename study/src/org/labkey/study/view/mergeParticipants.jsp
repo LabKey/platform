@@ -66,11 +66,12 @@
         var newIdField;
         var createAliasCB;
         var aliasSourceField;
-        var aliasDatasetName =<%= PageFlowUtil.jsString(aliasDatasetName) %>;
-        var aliasColumn =<%= PageFlowUtil.jsString(aliasColumn) %>;
+        var aliasDatasetName = <%= PageFlowUtil.jsString(aliasDatasetName) %>;
+        var aliasColumn = <%= PageFlowUtil.jsString(aliasColumn) %>;
         var aliasSourceColumn = <%= PageFlowUtil.jsString(aliasSourceColumn) %>;
         var allowAliasCreation = <%= allowAliasCreation %>;
         var mergeButton = {};
+        var globalError = false;
 
         var init = function()
         {
@@ -128,7 +129,7 @@
                 xtype: 'button',
                 text: 'Merge',
                 disabled : true,
-                handler: function() {commitMerge(oldIdField.getValue(), newIdField.getValue(), createAliasCB.getValue(), aliasSourceField.getValue());}
+                handler: function() {trimFields(); commitMerge(oldIdField.getValue(), newIdField.getValue(), createAliasCB.getValue(), aliasSourceField.getValue());}
             });
 
             var form = Ext4.create('Ext.form.FormPanel', {
@@ -164,7 +165,7 @@
                     items: [{
                         xtype: 'button',
                         text: 'Preview',
-                        handler: function() {previewMerge(oldIdField.getValue(), newIdField.getValue(), createAliasCB.getValue(), aliasSourceField.getValue());}
+                        handler: function() {trimFields(); previewMerge(oldIdField.getValue(), newIdField.getValue(), createAliasCB.getValue(), aliasSourceField.getValue());}
                     },
                     mergeButton,
                     {
@@ -180,6 +181,7 @@
             schemaName : 'study',
             queryName : 'Datasets',
             columns: 'Name',
+            sort: 'Name',
             success : function(details){
                 var rows = details.rows;
                 this.tables = {};
@@ -206,10 +208,17 @@
             scope : this
         });
 
+        var trimFields = function() {
+            oldIdField.setValue(Ext.util.Format.trim(oldIdField.getValue()));
+            newIdField.setValue(Ext.util.Format.trim(newIdField.getValue()));
+            aliasSourceField.setValue(Ext.util.Format.trim(aliasSourceField.getValue()));
+        };
+
         var resetPreview = function(resetPreviewPanel)
         {
             mergeButton.setDisabled(true);
             emptyPreviewTableStatus();
+            globalError = false;
             document.getElementById('mergeResults-div').innerHTML = "";
             if (resetPreviewPanel) {
                 document.getElementById('previewPanel-div').innerHTML = "";
@@ -268,16 +277,22 @@
                         // if table has both new and old ids, then make an update clause
                         // and check to see if we have any conflict errors
                         //
-                        if (table.oldIds.length > 0 && table.newIds.length > 0) {
+                        if ((table.oldIds.length > 0 && table.newIds.length > 0) ||
+                                ( (table.oldIds.length > 0 || table.newIds.length > 0 ) && table.name == aliasDatasetName && createAlias))
+                        {
+                            var commands = [];
+                            commands.push(buildUpdateCommand(table, newId));
+                            if (table.name == aliasDatasetName && createAlias)
+                                commands.push(buildInsertCommand(oldId, newId, aliasSource));
                             LABKEY.Query.saveRows({
-                                commands : [buildUpdateCommand(table, newId)],
-                                validateOnly : true,
+                                commands : commands,
                                 success : function(data) {
-                                    checkMoveToSpecimenDetail(table, false, oldId, newId, filters);
+                                   checkMoveToSpecimenDetail(table, false, oldId, newId, filters);
                                 },
                                 failure : function(errorInfo, response) {
                                     checkMoveToSpecimenDetail(table, true, oldId, newId, filters);
-                                }
+                                },
+                                validateOnly : true
                             });
                         }
                         else {
@@ -289,17 +304,6 @@
                     }
                 });
             }
-
-            if (createAlias) {
-                LABKEY.Query.saveRows({
-                    commands : [buildInsertCommand(oldId, newId, aliasSource)],
-                    validateOnly : true,
-                    success : function() {},
-                    failure : function(response) {
-                        updateMergeResults(response.exception, true);
-                }
-                });
-            }
         };
 
         var checkMoveToSpecimenDetail = function(table, hasConflict, oldId, newId, filters) {
@@ -307,7 +311,7 @@
             this.datasetsToProcess--;
             if (this.datasetsToProcess == 0)
                 checkSpecimenDetail(oldId, newId, filters);
-        }
+        };
 
         var checkSpecimenDetail = function(oldId, newId, filters) {
             var specimenDetail = this.tables['SpecimenDetail'];
@@ -419,7 +423,10 @@
         {
             var statusEl = document.getElementById('mergeResults-div');
             if (isError)
+            {
                 statusEl.innerHTML = "<span style='color:red;padding-top: 8px; font-weight: bold;'>" + Ext4.util.Format.htmlEncode(message) + "<br/></span>";
+                globalError = true;
+            }
             else
                 statusEl.innerHTML = "<span style='padding-top: 8px; font-weight: bold;'>" + Ext4.util.Format.htmlEncode(message) + "<br/></span>";
         };
@@ -512,16 +519,17 @@
                 params.queryName = 'SpecimenDetail';
                 url = LABKEY.ActionURL.buildURL("query", 'executeQuery.view', null, params);
             }
+            url = "<a href='" + url + "' target='_blank'/>";
             return url;
-        };
+        }
 
         var renderPreviewTable = function(oldId, newId){
             var html = [];
 
             html.push("<table class='labkey-data-region labkey-show-borders'>");
             html.push("<tr><td class='labkey-column-header'>Data Source</td>");
-            html.push("<td class='labkey-column-header'>'" + oldId + "' Row Count</td>");
-            html.push("<td class='labkey-column-header'>'" + newId + "' Row Count</td>");
+            html.push("<td class='labkey-column-header'>" + Ext4.util.Format.htmlEncode(oldId) + " Row Count</td>");
+            html.push("<td class='labkey-column-header'>" + Ext4.util.Format.htmlEncode(newId) + " Row Count</td>");
             html.push("<td class='labkey-column-header'>Status</td>");
             html.push("<td class='labkey-column-header'>&nbsp;</td></tr>");
 
@@ -537,9 +545,9 @@
                 var bothIdURL = buildDataURL(table, oldId, newId);
                 var oldIdURL = buildDataURL(table, oldId, null);
                 var newIdURL = buildDataURL(table, null, newId);
-                html.push("<td><a href='" + bothIdURL + "'/>" + table.htmlName + "</td>");
-                html.push("<td><a href='" + oldIdURL + "'/>" + table.oldIds.length + "</td>");
-                html.push("<td><a href='" + newIdURL + "'/>" + table.newIds.length + "</td>");
+                html.push("<td>" + bothIdURL + tableName + "</td>");
+                html.push("<td>" + oldIdURL + table.oldIds.length + "</td>");
+                html.push("<td>" + newIdURL + table.newIds.length + "</td>");
                 if (null == table.hasConflict) {
                     html.push("<td>Checking...</td>");
                     html.push("<td>&nbsp;</td></tr>");
@@ -558,14 +566,21 @@
                         // id values.  Right now we do this when the user hits an enabled merge button
                         //
                         var group = getConflictHintGroupName(table);
-                        html.push("<td><a href='" + bothIdURL + "'/>Conflict!</td>");
+                        html.push("<td>" + bothIdURL + "Conflict!</td>");
                         html.push("<td>");
-                        html.push("<input type='radio' name='" + group + "' value='old'>Retain '" + oldId + "' rows ");
-                        html.push("<input type='radio' name='" + group + "' value='new'>Retain '" + newId + "' rows ");
+                        if (table.name == aliasDatasetName)
+                        {
+                            html.push("Duplicate alias would be created. Conflict must be resolved manually.");
+                        }
+                        else
+                        {
+                            html.push("<input type='radio' name='" + group + "' value='old'>Use old Id values ");
+                            html.push("<input type='radio' name='" + group + "' value='new'>Use new Id values ");
+                        }
                         html.push("</td>");
                     }
                 } else {
-                    html.push("<td><a href='" + bothIdURL + "'/>No conflicts</td>");
+                    html.push("<td>" + bothIdURL + "No conflicts</td>");
                     html.push("<td>&nbsp;</td></tr>");
                 }
                 // if any editable dataset has any rows with the old value then there is work to do
@@ -575,10 +590,10 @@
             }
             html.push("</table>");
             document.getElementById('previewPanel-div').innerHTML = html.join("");
-            if (hasOldValues && !stillChecking)
+            if (hasOldValues && !stillChecking && !globalError)
                 enableMerge();
             return 0;
-        };
+        }
 
         Ext4.onReady(init);
 
