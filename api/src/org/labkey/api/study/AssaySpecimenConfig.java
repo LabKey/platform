@@ -15,8 +15,6 @@
  */
 package org.labkey.api.study;
 
-import java.util.List;
-
 /**
  * User: cnathe
  * Date: 12/14/13

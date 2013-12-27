@@ -51,6 +51,8 @@ public interface Study extends StudyEntity
 
     List<? extends Visit> getVisitsForAssaySchedule();
 
+    List<? extends Product> getStudyProducts(User user, String role, String label);
+
     ParticipantCategory[] getParticipantCategories(User user);
 
     boolean isAdvancedCohorts();

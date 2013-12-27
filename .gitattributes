@@ -1239,6 +1239,8 @@ api/src/org/labkey/api/study/PlateTemplate.java -text
 api/src/org/labkey/api/study/PlateTypeHandler.java -text
 api/src/org/labkey/api/study/Position.java -text
 api/src/org/labkey/api/study/PositionImpl.java -text
+api/src/org/labkey/api/study/Product.java -text
+api/src/org/labkey/api/study/ProductAntigen.java -text
 api/src/org/labkey/api/study/PropertySet.java -text
 api/src/org/labkey/api/study/SamplesUrls.java -text
 api/src/org/labkey/api/study/SpecimenImportStrategy.java -text
