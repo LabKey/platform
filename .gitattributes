@@ -1321,6 +1321,7 @@ api/src/org/labkey/api/study/assay/AssayRunCreator.java -text
 api/src/org/labkey/api/study/assay/AssayRunDatabaseContext.java -text
 api/src/org/labkey/api/study/assay/AssayRunType.java -text
 api/src/org/labkey/api/study/assay/AssayRunUploadContext.java -text
+api/src/org/labkey/api/study/assay/AssayRunUploadContextImpl.java -text
 api/src/org/labkey/api/study/assay/AssayRunsView.java -text
 api/src/org/labkey/api/study/assay/AssaySaveHandler.java -text
 api/src/org/labkey/api/study/assay/AssaySchema.java -text
