@@ -610,7 +610,7 @@ public class FileSystemResource extends AbstractWebdavResource
                 if (attach != null)
                 {
                     AttachmentService.get().deleteAttachment(dir, file.getName(), null);
-                    return true;
+                    return (AttachmentService.get().getAttachment(dir, file.getName()) == null);
                 }
             }
         }
