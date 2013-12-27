@@ -24,15 +24,24 @@
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<VisitForm> me = (JspView<VisitForm>)HttpView.currentView();
+    ViewContext context = me.getViewContext();
     VisitForm form = me.getModelBean();
     VisitImpl v = form.getBean();
 
     StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
     boolean isDateBased = study != null && study.getTimepointType() == TimepointType.DATE;
+
+    ActionURL returnURL;
+    if (context.getActionURL().getParameter("returnUrl") != null)
+        returnURL = new ActionURL(context.getActionURL().getParameter("returnUrl"));
+    else
+        returnURL = new ActionURL(StudyController.ManageVisitsAction.class, context.getContainer());
 %>
 <labkey:errors/>
 <p style="width: 750px;">
@@ -123,7 +132,10 @@ is uploaded along with the data. This form allows you to define a range of seque
         </tr>
         <tr>
             <td>&nbsp;</td>
-            <td><%= this.generateSubmitButton("Save")%>&nbsp;<%=generateButton("Cancel", StudyController.ManageVisitsAction.class)%></td>
+            <td>
+                <input type="hidden" name="returnUrl" value="<%= returnURL %>">
+                <%= this.generateSubmitButton("Save")%>&nbsp;<%=generateButton("Cancel", returnURL)%>
+            </td>
         </tr>
     </table>
 </form>

@@ -176,6 +176,8 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.DatasetReorderer;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.Participant;
+import org.labkey.study.model.ProductAntigenImpl;
+import org.labkey.study.model.ProductImpl;
 import org.labkey.study.model.QCState;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.SecurityType;
@@ -1978,7 +1980,7 @@ public class StudyController extends BaseStudyController
 
         public ActionURL getSuccessURL(VisitForm visitForm)
         {
-            return new ActionURL(ManageVisitsAction.class, getContainer());
+            return visitForm.getReturnActionURL();
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4228,7 +4230,6 @@ public class StudyController extends BaseStudyController
     @RequiresPermissionClass(AdminPermission.class)
     public class VisitOrderAction extends FormViewAction<VisitReorderForm>
     {
-
         public ModelAndView getView(VisitReorderForm reorderForm, boolean reshow, BindException errors) throws Exception
         {
             return new StudyJspView<Object>(getStudyRedirectIfNull(), "visitOrder.jsp", reorderForm, errors);
@@ -4312,7 +4313,7 @@ public class StudyController extends BaseStudyController
 
         public ActionURL getSuccessURL(VisitReorderForm reorderForm)
         {
-            return new ActionURL(ManageVisitsAction.class, getContainer());
+            return reorderForm.getReturnActionURL();
         }
     }
 
@@ -5408,7 +5409,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class VisitReorderForm
+    public static class VisitReorderForm extends ReturnUrlForm
     {
         private boolean _explicitDisplayOrder;
         private boolean _explicitChronologicalOrder;
@@ -6768,13 +6769,28 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new JspView<>("/org/labkey/study/view/manageAssaySpecimen.jsp", o);
+            return new JspView<>("/org/labkey/study/view/studydesign/manageAssaySpecimen.jsp", o);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             _appendManageStudy(root);
             return root.addChild("Manage Assay/Specimen Configurations");
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ManageStudyProductsAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/study/view/studydesign/manageStudyProducts.jsp", o);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            return root.addChild("Manage Study Products");
         }
     }
 
@@ -7554,5 +7570,84 @@ public class StudyController extends BaseStudyController
             return actionURL;
         }
 
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetStudyProducts extends ApiAction<GetStudyProductsForm>
+    {
+        private StudyImpl _study;
+
+        @Override
+        public void validateForm(GetStudyProductsForm form, Errors errors)
+        {
+            _study = getStudy(getContainer());
+            if (_study == null)
+                errors.reject(ERROR_MSG, "A study does not exist in this folder");
+        }
+
+        @Override
+        public ApiResponse execute(GetStudyProductsForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            List<JSONObject> products = new ArrayList<>();
+
+            List<ProductImpl> studyProducts = StudyManager.getInstance().getStudyProducts(getContainer(), getUser(), form.getRole(), form.getLabel());
+            for (ProductImpl product : studyProducts)
+            {
+                JSONObject productJSON = new JSONObject();
+                productJSON.put("RowId", product.getRowId());
+                productJSON.put("Label", product.getLabel());
+                productJSON.put("Role", product.getRole());
+                productJSON.put("Type", product.getType());
+
+                List<JSONObject> productAntigens = new ArrayList<>();
+                List<ProductAntigenImpl> studyProductAntigens = StudyManager.getInstance().getStudyProductAntigens(getContainer(), getUser(), product.getRowId());
+                for (ProductAntigenImpl antigen : studyProductAntigens)
+                {
+                    JSONObject antigenJSON = new JSONObject();
+                    antigenJSON.put("RowId", antigen.getRowId());
+                    antigenJSON.put("ProductId", antigen.getProductId());
+                    antigenJSON.put("Gene", antigen.getGene());
+                    antigenJSON.put("SubType", antigen.getSubType());
+                    antigenJSON.put("GenBankId", antigen.getGenBankId());
+                    antigenJSON.put("Sequence", antigen.getSequence());
+                    productAntigens.add(antigenJSON);
+                }
+                productJSON.put("Antigens", productAntigens);
+
+                products.add(productJSON);
+            }
+
+            resp.put("success", true);
+            resp.put("products", products);
+
+            return resp;
+        }
+    }
+
+    public static class GetStudyProductsForm
+    {
+        private String _label;
+        private String _role;
+
+        public String getLabel()
+    {
+        return _label;
+    }
+
+        public void setLabel(String label)
+        {
+            _label = label;
+        }
+
+        public String getRole()
+        {
+            return _role;
+        }
+
+        public void setRole(String role)
+        {
+            _role = role;
+        }
     }
 }

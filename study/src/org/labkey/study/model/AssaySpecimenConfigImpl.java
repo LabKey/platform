@@ -15,10 +15,7 @@
  */
 package org.labkey.study.model;
 
-import org.labkey.api.data.Entity;
 import org.labkey.api.study.AssaySpecimenConfig;
-
-import java.util.List;
 
 /**
  * User: cnathe

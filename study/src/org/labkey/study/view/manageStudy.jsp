@@ -200,11 +200,6 @@
         <td><%= textLink("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
     </tr>
     <tr>
-        <th align="left">Assay Schedule</th>
-        <td>This study defines <%= getAssaySpecimenConfigs().size() %> assay/specimen configurations</td>
-        <td><%= textLink("Manage Assay Schedule", StudyController.ManageAssaySpecimenAction.class) %></td>
-    </tr>
-    <tr>
         <th align="left">Locations</th>
         <td>This study references <%= getLocations().size() %> locations (labs/sites/repositories)</td>
         <td><%= textLink("Manage Locations", StudyController.ManageLocationsAction.class) %></td>
@@ -251,6 +246,16 @@
         <td>Manage <%= h(subjectNounSingle.toLowerCase()) %> and  <%= h(subjectNounSingle.toLowerCase()) %>/visit comments</td>
         <td><%= textLink("Manage Comments",
                 new ActionURL(SpecimenController.ManageSpecimenCommentsAction.class, c)) %></td>
+    </tr>
+    <tr>
+        <th align="left">Study Products</th>
+        <td>This study defines <%= getStudyProducts(user, null, null).size() %> study products</td>
+        <td><%= textLink("Manage Study Products", StudyController.ManageStudyProductsAction.class) %></td>
+    </tr>
+    <tr>
+        <th align="left">Assay Schedule</th>
+        <td>This study defines <%= getAssaySpecimenConfigs().size() %> assay/specimen configurations</td>
+        <td><%= textLink("Manage Assay Schedule", StudyController.ManageAssaySpecimenAction.class) %></td>
     </tr>
     <tr>
         <th align="left">Demo Mode</th>

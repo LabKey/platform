@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.view;
+package org.labkey.study.view.studydesign;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.study.Study;
@@ -45,7 +45,7 @@ public class AssayScheduleWebpartFactory extends BaseWebPartFactory
     @Override
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
     {
-        JspView<Portal.WebPart> view = new JspView<>("/org/labkey/study/view/assayScheduleWebpart.jsp", webPart);
+        JspView<Portal.WebPart> view = new JspView<>("/org/labkey/study/view/studydesign/assayScheduleWebpart.jsp", webPart);
         view.setTitle(NAME);
         view.setFrame(WebPartView.FrameType.PORTAL);
 

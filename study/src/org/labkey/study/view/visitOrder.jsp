@@ -21,7 +21,21 @@
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%
+    JspView<StudyController.VisitReorderForm> me = (JspView<StudyController.VisitReorderForm>) HttpView.currentView();
+    ViewContext context = me.getViewContext();
+
+    ActionURL returnURL;
+    if (context.getActionURL().getParameter("returnUrl") != null)
+        returnURL = new ActionURL(context.getActionURL().getParameter("returnUrl"));
+    else
+        returnURL = new ActionURL(StudyController.ManageVisitsAction.class, context.getContainer());
+%>
 <script type="text/javascript">
 function saveList(listName, hiddenElName)
 {
@@ -171,6 +185,7 @@ function orderModule(listName, hiddenElName, down)
                 %>
                 </select>
                 <input type="hidden" name="chronologicalOrder" value="<%= orderedList %>">
+                <input type="hidden" name="returnUrl" value="<%= returnURL %>">
             </td>
             <td align="center" valign="center">
                 <%=PageFlowUtil.generateButton("Move Up", "#", "return orderModule('chronologicalOrderItems', 'chronologicalOrder', 0)")%><br><br>
@@ -178,5 +193,5 @@ function orderModule(listName, hiddenElName, down)
             </td>
         </tr>
     </table>
-    <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", StudyController.ManageVisitsAction.class) %>
+    <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", returnURL) %>
 </form>

@@ -25,6 +25,8 @@
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -38,6 +40,7 @@
 <%
     JspView<Object> me = (JspView) HttpView.currentView();
     ViewContext context = me.getViewContext();
+    ActionURL returnURL = context.getActionURL();
 
     Study study = StudyManager.getInstance().getStudy(context.getContainer());
     String visitDisplayName = "Visit";
@@ -531,6 +534,13 @@ function removeSVC(el, scRowId, vRowId)
 <span style='font-style: italic; font-size: smaller;'>* Double click to edit an assay/specimen configuration</span>
 <br/><br/><br/>
 <div id="AssaySpecimenVisitPanel"></div>
+<%=textLink("Create New " + visitDisplayName, new ActionURL(StudyController.CreateVisitAction.class, context.getContainer()).addReturnURL(returnURL))%>
+<%
+    if (study != null && study.getTimepointType() == TimepointType.VISIT && study.getVisits(Visit.Order.DISPLAY).size() > 1)
+    {
+        %><%= textLink("Change Visit Order", new ActionURL(StudyController.VisitOrderAction.class, context.getContainer()).addReturnURL(returnURL)) %><%
+    }
+%>
 <%=textLink("Manage " + visitDisplayName + "s", StudyController.ManageVisitsAction.class)%>
 <br/><br/><br/>
 <div id="AssayPlanPanel"></div>

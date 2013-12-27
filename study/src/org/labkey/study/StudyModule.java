@@ -173,7 +173,7 @@ import org.labkey.study.view.AssayList2WebPartFactory;
 import org.labkey.study.view.AssayListWebPartFactory;
 import org.labkey.study.view.AssayResultsWebPartFactory;
 import org.labkey.study.view.AssayRunsWebPartFactory;
-import org.labkey.study.view.AssayScheduleWebpartFactory;
+import org.labkey.study.view.studydesign.AssayScheduleWebpartFactory;
 import org.labkey.study.view.DatasetsWebPartView;
 import org.labkey.study.view.StudyListWebPartFactory;
 import org.labkey.study.view.StudySummaryWebPartFactory;
@@ -182,6 +182,7 @@ import org.labkey.study.view.StudyViewLoader;
 import org.labkey.study.view.SubjectDetailsWebPartFactory;
 import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.view.samples.SpecimenRequestNotificationEmailTemplate;
+import org.labkey.study.view.studydesign.VaccineDesignWebpartFactory;
 import org.labkey.study.writer.DatasetWriter;
 import org.labkey.study.writer.MissingValueWriterFactory;
 import org.labkey.study.writer.SpecimenWriter;
@@ -232,6 +233,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final WebPartFactory specimenToolsWebPartFactory = new StudyToolsWebPartFactory.Specimens(WebPartFactory.LOCATION_RIGHT);
     public static final WebPartFactory specimenReportWebPartFactory = new SpecimenController.SpecimenReportWebPartFactory();
     public static final WebPartFactory assayScheduleWebPartFactory = new AssayScheduleWebpartFactory();
+    public static final WebPartFactory vaccineDesignWebPartFactory = new VaccineDesignWebpartFactory();
 
     public String getName()
     {
@@ -328,7 +330,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 subjectDetailsWebPartFactory, assayList2WebPartFactory, studyListWebPartFactory, sampleSearchPartFactory,
                 subjectsWebPartFactory, subjectsWideWebPartFactory, dataToolsWebPartFactory,
                 dataToolsWideWebPartFactory, specimenToolsWebPartFactory, specimenToolsWideWebPartFactory,
-                specimenReportWebPartFactory, studyScheduleWebPartFactory, assayScheduleWebPartFactory));
+                specimenReportWebPartFactory, studyScheduleWebPartFactory, assayScheduleWebPartFactory, vaccineDesignWebPartFactory));
     }
 
     @NotNull

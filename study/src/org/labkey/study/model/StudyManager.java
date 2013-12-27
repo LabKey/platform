@@ -97,9 +97,9 @@ import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.study.ProductAntigen;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyCachable;
 import org.labkey.api.study.StudyService;
@@ -1220,6 +1220,32 @@ public class StudyManager
 
         return new TableSelector(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(),
                 Collections.singleton("VisitId"), filter, new Sort("VisitId")).getArrayList(Integer.class);
+    }
+
+    public List<ProductImpl> getStudyProducts(Container container, User user)
+    {
+        return getStudyProducts(container, user, null, null);
+    }
+
+    public List<ProductImpl> getStudyProducts(Container container, User user, @Nullable String role, @Nullable String label)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        if (role != null)
+            filter.addCondition(FieldKey.fromParts("Role"), role);
+        if (label != null)
+            filter.addCondition(FieldKey.fromParts("Label"), label);
+
+        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
+        return new TableSelector(ti, filter, new Sort("RowId")).getArrayList(ProductImpl.class);
+    }
+
+    public List<ProductAntigenImpl> getStudyProductAntigens(Container container, User user, int productId)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("ProductId"), productId);
+
+        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+        return new TableSelector(ti, filter, new Sort("RowId")).getArrayList(ProductAntigenImpl.class);
     }
 
     public void createVisitDataSetMapping(User user, Container container, int visitId,

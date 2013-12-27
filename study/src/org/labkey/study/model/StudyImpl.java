@@ -47,7 +47,6 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
@@ -283,6 +282,12 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public List<VisitImpl> getVisitsForAssaySchedule()
     {
         return StudyManager.getInstance().getVisitsForAssaySchedule(getContainer());
+    }
+
+    @Override
+    public List<ProductImpl> getStudyProducts(User user, String role, String label)
+    {
+        return StudyManager.getInstance().getStudyProducts(getContainer(), user, role, label);
     }
 
     @Override
