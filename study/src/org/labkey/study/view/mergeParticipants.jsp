@@ -546,42 +546,47 @@
                 var oldIdURL = buildDataURL(table, oldId, null);
                 var newIdURL = buildDataURL(table, null, newId);
                 html.push("<td>" + bothIdURL + tableName + "</td>");
-                html.push("<td>" + oldIdURL + table.oldIds.length + "</td>");
-                html.push("<td>" + newIdURL + table.newIds.length + "</td>");
+
                 if (null == table.hasConflict) {
+                    html.push("<td>Loading...</td>");
+                    html.push("<td>Loading...</td>");
                     html.push("<td>Checking...</td>");
                     html.push("<td>&nbsp;</td></tr>");
                     stillChecking = true;
                 }
                 else
-                if (true == table.hasConflict) {
-                    if (false == table.isEditable) {
-                        html.push("<td><span style='color:red;'>Warning:  Specimen data is not editable</span></td>");
-                    }
-                    else {
-                        //
-                        // build a radio group to allow the user to select old or new id values when merging
-                        // TODO: is there a robust way to get a change notification on when these are clicked?  We only
-                        // want to enable the merge button if the user has selected whether to keep old or new
-                        // id values.  Right now we do this when the user hits an enabled merge button
-                        //
-                        var group = getConflictHintGroupName(table);
-                        html.push("<td>" + bothIdURL + "Conflict!</td>");
-                        html.push("<td>");
-                        if (table.name == aliasDatasetName)
-                        {
-                            html.push("Duplicate alias would be created. Conflict must be resolved manually.");
+                {
+                    html.push("<td>" + oldIdURL + table.oldIds.length + "</td>");
+                    html.push("<td>" + newIdURL + table.newIds.length + "</td>");
+                    if (true == table.hasConflict) {
+                        if (false == table.isEditable) {
+                            html.push("<td><span style='color:red;'>Warning:  Specimen data is not editable</span></td>");
                         }
-                        else
-                        {
-                            html.push("<input type='radio' name='" + group + "' value='old'>Use old Id values ");
-                            html.push("<input type='radio' name='" + group + "' value='new'>Use new Id values ");
+                        else {
+                            //
+                            // build a radio group to allow the user to select old or new id values when merging
+                            // TODO: is there a robust way to get a change notification on when these are clicked?  We only
+                            // want to enable the merge button if the user has selected whether to keep old or new
+                            // id values.  Right now we do this when the user hits an enabled merge button
+                            //
+                            var group = getConflictHintGroupName(table);
+                            html.push("<td>" + bothIdURL + "Conflict!</td>");
+                            html.push("<td>");
+                            if (table.name == aliasDatasetName)
+                            {
+                                html.push("Duplicate alias would be created. Conflict must be resolved manually.");
+                            }
+                            else
+                            {
+                                html.push("<input type='radio' name='" + group + "' value='old'>Use old Id values ");
+                                html.push("<input type='radio' name='" + group + "' value='new'>Use new Id values ");
+                            }
+                            html.push("</td>");
                         }
-                        html.push("</td>");
+                    } else {
+                        html.push("<td>" + bothIdURL + "No conflicts</td>");
+                        html.push("<td>&nbsp;</td></tr>");
                     }
-                } else {
-                    html.push("<td>" + bothIdURL + "No conflicts</td>");
-                    html.push("<td>&nbsp;</td></tr>");
                 }
                 // if any editable dataset has any rows with the old value then there is work to do
                 if ((table.oldIds.length > 0) && (false != table.isEditable))
