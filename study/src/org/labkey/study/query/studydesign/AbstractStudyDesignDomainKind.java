@@ -150,10 +150,9 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
 
     protected static Container getDomainContainer(Container c)
     {
-        // for now create the domains per folder, override to root the domains at
-        // a higher level
-        return c;
-        //return ContainerManager.getSharedContainer();
+        // for now create the domains per project, override to root the domains at
+        // a different level.
+        return c.getProject();
     }
 
     @Override
