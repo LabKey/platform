@@ -15,23 +15,23 @@
  */
 package org.labkey.api.module;
 
-import org.labkey.api.view.BaseWebPartFactory;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.Portal;
-import org.labkey.api.data.Container;
-import org.labkey.data.xml.webpart.WebpartDocument;
-import org.labkey.data.xml.webpart.WebpartType;
-import org.labkey.data.xml.webpart.AvailableEnum;
-import org.labkey.data.xml.webpart.LocationType;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
+import org.labkey.api.data.Container;
+import org.labkey.api.resource.Resource;
+import org.labkey.api.util.Path;
+import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
+import org.labkey.data.xml.webpart.AvailableEnum;
+import org.labkey.data.xml.webpart.LocationType;
+import org.labkey.data.xml.webpart.WebpartDocument;
+import org.labkey.data.xml.webpart.WebpartType;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.util.Map;
+import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Map;
 
 /*
 * User: Dave
@@ -46,22 +46,15 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
 {
     public static final String FILE_EXTENSION = ".webpart.xml";
 
-    //can be used to select all webpart files in a directory
-    public static final FilenameFilter webPartFileFilter = new FilenameFilter(){
-        public boolean accept(File dir, String name)
-        {
-            return name.toLowerCase().endsWith(FILE_EXTENSION);
-        }
-    };
+    private final String _resourceName;
+    private final Module _module;
 
-    private File _webPartFile;
-    private long _lastModified = 0;
-    private Module _module;
     private WebpartType _webPartDef = null;
     private Exception _loadException = null;
 
     //map from internal (ugly) location names to public names used in the XML web part definition file
     private static final Map<String,String> _locationsTranslationMap = new HashMap<>();
+
     static
     {
         _locationsTranslationMap.put(LOCATION_BODY, "body");
@@ -84,31 +77,30 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         return null;
     }
 
-
-    public SimpleWebPartFactory(Module module, File webPartFile)
+    public SimpleWebPartFactory(Module module, String filename)
     {
-        super(getNameFromFile(webPartFile));
+        super(getNameFromFilename(filename));
         _module = module;
-        loadDefinition(webPartFile);
-        _webPartFile = webPartFile;
-        _lastModified = webPartFile.lastModified();
+        Path resourcePath = new Path(SimpleController.VIEWS_DIRECTORY, filename);
+        loadDefinition(module.getModuleResource(new Path(SimpleController.VIEWS_DIRECTORY, filename)));
+        _resourceName = resourcePath.getName();
     }
 
-    public File getWebPartFile()
+    private static String getNameFromFilename(String filename)
     {
-        return _webPartFile;
+        return filename.substring(0, filename.length() - FILE_EXTENSION.length());
     }
 
-    protected static String getNameFromFile(File webPartFile)
+    public static boolean isWebPartFile(String filename)
     {
-        String name = webPartFile.getName();
-        return name.substring(0, name.length() - FILE_EXTENSION.length());
+        return filename.toLowerCase().endsWith(FILE_EXTENSION);
     }
 
-    protected void loadDefinition(File webPartFile)
+    private void loadDefinition(Resource webPartResource)
     {
         Logger log = Logger.getLogger(SimpleWebPartFactory.class);
-        try
+
+        try (InputStream is = webPartResource.getInputStream())
         {
             _loadException = null;
             XmlOptions xmlOptions = new XmlOptions();
@@ -117,9 +109,9 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
             namespaceMap.put("", "http://labkey.org/data/xml/webpart");
             xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
             
-            WebpartDocument doc = WebpartDocument.Factory.parse(webPartFile, xmlOptions);
+            WebpartDocument doc = WebpartDocument.Factory.parse(is, xmlOptions);
             if(null == doc || null == doc.getWebpart())
-                throw new Exception("Webpart definition file " + webPartFile.getAbsolutePath() + " does not contain a root 'webpart' element!");
+                throw new Exception("Webpart definition file " + webPartResource.getName() + " does not contain a root 'webpart' element!");
 
             _webPartDef = doc.getWebpart();
         }
@@ -150,22 +142,13 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
     }
 
 
-    public boolean isStale()
-    {
-        return _webPartFile.lastModified() != _lastModified;
-    }
-
-
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
     {
-        if (isStale())
-            loadDefinition(_webPartFile);
-
         if (null != _loadException)
             throw new Exception("Error thrown during load", _loadException);
 
         if (null == getViewName())
-            throw new Exception("No view name specified for the module web part defined in " + _webPartFile.getAbsolutePath());
+            throw new Exception("No view name specified for the module web part defined in " + _resourceName);
 
         return SimpleAction.getModuleHtmlView(getModule(), getViewName(), webPart);
     }
@@ -174,9 +157,6 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
     @Override
     public boolean isAvailable(Container c, String location)
     {
-        if(isStale())
-            loadDefinition(_webPartFile);
-
         //if loading the definition failed, we are not available
         if (null == _webPartDef)
             return false;

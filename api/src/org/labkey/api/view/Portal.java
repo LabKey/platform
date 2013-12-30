@@ -74,7 +74,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-
 public class Portal
 {
     public static final String DEFAULT_PORTAL_PAGE_ID = "portal.default";
@@ -361,7 +360,6 @@ public class Portal
             result = 31 * result + (location != null ? location.hashCode() : 0);
             result = 31 * result + (permanent ? 1 : 0);
             result = 31 * result + (propertyMap != null ? propertyMap.hashCode() : 0);
-            result = 31 * result + 0;       // properties used to be here but was always null
             result = 31 * result + (extendedProperties != null ? extendedProperties.hashCode() : 0);
             return result;
         }
@@ -1093,23 +1091,6 @@ public class Portal
         return multiMap;
     }
 
-
-    public static MultiMap<String, WebPart> getPartsByLocation(WebPart[] parts)
-    {
-        MultiMap<String, WebPart> multiMap = new MultiHashMap<>();
-
-        for (WebPart part : parts)
-        {
-            if (null == part.getName() || 0 == part.getName().length())
-                continue;
-            String location = part.getLocation();
-            multiMap.put(location, part);
-        }
-
-        return multiMap;
-    }
-
-
     public static WebPartFactory getPortalPart(String name)
     {
         return getViewMap().get(name);
@@ -1123,7 +1104,7 @@ public class Portal
 
     private static synchronized HashMap<String, WebPartFactory> getViewMap()
     {
-        if (null == _viewMap || areWebPartMapsStale())
+        if (null == _viewMap)
             initMaps();
 
         return _viewMap;
@@ -1132,21 +1113,10 @@ public class Portal
 
     private static synchronized MultiHashMap<String, String> getRegionMap()
     {
-        if (null == _regionMap || areWebPartMapsStale())
+        if (null == _regionMap)
             initMaps();
 
         return _regionMap;
-    }
-
-    private static boolean areWebPartMapsStale()
-    {
-        List<Module> modules = ModuleLoader.getInstance().getModules();
-        for (Module module : modules)
-        {
-            if (module.isWebPartFactorySetStale())
-                return true;
-        }
-        return false;
     }
 
     private synchronized static void initMaps()

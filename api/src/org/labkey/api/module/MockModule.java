@@ -62,9 +62,9 @@ import java.util.Set;
  */
 public class MockModule implements Module
 {
-    private String _name;
-    private double _version;
-    private String[] _dependencies;
+    private final String _name;
+    private final double _version;
+    private final String[] _dependencies;
 
     public MockModule(String name, String... dependencies)
     {
@@ -78,15 +78,18 @@ public class MockModule implements Module
         _dependencies = dependencies;
     }
 
-    public int compareTo(Module m)
+    @Override
+    public int compareTo(@NotNull Module m)
     {
         return (m instanceof MockModule) ? 0 : 1;
     }
 
+    @Override
     public void initialize()
     {
     }
 
+    @Override
     public String getName()
     {
         return _name;
@@ -98,84 +101,95 @@ public class MockModule implements Module
         return null;
     }
 
+    @Override
     public String getTabName(ViewContext context)
     {
         return _name;
     }
 
+    @Override
     public double getVersion()
     {
         return _version;
     }
 
+    @Override
     public String getFormattedVersion()
     {
         return ModuleContext.formatVersion(getVersion());
     }
 
+    @Override
     public void beforeUpdate(ModuleContext moduleContext)
     {
     }
 
+    @Override
     public void versionUpdate(ModuleContext moduleContext) throws Exception
     {
     }
 
+    @Override
     public void afterUpdate(ModuleContext moduleContext)
     {
     }
 
+    @Override
     public void startup(ModuleContext moduleContext)
     {
     }
 
+    @Override
     public void destroy()
     {
     }
 
+    @Override
     @NotNull
     public Collection<WebPartFactory> getWebPartFactories()
     {
         return Collections.emptyList();
     }
 
-    public boolean isWebPartFactorySetStale()
-    {
-        return false;
-    }
-
+    @Override
     @NotNull
     public Collection<String> getSummary(Container c)
     {
         return Collections.emptyList();
     }
 
+    @Override
     public Map<String, Class<? extends Controller>> getControllerNameToClass()
     {
         return null;
     }
 
+    @Override
     public Map<Class<? extends Controller>, String> getControllerClassToName()
     {
         return null;
     }
 
+    @Override
     public ActionURL getTabURL(Container c, User user)
     {
         return null;
     }
 
+    @Override
     public TabDisplayMode getTabDisplayMode()
     {
         return TabDisplayMode.DISPLAY_NEVER;
     }
 
+    @Override
     @NotNull
     public Set<Class> getIntegrationTests()
     {
         return Collections.emptySet();
     }
 
+    @Override
     @NotNull
     public Set<Class> getUnitTests()
     {
@@ -189,117 +203,134 @@ public class MockModule implements Module
         return Collections.emptySet();
     }
 
+    @Override
     @NotNull
     public Set<String> getSchemaNames()
     {
         return Collections.emptySet();
     }
 
+    @Override
     public Resolver getModuleResolver()
     {
         return null;
     }
     
+    @Override
     public Resource getModuleResource(Path path)
     {
         return null;
     }
 
+    @Override
     public Resource getModuleResource(String path)
     {
         return null;
     }
 
+    @Override
     public InputStream getResourceStream(String filename) throws FileNotFoundException
     {
         return null;
     }
 
+    @Override
     public String getSourcePath()
     {
         return null;
     }
 
+    @Override
     public String getBuildPath()
     {
         return null;
     }
 
+    @Override
     public String getSvnRevision()
     {
         return null;
     }
 
+    @Override
     public String getSvnUrl()
     {
         return null;
     }
 
+    @Override
     public Map<String, String> getProperties()
     {
         return null;
     }
 
+    @Override
     public Set<String> getModuleDependenciesAsSet()
     {
         return new HashSet<>(Arrays.asList(_dependencies));
     }
 
-    public List<String> getAttributions()
-    {
-        return null;
-    }
-
+    @Override
     public void setExplodedPath(File path)
     {
     }
 
+    @Override
     public Set<String> getSqlScripts(@Nullable DbSchema schema)
     {
         return null;
     }
 
+    @Override
     public String getSqlScriptsPath(@NotNull SqlDialect dialect)
     {
         return null;
     }
 
+    @Override
     @Nullable
     public ReportDescriptor getCachedReport(Path path)
     {
         return null;
     }
 
+    @Override
     public void cacheReport(Path path, ReportDescriptor descriptor)
     {
     }
 
+    @Override
     public Set<Resource> getReportFiles()
     {
         return Collections.emptySet();
     }
 
+    @Override
     @NotNull
     public Set<ModuleResourceLoader> getResourceLoaders()
     {
         return Collections.emptySet();
     }
 
+    @Override
     public File getExplodedPath()
     {
         return null;
     }
 
+    @Override
     public void dispatch(HttpServletRequest request, HttpServletResponse response, ActionURL url) throws ServletException, IOException
     {
     }
 
+    @Override
     @NotNull
     public List<File> getStaticFileDirectories()
     {
         return Collections.emptyList();
     }
 
+    @Override
     public @Nullable Collection<String> getJarFilenames()
     {
         return null;
@@ -344,16 +375,19 @@ public class MockModule implements Module
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Map<String, ModuleProperty> getModuleProperties()
     {
         return new HashMap<>();
     }
 
+    @Override
     public JSONObject getPageContextJson(User u, Container c)
     {
         return new JSONObject();
     }
 
+    @Override
     public LinkedHashSet<ClientDependency> getClientDependencies(Container c, User u)
     {
         return new LinkedHashSet<>();
@@ -373,11 +407,6 @@ public class MockModule implements Module
     }
 
     @Override
-    public void clearResourceCache()
-    {
-    }
-
-    @Override
     public String getResourcePath()
     {
         return null;
@@ -388,5 +417,4 @@ public class MockModule implements Module
     {
         return false;
     }
-
 }

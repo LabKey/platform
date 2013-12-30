@@ -48,10 +48,8 @@ import org.labkey.data.xml.TablesDocument;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -77,7 +75,6 @@ public class SimpleModule extends SpringModule
     public static String PROPERTY_NAMESPACE_PREFIX_TEMPLATE = NAMESPACE_PREFIX + "-${SchemaName}-${TableName}";
     public static String PROPERTY_LSID_TEMPLATE = "${FolderLSIDBase}:${GUID}";
 
-    int _factorySetHash = 0;
     private Collection<String> _schemaNames;
 
     public SimpleModule()
@@ -112,34 +109,12 @@ public class SimpleModule extends SpringModule
     }
 
     @NotNull
-    protected Collection<WebPartFactory> createWebPartFactories()
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
-        List<WebPartFactory> factories = new ArrayList<>();
-        for(File webPartFile : getWebPartFiles())
-        {
-            factories.add(new SimpleWebPartFactory(this, webPartFile));
-        }
-        _factorySetHash = calcFactorySetHash();
-        return factories;
+        return Collections.emptyList();
     }
 
-    @NotNull
-    protected File[] getWebPartFiles()
-    {
-        File viewsDir = new File(getExplodedPath(), SimpleController.VIEWS_DIRECTORY);
-        return viewsDir.exists() && viewsDir.isDirectory() ? viewsDir.listFiles(SimpleWebPartFactory.webPartFileFilter) : new File[0];
-    }
-
-    public boolean isWebPartFactorySetStale()
-    {
-        return _factorySetHash != calcFactorySetHash();
-    }
-
-    protected int calcFactorySetHash()
-    {
-        return Arrays.hashCode(getWebPartFiles());
-    }
-
+    @Override
     public boolean hasScripts()
     {
         SqlScriptProvider provider = new FileSqlScriptProvider(this);
@@ -248,6 +223,7 @@ public class SimpleModule extends SpringModule
         }
     }
 
+    @Override
     public ActionURL getTabURL(Container c, User user)
     {
         return SimpleController.getBeginViewUrl(this, c);

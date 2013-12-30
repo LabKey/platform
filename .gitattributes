@@ -746,6 +746,7 @@ api/src/org/labkey/api/module/ModuleHtmlView.java -text
 api/src/org/labkey/api/module/ModuleHtmlViewDefinition.java -text
 api/src/org/labkey/api/module/ModuleLoader.java -text
 api/src/org/labkey/api/module/ModuleProperty.java -text
+api/src/org/labkey/api/module/ModuleResourceCache.java -text
 api/src/org/labkey/api/module/ModuleResourceLoadException.java -text
 api/src/org/labkey/api/module/ModuleResourceLoader.java -text
 api/src/org/labkey/api/module/ModuleResourceResolver.java -text
@@ -1540,6 +1541,7 @@ api/src/org/labkey/api/view/ServletView.java -text
 api/src/org/labkey/api/view/SimpleFolderTab.java -text
 api/src/org/labkey/api/view/SimpleTextDisplayElement.java -text
 api/src/org/labkey/api/view/SimpleWebPartFactory.java -text
+api/src/org/labkey/api/view/SimpleWebPartFactoryCache.java -text
 api/src/org/labkey/api/view/SpringErrorView.java -text
 api/src/org/labkey/api/view/Stats.java -text
 api/src/org/labkey/api/view/TabBoxView.java -text
@@ -7917,6 +7919,7 @@ internal/src/org/labkey/api/view/DefaultWebPartFactory.java -text
 internal/src/org/labkey/api/view/FileServlet.java -text
 internal/src/org/labkey/api/view/JavaScriptFilter.java -text
 internal/src/org/labkey/api/view/LinkBarView.java -text
+internal/src/org/labkey/api/view/SimpleWebPartResourceLoader.java -text
 internal/src/org/labkey/api/view/SiteDownServlet.java -text
 internal/src/org/labkey/api/view/StaticContentCachingFilter.java -text
 internal/src/org/labkey/api/view/addWebPart.jsp -text

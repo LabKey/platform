@@ -29,7 +29,8 @@ public class FileSystemWatchers
 {
     public static FileSystemWatcher get(String name)
     {
-        // TODO: For now, return a real FileSystemWatcher in dev mode only. In the future,
+        // TODO: For now, return a real FileSystemWatcher in dev mode only. In the future, we might selectively enable
+        // file system watchers in production mode, e.g., by allowing admins to mark a module to auto-reload
         if (AppProps.getInstance().isDevMode())
         {
             try

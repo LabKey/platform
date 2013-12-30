@@ -1722,7 +1722,7 @@ public class ModuleLoader implements Filter
         registerResourceLoaders(Collections.singleton(loader));
     }
 
-    public void registerResourceLoaders(Set<ModuleResourceLoader> loaders)
+    public void registerResourceLoaders(Set<? extends ModuleResourceLoader> loaders)
     {
         synchronized (_resourceLoaders)
         {

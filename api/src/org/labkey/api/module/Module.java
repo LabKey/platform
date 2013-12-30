@@ -149,12 +149,6 @@ public interface Module extends Comparable<Module>
     public @NotNull Collection<WebPartFactory> getWebPartFactories();
 
     /**
-     * Return true if the set of web part factories is now stale and needs to be reloaded
-     * @return true if stale, false if not.
-     */
-    public boolean isWebPartFactorySetStale();
-    
-    /**
      * @param c container in which the items would be stored
      * @return description of the objects that this module has stored in the container
      */
@@ -267,12 +261,12 @@ public interface Module extends Comparable<Module>
     public Set<Resource> getReportFiles();
 
     /**
-     * Modules can provide a set ModuleResourceLoaders which will be used
+     * Modules can provide a set of ModuleResourceLoaders which will be used
      * to add modules dependencies between modules and load resources during initialization.
      * @return The set of ModuleResourceLoaders this module provides.
      */
     @NotNull
-    public Set<ModuleResourceLoader> getResourceLoaders();
+    public Set<? extends ModuleResourceLoader> getResourceLoaders();
 
     /**
      * handle a http request
@@ -322,9 +316,6 @@ public interface Module extends Comparable<Module>
     public LinkedHashSet<ClientDependency> getClientDependencies(Container c, User u);
 
     public @Nullable UpgradeCode getUpgradeCode();
-
-    @Deprecated  // TODO: Remove... no usages and don't need this, thanks to file listeners
-    void clearResourceCache();
 
     @Nullable
     public String getResourcePath();

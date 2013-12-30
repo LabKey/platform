@@ -31,7 +31,6 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class ExtendedSimpleModule extends SimpleModule
 {
-
     @Override
     public Controller getController(@Nullable HttpServletRequest request, Class controllerClass)
     {
@@ -50,11 +49,7 @@ public class ExtendedSimpleModule extends SimpleModule
             }
             return con;
         }
-        catch (IllegalAccessException x)
-        {
-            throw new RuntimeException(x);
-        }
-        catch (InstantiationException x)
+        catch (IllegalAccessException | InstantiationException x)
         {
             throw new RuntimeException(x);
         }
@@ -67,6 +62,7 @@ public class ExtendedSimpleModule extends SimpleModule
         return "/" + getClass().getPackage().getName().replaceAll("\\.", "/");
     }
 
+    @Override
     public boolean hasScripts()
     {
         return true;

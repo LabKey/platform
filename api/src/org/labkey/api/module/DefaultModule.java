@@ -60,6 +60,7 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.SimpleWebPartFactoryCache;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
@@ -142,7 +143,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
     }
 
-    public int compareTo(Module m)
+    public int compareTo(@NotNull Module m)
     {
         //sort by name--core module will override to ensure first in sort
         return getName().compareTo(m.getName());
@@ -246,8 +247,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     protected abstract void init();
-    protected abstract @NotNull Collection<WebPartFactory> createWebPartFactories();
-    public boolean isWebPartFactorySetStale() {return false;}
+    protected abstract @NotNull Collection<? extends WebPartFactory> createWebPartFactories();
     public abstract boolean hasScripts();
 
     final public void startup(ModuleContext moduleContext)
@@ -381,38 +381,17 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         }
     }
 
-    @NotNull
-    protected File[] getWebPartFiles()
-    {
-        // TODO use module resources
-        File viewsDir = null;
-        if (AppProps.getInstance().isDevMode() && null != getSourcePath())
-        {
-            viewsDir = new File(getSourcePath(), "resources/" + SimpleController.VIEWS_DIRECTORY);
-            if (!viewsDir.exists())
-                viewsDir = new File(getSourcePath(), SimpleController.VIEWS_DIRECTORY);
-        }
-        if (null == viewsDir || !viewsDir.isDirectory())
-            viewsDir = new File(getExplodedPath(), SimpleController.VIEWS_DIRECTORY);
-        return viewsDir.isDirectory() ? viewsDir.listFiles(org.labkey.api.module.SimpleWebPartFactory.webPartFileFilter) : new File[0];
-    }
 
     @Override
     public final @NotNull Collection<WebPartFactory> getWebPartFactories()
     {
-        if (null == _webPartFactories || isWebPartFactorySetStale())
+        // TODO: Synchronization!!
+        if (null == _webPartFactories)
         {
             Collection<WebPartFactory> wpf = new ArrayList<>();
             wpf.addAll(createWebPartFactories());
+            wpf.addAll(SimpleWebPartFactoryCache.get().getResources(this));
 
-            File[] files = getWebPartFiles();
-            if (files.length > 0)
-            {
-                for (File file : files)
-                {
-                    wpf.add(new SimpleWebPartFactory(this, file));
-                }
-            }
             _webPartFactories = wpf;
         }
         return _webPartFactories;
@@ -919,7 +898,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     @NotNull
     @Override
-    public Set<ModuleResourceLoader> getResourceLoaders()
+    public Set<? extends ModuleResourceLoader> getResourceLoaders()
     {
         return Collections.emptySet();
     }
@@ -950,13 +929,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         if (r != null && r.isFile())
             return r.getInputStream();
         return null;
-    }
-
-    public void clearResourceCache()
-    {
-        if (_resolver == null)
-            return;
-        _resolver.clear();
     }
 
     @Override

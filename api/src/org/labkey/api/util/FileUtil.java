@@ -481,20 +481,14 @@ quickScan:
 
     private static String digest(MessageDigest md, InputStream is) throws IOException
     {
-        DigestInputStream dis = null;
-        try
+        try (DigestInputStream dis = new DigestInputStream(is, md))
         {
-            dis = new DigestInputStream(is, md);
-            byte[] buf = new byte[8*1024];
+            byte[] buf = new byte[8 * 1024];
             while (-1 != (dis.read(buf)))
             {
                 /* */
             }
             return Crypt.encodeHex(md.digest());
-        }
-        finally
-        {
-            IOUtils.closeQuietly(dis);
         }
     }
 
@@ -506,7 +500,7 @@ quickScan:
         }
         catch (NoSuchAlgorithmException e)
         {
-            Logger.getInstance(FileUtil.class).error("unexpected error", e);
+            Logger.getLogger(FileUtil.class).error("unexpected error", e);
             return null;
         }
         finally
@@ -533,7 +527,7 @@ quickScan:
         }
         catch (NoSuchAlgorithmException e)
         {
-            Logger.getInstance(FileUtil.class).error("unexpected error", e);
+            Logger.getLogger(FileUtil.class).error("unexpected error", e);
             return null;
         }
         finally
