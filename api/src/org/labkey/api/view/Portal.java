@@ -1128,14 +1128,14 @@ public class Portal
         List<Module> modules = ModuleLoader.getInstance().getModules();
         for (Module module : modules)
         {
-            for (WebPartFactory webpart : module.getWebPartFactories())
+            for (WebPartFactory factory : module.getWebPartFactories())
             {
-                _viewMap.put(webpart.getName(), webpart);
-                for (String legacyName : webpart.getLegacyNames())
+                _viewMap.put(factory.getName(), factory);
+                for (String legacyName : factory.getLegacyNames())
                 {
-                    _viewMap.put(legacyName, webpart);
+                    _viewMap.put(legacyName, factory);
                 }
-                _regionMap.put(webpart.getDefaultLocation(), webpart.getName());
+                _regionMap.put(factory.getDefaultLocation(), factory.getName());
             }
         }
 
