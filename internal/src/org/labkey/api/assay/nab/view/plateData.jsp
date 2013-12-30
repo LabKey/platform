@@ -15,20 +15,18 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.assay.dilution.DilutionAssayRun" %>
+<%@ page import="org.labkey.api.assay.nab.Luc5Assay" %>
+<%@ page import="org.labkey.api.assay.nab.RenderAssayBean" %>
+<%@ page import="org.labkey.api.study.Plate" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.assay.nab.Luc5Assay" %>
-<%@ page import="org.labkey.api.study.Plate" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.assay.nab.RenderAssayBean" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<RenderAssayBean> me = (JspView<RenderAssayBean>) HttpView.currentView();
     RenderAssayBean bean = me.getModelBean();
     DilutionAssayRun assay = bean.getAssay();
-    ViewContext context = me.getViewContext();
     String wellFormat = bean.getPlateDataFormat();
 %>
 <table cellspacing="5px">

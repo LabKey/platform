@@ -46,8 +46,8 @@
     List<Portal.WebPart> menus = bean.menus;
     PageConfig pageConfig = bean.pageConfig;
 
-    ViewContext context = HttpView.currentContext();
-    Container c = context.getContainer();
+    ViewContext context = getViewContext();
+    Container c = getContainer();
 
 //    FolderDisplayMode folderMode = LookAndFeelProperties.getInstance(c).getFolderDisplayMode();
     boolean showExperimentalNavigation = AppProps.getInstance().isExperimentalFeatureEnabled(MenuBarView.EXPERIMENTAL_NAV);

@@ -242,8 +242,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
     // Obfuscate the passed in text if this user is in "demo" mode in this container
     public String id(String id)
     {
-        ViewContext ctx = getViewContext();
-        return DemoMode.id(id, ctx.getContainer(), ctx.getUser());
+        return DemoMode.id(id, getContainer(), getUser());
     }
 
 
@@ -255,7 +254,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
      */
     public ActionURL urlFor(Class<? extends Controller> actionClass)
     {
-        return new ActionURL(actionClass, getViewContext().getContainer());
+        return new ActionURL(actionClass, getContainer());
     }
 
     /**
@@ -340,7 +339,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
 
     public String generateButton(String text, Class<? extends Controller> actionClass)
     {
-        return PageFlowUtil.generateButton(text, new ActionURL(actionClass, getViewContext().getContainer()));
+        return PageFlowUtil.generateButton(text, new ActionURL(actionClass, getContainer()));
     }
 
     /**
@@ -652,8 +651,8 @@ abstract public class JspBase extends JspContext implements HasViewContext
                 throw new IllegalStateException("Could not find an action name for " + actionClass);
             return controller + "-" + action + "." + m.getSuffix() + "?";
         }
-        ActionURL v = getViewContext().getActionURL();
-        ActionURL u = new ActionURL(actionClass, getViewContext().getContainer());
+        ActionURL v = getActionURL();
+        ActionURL u = new ActionURL(actionClass, getContainer());
         String full = u.getLocalURIString();
         if (v.isCanonical() && v.getController().equals(u.getController()))
             return full.substring(full.lastIndexOf('/')+1);
@@ -663,8 +662,8 @@ abstract public class JspBase extends JspContext implements HasViewContext
     /** simple link to different action w/no parameters */
     protected String buildURL(Class<? extends Controller> actionClass, String query)
     {
-        ActionURL v = getViewContext().getActionURL();
-        ActionURL u = new ActionURL(actionClass, getViewContext().getContainer());
+        ActionURL v = getActionURL();
+        ActionURL u = new ActionURL(actionClass, getContainer());
         String full = u.getLocalURIString();
         if (v.isCanonical() && v.getController().equals(u.getController()))
             return full.substring(full.lastIndexOf('/')+1) + query;

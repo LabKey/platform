@@ -20,14 +20,12 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Portal.AddWebParts bean = (Portal.AddWebParts)HttpView.currentModel();
-    ViewContext ctx = getViewContext();
-    Container c = ctx.getContainer();
-    ActionURL currentURL = ctx.getActionURL();
+    Container c = getContainer();
+    ActionURL currentURL = getActionURL();
 %>
 <table width="100%">
 <tr>

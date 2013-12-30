@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.GWTView" %>
@@ -36,14 +35,14 @@
     PrintTemplate me = (PrintTemplate) HttpView.currentView();
     PageConfig bean = me.getModelBean();
     String contextPath = request.getContextPath();
-    ActionURL url = HttpView.getRootContext().getActionURL();
+    ActionURL url = getActionURL();
     ActionURL base = url.clone();
     base.setAction((String)null);
     base.deleteParameters();
     Set<String> gwtModules = GWTView.getModulesForRootContext();
-    Container c = me.getViewContext().getContainer();
-    User user = me.getViewContext().getUser();
-    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
+    Container c = getContainer();
+    User user = getUser();
+//    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     ThemeFont themeFont = ThemeFont.getThemeFont(c);
     boolean isPrint = bean.getTemplate() == PageConfig.Template.Print;
 
@@ -182,7 +181,7 @@ if (null != me.getView("moduleNav"))
 				{ %>
             <!-- RIGHT -->
             <td class="labkey-side-panel" style="min-width:240px;">
-                <img height=1 width=240 src="<%= contextPath %>/_.gif"><br>
+                <img height=1 width=240 src="<%=getContextPath()%>/_.gif"><br>
                 <% me.include(me.getView(WebPartFactory.LOCATION_RIGHT),out); %>
             </td>
             <!-- /RIGHT -->

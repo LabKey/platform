@@ -22,12 +22,11 @@
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart bean = me.getModelBean();
-    ViewContext ctx = me.getViewContext();
+    ViewContext ctx = getViewContext();
     ActionURL postUrl = bean.getCustomizePostURL(ctx);
 
     String defaultContent = bean.getPropertyMap().get(ClientAPIWebPartFactory.DEFAULT_CONTENT_KEY);
@@ -66,7 +65,7 @@
             <%=generateSubmitButton("Save & Close")%>
             <%=generateButton("Preview", "", "preview()")%>
             <%=generateButton("Reset", "", "reset()")%>
-            <%=generateButton("Cancel", ctx.getContainer().getStartURL(ctx.getUser()))%>
+            <%=generateButton("Cancel", getContainer().getStartURL(getUser()))%>
         </td>
     </tr>
 </table>

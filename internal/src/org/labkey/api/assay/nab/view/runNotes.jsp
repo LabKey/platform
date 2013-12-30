@@ -17,29 +17,30 @@
 %>
 <%@ page import="org.labkey.api.assay.dilution.DilutionAssayRun" %>
 <%@ page import="org.labkey.api.assay.nab.RenderAssayBean" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.nab.NabUrls" %>
 <%@ page import="org.labkey.api.query.QueryView" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<RenderAssayBean> me = (JspView<RenderAssayBean>) HttpView.currentView();
     RenderAssayBean bean = me.getModelBean();
+    Container c = getContainer();
+    User user = getUser();
     DilutionAssayRun assay = bean.getAssay();
-    ViewContext context = me.getViewContext();
 
-    ActionURL rerunURL = assay.getProvider().getImportURL(context.getContainer(), assay.getProtocol());
+    ActionURL rerunURL = assay.getProvider().getImportURL(getContainer(), assay.getProtocol());
     rerunURL.addParameter("reRunId", bean.getRunId());
 
     if (bean.needsCurveNote())
     {
-        boolean deleteAndInsertPerms = context.getContainer().hasPermission(context.getUser(), DeletePermission.class) &&
-        context.getContainer().hasPermission(context.getUser(), InsertPermission.class);
+        boolean deleteAndInsertPerms = c.hasPermission(user, DeletePermission.class) && c.hasPermission(user, InsertPermission.class);
 %>
 <tr>
     <td>
@@ -72,9 +73,9 @@
     <td class="labkey-form-label">
         This run has been automatically saved.
     <%
-            if (context.getContainer().hasPermission(context.getUser(), DeletePermission.class))
+            if (c.hasPermission(user, DeletePermission.class))
             {
-                ActionURL deleteUrl = PageFlowUtil.urlProvider(NabUrls.class).urlDeleteRun(context.getContainer());
+                ActionURL deleteUrl = PageFlowUtil.urlProvider(NabUrls.class).urlDeleteRun(c);
                 deleteUrl.addParameter("rowId", bean.getRunId());
     %>
     <%=generateButton("Delete Run", deleteUrl, "return confirm('Permanently delete this run?')")%>
@@ -89,7 +90,7 @@
     }
     if (bean.needsDupFileNote())
     {
-        QueryView duplicateDataFileView = bean.getDuplicateDataFileView(me.getViewContext());
+        QueryView duplicateDataFileView = bean.getDuplicateDataFileView(getViewContext());
 %>
 <tr>
     <td class="labkey-form-label">

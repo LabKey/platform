@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.springframework.beans.PropertyValue" %>
 <%@ page import="org.springframework.beans.PropertyValues" %>
 <%@ page import="java.io.IOException" %>
@@ -30,12 +29,11 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<ConfirmAction> me = (JspView<ConfirmAction>) HttpView.currentView();
-    ViewContext context = me.getViewContext();
     ConfirmAction confirmAction = me.getModelBean();
     PropertyValues propertyValues = confirmAction.getPropertyValues();
     URLHelper cancelUrl = confirmAction.getCancelUrl();
 %>
-<form action="<%=h(context.getActionURL().clone().deleteParameters())%>.post" method="POST">
+<form action="<%=h(getActionURL().clone().deleteParameters())%>.post" method="POST">
     <labkey:csrf/>
     <%
     me.include(me.getBody(), out);

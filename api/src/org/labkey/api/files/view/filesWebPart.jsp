@@ -21,10 +21,9 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -38,9 +37,7 @@
 <%
     JspView<FilesWebPart.FilesForm> me = (JspView) HttpView.currentView();
     FilesWebPart.FilesForm bean = me.getModelBean();
-
-    ViewContext context = me.getViewContext();
-    Container c = context.getContainer();
+    Container c = getContainer();
 
     ActionURL projConfig = urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
     int height = bean.getSize();
@@ -58,7 +55,7 @@
 %>
     <span class="labkey-error">
         The file root for this folder is invalid. It may not exist or may have been configured incorrectly.<br>
-        <%=text(c.hasPermission(context.getUser(), AdminPermission.class) ? "File roots can be configured from the <a href=\"" + projConfig + "\">project settings</a> view." : "Contact your administrator to address this problem.")%>
+        <%=text(c.hasPermission(getUser(), AdminPermission.class) ? "File roots can be configured from the <a href=\"" + projConfig + "\">project settings</a> view." : "Contact your administrator to address this problem.")%>
     </span>
 <%
     }
@@ -96,7 +93,7 @@
             showDetails: <%=bean.isShowDetails()%>,
             expandUpload: <%=bean.isExpandFileUpload()%>,
             isPipelineRoot : <%=bean.isPipelineRoot()%>,
-            adminUser : <%=getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class)%>,
+            adminUser : <%=c.hasPermission(getUser(), AdminPermission.class)%>,
             fileSystem: fileSystem,
             tbarItems: buttonActions
             <%

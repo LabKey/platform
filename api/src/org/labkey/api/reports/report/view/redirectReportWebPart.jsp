@@ -19,24 +19,21 @@
 <%@ page import="org.labkey.api.reports.report.RedirectReport" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     RedirectReport report = (RedirectReport)getModelBean();
-    ViewContext context = getViewContext();
 
-    String url = report.getUrl(context.getContainer());
+    String url = report.getUrl(getContainer());
     Map<String, String> reportURLAttributes =  report.getRunReportTarget() != null ?
             Collections.singletonMap("target", report.getRunReportTarget()) :
             Collections.<String, String>emptyMap();
 
-    ActionURL thumbnailURL = PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(context.getContainer(), report);
+    ActionURL thumbnailURL = PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(getContainer(), report);
 
     String name = report.getDescriptor().getReportName();
     String description = report.getDescriptor().getReportDescription();
@@ -45,13 +42,13 @@
     Integer authorId = report.getDescriptor().getAuthor();
     if (authorId == null)
     {
-        Object o = ReportPropsManager.get().getPropertyValue(report.getEntityId(), context.getContainer(), "author");
+        Object o = ReportPropsManager.get().getPropertyValue(report.getEntityId(), getContainer(), "author");
         if (o instanceof Double)
             authorId = ((Double)o).intValue();
     }
     String author = null;
     if (authorId != null && authorId.intValue() > 0)
-        author = UserManager.getDisplayNameOrUserId(authorId, context.getUser());
+        author = UserManager.getDisplayNameOrUserId(authorId, getUser());
 
     String category = null;
     if (report.getDescriptor().getCategory() != null)

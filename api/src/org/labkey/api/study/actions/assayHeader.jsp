@@ -24,7 +24,7 @@
     if (bean.isIncludeDescription() && bean.getProtocol().getProtocolDescription() != null && !"".equals(bean.getProtocol().getProtocolDescription().trim())) { %>
         <p><%= h(bean.getProtocol().getProtocolDescription()) %></p>
 <% }
-    ActionURL current = getViewContext().getActionURL();
+    ActionURL current = getActionURL();
     for (NavTree link : bean.getLinks())
     {
         if (link.getChildCount() == 0)

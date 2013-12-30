@@ -28,8 +28,8 @@
 <%
     DialogTemplate me = (DialogTemplate) HttpView.currentView();
     PageConfig pageConfig = me.getModelBean();
-    Container c = me.getViewContext().getContainer();
-    User u = me.getViewContext().getUser();
+    Container c = getContainer();
+    User u = getUser();
     ThemeFont themeFont = ThemeFont.getThemeFont(c);
 
     if (pageConfig.getFrameOption() != PageConfig.FrameOption.ALLOW)
@@ -41,7 +41,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <%if (pageConfig.getFrameOption() == PageConfig.FrameOption.DENY) {%> <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%}%>
     <title><%=h(pageConfig.getTitle())%></title>
-    <%= pageConfig.getMetaTags(me.getViewContext().getActionURL()) %>
+    <%= pageConfig.getMetaTags(getActionURL()) %>
     <%= PageFlowUtil.getStandardIncludes(c, u, request.getHeader("User-Agent"), pageConfig.getClientDependencies()) %>
 </head>
 

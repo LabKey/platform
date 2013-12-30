@@ -18,11 +18,11 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.assay.dilution.DilutionAssayRun" %>
 <%@ page import="org.labkey.api.assay.nab.RenderAssayBean" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.LinkedHashMap" %>
@@ -33,8 +33,8 @@
 <%
     JspView<RenderAssayBean> me = (JspView<RenderAssayBean>) HttpView.currentView();
     RenderAssayBean bean = me.getModelBean();
-    DilutionAssayRun assay = bean.getAssay();
-    ViewContext context = me.getViewContext();
+    Container c = getContainer();
+//    DilutionAssayRun assay = bean.getAssay();
     // the data for the sample properties table
     List<Map<PropertyDescriptor, Object>> sampleData = new ArrayList<>();
     Set<String> pdsWithData = new HashSet<>();
@@ -43,19 +43,19 @@
     {
         Map<PropertyDescriptor, Object> sampleProps = new LinkedHashMap<>(result.getSampleProperties());
 
-        Pair<PropertyDescriptor, Object> fitErrorPair = bean.getFitError(result, context.getContainer());
+        Pair<PropertyDescriptor, Object> fitErrorPair = bean.getFitError(result, c);
         if (fitErrorPair != null)
             sampleProps.put(fitErrorPair.getKey(), fitErrorPair.getValue());
 
-        Pair<PropertyDescriptor, Object> stdDev = bean.getStandardDev(result, context.getContainer());
+        Pair<PropertyDescriptor, Object> stdDev = bean.getStandardDev(result, c);
         if (stdDev != null)
             sampleProps.put(stdDev.getKey(), stdDev.getValue());
 
-        Pair<PropertyDescriptor, Object> aucPair = bean.getAuc(result, context.getContainer());
+        Pair<PropertyDescriptor, Object> aucPair = bean.getAuc(result, c);
         if (aucPair != null)
             sampleProps.put(aucPair.getKey(), aucPair.getValue());
 
-        Pair<PropertyDescriptor, Object> paucPair = bean.getPositiveAuc(result, context.getContainer());
+        Pair<PropertyDescriptor, Object> paucPair = bean.getPositiveAuc(result, c);
         if (paucPair != null)
             sampleProps.put(paucPair.getKey(), paucPair.getValue());
 
@@ -108,7 +108,7 @@
                         {
                             rowNumber++;
                     %>
-                        <tr <%= rowNumber % 2 == 0 ? "class=\"labkey-alternate-row\"" : ""%>>
+                        <tr <%=text(rowNumber % 2 == 0 ? "class=\"labkey-alternate-row\"" : "")%>>
                     <%
                         for (Map.Entry<PropertyDescriptor, Object> entry : row.entrySet())
                         {

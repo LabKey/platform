@@ -21,16 +21,16 @@
 <%@ page import="org.labkey.api.reports.report.RReport" %>
 <%@ page import="org.labkey.api.reports.report.RReportJob" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.io.File" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<RReport> me = (JspView<RReport>) HttpView.currentView();
     RReport bean = me.getModelBean();
-    ViewContext context = HttpView.currentContext();
+    ViewContext context = getViewContext();
 
     File logFile = new File(bean.getReportDir(), RReportJob.LOG_FILE_NAME);
     PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile);

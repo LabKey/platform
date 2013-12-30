@@ -21,13 +21,11 @@
 <%@ page import="org.labkey.api.study.Plate" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<RenderAssayBean> me = (JspView<RenderAssayBean>) HttpView.currentView();
     RenderAssayBean bean = me.getModelBean();
     DilutionAssayRun assay = bean.getAssay();
-    ViewContext context = me.getViewContext();
 
     // Lay out the table vertically, rather than horizontally, if we have more than one plate
     // to keep the table from getting too wide.

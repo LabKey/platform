@@ -43,6 +43,7 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -59,15 +60,16 @@
 <%
     JspView<ScriptReportBean> me = (JspView<ScriptReportBean>)HttpView.currentView();
     ViewContext ctx = getViewContext();
-    Container c = ctx.getContainer();
+    Container c = getContainer();
+    User user = getUser();
     ScriptReportBean bean = me.getModelBean();
     ScriptReport report = (ScriptReport) bean.getReport(ctx);
-    List<Report> sharedReports = report.getAvailableSharedScripts(ctx, bean);
+//    List<Report> sharedReports = report.getAvailableSharedScripts(ctx, bean);
     List<String> includedReports = bean.getIncludedReports();
     String helpHtml = report.getDesignerHelpHtml();
-    boolean readOnly = bean.isReadOnly() || !report.canEdit(ctx.getUser(), c);
+    boolean readOnly = bean.isReadOnly() || !report.canEdit(user, c);
     Mode mode = bean.getMode();
-    boolean sourceAndHelp = mode.showSourceAndHelp(ctx.getUser()) || bean.isSourceTabVisible();
+//    boolean sourceAndHelp = mode.showSourceAndHelp(user) || bean.isSourceTabVisible();
 
     // a report is inherited if it has been shared from a parent (or shared) folder
     boolean inherited = report.getReportId() != null ? report.getDescriptor().isInherited(c) : false;
@@ -96,9 +98,9 @@
     }
 
     // Mode determines whether we need unique IDs on all the HTML elements
-    String uid = mode.getUniqueID();
-    String scriptId = "script" + uid;
-    String viewDivId = "viewDiv" + uid;
+//    String uid = mode.getUniqueID();
+//    String scriptId = "script" + uid;
+//    String viewDivId = "viewDiv" + uid;
 
     String knitrFormat = bean.getKnitrFormat() != null ? bean.getKnitrFormat() : "None";
     boolean useGetDataApi = report.getReportId() == null || bean.isUseGetDataApi();
@@ -106,7 +108,7 @@
     ActionURL saveURL = urlProvider(ReportUrls.class).urlAjaxSaveScriptReport(c);
     ActionURL initialViewURL = urlProvider(ReportUrls.class).urlViewScriptReport(c);
     ActionURL baseViewURL = initialViewURL.clone();
-    List<Pair<String, String>> params = ctx.getActionURL().getParameters();
+    List<Pair<String, String>> params = getActionURL().getParameters();
 
     // Initial view URL uses all parameters
     initialViewURL.addParameters(params);
@@ -159,7 +161,7 @@
     reportConfig.put("supportsPipeline", report.supportsPipeline());
 
     // must be project admin (or above to to share a report to child folders
-    reportConfig.put("allowInherit", ctx.getUser().isSiteAdmin() || ReportUtil.isInRole(ctx.getUser(), c, ProjectAdminRole.class));
+    reportConfig.put("allowInherit", user.isSiteAdmin() || ReportUtil.isInRole(user, c, ProjectAdminRole.class));
     reportConfig.put("inheritable", bean.isInheritable());
     reportConfig.put("editAreaSyntax", report.getEditAreaSyntax());
 

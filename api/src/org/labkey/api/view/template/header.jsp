@@ -43,10 +43,9 @@
 <%
     TemplateHeaderView me = ((TemplateHeaderView) HttpView.currentView());
     TemplateHeaderView.TemplateHeaderBean bean = me.getModelBean();
-    ViewContext currentContext = HttpView.currentContext();
-    Container c = currentContext.getContainer();
-    ActionURL currentURL = currentContext.getActionURL();
-    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(currentContext.getContainer());
+    Container c = getContainer();
+    ActionURL currentURL = getActionURL();
+    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
 
     boolean hasWarnings = me.getWarningMessages().size() > 0;
     boolean showSearchForm = bean.pageConfig.getTemplate() == PageConfig.Template.Home || bean.pageConfig.getTemplate() == PageConfig.Template.None;

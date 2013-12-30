@@ -34,13 +34,13 @@
     ViewContext ctx = me.getViewContext();
     ActionURL postUrl = form.getWebPart().getCustomizePostURL(ctx);
     FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-    AttachmentDirectory [] attDirs = svc.getRegisteredDirectories(ctx.getContainer());
+    AttachmentDirectory [] attDirs = svc.getRegisteredDirectories(getContainer());
 
     Collection<String> cloudStoreNames = Collections.emptyList();
     CloudStoreService cloud = ServiceRegistry.get().getService(CloudStoreService.class);
     if (cloud != null)
     {
-        cloudStoreNames = cloud.getEnabledCloudStores(ctx.getContainer());
+        cloudStoreNames = cloud.getEnabledCloudStores(getContainer());
     }
 
     boolean small = false;
@@ -77,9 +77,9 @@
                 <option value="<%=h(value)%>" <%=selected(value.equals(form.getFileSet()))%>><%=h("Cloud storage: " + storeName)%></option>
 <%          } %>
             </select>
-<%          if (ctx.getUser().isSiteAdmin())
+<%          if (getUser().isSiteAdmin())
             {
-                ActionURL configUrl = urlProvider(FileUrls.class).urlShowAdmin(ctx.getContainer()); %>
+                ActionURL configUrl = urlProvider(FileUrls.class).urlShowAdmin(getContainer()); %>
                 <a href="<%=h(configUrl)%>">Configure File Roots</a>
 <%          } %>
             </td>

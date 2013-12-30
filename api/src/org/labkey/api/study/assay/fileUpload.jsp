@@ -26,7 +26,7 @@
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Map" %>
-
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<FileUploadDataCollector> me = (JspView<FileUploadDataCollector>) HttpView.currentView();
     FileUploadDataCollector<? extends AssayRunUploadContext<? extends AssayProvider>> bean = me.getModelBean();
@@ -40,7 +40,7 @@
 
 <script type="text/javascript">
     var MAX_FILE_INPUTS = <%= bean.getMaxFileInputs() %>;
-    var PREFIX = "<%= PageFlowUtil.filter(AssayDataCollector.PRIMARY_FILE) %>";
+    var PREFIX = "<%= h(AssayDataCollector.PRIMARY_FILE) %>";
 
     // Keep a list of all of the files (new uploads and reuse candidates so that we can track down their
     // corresponding UI elements easily
@@ -72,7 +72,7 @@
         <%
         PreviouslyUploadedDataCollector reuseDataCollector = new PreviouslyUploadedDataCollector(Collections.<String, File>emptyMap(), PreviouslyUploadedDataCollector.Type.ReRun);
         for (Map.Entry<String, File> entry : bean.getReusableFiles().entrySet()) { %>
-            addFileUploadInputRow(null, <%= PageFlowUtil.jsString(entry.getValue().getName())%>, <%= PageFlowUtil.jsString(reuseDataCollector.getHiddenFormElementHTML(me.getViewContext().getContainer(), entry.getKey(), entry.getValue()))%>);
+            addFileUploadInputRow(null, <%= PageFlowUtil.jsString(entry.getValue().getName())%>, <%= PageFlowUtil.jsString(reuseDataCollector.getHiddenFormElementHTML(getContainer(), entry.getKey(), entry.getValue()))%>);
         <% } %>
 
         // Be sure that we always have at least one file in the list

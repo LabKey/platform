@@ -30,7 +30,7 @@
     }
 %>
 <%
-    ViewContext context = HttpView.currentContext();
+    ViewContext context = getViewContext();
     ActionURL url = context.cloneActionURL();
 %>
 

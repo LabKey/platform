@@ -22,11 +22,9 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
 <%!
 
   public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -56,10 +54,8 @@
 </style>
 
 <%
-    ViewContext context = HttpView.currentContext();
     FilesWebPart.FilesForm bean = (FilesWebPart.FilesForm)HttpView.currentModel();
-
-    Container c = context.getContainer();
+    Container c = getContainer();
 
     ActionURL projConfig = c.isProject() ? urlProvider(AdminUrls.class).getProjectSettingsFileURL(c) : urlProvider(AdminUrls.class).getFolderManagementFileURL(c);
     int height = 350;
@@ -73,7 +69,7 @@
 
     <span class="labkey-error">
         The file root for this folder is invalid. It may not exist or may have been configured incorrectly.<br>
-        <%=text(c.hasPermission(context.getUser(), AdminPermission.class) ? "File roots can be configured from the <a href=\"" + projConfig + "\">project settings</a> view." : "Contact your administrator to address this problem.")%>
+        <%=text(c.hasPermission(getUser(), AdminPermission.class) ? "File roots can be configured from the <a href=\"" + projConfig + "\">project settings</a> view." : "Contact your administrator to address this problem.")%>
     </span>
 
 <%  } %>
@@ -161,7 +157,7 @@
                     allowChangeDirectory: true,
                     tbarItems: buttonActions,
                     isPipelineRoot: isPipelineRoot,
-                    adminUser : <%=getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class)%>,
+                    adminUser : <%=getContainer().hasPermission(getUser(), AdminPermission.class)%>,
                     statePrefix: prefix,
                     rootOffset: <%=PageFlowUtil.jsString(bean.getRootOffset())%>
                 });

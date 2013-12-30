@@ -15,19 +15,17 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.PopupMenu" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.AppBar" %>
 <%@ page import="org.labkey.api.view.template.AppBarView" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -38,9 +36,9 @@
     }
 %>
 <%
-    ViewContext context = HttpView.currentView().getViewContext();
-    Container tabContainer = context.getContainer();
-    if(tabContainer.isContainerTab() || tabContainer.isWorkbook())
+    ViewContext context = getViewContext();
+    Container tabContainer = getContainer();
+    if (tabContainer.isContainerTab() || tabContainer.isWorkbook())
         tabContainer = tabContainer.getParent();
 
     String tabEditMode = session.getAttribute("tabEditMode") == null ? "" : (String) session.getAttribute("tabEditMode");
@@ -77,13 +75,13 @@
                             if (navTree.isDisabled())
                                 classes = classes + " labkey-app-bar-tab-hidden";
 
-                            if (!context.hasPermission(context.getUser(), AdminPermission.class) || navTree.getChildCount() == 0)
+                            if (!context.hasPermission(getUser(), AdminPermission.class) || navTree.getChildCount() == 0)
                                 classes = classes + " labkey-no-tab-menu";
                 %>
                         <li class="<%=text(classes)%>">
                             <a href="<%=h(navTree.getHref())%>" id="<%=h(navTree.getText()).replace(" ", "")%>Tab"><%=h(navTree.getText())%></a>
                             <%
-                                if(context.hasPermission(context.getUser(), AdminPermission.class) && navTree.getChildCount() > 0)
+                                if(context.hasPermission(getUser(), AdminPermission.class) && navTree.getChildCount() > 0)
                                 {
                             %>
                                     <span class="labkey-tab-menu" style="visibility:hidden;">
@@ -104,14 +102,14 @@
                 <%
                         }
                     }
-                    if(context.hasPermission(context.getUser(), AdminPermission.class) && context.getContainer().getFolderType() != org.labkey.api.module.FolderType.NONE)
+                    if(context.hasPermission(getUser(), AdminPermission.class) && getContainer().getFolderType() != org.labkey.api.module.FolderType.NONE)
                     {
                 %>
                         <li class="labkey-app-bar-add-tab" id="addTab">
                             <a href="javascript:LABKEY.Portal.addTab();" title="Add New Tab">+</a>
                         </li>
                         <li class="labkey-app-bar-edit-tab" id="editTabs">
-                            <a href="javascript:LABKEY.Portal.toggleTabEditMode();" title="Toggle Edit Mode"><img src="<%=context.getContextPath()%>/_images/pencil2.png" /></a>
+                            <a href="javascript:LABKEY.Portal.toggleTabEditMode();" title="Toggle Edit Mode"><img src="<%=getContextPath()%>/_images/pencil2.png" /></a>
                         </li>
                 <%
                     }

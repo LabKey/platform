@@ -28,9 +28,8 @@
     JspView<RenderAssayBean> me = (JspView<RenderAssayBean>) HttpView.currentView();
     RenderAssayBean bean = me.getModelBean();
     DilutionAssayRun assay = bean.getAssay();
-    ViewContext context = me.getViewContext();
 
-    boolean writer = context.getContainer().hasPermission(context.getUser(), InsertPermission.class);
+    boolean writer = getContainer().hasPermission(getUser(), InsertPermission.class);
 %>
 <table>
 <%
@@ -89,7 +88,7 @@
         <th>Discussions</th>
     </tr>
     <tr>
-        <td><% me.include(bean.getDiscussionView(HttpView.getRootContext()), out); %></td>
+        <td><% me.include(bean.getDiscussionView(getViewContext()), out); %></td>
     </tr>
 <%
     }
