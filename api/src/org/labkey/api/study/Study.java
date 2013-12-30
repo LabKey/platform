@@ -51,7 +51,9 @@ public interface Study extends StudyEntity
 
     List<? extends Visit> getVisitsForAssaySchedule();
 
-    List<? extends Product> getStudyProducts(User user, String role, String label);
+    List<? extends Product> getStudyProducts(User user, String role);
+
+    List<? extends Treatment> getStudyTreatments(User user);
 
     ParticipantCategory[] getParticipantCategories(User user);
 

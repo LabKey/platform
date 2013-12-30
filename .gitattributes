@@ -1256,6 +1256,8 @@ api/src/org/labkey/api/study/StudySerializationRegistry.java -text
 api/src/org/labkey/api/study/StudyService.java -text
 api/src/org/labkey/api/study/StudyUrls.java -text
 api/src/org/labkey/api/study/TimepointType.java -text
+api/src/org/labkey/api/study/Treatment.java -text
+api/src/org/labkey/api/study/TreatmentProduct.java -text
 api/src/org/labkey/api/study/Visit.java -text
 api/src/org/labkey/api/study/Well.java -text
 api/src/org/labkey/api/study/WellData.java -text
