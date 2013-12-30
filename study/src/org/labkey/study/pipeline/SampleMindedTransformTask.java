@@ -55,12 +55,14 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelLoader;
+import org.labkey.api.security.User;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.study.model.ParticipantIdImportHelper;
 import org.labkey.study.model.SequenceNumImportHelper;
 import org.labkey.study.model.StudyManager;
 
@@ -481,7 +483,7 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
             if (null == df)
                 return;
             DataLoader dl = df.createLoader(source, true, study.getContainer());
-            DataIteratorBuilder sampleminded = StudyService.get().wrapSampleMindedTransform(dl, context, study, target);
+            DataIteratorBuilder sampleminded = StudyService.get().wrapSampleMindedTransform(job.getUser(), dl, context, study, target);
             Map<String,Object> empty = new HashMap<>();
 
             // would be nice to have deleteAll() in QueryUpdateService
@@ -522,10 +524,10 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
      *
      * TODO this should probably be turned inside out so that transform() uses the DataIterator.
      */
-    public static DataIteratorBuilder wrapSampleMindedTransform(DataIteratorBuilder in, DataIteratorContext context,
-            Study study, TableInfo target)
+    public static DataIteratorBuilder wrapSampleMindedTransform(User user, DataIteratorBuilder in, DataIteratorContext context,
+                                                                Study study, TableInfo target)
     {
-        return new _DataIteratorBuilder(in, context, study, target);
+        return new _DataIteratorBuilder(user, in, context, study, target);
     }
 
 
@@ -534,12 +536,14 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
         DataIteratorBuilder _input;
         Study _study;
         TableInfo _target;
+        User _user;
 
-        private _DataIteratorBuilder(DataIteratorBuilder in, DataIteratorContext context, Study study, TableInfo target)
+        private _DataIteratorBuilder(User user, DataIteratorBuilder in, DataIteratorContext context, Study study, TableInfo target)
         {
             _input = in;
             _study = study;
             _target = target;
+            _user = user;
         }
 
         @Override
@@ -564,7 +568,7 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
                 boolean lookslikeSampleMinded = barcode && siteshortname && !global_unique_specimen_id && !lab_id;
 
                 if (lookslikeSampleMinded)
-                    return LoggingDataIterator.wrap(_DataIterator.create(iterator, context, _study, _target));
+                    return LoggingDataIterator.wrap(_DataIterator.create(_user, iterator, context, _study, _target));
                 else
                     return iterator;
             }
@@ -577,13 +581,13 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
 
     static class _DataIterator extends ListofMapsDataIterator
     {
-        static DataIterator create(DataIterator source, DataIteratorContext context, Study study, TableInfo target) throws BatchValidationException
+        static DataIterator create(User user, DataIterator source, DataIteratorContext context, Study study, TableInfo target) throws BatchValidationException
         {
             List<ColumnInfo> cols = target.getColumns();
-            return new _DataIterator(cols, source, context, study);
+            return new _DataIterator(user, cols, source, context, study);
         }
 
-        _DataIterator(List<ColumnInfo> cols, DataIterator source, DataIteratorContext context, Study study)
+        _DataIterator(User user, List<ColumnInfo> cols, DataIterator source, DataIteratorContext context, Study study)
                 throws BatchValidationException
         {
             super(cols);
@@ -592,6 +596,7 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
             {
 
                 SequenceNumImportHelper snih = new SequenceNumImportHelper(study, null);
+                ParticipantIdImportHelper piih = new ParticipantIdImportHelper(study, user, null);
 
                 List<Map<String, Object>> inputRows = new ArrayList<>();
                 MapDataIterator di = DataIteratorUtil.wrapMap(source, false);
@@ -610,10 +615,11 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
                     rownumber++;
                     Object visit = row.get("visit_value");
                     Object collection = row.get("draw_timestamp");
-                    Object ptid = StringUtils.defaultString((String)row.get("participantid"),(String)row.remove("ptid"));
+                    Object ptid = StringUtils.defaultString((String) row.get("participantid"), (String) row.remove("ptid"));
+                    Object translatedPtid = piih.translateParticipantId(ptid);
+                    row.put("participantid", translatedPtid);
                     Double sn = snih.translateSequenceNum(visit,collection);
                     row.put("sequencenum", sn);
-                    row.put("participantid", ptid);
                     if (null == sn)
                     {
                         String msg = null == visit ? "visit not specified" : "visit not recognized: " + visit;
@@ -629,6 +635,10 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
             catch (IOException x)
             {
                 context.getErrors().addRowError(new ValidationException(x.getMessage()));
+            }
+            catch (ValidationException e)
+            {
+                throw new BatchValidationException(e);
             }
         }
     }

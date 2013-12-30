@@ -3394,6 +3394,7 @@ study/src/org/labkey/study/model/ParticipantDataMapKey.java -text
 study/src/org/labkey/study/model/ParticipantDataset.java -text
 study/src/org/labkey/study/model/ParticipantGroup.java -text
 study/src/org/labkey/study/model/ParticipantGroupManager.java -text
+study/src/org/labkey/study/model/ParticipantIdImportHelper.java -text
 study/src/org/labkey/study/model/ParticipantMapper.java -text
 study/src/org/labkey/study/model/PrimaryType.java -text
 study/src/org/labkey/study/model/ProductAntigenImpl.java -text

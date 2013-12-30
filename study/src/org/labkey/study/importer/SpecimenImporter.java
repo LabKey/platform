@@ -16,7 +16,6 @@
 
 package org.labkey.study.importer;
 
-import com.google.common.collect.Maps;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -75,6 +74,7 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.LocationImpl;
+import org.labkey.study.model.ParticipantIdImportHelper;
 import org.labkey.study.model.SequenceNumImportHelper;
 import org.labkey.study.model.Specimen;
 import org.labkey.study.model.SpecimenComment;
@@ -128,7 +128,6 @@ public class SpecimenImporter
     private final CPUTimer cpuCreateTempTable = new CPUTimer("createTempTable");
     private final CPUTimer cpuPopulateTempTable = new CPUTimer("populateTempTable");
     private final CPUTimer cpuCurrentLocations = new CPUTimer("updateCurrentLocations");
-
 
     public static class ImportableColumn
     {
@@ -1000,7 +999,7 @@ public class SpecimenImporter
         logDebug.debug(cpuPopulateTempTable);
     }
 
-    private SpecimenLoadInfo populateTempSpecimensTable(DbSchema schema, SpecimenImportFile file, boolean merge) throws SQLException, IOException
+    private SpecimenLoadInfo populateTempSpecimensTable(DbSchema schema, SpecimenImportFile file, boolean merge) throws SQLException, IOException, ValidationException
     {
         String tableName = createTempTable(schema);
         Pair<List<SpecimenColumn>, Integer> pair = populateTempTable(schema, tableName, file, merge);
@@ -2463,7 +2462,7 @@ public class SpecimenImporter
     private Pair<List<SpecimenColumn>, Integer> populateTempTable(
             DbSchema schema, final String tempTable,
             SpecimenImportFile file, boolean merge)
-        throws SQLException, IOException
+        throws SQLException, IOException, ValidationException
     {
         assert cpuPopulateTempTable.start();
 
@@ -2490,19 +2489,41 @@ public class SpecimenImporter
         // 2) convert this to ETL?
         SpecimenColumn _visitCol = null;
         SpecimenColumn _dateCol = null;
+        SpecimenColumn _participantIdCol = null;
         for (SpecimenColumn sc : SPECIMEN_COLUMNS)
         {
             if (StringUtils.equals("VisitValue", sc.getDbColumnName()))
                 _visitCol = sc;
             else if (StringUtils.equals("DrawTimestamp", sc.getDbColumnName()))
                 _dateCol = sc;
+            else if (StringUtils.equals("Ptid", sc.getDbColumnName()))
+                _participantIdCol = sc;
         }
 
         Study study = StudyManager.getInstance().getStudy(_container);
         final SequenceNumImportHelper h = new SequenceNumImportHelper(study, null);
+        final ParticipantIdImportHelper piih = new ParticipantIdImportHelper(study, _user, null);
         final SpecimenColumn visitCol = _visitCol;
         final SpecimenColumn dateCol = _dateCol;
+        final SpecimenColumn participantIdCol = _participantIdCol;
         final Parameter.TypedValue nullDouble = Parameter.nullParameter(JdbcType.DOUBLE);
+
+        ComputedColumn computedParticipantIdCol = new ComputedColumn()
+        {
+            @Override
+            public String getName()
+            {
+                return participantIdCol.getDbColumnName();
+            }
+
+            @Override
+            public Object getValue(Map<String, Object> row)
+            {
+                Object p = SpecimenImporter.this.getValue(participantIdCol, row);
+                String participantId = piih.translateParticipantId(p);
+                return participantId;
+            }
+        };
 
         ComputedColumn sequencenumCol = new ComputedColumn()
         {

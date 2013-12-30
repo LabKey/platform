@@ -675,9 +675,9 @@ public class StudyServiceImpl implements StudyService.Service
     }
 
 
-    public DataIteratorBuilder wrapSampleMindedTransform(DataIteratorBuilder in, DataIteratorContext context, Study study, TableInfo target)
+    public DataIteratorBuilder wrapSampleMindedTransform(User user, DataIteratorBuilder in, DataIteratorContext context, Study study, TableInfo target)
     {
-        return SampleMindedTransformTask.wrapSampleMindedTransform(in,context,study,target);
+        return SampleMindedTransformTask.wrapSampleMindedTransform(user, in,context,study,target);
     }
 
     @Override

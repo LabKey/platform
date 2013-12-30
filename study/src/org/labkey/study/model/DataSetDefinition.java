@@ -1776,8 +1776,19 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             Integer indexVisitDate = outputMap.get(DataSetDefinition.getVisitDateURI());
             Integer indexReplace = outputMap.get("replace");
 
+            // do a conversion for PTID aliasing
+            Integer translatedIndexPTID = indexPTID;
+            try
+            {
+                translatedIndexPTID = it.translatePtid(indexPTID, user);
+            }
+            catch (ValidationException e)
+            {
+                context.getErrors().addRowError(e);
+            }
+
             // For now, just specify null for sequence num index... we'll add it below
-            it.setSpecialOutputColumns(indexPTID, null, indexVisitDate, indexKeyProperty);
+            it.setSpecialOutputColumns(translatedIndexPTID, null, indexVisitDate, indexKeyProperty);
             it.setTimepointType(timetype);
 
             /* NOTE: these columns must be added in dependency order
@@ -2081,6 +2092,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             ColumnInfo col = new ColumnInfo("SequenceNum", JdbcType.DOUBLE);
             SequenceNumImportHelper snih = new SequenceNumImportHelper(_study, DataSetDefinition.this);
             Callable call = snih.getCallable(getInput(), indexSequenceNumInput, indexVisitDateInput);
+            return addColumn(col, call);
+        }
+
+        int translatePtid(Integer indexPtidInput, User user) throws ValidationException
+        {
+            ColumnInfo col = new ColumnInfo("ParticipantId", JdbcType.INTEGER);
+            ParticipantIdImportHelper piih = new ParticipantIdImportHelper(_study, user, DataSetDefinition.this);
+            Callable call = piih.getCallable(getInput(), indexPtidInput);
             return addColumn(col, call);
         }
 
