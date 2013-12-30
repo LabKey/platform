@@ -20,16 +20,15 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-JspView<TimelineSettings> me = (JspView<TimelineSettings>) HttpView.currentView();
-TimelineSettings bean = me.getModelBean();
-String contextPath = me.getViewContext().getContextPath();
+    JspView<TimelineSettings> me = (JspView<TimelineSettings>) HttpView.currentView();
+    TimelineSettings bean = me.getModelBean();
 %>
 <div class="ms-form" style="border:1px solid black;width:100%;height:<%=bean.getPixelHeight()%>px" id="<%=bean.getDivId()%>"></div>
 <script type="text/javascript">LABKEY.requiresClientAPI();</script>
-<script src='<%=contextPath%>/timeline.js'></script>
-<script src='<%=contextPath%>/similetimeline/bundle.js'></script>
-<script src='<%=contextPath%>/similetimeline/scripts/l10n/en/timeline.js'></script>
-<script src='<%=contextPath%>/similetimeline/scripts/l10n/en/labellers.js'></script>
+<script src='<%=getContextPath()%>/timeline.js'></script>
+<script src='<%=getContextPath()%>/similetimeline/bundle.js'></script>
+<script src='<%=getContextPath()%>/similetimeline/scripts/l10n/en/timeline.js'></script>
+<script src='<%=getContextPath()%>/similetimeline/scripts/l10n/en/labellers.js'></script>
 <script type="text/javascript">
     Ext.onReady(function() {
     var tl = LABKEY.Timeline.create({

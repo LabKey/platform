@@ -18,19 +18,13 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
-<%@ page import="org.labkey.api.view.Portal" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
-
     // Create Project URL
     ActionURL createProjectURL = new ActionURL(AdminController.CreateFolderAction.class, ContainerManager.getRoot());
 
