@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.reports.model.ViewCategory"%>
+<%@ page import="com.fasterxml.jackson.databind.ObjectMapper"%>
+<%@ page import="org.labkey.api.reports.model.ViewCategory" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -28,7 +29,6 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -39,9 +39,8 @@
       return resources;
   }
 %>
-
 <%
-    List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getViewContext().getUser());
+    List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getUser());
     JspView<Map<Integer,StudyController.DatasetVisibilityData>> me = (JspView<Map<Integer,StudyController.DatasetVisibilityData>>) HttpView.currentView();
     Map<Integer,StudyController.DatasetVisibilityData> bean = me.getModelBean();
 
@@ -65,10 +64,9 @@
 <labkey:errors/>
 
 <%
-
     if (bean.entrySet().size() == 0)
     {
-        ActionURL createURL = new ActionURL(StudyController.DefineDatasetTypeAction.class, getViewContext().getContainer());
+        ActionURL createURL = new ActionURL(StudyController.DefineDatasetTypeAction.class, getContainer());
         createURL.addParameter("autoDatasetId", "true");
 %>
     No datasets have been created in this study.<br><br>

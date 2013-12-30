@@ -19,27 +19,26 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.UserManager"%>
+<%@ page import="org.labkey.api.settings.AppProps"%>
 <%@ page import="org.labkey.api.study.Location"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.study.SampleManager"%>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.study.SampleManager" %>
+<%@ page import="org.labkey.study.controllers.CreateChildStudyAction" %>
+<%@ page import="org.labkey.study.controllers.samples.ShowSearchAction" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
+<%@ page import="org.labkey.study.model.LocationImpl" %>
 <%@ page import="org.labkey.study.model.SampleRequestActor" %>
 <%@ page import="org.labkey.study.model.SampleRequestRequirement" %>
 <%@ page import="org.labkey.study.model.SampleRequestStatus" %>
-<%@ page import="org.labkey.study.model.LocationImpl" %>
 <%@ page import="org.labkey.study.model.Specimen" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.controllers.samples.ShowSearchAction" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.study.controllers.CreateChildStudyAction" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 
@@ -53,31 +52,30 @@
     }
 %>
 <%
-
     JspView<SpecimenController.ManageRequestBean> me = (JspView<SpecimenController.ManageRequestBean>) HttpView.currentView();
-    Container c = me.getViewContext().getContainer();
+    Container c = getContainer();
+    User user = getUser();
     SpecimenController.ManageRequestBean bean = me.getModelBean();
     String comments = bean.getSampleRequest().getComments();
-    ViewContext context = me.getViewContext();
     if (comments == null)
         comments = "[No description provided]";
     SampleManager manager = SampleManager.getInstance();
-    boolean hasExtendedRequestView = manager.getExtendedSpecimenRequestView(context) != null;
-    SampleRequestActor[] actors = manager.getRequirementsProvider().getActors(context.getContainer());
+    boolean hasExtendedRequestView = manager.getExtendedSpecimenRequestView(getViewContext()) != null;
+    SampleRequestActor[] actors = manager.getRequirementsProvider().getActors(c);
     SampleRequestRequirement[] requirements = manager.getRequestRequirements(bean.getSampleRequest());
     Location destinationLocation = bean.getDestinationSite();
     User creatingUser = UserManager.getUser(bean.getSampleRequest().getCreatedBy());
-    List<LocationImpl> locations = StudyManager.getInstance().getSites(context.getContainer());
+    List<LocationImpl> locations = StudyManager.getInstance().getSites(c);
     boolean notYetSubmitted = false;
-    if (manager.isSpecimenShoppingCartEnabled(context.getContainer()))
+    if (manager.isSpecimenShoppingCartEnabled(c))
     {
-        SampleRequestStatus cartStatus = manager.getRequestShoppingCartStatus(context.getContainer(), context.getUser());
+        SampleRequestStatus cartStatus = manager.getRequestShoppingCartStatus(c, user);
         notYetSubmitted = bean.getSampleRequest().getStatusId() == cartStatus.getRowId();
     }
 
-    String specimenSearchButton = manager.hasEditRequestPermissions(context.getUser(), bean.getSampleRequest()) ?
+    String specimenSearchButton = manager.hasEditRequestPermissions(user, bean.getSampleRequest()) ?
         generateButton("Specimen Search", buildURL(ShowSearchAction.class) + "showVials=true", null) : "";
-    String importVialIdsButton = manager.hasEditRequestPermissions(context.getUser(), bean.getSampleRequest()) ?
+    String importVialIdsButton = manager.hasEditRequestPermissions(user, bean.getSampleRequest()) ?
         generateButton("Upload Specimen Ids", buildURL(SpecimenController.ImportVialIdsAction.class,
                 "id=" + bean.getSampleRequest().getRowId()), null) : "";
 
@@ -321,7 +319,7 @@
         <tr>
             <td class="labkey-form-label"><span class="labkey-error"><b>This request has not been submitted.</b></span>
 <%
-        if (manager.hasEditRequestPermissions(context.getUser(), bean.getSampleRequest()))
+        if (manager.hasEditRequestPermissions(user, bean.getSampleRequest()))
         {
 %>
             <div style="padding-bottom: 0.5em">
@@ -368,7 +366,7 @@
         else
         {
 %>
-                Only the request creator (<%= h(creatingUser.getDisplayName(context.getUser())) %>) or an administrator may submit or cancel this request.
+                Only the request creator (<%= h(creatingUser.getDisplayName(user)) %>) or an administrator may submit or cancel this request.
 <%
         }
     }
@@ -381,7 +379,7 @@
                 <table>
                     <tr>
                         <th valign="top" align="right">Requester</th>
-                        <td><%= h(creatingUser != null ? h(creatingUser.getDisplayName(context.getUser())) : "Unknown") %></td>
+                        <td><%= h(creatingUser != null ? h(creatingUser.getDisplayName(user)) : "Unknown") %></td>
                     </tr>
                     <tr>
                         <th valign="top" align="right">Requesting Location</th>

@@ -67,8 +67,8 @@ private Object outputJob(String status, PipelineJob job,
     PipelineController.StatusModel bean = me.getModelBean();
     PipelineJobData jobData = bean.getJobData();
 
-    Container c = getViewContext().getContainer();
-    User user = getViewContext().getUser();
+    Container c = getContainer();
+    User user = getUser();
 
     boolean canCancel = c.hasPermission(user, DeletePermission.class);
     boolean canClear = canCancel;

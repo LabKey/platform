@@ -30,11 +30,11 @@
 <%
     JspView<SpecimenController.SpecimenHeaderBean> me = (JspView<SpecimenController.SpecimenHeaderBean>) HttpView.currentView();
     SpecimenController.SpecimenHeaderBean bean = me.getModelBean();
-    ActionURL createRequestURL = new ActionURL(SpecimenController.ShowAPICreateSampleRequestAction.class, getViewContext().getContainer());
+    ActionURL createRequestURL = new ActionURL(SpecimenController.ShowAPICreateSampleRequestAction.class, getContainer());
     createRequestURL.addParameter("fromGroupedView", !bean.isShowingVials());
-    createRequestURL.addParameter("returnUrl", getViewContext().getActionURL().toString());
-    String subjectNounSingle = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
-    String subjectNounPlural = StudyService.get().getSubjectNounPlural(getViewContext().getContainer());
+    createRequestURL.addParameter("returnUrl", getActionURL().toString());
+    String subjectNounSingle = StudyService.get().getSubjectNounSingular(getContainer());
+    String subjectNounPlural = StudyService.get().getSubjectNounPlural(getContainer());
 %>
 <script>LABKEY.requiresScript('util.js');</script>
 <script>LABKEY.requiresClientAPI();</script>
@@ -53,14 +53,14 @@
     %>
 </script>
 <%
-   // boolean enableRequests = SampleManager.getInstance().getRepositorySettings(me.getViewContext().getContainer()).isEnableRequests();
+   // boolean enableRequests = SampleManager.getInstance().getRepositorySettings(getContainer()).isEnableRequests();
     String vialLinkText = bean.isShowingVials() ? "Group vials" : "Show individual vials";
 
-    if (bean.getViewContext().getContainer().hasPermission(bean.getViewContext().getUser(), AdminPermission.class))
+    if (getContainer().hasPermission(getUser(), AdminPermission.class))
     {
 %>
 <%=textLink("Manage Study",
-        new ActionURL(ManageStudyAction.class, bean.getViewContext().getContainer()))%>&nbsp;
+        new ActionURL(ManageStudyAction.class, getContainer()))%>&nbsp;
 <%
     }
 %>

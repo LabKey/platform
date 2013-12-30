@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -26,22 +25,24 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.view.SubjectDetailsWebPartFactory" %>
 <%@ page import="java.util.EnumSet" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart bean = me.getModelBean();
     ViewContext ctx = me.getViewContext();
+    Container c = getContainer();
     ActionURL postUrl = bean.getCustomizePostURL(ctx);
     String participantId = bean.getPropertyMap().get(SubjectDetailsWebPartFactory.PARTICIPANT_ID_KEY);
-    String ptidCompletionBase = SpecimenService.get().getCompletionURLBase(ctx.getContainer(), SpecimenService.CompletionType.ParticipantId);
+    String ptidCompletionBase = SpecimenService.get().getCompletionURLBase(c, SpecimenService.CompletionType.ParticipantId);
 
     String selectedData = bean.getPropertyMap().get(SubjectDetailsWebPartFactory.DATA_TYPE_KEY);
     if (selectedData == null)
         selectedData = SubjectDetailsWebPartFactory.DataType.ALL.name();
     
     boolean includePrivateData = Boolean.parseBoolean(bean.getPropertyMap().get(SubjectDetailsWebPartFactory.QC_STATE_INCLUDE_PRIVATE_DATA_KEY));
-    String subjectNoun = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
+    String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
 %>
 <p>Each <%= h(subjectNoun.toLowerCase()) %> webpart will display datasets from a single <%= h(subjectNoun.toLowerCase()) %>.</p>
 
@@ -49,7 +50,7 @@
 <table>
     <tr>
         <td>
-            <%= StudyService.get().getSubjectColumnName(getViewContext().getContainer()) %>:
+            <%= StudyService.get().getSubjectColumnName(getContainer()) %>:
         </td>
         <td>
             <labkey:autoCompleteText name="<%= SubjectDetailsWebPartFactory.PARTICIPANT_ID_KEY %>"
@@ -74,7 +75,7 @@
         </td>
     </tr>
     <%
-        if (StudyManager.getInstance().showQCStates(ctx.getContainer()))
+        if (StudyManager.getInstance().showQCStates(c))
         {
     %>
     <tr>
@@ -92,7 +93,7 @@
     <tr>
         <td>
             <%=generateSubmitButton("Submit")%>
-            <%=generateButton("Cancel", ctx.getContainer().getStartURL(ctx.getUser()))%>
+            <%=generateButton("Cancel", c.getStartURL(getUser()))%>
         </td>
     </tr>
 </table>

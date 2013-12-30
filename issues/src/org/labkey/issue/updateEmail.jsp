@@ -15,18 +15,16 @@
  * limitations under the License.
  */
 %><%@ page import="org.labkey.api.data.Container"
-%><%@ page import="org.labkey.api.util.HString"
 %><%@ page import="org.labkey.api.util.PageFlowUtil"
 %><%@ page import="org.labkey.api.view.HttpView"
-%><%@ page import="org.labkey.api.view.JspView" 
+%><%@ page import="org.labkey.api.view.JspView"
 %><%@ page import="org.labkey.issue.IssuesController"
 %><%@ page import="org.labkey.issue.model.Issue"
-%>
-<%@ page extends="org.labkey.api.jsp.JspBase"
+%><%@ page extends="org.labkey.api.jsp.JspBase"
 %><%
     JspView<IssuesController.UpdateEmailPage> me = (JspView<IssuesController.UpdateEmailPage>)HttpView.currentView();
     IssuesController.UpdateEmailPage bean = me.getModelBean();
-    Container c = getViewContext().getContainer();
+    Container c = getContainer();
 
     String changeComment = "(No change comment)";
     String modifiedBy = "(unknown)";
@@ -34,7 +32,7 @@
 
     if (lastComment != null)
     {
-        modifiedBy = lastComment.getCreatedByName(me.getViewContext().getUser());
+        modifiedBy = lastComment.getCreatedByName(getUser());
         changeComment = lastComment.getComment();
     }
 
@@ -47,8 +45,8 @@
 
 %><html>
 <head>
-<base href="<%=h(getViewContext().getActionURL().getBaseServerURI() + getViewContext().getContextPath())%>">
-<%=PageFlowUtil.getStylesheetIncludes(c, getViewContext().getUser())%>
+<base href="<%=h(getActionURL().getBaseServerURI() + getViewContext().getContextPath())%>">
+<%=PageFlowUtil.getStylesheetIncludes(c, getUser())%>
 </head>
 <body><%
         %>You can review this issue here: <a href="<%=h(bean.url)%>"><%=h(bean.url)%></a><br/><%

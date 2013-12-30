@@ -67,7 +67,7 @@
         </tr>
         <tr>
             <th align="left" width=200>Reload User</th>
-            <td><%=allowReload ? (null == reloadUser ? "<div class=\"labkey-error\">Error: Reload user not defined!</div>" : h(reloadUser.getDisplayName(getViewContext().getUser()))) : ""%></td>
+            <td><%=allowReload ? (null == reloadUser ? "<div class=\"labkey-error\">Error: Reload user not defined!</div>" : h(reloadUser.getDisplayName(getUser()))) : ""%></td>
         </tr>
         <tr>
             <td width=200>&nbsp;</td>

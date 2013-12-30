@@ -42,9 +42,9 @@
     JspView<StudyManageReportsBean> me = (JspView<StudyManageReportsBean>) HttpView.currentView();
     StudyManageReportsBean bean = me.getModelBean();
 
-    ViewContext context = HttpView.currentContext();
-    Container c = context.getContainer();
-    User user = context.getUser();
+    ViewContext context = getViewContext();
+    Container c = getContainer();
+    User user = getUser();
     List<DataViewInfo> allViews = new ArrayList<>();
 
     // group by category name

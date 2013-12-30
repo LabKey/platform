@@ -28,13 +28,15 @@
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.NewRequestBean> me = (JspView<SpecimenController.NewRequestBean>) HttpView.currentView();
     SpecimenController.NewRequestBean bean = me.getModelBean();
     ViewContext context = me.getViewContext();
-    List<LocationImpl> locations = StudyManager.getInstance().getValidRequestingLocations(context.getContainer());
-    boolean shoppingCart = SampleManager.getInstance().isSpecimenShoppingCartEnabled(context.getContainer());
+    Container c = getContainer();
+    List<LocationImpl> locations = StudyManager.getInstance().getValidRequestingLocations(c);
+    boolean shoppingCart = SampleManager.getInstance().isSpecimenShoppingCartEnabled(c);
     boolean hasExtendedRequestView = SampleManager.getInstance().getExtendedSpecimenRequestView(context) != null;
     List<Specimen> specimens = bean.getSamples();
     SampleManager.SpecimenRequestInput[] inputs = bean.getInputs();
@@ -46,7 +48,7 @@
         {
             for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
             {
-                %><%=h(HttpView.currentContext().getMessage(e))%><br><%
+                %><%=h(context.getMessage(e))%><br><%
             }
         }
     %>
@@ -65,7 +67,7 @@ var DefaultValues = new Object();
 LastSetValues['input<%= i %>'] = '';
 DefaultValues['input<%= i %>'] = new Object();
     <%
-            Map<Integer, String> defaults = input.getDefaultSiteValues(context.getContainer());
+            Map<Integer, String> defaults = input.getDefaultSiteValues(c);
             for (Map.Entry<Integer,String> entry : defaults.entrySet())
             {
     %>DefaultValues['input<%= i %>']['<%= entry.getKey() %>'] = <%= PageFlowUtil.jsString(entry.getValue()) %>;

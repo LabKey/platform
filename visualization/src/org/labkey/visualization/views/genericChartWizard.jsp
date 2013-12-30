@@ -31,6 +31,7 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -45,9 +46,10 @@
 <%
     JspView<VisualizationController.GenericReportForm> me = (JspView<VisualizationController.GenericReportForm>) HttpView.currentView();
     ViewContext ctx = me.getViewContext();
-    Container c = ctx.getContainer();
+    Container c = getContainer();
+    User user = getUser();
     VisualizationController.GenericReportForm form = me.getModelBean();
-    String numberFormat = PropertyManager.getProperties(ctx.getContainer(), "DefaultStudyFormatStrings").get("NumberFormatString");
+    String numberFormat = PropertyManager.getProperties(c, "DefaultStudyFormatStrings").get("NumberFormatString");
     String numberFormatFn;
     boolean canEdit = false;
     ActionURL editUrl = null;
@@ -64,13 +66,13 @@
         Report report = form.getReportId().getReport(ctx);
         if(report != null)
         {
-            canEdit = report.canEdit(ctx.getUser(), ctx.getContainer());
+            canEdit = report.canEdit(user, c);
             editUrl = report.getEditReportURL(ctx);
         }
     }
     else
     {
-        canEdit = ctx.hasPermission(ReadPermission.class) && ! ctx.getUser().isGuest();
+        canEdit = ctx.hasPermission(ReadPermission.class) && ! user.isGuest();
     }
 
     String renderId = "generic-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
@@ -87,21 +89,21 @@
             reportId        : <%=q(form.getReportId() != null ? form.getReportId().toString() : null) %>,
             schemaName      : <%=q(form.getSchemaName() != null ? form.getSchemaName() : null) %>,
             queryName       : <%=q(form.getQueryName() != null ? form.getQueryName() : null) %>,
-            queryLabel      : <%=q(ReportUtil.getQueryLabelByName(ctx.getUser(), c, form.getSchemaName(), form.getQueryName()))%>,
+            queryLabel      : <%=q(ReportUtil.getQueryLabelByName(user, c, form.getSchemaName(), form.getQueryName()))%>,
             viewName        : <%=q(form.getViewName() != null ? form.getViewName() : null) %>,
             dataRegionName  : <%=q(form.getDataRegionName())%>,
             renderType      : <%=q(form.getRenderType())%>,
             id              : <%=q(form.getComponentId()) %>,
-            baseUrl         : <%=q(ctx.getActionURL().toString())%>,
+            baseUrl         : <%=q(getActionURL().toString())%>,
             renderTo        : '<%=text(renderId)%>',
             canEdit         : <%=canEdit%>,
-            allowShare      : <%=c.hasPermission(ctx.getUser(), ShareReportPermission.class)%>,
-            isDeveloper     : <%=ctx.getUser().isDeveloper()%>,
-            hideSave        : <%=ctx.getUser().isGuest()%>,
+            allowShare      : <%=c.hasPermission(user, ShareReportPermission.class)%>,
+            isDeveloper     : <%=user.isDeveloper()%>,
+            hideSave        : <%=user.isGuest()%>,
             autoColumnYName  : <%=q(form.getAutoColumnYName() != null ? form.getAutoColumnYName() : null) %>,
             autoColumnXName  : <%=q(form.getAutoColumnXName() != null ? form.getAutoColumnXName() : null) %>,
             defaultNumberFormat: eval("<%=text(numberFormatFn)%>"),
-            allowEditMode: <%=!ctx.getUser().isGuest() && form.allowToggleMode()%>,
+            allowEditMode: <%=!user.isGuest() && form.allowToggleMode()%>,
             editModeURL: <%=q(editUrl != null ? editUrl.toString() : null) %>,
             firstLoad: true
         });

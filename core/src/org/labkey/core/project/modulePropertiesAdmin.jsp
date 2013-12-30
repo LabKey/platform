@@ -1,18 +1,3 @@
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.core.admin.FolderManagementAction" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.json.JSONObject" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
-<%@ page import="org.labkey.api.module.Module" %>
-<%@ page import="org.json.JSONArray" %>
-<%@ page import="java.util.ArrayList" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.gwt.client.util.StringUtils" %>
 <%
 /*
  * Copyright (c) 2012-2013 LabKey Corporation
@@ -30,18 +15,21 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.gwt.client.util.StringUtils" %>
+<%@ page import="org.labkey.api.module.Module" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.List" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<FolderManagementAction.FolderManagementForm> me = (JspView) HttpView.currentView();
     //int webPartId = me.getModelBean().getRowId();
     String renderTarget = "project-";// + me.getModelBean().getIndex();
-    ViewContext ctx = me.getViewContext();
-    boolean hasPermission;
 
-    Container target = ctx.getContainer();
-    hasPermission = target.hasPermission(ctx.getUser(), ReadPermission.class);
+    Container target = getContainer();
+//    boolean hasPermission = target.hasPermission(getUser(), ReadPermission.class);
 
     List<String> modules = new ArrayList<>();
-    for (Module m : target.getActiveModules(ctx.getUser()))
+    for (Module m : target.getActiveModules(getUser()))
     {
         if(m.getModuleProperties().size() > 0)
         {

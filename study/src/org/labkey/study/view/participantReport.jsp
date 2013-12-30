@@ -47,12 +47,12 @@
     if (bean.getReportId() != null)
         reportId = bean.getReportId().toString();
 
-    Container c = me.getViewContext().getContainer();
-    User user = me.getViewContext().getUser();
+    Container c = getContainer();
+    User user = getUser();
     Study s = StudyManager.getInstance().getStudy(c);
 
     // for testing
-    boolean isPrint = me.getViewContext().getActionURL().getParameter("print") != null;
+    boolean isPrint = getActionURL().getParameter("print") != null;
     String renderId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
     String filterRenderId = "participant-filter-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
@@ -101,8 +101,8 @@
     Ext4.onReady(function(){
         var pr = Ext4.create('LABKEY.ext4.ParticipantReport', {
             height          : 600,
-            subjectColumn   : <%=q(org.labkey.api.study.StudyService.get().getSubjectColumnName(me.getViewContext().getContainer()))%>,
-            subjectVisitColumn: <%=q(org.labkey.api.study.StudyService.get().getSubjectVisitColumnName(me.getViewContext().getContainer()))%>,
+            subjectColumn   : <%=q(org.labkey.api.study.StudyService.get().getSubjectColumnName(getContainer()))%>,
+            subjectVisitColumn: <%=q(org.labkey.api.study.StudyService.get().getSubjectVisitColumnName(getContainer()))%>,
             subjectNoun     : {singular : <%=PageFlowUtil.jsString(s.getSubjectNounSingular())%>, plural : <%=PageFlowUtil.jsString(s.getSubjectNounPlural())%>, columnName: <%=PageFlowUtil.jsString(s.getSubjectColumnName())%>},
             visitBased      : <%=s.getTimepointType().isVisitBased()%>,
             renderTo        : '<%= renderId %>',

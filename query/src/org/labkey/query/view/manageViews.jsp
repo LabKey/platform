@@ -47,8 +47,8 @@
 %>
 <%
     QueryForm form = (QueryForm) HttpView.currentModel();
-    User user = getViewContext().getUser();
-    Container c = getViewContext().getContainer();
+    User user = getUser();
+    Container c = getContainer();
     String schemaName = form.getSchemaName().equals("") ? null : form.getSchemaName();
     String queryName = form.getQueryName();
     QueryManager mgr = QueryManager.get();

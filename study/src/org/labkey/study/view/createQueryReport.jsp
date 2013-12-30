@@ -33,7 +33,7 @@
 <%
     JspView<ReportsController.CreateQueryReportBean> me = (JspView<org.labkey.study.controllers.reports.ReportsController.CreateQueryReportBean>) HttpView.currentView();
     ReportsController.CreateQueryReportBean bean = me.getModelBean();
-    Container container = HttpView.currentContext().getContainer();
+    Container container = getContainer();
 
     String paramStart = QueryParam.schemaName.toString() + "=" + StudySchema.getInstance().getSchemaName();
 %>

@@ -37,9 +37,9 @@
 <%
     JspView<SpecimenController.UpdateSpecimenCommentsBean> me = (JspView<SpecimenController.UpdateSpecimenCommentsBean>) HttpView.currentView();
     SpecimenController.UpdateSpecimenCommentsBean bean = me.getModelBean();
-    Container container = me.getViewContext().getContainer();
+    Container container = getContainer();
 
-    NavTree copyButton = createCopyCommentButton(bean.getParticipantVisitMap(), StudyManager.getInstance().getStudy(container), getViewContext().getUser());
+    NavTree copyButton = createCopyCommentButton(bean.getParticipantVisitMap(), StudyManager.getInstance().getStudy(container), getUser());
 %>
 <form action="<%=h(buildURL(SpecimenController.UpdateCommentsAction.class))%>" name="updateComments" id="updateCommentForm" method="POST">
     <input type="hidden" name="copyToParticipant" value="false">
@@ -180,7 +180,7 @@
     private void addParticipantMenuItems(NavTree button, Map<String, Map<String, Integer>> pvMap,
                                          boolean hasParticipantMenu, boolean hasParticipantVisitMenu, boolean isMove)
     {
-        String subjectNoun = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
+        String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
         // participant comments
         if (hasParticipantMenu)
         {

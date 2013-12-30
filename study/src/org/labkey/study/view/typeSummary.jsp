@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.api.study.Study"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.StudyController.BulkImportDataTypesAction" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="java.util.ArrayList" %>
@@ -34,8 +33,7 @@
     DataSetDefinition dataset = me.getModelBean();
     Study study = dataset.getStudy();
 
-    ViewContext context = HttpView.currentContext();
-    List<ColumnInfo> allCols = dataset.getTableInfo(context.getUser(), true).getColumns();
+    List<ColumnInfo> allCols = dataset.getTableInfo(getUser(), true).getColumns();
 
     List<ColumnInfo> systemColumns = new ArrayList<>();
     List<ColumnInfo> userColumns = new ArrayList<>();
@@ -111,7 +109,7 @@
 </table>
 
 <%
-    if (context.hasPermission(AdminPermission.class))
+    if (getViewContext().hasPermission(AdminPermission.class))
     {
         if (dataset.getTypeURI() == null)
         {

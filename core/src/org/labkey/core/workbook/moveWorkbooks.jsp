@@ -15,16 +15,15 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.core.workbook.MoveWorkbooksBean" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.core.workbook.MoveWorkbooksBean" %>
+<%@ page import="java.util.List" %>
 <%
     JspView me = (JspView) HttpView.currentView();
-    Container container = me.getViewContext().getContainer();
     MoveWorkbooksBean bean = (MoveWorkbooksBean)me.getModelBean();
     List<Container> workbooks = bean.getWorkbooks();
 

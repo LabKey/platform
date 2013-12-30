@@ -39,7 +39,7 @@
 %>
 <%
     ProjectSettingsAction.LookAndFeelResourcesBean bean = ((JspView<ProjectSettingsAction.LookAndFeelResourcesBean>)HttpView.currentView()).getModelBean();
-    Container c = getViewContext().getContainer();
+    Container c = getContainer();
 %>
 <%=formatMissedErrors("form")%>
 <form name="preferences" enctype="multipart/form-data" method="post" id="form-preferences">

@@ -45,7 +45,7 @@
 <%
     JspView<AdminController.CustomEmailForm> me = (JspView<AdminController.CustomEmailForm>) HttpView.currentView();
     AdminController.CustomEmailForm bean = me.getModelBean();
-    Container c = getViewContext().getContainer();
+    Container c = getContainer();
 
     List<EmailTemplate> emailTemplates = EmailTemplateService.get().getEditableEmailTemplates(c);
     String errorHTML = formatMissedErrorsStr("form");

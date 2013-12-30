@@ -38,8 +38,8 @@
 <%
     AnnouncementWebPart me = (AnnouncementWebPart) HttpView.currentView();
     MessagesBean bean = me.getModelBean();
-    Container c = me.getViewContext().getContainer();
-    User user = me.getViewContext().getUser();
+    Container c = getContainer();
+    User user = getUser();
     String tableId = "table" + getRequestScopedUID();
     int maxHeight=120;
 %>

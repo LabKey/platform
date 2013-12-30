@@ -15,21 +15,21 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.PropertyManager" %>
 <%@ page import="org.labkey.api.reports.Report" %>
+<%@ page import="org.labkey.api.reports.permissions.ShareReportPermission" %>
 <%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.util.ExtUtil" %>
+<%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.visualization.VisualizationController" %>
-<%@ page import="org.labkey.api.reports.permissions.ShareReportPermission" %>
-<%@ page import="org.labkey.api.data.PropertyManager" %>
-<%@ page import="org.labkey.api.util.ExtUtil" %>
-<%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.visualization.VisualizationController" %>
 <%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -46,8 +46,8 @@
     VisualizationController.GetVisualizationForm form = me.getModelBean();
     boolean canEdit = false;
     boolean canShare = ctx.hasPermission(ShareReportPermission.class);
-    boolean isDeveloper = ctx.getUser().isDeveloper();
-    String numberFormat = PropertyManager.getProperties(ctx.getContainer(), "DefaultStudyFormatStrings").get("NumberFormatString");
+    boolean isDeveloper = getUser().isDeveloper();
+    String numberFormat = PropertyManager.getProperties(getContainer(), "DefaultStudyFormatStrings").get("NumberFormatString");
     String numberFormatFn;
     if(numberFormat == null)
     {
@@ -64,13 +64,13 @@
         report = id.getReport(ctx);
         if (report != null)
         {
-            canEdit = report.canEdit(ctx.getUser(), ctx.getContainer());
+            canEdit = report.canEdit(getUser(), getContainer());
             editUrl = report.getEditReportURL(ctx);
         }
     }
     else
     {
-        canEdit = ctx.hasPermission(ReadPermission.class) && ! ctx.getUser().isGuest();
+        canEdit = ctx.hasPermission(ReadPermission.class) && ! getUser().isGuest();
     }
 
     String elementId = "vis-wizard-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
@@ -178,7 +178,7 @@
                 canShare: <%=canShare%>,
                 isDeveloper: <%=isDeveloper%>,
                 defaultNumberFormat: eval("<%=numberFormatFn%>"),
-                allowEditMode: <%=!ctx.getUser().isGuest() && form.allowToggleMode()%>,
+                allowEditMode: <%=!getUser().isGuest() && form.allowToggleMode()%>,
                 editModeURL: <%=q(editUrl != null ? editUrl.toString() : null) %>
             }]
         });

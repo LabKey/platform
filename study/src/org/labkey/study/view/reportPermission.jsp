@@ -20,31 +20,27 @@
 <%@ page import="org.labkey.api.security.Group"%>
 <%@ page import="org.labkey.api.security.SecurityManager"%>
 <%@ page import="org.labkey.api.security.SecurityPolicy"%>
+<%@ page import="org.labkey.api.security.SecurityPolicyManager"%>
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission"%>
 <%@ page import="org.labkey.api.study.Study"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.security.SecurityPolicyManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
     JspView<Report> me = (JspView<Report>) HttpView.currentView();
     Report bean = me.getModelBean();
 
-    ViewContext context = HttpView.currentContext();
-    Study study = StudyManager.getInstance().getStudy(context.getContainer());
+    Study study = StudyManager.getInstance().getStudy(getContainer());
     Container c = study.getContainer();
     SecurityPolicy containerPolicy = c.getPolicy();
     SecurityPolicy reportPolicy = SecurityPolicyManager.getPolicy(bean.getDescriptor());
-
-    boolean isAttachmentReport = false;  // TODO: Remove all references
 
     Container project = study.getContainer().getProject();
     Group[] globalGroups = SecurityManager.getGroups(null, false);
@@ -101,24 +97,16 @@
 
 <h3><%= bean.getDescriptor().getReportName() %></h3>
 
-    <p>This page enables you to fine-tune permissions for this <%=isAttachmentReport ? "report" : "view"%>.</p>
+    <p>This page enables you to fine-tune permissions for this view%>.</p>
     <p>You can choose the default behavior as described.  Alternately, you can set custom permissions for each group. As always, if you don't have read permission on this folder, you don't get to see anything, regardless of any other settings.</p>
 
     <form id=permissionsForm action="" method=POST>
         <table>
-        <tr><td colspan=2><input id=useDefault name=permissionType type=radio value="<%=org.labkey.study.controllers.security.SecurityController.PermissionType.defaultPermission%>"<%=checked(getPermissionType(bean) == SecurityController.PermissionType.defaultPermission)%> onclick="updateDisplay()"></td><td><b>Default</b> :<%
-            if (isAttachmentReport)
-            {
-            %> this static report will be readable by all users with access to this study<%
-            }
-            else
-            {
-            %> this dynamic view will be readable only by users who have permission to see the source datasets<%
-            }
-        %></td></tr>
+        <tr><td colspan=2><input id=useDefault name=permissionType type=radio value="<%=org.labkey.study.controllers.security.SecurityController.PermissionType.defaultPermission%>"<%=checked(getPermissionType(bean) == SecurityController.PermissionType.defaultPermission)%> onclick="updateDisplay()"></td><td><b>Default</b> :
+          this dynamic view will be readable only by users who have permission to see the source datasets</td></tr>
         <tr><td colspan=2><input id=useCustom name=permissionType type=radio value="<%=SecurityController.PermissionType.customPermission%>"<%=checked(getPermissionType(bean) == SecurityController.PermissionType.customPermission)%> onclick="updateDisplay()"></td><td><b>Custom</b> : set permissions per group
     <%
-        if (isOwner(bean, context)) {
+        if (isOwner(bean )) {
     %>
         <tr><td colspan=2><input id=usePrivate name=permissionType type=radio value="<%=SecurityController.PermissionType.privatePermission%>"<%=checked(getPermissionType(bean) == SecurityController.PermissionType.privatePermission)%> onclick="updateDisplay()"></td><td><b>Private</b> : this view is only visible to you
     <%
@@ -164,7 +152,7 @@
     </form>&nbsp;
 
 <table>
-    <tr><td colspan="2">An enabled group indicates that the group already has READ access to the dataset (and to this <%=isAttachmentReport ? "report" : "view"%>) through
+    <tr><td colspan="2">An enabled group indicates that the group already has READ access to the dataset (and to this view) through
         the project permissions. If a group is disabled, the group does not have READ access to the dataset
         and cannot be granted access through this view. If the checkbox is selected, the group has been given explicit
         access through this view.<br/><br/>For more information on study security, consult the main documentation:
@@ -184,8 +172,8 @@
         return SecurityController.PermissionType.defaultPermission;
     }
 
-    boolean isOwner(Report report, ViewContext context)
+    boolean isOwner(Report report)
     {
-        return report.canEdit(context.getUser(), context.getContainer());
+        return report.canEdit(getUser(), getContainer());
     }
 %>

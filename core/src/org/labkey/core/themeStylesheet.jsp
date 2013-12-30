@@ -28,7 +28,7 @@
    That means colors and font sizes only. All other properties should be set in stylesheet.css. This file represents
    the minimal set of overrides to respect the user's look and feel settings.
 */
-    Container c = getViewContext().getContainer();
+    Container c = getContainer();
     WebTheme theme = WebThemeManager.getTheme(c);
     response.setContentType("text/css");
 

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -23,22 +24,18 @@
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="java.util.Set" %>
 <%@ page import="java.util.HashSet" %>
-<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
-    ViewContext ctx = me.getViewContext();
-    String contextPath = ctx.getContextPath();
 
     // Create Project URL
     ActionURL createProjectURL = new ActionURL(AdminController.CreateFolderAction.class, ContainerManager.getRoot());
 
-    NavTree projects = ContainerManager.getProjectList(ctx);
-    Container currentProject = ctx.getContainer().getProject();
+    NavTree projects = ContainerManager.getProjectList(getViewContext());
+    Container currentProject = getContainer().getProject();
     String projectName = null;
     if (null != currentProject)
         projectName = currentProject.getName();
@@ -135,7 +132,7 @@
                             if (null != p.getHref())
                             {
                         %>
-                        <a title="<%=h(text)%>" href="<%=PageFlowUtil.filter(p.getHref())%>" <%=highlight%>><%=h(text)%></a>
+                        <a title="<%=h(text)%>" href="<%=h(p.getHref())%>" <%=highlight%>><%=h(text)%></a>
                         <%
                             }
                             else
@@ -153,11 +150,11 @@
     </ul>
 </div>
 <%
-        if (getViewContext().getUser().isSiteAdmin())
+        if (getUser().isSiteAdmin())
         {
 %>
 <div class="project-menu-buttons">
-    <span class="button-icon"><a href="<%=createProjectURL%>" title="New Project"><img src="<%=contextPath%>/_images/icon_projects_add.png" alt="New Project" /></a></span>
+    <span class="button-icon"><a href="<%=createProjectURL%>" title="New Project"><img src="<%=getContextPath()%>/_images/icon_projects_add.png" alt="New Project" /></a></span>
 </div>
 <%
         }

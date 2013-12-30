@@ -15,20 +15,21 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.admin.AdminUrls"%>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.security.SecurityUrls"%>
+<%@ page import="org.labkey.api.security.SecurityUrls" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.samples.settings.RequestNotificationSettings" %>
-<%@ page import="org.labkey.study.samples.settings.RequestNotificationSettings.*" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.study.samples.settings.RequestNotificationSettings.DefaultEmailNotifyEnum" %>
+<%@ page import="org.labkey.study.samples.settings.RequestNotificationSettings.SpecimensAttachmentEnum" %>
 <%@ page import="org.labkey.study.view.samples.SpecimenRequestNotificationEmailTemplate" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
@@ -45,10 +46,9 @@ function setElementDisplayByCheckbox(checkbox, element)
 </script>
 
 <%
-    JspView<RequestNotificationSettings> me =
-            (JspView<RequestNotificationSettings>) HttpView.currentView();
+    JspView<RequestNotificationSettings> me = (JspView<RequestNotificationSettings>) HttpView.currentView();
     RequestNotificationSettings bean = me.getModelBean();
-    Container container = HttpView.getRootContext().getContainer();
+    Container container = getContainer();
 
     String completionURLPrefix = urlProvider(SecurityUrls.class).getCompleteUserURLPrefix(container);
     boolean newRequestNotifyChecked = ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()) ?

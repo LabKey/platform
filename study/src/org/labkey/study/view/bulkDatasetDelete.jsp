@@ -19,10 +19,9 @@
 <%@ page import="org.labkey.api.study.Study"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.study.controllers.DatasetController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.controllers.DatasetController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -56,7 +55,7 @@
         <td><a href="<%=detailsLink%>"><%= h(def.getLabel()) %></a></td>
         <td><%= h(def.getViewCategory() != null ? def.getViewCategory().getLabel() : null) %></td>
         <td><%= def.getType() %></td>
-        <td align="right"><%=StudyManager.getInstance().getNumDatasetRows(HttpView.currentContext().getUser(), def)%></td>
+        <td align="right"><%=StudyManager.getInstance().getNumDatasetRows(getUser(), def)%></td>
     </tr>
     <%
         

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.CoreSchema" %>
 <%@ page import="org.labkey.api.module.Module" %>
@@ -25,20 +26,15 @@
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.user.UserController" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.AdminBean> me = (HttpView<AdminController.AdminBean>) HttpView.currentView();
     AdminController.AdminBean bean = me.getModelBean();
-
-    ViewContext context = me.getViewContext();
-    Container c = context.getContainer();
-    String contextPath = context.getContextPath();
+    Container c = getContainer();
 %>
 <table class="labkey-admin-console"><tr>
 <td>
@@ -55,11 +51,11 @@
     <tr><td colspan="2">&nbsp;</td></tr><%
     }
 
-    if (context.getUser().isSiteAdmin())
+    if (getUser().isSiteAdmin())
     {
     %>
     <tr><td colspan="2"><%
-        include(new UserController.ImpersonateView(c, context.getUser(), true), out);
+        include(new UserController.ImpersonateView(c, getUser(), true), out);
     %>
     </td></tr><%
     }
@@ -126,7 +122,7 @@
     <tr class="labkey-header">
         <td valign="middle" width="9">
             <a id="<%= h(guid) %>" onclick="return toggleLink(this, false);">
-                <img src="<%= h(contextPath) %>/_images/plus.gif">
+                <img src="<%=getContextPath()%>/_images/plus.gif">
             </a>
         </td>
         <td>

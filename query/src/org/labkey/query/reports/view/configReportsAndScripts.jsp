@@ -16,23 +16,17 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
+<%@ page import="org.labkey.api.reports.ExternalScriptEngine"%>
 <%@ page import="org.labkey.api.reports.report.ExternalScriptEngineReport"%>
-<%@ page import="org.labkey.api.reports.report.RReport"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.reports.ExternalScriptEngine" %>
+<%@ page import="org.labkey.api.reports.report.RReport" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
-<%
-    ViewContext context = HttpView.currentContext();
-%>
-
 <style type="text/css">
 
     .bmenu {
-        background-image: url(<%=h(context.getContextPath() + "/_icons/exe.png")%>) !important;
+        background-image: url(<%=getContextPath() + "/_icons/exe.png"%>) !important;
     }
 
 </style>
@@ -115,7 +109,7 @@
 
 
         var con = new Ext.data.HttpProxy(new Ext.data.Connection({
-                url: LABKEY.ActionURL.buildURL("reports", "scriptEnginesSummary", <%=q(context.getContainer().getPath())%>),
+                url: LABKEY.ActionURL.buildURL("reports", "scriptEnginesSummary", <%=q(getContainer().getPath())%>),
                 method: 'GET'
             }));
 

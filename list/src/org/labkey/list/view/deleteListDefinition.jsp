@@ -24,7 +24,7 @@
 <%
     ListDefinitionForm form = (ListDefinitionForm)getModelBean();
     ListDefinition list = form.getList();
-    Collection<String> dependents = list == null ? null : list.getDependents(getViewContext().getUser());
+    Collection<String> dependents = list == null ? null : list.getDependents(getUser());
 %>
 <labkey:errors></labkey:errors>
 <p>Are you sure you want to delete the list '<%=h(list.getName())%>'?</p>

@@ -15,22 +15,20 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.study.TimepointType"%>
 <%@ page import="org.labkey.api.study.Visit"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.StudyController.VisitForm" %>
-<%@ page import="org.labkey.study.model.VisitImpl" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.api.study.TimepointType" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.VisitForm" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<VisitForm> me = (JspView<VisitForm>)HttpView.currentView();
-    ViewContext context = me.getViewContext();
     VisitForm form = me.getModelBean();
     VisitImpl v = form.getBean();
 
@@ -38,10 +36,10 @@
     boolean isDateBased = study != null && study.getTimepointType() == TimepointType.DATE;
 
     ActionURL returnURL;
-    if (context.getActionURL().getParameter("returnUrl") != null)
-        returnURL = new ActionURL(context.getActionURL().getParameter("returnUrl"));
+    if (getActionURL().getParameter("returnUrl") != null)
+        returnURL = new ActionURL(getActionURL().getParameter("returnUrl"));
     else
-        returnURL = new ActionURL(StudyController.ManageVisitsAction.class, context.getContainer());
+        returnURL = new ActionURL(StudyController.ManageVisitsAction.class, getContainer());
 %>
 <labkey:errors/>
 <p style="width: 750px;">

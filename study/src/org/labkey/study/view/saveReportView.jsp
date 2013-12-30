@@ -58,13 +58,13 @@
     {
         for (ObjectError e : (List<ObjectError>) bean.getErrors().getAllErrors())
         {
-            %><tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
+            %><tr><td colspan=3><font class="labkey-error"><%=h(context.getMessage(e))%></font></td></tr><%
         }
     }
 %>
 </table>
 
-<form method="post" action="<%=h(new ActionURL(ReportsController.SaveReportViewAction.class, context.getContainer()))%>" onsubmit="return validateForm();">
+<form method="post" action="<%=h(new ActionURL(ReportsController.SaveReportViewAction.class, getContainer()))%>" onsubmit="return validateForm();">
     <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=StringUtils.trimToEmpty(bean.getSchemaName())%>">
     <input type="hidden" name="<%=QueryParam.queryName%>" value="<%=StringUtils.trimToEmpty(bean.getQueryName())%>">
     <input type="hidden" name="<%=QueryParam.viewName%>" value="<%=StringUtils.trimToEmpty(bean.getViewName())%>">
@@ -83,7 +83,7 @@
 %>
         <td><b>Save View</b></td>
         <td>Name:&nbsp;<input id="reportName" name="label" value="<%=h(bean.getLabel())%>">
-        <input type=hidden name=srcURL value="<%=context.getActionURL().getLocalURIString()%>">
+        <input type=hidden name=srcURL value="<%=getActionURL().getLocalURIString()%>">
 <%
     }
 %>
@@ -96,7 +96,7 @@
 <%
         for (DataSet def : defs)
         {
-            if (def.canRead(context.getUser())) %>
+            if (def.canRead(getUser())) %>
                 <option<%=selected(def.getDataSetId() == showWithDataset)%> value="<%=def.getDataSetId()%>"><%=h(def.getLabel())%></option>
 <%
         }

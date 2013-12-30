@@ -39,10 +39,10 @@
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>)HttpView.currentView();
     DataSetDefinition dataset = me.getModelBean();
 
-    Container container = HttpView.currentContext().getContainer();
+    Container container = getContainer();
     StudyImpl study = StudyManager.getInstance().getStudy(container);
     VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
-    List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(container, me.getViewContext().getUser());
+    List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(container, getUser());
     Map<Integer, String> cohortMap = new HashMap<>();
     cohortMap.put(null, "All");
 

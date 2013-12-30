@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.search.umls.Relationship" %>
 <%@ page import="org.labkey.search.umls.SemanticType" %>
 <%@ page import="org.labkey.search.umls.UmlsController" %>
+<%@ page import="org.labkey.search.umls.UmlsSchema" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Comparator" %>
@@ -37,7 +38,6 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
-<%@ page import="org.labkey.search.umls.UmlsSchema" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!

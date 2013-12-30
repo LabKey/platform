@@ -44,7 +44,7 @@
 %>
 <%
     SecurityController.FolderPermissionsView me = (SecurityController.FolderPermissionsView)HttpView.currentView();
-    Container c = getViewContext().getContainer();
+    Container c = getContainer();
     ActionURL doneURL = me.doneURL;
     if (null == doneURL)
     {
@@ -55,7 +55,7 @@
     }
     Container project = c.getProject();
     Container root = ContainerManager.getRoot();
-    User user = getViewContext().getUser();
+    User user = getUser();
 %>
 <style type="text/css">
 

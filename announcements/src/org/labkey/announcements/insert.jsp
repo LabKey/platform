@@ -40,7 +40,7 @@
     HttpView<InsertBean> me = (HttpView<InsertBean>) HttpView.currentView();
     InsertBean bean = me.getModelBean();
 
-    Container c = HttpView.currentContext().getContainer();
+    Container c = getContainer();
     DiscussionService.Settings settings = bean.settings;
     AnnouncementsController.AnnouncementForm form = bean.form;
     URLHelper cancelURL = bean.cancelURL;

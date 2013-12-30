@@ -15,20 +15,19 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.samples.settings.DisplaySettings" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
+<%@ page import="org.labkey.study.samples.settings.DisplaySettings" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<DisplaySettings> me =
-            (JspView<DisplaySettings>) HttpView.currentView();
+    JspView<DisplaySettings> me = (JspView<DisplaySettings>) HttpView.currentView();
     DisplaySettings bean = me.getModelBean();
-    Container container = HttpView.getRootContext().getContainer();
+    Container container = getContainer();
 %>
 
 <labkey:errors/>

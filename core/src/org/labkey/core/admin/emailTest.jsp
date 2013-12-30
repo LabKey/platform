@@ -39,7 +39,7 @@ message to the address specified in the 'To' text box containing the content spe
 </div>
 <% }%>
 
-<form action="<%=new ActionURL(AdminController.EmailTestAction.class, me.getViewContext().getContainer()).getLocalURIString()%>" method="POST">
+<form action="<%=new ActionURL(AdminController.EmailTestAction.class, getContainer()).getLocalURIString()%>" method="POST">
     <table>
         <tr>
             <td class="labkey-form-label">To</td>

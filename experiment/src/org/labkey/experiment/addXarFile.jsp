@@ -27,4 +27,4 @@
     Local file: <input id="UploadFile" type="file" name="uploadFile" value="" size="60"> <%= generateSubmitButton("Upload") %>
 </form>
 </p>
-<p>To import a <em>.xar</em> or <em>.xar.xml</em> file that is already on the server's disk, please use the <a href="<%=urlProvider(PipelineUrls.class).urlSetup(HttpView.currentContext().getContainer())%>">Data Pipeline</a> instead.</p>
+<p>To import a <em>.xar</em> or <em>.xar.xml</em> file that is already on the server's disk, please use the <a href="<%=urlProvider(PipelineUrls.class).urlSetup(getContainer())%>">Data Pipeline</a> instead.</p>

@@ -15,17 +15,15 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.util.DemoMode" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    ViewContext ctx = getViewContext();
-    boolean demoMode = DemoMode.isDemoMode(ctx.getContainer(), ctx.getUser());
-    Study study = StudyManager.getInstance().getStudy(ctx.getContainer());
+    boolean demoMode = DemoMode.isDemoMode(getContainer(), getUser());
+    Study study = StudyManager.getInstance().getStudy(getContainer());
     String subjectNameFiltered = h(study.getSubjectNounSingular().toLowerCase());
 %>
 <form action="" method="post">

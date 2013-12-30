@@ -28,7 +28,7 @@
     JspView<StudyController.CustomizeParticipantViewForm> me = (JspView<StudyController.CustomizeParticipantViewForm>) HttpView.currentView();
     StudyController.CustomizeParticipantViewForm bean = me.getModelBean();
     boolean useCustomView = bean.isUseCustomView();
-    String subjectNoun = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
+    String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
 %>
 <script type="text/javascript">
     window.onbeforeunload = LABKEY.beforeunload();
@@ -82,7 +82,7 @@
                 <%= buttonImg("Save and Finish", "document.forms['editorForm'].customScript.disabled = false; LABKEY.setSubmit(true); return true;")%>
                 <%= text(bean.getReturnUrl() != null && bean.getReturnUrl().length() > 0 ?
                         generateButton("Cancel", bean.getReturnUrl()) :
-                        generateButton("Cancel", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer()))) %>
+                        generateButton("Cancel", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()))) %>
                 <%= buttonImg("Restore default script", "if (confirm('Restore default script?  You will lose any changes made to this page.')) document.getElementById('customScript').value = DEFAULT_SCRIPT_VALUE; return false;") %>
             </td>
         </tr>

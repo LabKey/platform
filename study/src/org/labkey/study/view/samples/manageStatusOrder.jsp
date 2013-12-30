@@ -27,7 +27,7 @@
 <%
     JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
     StudyImpl study = me.getModelBean();
-    List<SampleRequestStatus> statuses = study.getSampleRequestStatuses(me.getViewContext().getUser());
+    List<SampleRequestStatus> statuses = study.getSampleRequestStatuses(getUser());
 %>
 <labkey:errors/>
 <script type="text/javascript">

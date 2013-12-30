@@ -31,7 +31,6 @@
 <%@ page import="org.labkey.issue.model.IssueManager.EntryTypeNames" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
-<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -40,10 +39,10 @@
     ViewContext context = me.getViewContext();
     IssuePage bean = me.getModelBean();
     final Issue issue = bean.getIssue();
-    final Container c = context.getContainer();
-    final User user = context.getUser();
+    final Container c = getContainer();
+    final User user = getUser();
     final String focusId = (0 == issue.getIssueId() ? "title" : "comment");
-    int emailPrefs = IssueManager.getUserEmailPreferences(context.getContainer(), user.getUserId());
+    int emailPrefs = IssueManager.getUserEmailPreferences(c, user.getUserId());
     final String popup = getNotifyHelpPopup(emailPrefs, issue.getIssueId(), IssueManager.getEntryTypeNames(c));
 
     BindException errors = bean.getErrors();
@@ -52,11 +51,11 @@
 
     if (issue.getIssueId() > 0)
     {
-        cancelURL = IssuesController.issueURL(context.getContainer(), IssuesController.DetailsAction.class).addParameter("issueId", issue.getIssueId());
+        cancelURL = IssuesController.issueURL(c, IssuesController.DetailsAction.class).addParameter("issueId", issue.getIssueId());
     }
     else
     {
-        cancelURL = IssuesController.issueURL(context.getContainer(), IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
+        cancelURL = IssuesController.issueURL(c, IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
     }
 %>
 
@@ -89,7 +88,7 @@
         return true;
     }
 </script>
-<form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data" action="<%=IssuesController.issueURL(context.getContainer(), bean.getAction())%>">
+<form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data" action="<%=IssuesController.issueURL(c, bean.getAction())%>">
 
     <table>
     <%
@@ -185,7 +184,7 @@
                                 if(issue.getDuplicate() != null)
                                 {
                         %>
-                            <a href="<%=IssuesController.getDetailsURL(context.getContainer(), issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a>
+                            <a href="<%=IssuesController.getDetailsURL(c, issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a>
                         <%
                                 }
                             }
@@ -209,17 +208,17 @@
                         if (issue.getIssueId() == 0)
                         {
     %>
-                            <%= textLink("email prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class).getLocalURIString(), null, null)%>
+                            <%= textLink("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class).getLocalURIString(), null, null)%>
     <%
                         } else {
     %>
-                            <%= textLink("email prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId()).getLocalURIString(), null, null)%>
+                            <%= textLink("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId()).getLocalURIString(), null, null)%>
     <%
                         }
     %>
                         </td>
                         <td>
-                            <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=h(completionUrl.getLocalURIString())%>" rows="4" tabindex="3" cols="30" value="<%=PageFlowUtil.filter(bean.getNotifyListString(false).toString())%>"/>
+                            <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=h(completionUrl.getLocalURIString())%>" rows="4" tabindex="3" cols="30" value="<%=h(bean.getNotifyListString(false).toString())%>"/>
                         </td>
                     </tr>
     <%
@@ -251,7 +250,7 @@
 
     <table>
         <tr><td><table id="filePickerTable"></table></td></tr>
-        <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=h(context.getRequest().getContextPath())%>/_images/paperclip.gif">Attach a file</a></td></tr>
+        <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=getContextPath()%>/_images/paperclip.gif">Attach a file</a></td></tr>
     </table>
     
 <%

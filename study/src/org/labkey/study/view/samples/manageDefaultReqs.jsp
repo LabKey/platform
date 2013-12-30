@@ -31,7 +31,7 @@
     SampleRequestRequirement[] receiverRequirements = bean.getReceiverRequirements();
     SampleRequestRequirement[] generalRequirements = bean.getGeneralRequirements();
     SampleRequestActor[] actors = bean.getActors();
-    ActionURL deleteDefaultRequirement = new ActionURL(SpecimenController.DeleteDefaultRequirementAction.class, getViewContext().getContainer()).addParameter("id",0);
+    ActionURL deleteDefaultRequirement = new ActionURL(SpecimenController.DeleteDefaultRequirementAction.class, getContainer()).addParameter("id",0);
 %>
 <script type="text/javascript">
 function verifyNewRequirement(prefix)
@@ -241,6 +241,6 @@ function verifyNewRequirement(prefix)
             </td>
         </tr>
     </table>
-    <input type="hidden" name="nextPage" value="<%=new ActionURL(SpecimenController.ManageDefaultReqsAction.class, getViewContext().getContainer()).getLocalURIString()%>">
+    <input type="hidden" name="nextPage" value="<%=new ActionURL(SpecimenController.ManageDefaultReqsAction.class, getContainer()).getLocalURIString()%>">
 </form>
-<%= textLink("manage study", new ActionURL(StudyController.ManageStudyAction.class, me.getViewContext().getContainer())) %>
+<%= textLink("manage study", new ActionURL(StudyController.ManageStudyAction.class, getContainer())) %>

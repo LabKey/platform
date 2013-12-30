@@ -32,7 +32,7 @@
 %>
 <%
     JspView me = (JspView) HttpView.currentView();
-    ActionURL defGetUrl = new ActionURL(QueryController.SelectRowsAction.class, me.getViewContext().getContainer());
+    ActionURL defGetUrl = new ActionURL(QueryController.SelectRowsAction.class, getContainer());
     String schemaName = HttpView.currentRequest().getParameter("schemaName");
     if (schemaName == null)
         schemaName = "**schema**";
@@ -317,7 +317,7 @@
                         onError(req.statusText, req.responseText);
                 }
             };
-            req.open("POST", "<%=new ActionURL(QueryController.SaveApiTestAction.class, HttpView.currentContext().getContainer()).getLocalURIString()%>", true);
+            req.open("POST", "<%=new ActionURL(QueryController.SaveApiTestAction.class, getContainer()).getLocalURIString()%>", true);
             req.setRequestHeader("content-type", "application/x-www-form-urlencoded");
             req.send(pairs.join('&'));
         }

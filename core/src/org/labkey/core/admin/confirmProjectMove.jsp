@@ -27,7 +27,7 @@
 <%
     JspView<ManageFoldersForm> view = (JspView<ManageFoldersForm>)HttpView.currentView();
     ManageFoldersForm f = view.getModelBean();
-    Container c = view.getViewContext().getContainer();
+    Container c = getContainer();
     ActionURL cancelURL = PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c);
 %>
 

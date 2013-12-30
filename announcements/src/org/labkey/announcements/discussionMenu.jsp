@@ -31,10 +31,9 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     DiscussionServiceImpl.PickerView me = (DiscussionServiceImpl.PickerView) HttpView.currentView();
-    ViewContext context = me.getViewContext();
     String contextPath = request.getContextPath();
-    Container c = context.getContainer();
-    User user = context.getUser();
+    Container c = getContainer();
+    User user = getUser();
 
     boolean isGuest = user.isGuest();
     boolean isAdmin = !isGuest && c.hasPermission(user, AdminPermission.class);
@@ -57,11 +56,11 @@
 <style><!--
 .discuss-discuss-icon
 {
-    background-image:url(<%=h(contextPath)%>/_images/message.png);
+    background-image:url(<%=getContextPath()%>/_images/message.png);
 }
 .discuss-email-icon
 {
-    background-image:url(<%=h(contextPath)%>/_images/email.png);
+    background-image:url(<%=getContextPath()%>/_images/email.png);
 }
 
 --></style>

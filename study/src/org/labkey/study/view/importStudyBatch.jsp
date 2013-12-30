@@ -65,7 +65,7 @@ for (DatasetImportRunnable runnable : runnables)
 
 if (!hasError)
 {
-    ActionURL submitURL = new ActionURL(StudyController.SubmitStudyBatchAction.class, me.getViewContext().getContainer());
+    ActionURL submitURL = new ActionURL(StudyController.SubmitStudyBatchAction.class, getContainer());
 %><form action="<%=submitURL.getLocalURIString()%>" method=POST>
     <input type=hidden name=path value="<%=h(bean.getPath())%>">
     <%=generateSubmitButton("Start Import")%>

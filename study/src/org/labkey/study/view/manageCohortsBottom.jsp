@@ -1,24 +1,23 @@
 <%
-    /*
-    * Copyright (c) 2008-2013 LabKey Corporation
-    *
-    * Licensed under the Apache License, Version 2.0 (the "License");
-    * you may not use this file except in compliance with the License.
-    * You may obtain a copy of the License at
-    *
-    *     http://www.apache.org/licenses/LICENSE-2.0
-    *
-    * Unless required by applicable law or agreed to in writing, software
-    * distributed under the License is distributed on an "AS IS" BASIS,
-    * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    * See the License for the specific language governing permissions and
-    * limitations under the License.
-    */
+/*
+ * Copyright (c) 2008-2013 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 %>
 <%@ page import="org.labkey.api.study.Cohort" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.CohortFilterFactory" %>
 <%@ page import="org.labkey.study.controllers.CohortController" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
@@ -28,7 +27,6 @@
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
@@ -54,11 +52,11 @@
     {
         CohortImpl cohort = manager.getCurrentCohortForParticipant(
                 study.getContainer(),
-                getViewContext().getUser(),
+                getUser(),
                 participant.getParticipantId());
         participant2Cohort.put(participant, cohort);
     }
-    List<CohortImpl> cohorts = new ArrayList<>(manager.getCohorts(study.getContainer(), HttpView.currentContext().getUser()));
+    List<CohortImpl> cohorts = new ArrayList<>(manager.getCohorts(study.getContainer(), getUser()));
 
     // Need a null cohort for manual removal of cohort setting
     CohortImpl nullCohort = new CohortImpl();
@@ -95,7 +93,7 @@
     %>
     <table id="participant-cohort-assignments">
         <tr>
-            <th><%= h(StudyService.get().getSubjectColumnName(getViewContext().getContainer())) %></th>
+            <th><%= h(StudyService.get().getSubjectColumnName(getContainer())) %></th>
             <th>Current Cohort</th>
         </tr>
     <%

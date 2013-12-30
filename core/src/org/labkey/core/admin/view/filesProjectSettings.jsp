@@ -43,7 +43,7 @@
     File siteRoot = service.getSiteDefaultRoot();
     if (siteRoot != null)
     {
-        File defaultRootFile = service.getDefaultRoot(getViewContext().getContainer(), false);
+        File defaultRootFile = service.getDefaultRoot(getContainer(), false);
         if (defaultRootFile != null)
         {
             defaultRoot = FileUtil.getAbsoluteCaseSensitiveFile(defaultRootFile).getAbsolutePath();
@@ -53,13 +53,13 @@
     //b/c setting a custom file root potentially allows access to any files, we only allow
     //site admins to do this.  however, folder admin can disable sharing on a folder
     //if this folder already has a custom file root, only a site admin can make further changes
-    User user = getViewContext().getUser();
-    boolean canChangeFileSettings = getViewContext().getContainer().hasPermission(user, AdminPermission.class) || user.isSiteAdmin();
-    if (AdminController.ProjectSettingsForm.FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) && !getViewContext().getUser().isSiteAdmin())
+    User user = getUser();
+    boolean canChangeFileSettings = getContainer().hasPermission(user, AdminPermission.class) || user.isSiteAdmin();
+    if (AdminController.ProjectSettingsForm.FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) && !user.isSiteAdmin())
     {
         canChangeFileSettings = false;
     }
-    boolean canSetCustomFileRoot = getViewContext().getUser().isSiteAdmin();
+    boolean canSetCustomFileRoot = user.isSiteAdmin();
 
     CloudStoreService cloud = ServiceRegistry.get(CloudStoreService.class);
     Collection<String> storeNames = Collections.emptyList();
@@ -97,7 +97,7 @@
                     <tr><td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>type="radio" name="fileRootOption" id="optionDisable" value="<%=AdminController.ProjectSettingsForm.FileRootProp.disable%>"
                                    <%=checked(AdminController.ProjectSettingsForm.FileRootProp.disable.name().equals(bean.getFileRootOption()))%>
                                    onclick="updateSelection();">
-                        Disable file sharing for this <%=h(getViewContext().getContainer().getContainerNoun())%></td></tr>
+                        Disable file sharing for this <%=h(getContainer().getContainerNoun())%></td></tr>
                     <tr>
                         <td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>type="radio" name="fileRootOption" id="optionSiteDefault" value="<%=AdminController.ProjectSettingsForm.FileRootProp.siteDefault%>"
                                    <%=checked(AdminController.ProjectSettingsForm.FileRootProp.siteDefault.name().equals(bean.getFileRootOption()))%>
@@ -109,7 +109,7 @@
                         <td><input <%=h(canChangeFileSettings && canSetCustomFileRoot ? "" : " disabled ")%>type="radio" name="fileRootOption" id="optionProjectSpecified" value="<%=AdminController.ProjectSettingsForm.FileRootProp.folderOverride%>"
                                    <%=checked(AdminController.ProjectSettingsForm.FileRootProp.folderOverride.name().equals(bean.getFileRootOption()))%>
                                    onclick="updateSelection();">
-                            Use a <%=text(getViewContext().getContainer().getContainerNoun())%>-level file root</td>
+                            Use a <%=text(getContainer().getContainerNoun())%>-level file root</td>
                         <td><input type="text" id="folderRootPath" name="folderRootPath" size="64" value="<%=h(bean.getFolderRootPath())%>"></td>
                     </tr>
                 </table>
@@ -148,7 +148,7 @@
                 for (String storeName : storeNames)
                 {
                     boolean siteEnabled = cloud.isEnabled(storeName);
-                    boolean containerEnabled = cloud.isEnabled(storeName, getViewContext().getContainer());
+                    boolean containerEnabled = cloud.isEnabled(storeName, getContainer());
                     String id = "cloudStore_" + UniqueID.getRequestScopedUID(getViewContext().getRequest());
         %>
         <tr>

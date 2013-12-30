@@ -40,14 +40,11 @@
     JspView<FolderNavigationForm> me = (JspView<FolderNavigationForm>) HttpView.currentView();
     FolderNavigationForm form = me.getModelBean();
 
-    ViewContext ctx = me.getViewContext();
-    String contextPath = ctx.getContextPath();
-
     // Create Project URL
     ActionURL createProjectURL = new ActionURL(AdminController.CreateFolderAction.class, ContainerManager.getRoot());
 
-    NavTree projects = ContainerManager.getProjectList(ctx);
-    Container currentProject = ctx.getContainer().getProject();
+    NavTree projects = ContainerManager.getProjectList(getViewContext());
+    Container currentProject = getContainer().getProject();
 
     String projectName = null;
     if (null != currentProject)
@@ -67,7 +64,7 @@
                     for (NavTree p : projects.getChildren())
                     {
                 %>
-                    <li><a title="<%=h(p.getText())%>" href="<%=PageFlowUtil.filter(p.getHref())%>" onclick="requestProject(<%=PageFlowUtil.jsString(p.getText())%>); return false;"><%=h(p.getText())%></a></li>
+                    <li><a title="<%=h(p.getText())%>" href="<%=h(p.getHref())%>" onclick="requestProject(<%=PageFlowUtil.jsString(p.getText())%>); return false;"><%=h(p.getText())%></a></li>
                 <%
                     }
                 %>
@@ -84,7 +81,7 @@
     </div>
 </div>
 <div class="project-menu-buttons">
-    <span class="button-icon"><a href="<%=createProjectURL%>" title="New Project"><img src="<%=contextPath%>/_images/icon_projects_add.png" alt="New Project" /></a></span>
+    <span class="button-icon"><a href="<%=createProjectURL%>" title="New Project"><img src="<%=getContextPath()%>/_images/icon_projects_add.png" alt="New Project" /></a></span>
 </div>
 <script type="text/javascript">
 

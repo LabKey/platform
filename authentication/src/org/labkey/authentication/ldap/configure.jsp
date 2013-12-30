@@ -17,11 +17,11 @@
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.authentication.ldap.LdapController" %>
 <%@ page import="org.labkey.authentication.ldap.LdapController.Config" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Config> me = (JspView<Config>)HttpView.currentView();
@@ -57,7 +57,7 @@
         <td colspan=2><%=helpLink("configLdap", "More information about LDAP authentication")%></td>
     </tr>
     <tr>
-        <td colspan=2><%=textLink("Test LDAP settings", urlFor(LdapController.TestLdapAction.class).addReturnURL(me.getViewContext().getActionURL()))%></td>
+        <td colspan=2><%=textLink("Test LDAP settings", urlFor(LdapController.TestLdapAction.class).addReturnURL(getActionURL()))%></td>
     </tr>
 </table>
 </form>

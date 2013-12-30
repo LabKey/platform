@@ -26,7 +26,7 @@ You can import a list archive to create and populate lists in this folder.  A li
 conforms to the LabKey list export format.  A list archive is typically created using the list export feature.  Using
 export and import, lists can be moved from one server to another or a folder can be initialized with standard lists or
 list templates.<%
-    Container c = getViewContext().getContainer();
+    Container c = getContainer();
 
     if (!ListService.get().getLists(c).isEmpty())
     {

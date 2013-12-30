@@ -18,12 +18,9 @@
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     AdminUrls adminURLs = PageFlowUtil.urlProvider(AdminUrls.class);
-    ViewContext viewContext = HttpView.currentContext();
 
     // Build links for what's new and the release notes
     // We use most recent "major" version of the core module, so versions 11.20, 11.21, 11.29, etc will all go to the
@@ -32,7 +29,7 @@
     String versionSuffix = Double.toString(Math.floor(coreVersion * 10.0) / 10.0).replace(".", "");
     boolean newInstall = org.labkey.api.module.ModuleLoader.getInstance().isNewInstall();
 %>
-<p>Congratulations! Your LabKey Server installation <%= newInstall ? "is ready to use" : "has been successfully upgraded" %>.</p>
+<p>Congratulations! Your LabKey Server installation <%=text(newInstall ? "is ready to use" : "has been successfully upgraded")%>.</p>
 
 <p>What would you like to do next?</p>
 
@@ -58,7 +55,7 @@
     <% } %>
     
     <li style="margin-bottom: 10px;">
-        <a href="<%= h(ContainerManager.getHomeContainer().getStartURL(viewContext.getUser())) %>">Go directly to the server's Home page</a>
+        <a href="<%= h(ContainerManager.getHomeContainer().getStartURL(getUser())) %>">Go directly to the server's Home page</a>
     </li>
 
     <li style="margin-bottom: 10px;">

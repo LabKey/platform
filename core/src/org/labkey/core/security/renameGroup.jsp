@@ -16,15 +16,14 @@
  */
 %>
 <%@ page import="org.labkey.api.security.Group" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page extends="org.labkey.api.jsp.JspBase"%> <%
-    ViewContext context = HttpView.currentContext();
+<%@ page extends="org.labkey.api.jsp.JspBase"%>
+<%
     Group group = (Group)HttpView.currentModel();
-    ActionURL manageURL = new ActionURL(SecurityController.GroupAction.class, context.getContainer());
+    ActionURL manageURL = new ActionURL(SecurityController.GroupAction.class, getContainer());
     manageURL.addParameter("id", group.getUserId());
 %>
 

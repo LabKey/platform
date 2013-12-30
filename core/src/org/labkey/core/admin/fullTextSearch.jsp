@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.core.admin.FolderManagementAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    Container c = getViewContext().getContainer();
+    Container c = getContainer();
 %>
 <form name="fullTextSearch" method="POST" action="<%=text(buildURL(FolderManagementAction.class))%>tabId=fullTextSearch">
     <table>

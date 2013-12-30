@@ -24,9 +24,9 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DeactivateUsersBean> me = (JspView<DeactivateUsersBean>) HttpView.currentView();
-    User currentUser = me.getViewContext().getUser();
     DeactivateUsersBean bean = me.getModelBean();
-    ActionURL urlPost = me.getViewContext().cloneActionURL();
+    User currentUser = getUser();
+    ActionURL urlPost = getViewContext().cloneActionURL();
     urlPost.deleteParameters();
 %>
 <p>Are sure you want to <b><%=bean.isActivate() ? "re-activate" : "deactivate"%></b>

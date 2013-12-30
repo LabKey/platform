@@ -40,7 +40,7 @@
 <%
     HttpView<Portal.WebPart> me = (HttpView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart part = me.getModelBean();
-    ViewContext ctx = me.getViewContext();
+    ViewContext ctx = getViewContext();
     Map<String, String> props = part.getPropertyMap();
 
     String listName = props.get("listName");
@@ -52,7 +52,7 @@
             if (listIdStr != null)
             {
                 int listId = Integer.parseInt(listIdStr);
-                ListDefinition list = ListService.get().getList(ctx.getContainer(), listId);
+                ListDefinition list = ListService.get().getList(getContainer(), listId);
                 listName = list.getName();
             }
         }

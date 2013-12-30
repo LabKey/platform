@@ -35,7 +35,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     GroupView.GroupBean bean = ((JspView<GroupView.GroupBean>)HttpView.currentView()).getModelBean();
-    Container c = getViewContext().getContainer();
+    Container c = getContainer();
 
     ActionURL completionUrl = new ActionURL(SecurityController.CompleteMemberAction.class, c);
     completionUrl.addParameter("groupId", bean.group.getUserId());
@@ -194,7 +194,7 @@ else
         else
         {
             User u = (User)member;
-            String displayName = u.getDisplayName(getViewContext().getUser());
+            String displayName = u.getDisplayName(getUser());
             if (!u.isActive()) // issue 13849
             {
                 %><span class="lowlight" ext:qtitle="User Inactive" ext:qtip="This user account has been disabled."><%= h(memberName) %></span>&nbsp;<%

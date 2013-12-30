@@ -170,7 +170,7 @@
         if (!selectedFileNames || selectedFileNames.length == 0)
         {
             alert("No files have been selected for analysis. Return to the pipeline to select them.");
-            window.location = "<%= urlProvider(PipelineUrls.class).urlBrowse(HttpView.currentContext().getContainer(), null) %>";
+            window.location = "<%= urlProvider(PipelineUrls.class).urlBrowse(getContainer(), null) %>";
         }
         showFileStatus("<em>(Refreshing status)</em>");
         LABKEY.Pipeline.getProtocols({ taskId: taskId, successCallback: getProtocolsCallback });

@@ -24,10 +24,9 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
-    ViewContext ctx = me.getViewContext();
     Portal.WebPart webPart = me.getModelBean();
     String title = webPart.getPropertyMap().get("title");
-    HString singularName = IssueManager.getEntryTypeNames(me.getViewContext().getContainer()).singularName;
+    HString singularName = IssueManager.getEntryTypeNames(getContainer()).singularName;
 %>
 <% // Post to current action; URL includes pageId and index parameters %>
 <form name="frmCustomize" method="post">
@@ -43,7 +42,7 @@
   <tr>
     <td colspan=2 align="right">
       <%=generateSubmitButton("Submit")%>
-      <%=generateButton("Cancel", ctx.getContainer().getStartURL(ctx.getUser()))%>
+      <%=generateButton("Cancel", getContainer().getStartURL(getUser()))%>
     </td>
   </tr>
 </table>

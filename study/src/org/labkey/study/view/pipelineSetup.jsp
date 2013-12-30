@@ -23,7 +23,7 @@
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<String> me = (JspView<String>) HttpView.currentView();
-    Container c = me.getViewContext().getContainer();
+    Container c = getContainer();
     String description = me.getModelBean();
 %>
 <table>

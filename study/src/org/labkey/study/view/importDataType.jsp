@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     StudyController.ImportTypeForm form = (StudyController.ImportTypeForm)HttpView.currentModel();
     String formDatasetId = form.getDataSetId() == null ? "" : form.getDataSetId().toString();

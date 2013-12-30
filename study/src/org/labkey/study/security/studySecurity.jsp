@@ -34,7 +34,7 @@
 </ul>
 
 <p>All users must have READ permissions on this folder to access anything in this study. You can also
-    <%=PageFlowUtil.textLink("Configure Folder Security", urlProvider(SecurityUrls.class).getBeginURL(getViewContext().getContainer()))%></p>
+    <%=PageFlowUtil.textLink("Configure Folder Security", urlProvider(SecurityUrls.class).getBeginURL(getContainer()))%></p>
 
 <p>If you want to set permissions on individual datasets within the study, you must select one of the custom study security options below.</p>
 

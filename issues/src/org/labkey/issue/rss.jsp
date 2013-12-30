@@ -28,13 +28,12 @@
 <%
     JspView<IssuesController.RssBean> me = (JspView<IssuesController.RssBean>) HttpView.currentView();
     IssuesController.RssBean bean = me.getModelBean();
-    ViewContext ctx = getViewContext();
-    Container c = ctx.getContainer();
-    User user = ctx.getUser();
+    Container c = getContainer();
+    User user = getUser();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     AppProps.Interface app = AppProps.getInstance();
 
-    ctx.getResponse().setContentType("text/xml");
+    getViewContext().getResponse().setContentType("text/xml");
 
 %><rss version="2.0">
 <channel>

@@ -30,9 +30,8 @@
 <%
     JspView<VersionBean> me = (JspView<VersionBean>) HttpView.currentView();
     VersionBean bean = me.getModelBean();
-    ViewContext ctx = me.getViewContext();
-    User user = ctx.getUser();
-    Container c = ctx.getContainer();
+    User user = getUser();
+    Container c = getContainer();
 %>
 <!--wiki-->
 <table width="100%">

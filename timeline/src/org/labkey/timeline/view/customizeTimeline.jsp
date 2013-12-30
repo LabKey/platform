@@ -51,11 +51,11 @@ a display value, select the display value from the linked table.
     Map<String, String> schemaOptions = new TreeMap<>();
 
     Map<String, Map<String, List<String>>> schemaTableNames = new CaseInsensitiveHashMap<>();
-    DefaultSchema defSchema = DefaultSchema.get(ctx.getUser(), ctx.getContainer());
+    DefaultSchema defSchema = DefaultSchema.get(getUser(), getContainer());
     for (String name : defSchema.getUserSchemaNames())
     {
         schemaOptions.put(name, name);
-        UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), name);
+        UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), name);
         Map<String, List<String>> tableNames = new CaseInsensitiveHashMap<>();
         for (String tableName : new TreeSet<>(schema.getTableAndQueryNames(true)))
         {
@@ -65,7 +65,7 @@ a display value, select the display value from the linked table.
             QueryDefinition queryDef = schema.getQueryDefForTable(tableName);
             if (queryDef != null)
             {
-                viewNames.addAll(queryDef.getCustomViews(ctx.getUser(), ctx.getRequest(), false, false).keySet());
+                viewNames.addAll(queryDef.getCustomViews(getUser(), ctx.getRequest(), false, false).keySet());
             }
 
             tableNames.put(tableName, viewNames);

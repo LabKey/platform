@@ -15,29 +15,27 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.study.designer.StudyDesignInfo" %>
-<%@ page import="org.labkey.study.designer.StudyDesignManager" %>
 <%@ page import="gwt.client.org.labkey.study.designer.client.model.GWTAntigen" %>
 <%@ page import="gwt.client.org.labkey.study.designer.client.model.GWTCohort" %>
 <%@ page import="gwt.client.org.labkey.study.designer.client.model.GWTImmunogen" %>
 <%@ page import="gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.controllers.designer.DesignerController" %>
+<%@ page import="org.labkey.api.attachments.Attachment" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.attachments.Attachment" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.designer.DesignerController" %>
+<%@ page import="org.labkey.study.designer.StudyDesignInfo" %>
+<%@ page import="org.labkey.study.designer.StudyDesignManager" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    Container c = HttpView.currentContext().getContainer();
-    User user = HttpView.currentContext().getUser();
+    Container c = getContainer();
+    User user = getUser();
     Study study = StudyManager.getInstance().getStudy(c);
     if (null == study)
     {      %>
@@ -54,7 +52,7 @@
         return;
     }
     //Shouldn't happen, but being defensive
-    if (!info.getContainer().equals(study.getContainer()) && !info.getContainer().hasPermission(HttpView.currentContext().getUser(), ReadPermission.class))
+    if (!info.getContainer().equals(study.getContainer()) && !info.getContainer().hasPermission(getUser(), ReadPermission.class))
     {%>
         Study protocol is in another folder you do not have permission to read.
 <%
@@ -112,7 +110,7 @@ This study was created from a vaccine study protocol with the following descript
         String grant = study.getGrant();
         List<Attachment> protocolDocs = study.getProtocolDocuments();
         ActionURL editMetadataURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
-        editMetadataURL.addParameter("returnURL", HttpView.currentContext().getActionURL().toString());
+        editMetadataURL.addParameter("returnURL", getActionURL().toString());
     %>
     <script type="text/javascript">
         LABKEY.requiresCss("editInPlaceElement.css");
@@ -125,7 +123,7 @@ This study was created from a vaccine study protocol with the following descript
                         <%
                             if(investigator != null)
                             {
-                                out.print("Investigator: " + PageFlowUtil.filter(investigator));
+                                out.print(h("Investigator: " +investigator));
                             }
                         %>
                     </span>
@@ -134,7 +132,7 @@ This study was created from a vaccine study protocol with the following descript
                         <%
                             if(grant != null)
                             {
-                                out.print("Grant: " + PageFlowUtil.filter(grant));
+                                out.print(h("Grant: " + grant));
                             }
                         %>
                     </span>

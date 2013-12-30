@@ -27,7 +27,6 @@
 <%@ page import="org.labkey.api.security.roles.RoleManager" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.util.List" %>
@@ -35,9 +34,8 @@
 <div width="240px" id="pipelineFilesPermissions">
 <%
     PipelineController.PermissionView me = (PipelineController.PermissionView)HttpView.currentView();
-    ViewContext context = me.getViewContext();
     SecurityPolicy policy = me.getModelBean();
-    Container c = context.getContainer();
+    Container c = getContainer();
 
     boolean enableFTP = !policy.isEmpty();
 %>

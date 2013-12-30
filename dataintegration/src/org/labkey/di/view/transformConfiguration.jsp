@@ -18,8 +18,6 @@
 <%@ page import="org.labkey.api.di.ScheduledPipelineJobDescriptor" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.di.pipeline.TransformConfiguration" %>
 <%@ page import="org.labkey.di.pipeline.TransformManager" %>
 <%@ page import="org.labkey.di.view.DataIntegrationController" %>
@@ -30,16 +28,13 @@
 <%@ page import="java.util.TreeMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-ViewContext context = HttpView.currentContext();
-
-
-List<TransformConfiguration> configurationsList = TransformManager.get().getTransformConfigurations(context.getContainer());
+List<TransformConfiguration> configurationsList = TransformManager.get().getTransformConfigurations(getContainer());
 Map<String,TransformConfiguration> configurationsMap = new HashMap<>(configurationsList.size()*2);
 for (TransformConfiguration c : configurationsList)
     configurationsMap.put(c.getTransformId(), c);
 
 // It's possible to have configurations for transforms whose modules are in active, so make sure we get those
-Collection<ScheduledPipelineJobDescriptor> descriptorsList = TransformManager.get().getDescriptors(context.getContainer());
+Collection<ScheduledPipelineJobDescriptor> descriptorsList = TransformManager.get().getDescriptors(getContainer());
 TreeMap<String,ScheduledPipelineJobDescriptor> descriptorsMap = new TreeMap<>();
 for (ScheduledPipelineJobDescriptor d : descriptorsList)
     descriptorsMap.put(d.getId(), d);
@@ -53,7 +48,7 @@ for (TransformConfiguration c : configurationsList)
     }
 }
 
-boolean isAdmin = context.hasPermission(AdminPermission.class);
+boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
 %>
 <script>
     var X = Ext4 || Ext;
@@ -195,7 +190,7 @@ for (ScheduledPipelineJobDescriptor descriptor : descriptorsMap.values())
     if (null == configuration)
     {
         configuration = new TransformConfiguration();
-        configuration.setContainer(context.getContainer().getId());
+        configuration.setContainer(getContainer().getId());
         configuration.setTransformId(id);
     }
 

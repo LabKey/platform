@@ -41,7 +41,7 @@
 %>
 <%
     ProjectSettingsAction.LookAndFeelPropertiesBean bean = ((JspView<ProjectSettingsAction.LookAndFeelPropertiesBean>)HttpView.currentView()).getModelBean();
-    Container c = getViewContext().getContainer();
+    Container c = getContainer();
     boolean folder = !c.isRoot() && !c.isProject();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
 %>

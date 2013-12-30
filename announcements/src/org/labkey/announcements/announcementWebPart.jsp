@@ -22,14 +22,13 @@
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     AnnouncementWebPart me = (AnnouncementWebPart) HttpView.currentView();
     MessagesBean bean = me.getModelBean();
-    Container c = me.getViewContext().getContainer();
-    User user = me.getViewContext().getUser();
+    Container c = getContainer();
+    User user = getUser();
 %>
 <!--ANNOUNCEMENTS-->
 <table style="width:100%">
@@ -56,13 +55,13 @@
     <tr>
         <td width="40%" align="left"><%
         if (a.getResponseCount() > 0)
-            out.print(" (" + a.getResponseCount() + (a.getResponseCount() == 1 ? "&nbsp;response)" : "&nbsp;responses)"));
+            out.print(text(" (" + a.getResponseCount() + (a.getResponseCount() == 1 ? "&nbsp;response)" : "&nbsp;responses)")));
         %></td>
         <td width="20%" align="center"><%=h(a.getCreatedByName(bean.includeGroups, user))%></td>
         <td width="40%" align="right" nowrap><%=formatDateTime(a.getCreated())%></td>
     </tr>
     <tr><td colspan=3 class="labkey-title-area-line"></td></tr>
-    <tr><td colspan=3 class="labkey-force-word-break"><%=a.translateBody(c)%></td></tr>
+    <tr><td colspan=3 class="labkey-force-word-break"><%=h(a.translateBody(c))%></td></tr>
 <%
     if (a.getAttachments().size() > 0)
         { %>
@@ -70,7 +69,7 @@
         for (Attachment d : a.getAttachments())
         {
     %>
-        <a href="<%=h(d.getDownloadUrl(DownloadAction.class))%>"><img src="<%=request.getContextPath()%><%=d.getFileIcon()%>">&nbsp;<%=h(d.getName())%></a>&nbsp;<%
+        <a href="<%=h(d.getDownloadUrl(DownloadAction.class))%>"><img src="<%=getContextPath()%><%=h(d.getFileIcon())%>">&nbsp;<%=h(d.getName())%></a>&nbsp;<%
             }
         %>
     </td></tr>

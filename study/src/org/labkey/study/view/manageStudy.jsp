@@ -24,13 +24,13 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="org.labkey.api.study.SpecimenService" %>
+<%@ page import="org.labkey.api.study.SpecimenTransform" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.api.writer.Writer" %>
 <%@ page import="org.labkey.study.controllers.CohortController" %>
@@ -48,7 +48,6 @@
 <%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.query.StudyPropertiesQueryView" %>
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
@@ -58,8 +57,6 @@
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.study.SpecimenTransform" %>
-<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
 
@@ -74,20 +71,19 @@
   }
 %>
 <%
-    JspView<StudyPropertiesQueryView> me = (JspView<StudyPropertiesQueryView>) HttpView.currentView();
     StudyImpl study = getStudy();
-    Container c = me.getViewContext().getContainer();
+    Container c = getContainer();
 
     String visitLabel = StudyManager.getInstance().getVisitManager(study).getPluralLabel();
     ActionURL manageCohortsURL = new ActionURL(CohortController.ManageCohortsAction.class, c);
-    User user = HttpView.currentContext().getUser();
+    User user = getUser();
     int numProperties = study.getNumExtendedProperties(user);
     String propString = numProperties == 1 ? "property" : "properties";
 
     StudyReload.ReloadInterval currentInterval = StudyReload.ReloadInterval.getForSeconds(study.getReloadInterval());
     String intervalLabel;
 
-    String subjectNounSingle = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
+    String subjectNounSingle = StudyService.get().getSubjectNounSingular(c);
     List<ParticipantGroup> groups = new LinkedList<>();
 
     for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(c, user))
@@ -126,8 +122,6 @@
     ArrayList<String> studyText = new ArrayList<>();
     ArrayList<String> folderText =  new ArrayList<>();
 
-
-
     for (FolderWriter writer : writers)
     {
         folderText.add(writer.getSelectionText());
@@ -139,7 +133,6 @@
             }
         }
     }
-
 %>
 <table>
     <%
@@ -162,7 +155,7 @@
             Container p = c.getProject();
             if (p.hasPermission(user,AdminPermission.class))
             {
-                ActionURL returnURL = getViewContext().getActionURL();
+                ActionURL returnURL = getActionURL();
                 ActionURL editDefinition = new ActionURL(StudyDefinitionController.EditStudyDefinitionAction.class, p);
                 editDefinition.addReturnURL(returnURL);
                 %><%= textLink("Edit Definition", editDefinition) %><%
@@ -212,7 +205,7 @@
 
     <tr>
         <th align="left">Cohorts</th>
-        <td>This study defines <%= getCohorts(getViewContext().getUser()).size() %> cohorts</td>
+        <td>This study defines <%= getCohorts(getUser()).size() %> cohorts</td>
         <td><%= textLink("Manage Cohorts", manageCohortsURL) %></td>
     </tr>
     <tr>
@@ -338,7 +331,7 @@
     <tr><td colspan="3" class="labkey-title-area-line"></td></tr>
     <tr>
         <th align="left">Statuses</th>
-        <td>This study defines <%= study.getSampleRequestStatuses(HttpView.currentContext().getUser()).size() %> specimen request
+        <td>This study defines <%= study.getSampleRequestStatuses(getUser()).size() %> specimen request
             statuses</td>
         <td><%= textLink("Manage Request Statuses",
                 new ActionURL(SpecimenController.ManageStatusesAction.class, c)) %></td>

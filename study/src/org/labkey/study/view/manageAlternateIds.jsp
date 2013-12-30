@@ -1,24 +1,23 @@
 <%
-    /*
-    * Copyright (c) 2012-2013 LabKey Corporation
-    *
-    * Licensed under the Apache License, Version 2.0 (the "License");
-    * you may not use this file except in compliance with the License.
-    * You may obtain a copy of the License at
-    *
-    *     http://www.apache.org/licenses/LICENSE-2.0
-    *
-    * Unless required by applicable law or agreed to in writing, software
-    * distributed under the License is distributed on an "AS IS" BASIS,
-    * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    * See the License for the specific language governing permissions and
-    * limitations under the License.
-    */
+/*
+ * Copyright (c) 2012-2013 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.study.Study"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -28,7 +27,6 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
@@ -39,7 +37,7 @@
 <%
     JspView<StudyController.ChangeAlternateIdsForm> me = (JspView<StudyController.ChangeAlternateIdsForm>) HttpView.currentView();
     StudyController.ChangeAlternateIdsForm bean = me.getModelBean();
-    Container c = me.getViewContext().getContainer();
+    Container c = getContainer();
     Study s = StudyManager.getInstance().getStudy(c);
     String subjectNounSingular = s.getSubjectNounSingular();
     String subjectNounPlural = s.getSubjectNounPlural();
@@ -47,28 +45,28 @@
     int aliasDatasetId = bean.getAliasDatasetId();
     String aliasColumn = bean.getAliasColumn();
     String sourceColumn = bean.getSourceColumn();
-    boolean isAdmin = c.hasPermission(getViewContext().getUser(), AdminPermission.class);
+//    boolean isAdmin = c.hasPermission(getUser(), AdminPermission.class);
     Integer numberOfDigits = bean.getNumDigits() > 0 ? bean.getNumDigits() : 6;
 %>
 <div style="max-width: 1000px">
-<h2>Alternate <%= PageFlowUtil.filter(subjectNounSingular)%> IDs</h2>
-<p>Alternate <%= PageFlowUtil.filter(subjectNounSingular) %> IDs allow you to publish and export a study with all <%= PageFlowUtil.filter(subjectNounSingular.toLowerCase()) %> IDs
+<h2>Alternate <%= h(subjectNounSingular)%> IDs</h2>
+<p>Alternate <%= h(subjectNounSingular) %> IDs allow you to publish and export a study with all <%= h(subjectNounSingular.toLowerCase()) %> IDs
     replaced by randomly generated alternate IDs or by IDs you specify. Alternate IDs must be unique. The Change Alternate IDs button clears all alternate IDs, whether you had specified them or not.
-    Random alternate IDs will then be generated automatically for all <%= PageFlowUtil.filter(subjectNounPlural.toLowerCase()) %> using
+    Random alternate IDs will then be generated automatically for all <%= h(subjectNounPlural.toLowerCase()) %> using
     the prefix and the number of digits specified below.
 </p>
 <p>
-    Every <%= PageFlowUtil.filter(subjectNounSingular.toLowerCase()) %> is also given a date offset that is used when you publish or export a study, if you request date shifting. Date offsets never change.
-    The Export button exports a TSV that contains the alternate ID and date offset for each <%= PageFlowUtil.filter(subjectNounSingular.toLowerCase()) %>.
-    The Import button imports a TSV that contains an alternate ID and/or date offset for some or all <%= PageFlowUtil.filter(subjectNounPlural.toLowerCase()) %>.
+    Every <%= h(subjectNounSingular.toLowerCase()) %> is also given a date offset that is used when you publish or export a study, if you request date shifting. Date offsets never change.
+    The Export button exports a TSV that contains the alternate ID and date offset for each <%= h(subjectNounSingular.toLowerCase()) %>.
+    The Import button imports a TSV that contains an alternate ID and/or date offset for some or all <%= h(subjectNounPlural.toLowerCase()) %>.
 </p>
 </div>
 <div id="alternateIdsPanel"></div>
 
 <div style="max-width: 1000px">
-<h2><%= PageFlowUtil.filter(subjectNounSingular)%> Aliases</h2>
-<p>You may link <%= PageFlowUtil.filter(subjectNounPlural).toLowerCase()%> in this study with <%= PageFlowUtil.filter(subjectNounPlural).toLowerCase()%> from another source
-    by specifying a dataset that contains aliases for each <%= PageFlowUtil.filter(subjectNounSingular).toLowerCase()%>.
+<h2><%= h(subjectNounSingular)%> Aliases</h2>
+<p>You may link <%= h(subjectNounPlural).toLowerCase()%> in this study with <%= h(subjectNounPlural).toLowerCase()%> from another source
+    by specifying a dataset that contains aliases for each <%= h(subjectNounSingular).toLowerCase()%>.
     You must also specify which dataset columns contain the aliases and source organization names that use the aliases.
 </p>
 </div>
@@ -417,10 +415,7 @@
             });
         };
 
-
-
         Ext4.onReady(init);
-
     })();
 
 </script>

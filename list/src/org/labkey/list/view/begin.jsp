@@ -33,15 +33,13 @@
 <%@ page import="org.labkey.list.controllers.ListController" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeSet" %>
-<%@ page import="java.util.HashMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ViewContext> view = (JspView<ViewContext>) HttpView.currentView();
     ViewContext me = view.getModelBean();
-    ViewContext ctx = HttpView.currentContext();
-    Container c = ctx.getContainer();
-    User user = ctx.getUser();
-    Map<Integer, String> nameMap = new HashMap<Integer, String>();
+    Container c = getContainer();
+    User user = getUser();
+//    Map<Integer, String> nameMap = new HashMap<Integer, String>();
     Map<String, ListDefinition> lists = ListService.get().getLists(c);
     NavTree links;
     PopupMenuView pmw;
@@ -87,7 +85,7 @@
                     include(pmw, out);
                     %></td><%
                 }
-                %><td><a href="<%=PageFlowUtil.filter(list.urlShowData())%>"><%=PageFlowUtil.filter(list.getName())%></a></td><%
+                %><td><a href="<%=h(list.urlShowData())%>"><%=h(list.getName())%></a></td><%
                 if (isBegin)
                 {
                     for (NavTree link : links.getChildren())

@@ -16,25 +16,24 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
 <%
     JspView<SecurityController.PermissionsForm> me = (JspView<SecurityController.PermissionsForm>) HttpView.currentView();
     SecurityController.PermissionsForm bean = me.getModelBean();
 
-    ActionURL url = HttpView.currentContext().cloneActionURL();
+    ActionURL url =  getViewContext().cloneActionURL();
     String currentTab = StringUtils.defaultString(bean.getTabId(), SecurityController.TAB_REPORT);
-    String nextTab = SecurityController.TAB_REPORT.equals(currentTab) ? SecurityController.TAB_STUDY : SecurityController.TAB_REPORT;
+//    String nextTab = SecurityController.TAB_REPORT.equals(currentTab) ? SecurityController.TAB_STUDY : SecurityController.TAB_REPORT;
 %>
     <input type="hidden" name="reportId" value="<%=bean.getReportId()%>">
     <table class="labkey-tab-strip">
         <tr>
             <td class="labkey-tab-space">
-                <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
+                <img src="<%=getContextPath()%>/_.gif" height=1 width=5>
             </td>
             <td class=<%=SecurityController.TAB_REPORT.equals(currentTab) ? "labkey-tab-selected" : "labkey-tab-inactive"%>><a <%=SecurityController.TAB_REPORT.equals(currentTab) ? "" : "href=\"" + url.replaceParameter("tabId", SecurityController.TAB_REPORT) + "\""%>>Permissions&nbsp;</a></td>
             <td class=<%=SecurityController.TAB_STUDY.equals(currentTab) ? "labkey-tab-selected" : "labkey-tab-inactive"%>><a <%=SecurityController.TAB_STUDY.equals(currentTab) ? "" : "href=\"" + url.replaceParameter("tabId", SecurityController.TAB_STUDY) + "\""%>>Study&nbsp;Security&nbsp;</a></td>

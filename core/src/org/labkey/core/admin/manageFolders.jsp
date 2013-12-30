@@ -19,10 +19,6 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.roles.RoleManager" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.core.admin.FolderManagementAction.FolderManagementForm" %>
-<%@ page import="org.labkey.core.admin.FolderManagementAction" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -37,9 +33,7 @@
     }
 %>
 <%
-    HttpView<FolderManagementForm> me = (HttpView<FolderManagementAction.FolderManagementForm>) HttpView.currentView();
-    ViewContext ctx = me.getViewContext();
-    Container c = ctx.getContainer();
+    Container c = getContainer();
 %>
 <div id="fmp"></div>
 <script type="text/javascript">

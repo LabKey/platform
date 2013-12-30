@@ -24,7 +24,7 @@
 <%
     HttpView<RssBean> me = (HttpView<RssBean>) HttpView.currentView();
     RssBean bean = me.getModelBean();
-    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(getViewContext().getContainer());
+    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(getContainer());
 %>
 <rss version="2.0">
 <channel>

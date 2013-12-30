@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.DataRegion" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.DataRegion"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.ViewContext"%>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="org.springframework.validation.BindException" %>
@@ -27,13 +28,14 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuesController.EmailPrefsBean> me = (JspView<IssuesController.EmailPrefsBean>)HttpView.currentView();
-    ViewContext context = me.getViewContext();
+    ViewContext context = getViewContext();
+    Container c = getContainer();
     IssuesController.EmailPrefsBean bean = me.getModelBean();
     int emailPrefs = bean.getEmailPreference();
     BindException errors = bean.getErrors();
     String message = bean.getMessage();
     int issueId = bean.getIssueId();
-    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(context.getContainer());
+    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c);
     String indefArticle = names.getIndefiniteSingularArticle();
 
     if (message != null)
@@ -65,11 +67,11 @@
     <%=generateSubmitButton("Update")%><%
     if (issueId > 0)
     {
-        %><%= generateButton("Back to " + names.singularName.getSource(), IssuesController.issueURL(context.getContainer(), IssuesController.DetailsAction.class).addParameter("issueId", bean.getIssueId())) %><%
+        %><%= generateButton("Back to " + names.singularName.getSource(), IssuesController.issueURL(c, IssuesController.DetailsAction.class).addParameter("issueId", bean.getIssueId())) %><%
     }
     else
     {
-        %><%= generateButton("View Grid", IssuesController.issueURL(context.getContainer(), IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true")) %><%
+        %><%= generateButton("View Grid", IssuesController.issueURL(c, IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true")) %><%
     }
 %>
 </form>

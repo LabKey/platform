@@ -18,23 +18,23 @@
 <%@ page import="org.labkey.api.security.Group"%>
 <%@ page import="org.labkey.api.security.SecurityManager"%>
 <%@ page import="org.labkey.api.security.SecurityPolicy"%>
+<%@ page import="org.labkey.api.security.SecurityPolicyManager"%>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission"%>
 <%@ page import="org.labkey.api.security.permissions.ReadSomePermission"%>
 <%@ page import="org.labkey.api.security.roles.EditorRole"%>
-<%@ page import="org.labkey.api.security.roles.ReaderRole"%>
+<%@ page import="org.labkey.api.security.roles.ReaderRole" %>
 <%@ page import="org.labkey.api.security.roles.Role" %>
 <%@ page import="org.labkey.api.security.roles.RoleManager" %>
 <%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.security.SecurityPolicyManager" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Comparator" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     String groupName(Group g)
@@ -134,7 +134,7 @@ else
 
 <form id="datasetSecurityForm" action="<%=h(buildURL(SecurityController.ApplyDatasetPermissionsAction.class))%>" method="POST">
 <%
-    String redir = (String)HttpView.currentContext().get("redirect");
+    String redir = (String)getViewContext().get("redirect");
     if (redir != null)
         out.write("<input type=\"hidden\" name=\"redirect\" value=\"" + h(redir) + "\">");
 

@@ -25,7 +25,7 @@
 <%
     JspView<AdminController.ManageFoldersForm> me = (JspView<AdminController.ManageFoldersForm>) HttpView.currentView();
     AdminController.ManageFoldersForm form = me.getModelBean();
-    Container c = me.getViewContext().getContainer();
+    Container c = getContainer();
 
     String name = form.getName();
 

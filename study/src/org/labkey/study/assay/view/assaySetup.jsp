@@ -22,13 +22,12 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.permissions.DesignAssayPermission" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.study.assay.AssayManager" %>
 <%@ page import="org.labkey.study.controllers.assay.AssayController" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
@@ -37,8 +36,8 @@
     }
 %>
 <%
-    Container c = getViewContext().getContainer();
-    User user = getViewContext().getUser();
+    Container c = getContainer();
+    User user = getUser();
 
     boolean hasAssayProtocols = !AssayManager.get().getAssayProtocols(c).isEmpty();
     boolean canDesignAssays = c.hasPermission(user, DesignAssayPermission.class);
@@ -51,7 +50,7 @@
 <% if (!hasAssayProtocols) { %>
 <em>No assay designs are available in this folder.</em>
 <% if (canDesignAssays) { %>
-    <labkey:link href="<%=new ActionURL(AssayController.ChooseAssayTypeAction.class, c).addParameter(\"returnURL\", getViewContext().getActionURL().getLocalURIString())%>" text="New Assay Design"/>
+    <labkey:link href="<%=new ActionURL(AssayController.ChooseAssayTypeAction.class, c).addParameter(\"returnURL\", getActionURL().getLocalURIString())%>" text="New Assay Design"/>
 <% } %>
 <p class="labkey-indented">
     Each assay type provides pages to load and process data for a particular assay.

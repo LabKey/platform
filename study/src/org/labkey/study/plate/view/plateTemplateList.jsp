@@ -15,24 +15,24 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.study.PlateTemplate" %>
-<%@ page import="org.labkey.study.controllers.plate.PlateController" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.study.PlateTypeHandler" %>
-<%@ page import="org.labkey.study.plate.PlateManager" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
+<%@ page import="org.labkey.api.study.PlateTemplate" %>
+<%@ page import="org.labkey.api.study.PlateTypeHandler" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.controllers.plate.PlateController" %>
+<%@ page import="org.labkey.study.plate.PlateManager" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PlateController.PlateTemplateListBean> me = (JspView<PlateController.PlateTemplateListBean>) HttpView.currentView();
-    ViewContext context = me.getViewContext();
+    Container c = getContainer();
     PlateTemplate[] plateTemplates = me.getModelBean().getTemplates();
 %>
 <h4>Available Plate Templates</h4>
@@ -44,20 +44,20 @@
     <tr>
         <td><%= h(template.getName()) %></td>
         <%
-            if (context.getContainer().hasPermission(context.getUser(), UpdatePermission.class))
+            if (c.hasPermission(getUser(), UpdatePermission.class))
             {
         %>
         <td><%= textLink("edit", buildURL(PlateController.DesignerAction.class, "templateName=" + PageFlowUtil.encode(template.getName()))) %></td>
         <%
             }
-            if (context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
+            if (c.hasPermission(getUser(), InsertPermission.class))
             {
         %>
         <td><%= textLink("edit a copy", buildURL(PlateController.DesignerAction.class, "copy=true&templateName=" + PageFlowUtil.encode(template.getName()))) %></td>
         <td><%= textLink("copy to another folder", buildURL(PlateController.CopyTemplateAction.class, "templateName=" + PageFlowUtil.encode(template.getName()))) %></td>
         <%
             }
-            if (context.getContainer().hasPermission(context.getUser(), DeletePermission.class))
+            if (c.hasPermission(getUser(), DeletePermission.class))
             {
         %>
         <td><%= ((plateTemplates !=null && plateTemplates.length > 1) ?
@@ -70,7 +70,7 @@
     </tr>
 <%
     }
-    if (context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
+    if (c.hasPermission(getUser(), InsertPermission.class))
     {
 %>
     <tr><td><br></td></tr>
@@ -82,7 +82,7 @@
             int cols = size.getValue();
             int wellCount = rows * cols;
             String sizeDesc = wellCount + " well (" + rows + "x" + cols + ") ";
-            ActionURL designerURL = new ActionURL(PlateController.DesignerAction.class, context.getContainer());
+            ActionURL designerURL = new ActionURL(PlateController.DesignerAction.class, c);
             designerURL.addParameter("rowCount", rows);
             designerURL.addParameter("colCount", cols);
             designerURL.addParameter("assayType", handler.getAssayType());

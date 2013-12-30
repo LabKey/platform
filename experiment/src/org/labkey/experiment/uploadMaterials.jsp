@@ -102,9 +102,9 @@
 <form onSubmit="return validateKey();" action="<%=h(buildURL(ExperimentController.ShowUploadMaterialsAction.class))%>" method="post">
 <labkey:errors />
     <p>If you have an existing sample set definition in the XAR file format (a .xar or .xar.xml file), you can
-        <a href="<%= urlProvider(ExperimentUrls.class).getUploadXARURL(getViewContext().getContainer()) %>">upload the XAR file directly</a>
+        <a href="<%= urlProvider(ExperimentUrls.class).getUploadXARURL(getContainer()) %>">upload the XAR file directly</a>
         or place the file in this folder's pipeline directory and import using the
-        <a href="<%= urlProvider(PipelineUrls.class).urlBrowse(getViewContext().getContainer(), getViewContext().getActionURL().toString()) %>">Data Pipeline</a>.
+        <a href="<%= urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getActionURL().toString()) %>">Data Pipeline</a>.
     </p>
 
     <table>

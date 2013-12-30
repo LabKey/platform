@@ -16,33 +16,23 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.data.SimpleFilter" %>
-<%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.exp.api.ExpSampleSet" %>
-<%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page import="org.labkey.api.study.SamplesUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.experiment.api.ExpSampleSetImpl" %>
 <%@ page import="org.labkey.experiment.api.ExperimentServiceImpl" %>
-<%@ page import="org.labkey.experiment.api.MaterialSource" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView me = (JspView) HttpView.currentView();
-    ViewContext ctx = me.getViewContext();
-    Container proj = ctx.getContainer().getProject();
+    Container proj = getContainer().getProject();
     if (proj == null || proj.isRoot())
     {
         out.write("No current project.");
     }
     else
     {
-        List<ExpSampleSetImpl> sampleSets = ExperimentServiceImpl.get().getSampleSets(ctx.getContainer(), ctx.getUser(), true);
+        List<ExpSampleSetImpl> sampleSets = ExperimentServiceImpl.get().getSampleSets(getContainer(), getUser(), true);
 
         int i = 0;
     %> <table style="width:50px;margin-right:1em" ><tr><td style="vertical-align:top;white-space:nowrap;margin:1em"> <%

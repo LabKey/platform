@@ -41,7 +41,7 @@
 
     StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
     boolean isDateBased = study != null && study.getTimepointType() == TimepointType.DATE;
-    List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(me.getViewContext().getContainer(), me.getViewContext().getUser());
+    List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
 %>
 <labkey:errors/>
 <form action="<%=h(buildURL(StudyController.VisitSummaryAction.class))%>" method="POST">

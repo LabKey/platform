@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.files.MissingRootDirectoryException" %>
 <%@ page import="org.labkey.api.files.UnsetRootDirectoryException" %>
 <%@ page import="org.labkey.api.files.view.FilesWebPart" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
@@ -33,18 +34,18 @@
 <%@ page import="org.labkey.filecontent.FileContentController.BeginAction" %>
 <%@ page import="org.labkey.filecontent.FileContentController.RenderStyle" %>
 <%@ page import="org.labkey.filecontent.FileContentController.ShowAdminAction" %>
-<%@ page import="java.io.File" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    ViewContext context = HttpView.currentContext();
+    ViewContext context = getViewContext();
     FilesWebPart.FilesForm bean = (FilesWebPart.FilesForm) HttpView.currentModel();
     AttachmentDirectory parent = bean.getRoot();
     FilesWebPart me = (FilesWebPart) HttpView.currentView();
-    Container c = context.getContainer();
+    Container c = getContainer();
+    User user = getUser();
 
     assert(!me.isWide());
 
@@ -58,7 +59,7 @@
     if (null == parent)
     {
         out.println("The file set for this directory is not configured properly.");
-        if (me.isShowAdmin() && context.getUser().isSiteAdmin())
+        if (me.isShowAdmin() && user.isSiteAdmin())
         {
             %><%=textLink("Configure Directories", new ActionURL(ShowAdminAction.class, c))%><%
         }
@@ -71,11 +72,11 @@
     }
     catch (UnsetRootDirectoryException e)
     {
-            %>In order to use this module, a root directory must be set for the project.<br><%=adminError(context)%><%
+            %>In order to use this module, a root directory must be set for the project.<br><%=adminError()%><%
     }
     catch (MissingRootDirectoryException e)
     {
-        %>The root directory expected for this project does not exist.<br><%=adminError(context)%><%
+        %>The root directory expected for this project does not exist.<br><%=adminError()%><%
          return;
     }
 
@@ -92,10 +93,10 @@
     });
 
     //Need to use URLHelper instead of ActionURL so that .view is not appended to files automatically
-    URLHelper fileUrl = new URLHelper(new ActionURL("files", "", context.getContainer()).toString());
+    URLHelper fileUrl = new URLHelper(new ActionURL("files", "", c).toString());
     if (null != me.getFileSet())
         fileUrl.addParameter("fileSet", me.getFileSet());
-    ActionURL addAttachmentUrl = new ActionURL(FileContentController.AddAttachmentAction.class, context.getContainer());
+    ActionURL addAttachmentUrl = new ActionURL(FileContentController.AddAttachmentAction.class, c);
     addAttachmentUrl.addParameter("entityId", parent.getEntityId());
 
     for (Attachment a : attachments)
@@ -128,7 +129,7 @@ if (context.hasPermission(UpdatePermission.class))
         manage.addParameter("fileSetName", fileSetName);
     %><%=textLink("Manage Files", manage)%>&nbsp;<%
 }
-if (me.isShowAdmin() && context.getUser().isSiteAdmin())
+if (me.isShowAdmin() && user.isSiteAdmin())
 {
     %><%=textLink("Configure", new ActionURL(ShowAdminAction.class, c))%>&nbsp;<%
 }%>
@@ -142,12 +143,12 @@ if (me.isShowAdmin() && context.getUser().isSiteAdmin())
         return url;
     }
 
-    String adminError(ViewContext context)
+    String adminError()
     {
         StringBuilder sb = new StringBuilder();
-        if (context.getUser().isSiteAdmin())
+        if (getUser().isSiteAdmin())
         {
-            ActionURL url = new ActionURL(BeginAction.class, context.getContainer().getProject());
+            ActionURL url = new ActionURL(BeginAction.class, getContainer().getProject());
             sb.append("<a href=\"").append(url).append("\">Configure root</a>");
         }
         else

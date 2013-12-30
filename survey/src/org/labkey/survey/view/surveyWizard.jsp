@@ -15,23 +15,20 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.survey.SurveyForm" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.survey.model.Survey" %>
+<%@ page import="org.labkey.api.util.UniqueID" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.survey.SurveyForm" %>
 <%@ page import="org.labkey.survey.SurveyManager" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
 <%!
-
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
@@ -48,7 +45,6 @@
 <%
     JspView<SurveyForm> me = (JspView<SurveyForm>) HttpView.currentView();
     SurveyForm bean = me.getModelBean();
-    ViewContext ctx = me.getViewContext();
 
     Integer rowId = 0;
     Integer surveyDesignId = null;
@@ -68,13 +64,13 @@
         returnURL = bean.getReturnActionURL() != null ? bean.getReturnActionURL().getLocalURIString() : null;
     }
 
-    Survey survey = SurveyManager.get().getSurvey(ctx.getContainer(), ctx.getUser(), rowId);
+    Survey survey = SurveyManager.get().getSurvey(getContainer(), getUser(), rowId);
     boolean locked = survey != null && SurveyManager.get().getSurveyLockedStates().indexOf(survey.getStatus()) > -1;
 
     // we allow editing for 1) non-submitted surveys 2) submitted surveys (that are not locked) if the user is a project or site admin
-    Container project = ctx.getContainer().getProject();
-    boolean isAdmin = (project != null && project.hasPermission(ctx.getUser(), AdminPermission.class)) || ctx.getUser().isSiteAdmin();
-    boolean canEdit = !locked && ((!submitted && ctx.getContainer().hasPermission(ctx.getUser(), UpdatePermission.class)) || isAdmin);
+    Container project = getContainer().getProject();
+    boolean isAdmin = (project != null && project.hasPermission(getUser(), AdminPermission.class)) || getUser().isSiteAdmin();
+    boolean canEdit = !locked && ((!submitted && getContainer().hasPermission(getUser(), UpdatePermission.class)) || isAdmin);
 
     String headerRenderId = "survey-header-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
     String formRenderId = "survey-form-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());

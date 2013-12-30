@@ -27,7 +27,6 @@
     JspView<ReportsController.ExternalReportBean> me = (JspView<ReportsController.ExternalReportBean>) HttpView.currentView();
     ReportsController.ExternalReportBean bean = me.getModelBean();
     ExternalReport report = bean.getExtReport();
-
 %>
 <form action="" method="GET">
     Design external view. You can invoke any command line to generate the view. You can use the following
@@ -43,7 +42,8 @@
     <table>
         <tr>
             <td>Dataset/Query</td>
-            <td colspan="3">            <select name="queryName">
+            <td colspan="3">
+                <select name="queryName">
                 <%
                     Map<String, DataSetDefinition> datasetMap = bean.getDatasetDefinitions();
                     for (String name : bean.getTableAndQueryNames())
@@ -59,8 +59,8 @@
                 <%
                     }
                 %>
-            </select>
-</td>
+                </select>
+            </td>
         </tr>
         <tr>
             <td>Program</td>
@@ -83,7 +83,6 @@
                 </select>
             </td>
         </tr>
-
     </table>
 
     <%=generateSubmitButton("Submit")%>

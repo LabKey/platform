@@ -48,7 +48,7 @@
             unambiguous = false;
     }
 
-    ActionURL postURL = urlProvider(AssayUrls.class).getCopyToStudyConfirmURL(getViewContext().getContainer(), bean.getProtocol());
+    ActionURL postURL = urlProvider(AssayUrls.class).getCopyToStudyConfirmURL(getContainer(), bean.getProtocol());
     List<Pair<String, String>> parameters = postURL.getParameters();
     postURL.deleteParameters();
 %>
@@ -112,7 +112,7 @@
                 <select name="targetStudy">
                 <%
 
-                    Set<Study> studies = AssayPublishService.get().getValidPublishTargets(getViewContext().getUser(), InsertPermission.class);
+                    Set<Study> studies = AssayPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class);
                     for (Study study : studies)
                     {
                         String path = study.getContainer().getPath();

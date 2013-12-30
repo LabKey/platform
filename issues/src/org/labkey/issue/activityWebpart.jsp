@@ -15,22 +15,21 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.issue.IssuesController" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.issue.model.IssueManager" %>
-<%@ page import="org.labkey.issue.IssuesActivityWebPartFactory" %>
-<%@ page import="org.labkey.issue.model.Issue" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.issue.IssuesActivityWebPartFactory" %>
+<%@ page import="org.labkey.issue.IssuesController" %>
+<%@ page import="org.labkey.issue.model.Issue" %>
+<%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="org.w3c.tidy.Tidy" %>
 <%@ page import="java.io.StringReader" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     IssuesActivityWebPartFactory.IssuesActivityBean bean = (IssuesActivityWebPartFactory.IssuesActivityBean) getModelBean();
-    User user = getViewContext().getUser();
-    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+    User user = getUser();
+    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
 
     int COMMENT_MAX_LEN = 1000;
     Tidy tidy = new Tidy();

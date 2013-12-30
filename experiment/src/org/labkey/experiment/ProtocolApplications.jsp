@@ -15,20 +15,20 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.exp.api.ExpData"%>
+<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.exp.ExperimentDataHandler" %>
+<%@ page import="org.labkey.api.exp.api.ExpData" %>
 <%@ page import="org.labkey.api.exp.api.ExpMaterial" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocolApplication" %>
 <%@ page import="org.labkey.api.exp.api.ExpRun" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.exp.ExperimentDataHandler" %>
-<%@ page import="org.labkey.api.util.URLHelper" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ExpRun> me = (JspView<ExpRun>) HttpView.currentView();
     ExpRun run = me.getModelBean();
+    Container c = getContainer();
 %>
 
 <table class="labkey-protocol-applications">
@@ -48,7 +48,7 @@
                     <a href="showData.view?rowId=<%= data.getRowId() %>"><%= h(data.getName()) %></a>
                 <%
                     ExperimentDataHandler handler = data.findDataHandler();
-                    ActionURL url = handler == null ? null : handler.getContentURL(HttpView.currentContext().getContainer(), data);
+                    ActionURL url = handler == null ? null : handler.getContentURL(c, data);
                     if (url != null) { %><%=textLink("view", url)%><% } %><br/>
                 <% } %>
             </td>
@@ -60,7 +60,7 @@
                     <a href="showData.view?rowId=<%= data.getRowId() %>"><%= h(data.getName()) %></a>
                 <%
                     ExperimentDataHandler handler = data.findDataHandler();
-                    ActionURL url = handler == null ? null : handler.getContentURL(HttpView.currentContext().getContainer(), data);
+                    ActionURL url = handler == null ? null : handler.getContentURL(c, data);
                     if (url != null) { %><%=textLink("view", url)%><% } %><br/>
                 <% } %>
             </td>

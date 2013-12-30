@@ -30,9 +30,9 @@
 <%
     JspView<StudyController.ViewPrefsBean> me = (JspView<StudyController.ViewPrefsBean>) HttpView.currentView();
     StudyController.ViewPrefsBean bean = me.getModelBean();
-    ActionURL url = HttpView.currentContext().cloneActionURL();
 
-    ViewContext context = HttpView.currentContext();
+    ViewContext context = getViewContext();
+    ActionURL url = context.cloneActionURL();
     String defaultView = StudyController.getDefaultView(context, bean.getDataSetDefinition().getDataSetId());
 %>
 
@@ -60,7 +60,7 @@
 <%
     }
 
-    ActionURL doneUrl = HttpView.currentContext().cloneActionURL();
+    ActionURL doneUrl = context.cloneActionURL();
     doneUrl.setAction(StudyController.DatasetReportAction.class);
     doneUrl.deleteParameter("defaultView");
     doneUrl.deleteParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME);

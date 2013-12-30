@@ -24,8 +24,8 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     IssuesController.SummaryBean bean = ((JspView<IssuesController.SummaryBean>) HttpView.currentView()).getModelBean();
-    User user = getViewContext().getUser();
-    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(HttpView.currentContext().getContainer());
+    User user = getUser();
+    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
 
     if (bean.hasPermission)
     {

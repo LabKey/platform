@@ -17,19 +17,17 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.Portal" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     HttpView<Portal.WebPart> me = (HttpView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart part = me.getModelBean();
-    ViewContext ctx = me.getViewContext();
     Map<String, String> props = part.getPropertyMap();
 %>
 This webpart displays a single discussion.  It's designed to work in conjunction with custom pages built using the JavaScript API, though it could be placed on a portal page to display a single, specific discussion.<br><br>
 
-<form name="frmCustomize" method="post" action="<%=h(part.getCustomizePostURL(ctx))%>">
+<form name="frmCustomize" method="post" action="<%=h(part.getCustomizePostURL(getViewContext()))%>">
     <table>
         <tr>
             <td>Entity Id:</td>

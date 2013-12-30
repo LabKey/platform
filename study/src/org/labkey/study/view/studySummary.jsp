@@ -36,7 +36,7 @@
     StudySummaryWebPartFactory.StudySummaryBean bean = me.getModelBean();
 
     User user = (User)request.getUserPrincipal();
-    Container c = getViewContext().getContainer();
+    Container c = getContainer();
 
     if (null == bean.getStudy())
     {

@@ -15,23 +15,23 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="java.util.List"%>
-<%@ page import="org.labkey.core.user.UserController"%>
-<%@ page import="org.labkey.api.security.Group"%>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.data.ContainerManager"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.security.SecurityUrls" %>
+<%@ page import="org.labkey.api.security.Group"%>
+<%@ page import="org.labkey.api.security.SecurityManager"%>
+<%@ page import="org.labkey.api.security.SecurityUrls"%>
+<%@ page import="org.labkey.api.security.User"%>
+<%@ page import="org.labkey.api.security.UserManager"%>
+<%@ page import="org.labkey.api.security.UserPrincipal"%>
 <%@ page import="org.labkey.api.security.UserUrls" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.security.UserManager" %>
+<%@ page import="org.labkey.core.user.UserController" %>
+<%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.security.SecurityManager" %>
-<%@ page import="org.labkey.api.security.UserPrincipal" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -42,10 +42,8 @@
  *  SecurityController.FolderAccessAction    : displays user access for a single folder
  */
 
-    ViewContext context = HttpView.currentContext();
-    String contextPath = context.getContextPath();
-    User currentUser = context.getUser();
-    Container c = context.getContainer();
+    User currentUser = getUser();
+    Container c = getContainer();
     JspView<UserController.AccessDetail> me = (JspView<UserController.AccessDetail>) HttpView.currentView();
     UserController.AccessDetail bean = me.getModelBean();
     List<UserController.AccessDetailRow> rows = bean.getRows();
@@ -110,7 +108,7 @@ However, If this account is re-enabled, it would have the following permissions.
         }
         else
         {
-            %><td><%= textLink("details", urlProvider(UserUrls.class).getUserDetailsURL(c, row.getUser().getUserId(), context.getActionURL())) %></td><%
+            %><td><%= textLink("details", urlProvider(UserUrls.class).getUserDetailsURL(c, row.getUser().getUserId(), getActionURL())) %></td><%
             out.print("<td style='padding-left:" + cellPadding + "px;'>");
             if (isUser)
             {
@@ -135,7 +133,7 @@ However, If this account is re-enabled, it would have the following permissions.
                     <tr class="labkey-nav-tree-row labkey-header" >
                         <td class="labkey-nav-tree-text" align="left" style="border:0 none;">
                             <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#">
-                                <img src="<%=contextPath%>/_images/plus.gif" alt="" />
+                                <img src="<%=getContextPath()%>/_images/plus.gif" alt="" />
                                 <span><%= row.getAccess() %><%= inherited ? "*" : "" %></span>
                             </a>
                         </td>

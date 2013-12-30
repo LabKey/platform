@@ -16,23 +16,23 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
+<%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.NotFoundException" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.api.view.WebThemeManager" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.study.designer.StudyDesignManager" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.view.StudyGWTView" %>
 <%@ page import="org.labkey.study.view.VaccineStudyWebPart" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -44,26 +44,27 @@
 %>
 <%
     HttpView me = HttpView.currentView();
-    ViewContext currentContext = HttpView.currentContext();
+    ViewContext context = getViewContext();
+    Container c = getContainer();
     VaccineStudyWebPart.Model bean = (VaccineStudyWebPart.Model) me.getModelBean();
 
     Map<String, String> params = new HashMap<>();
     params.put("studyId", Integer.toString(bean.getStudyId()));
 
     //In the web part we always show the latest revision
-    Integer revInteger = StudyDesignManager.get().getLatestRevisionNumber(currentContext.getContainer(), bean.getStudyId());
+    Integer revInteger = StudyDesignManager.get().getLatestRevisionNumber(c, bean.getStudyId());
     if (revInteger == null)
         throw new NotFoundException("No revision found for Study ID: " + bean.getStudyId());
 
     params.put("revision", Integer.toString(revInteger));
-    params.put("edit", getViewContext().hasPermission(UpdatePermission.class) && bean.isEditMode() ? "true" : "false");
-    boolean canEdit = getViewContext().hasPermission(UpdatePermission.class);
+    params.put("edit", context.hasPermission(UpdatePermission.class) && bean.isEditMode() ? "true" : "false");
+    boolean canEdit = context.hasPermission(UpdatePermission.class);
     params.put("canEdit",  Boolean.toString(canEdit));
     //Can't create repository from web part
     params.put("canCreateRepository", Boolean.FALSE.toString());
 
-    StudyImpl study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
-    boolean canAdmin = getViewContext().hasPermission(AdminPermission.class) && null != study;
+    StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+    boolean canAdmin = context.hasPermission(AdminPermission.class) && null != study;
     params.put("canAdmin", Boolean.toString(canAdmin));
     params.put("canCreateTimepoints", Boolean.toString(canAdmin && (study.getVisits(Visit.Order.CHRONOLOGICAL).size() < 1)));
 
@@ -73,7 +74,6 @@
 
     StudyGWTView innerView = new StudyGWTView(gwt.client.org.labkey.study.designer.client.Designer.class, params);
 
-    Container c = currentContext.getContainer();
     WebTheme theme = WebThemeManager.getTheme(c);
     response.setContentType("text/css");
 

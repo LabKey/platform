@@ -21,8 +21,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView me = (JspView) HttpView.currentView();
-    Container container = me.getViewContext().getContainer();
+    Container container = getContainer();
 %>
 <script type="text/javascript">
     LABKEY.requiresCss("editInPlaceElement.css");

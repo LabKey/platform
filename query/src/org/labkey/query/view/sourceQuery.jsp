@@ -47,7 +47,7 @@
     ActionURL exeUrl = null;
     try
     {
-        exeUrl = queryDef.urlFor(QueryAction.executeQuery, getViewContext().getContainer());
+        exeUrl = queryDef.urlFor(QueryAction.executeQuery, getContainer());
     }
     catch (Exception x)
     {

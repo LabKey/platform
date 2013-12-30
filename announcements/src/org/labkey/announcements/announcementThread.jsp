@@ -27,24 +27,20 @@
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.springframework.web.servlet.mvc.Controller" %>
 <%@ page import="java.util.Objects" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--ANNOUNCEMENTS-->
 <%
     ThreadView me = (ThreadView) HttpView.currentView();
-    ViewContext context = me.getViewContext();
-    Container c = context.getContainer();
-    User user = context.getUser();
+    Container c = getContainer();
+    User user = getUser();
     ThreadViewBean bean = me.getModelBean();
     AnnouncementModel announcementModel = bean.announcementModel;
     DiscussionService.Settings settings = bean.settings;
-    String contextPath = context.getContextPath();
 
     if (null == announcementModel)
     {
@@ -68,7 +64,7 @@ if (!bean.embedded && null != announcementModel.getDiscussionSrcURL())
 
 if (!bean.print && null != discussionSrc)
 { %>
-    <p></p><img src="<%=contextPath%>/_images/exclaim.gif">&nbsp;This is a <%=h(settings.getConversationName().toLowerCase())%> about another page.  <%=textLink("view page", discussionSrc.getLocalURIString())%><%
+    <p></p><img src="<%=getContextPath()%>/_images/exclaim.gif">&nbsp;This is a <%=h(settings.getConversationName().toLowerCase())%> about another page.  <%=textLink("view page", discussionSrc.getLocalURIString())%><%
 }
 %>
 

@@ -15,16 +15,13 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.survey.SurveyController" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
@@ -39,11 +36,9 @@
 
 <%
     JspView<SurveyController.SurveyDesignForm> me = (JspView<SurveyController.SurveyDesignForm>) HttpView.currentView();
-    ViewContext ctx = me.getViewContext();
-    Container c = ctx.getContainer();
     SurveyController.SurveyDesignForm form = me.getModelBean();
 
-    String allSchemas = ctx.getActionURL().getParameter("allSchemas");
+    String allSchemas = getActionURL().getParameter("allSchemas");
     String renderId = "survey-design-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
 <div id="<%= h(renderId)%>" class="dvc"></div>

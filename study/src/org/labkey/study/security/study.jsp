@@ -18,27 +18,26 @@
 <%@ page import="org.labkey.api.security.Group" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.security.SecurityPolicy" %>
+<%@ page import="org.labkey.api.security.SecurityPolicyManager" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadSomePermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
+<%@ page import="org.labkey.study.model.GroupSecurityType" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
-<%@ page import="org.labkey.api.security.SecurityPolicyManager" %>
-<%@ page import="org.labkey.study.model.GroupSecurityType" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     HttpView<StudyImpl> me = (HttpView<StudyImpl>) HttpView.currentView();
-    String contextPath = me.getViewContext().getContextPath();
     StudyImpl study = me.getModelBean();
     boolean includeEditOption = study.getSecurityType() == SecurityType.ADVANCED_WRITE;
 %>
 Any user with READ access to this folder may view some summary data.  However, access to detail data must be explicitly granted.
     <form id="groupUpdateForm" action="<%=h(buildURL(SecurityController.SaveStudyPermissionsAction.class))%>" method="post">
 <%
-    String redir = (String) HttpView.currentContext().get("redirect");
+    String redir = (String) getViewContext().get("redirect");
     if (redir != null)
         out.write("<input type=\"hidden\" name=\"redirect\" value=\"" + h(redir) + "\">");
 %>
@@ -55,7 +54,7 @@ Any user with READ access to this folder may view some summary data.  However, a
             <th width=100>PER&nbsp;DATASET<%=PageFlowUtil.helpPopup("PER DATASET", "user/group may view and/or edit rows in some datasets, configured per dataset")%></th>
             <th width=100>NONE<%=PageFlowUtil.helpPopup("NONE", "user/group may not view or edit any detail data")%></th></tr>
     <%
-    SecurityPolicy folderPolicy = me.getViewContext().getContainer().getPolicy();
+    SecurityPolicy folderPolicy = getContainer().getPolicy();
     SecurityPolicy studyPolicy = SecurityPolicyManager.getPolicy(study);
     Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
     for (Group group : groups)
@@ -84,7 +83,7 @@ Any user with READ access to this folder may view some summary data.  However, a
         <th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.READ_ALL.getParamName())%>"<%=checked(GroupSecurityType.READ_ALL == gt)%>></th>
         <th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.PER_DATASET.getParamName())%>"<%=checked(GroupSecurityType.PER_DATASET == gt)%>></th>
         <th><input <%=h(clear)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.NONE.getParamName())%>"<%=checked(GroupSecurityType.NONE == gt)%>></th><%
-        %><td id="<%=h(inputName)%>$WARN" style="display:<%=h(!hasFolderRead && (hasReadAllPerm || hasReadSomePerm)?"inline":"none")%>;"><img src="<%=h(contextPath)%>/_images/exclaim.gif" alt="group does not have folder read permissions" title="group does not have folder read permissions"></td><%
+        %><td id="<%=h(inputName)%>$WARN" style="display:<%=h(!hasFolderRead && (hasReadAllPerm || hasReadSomePerm)?"inline":"none")%>;"><img src="<%=getContextPath()%>/_images/exclaim.gif" alt="group does not have folder read permissions" title="group does not have folder read permissions"></td><%
         %></tr><%
     }
     %></table>

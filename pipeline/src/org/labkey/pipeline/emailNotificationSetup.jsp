@@ -49,7 +49,7 @@
     }
 %>
 <%
-    Container c = HttpView.currentContext().getContainer();
+    Container c = getContainer();
     boolean notifyOwnerOnSuccess = PipelineEmailPreferences.get().getNotifyOwnerOnSuccess(c);
     boolean notifyOwnerOnError = PipelineEmailPreferences.get().getNotifyOwnerOnError(c);
     String notifyUsersOnSuccess = StringUtils.defaultString(PipelineEmailPreferences.get().getNotifyUsersOnSuccess(c)).replaceAll(";", "\n");

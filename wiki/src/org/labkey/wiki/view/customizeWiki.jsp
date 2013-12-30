@@ -21,15 +21,13 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     WikiController.CustomizeWikiPartView me = (WikiController.CustomizeWikiPartView) HttpView.currentView();
     Portal.WebPart webPart = me.getModelBean();
-    ViewContext ctx = me.getViewContext();
-    Container currentContainer = ctx.getContainer();
+    Container currentContainer = getContainer();
 %>
 <script type="text/javascript">
 LABKEY.requiresClientAPI(); //for Ext AJAX object
@@ -246,7 +244,7 @@ function restoreDefaultPage()
             <tr>
                 <td align="left">
                     <%=PageFlowUtil.generateSubmitButton("Submit", "", "name=\"Submit\" id=\"btnSubmit\"")%>
-                    <%=generateButton("Cancel", ctx.getContainer().getStartURL(ctx.getUser()))%>
+                    <%=generateButton("Cancel", getContainer().getStartURL(getUser()))%>
                 </td>
             </tr>
         </table>

@@ -29,7 +29,7 @@
 <%
     JspView<CreateWorkbookBean> me = (JspView<CreateWorkbookBean>) HttpView.currentView();
     CreateWorkbookBean bean = me.getModelBean();
-    Container container = me.getViewContext().getContainer();
+    Container container = getContainer();
 
     Set<FolderType> folderTypes = new LinkedHashSet<>();
     for (FolderType folderType : ModuleLoader.getInstance().getEnabledFolderTypes())
@@ -127,7 +127,7 @@
         <% } %>
         <tr>
             <td colspan="2" class="cwb-button-bar">
-                <%=generateButton("Cancel", container.getStartURL(me.getViewContext().getUser()))%>
+                <%=generateButton("Cancel", container.getStartURL(getUser()))%>
                 <%=PageFlowUtil.generateSubmitButton("Create Workbook", null, null, true, true)%>
             </td>
         </tr>

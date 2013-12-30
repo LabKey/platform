@@ -24,7 +24,6 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.filecontent.FileContentController" %>
 <%@ page import="java.io.File" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -33,8 +32,7 @@
     JspView<FileContentController.FileContentForm> me = (JspView<FileContentController.FileContentForm>) HttpView.currentView();
     FileContentController.FileContentForm form = me.getModelBean();
     FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
-    ViewContext ctx = me.getViewContext();
-    AttachmentDirectory[] attachmentDirs = service.getRegisteredDirectories(ctx.getContainer());
+    AttachmentDirectory[] attachmentDirs = service.getRegisteredDirectories(getContainer());
 
     String fileSetHelp = "A file set enables web file sharing of data in subdirectories that do not correspond " +
     "exactly to LabKey containers. It is important to remember that when you request a file from a file set, " +
@@ -49,10 +47,10 @@
         %><div style="color:green;"><%=text(form.getMessage())%></div><%
     }
 
-    if (ctx.getUser().isSiteAdmin())
+    if (getUser().isSiteAdmin())
     {
-        File rootFile = service.getFileRoot(ctx.getContainer());
-        ActionURL configureHelper = urlProvider(AdminUrls.class).getProjectSettingsURL(ctx.getContainer()).addParameter("tabId", "files");
+        File rootFile = service.getFileRoot(getContainer());
+        ActionURL configureHelper = urlProvider(AdminUrls.class).getProjectSettingsURL(getContainer()).addParameter("tabId", "files");
         if (null == rootFile)
         { %>
             There is no file root for this folder.
@@ -63,7 +61,7 @@
             The directory containing files for this folder is
         <%
             String path = "<unset>";
-            AttachmentDirectory attachDir = service.getMappedAttachmentDirectory(ctx.getContainer(), false);
+            AttachmentDirectory attachDir = service.getMappedAttachmentDirectory(getContainer(), false);
             if (attachDir != null)
             {
                 File fileSystemDir = attachDir.getFileSystemDirectory();
@@ -118,7 +116,7 @@ Each file set is an additional directory that stores files accessible to users o
 </table>
 </form>
 <%
-if (ctx.getUser().isSiteAdmin())
+if (getUser().isSiteAdmin())
 {
 %>
 <br><b>Additional Information</b><br>

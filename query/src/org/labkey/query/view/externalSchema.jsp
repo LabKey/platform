@@ -31,7 +31,7 @@
 <%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    Container c = getViewContext().getContainer();
+    Container c = getContainer();
     BaseExternalSchemaBean bean = (BaseExternalSchemaBean)HttpView.currentModel();
     AbstractExternalSchemaDef def = bean.getSchemaDef();
     DataSourceInfo initialSource = bean.getInitialSource();

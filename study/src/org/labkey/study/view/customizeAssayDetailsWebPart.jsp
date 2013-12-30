@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
-<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.study.assay.AssayProvider" %>
 <%@ page import="org.labkey.api.study.assay.AssayService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -45,7 +44,7 @@
     }
 
     Map<String, Integer> nameToId = new TreeMap<>();
-    for (ExpProtocol protocol : AssayService.get().getAssayProtocols(ctx.getContainer()))
+    for (ExpProtocol protocol : AssayService.get().getAssayProtocols(getContainer()))
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         nameToId.put(provider.getName() + ": " + protocol.getName(), protocol.getRowId());
@@ -77,7 +76,7 @@
         </tr>
         <tr>
             <td/>
-            <td><%=generateSubmitButton("Submit")%> <%=generateButton("Cancel", ctx.getContainer().getStartURL(ctx.getUser()))%></td>
+            <td><%=generateSubmitButton("Submit")%> <%=generateButton("Cancel", getContainer().getStartURL(getUser()))%></td>
         </tr>
     </table>
 </form>

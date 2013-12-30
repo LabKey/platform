@@ -42,7 +42,7 @@
     BaseExternalSchemaBean bean = (BaseExternalSchemaBean)HttpView.currentModel();
     AbstractExternalSchemaDef def = bean.getSchemaDef();
 
-    Container targetContainer = getViewContext().getContainer();
+    Container targetContainer = getContainer();
     Container sourceContainer = targetContainer;
 
     boolean isExternal = true;

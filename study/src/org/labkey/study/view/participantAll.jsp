@@ -1,19 +1,19 @@
 <%
-    /*
-     * Copyright (c) 2006-2013 LabKey Corporation
-     *
-     * Licensed under the Apache License, Version 2.0 (the "License");
-     * you may not use this file except in compliance with the License.
-     * You may obtain a copy of the License at
-     *
-     *     http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing, software
-     * distributed under the License is distributed on an "AS IS" BASIS,
-     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     * See the License for the specific language governing permissions and
-     * limitations under the License.
-     */
+/*
+ * Copyright (c) 2006-2013 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 %>
 <%@ page import="org.apache.commons.beanutils.ConvertUtils" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
@@ -74,6 +74,7 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
+<%@ page import="org.labkey.study.query.StudyQuerySchema" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 
@@ -85,10 +86,9 @@
     }
 %>
 <%
-    ViewContext context = HttpView.currentContext();
-    org.labkey.study.query.StudyQuerySchema querySchema = (org.labkey.study.query.StudyQuerySchema) QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
+    ViewContext context = getViewContext();
+    StudyQuerySchema querySchema = (StudyQuerySchema) QueryService.get().getUserSchema(getUser(), getContainer(), "study");
     DbSchema dbSchema = querySchema.getDbSchema();
-    String contextPath = request.getContextPath();
     JspView<StudyManager.ParticipantViewConfig> me = (JspView<StudyManager.ParticipantViewConfig>) HttpView.currentView();
     final StudyManager.ParticipantViewConfig bean = me.getModelBean();
     Map<String, String> aliasMap = bean.getAliases();
@@ -99,7 +99,7 @@
     chartBean.setSchemaName(querySchema.getSchemaName());
     String currentUrl = bean.getRedirectUrl();
     if (currentUrl == null)
-        currentUrl = context.getActionURL().getLocalURIString();
+        currentUrl = getActionURL().getLocalURIString();
 
     ActionURL url = ReportUtil.getChartDesignerURL(context, chartBean);
     url.setAction(ReportsController.DesignChartAction.class);
@@ -108,7 +108,7 @@
     url.addParameter("participantId", bean.getParticipantId());
 
     StudyManager manager = StudyManager.getInstance();
-    StudyImpl study = manager.getStudy(context.getContainer());
+    StudyImpl study = manager.getStudy(getContainer());
 
     User user = (User) request.getUserPrincipal();
     List<DataSetDefinition> allDatasets = manager.getDataSetDefinitions(study);
@@ -237,8 +237,8 @@
 <table class="labkey-data-region">
 
 <tr class="labkey-alternate-row">
-    <td class="labkey-participant-view-header"><img alt="" width=180 height=1 src="<%=h(contextPath)%>/_.gif"></td>
-    <td class="labkey-participant-view-header"><img alt="" width=20 height=1 src="<%=h(contextPath)%>/_.gif"></td>
+    <td class="labkey-participant-view-header"><img alt="" width=180 height=1 src="<%=getContextPath()%>/_.gif"></td>
+    <td class="labkey-participant-view-header"><img alt="" width=20 height=1 src="<%=getContextPath()%>/_.gif"></td>
     <%
 
         for (VisitImpl visit : visits)
@@ -261,8 +261,8 @@
 </tr>
 
 <tr class="labkey-alternate-row">
-    <td class="labkey-participant-view-header"><img alt="" width=1 height=1 src="<%=h(contextPath)%>/_.gif"></td>
-    <td class="labkey-participant-view-header"><img alt="" width=1 height=1 src="<%=h(contextPath)%>/_.gif"></td>
+    <td class="labkey-participant-view-header"><img alt="" width=1 height=1 src="<%=getContextPath()%>/_.gif"></td>
+    <td class="labkey-participant-view-header"><img alt="" width=1 height=1 src="<%=getContextPath()%>/_.gif"></td>
     <%
 
         for (VisitImpl visit : visits)
@@ -347,7 +347,7 @@
         <a title="Click to expand/collapse"
            href="<%=new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>"
            onclick="return toggleIfReady(this, true);">
-            <img src="<%= h(context.getContextPath()) %>/_images/<%= text(expanded ? "minus.gif" : "plus.gif") %>"
+            <img src="<%=getContextPath()%>/_images/<%= text(expanded ? "minus.gif" : "plus.gif") %>"
                  alt="Click to expand/collapse">
             <%=h(dataset.getDisplayString())%>
         </a><%
@@ -399,7 +399,7 @@
     // display details link(s) only if we have a source lsid in at least one of the rows
     boolean hasSourceLsid = false;
 
-    if (StudyManager.getInstance().showQCStates(context.getContainer()))
+    if (StudyManager.getInstance().showQCStates(getContainer()))
     {
         row++;
 %>
@@ -444,8 +444,8 @@
     }
 
     // sort the properties so they appear in the same order as the grid view
-//            PropertyDescriptor[] pds = sortProperties(StudyController.getParticipantPropsFromCache(HttpView.getRootContext(), typeURI), dataset, HttpView.getRootContext());
-    ColumnInfo[] displayColumns = sortColumns(allColumns.values(), dataset, HttpView.getRootContext());
+//            PropertyDescriptor[] pds = sortProperties(StudyController.getParticipantPropsFromCache(context, typeURI), dataset, context);
+    ColumnInfo[] displayColumns = sortColumns(allColumns.values(), dataset, context);
 
     for (ColumnInfo col : displayColumns)
     {
@@ -516,9 +516,9 @@
                         Map propMap = e.getValue();
                         String sourceLsid = (String) sourceLsidColumn.getValue(propMap);
 
-                        if (sourceLsid != null && LsidManager.get().hasPermission(sourceLsid, getViewContext().getUser(), ReadPermission.class))
+                        if (sourceLsid != null && LsidManager.get().hasPermission(sourceLsid, getUser(), ReadPermission.class))
                         {
-                            ActionURL sourceURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, context.getContainer());
+                            ActionURL sourceURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, getContainer());
                             sourceURL.addParameter("sourceLsid", sourceLsid);
                             link = "[<a href=\"" + sourceURL.getLocalURIString() + "\">details</a>]";
                         }
@@ -603,7 +603,7 @@
         }
 
         // default list
-        String subjectcol = StudyService.get().getSubjectColumnName(context.getContainer());
+        String subjectcol = StudyService.get().getSubjectColumnName(getContainer());
         List<ColumnInfo> ret = new ArrayList<>(cols.size());
         for (ColumnInfo col : cols)
         {

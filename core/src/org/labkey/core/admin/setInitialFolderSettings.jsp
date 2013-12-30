@@ -38,7 +38,7 @@
     File siteRoot = ServiceRegistry.get().getService(FileContentService.class).getSiteDefaultRoot();
     if (siteRoot != null)
     {
-        File projRoot = new File(siteRoot, getViewContext().getContainer().getProject().getName());
+        File projRoot = new File(siteRoot, getContainer().getProject().getName());
         if (projRoot != null)
         {
             // Show the user the path that we'd point to if using the default location
@@ -135,7 +135,7 @@
             buttons: [{
                 xtype: 'button',
                 cls: 'labkey-button',
-                text: <%= PageFlowUtil.jsString(getViewContext().getContainer().getFolderType().getExtraSetupSteps(getViewContext().getContainer()).isEmpty() ? "Finish" : "Next") %>,
+                text: <%= PageFlowUtil.jsString(getContainer().getFolderType().getExtraSetupSteps(getContainer()).isEmpty() ? "Finish" : "Next") %>,
                 handler: function(btn){
                     var f = btn.up('form').getForm();
                     f.submit();

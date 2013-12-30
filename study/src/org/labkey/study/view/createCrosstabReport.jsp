@@ -17,23 +17,23 @@
 %>
 <%@ page import="org.labkey.api.query.QueryParam"%>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor"%>
+<%@ page import="org.labkey.api.reports.report.ReportUrls"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.StudySchema" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController.CreateCrosstabBean" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.reports.StudyCrosstabReport" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<CreateCrosstabBean> me = (JspView<ReportsController.CreateCrosstabBean>) HttpView.currentView();
     CreateCrosstabBean bean = me.getModelBean();
 
-    ActionURL returnURL = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer());
+    ActionURL returnURL = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer());
 %>
 <form action="<%=h(buildURL(ReportsController.ParticipantCrosstabAction.class))%>" method="GET">
 <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=h(StudySchema.getInstance().getSchemaName())%>">

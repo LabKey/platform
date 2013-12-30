@@ -16,13 +16,11 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.BooleanUtils" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.snapshot.QuerySnapshotDefinition" %>
 <%@ page import="org.labkey.api.query.snapshot.QuerySnapshotForm" %>
 <%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -35,19 +33,19 @@
 <%
     JspView<QuerySnapshotForm> me = (JspView<QuerySnapshotForm>) HttpView.currentView();
     QuerySnapshotForm bean = me.getModelBean();
-    ViewContext context = HttpView.currentContext();
+    ViewContext context = getViewContext();
 
-    QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(context.getContainer(), bean.getSchemaName(), bean.getSnapshotName());
+    QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), bean.getSchemaName(), bean.getSnapshotName());
 
-    boolean showHistory = BooleanUtils.toBoolean(context.getActionURL().getParameter("showHistory"));
+    boolean showHistory = BooleanUtils.toBoolean(getActionURL().getParameter("showHistory"));
     String historyLabel = showHistory ? "Hide History" : "Show History";
 
-    boolean showDataset = BooleanUtils.toBoolean(context.getActionURL().getParameter("showDataset"));
+    boolean showDataset = BooleanUtils.toBoolean(getActionURL().getParameter("showDataset"));
     String datasetLabel = showDataset ? "Hide Dataset Definition" : "Edit Dataset Definition";
 
-    final Study study = StudyManager.getInstance().getStudy(context.getContainer());
+    final Study study = StudyManager.getInstance().getStudy(getContainer());
     final DataSet dsDef = StudyManager.getInstance().getDataSetDefinitionByName(study, bean.getSnapshotName());
-    ActionURL deleteSnapshotURL = new ActionURL(StudyController.DeleteDatasetAction.class, context.getContainer());
+    ActionURL deleteSnapshotURL = new ActionURL(StudyController.DeleteDatasetAction.class, getContainer());
 %>
 
 <%  if (def != null) { %>
@@ -57,7 +55,7 @@
     <tr><td class="labkey-form-label">Modified By</td><td><%=h(def.getModifiedBy())%></td>
     <tr><td class="labkey-form-label">Created</td><td><%=h(def.getCreated())%></td>
     <tr><td class="labkey-form-label">Last Updated</td><td><%=formatDateTime(def.getLastUpdated())%></td>
-    <tr><td class="labkey-form-label">Query Source</td><td><textarea rows="20" cols="65" readonly="true"><%=def.getQueryDefinition(context.getUser()).getSql()%></textarea></td>
+    <tr><td class="labkey-form-label">Query Source</td><td><textarea rows="20" cols="65" readonly="true"><%=def.getQueryDefinition(getUser()).getSql()%></textarea></td>
 </table>
 <%  } %>
 

@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -31,7 +30,7 @@
 %>
 <%= textLink("All User Requests", userLink.deleteParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY)) %>
 <%= textLink("My Requests", userLink.replaceParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY,
-        context.getUser().getDisplayName(context.getUser()))) %>
+        getUser().getDisplayName(getUser()))) %>
 Filter by status: <select onChange="document.location=options[selectedIndex].value;">
 <%
     ActionURL current = context.cloneActionURL();
@@ -49,7 +48,7 @@ Filter by status: <select onChange="document.location=options[selectedIndex].val
 %>
 </select>
 <%
-    String userFilter = context.getActionURL().getParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY);
+    String userFilter = getActionURL().getParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY);
     if (userFilter != null)
     {
 %>

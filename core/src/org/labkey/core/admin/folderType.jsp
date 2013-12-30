@@ -15,22 +15,22 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.json.JSONObject"%>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.module.FolderType" %>
 <%@ page import="org.labkey.api.module.Module" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="org.labkey.core.admin.FolderManagementAction" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.core.admin.FolderManagementAction" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.json.JSONObject" %>
+<%@ page import="java.util.Set" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -41,10 +41,10 @@ LABKEY.requiresExt4Sandbox();
 var requiredModules = new Object();
 var defaultModules = new Object();
 <% //Generate javascript objects...
-    final ViewContext context = HttpView.currentContext();
-    Container c = context.getContainer();
     FolderManagementAction.FolderManagementForm form = (FolderManagementAction.FolderManagementForm) HttpView.currentModel();
-    boolean userHasEnableRestrictedModulesPermission = c.hasEnableRestrictedModules(context.getUser());
+    final ViewContext context = getViewContext();
+    Container c = getContainer();
+    boolean userHasEnableRestrictedModulesPermission = c.hasEnableRestrictedModules(getUser());
     Collection<FolderType> allFolderTypes = ModuleLoader.getInstance().getFolderTypes(userHasEnableRestrictedModulesPermission);
     List<Module> allModules = new ArrayList<>(ModuleLoader.getInstance().getModules(userHasEnableRestrictedModulesPermission));
     Collections.sort(allModules, new Comparator<Module>()
@@ -63,7 +63,7 @@ var defaultModules = new Object();
         dependencyMapJson.put(m, dependencyMap.get(m));
     }
 
-    Module defaultModule = c.getDefaultModule(context.getUser());
+    Module defaultModule = c.getDefaultModule(getUser());
     FolderType folderType = c.getFolderType();
     String path = c.getPath();
 
@@ -302,7 +302,7 @@ function checkChangedType()
                         if (activeModules.contains(module))
                             {
                             %>
-                                <option value="<%= h(module.getName()) %>"<%=selected(module.getName().equals(defaultModule.getName()))%>><%= h(module.getTabName(HttpView.currentContext())) %></option>
+                                <option value="<%= h(module.getName()) %>"<%=selected(module.getName().equals(defaultModule.getName()))%>><%= h(module.getTabName(context)) %></option>
                             <%
                             }
                         }
@@ -326,11 +326,11 @@ for (Module module : allModules)
     {
         %>
         <input type="checkbox" id="activeModules[<%= i %>]" name="activeModules[<%= i %>]"
-               title="<%= h(module.getTabName(HttpView.currentContext()))%>"
+               title="<%= h(module.getTabName(context))%>"
                value="<%= h(module.getName())%>"
                <%=disabled(!enabled)%><%=checked(active)%>
                onClick="return updateDefaultOptions(this);">
-        <label for="activeModules[<%= i %>]"><%= h(module.getTabName(HttpView.currentContext())) %></label>
+        <label for="activeModules[<%= i %>]"><%= h(module.getTabName(context)) %></label>
         <br>
         <%
         i++;

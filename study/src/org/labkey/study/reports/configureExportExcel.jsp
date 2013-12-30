@@ -41,7 +41,7 @@ Spreadsheet Export allows you to export data from one location exclusively, or t
 Before you export, you can select the source location or locations using the "Location" drop-down menu.
 <ul>
 <li><b>All Locations</b>. If you select "All Locations" from the dropdown "Location" menu, you will export all data for all
-    <%= h(StudyService.get().getSubjectNounPlural(getViewContext().getContainer())) %> across all locations.</li>
+    <%= h(StudyService.get().getSubjectNounPlural(getContainer())) %> across all locations.</li>
 <li ><b>Single Site</b>. If you select a particular location from the "Site" menu, you will export only data associated with the chosen location.</li>
 </ul>
 </div>

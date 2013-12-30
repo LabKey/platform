@@ -30,7 +30,7 @@
 <%
     JspView<StudyController.UpdateQCStateForm> me = (JspView<StudyController.UpdateQCStateForm>) HttpView.currentView();
     StudyController.UpdateQCStateForm bean = me.getModelBean();
-    Container container = me.getViewContext().getContainer();
+    Container container = getContainer();
     QCState[] states = StudyManager.getInstance().getQCStates(container);
 %>
 <%

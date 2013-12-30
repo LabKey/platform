@@ -17,14 +17,12 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
 <%
-    Container c =  HttpView.currentView().getViewContext().getContainer();
+    Container c = getContainer();
     StudyImpl s = StudyManager.getInstance().getStudy(c);
     String subjectNounSingular = s.getSubjectNounSingular();
     String subjectNounColumnName = s.getSubjectColumnName();
@@ -45,12 +43,11 @@
     // We autofill the date field with today's date.
     boolean allowAliasCreation = aliasDatasetName != null && !s.getTimepointType().isVisitBased();
 %>
-
 <div style="max-width: 1000px">
     <p>
-        If a(n) <%= PageFlowUtil.filter(subjectNounSingular) %>  in your study has been loaded with an incorrect <%= PageFlowUtil.filter(subjectNounColumnName) %>,
-        you can change the <%= PageFlowUtil.filter(subjectNounColumnName) %> of that <%= PageFlowUtil.filter(subjectNounSingular.toLowerCase()) %>. If you change the <%= PageFlowUtil.filter(subjectNounColumnName) %>
-        to an existing <%= PageFlowUtil.filter(subjectNounColumnName) %>, data will be merged into a single <%= PageFlowUtil.filter(subjectNounSingular) %>.
+        If a(n) <%= h(subjectNounSingular) %>  in your study has been loaded with an incorrect <%= h(subjectNounColumnName) %>,
+        you can change the <%= h(subjectNounColumnName) %> of that <%= h(subjectNounSingular.toLowerCase()) %>. If you change the <%= h(subjectNounColumnName) %>
+        to an existing <%= h(subjectNounColumnName) %>, data will be merged into a single <%= h(subjectNounSingular) %>.
     </p>
 </div>
 <div id="mergeParticipantsPanel-div"></div>

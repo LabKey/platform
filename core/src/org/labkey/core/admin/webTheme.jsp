@@ -165,7 +165,7 @@ if (null != webThemeErrors) { %>
         }
         else
             {%>
-            <%=generateButton("Done", urlProvider(AdminUrls.class).getProjectSettingsURL(HttpView.currentContext().getContainer()))%>
+            <%=generateButton("Done", urlProvider(AdminUrls.class).getProjectSettingsURL(getContainer()))%>
            <%}%>
     </td>
 </tr>

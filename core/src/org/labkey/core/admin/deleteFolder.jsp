@@ -31,8 +31,8 @@
 <%
     JspView<ManageFoldersForm> me = (JspView<ManageFoldersForm>) HttpView.currentView();
     ManageFoldersForm form = me.getModelBean();
-    Container c = HttpView.currentContext().getContainer();
-    User user = HttpView.currentContext().getUser();
+    Container c = getContainer();
+    User user = getUser();
 
     String name = form.getName();
     if (null == name)

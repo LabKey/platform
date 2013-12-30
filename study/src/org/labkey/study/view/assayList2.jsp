@@ -22,18 +22,14 @@
 <%@ page import="org.labkey.api.study.assay.AssayService" %>
 <%@ page import="org.labkey.api.study.assay.AssayUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.assay.AssayController" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView me = (JspView) HttpView.currentView();
-    ViewContext ctx = me.getViewContext();
-    Container proj = ctx.getContainer().getProject();
+    Container c = getContainer();
+    Container proj = c.getProject();
 
-    List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(ctx.getContainer());
+    List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c);
     for (ExpProtocol protocol : protocols)
     {
         ActionURL url;
@@ -43,7 +39,7 @@
             url.addParameter(protocol.getName() + " Runs.containerFilterName", ContainerFilter.AllInProject.class.getSimpleName());
         }
         else
-            url = new ActionURL(AssayController.SummaryRedirectAction.class, ctx.getContainer());
+            url = new ActionURL(AssayController.SummaryRedirectAction.class, c);
 
         url.replaceParameter("rowId", ""+ protocol.getRowId());
         %>
@@ -54,9 +50,9 @@
      <% }  %>
         <br>
 <%  }
-    if (ctx.getContainer().getProject().hasPermission(ctx.getUser(), AdminPermission.class))
+    if (proj.hasPermission(getUser(), AdminPermission.class))
     {
-        ActionURL actionURL = new ActionURL(AssayController.BeginAction.class, ctx.getContainer().getProject());
+        ActionURL actionURL = new ActionURL(AssayController.BeginAction.class, proj);
 %>
 <%=generateButton("Manage Assays", actionURL)%>
 <%

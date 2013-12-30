@@ -26,12 +26,12 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DeleteUsersBean> me = (JspView<DeleteUsersBean>) HttpView.currentView();
-    User currentUser = me.getViewContext().getUser();
     DeleteUsersBean bean = me.getModelBean();
-    ActionURL urlPost = me.getViewContext().cloneActionURL();
+    User currentUser = getUser();
+    ActionURL urlPost = getViewContext().cloneActionURL();
     urlPost.deleteParameters();
 
-    ActionURL deactivateUsersUrl = new ActionURL(UserController.DeactivateUsersAction.class, me.getViewContext().getContainer());
+    ActionURL deactivateUsersUrl = new ActionURL(UserController.DeactivateUsersAction.class, getContainer());
 %>
 <p>Are sure you want to <span style="font-weight:bold;color: #FF0000">permanently delete</span>
 the following <%=bean.getUsers().size() > 1 ? "users" : "user"%>?

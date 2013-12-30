@@ -15,21 +15,18 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.module.FolderType" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView me = (JspView) HttpView.currentView();
-    ViewContext ctx = me.getViewContext();
-    Container proj = ctx.getContainer().getProject();
+    Container proj = getContainer().getProject();
 
-    Study[] studies = StudyManager.getInstance().getAllStudies(proj, ctx.getUser());
+    Study[] studies = StudyManager.getInstance().getAllStudies(proj, getUser());
     if (studies.length == 0)
     {
         out.print("No Studies found in project " + proj.getName());
@@ -41,9 +38,9 @@
     {
         ActionURL url;
         if (studyFolderType.equals(study.getContainer().getFolderType()))
-            url = studyFolderType.getStartURL(study.getContainer(), ctx.getUser());
+            url = studyFolderType.getStartURL(study.getContainer(), getUser());
         else
-            url = new ActionURL(StudyController.BeginAction.class,study.getContainer());
+            url = new ActionURL(StudyController.BeginAction.class, study.getContainer());
         %>
 <span class="highlightregion"></span><b><a href="<%=url%>"><%=h(study.getLabel())%></a></b>
             <br>(<%=h(study.getContainer().getPath())%>)

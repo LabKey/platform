@@ -41,8 +41,8 @@
 <%
     JspView<SpecimenController.ReportConfigurationBean> me = (JspView<SpecimenController.ReportConfigurationBean>) HttpView.currentView();
     SpecimenController.ReportConfigurationBean bean = me.getModelBean();
-    Container container = me.getViewContext().getContainer();
-    User user = me.getViewContext().getUser();
+    Container container = getContainer();
+    User user = getUser();
     boolean showCohorts = StudyManager.getInstance().showCohorts(container, user);
     Study study = StudyManager.getInstance().getStudy(container);
     List<CohortImpl> cohorts = null;

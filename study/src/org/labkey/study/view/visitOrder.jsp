@@ -15,26 +15,24 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.model.VisitImpl"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.study.StudyService"%>
+<%@ page import="org.labkey.api.study.Visit"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.model.VisitImpl" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyController.VisitReorderForm> me = (JspView<StudyController.VisitReorderForm>) HttpView.currentView();
-    ViewContext context = me.getViewContext();
 
     ActionURL returnURL;
-    if (context.getActionURL().getParameter("returnUrl") != null)
-        returnURL = new ActionURL(context.getActionURL().getParameter("returnUrl"));
+    if (getActionURL().getParameter("returnUrl") != null)
+        returnURL = new ActionURL(getActionURL().getParameter("returnUrl"));
     else
-        returnURL = new ActionURL(StudyController.ManageVisitsAction.class, context.getContainer());
+        returnURL = new ActionURL(StudyController.ManageVisitsAction.class, getContainer());
 %>
 <script type="text/javascript">
 function saveList(listName, hiddenElName)
@@ -95,7 +93,7 @@ function orderModule(listName, hiddenElName, down)
             <td></td>
             <th>Chronological Order<%= helpPopup("Chronological Order", "Chronological visit order is used to determine which visits occurred before " +
                     "or after others.  Visits are chronologically ordered when all participants move only downward through the visit list.  Any given " +
-                    StudyService.get().getSubjectNounSingular(getViewContext().getContainer()).toLowerCase() + " may skip some visits, depending on " +
+                    StudyService.get().getSubjectNounSingular(getContainer()).toLowerCase() + " may skip some visits, depending on " +
                     "cohort assignment or other factors.  It is generally not useful to set a chronological order for date-based studies.")%></th>
             <td></td>
         </tr>

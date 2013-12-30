@@ -15,17 +15,18 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.exp.ExperimentRunType" %>
-<%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
+<%@ page import="java.util.Set" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 JspView<Set<ExperimentRunType>> me = (JspView<Set<ExperimentRunType>>) HttpView.currentView();
 
 for (ExperimentRunType type : me.getModelBean())
 { %>
-    <a href="<%= ExperimentController.ExperimentUrlsImpl.get().getShowRunsURL(me.getViewContext().getContainer(), type) %>"><%= type.getDescription() %></a><br/>
+    <a href="<%= ExperimentController.ExperimentUrlsImpl.get().getShowRunsURL(getContainer(), type) %>"><%= type.getDescription() %></a><br/>
 <%
 }
 %>

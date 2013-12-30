@@ -30,9 +30,9 @@
 <%
     BaseWikiView view = (BaseWikiView)HttpView.currentView();
     ViewContext context = view.getViewContext();
-    User user = context.getUser();
+    User user = getUser();
     Wiki wiki = view.wiki;
-    Container c = (wiki != null && wiki.getContainerId() != null) ? ContainerManager.getForId(wiki.getContainerId()) : context.getContainer();
+    Container c = (wiki != null && wiki.getContainerId() != null) ? ContainerManager.getForId(wiki.getContainerId()) : getContainer();
 
     if (null == c)
     {

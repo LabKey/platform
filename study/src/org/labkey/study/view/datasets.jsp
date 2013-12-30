@@ -1,19 +1,19 @@
 <%
-    /*
-     * Copyright (c) 2006-2013 LabKey Corporation
-     *
-     * Licensed under the Apache License, Version 2.0 (the "License");
-     * you may not use this file except in compliance with the License.
-     * You may obtain a copy of the License at
-     *
-     *     http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing, software
-     * distributed under the License is distributed on an "AS IS" BASIS,
-     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     * See the License for the specific language governing permissions and
-     * limitations under the License.
-     */
+/*
+ * Copyright (c) 2006-2013 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
@@ -21,9 +21,6 @@
 <%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -31,12 +28,10 @@
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView me = (JspView) HttpView.currentView();
-    ViewContext ctx = me.getViewContext();
     StudyManager manager = StudyManager.getInstance();
-    Container container = ctx.getContainer();
+    Container container = getContainer();
     Study study = manager.getStudy(container);
-    User user = ctx.getUser();
+    User user = getUser();
     List<DataSetDefinition> datasets = manager.getDataSetDefinitions(study);
 
     if (null == datasets || datasets.isEmpty())
@@ -55,7 +50,7 @@
         if (!dataSet.isShowByDefault())
             continue;
 
-        if (dataSet.canRead(ctx.getUser()))
+        if (dataSet.canRead(getUser()))
             userDatasets.add(dataSet);
     }
 
@@ -63,11 +58,11 @@
 %>
 <table width="100%">
     <tr>
-        <td valign=top><%=renderDatasets(ctx, userDatasets, 0, datasetsPerCol + 1)%>
+        <td valign=top><%=renderDatasets(userDatasets, 0, datasetsPerCol + 1)%>
         </td>
-        <td valign=top><%=renderDatasets(ctx, userDatasets, datasetsPerCol + 1, (2 * datasetsPerCol) + 1)%>
+        <td valign=top><%=renderDatasets(userDatasets, datasetsPerCol + 1, (2 * datasetsPerCol) + 1)%>
         </td>
-        <td valign=top><%=renderDatasets(ctx, userDatasets, (2 * datasetsPerCol) + 1, userDatasets.size())%>
+        <td valign=top><%=renderDatasets(userDatasets, (2 * datasetsPerCol) + 1, userDatasets.size())%>
         </td>
     </tr>
 </table>
@@ -76,14 +71,14 @@
         out.print("<br>" + textLink("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, container)));
 %>
 <%!
-    String renderDatasets(ViewContext ctx, List<DataSetDefinition> datasets, int startIndex, int endIndex)
+    String renderDatasets(List<DataSetDefinition> datasets, int startIndex, int endIndex)
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (startIndex >= datasets.size() || startIndex >= endIndex)
             return "";
 
         String category = startIndex == 0 ? null : datasets.get(startIndex - 1).getCategory();
-        ActionURL datasetURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, ctx.getContainer());
+        ActionURL datasetURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, getContainer());
         sb.append("<table>\n");
         //Print a column header if necessary
         DataSet firstDataset = datasets.get(startIndex);

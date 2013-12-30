@@ -25,12 +25,12 @@ Before uploading datasets, an administrator must set up a "pipeline"
 directory where uploaded data will be stored.<br><br>
 
 <%
-    ViewContext context = HttpView.currentContext();
+    ViewContext context = getViewContext();
 
     if (context.hasPermission(AdminPermission.class))
     {
-        ActionURL pipelineUrl = urlProvider(PipelineUrls.class).urlSetup(context.getContainer());
-        pipelineUrl.addParameter("referer", context.getActionURL().getLocalURIString());
+        ActionURL pipelineUrl = urlProvider(PipelineUrls.class).urlSetup(getContainer());
+        pipelineUrl.addParameter("referer", getActionURL().getLocalURIString());
         out.print(textLink("Pipeline Setup", pipelineUrl));
         out.print(" ");
     }

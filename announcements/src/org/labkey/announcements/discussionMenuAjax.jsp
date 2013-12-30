@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
 <%@ page import="org.labkey.announcements.model.DiscussionServiceImpl" %>
 <%@ page import="org.labkey.api.data.Container" %>
@@ -24,18 +25,15 @@
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.announcements.AnnouncementsController" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     DiscussionServiceImpl.PickerView me = (DiscussionServiceImpl.PickerView) HttpView.currentView();
-    ViewContext context = me.getViewContext();
-    Container c = context.getContainer();
-    User user = context.getUser();
+    Container c = getContainer();
+    User user = getUser();
     AnnouncementModel[] announcementModels = me.announcementModels;
     if (null == announcementModels)
         announcementModels = new AnnouncementModel[0];
@@ -137,14 +135,14 @@
                 comma = "\n,";
             }
         }
-        if ((me.allowMultipleDiscussions || announcementModels.length == 0) && c.hasPermission(context.getUser(), InsertPermission.class))
+        if ((me.allowMultipleDiscussions || announcementModels.length == 0) && c.hasPermission(getUser(), InsertPermission.class))
         {
             %><%=text(comma)%>{text:'Start <%=text(me.allowMultipleDiscussions ? "new " : "")%>discussion',href:discussionMenu.pageUrl+'&discussion.start=true#discussionArea'},<%
             comma = "\n,";
         }
         %>'-'<%=text(comma)%>{text:'Email preferences',href:discussionMenu.emailPreferencesUrl}<%
         comma = "\n,";
-        if (c.hasPermission(context.getUser(), AdminPermission.class))
+        if (c.hasPermission(getUser(), AdminPermission.class))
         {
             %>
             <%=text(comma)%>{text:'Email admin',href:discussionMenu.adminEmailUrl},

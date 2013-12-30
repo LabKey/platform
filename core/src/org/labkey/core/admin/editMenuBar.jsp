@@ -21,7 +21,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();
-    ActionURL refreshURL = urlProvider(AdminUrls.class).getProjectSettingsMenuURL(me.getViewContext().getContainer());
+    ActionURL refreshURL = urlProvider(AdminUrls.class).getProjectSettingsMenuURL(getContainer());
 %>
 <style type="text/css">
     div.section

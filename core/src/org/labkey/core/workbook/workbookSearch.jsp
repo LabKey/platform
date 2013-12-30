@@ -23,8 +23,7 @@
 <%@ page import="org.labkey.core.workbook.WorkbookSearchBean" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<WorkbookSearchBean> me = (JspView<WorkbookSearchBean>) HttpView.currentView();
-    Container container = me.getViewContext().getContainer();
+    Container container = getContainer();
 %>
 <table><tr>
 <td>

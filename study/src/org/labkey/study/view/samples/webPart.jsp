@@ -35,12 +35,10 @@
     }
 %>
 <%
-    ViewContext currentContext = HttpView.currentContext();
     SamplesWebPart.SamplesWebPartBean bean = (SamplesWebPart.SamplesWebPartBean) HttpView.currentView().getModelBean();
 
-    Container c = currentContext.getContainer();
-    User user = currentContext.getUser();
-    String contextPath = currentContext.getContextPath();
+    Container c = getContainer();
+    User user = getUser();
     String time = Long.toString(System.currentTimeMillis());
     boolean isAdmin = c.hasPermission(user, AdminPermission.class);
 
@@ -66,9 +64,9 @@
             var details = values[i];
             innerHTML += '<tr class="labkey-header">';
             if (details.group)
-                innerHTML += '<td class="labkey-nav-tree-node"><a onclick="return toggleLink(this, false);" href="#"><img src="<%=h(contextPath)%>/_images/plus.gif"></a></td>';
+                innerHTML += '<td class="labkey-nav-tree-node"><a onclick="return toggleLink(this, false);" href="#"><img src="<%=getContextPath()%>/_images/plus.gif"></a></td>';
             else
-                innerHTML += '<td class="labkey-nav-tree-node"><img width="9" src="<%=h(contextPath)%>/_.gif"></td>';
+                innerHTML += '<td class="labkey-nav-tree-node"><img width="9" src="<%=getContextPath()%>/_.gif"></td>';
 
             var nextByGroup = '';
             innerHTML += '<td class="labkey-nav-tree-text" width="100%"><a href=\"' + details.url + '\">' +
@@ -146,7 +144,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a  style="color:#000000;width:auto" onclick="return toggleLink(this, false);" href="#"><img src="<%=h(contextPath)%>/_images/minus.gif" alt="" />
+                        <a  style="color:#000000;width:auto" onclick="return toggleLink(this, false);" href="#"><img src="<%=getContextPath()%>/_images/minus.gif" alt="" />
                             <span>View All Specimens</span></a><a style="width:auto"
                                onmouseover="return showHelpDivDelay(this, 'Vial Viewing Options', 'Vials may be viewed individually, with one row per vial, or by vial group, with one row per subject, time point, and sample type combination.');"
                                onmouseout="return hideHelpDivDelay();"
@@ -178,7 +176,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=h(contextPath)%>/_images/minus.gif" alt="" />
+                        <a style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=getContextPath()%>/_images/minus.gif" alt="" />
                             <span>Search Specimens</span>
                         </a>
                     </td>
@@ -216,7 +214,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=h(contextPath)%>/_images/plus.gif" alt="" />
+                        <a style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=getContextPath()%>/_images/plus.gif" alt="" />
                             <span>Specimen Reports</span>
                         </a>
                     </td>
@@ -244,7 +242,7 @@
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
                         <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#">
-                            <img src="<%=h(contextPath)%>/_images/plus.gif" alt="" />
+                            <img src="<%=getContextPath()%>/_images/plus.gif" alt="" />
                             <span>Specimen Requests</span>
                         </a>
                     </td>
@@ -253,7 +251,7 @@
                     <td style="padding-left:1em">
                         <table class="labkey-nav-tree-child">
                             <tbody>
-                            <% if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), RequestSpecimensPermission.class)) { %>
+                            <% if (getContainer().hasPermission(getUser(), RequestSpecimensPermission.class)) { %>
                             <tr class="labkey-nav-tree-row labkey-header">
                                 <td class="labkey-nav-tree-text"><a href="#" onclick="return clickLink('study-samples', 'showCreateSampleRequest')">Create New Request</a></td>
                             </tr>
@@ -287,7 +285,7 @@
                 <tr class="labkey-nav-tree-row labkey-header" >
                     <td class="labkey-nav-tree-text" align="left">
                         <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#">
-                            <img src="<%=h(contextPath)%>/_images/minus.gif" alt="" />
+                            <img src="<%=getContextPath()%>/_images/minus.gif" alt="" />
                             <span id="<%=text(groupHeading1)%>"></span>
                         </a>
                     </td>
@@ -306,7 +304,7 @@
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
                         <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#">
-                            <img src="<%=h(contextPath)%>/_images/plus.gif" alt="" />
+                            <img src="<%=getContextPath()%>/_images/plus.gif" alt="" />
                             <span id="<%=text(groupHeading2)%>"></span>
                         </a>
                     </td>
@@ -327,7 +325,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=h(contextPath)%>/_images/plus.gif" alt="" />
+                        <a style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=getContextPath()%>/_images/plus.gif" alt="" />
                             <span>Administration</span>
                         </a>
                     </td>

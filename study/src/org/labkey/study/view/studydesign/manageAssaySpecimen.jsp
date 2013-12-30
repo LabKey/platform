@@ -15,18 +15,17 @@
  * limitations under the License.
  */
 %>
-
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
+<%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.study.TimepointType" %>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -38,11 +37,9 @@
   }
 %>
 <%
-    JspView<Object> me = (JspView) HttpView.currentView();
-    ViewContext context = me.getViewContext();
-    ActionURL returnURL = context.getActionURL();
+    ActionURL returnURL = getActionURL();
 
-    Study study = StudyManager.getInstance().getStudy(context.getContainer());
+    Study study = StudyManager.getInstance().getStudy(getContainer());
     String visitDisplayName = "Visit";
     if (study != null && study.getTimepointType() == TimepointType.DATE)
         visitDisplayName = "Timepoint";
@@ -534,11 +531,11 @@ function removeSVC(el, scRowId, vRowId)
 <span style='font-style: italic; font-size: smaller;'>* Double click to edit an assay/specimen configuration</span>
 <br/><br/><br/>
 <div id="AssaySpecimenVisitPanel"></div>
-<%=textLink("Create New " + visitDisplayName, new ActionURL(StudyController.CreateVisitAction.class, context.getContainer()).addReturnURL(returnURL))%>
+<%=textLink("Create New " + visitDisplayName, new ActionURL(StudyController.CreateVisitAction.class, getContainer()).addReturnURL(returnURL))%>
 <%
     if (study != null && study.getTimepointType() == TimepointType.VISIT && study.getVisits(Visit.Order.DISPLAY).size() > 1)
     {
-        %><%= textLink("Change Visit Order", new ActionURL(StudyController.VisitOrderAction.class, context.getContainer()).addReturnURL(returnURL)) %><%
+        %><%= textLink("Change Visit Order", new ActionURL(StudyController.VisitOrderAction.class, getContainer()).addReturnURL(returnURL)) %><%
     }
 %>
 <%=textLink("Manage " + visitDisplayName + "s", StudyController.ManageVisitsAction.class)%>

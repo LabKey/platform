@@ -34,7 +34,7 @@
     SpecimenComment comment = SampleManager.getInstance().getSpecimenCommentForVial(sample);
     ActionURL commentsLink = new ActionURL(SpecimenController.UpdateCommentsAction.class, sample.getContainer());
     commentsLink.addParameter("rowId", sample.getRowId());
-    commentsLink.addParameter("referrer", getViewContext().getActionURL().getLocalURIString());
+    commentsLink.addParameter("referrer", getActionURL().getLocalURIString());
 %>
 <table>
     <tr>
@@ -65,7 +65,7 @@
         <th align="right">Comments and QC</th>
         <td>
             <%= h(comment != null ? comment.getComment() : null) %>
-            <% if (sample.getContainer().hasPermission(getViewContext().getUser(), SetSpecimenCommentsPermission.class)) { %>
+            <% if (sample.getContainer().hasPermission(getUser(), SetSpecimenCommentsPermission.class)) { %>
                 <%= textLink("update", commentsLink) %>
             <% } %>
         </td>

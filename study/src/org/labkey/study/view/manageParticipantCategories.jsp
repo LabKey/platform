@@ -1,33 +1,29 @@
 <%
-    /*
-    * Copyright (c) 2011-2013 LabKey Corporation
-    *
-    * Licensed under the Apache License, Version 2.0 (the "License");
-    * you may not use this file except in compliance with the License.
-    * You may obtain a copy of the License at
-    *
-    *     http://www.apache.org/licenses/LICENSE-2.0
-    *
-    * Unless required by applicable law or agreed to in writing, software
-    * distributed under the License is distributed on an "AS IS" BASIS,
-    * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    * See the License for the specific language governing permissions and
-    * limitations under the License.
-    */
+/*
+ * Copyright (c) 2011-2013 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.study.Study"%>
 <%@ page import="org.labkey.api.study.permissions.SharedParticipantGroupPermission" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
@@ -37,13 +33,12 @@
     }
 %>
 <%
-    JspView<Object> me = (JspView<Object>) HttpView.currentView();
-    Container c = me.getViewContext().getContainer();
+    Container c = getContainer();
     Study s = StudyManager.getInstance().getStudy(c);
     String subjectNounSingular = s.getSubjectNounSingular();
     String subjectNounPlural = s.getSubjectNounPlural();
     String subjectNounColName = s.getSubjectColumnName();
-    boolean isAdmin = c.hasPermission(getViewContext().getUser(), SharedParticipantGroupPermission.class) || c.hasPermission(getViewContext().getUser(), AdminPermission.class);
+    boolean isAdmin = c.hasPermission(getUser(), SharedParticipantGroupPermission.class) || c.hasPermission(getUser(), AdminPermission.class);
 %>
 
 <style type="text/css">
@@ -55,8 +50,8 @@
     }
 </style>
 
-<p><%= PageFlowUtil.filter(subjectNounSingular) %> groups allow you to quickly filter data in a study to groups of <%= PageFlowUtil.filter(subjectNounPlural.toLowerCase()) %> you define.
-    Use this page to define a group and add <%= PageFlowUtil.filter(subjectNounPlural.toLowerCase()) %> to it.</p>
+<p><%= h(subjectNounSingular) %> groups allow you to quickly filter data in a study to groups of <%= h(subjectNounPlural.toLowerCase()) %> you define.
+    Use this page to define a group and add <%= h(subjectNounPlural.toLowerCase()) %> to it.</p>
 <div id="participantCategoriesGrid"></div>
 
 <script type="text/javascript">
@@ -87,9 +82,7 @@
             });
 
             dialog.show();
-
-
-        }
+        };
 
         var deleteParticipantGroup = function(row){
             // todo: do we need to handle deletion of a shared/public group differently?

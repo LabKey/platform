@@ -1,19 +1,19 @@
 <%
-    /*
-    * Copyright (c) 2009-2013 LabKey Corporation
-    *
-    * Licensed under the Apache License, Version 2.0 (the "License");
-    * you may not use this file except in compliance with the License.
-    * You may obtain a copy of the License at
-    *
-    *     http://www.apache.org/licenses/LICENSE-2.0
-    *
-    * Unless required by applicable law or agreed to in writing, software
-    * distributed under the License is distributed on an "AS IS" BASIS,
-    * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    * See the License for the specific language governing permissions and
-    * limitations under the License.
-    */
+/*
+ * Copyright (c) 2009-2013 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 %>
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
@@ -63,7 +63,7 @@
         }
     }
 
-    String subjectNounSingle = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
+    String subjectNounSingle = StudyService.get().getSubjectNounSingular(getContainer());
 %>
 <labkey:errors/>
 
@@ -212,7 +212,7 @@
             <td>&nbsp;</td>
             <td>
                 <%=generateSubmitButton("Save")%>
-                <%=generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, HttpView.currentContext().getContainer()))%>
+                <%=generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, getContainer()))%>
             </td>
         </tr>
     </table>

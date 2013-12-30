@@ -24,7 +24,7 @@
 <%
     QueryController.DeleteQueryAction action = (QueryController.DeleteQueryAction) HttpView.currentModel();
     QueryDefinition queryDef = action._queryDef;
-    Collection<String> dependents = queryDef == null ? null : queryDef.getDependents(getViewContext().getUser());
+    Collection<String> dependents = queryDef == null ? null : queryDef.getDependents(getUser());
 %>
 <labkey:errors></labkey:errors>
 <p>Are you sure you want to delete the query '<%=h(action._form.getQueryName())%>'?</p>

@@ -26,8 +26,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ViewContext> me = (JspView<ViewContext>) HttpView.currentView();
-    ViewContext context = me.getViewContext();
-    Container current = context.getContainer();
+    Container current = getContainer();
     List<Container> containers;
     boolean reorderingProjects = current.isRoot() || current.getParent().isRoot();
     if (current.isRoot())
@@ -145,5 +144,5 @@ function toggleItemSelector()
     </table>
 </p>
     <input type="hidden" name="order" value="">
-    <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", reorderingProjects ? urlProvider(AdminUrls.class).getAdminConsoleURL() : urlProvider(AdminUrls.class).getManageFoldersURL(context.getContainer())) %>
+    <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", reorderingProjects ? urlProvider(AdminUrls.class).getAdminConsoleURL() : urlProvider(AdminUrls.class).getManageFoldersURL(getContainer())) %>
 </form>

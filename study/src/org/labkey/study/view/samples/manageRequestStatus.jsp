@@ -17,19 +17,17 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.model.SampleRequestStatus"%>
 <%@ page import="org.labkey.study.SampleManager"%>
-<%@ page import="java.util.List"%>
-<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController"%>
+<%@ page import="org.labkey.study.model.SampleRequestStatus"%>
 <%@ page import="org.labkey.study.samples.notifications.ActorNotificationRecipientSet" %>
-<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<SpecimenController.ManageRequestBean> me = (JspView<SpecimenController.ManageRequestBean>) HttpView.currentView();
     SpecimenController.ManageRequestBean bean = me.getModelBean();
-    ViewContext context = me.getViewContext();
-    List<SampleRequestStatus> statuses = SampleManager.getInstance().getRequestStatuses(context.getContainer(), context.getUser());
+    List<SampleRequestStatus> statuses = SampleManager.getInstance().getRequestStatuses(getContainer(), getUser());
 %>
 <labkey:errors />
 <form action="<%=h(buildURL(SpecimenController.ManageRequestStatusAction.class))%>m" enctype="multipart/form-data" method="POST">

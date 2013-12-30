@@ -27,10 +27,9 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 JspView<SearchController.AdminForm> me = (JspView<SearchController.AdminForm>) HttpView.currentView();
-User user = me.getViewContext().getUser();
 SearchController.AdminForm form = me.getModelBean();
+User user = getUser();
 SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-
 %><labkey:errors /><%
     if (!StringUtils.isEmpty(form.getMessage()))
     { %>

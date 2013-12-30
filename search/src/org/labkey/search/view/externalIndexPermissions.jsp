@@ -28,11 +28,11 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SecurableResource> me = (JspView<SecurableResource>)HttpView.currentView();
-    Container c = getViewContext().getContainer();
+    Container c = getContainer();
     ActionURL doneURL = new ActionURL(SearchController.AdminAction.class, c);
     Container project = c.getProject();
     Container root = ContainerManager.getRoot();
-    User user = getViewContext().getUser();
+    User user = getUser();
     SecurableResource resource = me.getModelBean();
 %>
 <style type="text/css">

@@ -109,7 +109,7 @@
     <tr>
         <td>New Datasets can be added to this study at any time.</td>
         <%
-            ActionURL createURL = new ActionURL(StudyController.DefineDatasetTypeAction.class, getViewContext().getContainer());
+            ActionURL createURL = new ActionURL(StudyController.DefineDatasetTypeAction.class, getContainer());
             createURL.addParameter("autoDatasetId", "true");
         %>
         <td><%= textLink("Create New Dataset", createURL)%></td>

@@ -47,7 +47,7 @@
                     {
                 %>
                 <li>
-                    <p style="color:red;"><%=h(HttpView.currentContext().getMessage(error))%></p>
+                    <p style="color:red;"><%=h(getViewContext().getMessage(error))%></p>
                 </li>
                 <%
                     }

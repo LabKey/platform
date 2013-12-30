@@ -29,7 +29,7 @@
 <%
     JspView<WikiController.PrintAllBean> me = (JspView<WikiController.PrintAllBean>) HttpView.currentView();
     WikiController.PrintAllBean bean = me.getModelBean();
-    Container c = getViewContext().getContainer();
+    Container c = getContainer();
 %>
 <div style="padding:10px;">
     <table width="100%">

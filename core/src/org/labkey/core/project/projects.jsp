@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -43,8 +42,7 @@
     int webPartId = me.getModelBean().getRowId();
     JSONObject jsonProps = new JSONObject(me.getModelBean().getPropertyMap());
     String renderTarget = "project-" + me.getModelBean().getIndex();
-    ViewContext ctx = me.getViewContext();
-    boolean isAdmin = ctx.getUser().isSiteAdmin();
+    boolean isAdmin = getUser().isSiteAdmin();
     boolean hasPermission;
 
     Container target;
@@ -52,7 +50,7 @@
     if(containerPath == null || "".equals(containerPath))
     {
         hasPermission = true; //this means current container
-        target = ctx.getContainer();
+        target = getContainer();
     }
     else
     {
@@ -62,7 +60,7 @@
             // Could also be an entityId
             target = ContainerManager.getForId(containerPath);
         }
-        hasPermission = target != null && target.hasPermission(ctx.getUser(), ReadPermission.class);
+        hasPermission = target != null && target.hasPermission(getUser(), ReadPermission.class);
 
         //normalize entityId vs path.
         jsonProps.put("containerPath", target.getPath());

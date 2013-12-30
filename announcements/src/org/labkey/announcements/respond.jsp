@@ -41,7 +41,7 @@
     DiscussionService.Settings settings = bean.settings;
     AnnouncementForm form = bean.form;
 
-    Container c = me.getViewContext().getContainer();
+    Container c = getContainer();
 
     String respondUrl = AnnouncementsController.getRespondURL(c).getEncodedLocalURIString();
 %><%=formatMissedErrors("form")%>

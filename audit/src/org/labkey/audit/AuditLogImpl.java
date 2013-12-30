@@ -736,7 +736,6 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
         Map<FieldKey, ColumnInfo> sourceColumns = QueryService.get().getColumns(sourceTable, sourceFields);
 
-
         // Create map of columns (multiple sourceColumns may be mapped to the same targetColumn)
         Map<FieldKey, String> legacyNameMap = provider.legacyNameMap();
         MultiValueMap<String, ColumnInfo> colMap = new MultiValueMap<String, ColumnInfo>(new CaseInsensitiveHashMap<Collection<ColumnInfo>>())
@@ -747,6 +746,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
                 return new LinkedList<>();
             }
         };
+
         for (ColumnInfo c : sourceColumns.values())
         {
             if (null != c.getPropertyURI())
@@ -758,7 +758,6 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
             if (newName != null)
                 colMap.put(newName, c);
         }
-
 
         // Generate SQL insert
         SQLFragment insertInto = new SQLFragment("INSERT INTO ").append(targetTable.getSelectName()).append(" (");

@@ -15,16 +15,15 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.ViewContext"%>
+<%@ page import="org.labkey.study.controllers.StudyController"%>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.importer.RequestabilityManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     // TODO: This should use Selector.js
-    ViewContext context = HttpView.currentContext();
+    Container c = getContainer();
 %>
 <script type="text/javascript">
     Ext.QuickTips.init();
@@ -382,7 +381,7 @@
     {
         Ext.Msg.hide();
         LABKEY.setDirty(false);
-        document.location = '<%= new ActionURL(StudyController.ManageStudyAction.class, context.getContainer())%>';
+        document.location = '<%= new ActionURL(StudyController.ManageStudyAction.class, c)%>';
     }
 
     function saveFailed(response, options)
@@ -436,7 +435,7 @@
                 boolean first = true;
                 for (RequestabilityManager.RuleType type : RequestabilityManager.RuleType.values())
                 {
-                    ActionURL defaultTestURL = type.getDefaultTestURL(context.getContainer());
+                    ActionURL defaultTestURL = type.getDefaultTestURL(c);
                     RequestabilityManager.MarkType defaultMarkType = type.getDefaultMarkType();
                 %>
                     <%= text(!first ? "," : "") %>new Ext.menu.Item({
@@ -523,7 +522,7 @@
             text:'Cancel',
             id: 'btn_cancel',
             listeners: {
-                click: function(button, event) { document.location = '<%= new ActionURL(StudyController.ManageStudyAction.class, context.getContainer())%>'; }
+                click: function(button, event) { document.location = '<%= new ActionURL(StudyController.ManageStudyAction.class, c)%>'; }
             }
         });
         
@@ -540,13 +539,13 @@
         var initialData = [
         <%
         first = true;
-        for (RequestabilityManager.RequestableRule rule : RequestabilityManager.getInstance().getRules(context.getContainer()))
+        for (RequestabilityManager.RequestableRule rule : RequestabilityManager.getInstance().getRules(c))
         {
         %>
             <%= text(!first ? "," : "") %>
             ['<%= h(rule.getType().name()) %>', '<%= h(rule.getRuleData()) %>', '<%= h(rule.getName()) %>',
                 '<%= h(rule.getMarkType().getLabel()) %>',
-            '<%= h(null != rule.getTestURL(context.getUser()) ? rule.getTestURL(context.getUser()).getLocalURIString() : "") %>'
+            '<%= h(null != rule.getTestURL(getUser()) ? rule.getTestURL(getUser()).getLocalURIString() : "") %>'
             ]
         <%
             first = false;

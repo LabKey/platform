@@ -30,10 +30,10 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 JspView<ExternalIndexProperties> me = (JspView<ExternalIndexProperties>) HttpView.currentView();
-User user = me.getViewContext().getUser();
 ExternalIndexProperties props = me.getModelBean();
+User user = getUser();
 SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-String message = me.getViewContext().getActionURL().getParameter("externalMessage");
+String message = getActionURL().getParameter("externalMessage");
 
 if (null != ss)
 {

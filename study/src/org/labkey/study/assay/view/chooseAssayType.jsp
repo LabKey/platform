@@ -19,26 +19,23 @@
 <%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.study.assay.AssayProvider" %>
-<%@ page import="org.labkey.api.study.permissions.DesignAssayPermission" %>
+<%@ page import="org.labkey.api.study.assay.AssayService" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.assay.AssayController" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.labkey.api.study.assay.AssayService" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.LinkedHashMap" %>
+<%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     AssayController.ChooseAssayBean bean = (AssayController.ChooseAssayBean)getModelBean();
-    ViewContext context = getViewContext();
     List<AssayProvider> providers = bean.getProviders();
     Map<String, String> locations = new LinkedHashMap<>();
     String defaultLocation = null;
 
-    for (Pair<Container, String> entry : AssayService.get().getLocationOptions(context.getContainer(), context.getUser()))
+    for (Pair<Container, String> entry : AssayService.get().getLocationOptions(getContainer(), getUser()))
     {
         locations.put(entry.getKey().getId(), entry.getValue());
         if (defaultLocation == null)
@@ -50,9 +47,9 @@
     The assay type defines things like how the data is parsed and what kinds of analysis tools are provided.
 </p>
 <p>If you want to import an existing assay design in the <a href="<%= h(new HelpTopic("XarTutorial").getHelpTopicHref()) %>">XAR file format</a> (a .xar or .xar.xml file), you can
-    <%= textLink("upload", urlProvider(ExperimentUrls.class).getUploadXARURL(getViewContext().getContainer())) %>it directly
+    <%= textLink("upload", urlProvider(ExperimentUrls.class).getUploadXARURL(getContainer())) %>it directly
     or upload the file into this folder's pipeline directory and import using the
-    <%= textLink("Data Pipeline", urlProvider(PipelineUrls.class).urlBrowse(getViewContext().getContainer(), getViewContext().getActionURL().toString())) %>
+    <%= textLink("Data Pipeline", urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getActionURL().toString())) %>
 </p>
 <p>
     To create a new assay design, please choose which assay type you would like to customize with your own settings and input options.
@@ -89,7 +86,7 @@
         %>
         <tr>
             <td />
-            <td><%= generateSubmitButton("Next" )%><%= generateButton("Cancel", new ActionURL(AssayController.BeginAction.class, getViewContext().getContainer())) %></td>
+            <td><%= generateSubmitButton("Next" )%><%= generateButton("Cancel", new ActionURL(AssayController.BeginAction.class, getContainer())) %></td>
         </tr>
     </table>
 </form>

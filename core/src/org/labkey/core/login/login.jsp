@@ -24,7 +24,6 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginBean" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginForm" %>
@@ -33,11 +32,10 @@
     HttpView<LoginBean> me = (HttpView<LoginBean>) HttpView.currentView();
     LoginBean bean = me.getModelBean();
 
-    ViewContext context = HttpView.currentContext();
-    User user = context.getUser();
+    User user = getUser();
     LoginForm form = bean.form;
     URLHelper returnURL = form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL());
-    LookAndFeelProperties props = LookAndFeelProperties.getInstance(context.getContainer());
+    LookAndFeelProperties props = LookAndFeelProperties.getInstance(getContainer());
     boolean agreeOnly = bean.agreeOnly;
 
     if (agreeOnly)
@@ -62,7 +60,7 @@
     }
     if (!agreeOnly)
     {
-        String logoHtml = AuthenticationManager.getLoginPageLogoHtml(context.getActionURL());
+        String logoHtml = AuthenticationManager.getLoginPageLogoHtml(getActionURL());
         if (null != logoHtml)
         { %>
         <tr><td colspan="2"><%=text(logoHtml)%></td></tr>

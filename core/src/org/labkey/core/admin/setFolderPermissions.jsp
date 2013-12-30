@@ -34,7 +34,7 @@
 %>
 <%
     JspView<AdminController.SetFolderPermissionsForm> me = (JspView<AdminController.SetFolderPermissionsForm>) HttpView.currentView();
-    Container c = me.getViewContext().getContainer();
+    Container c = getContainer();
 %>
 <%=formatMissedErrors("form")%>
 <div id="folderPermissionsDiv"></div>

@@ -59,8 +59,8 @@
     JspView<SubjectsWebPart.SubjectsBean> me = (JspView<SubjectsWebPart.SubjectsBean>) HttpView.currentView();
     SubjectsWebPart.SubjectsBean bean = me.getModelBean();
 
-    Container container  = bean.getViewContext().getContainer();
-    User user            = bean.getViewContext().getUser();
+    Container container  = getContainer();
+    User user            = getUser();
     Study study = StudyService.get().getStudy(container);
 
     String singularNoun  = StudyService.get().getSubjectNounSingular(container);

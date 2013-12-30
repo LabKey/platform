@@ -27,8 +27,7 @@
 <%
     JspView<PipelineStatusFileImpl> me = (JspView<PipelineStatusFileImpl>) HttpView.currentView();
     PipelineStatusFile bean = me.getModelBean();
-
-    Container c = HttpView.currentContext().getContainer();
+    Container c = getContainer();
 
     String escalationUsers = StringUtils.defaultString(org.labkey.pipeline.api.PipelineEmailPreferences.get().getEscalationUsers(c));
     String[] users = escalationUsers.split(";");

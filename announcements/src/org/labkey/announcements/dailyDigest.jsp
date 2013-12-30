@@ -17,14 +17,13 @@
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.announcements.DailyDigestPage" %>
 <html>
 <head>
-<%=PageFlowUtil.getStylesheetIncludes(c, getViewContext().getUser())%>
+<%=PageFlowUtil.getStylesheetIncludes(c, getUser())%>
 </head>
 
 <body>
@@ -78,7 +77,7 @@
 <hr size="1">
 
 <table width=100%>
-    <tr><td>You have received this email because you are signed up for a daily digest of new posts to <a href="<%=h(boardURL.getURIString())%>"><%= PageFlowUtil.filter(boardPath) %></a> at <a href="<%=h(siteUrl)%>"><%=h(siteUrl)%></a>.
+    <tr><td>You have received this email because you are signed up for a daily digest of new posts to <a href="<%=h(boardURL.getURIString())%>"><%= h(boardPath) %></a> at <a href="<%=h(siteUrl)%>"><%=h(siteUrl)%></a>.
   If you no longer wish to receive these notifications, please <a href="<%=h(removeURL.getURIString())%>">change your email preferences</a>.</td></tr>
 </table>    
 </body>

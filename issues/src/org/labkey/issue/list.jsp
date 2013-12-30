@@ -15,19 +15,17 @@
  * limitations under the License.
  */
 %>
-<%@page import="org.labkey.api.security.permissions.InsertPermission"%>
+<%@page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.search.SearchUrls"%>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
-<%@ page import="org.labkey.api.search.SearchUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    ViewContext context = HttpView.getRootContext();
-    String contextPath = context.getContextPath();
-    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+    Container c = getContainer();
+    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c);
 
     if (request.getParameter("error") != null)
     {
@@ -36,19 +34,19 @@
 %>
 
 <table><tr>
-    <td nowrap><form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, context.getContainer()) %>" method="get">
+    <td nowrap><form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, c) %>" method="get">
     <%
-        if (context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
+        if (c.hasPermission(getUser(), InsertPermission.class))
         {
     %>
-            <%=generateButton("New " + names.singularName.getSource(), new ActionURL(IssuesController.InsertAction.class, context.getContainer()))%>&nbsp;&nbsp;&nbsp;
+            <%=generateButton("New " + names.singularName.getSource(), new ActionURL(IssuesController.InsertAction.class, c))%>&nbsp;&nbsp;&nbsp;
     <%
         }
     %><input type="text" size="5" name="issueId"/>
         <%=PageFlowUtil.generateSubmitButton("Jump to " + names.singularName.getSource(), "", "align=\"top\" vspace=\"2\"")%></form></td>
     <td width=100%>&nbsp;</td>
     <td align="right" nowrap>
-        <form action="<%=h(urlProvider(SearchUrls.class).getSearchURL(context.getContainer(), null))%>" method="get">
+        <form action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>" method="get">
             <input type="text" size="30" name="q" value="">
             <input type="hidden" name="template" value="<%=h(IssuesController.IssueSearchResultTemplate.NAME)%>">
             <%=PageFlowUtil.generateSubmitButton("Search", "", "align=\"top\" vspace=\"2\"")%>
@@ -57,9 +55,9 @@
 </tr></table>
 
 <%
-if ("true".equals(context.getActionURL().getParameter("navigateInPlace")))
+if ("true".equals(getActionURL().getParameter("navigateInPlace")))
 {
-%><script src="<%=h(contextPath)%>/issues/hashbang.js"></script>
+%><script src="<%=getContextPath()%>/issues/hashbang.js"></script>
 <script>
 if (!Ext.isDefined(window.navigationStrategy))
 {

@@ -22,7 +22,6 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="java.util.HashMap" %>
@@ -30,12 +29,9 @@
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
-
 <%
     JspView<StudyController.StudySnapshotForm> me = (JspView<StudyController.StudySnapshotForm>) HttpView.currentView();
     StudyController.StudySnapshotForm bean = me.getModelBean();
-    ViewContext context = HttpView.currentContext();
 
     Map<String, String> columnMap = new HashMap<>();
     for (String name : bean.getSnapshotColumns())
@@ -93,8 +89,8 @@
 
         %>
     </table>
-    <%  if (context.getActionURL().getParameter(DataSetDefinition.DATASETKEY) != null) { %>
-            <input type="hidden" name="<%=DataSetDefinition.DATASETKEY%>" value="<%=context.getActionURL().getParameter(DataSetDefinition.DATASETKEY)%>">
+    <%  if (getActionURL().getParameter(DataSetDefinition.DATASETKEY) != null) { %>
+            <input type="hidden" name="<%=DataSetDefinition.DATASETKEY%>" value="<%=getActionURL().getParameter(DataSetDefinition.DATASETKEY)%>">
     <%  } %>
     <input type="hidden" name="action" value="<%=StudyController.StudySnapshotForm.CREATE_SNAPSHOT%>" id="action">
     <input type="hidden" name="snapshotDatasetId" value="<%=bean.getSnapshotDatasetId()%>">

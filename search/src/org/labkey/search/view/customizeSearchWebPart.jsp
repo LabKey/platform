@@ -20,12 +20,10 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.search.view.SearchWebPartFactory" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>)HttpView.currentView();
     Portal.WebPart webPart = me.getModelBean();
-    ViewContext ctx = me.getViewContext();
     boolean includeSubfolders = SearchWebPartFactory.includeSubfolders(webPart);
 %>
 <form name="frmCustomize" method="post">
@@ -37,7 +35,7 @@
   <tr>
     <td colspan=2>
       <%=generateSubmitButton("Submit")%>
-      <%=generateButton("Cancel", ctx.getContainer().getStartURL(ctx.getUser()))%>
+      <%=generateButton("Cancel", getContainer().getStartURL(getUser()))%>
     </td>
   </tr>
 </table>

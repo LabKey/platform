@@ -28,7 +28,7 @@
     JspView<StudyController.ManageQCStatesBean> me = (JspView<StudyController.ManageQCStatesBean>) HttpView.currentView();
     StudyController.ManageQCStatesBean bean = me.getModelBean();
     ActionURL cancelUrl = bean.getReturnUrl() != null ? new ActionURL(bean.getReturnUrl()) :
-        new ActionURL(StudyController.ManageStudyAction.class, me.getViewContext().getContainer());
+        new ActionURL(StudyController.ManageStudyAction.class, getContainer());
 %>
 <labkey:errors/><br>
 <form action="<%=h(buildURL(StudyController.ManageQCStatesAction.class))%>" name="manageQCStates" method="POST">
@@ -58,7 +58,7 @@
             <tr>
             </tr>
             <%
-                ActionURL baseDeleteStateURL = new ActionURL(StudyController.DeleteQCStateAction.class, me.getViewContext().getContainer());
+                ActionURL baseDeleteStateURL = new ActionURL(StudyController.DeleteQCStateAction.class, getContainer());
                 baseDeleteStateURL.addParameter("manageReturnUrl", bean.getReturnUrl());
                 for (QCState state : bean.getQCStates())
                 {

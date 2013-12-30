@@ -28,10 +28,9 @@
     HttpView<UserController.ImpersonateUserBean> me = (HttpView<UserController.ImpersonateUserBean>) HttpView.currentView();
     UserController.ImpersonateUserBean bean = me.getModelBean();
 
-    ViewContext context = HttpView.currentContext();
-    User user = context.getUser();
-    Container c = context.getContainer();
-    ActionURL returnURL = context.getActionURL();
+    User user = getUser();
+    Container c = getContainer();
+    ActionURL returnURL = getActionURL();
 
     if (bean.emails.isEmpty())
         return;

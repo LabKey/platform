@@ -53,11 +53,10 @@
 <%
     JspView<SearchForm> me = (JspView<SearchForm>) HttpView.currentView();
     SearchForm form = me.getModelBean();
-    ViewContext ctx = me.getViewContext();
-    Container c = ctx.getContainer();
-    User user = ctx.getUser();
-    String contextPathStr = ctx.getContextPath();
-    Path contextPath = Path.parse(contextPathStr);
+    ViewContext ctx = getViewContext();
+    Container c = getContainer();
+    User user = getUser();
+    Path contextPath = Path.parse(ctx.getContextPath());
     SearchService ss = ServiceRegistry.get().getService(SearchService.class);
     boolean wideView = true;
     List<String> q = new ArrayList<>(Arrays.asList(form.getQ()));
@@ -122,10 +121,10 @@
         <input type="hidden" id="hidden-template" name="template" value="<%=form.getTemplate()%>"><%
     }
 
-    if (null != getViewContext().getActionURL().getParameter("status"))
+    if (null != getActionURL().getParameter("status"))
     {
         %>
-        <input type="hidden" id="search-type" name="status" value="<%=getViewContext().getActionURL().getParameter("status")%>"><%
+        <input type="hidden" id="search-type" name="status" value="<%=getActionURL().getParameter("status")%>"><%
     }   %>
 
         </td></tr>
@@ -138,7 +137,7 @@
 <table width=100% cellpadding="0" cellspacing="0" style="padding-left: 10px;">
     <tr>
         <td>
-            <input id="adv-search-btn" type="image" src="<%=contextPathStr%>/_images/plus.gif" onclick="showPanel(); return false;"><span> Advanced Search</span>
+            <input id="adv-search-btn" type="image" src="<%=getContextPath()%>/_images/plus.gif" onclick="showPanel(); return false;"><span> Advanced Search</span>
         </td>
     </tr>
     <tr>
@@ -158,7 +157,7 @@
     if (null != StringUtils.trimToNull(queryString))
     {
         %><table cellspacing=0 cellpadding=0 style="margin-top:10px;">
-        <tr><td valign="top" align="left" style="padding-right:10px;"><img title="" src="<%=contextPathStr%>/_.gif" width=500 height=1>
+        <tr><td valign="top" align="left" style="padding-right:10px;"><img title="" src="<%=getContextPath()%>/_.gif" width=500 height=1>
            <div id="searchResults" class="labkey-search-results">
                <%
 
@@ -248,7 +247,7 @@
             { %>
                 <div style="text-align:center;"><%
 
-                ActionURL currentURL = ctx.getActionURL();
+                ActionURL currentURL = getActionURL();
 
                 if (pageNo > 1)
                 {
@@ -281,12 +280,12 @@
 
                 if (result.hits.size() > 0)
                 {
-                    %><td valign="top" align="left"><img title="" src="<%=contextPathStr%>/_.gif" width=200 height=1><%
+                    %><td valign="top" align="left"><img title="" src="<%=getContextPath()%>/_.gif" width=200 height=1><%
                     %><div id="navigationResults" class="labkey-search-navresults"><h3>Folders</h3><%
 
                     for (SearchService.SearchHit hit : result.hits)
                     {
-                        %><table><tr><td><img src="<%=contextPathStr%>/_icons/folder.gif"></td><td><a class="labkey-search-title" href="<%=h(hit.url)%>"><%=h(hit.title)%></a></td></tr></table><%
+                        %><table><tr><td><img src="<%=getContextPath()%>/_icons/folder.gif"></td><td><a class="labkey-search-title" href="<%=h(hit.url)%>"><%=h(hit.title)%></a></td></tr></table><%
                         String summary = StringUtils.trimToNull(hit.summary);
                         if (null != summary)
                         {
@@ -394,7 +393,7 @@ Collection<NavTree> getActions(SearchService.SearchHit hit)
     WebdavResource r = ss.resolveResource(docid);
     if (null == r || !r.exists())
         return null;
-    Collection<NavTree> nav = r.getActions(HttpView.currentContext().getUser());
+    Collection<NavTree> nav = r.getActions(getUser());
     return nav.isEmpty() ? null : nav;
 }
 
@@ -414,7 +413,7 @@ NavTree getDocumentContext(Container c, SearchService.SearchHit hit)
     else
     {
         String text = c.getPath();
-        ActionURL url = c.getStartURL(getViewContext().getUser());
+        ActionURL url = c.getStartURL(getUser());
 
         try
         {

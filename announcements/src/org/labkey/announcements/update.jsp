@@ -35,8 +35,8 @@
 
     AnnouncementModel ann = bean.annModel;
     DiscussionService.Settings settings = bean.settings;
-    ActionURL baseUrl = me.getViewContext().cloneActionURL().deleteParameters();
-    ActionURL completeUserUrl = new ActionURL(AnnouncementsController.CompleteUserAction.class, me.getViewContext().getContainer());
+    ActionURL baseUrl = getViewContext().cloneActionURL().deleteParameters();
+    ActionURL completeUserUrl = new ActionURL(AnnouncementsController.CompleteUserAction.class, getContainer());
 %>
 <%=formatMissedErrors("form")%>
 <script type="text/javascript">

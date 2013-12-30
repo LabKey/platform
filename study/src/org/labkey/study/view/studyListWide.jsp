@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.module.FolderType" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
-<%@ page import="org.labkey.api.module.FolderType" %>
-<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <style type="text/css">
     div.labkey-study-list div.study-header {padding-top:6px;}
@@ -30,11 +30,9 @@
     span.labkey-study-investigator {float: right; width:150px}
 </style>
 <%
-    JspView me = (JspView) HttpView.currentView();
-    ViewContext ctx = me.getViewContext();
-    Container c = ctx.getContainer();
+    Container c = getContainer();
 
-    Study[] studies = StudyManager.getInstance().getAllStudies(ctx.getContainer(), ctx.getUser());
+    Study[] studies = StudyManager.getInstance().getAllStudies(c, getUser());
     if (studies.length == 0)
     {
         out.print(text("No Studies found in " + (c.equals(c.getProject()) ? "project " : "folder ") + h(c.getName()) + " or child folders."));
@@ -50,9 +48,9 @@
         <%
         ActionURL url;
         if (studyFolderType.equals(study.getContainer().getFolderType()))
-            url = studyFolderType.getStartURL(study.getContainer(), ctx.getUser());
+            url = studyFolderType.getStartURL(study.getContainer(), getUser());
         else
-            url = new ActionURL(StudyController.BeginAction.class,study.getContainer());
+            url = new ActionURL(StudyController.BeginAction.class, study.getContainer());
         %>
         <span class="labkey-study-title"><a href="<%=url%>"><%=h(study.getLabel())%></a></span>
     <%if(null != study.getInvestigator()) { %>

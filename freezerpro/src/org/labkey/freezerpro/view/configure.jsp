@@ -15,16 +15,12 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.json.JSONArray" %>
-<%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
-<%@ page import="org.labkey.api.study.assay.AssayService" %>
+<%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.freezerpro.FreezerProController" %>
 <%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -39,7 +35,6 @@
 <%
     JspView<FreezerProController.FreezerProConfig> me = (JspView<FreezerProController.FreezerProConfig>)HttpView.currentView();
     FreezerProController.FreezerProConfig bean = me.getModelBean();
-    ViewContext context = HttpView.currentContext();
 
     ObjectMapper jsonMapper = new ObjectMapper();
 %>

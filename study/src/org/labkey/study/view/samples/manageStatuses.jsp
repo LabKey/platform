@@ -15,23 +15,23 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.model.StudyImpl"%>
-<%@ page import="org.labkey.study.model.SampleRequestStatus"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.study.SampleManager" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.samples.settings.StatusSettings" %>
+<%@ page import="org.labkey.study.SampleManager"%>
+<%@ page import="org.labkey.study.controllers.StudyController"%>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
+<%@ page import="org.labkey.study.model.SampleRequestStatus" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.study.samples.settings.StatusSettings" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Set" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
     StudyImpl study = me.getModelBean();
-    List<SampleRequestStatus> statuses = study.getSampleRequestStatuses(me.getViewContext().getUser());
+    List<SampleRequestStatus> statuses = study.getSampleRequestStatuses(getUser());
     Set<Integer> inUseStatuses = study.getSampleRequestStatusesInUse();
     StatusSettings settings = SampleManager.getInstance().getStatusSettings(study.getContainer());
     boolean showSystemStatuses = settings.isUseShoppingCart();
@@ -133,8 +133,8 @@ function showSystemRows(value)
                     <%= generateSubmitButton("Save")%>&nbsp;
                     <%= text(buttonImg("Done", "document.manageStatuses.nextPage.value=''; return true;"))%>
                     <%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, study.getContainer()))%>&nbsp;
-                    <%= text(buttonImg("Change Order", "document.manageStatuses.nextPage.value='" + new ActionURL(SpecimenController.ManageStatusOrderAction.class, getViewContext().getContainer()).getLocalURIString() + "'; return true;"))%>
-                    <input type="hidden" name="nextPage" value="<%=h(new ActionURL(SpecimenController.ManageStatusesAction.class, getViewContext().getContainer()).getLocalURIString())%>">
+                    <%= text(buttonImg("Change Order", "document.manageStatuses.nextPage.value='" + new ActionURL(SpecimenController.ManageStatusOrderAction.class, getContainer()).getLocalURIString() + "'; return true;"))%>
+                    <input type="hidden" name="nextPage" value="<%=h(new ActionURL(SpecimenController.ManageStatusesAction.class, getContainer()).getLocalURIString())%>">
                 </td>
             </tr>
         </table>

@@ -43,9 +43,9 @@
 %>
 <%
     InternalSourceViewForm form = (InternalSourceViewForm) HttpView.currentModel();
-    ActionURL urlPost = new ActionURL(InternalSourceViewAction.class, getViewContext().getContainer());
+    ActionURL urlPost = new ActionURL(InternalSourceViewAction.class, getContainer());
     urlPost.addParameter("customViewId", Integer.toString(form.getCustomViewId()));
-    ActionURL urlCancel = new ActionURL(ManageViewsAction.class, getViewContext().getContainer());
+    ActionURL urlCancel = new ActionURL(ManageViewsAction.class, getContainer());
     CstmView view = form.getViewAndCheckPermission();
 %>
 <labkey:errors />

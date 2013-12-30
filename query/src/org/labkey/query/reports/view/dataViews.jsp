@@ -37,9 +37,9 @@
 %>
 <%
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
-    User u = me.getViewContext().getUser();
     int webPartId = me.getModelBean().getRowId();
     Map<String, String> properties = me.getModelBean().getPropertyMap();
+    User u = getUser();
 
     // the manageView flag refers to manage views
     boolean manageView = false;
@@ -60,8 +60,8 @@
             webpartId   : <%= webPartId %>,
             manageView  : <%= manageView%>,
             fullPage    : <%= manageView%>,
-            returnUrl   : '<%= me.getViewContext().getActionURL().getLocalURIString()%>',
-            allowCustomize : <%= me.getViewContext().getContainer().hasPermission(u, AdminPermission.class) %>,
+            returnUrl   : '<%= getActionURL().getLocalURIString()%>',
+            allowCustomize : <%= getContainer().hasPermission(u, AdminPermission.class) %>,
             listeners   : {
                 render: function(panel) {
                     if (panel.fullPage) {

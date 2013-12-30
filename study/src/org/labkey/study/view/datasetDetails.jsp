@@ -15,17 +15,19 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.pipeline.PipelineService"%>
+<%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
-<%@ page import="org.labkey.api.security.permissions.Permission"%>
-<%@ page import="org.labkey.api.security.permissions.UpdatePermission"%>
+<%@ page import="org.labkey.api.security.permissions.Permission" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
@@ -39,33 +41,33 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
     DataSetDefinition dataset = me.getModelBean();
 
-    ViewContext context = HttpView.currentContext();
+    Container c = getContainer();
+    User user = getUser();
 
-    String queryName = dataset.getTableInfo(context.getUser()).getName();
-    String schemaName = dataset.getTableInfo(context.getUser()).getSchema().getQuerySchemaName();
+    String queryName = dataset.getTableInfo(user).getName();
+    String schemaName = dataset.getTableInfo(user).getSchema().getQuerySchemaName();
 
-    Set<Class<? extends Permission>> permissions = context.getContainer().getPolicy().getPermissions(context.getUser());
-    StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
+    Set<Class<? extends Permission>> permissions = c.getPolicy().getPermissions(user);
+    StudyImpl study = StudyManager.getInstance().getStudy(c);
     VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
-    boolean pipelineSet = null != PipelineService.get().findPipelineRoot(HttpView.currentContext().getContainer());
+    boolean pipelineSet = null != PipelineService.get().findPipelineRoot(c);
 %>
 <% if (permissions.contains(AdminPermission.class))
 {
-    ActionURL viewDatasetURL = new ActionURL(StudyController.DatasetAction.class, context.getContainer());
+    ActionURL viewDatasetURL = new ActionURL(StudyController.DatasetAction.class, c);
     viewDatasetURL.addParameter("datasetId", dataset.getDataSetId());
 
-    ActionURL updateDatasetURL = new ActionURL(StudyController.UpdateDatasetVisitMappingAction.class, context.getContainer());
+    ActionURL updateDatasetURL = new ActionURL(StudyController.UpdateDatasetVisitMappingAction.class, c);
     updateDatasetURL.addParameter("datasetId", dataset.getDataSetId());
 
-    ActionURL manageTypesURL = new ActionURL(StudyController.ManageTypesAction.class, context.getContainer());
+    ActionURL manageTypesURL = new ActionURL(StudyController.ManageTypesAction.class, c);
 
-    ActionURL deleteDatasetURL = new ActionURL(StudyController.DeleteDatasetAction.class, context.getContainer());
+    ActionURL deleteDatasetURL = new ActionURL(StudyController.DeleteDatasetAction.class, c);
     deleteDatasetURL.addParameter("id", dataset.getDataSetId());
 
     %>
@@ -85,10 +87,10 @@
 }
 if (permissions.contains(UpdatePermission.class))
 {
-    ActionURL showHistoryURL = new ActionURL(StudyController.ShowUploadHistoryAction.class, context.getContainer());
+    ActionURL showHistoryURL = new ActionURL(StudyController.ShowUploadHistoryAction.class, c);
     showHistoryURL.addParameter("id", dataset.getDataSetId());
 
-    ActionURL editTypeURL = new ActionURL(StudyController.EditTypeAction.class, context.getContainer());
+    ActionURL editTypeURL = new ActionURL(StudyController.EditTypeAction.class, c);
     editTypeURL.addParameter("datasetId", dataset.getDataSetId());
 
     %>&nbsp;<%=generateButton("Show Import History", showHistoryURL)%>
@@ -140,7 +142,7 @@ if (!pipelineSet)
     </tr>
     <tr>
         <td class=labkey-form-label>Demographic Data <%=helpPopup("Demographic Data", "Demographic data appears only once for each " +
-        StudyService.get().getSubjectNounSingular(getViewContext().getContainer()).toLowerCase() + 
+        StudyService.get().getSubjectNounSingular(c).toLowerCase() +
         " in the study.")%></td>
         <td><%= dataset.isDemographicData() ? "true" : "false" %></td>
     </tr>

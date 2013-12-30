@@ -23,8 +23,8 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     InternalNewViewForm form = (InternalNewViewForm) HttpView.currentModel();
-    ActionURL urlPost = new ActionURL(InternalNewViewAction.class, getViewContext().getContainer());
-    ActionURL urlCancel = new ActionURL(ManageViewsAction.class, getViewContext().getContainer());
+    ActionURL urlPost = new ActionURL(InternalNewViewAction.class, getContainer());
+    ActionURL urlCancel = new ActionURL(ManageViewsAction.class, getContainer());
 %>
 <labkey:errors />
 <form method="POST" action="<%=h(urlPost)%>">

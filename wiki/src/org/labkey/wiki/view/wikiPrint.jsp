@@ -24,7 +24,7 @@
 <%
     JspView<Wiki> me = (JspView<Wiki>) HttpView.currentView();
     Wiki wiki = me.getModelBean();
-    Container c = me.getViewContext().getContainer();
+    Container c = getContainer();
 %>
 <div style="padding:10px;">
     <%  if (null == wiki.getLatestVersion())

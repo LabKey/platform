@@ -39,9 +39,9 @@
         {
             throw new NotFoundException("Could not find assay batch " + batchId);
         }
-        if (!batch.getContainer().equals(getViewContext().getContainer()))
+        if (!batch.getContainer().equals(getContainer()))
         {
-            throw new NotFoundException("Could not find assay batch " + batchId + " in folder " + getViewContext().getContainer());
+            throw new NotFoundException("Could not find assay batch " + batchId + " in folder " + getContainer());
         }
         return batch;
     }
@@ -53,7 +53,7 @@
     ExpProtocol protocol = bean.getProtocol();
     int batchId = bean.getBatchId() == null ? 0 : bean.getBatchId().intValue();
 
-    Map<String, Object> assay = AssayController.serializeAssayDefinition(protocol, provider, getViewContext().getContainer(), getViewContext().getUser());
+    Map<String, Object> assay = AssayController.serializeAssayDefinition(protocol, provider, getContainer(), getUser());
 %>
 <script type="text/javascript">
     LABKEY.requiresClientAPI();
@@ -65,7 +65,7 @@ LABKEY.page.assay = <%= new JSONObject(assay).toString(2) %>;
  if (batchId > 0)
  {
     ExpExperiment batch = lookupBatch(batchId);
-    JSONObject batchJson = AssayJSONConverter.serializeBatch(batch, provider, protocol, me.getViewContext().getUser());
+    JSONObject batchJson = AssayJSONConverter.serializeBatch(batch, provider, protocol, getUser());
     %>LABKEY.page.batch = new LABKEY.Exp.RunGroup(<%=batchJson.toString(2)%>);<%
  }
  else

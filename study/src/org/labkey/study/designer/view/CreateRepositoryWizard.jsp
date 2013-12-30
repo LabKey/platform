@@ -15,22 +15,25 @@
  * limitations under the License.
  */
 %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page import="gwt.client.org.labkey.study.designer.client.model.GWTCohort" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.designer.DesignerController" %>
-<%@ page import="gwt.client.org.labkey.study.designer.client.model.GWTCohort" %>
-<%@ page import="java.util.*" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="java.util.Comparator" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="java.util.SortedSet" %>
+<%@ page import="java.util.TreeSet" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     DesignerController.CreateRepositoryForm form = (DesignerController.CreateRepositoryForm) HttpView.currentModel();
-    Container container = HttpView.currentContext().getContainer();
-    User user = HttpView.currentContext().getUser();
+    Container container = getContainer();
+    User user = getUser();
     String species = DesignerController.getStudyDefinition(form, user, container).getAnimalSpecies();
     ActionURL cancelUrl = new ActionURL(DesignerController.CancelWizardAction.class, container).addParameter("studyId", String.valueOf(form.getStudyId()));
     if (null != form.getMessage())
@@ -85,7 +88,7 @@ the vaccine study.
             <td>
                 <select name="parentFolderId">
             <%
-                Set<Container> writableContainers = ContainerManager.getContainerSet(ContainerManager.getContainerTree(), HttpView.currentContext().getUser(), AdminPermission.class);
+                Set<Container> writableContainers = ContainerManager.getContainerSet(ContainerManager.getContainerTree(), user, AdminPermission.class);
                 SortedSet<Container> sortedContainers = new TreeSet<>(new Comparator<Container>()
                 {
                     public int compare(Container o1, Container o2)
@@ -182,9 +185,6 @@ if (form.getWizardStep() == DesignerController.WizardStep.SHOW_PARTICIPANTS)
 %>
     This study defines <%=DesignerController.getStudyDefinition(form, user, container).getGroups().size()%> cohorts with a total of
     <%=nParticipants%> subjects.
-    <%
-        ActionURL xlUrl = HttpView.currentContext().cloneActionURL().setAction(DesignerController.GetParticipantExcelAction.class);
-    %>
     <br>
     To initiate this study, you will need to fill out an excel workbook with the subject id and cohort for each <%=h(species)%>.
     <ul>

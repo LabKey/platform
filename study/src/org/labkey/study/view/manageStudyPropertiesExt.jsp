@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
@@ -35,13 +34,12 @@
   }
 %>
 <%
-    ViewContext context = getViewContext();
-    boolean canEdit = context.getContainer().hasPermission(context.getUser(), AdminPermission.class);
+    boolean canEdit = getContainer().hasPermission(getUser(), AdminPermission.class);
     boolean emptyStudy = getStudy().isEmptyStudy();
     String timepointType = getStudy().getTimepointType().toString();
-    String cancelLink = context.getActionURL().getParameter("returnURL");
+    String cancelLink = getActionURL().getParameter("returnURL");
     if (cancelLink == null || cancelLink.length() == 0)
-        cancelLink = new ActionURL(StudyController.ManageStudyAction.class, context.getContainer()).toString();
+        cancelLink = new ActionURL(StudyController.ManageStudyAction.class, getContainer()).toString();
 %>
 
 <%!

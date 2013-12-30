@@ -15,27 +15,26 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.reports.model.ReportPropsManager" %>
+<%@ page import="org.labkey.api.reports.report.ModuleReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportDesignBean" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="java.util.Collections" %>
-<%@ page import="org.labkey.api.reports.Report" %>
-<%@ page import="org.labkey.api.reports.report.ModuleReportDescriptor" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ReportDesignBean> me = (JspView<ReportDesignBean>) HttpView.currentView();
     ReportDesignBean bean = me.getModelBean();
-    ViewContext context = me.getViewContext();
+    ViewContext context = getViewContext();
     Report report = bean.getReport(context);
     ReportDescriptor reportDescriptor = report.getDescriptor();
 
@@ -49,7 +48,7 @@
     Date refreshDate = null;
 
     ActionURL vewReportURL = report.getRunReportURL(context);
-    ActionURL editReportURL = report.getEditReportURL(context, context.getActionURL());
+    ActionURL editReportURL = report.getEditReportURL(context, getActionURL());
     Map<String, String> reportURLAttributes =  report.getRunReportTarget() != null ?
             Collections.singletonMap("target", report.getRunReportTarget()) :
             Collections.<String, String>emptyMap();
@@ -108,7 +107,7 @@
                 if(authorId != null)
                 {
             %>
-                <%= h(UserManager.getUser(authorId) != null ? UserManager.getUser(authorId).getDisplayName(context.getUser()) : "")%>
+                <%= h(UserManager.getUser(authorId) != null ? UserManager.getUser(authorId).getDisplayName(getUser()) : "")%>
             <%
                 }
             %>
@@ -189,7 +188,7 @@
                 if(createdBy != null)
                 {
             %>
-                <%= h(UserManager.getUser(createdBy) != null ? UserManager.getUser(createdBy).getDisplayName(context.getUser()) : "")%>
+                <%= h(UserManager.getUser(createdBy) != null ? UserManager.getUser(createdBy).getDisplayName(getUser()) : "")%>
             <%
                 }
             %>
@@ -230,7 +229,7 @@
     <tr>
         <td colspan="2">
             <%=PageFlowUtil.generateButton("View Report", vewReportURL, null, reportURLAttributes)%>
-            <%=report.canEdit(context.getUser(), context.getContainer()) ? PageFlowUtil.generateButton("Edit Report", editReportURL) : ""%>
+            <%=report.canEdit(getUser(), getContainer()) ? PageFlowUtil.generateButton("Edit Report", editReportURL) : ""%>
         </td>
     </tr>
 </table>

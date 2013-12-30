@@ -30,8 +30,8 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ManageBean bean = ((HttpView<ManageBean>)HttpView.currentView()).getModelBean();
-    ViewContext context = HttpView.currentContext();
-    Container c = context.getContainer();
+    ViewContext context = getViewContext();
+    Container c = getContainer();
     Errors errors = getErrors("form");
     Wiki wiki = bean.wiki;
 %>

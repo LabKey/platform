@@ -30,7 +30,7 @@
     }
 %>
 <%
-    ActionURL groupDiagramURL = new ActionURL(SecurityController.GroupDiagramAction.class, getViewContext().getContainer());
+    ActionURL groupDiagramURL = new ActionURL(SecurityController.GroupDiagramAction.class, getContainer());
 %>
 <div id="unconnected" style="padding:5px;"></div>
 <div id="groupDiagram"></div>

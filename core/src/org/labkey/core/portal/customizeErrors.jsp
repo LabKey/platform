@@ -21,7 +21,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    Container c = getViewContext().getContainer();
+    Container c = getContainer();
 %>
 <labkey:errors/>
 <p>

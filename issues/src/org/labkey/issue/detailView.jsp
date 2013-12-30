@@ -40,8 +40,8 @@
     ViewContext context = me.getViewContext();
     IssuePage bean = me.getModelBean();
     final Issue issue = bean.getIssue();
-    final Container c = context.getContainer();
-    final User user = context.getUser();
+    final Container c = getContainer();
+    final User user = getUser();
     final String issueId = Integer.toString(issue.getIssueId());
     final boolean hasUpdatePerms = bean.getHasUpdatePermissions();
     IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c);
@@ -55,31 +55,31 @@
 
     if (bean.getHasUpdatePermissions())
     {
-        %><td><%= textLink("new " + names.singularName.getSource().toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), InsertAction.class)))%></td><%
+        %><td><%= textLink("new " + names.singularName.getSource().toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, InsertAction.class)))%></td><%
     }%>
 
-    <td><%= textLink("return to grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), ListAction.class)).deleteParameter("error"))%></td><%
+    <td><%= textLink("return to grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, ListAction.class)).deleteParameter("error"))%></td><%
 
     if (bean.getHasUpdatePermissions())
     {
-        %><td><%= textLink("update", IssuesController.issueURL(context.getContainer(), UpdateAction.class).addParameter("issueId", issueId))%></td><%
+        %><td><%= textLink("update", IssuesController.issueURL(c, UpdateAction.class).addParameter("issueId", issueId))%></td><%
     }
 
     if (issue.getStatus().equals(Issue.statusOPEN) && bean.getHasUpdatePermissions())
     {
-        %><td><%= textLink("resolve", IssuesController.issueURL(context.getContainer(), ResolveAction.class).addParameter("issueId", issueId))%></td><%
+        %><td><%= textLink("resolve", IssuesController.issueURL(c, ResolveAction.class).addParameter("issueId", issueId))%></td><%
     }
     else if (issue.getStatus().equals(Issue.statusRESOLVED) && bean.getHasUpdatePermissions())
     {
-        %><td><%= textLink("close", IssuesController.issueURL(context.getContainer(), CloseAction.class).addParameter("issueId", issueId))%></td>
-        <td><%= textLink("reopen", IssuesController.issueURL(context.getContainer(), ReopenAction.class).addParameter("issueId", issueId))%></td><%
+        %><td><%= textLink("close", IssuesController.issueURL(c, CloseAction.class).addParameter("issueId", issueId))%></td>
+        <td><%= textLink("reopen", IssuesController.issueURL(c, ReopenAction.class).addParameter("issueId", issueId))%></td><%
     }
     else if (issue.getStatus().equals(Issue.statusCLOSED) && bean.getHasUpdatePermissions())
     {
-        %><td><%= textLink("reopen", IssuesController.issueURL(context.getContainer(), ReopenAction.class).addParameter("issueId", issueId))%></td><%
+        %><td><%= textLink("reopen", IssuesController.issueURL(c, ReopenAction.class).addParameter("issueId", issueId))%></td><%
     }
     %><td><%= textLink("print", context.cloneActionURL().replaceParameter("_print", "1"))%></td>
-    <td><%= textLink("email prefs", IssuesController.issueURL(context.getContainer(), EmailPrefsAction.class).addParameter("issueId", issueId))%></td>
+    <td><%= textLink("email prefs", IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issueId))%></td>
     <td>&nbsp;&nbsp;&nbsp;Jump to <%=h(names.singularName)%>: <input type="text" size="5" name="issueId"/></td>
     </tr></table>
 </form><%
@@ -107,7 +107,7 @@
                 <% if (bean.isEditable("duplicate")) { %>
                     <%=text(bean.writeInput("duplicate", String.valueOf(issue.getDuplicate()), 10))%>
                 <% } else { %>
-                    <a href="<%=IssuesController.getDetailsURL(context.getContainer(), issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a>
+                    <a href="<%=IssuesController.getDetailsURL(c, issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a>
                 <% } %>
                 </td></tr><%
             }

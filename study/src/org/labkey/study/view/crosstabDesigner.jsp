@@ -91,15 +91,15 @@
             sb.append(">Visit Id</option>");
         }
 
-        String subjectNoun = StudyService.get().getSubjectColumnName(getViewContext().getContainer());
+        String subjectNoun = StudyService.get().getSubjectColumnName(getContainer());
         if (cols.containsKey(subjectNoun))
         {
             sb.append("<option value=\"").append(subjectNoun).append("\"");
             if (null != selected && selected.equalsIgnoreCase(subjectNoun))
                 sb.append(" selected");
-            sb.append(">").append(StudyService.get().getSubjectColumnName(getViewContext().getContainer())).append("</option>");
+            sb.append(">").append(StudyService.get().getSubjectColumnName(getContainer())).append("</option>");
         }
-        FieldKey ptid = new FieldKey(null,StudyService.get().getSubjectColumnName(getViewContext().getContainer()));
+        FieldKey ptid = new FieldKey(null,StudyService.get().getSubjectColumnName(getContainer()));
         FieldKey seqNum = new FieldKey(null, "SequenceNum");
 
         for (ColumnInfo col : cols.values())

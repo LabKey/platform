@@ -26,8 +26,7 @@
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart webPart = me.getModelBean();
-    ViewContext ctx = me.getViewContext();
-    Container currentContainer = ctx.getContainer();
+    Container currentContainer = getContainer();
     String title = webPart.getPropertyMap().get("title");
     List<Container> containerList = WikiController.populateWikiContainerList(getViewContext());
 %>
@@ -67,7 +66,7 @@
 <tr>
     <td colspan=2 align="right">
         <%=generateSubmitButton("Submit")%>
-        <%=generateButton("Cancel", ctx.getContainer().getStartURL(ctx.getUser()))%>
+        <%=generateButton("Cancel", getContainer().getStartURL(getUser()))%>
     </td>
 </tr>
 </table>

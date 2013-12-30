@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.StudyController"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyController.ImportDataSetForm> me = (JspView<StudyController.ImportDataSetForm>) HttpView.currentView();
     StudyController.ImportDataSetForm form = me.getModelBean();
@@ -44,7 +44,6 @@
         </td></tr>
     </table>
 	<input type=hidden name=datasetId value="<%=form.getDatasetId()%>">
-
 
     <br>&nbsp;
     <p />

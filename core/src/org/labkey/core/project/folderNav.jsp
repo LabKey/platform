@@ -18,20 +18,19 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.project.FolderNavigationForm" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
@@ -42,13 +41,14 @@
 <%
     JspView<FolderNavigationForm> me = (JspView<FolderNavigationForm>) HttpView.currentView();
     FolderNavigationForm form = me.getModelBean();
-    ViewContext ctx = me.getViewContext();
+    ViewContext ctx = getViewContext();
     String contextPath = ctx.getContextPath();
-    User user = ctx.getUser();
-    List<Container> containers = ContainerManager.containersToRootList(ctx.getContainer());
+    User user = getUser();
+    Container c = getContainer();
+    List<Container> containers = ContainerManager.containersToRootList(c);
     int size = containers.size();
 
-    ActionURL createFolderURL = new ActionURL(AdminController.CreateFolderAction.class, ctx.getContainer());
+    ActionURL createFolderURL = new ActionURL(AdminController.CreateFolderAction.class, c);
 %>
 <%!
     public _HtmlString getTrailSeparator(String ctxPath)
@@ -172,14 +172,14 @@
 </script>
 <div class="folder-menu-buttons">
 <%
-    if (ctx.getContainer().hasPermission(ctx.getUser(), AdminPermission.class))
+    if (c.hasPermission(user, AdminPermission.class))
     {
 %>
-    <span class="button-icon"><a href="<%=createFolderURL%>" title="New Subfolder"><img src="<%=text(contextPath)%>/_images/icon_folders_add.png" alt="New Subfolder" /></a></span>
+    <span class="button-icon"><a href="<%=createFolderURL%>" title="New Subfolder"><img src="<%=getContextPath()%>/_images/icon_folders_add.png" alt="New Subfolder" /></a></span>
 <%
     }
 %>
-    <span class="button-icon"><a id="permalink_vis" href="#" title="Permalink Page"><img src="<%=text(contextPath)%>/_images/icon_permalink.png" alt="Permalink Page" /></a></span>
+    <span class="button-icon"><a id="permalink_vis" href="#" title="Permalink Page"><img src="<%=getContextPath()%>/_images/icon_permalink.png" alt="Permalink Page" /></a></span>
     <script type="text/javascript">
         (function(){
             var p = document.getElementById('permalink');

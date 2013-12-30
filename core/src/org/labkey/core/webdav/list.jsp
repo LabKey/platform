@@ -33,8 +33,8 @@
 <%
     DavController.ListPage listpage = (DavController.ListPage) HttpView.currentModel();
     WebdavResource resource = listpage.resource;
-    ViewContext context = HttpView.currentContext();
-    User user = context.getUser();
+    ViewContext context = getViewContext();
+    User user = getUser();
     String userAgent = StringUtils.trimToEmpty(request.getHeader("user-agent"));
     boolean supportsDavMount = false;
     boolean supportsDavScheme = false;
@@ -75,13 +75,13 @@
     }
 }
 %></b></td><td align="right"><%=generateButton("Standard View","?listing=ext")%>&nbsp;<%
-    if (context.getUser().isGuest())
+    if (user.isGuest())
     {
         %><a href="<%=h(listpage.loginURL)%>">Sign In</a><%
     }
     else
     {
-        %><%=h(context.getUser().getEmail())%><%
+        %><%=h(user.getEmail())%><%
     }
 %></td></tr> </table>
 <hr size="1" noshade="noshade">
@@ -153,7 +153,7 @@
 %></table>
 <hr>
 <%
-    String href =  resource.getHref(context);
+    String href = resource.getHref(context);
 %>
 This is a WebDav enabled directory.<br>
 <%

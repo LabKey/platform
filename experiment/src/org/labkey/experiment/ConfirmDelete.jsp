@@ -16,26 +16,24 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.DataRegion" %>
+<%@ page import="org.labkey.api.data.DataRegionSelection" %>
 <%@ page import="org.labkey.api.exp.api.ExpObject" %>
 <%@ page import="org.labkey.api.exp.api.ExpRun" %>
+<%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
+<%@ page import="org.labkey.api.security.SecurableResource" %>
+<%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.experiment.ConfirmDeleteView" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.data.DataRegionSelection" %>
-<%@ page import="org.labkey.api.data.DataRegion" %>
-<%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
-<%@ page import="org.labkey.api.data.Entity" %>
-<%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.labkey.api.security.SecurableResource" %>
-
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ConfirmDeleteView.ConfirmDeleteBean> me = (JspView<ConfirmDeleteView.ConfirmDeleteBean>) HttpView.currentView();
     ConfirmDeleteView.ConfirmDeleteBean bean = me.getModelBean();
-    Container currentContainer = bean.getViewContext().getContainer();
+    Container currentContainer = getContainer();
 %>
 
 <% if (bean.getObjects().isEmpty())
@@ -49,7 +47,7 @@ else
 
     <ul>
     <% for (ExpObject object : bean.getObjects()) { %>
-        <li><a href="<%= h(new ActionURL(bean.getDetailAction(), getViewContext().getContainer()).addParameter("rowId", object.getRowId())) %>"><%= h(object.getName()) %></a></li>
+        <li><a href="<%= h(new ActionURL(bean.getDetailAction(), currentContainer).addParameter("rowId", object.getRowId())) %>"><%= h(object.getName()) %></a></li>
     <% } %>
     </ul>
 
@@ -70,7 +68,7 @@ else
                 <a href="<%= entry.getValue() %>"><%= h(entry.getKey().getResourceName()) %></a>
                 <% if (!entry.getKey().getResourceContainer().equals(currentContainer))
                 { %>
-                    (in <a href="<%= entry.getKey().getResourceContainer().getStartURL(bean.getViewContext().getUser()) %>"><%= h(entry.getKey().getResourceContainer().getPath()) %></a>)
+                    (in <a href="<%= entry.getKey().getResourceContainer().getStartURL(getUser()) %>"><%= h(entry.getKey().getResourceContainer().getPath()) %></a>)
                 <% } %>
             </li>
         <% } %>
@@ -95,7 +93,7 @@ else
             <a href="<%= h(entry.getValue()) %>"><%= h(entry.getKey().getResourceName()) %></a>
             <% if (!entry.getKey().getResourceContainer().equals(currentContainer))
             { %>
-                (in <a href="<%= entry.getKey().getResourceContainer().getStartURL(bean.getViewContext().getUser()) %>"><%= h(entry.getKey().getResourceContainer().getPath()) %></a>)
+                (in <a href="<%= entry.getKey().getResourceContainer().getStartURL(getUser()) %>"><%= h(entry.getKey().getResourceContainer().getPath()) %></a>)
             <% } %>
         </li>
     <% } %>
@@ -122,7 +120,7 @@ else
                 <a href="<%= url %>"><%= h(run.getName()) %></a>
                 <% if (!runContainer.equals(currentContainer))
                 { %>
-                    (in <a href="<%= runContainer.getStartURL(bean.getViewContext().getUser()) %>"><%= h(runContainer.getPath()) %></a>)
+                    (in <a href="<%= runContainer.getStartURL(getUser()) %>"><%= h(runContainer.getPath()) %></a>)
                 <% } %>
             </li>
         <% } %>
@@ -150,7 +148,7 @@ else
                 <a href="<%= url %>"><%= h(run.getName()) %></a>
                 <% if (!runContainer.equals(currentContainer))
                 { %>
-                    (in <a href="<%= runContainer.getStartURL(bean.getViewContext().getUser()) %>"><%= h(runContainer.getPath()) %></a>)
+                    (in <a href="<%= runContainer.getStartURL(getUser()) %>"><%= h(runContainer.getPath()) %></a>)
                 <% } %>
             </li>
         <% } %>

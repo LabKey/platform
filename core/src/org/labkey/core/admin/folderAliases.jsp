@@ -25,7 +25,7 @@
 <%
     JspView<ViewContext> me = (JspView<ViewContext>) HttpView.currentView();
     ViewContext context = me.getViewContext();
-    String[] pathAliases = ContainerManager.getAliasesForContainer(context.getContainer());
+    String[] pathAliases = ContainerManager.getAliasesForContainer(getContainer());
 %>
 <table width="500">
     <tr>
@@ -35,7 +35,7 @@
         <td>
             For example, if you enter <b>/otherproject/otherfolder</b> below,
             URLs directed to a folder with name <b>/otherproject/otherfolder</b>
-            will be redirected to this folder, <b><%= context.getContainer().getPath() %></b>.
+            will be redirected to this folder, <b><%= getContainer().getPath() %></b>.
         </td>
     </tr>
     <tr>
@@ -55,7 +55,7 @@
                     sb.append(path);
                 }%><%= sb.toString() %></textarea><br><br>
             <%= generateSubmitButton("Save Aliases") %>
-            <%= generateButton("Cancel", urlProvider(AdminUrls.class).getManageFoldersURL(context.getContainer())) %>
+            <%= generateButton("Cancel", urlProvider(AdminUrls.class).getManageFoldersURL(getContainer())) %>
         </form>
         </td>
     </tr>

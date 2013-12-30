@@ -1,19 +1,19 @@
 <%
-    /*
-    * Copyright (c) 2005-2013 LabKey Corporation
-    *
-    * Licensed under the Apache License, Version 2.0 (the "License");
-    * you may not use this file except in compliance with the License.
-    * You may obtain a copy of the License at
-    *
-    *     http://www.apache.org/licenses/LICENSE-2.0
-    *
-    * Unless required by applicable law or agreed to in writing, software
-    * distributed under the License is distributed on an "AS IS" BASIS,
-    * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    * See the License for the specific language governing permissions and
-    * limitations under the License.
-    */
+/*
+ * Copyright (c) 2005-2013 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.MvUtil" %>
@@ -54,9 +54,9 @@
                             linkContainer = linkContainer.getParent();
                     }
 
-                    boolean hasLinkPermission = linkContainer.hasPermission(HttpView.currentContext().getUser(), AdminPermission.class);
+                    boolean hasLinkPermission = linkContainer.hasPermission(getUser(), AdminPermission.class);
 
-                    ActionURL inheritURL = HttpView.currentContext().cloneActionURL();
+                    ActionURL inheritURL = getViewContext().cloneActionURL();
                     inheritURL.setContainer(linkContainer);
                     String containerLabel;
                     if (linkContainer.isRoot())
@@ -114,7 +114,7 @@
         </tr>
         <tr>
             <td>
-                <div id="mvIndicatorsDiv" style="display: <%=inherited ? "none" : "block"%>;">
+                <div id="mvIndicatorsDiv" style="display: <%=text(inherited ? "none" : "block")%>;">
                     <table id="mvTable">
                         <tr>
                             <th>&nbsp;</th>
@@ -134,7 +134,7 @@
                         %>
 
                         <tr id="rowId<%=++rowId%>">
-                            <td><img src="<%=getViewContext().getContextPath()%>/_images/partdelete.gif"
+                            <td><img src="<%=getContextPath()%>/_images/partdelete.gif"
                                      alt="delete" onclick="removeRow(<%=rowId%>);"></td>
                             <td><input name="mvIndicators" type="TEXT" size=3
                                        id="mvIndicators<%=rowId%>" value="<%=indicator%>">
@@ -179,7 +179,7 @@
 
         var cellLeft = row.insertCell(0);
         var imgNode = document.createElement('img');
-        imgNode.src = '<%=getViewContext().getContextPath()%>/_images/partdelete.gif';
+        imgNode.src = '<%=getContextPath()%>/_images/partdelete.gif';
         imgNode.setAttribute("onclick", 'removeRow(' + maxRowId + ');');
         imgNode.setAttribute("alt", "delete");
         cellLeft.appendChild(imgNode);
