@@ -38,6 +38,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.Transient;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
@@ -888,7 +889,7 @@ public class Portal
         public Map<String, String> rightWebPartNames;
     }
 
-    private static void addCustomizeDropdowns(ViewContext context, HttpView template, String id, Collection occupiedLocations)
+    private static void addCustomizeDropdowns(Container c, HttpView template, String id, Collection occupiedLocations)
     {
         Set<String> regionNames = getRegionMap().keySet();
         boolean rightEmpty = !occupiedLocations.contains(WebPartFactory.LOCATION_RIGHT);
@@ -897,7 +898,7 @@ public class Portal
         
         for (String regionName : regionNames)
         {
-            Map<String, String> partsToAdd = Portal.getPartsToAdd(context, regionName);
+            Map<String, String> partsToAdd = Portal.getPartsToAdd(c, regionName);
 
             if (WebPartFactory.LOCATION_RIGHT.equals(regionName) && rightEmpty)
                 rightParts = partsToAdd;
@@ -1018,7 +1019,7 @@ public class Portal
         }
 
         if (canCustomize)
-            addCustomizeDropdowns(context, template, id, locations);
+            addCustomizeDropdowns(context.getContainer(), template, id, locations);
     }
 
     @Nullable
@@ -1146,10 +1147,24 @@ public class Portal
         }
     }
 
-    public static Map<String, String> getPartsToAdd(ViewContext context, String location)
+    synchronized static void clearMaps()
     {
-        //TODO: Cache these
-        Container c = context.getContainer();
+        _viewMap = null;
+        _regionMap = null;
+    }
+
+    static void clearWebPartFactories(Module module)
+    {
+        // TODO: Move the webPartFactory handling into Portal
+        if (module instanceof DefaultModule)
+        {
+            ((DefaultModule) module).clearWebPartFactories();
+        }
+    }
+
+    public static Map<String, String> getPartsToAdd(Container c, String location)
+    {
+        //TODO: Cache these?
         Map<String, String> webPartNames = new TreeMap<>();
 
         for (Module module : ModuleLoader.getInstance().getModules())

@@ -48,24 +48,31 @@ public class SimpleWebPartFactoryCache extends ModuleResourceCache<SimpleWebPart
             @Override
             public void entryCreated(Path directory, Path entry)
             {
-
+                update();
             }
 
             @Override
             public void entryDeleted(Path directory, Path entry)
             {
-
+                update();
             }
 
             @Override
             public void entryModified(Path directory, Path entry)
             {
-
+                update();
             }
 
             @Override
             public void overflow()
             {
+                update();
+            }
+
+            private void update()
+            {
+                Portal.clearWebPartFactories(module);
+                Portal.clearMaps();
             }
         };
     }

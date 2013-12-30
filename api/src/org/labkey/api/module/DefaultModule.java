@@ -183,9 +183,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         init();
 
-        for (WebPartFactory part : getWebPartFactories())
-            part.setModule(this);
-
         preloadReports();
     }
 
@@ -247,6 +244,12 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     protected abstract void init();
+
+    /**
+     * Create the WebPartFactories that this module defines in code. File-based webpart factories are handled implicitly.
+     *
+     * @return A collection of WebPartFactories
+     */
     protected abstract @NotNull Collection<? extends WebPartFactory> createWebPartFactories();
     public abstract boolean hasScripts();
 
@@ -382,19 +385,39 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
+    // TODO: Move getWebPartFactories() and _webPartFactories into Portal... shouldn't be the module's responsibility
+    // This should also allow moving SimpleWebPartFactoryCache and dependencies into Internal
+
+    private final Object FACTORY_LOCK = new Object();
+
     @Override
     public final @NotNull Collection<WebPartFactory> getWebPartFactories()
     {
-        // TODO: Synchronization!!
-        if (null == _webPartFactories)
+        synchronized (FACTORY_LOCK)
         {
-            Collection<WebPartFactory> wpf = new ArrayList<>();
-            wpf.addAll(createWebPartFactories());
-            wpf.addAll(SimpleWebPartFactoryCache.get().getResources(this));
+            if (null == _webPartFactories)
+            {
+                Collection<WebPartFactory> wpf = new ArrayList<>();
+                wpf.addAll(createWebPartFactories());
+                wpf.addAll(SimpleWebPartFactoryCache.get().getResources(this));
 
-            _webPartFactories = wpf;
+                // Not sure why module isn't set at construction time...
+                for (WebPartFactory webPartFactory : wpf)
+                    webPartFactory.setModule(this);
+
+                _webPartFactories = wpf;
+            }
+            return _webPartFactories;
         }
-        return _webPartFactories;
+    }
+
+
+    public final void clearWebPartFactories()
+    {
+        synchronized (FACTORY_LOCK)
+        {
+            _webPartFactories = null;
+        }
     }
 
 
