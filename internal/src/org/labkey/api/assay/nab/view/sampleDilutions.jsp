@@ -15,17 +15,16 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.assay.dilution.DilutionAssayRun" %>
+<%@ page import="org.labkey.api.assay.dilution.DilutionSummary" %>
+<%@ page import="org.labkey.api.assay.dilution.SampleInfo" %>
+<%@ page import="org.labkey.api.assay.nab.Luc5Assay" %>
+<%@ page import="org.labkey.api.assay.nab.RenderAssayBean" %>
+<%@ page import="org.labkey.api.study.WellData" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.assay.nab.Luc5Assay" %>
 <%@ page import="java.text.DecimalFormat" %>
-<%@ page import="org.labkey.api.assay.dilution.SampleInfo" %>
-<%@ page import="org.labkey.api.study.WellData" %>
-<%@ page import="org.labkey.api.assay.dilution.DilutionSummary" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.assay.nab.RenderAssayBean" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<RenderAssayBean> me = (JspView<RenderAssayBean>) HttpView.currentView();
