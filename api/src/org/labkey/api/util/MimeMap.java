@@ -100,7 +100,7 @@ public class MimeMap implements FileNameMap
         }
         catch (Exception e)
         {
-            Logger.getInstance(MimeMap.class).error("unexpected error", e);
+            Logger.getLogger(MimeMap.class).error("unexpected error", e);
         }
     }
 

@@ -15,7 +15,6 @@
  */
 package org.labkey.api.etl;
 
-import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
 import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.collections.ArrayListMap;
@@ -26,7 +25,6 @@ import org.labkey.api.query.BatchValidationException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 /**

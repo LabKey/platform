@@ -17,7 +17,6 @@
 package org.labkey.api.security;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.Cache;
@@ -25,7 +24,6 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -55,7 +53,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class AuthenticatedRequest extends HttpServletRequestWrapper
 {
-    private static Category _log = Logger.getInstance(AuthenticatedRequest.class);
+    private static final Logger _log = Logger.getLogger(AuthenticatedRequest.class);
+
     private final User _user;
     boolean _loggedIn = false;
     private boolean _forceRealSession = false;
