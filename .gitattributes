@@ -3422,6 +3422,8 @@ study/src/org/labkey/study/model/StudyLsidHandler.java -text
 study/src/org/labkey/study/model/StudyManager.java -text
 study/src/org/labkey/study/model/StudySnapshot.java -text
 study/src/org/labkey/study/model/TestDatasetDomainKind.java -text
+study/src/org/labkey/study/model/TreatmentImpl.java -text
+study/src/org/labkey/study/model/TreatmentProductImpl.java -text
 study/src/org/labkey/study/model/UploadLog.java -text
 study/src/org/labkey/study/model/VialDomainKind.java -text
 study/src/org/labkey/study/model/VisitDataSet.java -text
@@ -3760,9 +3762,12 @@ study/src/org/labkey/study/view/studyListWide.jsp -text
 study/src/org/labkey/study/view/studySchedule.jsp -text
 study/src/org/labkey/study/view/studySummary.jsp -text
 study/src/org/labkey/study/view/studydesign/AssayScheduleWebpartFactory.java -text
+study/src/org/labkey/study/view/studydesign/ImmunizationScheduleWebpartFactory.java -text
 study/src/org/labkey/study/view/studydesign/VaccineDesignWebpartFactory.java -text
 study/src/org/labkey/study/view/studydesign/assayScheduleWebpart.jsp -text
+study/src/org/labkey/study/view/studydesign/immunizationScheduleWebpart.jsp -text
 study/src/org/labkey/study/view/studydesign/manageAssaySpecimen.jsp -text
+study/src/org/labkey/study/view/studydesign/manageImmunizations.jsp -text
 study/src/org/labkey/study/view/studydesign/manageStudyProducts.jsp -text
 study/src/org/labkey/study/view/studydesign/vaccineDesignWebpart.jsp -text
 study/src/org/labkey/study/view/subjects.jsp -text

@@ -183,6 +183,8 @@ import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.TreatmentImpl;
+import org.labkey.study.model.TreatmentProductImpl;
 import org.labkey.study.model.UploadLog;
 import org.labkey.study.model.VisitDataSet;
 import org.labkey.study.model.VisitDataSetType;
@@ -6795,6 +6797,21 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
+    public class ManageImmunizationsAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/study/view/studydesign/manageImmunizations.jsp", o);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            return root.addChild("Manage Immunizations");
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
     public class ManageAlternateIdsAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object form, BindException errors) throws Exception
@@ -7591,7 +7608,7 @@ public class StudyController extends BaseStudyController
             ApiSimpleResponse resp = new ApiSimpleResponse();
             List<JSONObject> products = new ArrayList<>();
 
-            List<ProductImpl> studyProducts = StudyManager.getInstance().getStudyProducts(getContainer(), getUser(), form.getRole(), form.getLabel());
+            List<ProductImpl> studyProducts = StudyManager.getInstance().getStudyProducts(getContainer(), getUser(), form.getRole(), form.getRowId());
             for (ProductImpl product : studyProducts)
             {
                 JSONObject productJSON = new JSONObject();
@@ -7627,17 +7644,17 @@ public class StudyController extends BaseStudyController
 
     public static class GetStudyProductsForm
     {
-        private String _label;
+        private Integer _rowId;
         private String _role;
 
-        public String getLabel()
-    {
-        return _label;
-    }
-
-        public void setLabel(String label)
+        public Integer getRowId()
         {
-            _label = label;
+            return _rowId;
+        }
+
+        public void setRowId(Integer rowId)
+        {
+            _rowId = rowId;
         }
 
         public String getRole()
@@ -7648,6 +7665,65 @@ public class StudyController extends BaseStudyController
         public void setRole(String role)
         {
             _role = role;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetStudyTreatments extends ApiAction<Object>
+    {
+        private StudyImpl _study;
+
+        @Override
+        public void validateForm(Object form, Errors errors)
+        {
+            _study = getStudy(getContainer());
+            if (_study == null)
+                errors.reject(ERROR_MSG, "A study does not exist in this folder");
+        }
+
+        @Override
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            List<JSONObject> treatments = new ArrayList<>();
+
+            List<TreatmentImpl> studyTreatments = StudyManager.getInstance().getStudyTreatments(getContainer(), getUser());
+            for (TreatmentImpl treatment : studyTreatments)
+            {
+                JSONObject treatmentJSON = new JSONObject();
+                treatmentJSON.put("RowId", treatment.getRowId());
+                treatmentJSON.put("Label", treatment.getLabel());
+                treatmentJSON.put("Description", treatment.getDescription());
+
+                List<JSONObject> treatmentProducts = new ArrayList<>();
+                Sort sort = new Sort();
+                sort.appendSortColumn(FieldKey.fromParts("ProductId", "Role"), Sort.SortDirection.DESC, false);
+                sort.appendSortColumn(FieldKey.fromParts("ProductId", "RowId"), Sort.SortDirection.ASC, false);
+                List<TreatmentProductImpl> studyTreatmentProducts = StudyManager.getInstance().getStudyTreatmentProducts(getContainer(), getUser(), treatment.getRowId(), sort);
+                for (TreatmentProductImpl treatmentProduct : studyTreatmentProducts)
+                {
+                    JSONObject productJSON = new JSONObject();
+                    productJSON.put("RowId", treatmentProduct.getRowId());
+                    productJSON.put("TreatmentId", treatmentProduct.getTreatmentId());
+                    productJSON.put("ProductId", treatmentProduct.getProductId());
+                    productJSON.put("Dose", treatmentProduct.getDose());
+                    productJSON.put("Route", treatmentProduct.getRoute());
+
+                    List<ProductImpl> products = StudyManager.getInstance().getStudyProducts(getContainer(), getUser(), null, treatmentProduct.getProductId());
+                    if (products.size() == 1)
+                        productJSON.put("ProductId/Label", products.get(0).getLabel());
+
+                    treatmentProducts.add(productJSON);
+                }
+                treatmentJSON.put("Products", treatmentProducts);
+
+                treatments.add(treatmentJSON);
+            }
+
+            resp.put("success", true);
+            resp.put("treatments", treatments);
+
+            return resp;
         }
     }
 }

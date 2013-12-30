@@ -285,9 +285,15 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
-    public List<ProductImpl> getStudyProducts(User user, String role, String label)
+    public List<ProductImpl> getStudyProducts(User user, String role)
     {
-        return StudyManager.getInstance().getStudyProducts(getContainer(), user, role, label);
+        return StudyManager.getInstance().getStudyProducts(getContainer(), user, role, null);
+    }
+
+    @Override
+    public List<TreatmentImpl> getStudyTreatments(User user)
+    {
+        return StudyManager.getInstance().getStudyTreatments(getContainer(), user);
     }
 
     @Override

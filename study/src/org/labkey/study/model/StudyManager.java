@@ -1227,13 +1227,13 @@ public class StudyManager
         return getStudyProducts(container, user, null, null);
     }
 
-    public List<ProductImpl> getStudyProducts(Container container, User user, @Nullable String role, @Nullable String label)
+    public List<ProductImpl> getStudyProducts(Container container, User user, @Nullable String role, @Nullable Integer rowId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         if (role != null)
             filter.addCondition(FieldKey.fromParts("Role"), role);
-        if (label != null)
-            filter.addCondition(FieldKey.fromParts("Label"), label);
+        if (rowId != null)
+            filter.addCondition(FieldKey.fromParts("RowId"), rowId);
 
         TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
         return new TableSelector(ti, filter, new Sort("RowId")).getArrayList(ProductImpl.class);
@@ -1246,6 +1246,27 @@ public class StudyManager
 
         TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
         return new TableSelector(ti, filter, new Sort("RowId")).getArrayList(ProductAntigenImpl.class);
+    }
+
+    public List<TreatmentImpl> getStudyTreatments(Container container, User user)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
+        return new TableSelector(ti, filter, new Sort("RowId")).getArrayList(TreatmentImpl.class);
+    }
+
+    public List<TreatmentProductImpl> getStudyTreatmentProducts(Container container, User user, int treatmentId)
+    {
+        return getStudyTreatmentProducts(container, user, treatmentId, new Sort("RowId"));
+    }
+
+    public List<TreatmentProductImpl> getStudyTreatmentProducts(Container container, User user, int treatmentId, Sort sort)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("TreatmentId"), treatmentId);
+
+        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+        return new TableSelector(ti, filter, sort).getArrayList(TreatmentProductImpl.class);
     }
 
     public void createVisitDataSetMapping(User user, Container container, int visitId,

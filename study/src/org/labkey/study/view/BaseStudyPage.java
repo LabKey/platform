@@ -66,9 +66,14 @@ public abstract class BaseStudyPage extends JspBase
         return getStudy().getAssaySpecimenConfigs();
     }
 
-    protected List<ProductImpl> getStudyProducts(User user, String role, String label)
+    protected List<ProductImpl> getStudyProducts(User user, String role)
     {
-        return getStudy().getStudyProducts(user, role, label);
+        return getStudy().getStudyProducts(user, role);
+    }
+
+    protected List<TreatmentImpl> getStudyTreatments(User user)
+    {
+        return getStudy().getStudyTreatments(user);
     }
 
     protected WikiRendererType[] getRendererTypes()

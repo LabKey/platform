@@ -242,8 +242,13 @@
     </tr>
     <tr>
         <th align="left">Study Products</th>
-        <td>This study defines <%= getStudyProducts(user, null, null).size() %> study products</td>
+        <td>This study defines <%= getStudyProducts(user, null).size() %> study products</td>
         <td><%= textLink("Manage Study Products", StudyController.ManageStudyProductsAction.class) %></td>
+    </tr>
+    <tr>
+        <th align="left">Treatments/Immunizations</th>
+        <td>This study defines <%= getStudyTreatments(user).size() %> treatments</td>
+        <td><%= textLink("Manage Immunizations", StudyController.ManageImmunizationsAction.class) %></td>
     </tr>
     <tr>
         <th align="left">Assay Schedule</th>

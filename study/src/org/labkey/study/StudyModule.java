@@ -182,6 +182,7 @@ import org.labkey.study.view.StudyViewLoader;
 import org.labkey.study.view.SubjectDetailsWebPartFactory;
 import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.view.samples.SpecimenRequestNotificationEmailTemplate;
+import org.labkey.study.view.studydesign.ImmunizationScheduleWebpartFactory;
 import org.labkey.study.view.studydesign.VaccineDesignWebpartFactory;
 import org.labkey.study.writer.DatasetWriter;
 import org.labkey.study.writer.MissingValueWriterFactory;
@@ -234,6 +235,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final WebPartFactory specimenReportWebPartFactory = new SpecimenController.SpecimenReportWebPartFactory();
     public static final WebPartFactory assayScheduleWebPartFactory = new AssayScheduleWebpartFactory();
     public static final WebPartFactory vaccineDesignWebPartFactory = new VaccineDesignWebpartFactory();
+    public static final WebPartFactory immunizationScheduleWebpartFactory = new ImmunizationScheduleWebpartFactory();
 
     public String getName()
     {
@@ -330,7 +332,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 subjectDetailsWebPartFactory, assayList2WebPartFactory, studyListWebPartFactory, sampleSearchPartFactory,
                 subjectsWebPartFactory, subjectsWideWebPartFactory, dataToolsWebPartFactory,
                 dataToolsWideWebPartFactory, specimenToolsWebPartFactory, specimenToolsWideWebPartFactory,
-                specimenReportWebPartFactory, studyScheduleWebPartFactory, assayScheduleWebPartFactory, vaccineDesignWebPartFactory));
+                specimenReportWebPartFactory, studyScheduleWebPartFactory,
+                assayScheduleWebPartFactory, vaccineDesignWebPartFactory, immunizationScheduleWebpartFactory));
     }
 
     @NotNull
