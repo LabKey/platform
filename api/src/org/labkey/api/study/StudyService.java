@@ -170,7 +170,7 @@ public class StudyService
 
         boolean runStudyImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
 
-        DataIteratorBuilder wrapSampleMindedTransform(DataIteratorBuilder in, DataIteratorContext context, Study study, TableInfo target);
+        DataIteratorBuilder wrapSampleMindedTransform(User user, DataIteratorBuilder in, DataIteratorContext context, Study study, TableInfo target);
 
         ColumnInfo createAlternateIdColumn(TableInfo ti, ColumnInfo column, Container c);
 

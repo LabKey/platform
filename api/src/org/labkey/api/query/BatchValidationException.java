@@ -49,6 +49,12 @@ public class BatchValidationException extends Exception
         this.extraContext = extraContext;
     }
 
+    public BatchValidationException(ValidationException e)
+    {
+        this();
+        this.rowErrors.add(e);
+    }
+
     public void addRowError(ValidationException vex)
     {
         rowErrors.add(vex);
