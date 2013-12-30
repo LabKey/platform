@@ -942,9 +942,9 @@ validNum:       {
 
     // TODO: Combine these format ISO methods with toISO() and nowISO()?
 
-    /*
-        Format current date using ISO 8601 pattern. This is appropriate only for persisting dates in machine-readable
-        form, for example, for export or in filenames. Most callers should use formatDate(Container c) instead.
+    /**
+     * Format current date using ISO 8601 pattern. This is appropriate only for persisting dates in machine-readable
+     * form, for example, for export or in filenames. Most callers should use formatDate(Container c) instead.
      */
     public static String formatDateISO8601()
     {
@@ -952,9 +952,9 @@ validNum:       {
     }
 
 
-    /*
-        Format date using ISO 8601 pattern. This is appropriate only for persisting dates in machine-readable
-        form, for example, for export or in filenames. Most callers should use formatDate(Container c, Date d) instead.
+    /**
+     * Format date using ISO 8601 pattern. This is appropriate only for persisting dates in machine-readable form,
+     * for example, for export or in filenames. Most callers should use formatDate(Container c, Date d) instead.
      */
     public static String formatDateISO8601(Date date)
     {
@@ -962,38 +962,38 @@ validNum:       {
     }
 
 
-    /*
-        Format date and time using ISO 8601 pattern. This is appropriate only for persisting dates in machine-readable
-        form, for example, for export or in filenames. Most callers should use formatDateTime(Container c, Date d) instead.
-    */
+    /**
+     * Format date and time using ISO 8601 pattern. This is appropriate only for persisting dates in machine-readable
+     * form, for example, for export or in filenames. Most callers should use formatDateTime(Container c, Date d) instead.
+     */
     public static String formatDateTimeISO8601(Date date)
     {
         return formatDateTime(date, ISO_DATE_TIME_FORMAT_STRING);
     }
 
 
-    /* Format current date using folder-specified default pattern */
+    /** Format current date using folder-specified default pattern */
     public static String formatDate(Container c)
     {
         return formatDate(c, new Date());
     }
 
 
-    /* Format date using using folder-specified default pattern */
+    /** Format date using using folder-specified default pattern */
     public static String formatDate(Container c, Date date)
     {
         return formatDateTime(date, getDateFormatString(c));
     }
 
 
-    /* Get the default date format string to use in this Container */
+    /** Get the default date format string to use in this Container */
     public static String getDateFormatString(Container c)
     {
         return FolderSettingsCache.getDefaultDateFormat(c);
     }
 
 
-    // Format specified date using standard date & time pattern
+    /** Format specified date using standard date & time pattern */
     @Deprecated
     public static String formatDateTime(Date date)
     {
@@ -1001,14 +1001,14 @@ validNum:       {
     }
 
 
-    /* Format current date & time using using folder-specified default date pattern plus standard time format */
+    /** Format current date & time using using folder-specified default date pattern plus standard time format */
     public static String formatDateTime(Container c)
     {
         return formatDateTime(c, new Date());
     }
 
 
-    /* Format date & time using using folder-specified default date pattern plus standard time format */
+    /** Format date & time using using folder-specified default date pattern plus standard time format */
     // TODO: In the future, allow administrators to explicitly set a full date time format
     public static String formatDateTime(Container c, Date date)
     {
@@ -1017,9 +1017,9 @@ validNum:       {
     }
 
 
-    /*
-        Format date & time using specified pattern
-        Note: This implementation is thread-safe and reuses formatters -- SimpleDateFormat is neither
+    /**
+     * Format date & time using specified pattern
+     * Note: This implementation is thread-safe and reuses formatters -- SimpleDateFormat is neither
      */
     public static String formatDateTime(Date date, String pattern)
     {
