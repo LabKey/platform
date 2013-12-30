@@ -25,7 +25,7 @@ import java.util.Set;
  * Time: 5:20:32 PM
  */
 
-// Lame version of commons collections MultiValueMap that adds generics.  Collections-generic includes MultiValueHashMap,
+// Lame version of commons collections MultiValueMap that adds generics.  Collections-generic includes MultiHashMap,
 // but not a MultiMap that wraps another map implementation like this.
 public abstract class MultiValueMap<K, V>
 {
