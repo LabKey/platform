@@ -1,0 +1,10 @@
+.manage-visit-table
+{
+    border-collapse: collapse;
+    border: solid #c0c0c0 1px;
+}
+
+.manage-visit-table th, .manage-visit-table td
+{
+    border: solid #c0c0c0 1px;
+}

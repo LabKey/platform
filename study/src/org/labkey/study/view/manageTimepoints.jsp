@@ -25,8 +25,19 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("study/ManageVisit.css"));
+        return resources;
+    }
+%>
 <labkey:errors />
 <%
     StudyController.StudyPropertiesForm form = (StudyController.StudyPropertiesForm) getModelBean();
@@ -91,7 +102,7 @@
 <%WebPartView.startTitleFrame(out, "Timepoints", null, "900", null);%>
 <p>NOTE: If you edit the day range of timepoints, use <%= textLink("Recompute Timepoints", UpdateParticipantVisitsAction.class)%> to
 assign dataset data to the correct timepoints.</p>
-<table border="1" cellpadding="3" style="border-collapse: collapse; border: solid #c0c0c0 1px;">
+<table cellpadding="3" class="manage-visit-table">
     <tr>
         <th>&nbsp;</th>
         <th>Label</th>

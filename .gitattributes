@@ -3817,6 +3817,7 @@ study/src/org/labkey/study/writer/XmlVisitMapWriter.java -text
 study/webapp/WEB-INF/study/studyContext.xml -text
 study/webapp/sampleRequest.js -text
 study/webapp/study/ImmunizationSchedule.js -text
+study/webapp/study/ManageVisit.css -text
 study/webapp/study/MeasurePicker.js -text
 study/webapp/study/ParticipantFilterPanel.js -text
 study/webapp/study/ParticipantGroup.js -text

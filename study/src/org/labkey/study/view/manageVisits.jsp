@@ -19,7 +19,18 @@
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.study.controllers.StudyController.*" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("study/ManageVisit.css"));
+        return resources;
+    }
+%>
 <table>
     <tr>
         <td>View study schedule.</td>
@@ -64,7 +75,7 @@
     {
 %>
 <p>
-<table id="visits" border="1" cellpadding="3" style="border-collapse: collapse; border: solid #c0c0c0 1px;">
+<table id="visits" cellpadding="3" class="manage-visit-table">
     <tr>
         <th>&nbsp;</th>
         <th>Label</th>
