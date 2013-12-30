@@ -18,14 +18,12 @@ package org.labkey.query.controllers;
 import mondrian.olap.MondrianServer;
 import mondrian.xmla.impl.MondrianXmlaServlet;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -221,7 +219,7 @@ public class OlapController extends SpringActionController
             }
             catch (RuntimeException x)
             {
-                Category.getInstance(OlapController.class).error("mondrian error", x);
+                Logger.getLogger(OlapController.class).error("mondrian error", x);
                 Throwable t = x;
                 while (null != t.getCause() && t != t.getCause())
                     t = t.getCause();
@@ -254,12 +252,12 @@ public class OlapController extends SpringActionController
                 OlapConnection conn = controller.getConnection(sd);
                 stmt = conn.createStatement();
                 String query = form.getQuery();
-                Category.getInstance(this.getClass()).debug("\nSTART executeOlapQuery: --------------------------    --------------------------    --------------------------\n" + query);
+                Logger.getLogger(this.getClass()).debug("\nSTART executeOlapQuery: --------------------------    --------------------------    --------------------------\n" + query);
                 long ms = System.currentTimeMillis();
                 cs = stmt.executeOlapQuery(query);
                 long d = System.currentTimeMillis() - ms;
                 QueryProfiler.track(null, "-- MDX\n" + query, null, d, null, true);
-                Category.getInstance(this.getClass()).debug("\nEND executeOlapQuery: " + DateUtil.formatDuration(d) + " --------------------------    --------------------------    --------------------------\n");
+                Logger.getLogger(this.getClass()).debug("\nEND executeOlapQuery: " + DateUtil.formatDuration(d) + " --------------------------    --------------------------    --------------------------\n");
 
                 StringWriter sw = new StringWriter();
                 Olap4Js.convertCellSet(cs, sw);
