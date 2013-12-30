@@ -18,25 +18,22 @@
 
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.Portal" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.WebTheme" %>
+<%@ page import="org.labkey.api.view.WebThemeManager" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.study.SampleManager" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.model.AssaySpecimenConfigImpl" %>
+<%@ page import="org.labkey.study.model.DerivativeType" %>
+<%@ page import="org.labkey.study.model.LocationImpl" %>
+<%@ page import="org.labkey.study.model.PrimaryType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.model.AssaySpecimenConfigImpl" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.study.model.LocationImpl" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="java.util.List" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
-<%@ page import="org.labkey.api.view.WebThemeManager" %>
-<%@ page import="org.labkey.api.view.WebTheme" %>
-<%@ page import="org.labkey.study.SampleManager" %>
-<%@ page import="org.labkey.study.model.PrimaryType" %>
-<%@ page import="org.labkey.study.model.DerivativeType" %>
 <%@ page import="org.labkey.study.security.permissions.ManageStudyPermission" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -47,11 +44,10 @@
     }
 %>
 <%
-    JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
-    Container c = me.getViewContext().getContainer();
+    Container c = getContainer();
     StudyImpl study = StudyManager.getInstance().getStudy(c);
 
-    User user = me.getViewContext().getUser();
+    User user = getUser();
     boolean canManageStudy  = c.hasPermission(user, ManageStudyPermission.class);
 
     String assayPlan = "";
