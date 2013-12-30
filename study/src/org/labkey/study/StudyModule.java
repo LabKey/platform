@@ -311,10 +311,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public Set<ModuleResourceLoader> getResourceLoaders()
     {
-        Set<ModuleResourceLoader> loaders = new HashSet<>();
-        loaders.add(new ModuleAssayLoader());
-        loaders.add(new StudyViewLoader());
-        return loaders;
+        return PageFlowUtil.set(new ModuleAssayLoader(), new StudyViewLoader());
     }
 
     public boolean hasScripts()

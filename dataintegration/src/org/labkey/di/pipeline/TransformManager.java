@@ -322,24 +322,16 @@ public class TransformManager implements DataIntegrationService
     }
 
     @NotNull
-    public Collection<ScheduledPipelineJobDescriptor> getAllDescriptors()
-    {
-        // Easy to implement, if we actually need it
-        throw new UnsupportedOperationException();
-    }
-
-
-    @NotNull
     public Collection<ScheduledPipelineJobDescriptor> getDescriptors(Container c)
     {
-        return DescriptorCache.getDescriptors(c);
+        return DescriptorCache.get().getResources(c);
     }
 
 
     @Nullable
     public ScheduledPipelineJobDescriptor getDescriptor(String id)
     {
-        return DescriptorCache.getDescriptor(id);
+        return DescriptorCache.get().getResource(id);
     }
 
 
@@ -617,7 +609,7 @@ public class TransformManager implements DataIntegrationService
                 int runAsUserId = config.getModifiedBy();
                 User runAsUser = UserManager.getUser(runAsUserId);
 
-                ScheduledPipelineJobDescriptor descriptor = DescriptorCache.getDescriptor(config.getTransformId());
+                ScheduledPipelineJobDescriptor descriptor = DescriptorCache.get().getResource(config.getTransformId());
                 if (null == descriptor)
                     return;
                 Container c = ContainerManager.getForId(config.getContainerId());
@@ -734,7 +726,7 @@ public class TransformManager implements DataIntegrationService
     public void registerDescriptors(Module module)
     {
         // Delegate to the cache
-        DescriptorCache.registerModule(module);
+        DescriptorCache.get().registerModule(module);
     }
 
     @Override

@@ -94,7 +94,7 @@ public class ServerManager
             MondrianServer s = null != ref ? ref.get() : null;
             if (null == s)
             {
-                Collection<OlapSchemaDescriptor> descriptors = OlapSchemaCache.get().getDescriptors(c);
+                Collection<OlapSchemaDescriptor> descriptors = OlapSchemaCache.get().getResources(c);
 
                 StringBuilder sb = new StringBuilder();
                 sb.append(
@@ -210,7 +210,7 @@ public class ServerManager
     }
 
 
-   static Map<_DataSourceChangeListener,Boolean> changeListeners = Collections.synchronizedMap(new WeakHashMap<_DataSourceChangeListener, Boolean>());
+    static Map<_DataSourceChangeListener, Boolean> changeListeners = Collections.synchronizedMap(new WeakHashMap<_DataSourceChangeListener, Boolean>());
 
     public static class _DataSourceChangeListener implements DataSourceChangeListener
     {
@@ -244,7 +244,7 @@ public class ServerManager
             try
             {
                 // Need a way to get a URL or something to the resource
-                OlapSchemaDescriptor d = OlapSchemaCache.get().getDescriptor(catalogPath);
+                OlapSchemaDescriptor d = OlapSchemaCache.get().getResource(catalogPath);
                 if (null == d)
                     throw new IOException("catalog not found: " + catalogPath);
                 File f = d.getFile();

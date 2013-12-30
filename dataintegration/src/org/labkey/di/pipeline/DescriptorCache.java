@@ -15,134 +15,79 @@
  */
 package org.labkey.di.pipeline;
 
-import org.jetbrains.annotations.NotNull;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
-import org.labkey.api.cache.CacheManager;
-import org.labkey.api.data.Container;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
-import org.labkey.api.files.FileSystemWatcher;
-import org.labkey.api.files.FileSystemWatchers;
+import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.resource.MergedDirectoryResource;
+import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
-
-import java.nio.file.StandardWatchEventKinds;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * User: adam
  * Date: 9/13/13
  * Time: 4:26 PM
  */
-public class DescriptorCache
+public class DescriptorCache extends ModuleResourceCache<ScheduledPipelineJobDescriptor>
 {
-    // List of modules that expose ETL configurations. Since the number of modules exposing etls is likely small, this
-    // is a nice optimization. More importantly, this is where we hook our file system listener, so we can watch for
-    // create, delete, and update events. The module list is initialized at startup time and never changes.
-    private static final List<Module> _etlModules = new CopyOnWriteArrayList<>();
-    private static final BlockingStringKeyCache<Object> BLOCKING_CACHE = CacheManager.getBlockingStringKeyCache(1000, CacheManager.DAY, "ETL job descriptors and collections", null);
-    private static final FileSystemWatcher WATCHER = FileSystemWatchers.get("ETL descriptor cache watcher");
+    private static final TransformManager _transformManager = TransformManager.get();
+    private static final DescriptorCache _instance = new DescriptorCache();
 
-    // At startup, we record all modules with "etls" directories and register a file listener to monitor for changes.
-    // Loading the list of configurations in each module and the descriptors themselves happens lazily.
-    static void registerModule(Module module)
+    public static DescriptorCache get()
     {
-        Path etlsDirPath = new Path("etls");
-        Resource etlsDir = module.getModuleResolver().lookup(etlsDirPath);
-
-        if (null != etlsDir && etlsDir.isCollection())
-        {
-            _etlModules.add(module);
-
-            // TODO: Integrate this better with Resource
-            ((MergedDirectoryResource)etlsDir).registerListener(WATCHER, new EtlDirectoryListener(module),
-                    StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
-        }
+        return _instance;
     }
 
-    @NotNull
-    static Collection<ScheduledPipelineJobDescriptor> getDescriptors(Container c)
+    private DescriptorCache()
     {
-        Set<Module> activeModules = c.getActiveModules();
-        ArrayList<ScheduledPipelineJobDescriptor> descriptors = new ArrayList<>();
-
-        for (Module etlModule : _etlModules)
-        {
-            if (activeModules.contains(etlModule))
-            {
-                List<String> configNames = getConfigNames(etlModule);
-
-                for (String configName : configNames)
-                {
-                    ScheduledPipelineJobDescriptor descriptor = getDescriptor(TransformManager.get().createConfigId(etlModule, configName));
-
-                    if (null != descriptor)
-                        descriptors.add(descriptor);
-                }
-            }
-        }
-
-        return descriptors;
+       super("etls", "ETL job descriptors");
     }
-
 
     @Nullable
-    static ScheduledPipelineJobDescriptor getDescriptor(String configId)
+    @Override
+    protected FileSystemDirectoryListener createChainedDirectoryListener(Module module)
     {
-        //noinspection unchecked
-        return (ScheduledPipelineJobDescriptor)BLOCKING_CACHE.get(configId, null, DESCRIPTOR_LOADER);
+        return new EtlDirectoryListener(module);
     }
 
-
-    // Clear a single descriptor from the cache
-    static void removeDescriptor(Module module, String configName)
+    @Override
+    protected String createCacheKey(Module module, String resourceName)
     {
-        String id = TransformManager.get().createConfigId(module, configName);
-        BLOCKING_CACHE.remove(id);
+        return _transformManager.createConfigId(module, resourceName);
     }
 
-
-    // Clear a single module's list of ETL configurations from the cache (but leave the descriptors cached)
-    static void removeConfigNames(Module module)
+    @Override
+    protected boolean isResourceFile(String filename)
     {
-        BLOCKING_CACHE.remove(module.getName());
+        return _transformManager.isConfigFile(filename);
     }
 
-
-    // Clear the whole cache
-    static void clear()
+    @Override
+    protected String getResourceName(String filename)
     {
-        BLOCKING_CACHE.clear();
+        assert isResourceFile(filename) : "Configuration filename \"" + filename + "\" does not end with .xml";
+        return FileUtil.getBaseName(filename);
     }
 
-
-    // Will return empty list if etls directory gets deleted, no ETLS, etc.
-    @NotNull
-    private static List<String> getConfigNames(Module module)
+    @Override
+    protected CacheLoader<String, ScheduledPipelineJobDescriptor> getResourceLoader()
     {
-        //noinspection unchecked
-        return (List<String>)BLOCKING_CACHE.get(module.getName(), null, CONFIG_NAMES_LOADER);
+        return DESCRIPTOR_LOADER;
     }
 
-
-    private static final CacheLoader DESCRIPTOR_LOADER = new CacheLoader<String, ScheduledPipelineJobDescriptor>()
+    private static final CacheLoader<String, ScheduledPipelineJobDescriptor> DESCRIPTOR_LOADER = new CacheLoader<String, ScheduledPipelineJobDescriptor>()
     {
         @Override
         public ScheduledPipelineJobDescriptor load(String configId, @Nullable Object argument)
         {
-            Pair<Module, String> pair = TransformManager.get().parseConfigId(configId);
+            Pair<Module, String> pair = _transformManager.parseConfigId(configId);
             Module module = pair.first;
             String configName = pair.second;
 
@@ -150,40 +95,62 @@ public class DescriptorCache
             Resource config = pair.first.getModuleResolver().lookup(configPath);
 
             if (config != null && config.isFile())
-                return TransformManager.get().parseETL(config, module);
+                return _transformManager.parseETL(config, module);
             else
                 return null;
         }
     };
 
 
-    private static final CacheLoader CONFIG_NAMES_LOADER = new CacheLoader<String, List<String>>()
+    private class EtlDirectoryListener implements FileSystemDirectoryListener
     {
-        @Override
-        public List<String> load(String moduleName, @Nullable Object argument)
+        private final Module _module;
+
+        public EtlDirectoryListener(Module module)
         {
-            Path etlsDirPath = new Path("etls");
-            Module module = ModuleLoader.getInstance().getModule(moduleName);
-            Resource etlsDir = module.getModuleResolver().lookup(etlsDirPath);
-            List<String> configs = new LinkedList<>();
-
-            if (etlsDir != null && etlsDir.isCollection())
-            {
-                // Create a list of all files in this directory that conform to the configuration file format (end in ".xml").
-                // Store just the base name, which matches the descriptor ID format.
-                for (Resource r : etlsDir.list())
-                {
-                    if (r.isFile())
-                    {
-                        String name = r.getName();
-
-                        if (TransformManager.get().isConfigFile(name))
-                            configs.add(FileUtil.getBaseName(name));
-                    }
-                }
-            }
-
-            return Collections.unmodifiableList(configs);
+            _module = module;
         }
-    };
+
+        @Override
+        public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
+        {
+        }
+
+        @Override
+        public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
+        {
+            removeDescriptor(entry);
+        }
+
+        @Override
+        public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
+        {
+            removeDescriptor(entry);
+        }
+
+        @Override
+        public void overflow()
+        {
+            // TODO: Should clear all the registered pipelines, but no current method to retrieve list of all config names across all modules.
+        }
+
+        // TODO: Ideally, we'd take a lighterweight approach, since this will be called many times for each descriptor file change
+        private void removeDescriptor(java.nio.file.Path entry)
+        {
+            String filename = entry.toString();
+
+            final String configName = _transformManager.getConfigName(filename);
+            final TaskId pipelineId = new TaskId(_module.getName(), TaskId.Type.pipeline, _transformManager.createConfigId(_module, configName),0);
+            final TaskPipeline pipeline = PipelineJobService.get().getTaskPipeline(pipelineId);
+            if (pipeline != null)
+            {
+                for (TaskId taskId : pipeline.getTaskProgression())
+                {
+                    if (StringUtils.startsWith(taskId.getName(), pipelineId.getName() + ":"))
+                        PipelineJobService.get().removeTaskFactory(taskId);
+                }
+                PipelineJobService.get().removeTaskPipeline(pipelineId);
+             }
+        }
+    }
 }

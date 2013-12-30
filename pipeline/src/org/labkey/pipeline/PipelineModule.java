@@ -130,9 +130,9 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
     @NotNull
     @Override
-    public Set<ModuleResourceLoader> getResourceLoaders()
+    public Set<? extends ModuleResourceLoader> getResourceLoaders()
     {
-        return Collections.<ModuleResourceLoader>singleton(new PipelineModuleResourceLoader());
+        return Collections.singleton(new PipelineModuleResourceLoader());
     }
 
 

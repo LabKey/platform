@@ -29,6 +29,8 @@ import java.util.Set;
  * User: matthew
  * Date: 10/30/13
  */
+
+// TODO: Use or remove!
 public class OlapSchemaLoader implements ModuleResourceLoader
 {
     @NotNull

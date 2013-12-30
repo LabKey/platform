@@ -102,6 +102,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.SimpleWebPartResourceLoader;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
@@ -169,7 +170,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -206,7 +206,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     @Override
-    public int compareTo(Module m)
+    public int compareTo(@NotNull Module m)
     {
         //core module always sorts first
         return (m instanceof CoreModule) ? 0 : -1;
@@ -279,9 +279,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     @NotNull
     @Override
-    public Set<ModuleResourceLoader> getResourceLoaders()
+    public Set<? extends ModuleResourceLoader> getResourceLoaders()
     {
-        return Collections.<ModuleResourceLoader>singleton(new FolderTypeResourceLoader());
+        return PageFlowUtil.set(new FolderTypeResourceLoader(), new SimpleWebPartResourceLoader());
     }
 
     @NotNull

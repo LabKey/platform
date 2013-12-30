@@ -33,7 +33,7 @@
 
 <labkey:errors></labkey:errors>
 <%
-    Collection<OlapSchemaDescriptor> list = OlapSchemaCache.get().getDescriptors(getContainer());
+    Collection<OlapSchemaDescriptor> list = OlapSchemaCache.get().getResources(getContainer());
     for (OlapSchemaDescriptor sd : list)
     {
         %><h3><%=h(sd.getName())%></h3><%

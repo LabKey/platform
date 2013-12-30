@@ -165,9 +165,9 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
 
     @NotNull
     @Override
-    public Set<ModuleResourceLoader> getResourceLoaders()
+    public Set<? extends ModuleResourceLoader> getResourceLoaders()
     {
-        return Collections.<ModuleResourceLoader>singleton(new EtlResourceLoader());
+        return Collections.singleton(new EtlResourceLoader());
     }
 
     //

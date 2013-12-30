@@ -877,7 +877,6 @@ dataintegration/src/org/labkey/di/filters/RunFilterStrategy.java -text
 dataintegration/src/org/labkey/di/filters/SelectAllFilterStrategy.java -text
 dataintegration/src/org/labkey/di/pipeline/DescriptorCache.java -text
 dataintegration/src/org/labkey/di/pipeline/ETLPipelineProvider.java -text
-dataintegration/src/org/labkey/di/pipeline/EtlDirectoryListener.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformConfiguration.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformDescriptor.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformJobContext.java -text
