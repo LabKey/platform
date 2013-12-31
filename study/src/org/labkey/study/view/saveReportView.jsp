@@ -32,7 +32,7 @@
 <%
     JspView<ReportsController.SaveReportViewForm> me = (JspView<ReportsController.SaveReportViewForm>) HttpView.currentView();
     ReportsController.SaveReportViewForm bean = me.getModelBean();
-    ViewContext context = me.getViewContext();
+    ViewContext context = getViewContext();
 
     Report report = bean.getReport(context);
     boolean confirm = bean.getConfirmed() != null ? Boolean.parseBoolean(bean.getConfirmed()) : false;

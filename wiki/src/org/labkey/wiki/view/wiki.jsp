@@ -29,7 +29,7 @@
 <!--wiki-->
 <%
     BaseWikiView view = (BaseWikiView)HttpView.currentView();
-    ViewContext context = view.getViewContext();
+    ViewContext context = getViewContext();
     User user = getUser();
     Wiki wiki = view.wiki;
     Container c = (wiki != null && wiki.getContainerId() != null) ? ContainerManager.getForId(wiki.getContainerId()) : getContainer();
@@ -132,7 +132,7 @@ else
 
         for (Attachment a : wiki.getAttachments())
         {
-            %><a href="<%=h(a.getDownloadUrl(DownloadAction.class))%>"><img src="<%=request.getContextPath()%><%=h(a.getFileIcon())%>">&nbsp;<%=h(a.getName())%></a><br><%
+            %><a href="<%=h(a.getDownloadUrl(DownloadAction.class))%>"><img src="<%=getContextPath()%><%=h(a.getFileIcon())%>">&nbsp;<%=h(a.getName())%></a><br><%
         }
     }
 }

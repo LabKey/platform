@@ -25,7 +25,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
-import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -45,7 +44,6 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
     {
         private final Map<ExpRun, Container> _runsWithPermission;
         private final Map<ExpRun, Container> _runsWithoutPermission;
-        private final ViewContext _viewContext;
         private final List<? extends ExpObject> _objects;
         private final String _objectType;
         private final Class<? extends Controller> _detailAction;
@@ -56,11 +54,10 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         private final List<Pair<SecurableResource, ActionURL>> _deleteableExtras;
         private final List<Pair<SecurableResource, ActionURL>> _noPermissionExtras;
 
-        public ConfirmDeleteBean(Map<ExpRun, Container> runsWithPermission, Map<ExpRun, Container> runsWithoutPermission, ViewContext viewContext, List<? extends ExpObject> objects, String objectType, Class<? extends Controller> detailAction, Integer singleObjectRowId, String extraNoun, List<Pair<SecurableResource, ActionURL>> deleteableExtras, List<Pair<SecurableResource, ActionURL>> noPermissionExtras)
+        public ConfirmDeleteBean(Map<ExpRun, Container> runsWithPermission, Map<ExpRun, Container> runsWithoutPermission, List<? extends ExpObject> objects, String objectType, Class<? extends Controller> detailAction, Integer singleObjectRowId, String extraNoun, List<Pair<SecurableResource, ActionURL>> deleteableExtras, List<Pair<SecurableResource, ActionURL>> noPermissionExtras)
         {
             _runsWithPermission = runsWithPermission;
             _runsWithoutPermission = runsWithoutPermission;
-            _viewContext = viewContext;
             _objects = objects;
             _objectType = objectType;
             _detailAction = detailAction;
@@ -78,11 +75,6 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         public Map<ExpRun, Container> getRunsWithoutPermission()
         {
             return _runsWithoutPermission;
-        }
-
-        public ViewContext getViewContext()
-        {
-            return _viewContext;
         }
 
         public List<? extends ExpObject> getObjects()
@@ -170,7 +162,7 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
             }
         }
 
-        ConfirmDeleteBean bean = new ConfirmDeleteBean(runsWithPermission, runsWithoutPermission, getViewContext(), objects, objectType, detailAction, form.getSingleObjectRowId(), extraNoun, deleteableExtras, noPermissionExtras);
+        ConfirmDeleteBean bean = new ConfirmDeleteBean(runsWithPermission, runsWithoutPermission, objects, objectType, detailAction, form.getSingleObjectRowId(), extraNoun, deleteableExtras, noPermissionExtras);
         bean.setReturnUrl(form.getReturnUrl());
         bean.setDataRegionSelectionKey(form.getDataRegionSelectionKey());
         setModelBean(bean);

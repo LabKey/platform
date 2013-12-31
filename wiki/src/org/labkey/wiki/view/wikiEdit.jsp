@@ -75,7 +75,7 @@
             {
                 %>
                     <%=sep%>{name: <%=PageFlowUtil.jsString(att.getName())%>,
-                             iconUrl: <%=PageFlowUtil.jsString(me.getViewContext().getContextPath() + att.getFileIcon())%>,
+                             iconUrl: <%=PageFlowUtil.jsString(getViewContext().getContextPath() + att.getFileIcon())%>,
                              downloadUrl: <%=PageFlowUtil.jsString(att.getDownloadUrl(DownloadAction.class).toString())%>
                             }
                 <%
@@ -203,7 +203,7 @@
                             </table>
                             <table id="wiki-new-attachments">
                             </table>
-                            <a onclick="addNewAttachmentInput('wiki-file-link');" id="wiki-file-link"><img src="<%=h(me.getViewContext().getContextPath())%>/_images/paperclip.gif">Attach a file</a>
+                            <a onclick="addNewAttachmentInput('wiki-file-link');" id="wiki-file-link"><img src="<%=getContextPath()%>/_images/paperclip.gif">Attach a file</a>
                         </form>
                     </td>
                 </tr>

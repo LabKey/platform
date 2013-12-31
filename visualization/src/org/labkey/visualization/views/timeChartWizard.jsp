@@ -42,7 +42,7 @@
 %>
 <%
     JspView<VisualizationController.GetVisualizationForm> me = (JspView<VisualizationController.GetVisualizationForm>) HttpView.currentView();
-    ViewContext ctx = me.getViewContext();
+    ViewContext ctx = getViewContext();
     VisualizationController.GetVisualizationForm form = me.getModelBean();
     boolean canEdit = false;
     boolean canShare = ctx.hasPermission(ShareReportPermission.class);

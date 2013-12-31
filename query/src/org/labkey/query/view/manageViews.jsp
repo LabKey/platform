@@ -21,29 +21,36 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.query.controllers.QueryController.InternalDeleteView" %>
+<%@ page import="org.labkey.query.controllers.QueryController.InternalNewViewAction" %>
+<%@ page import="org.labkey.query.controllers.QueryController.InternalSourceViewAction" %>
 <%@ page import="org.labkey.query.persist.CstmView" %>
 <%@ page import="org.labkey.query.persist.QueryManager" %>
-<%@ page import="java.util.*" %>
-<%@ page import="org.labkey.query.controllers.QueryController.*" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.query.view.CustomViewSetKey" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.Collections" %>
+<%@ page import="java.util.Comparator" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%! String userIdToString(Integer userId, User currentUser)
-{
-    if (userId == null)
+<%!
+    String userIdToString(Integer userId, User currentUser)
     {
-        return "";
+        if (userId == null)
+        {
+            return "";
+        }
+        User user = UserManager.getUser(userId);
+        if (user == null)
+            return "Unknown user #" + userId;
+        if (user.isGuest())
+            return "Guest";
+        return user.getDisplayName(currentUser);
     }
-    User user = UserManager.getUser(userId);
-    if (user == null)
-        return "Unknown user #" + userId;
-    if (user.isGuest())
-        return "Guest";
-    return user.getDisplayName(currentUser);
-}
 %>
 <%
     QueryForm form = (QueryForm) HttpView.currentModel();
@@ -53,10 +60,12 @@
     String queryName = form.getQueryName();
     QueryManager mgr = QueryManager.get();
     List<CstmView> views = new ArrayList<>();
-    if (form.getViewContext().hasPermission(UpdatePermission.class))
+
+    if (getViewContext().hasPermission(UpdatePermission.class))
     {
         views.addAll(Arrays.asList(mgr.getCstmViews(c, schemaName, queryName, null, null, false, true)));
     }
+
     if (!user.isGuest())
     {
         views.addAll(Arrays.asList(mgr.getCstmViews(c, schemaName, queryName, null, user, false, false)));
@@ -115,7 +124,7 @@
         <th>Modified</th>
         <th>Modified&nbsp;By</th>
     </tr>
-    <% if (form.getViewContext().hasPermission(UpdatePermission.class))
+    <% if (getViewContext().hasPermission(UpdatePermission.class))
     {
         for (CstmView view : views)
         {

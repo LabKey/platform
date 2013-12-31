@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.data.ContainerManager"%>
 <%@ page import="org.labkey.api.data.DataRegion"%>
@@ -26,16 +25,16 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.issue.ColumnType" %>
 <%@ page import="org.labkey.issue.IssuePage" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
-<%@ page import="org.labkey.issue.ColumnType" %>
 <%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
-    ViewContext context = me.getViewContext();
+    ViewContext context = getViewContext();
     IssuePage bean = me.getModelBean();
 
     Set<String> issueIds = bean.getIssueIds();

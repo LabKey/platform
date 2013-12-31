@@ -32,7 +32,7 @@
     JspView<AssayBaseWebPartFactory.EditViewBean> me = (JspView<EditViewBean>) HttpView.currentView();
     EditViewBean bean = me.getModelBean();
     Portal.WebPart webPart = bean.webPart;
-    ViewContext ctx = me.getViewContext();
+    ViewContext ctx = getViewContext();
     ActionURL postUrl = webPart.getCustomizePostURL(ctx);
     Integer viewProtocolId = AssayBaseWebPartFactory.getProtocolId(webPart);
 

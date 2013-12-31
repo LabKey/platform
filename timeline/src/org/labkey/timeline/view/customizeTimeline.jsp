@@ -21,7 +21,8 @@
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
 <%@ page import="org.labkey.api.query.DefaultSchema" %>
 <%@ page import="org.labkey.api.query.QueryDefinition" %>
-<%@ page import="org.labkey.api.query.UserSchema"%>
+<%@ page import="org.labkey.api.query.QueryService"%>
+<%@ page import="org.labkey.api.query.UserSchema" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
@@ -31,13 +32,12 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
-<%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     HttpView<Portal.WebPart> me = (HttpView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart part = me.getModelBean();
-    ViewContext ctx = me.getViewContext();
+    ViewContext ctx = getViewContext();
     TimelineSettings settings = new TimelineSettings();
     BeanUtils.populate(settings, part.getPropertyMap());
 

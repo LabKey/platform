@@ -15,19 +15,19 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.study.PlateTemplate" %>
-<%@ page import="org.labkey.api.study.Position" %>
-<%@ page import="org.labkey.api.study.WellGroupTemplate" %>
-<%@ page import="org.labkey.study.controllers.plate.PlateController" %>
-<%@ page import="java.util.*" %>
 <%@ page import="org.labkey.api.study.WellGroup" %>
+<%@ page import="org.labkey.api.study.WellGroupTemplate" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.controllers.plate.PlateController" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.TreeMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PlateController.TemplateViewBean> me = (JspView<PlateController.TemplateViewBean>) HttpView.currentView();
-    ViewContext context = me.getViewContext();
     PlateController.TemplateViewBean bean = me.getModelBean();
     PlateTemplate template = bean.getTemplate();
 %>

@@ -37,9 +37,9 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
-    ViewContext context = me.getViewContext();
     IssuePage bean = me.getModelBean();
     final Issue issue = bean.getIssue();
+    ViewContext context = getViewContext();
     final Container c = getContainer();
     final User user = getUser();
     final String issueId = Integer.toString(issue.getIssueId());

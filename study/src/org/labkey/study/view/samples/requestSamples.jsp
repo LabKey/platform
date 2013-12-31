@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
@@ -23,17 +24,16 @@
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController"%>
 <%@ page import="org.labkey.study.model.LocationImpl"%>
 <%@ page import="org.labkey.study.model.Specimen"%>
-<%@ page import="org.labkey.study.model.StudyManager"%>
+<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.NewRequestBean> me = (JspView<SpecimenController.NewRequestBean>) HttpView.currentView();
     SpecimenController.NewRequestBean bean = me.getModelBean();
-    ViewContext context = me.getViewContext();
+    ViewContext context = getViewContext();
     Container c = getContainer();
     List<LocationImpl> locations = StudyManager.getInstance().getValidRequestingLocations(c);
     boolean shoppingCart = SampleManager.getInstance().isSpecimenShoppingCartEnabled(c);

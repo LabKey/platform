@@ -15,16 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ViewContext> me = (JspView<ViewContext>) HttpView.currentView();
-    ViewContext context = me.getViewContext();
     String[] pathAliases = ContainerManager.getAliasesForContainer(getContainer());
 %>
 <table width="500">

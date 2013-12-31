@@ -24,7 +24,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.ViewRequestsHeaderBean> me = (JspView<SpecimenController.ViewRequestsHeaderBean>) HttpView.currentView();
-    ViewContext context = me.getViewContext();
+    ViewContext context = getViewContext();
     SpecimenController.ViewRequestsHeaderBean bean = me.getModelBean();
     ActionURL userLink = context.cloneActionURL();
 %>

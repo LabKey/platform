@@ -38,7 +38,7 @@
 %>
 <%
     MoveFolderTreeView me = (MoveFolderTreeView) HttpView.currentView();
-    ViewContext ctx = me.getViewContext();
+    ViewContext ctx = getViewContext();
     Container c = getContainer();
     Container project = c.getProject();
 %>

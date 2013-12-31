@@ -155,11 +155,11 @@ else
         </ul>
     <% } %>
 
-    <form action="<%= h(bean.getViewContext().cloneActionURL().deleteParameters()) %>" method="post">
+    <form action="<%= h(getViewContext().cloneActionURL().deleteParameters()) %>" method="post">
         <%
-            if (bean.getViewContext().getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME) != null)
+            if (getViewContext().getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME) != null)
             {
-                for (String selectedValue : bean.getViewContext().getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME))
+                for (String selectedValue : getViewContext().getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME))
                 { %>
                     <input type="hidden" name="<%= h(DataRegion.SELECT_CHECKBOX_NAME) %>" value="<%= h(selectedValue) %>" /><%
                 }

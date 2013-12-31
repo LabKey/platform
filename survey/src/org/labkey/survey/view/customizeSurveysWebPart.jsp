@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -36,7 +36,7 @@
 <%
     HttpView<Portal.WebPart> me = (HttpView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart part = me.getModelBean();
-    ViewContext ctx = me.getViewContext();
+    ViewContext ctx = getViewContext();
     Map<String, String> props = part.getPropertyMap();
 
     Integer surveyDesignId = props.get("surveyDesignId") != null ? Integer.parseInt(props.get("surveyDesignId")) : null;
