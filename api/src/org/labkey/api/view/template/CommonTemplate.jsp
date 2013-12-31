@@ -171,7 +171,7 @@ if (null != me.getView("moduleNav"))
 
     %>
             <td id="bodypanel" class="labkey-body-panel" style="min-width:<%=bean.getMinimumWidth()%>px;">
-                <img height=1 width=<%=bean.getMinimumWidth()%> src="<%= contextPath %>/_.gif"><br>
+                <img height=1 width=<%=bean.getMinimumWidth()%> src="<%=getContextPath()%>/_.gif"><br>
                 <!-- BODY -->
                 <% me.include(me.getBody(),out); %>
                 <!-- /BODY -->
@@ -216,7 +216,7 @@ if (null != me.getView("moduleNav"))
     <!--<%= text("time " + (System.currentTimeMillis() - (Long)request.getAttribute(ViewServlet.REQUEST_STARTTIME)) + "ms") %> --><%
     }
 
-    ActionURL permaLink = me.getViewContext().cloneActionURL();
+    ActionURL permaLink = getViewContext().cloneActionURL();
     permaLink.setExtraPath("__r" + Integer.toString(c.getRowId()));
 %>
 <a href="<%=permaLink%>" id="permalink" style="display: none;"></a>

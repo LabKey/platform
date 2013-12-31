@@ -31,7 +31,7 @@
 <%
     CustomizeFilesWebPartView me = (CustomizeFilesWebPartView) HttpView.currentView();
     CustomizeFilesWebPartView.CustomizeWebPartForm form = me.getModelBean();
-    ViewContext ctx = me.getViewContext();
+    ViewContext ctx = getViewContext();
     ActionURL postUrl = form.getWebPart().getCustomizePostURL(ctx);
     FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
     AttachmentDirectory [] attDirs = svc.getRegisteredDirectories(getContainer());
