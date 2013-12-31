@@ -44,4 +44,5 @@
     String nq(String str)
     {
         return str == null ? "null" : q(str);
-    } %>
+    }
+%>

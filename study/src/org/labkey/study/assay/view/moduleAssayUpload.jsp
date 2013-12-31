@@ -15,19 +15,18 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
-<%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
-<%@ page import="org.labkey.api.exp.api.ExpExperiment" %>
-<%@ page import="org.labkey.api.exp.api.ExperimentService" %>
-<%@ page import="org.labkey.api.view.NotFoundException" %>
-<%@ page import="org.json.JSONObject" %>
-<%@ page import="org.labkey.study.controllers.assay.AssayController" %>
-<%@ page import="org.labkey.study.controllers.assay.actions.AbstractAssayAPIAction" %>
-<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
-<%@ page import="java.util.Map" %>
+<%@ page import="org.json.JSONObject"%>
 <%@ page import="org.labkey.api.exp.api.AssayJSONConverter" %>
+<%@ page import="org.labkey.api.exp.api.ExpExperiment" %>
+<%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
+<%@ page import="org.labkey.api.exp.api.ExperimentService" %>
+<%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
+<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.NotFoundException" %>
+<%@ page import="org.labkey.study.controllers.assay.AssayController" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     protected ExpExperiment lookupBatch(int batchId)

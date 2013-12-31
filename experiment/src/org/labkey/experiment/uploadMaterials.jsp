@@ -17,19 +17,19 @@
 %>
 <%@ page import="org.labkey.api.data.ColumnInfo"%>
 <%@ page import="org.labkey.api.exp.api.ExpSampleSet"%>
-<%@ page import="org.labkey.api.exp.property.DomainProperty"%>
+<%@ page import="org.labkey.api.exp.api.ExperimentUrls"%>
+<%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page import="org.labkey.api.exp.query.ExpMaterialTable" %>
+<%@ page import="org.labkey.api.exp.query.SamplesSchema" %>
+<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
+<%@ page import="org.labkey.api.query.QueryUrls" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="org.labkey.experiment.samples.UploadMaterialSetForm" %>
 <%@ page import="org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.query.QueryUrls" %>
-<%@ page import="org.labkey.api.exp.query.SamplesSchema" %>
-<%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
-<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
-<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%

@@ -53,7 +53,7 @@ These permissions control whether pipeline files can be downloaded and updated v
         new Pair<>("create files", RoleManager.getRole(AuthorRole.class)),
         new Pair<>("create and delete", RoleManager.getRole(EditorRole.class))
     };
-    Pair[] optionsGuest = new Pair[] {optionsFull[0],optionsFull[1]};
+    Pair[] optionsGuest = new Pair[] {optionsFull[0], optionsFull[1]};
 
     int i=0;
     %><b class="labkey-message">Global groups</b><table><%  // FIELDSET is broken on firefox  <fieldset><legend>Global groups</legend>
@@ -113,7 +113,7 @@ function toggleEnableFTP(checkbox)
 <%!
     String writeOptions(Pair[] options, Role role) throws IOException
     {
-        StringBuffer out = new StringBuffer();
+        StringBuilder out = new StringBuilder();
         boolean selected = false;
         for (Pair option : options)
         {
@@ -132,9 +132,9 @@ function toggleEnableFTP(checkbox)
         if (!selected && null != role)
         {
             out.append("<option value=\"");
-            out.append("" + role.getUniqueName());
-                out.append("\" selected>");
-            out.append("" + role.getName());
+            out.append(h(role.getUniqueName()));
+            out.append("\" selected>");
+            out.append(h(role.getName()));
             out.append("</option>");
         }
         return out.toString();
