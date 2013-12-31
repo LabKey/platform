@@ -124,9 +124,10 @@ public class ReportsWebPart extends WebPartView
             String reportName = props.get(Report.renderParam.reportName.name());
             if (!StringUtils.isEmpty(reportName))
             {
-                String key = ReportUtil.getReportKey(props.get(QueryParam.schemaName.name()), props.get(QueryParam.queryName.name()));
+                String key = StringUtils.trimToNull(ReportUtil.getReportKey(props.get(QueryParam.schemaName.name()), props.get(QueryParam.queryName.name())));
 
-                for (Report rpt : ReportService.get().getReports(getViewContext().getUser(), getViewContext().getContainer(), key))
+                // try to match by report name including any explicitly shared reports in parent folders or reports in the shared container
+                for (Report rpt : ReportUtil.getReports(getViewContext().getContainer(), getViewContext().getUser(), key, true))
                 {
                     if (reportName.equals(rpt.getDescriptor().getReportName()))
                         return rpt;
