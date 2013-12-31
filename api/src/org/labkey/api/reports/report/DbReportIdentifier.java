@@ -17,6 +17,7 @@ package org.labkey.api.reports.report;
 
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.writer.ContainerUser;
 
 /*
@@ -83,6 +84,11 @@ public class DbReportIdentifier extends AbstractReportIdentifier
     {
         if(_id == -1)
             return null;
-        return ReportService.get().getReport(getRowId());
+
+        Report report = ReportService.get().getReport(getRowId());
+        if (report != null && ReportUtil.isReportViewable(cu.getContainer(), report))
+            return report;
+
+        return null;
     }
 }

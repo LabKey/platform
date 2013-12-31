@@ -289,14 +289,41 @@ public class ReportUtil
         return false;
     }
 
+    /**
+     * Reports are inherited when they are viewed from a folder different from the folder it was created in.
+     * The report must also be either configured as shared from a parent folder or reside in the shared folder.
+     */
     public static boolean isReportInherited(Container c, Report report)
     {
         if (null != report.getDescriptor().getReportId())
         {
+            if (ContainerManager.getSharedContainer().getId().equals(report.getDescriptor().getContainerId()))
+            {
+                return !ContainerManager.getSharedContainer().equals(c);
+            }
+
             if ((report.getDescriptor().getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0)
             {
                 return !c.getId().equals(report.getDescriptor().getContainerId());
             }
+        }
+        return false;
+    }
+
+    /**
+     * If a report was not created in the specified folder then it must have been
+     * shared to be viewable.
+     */
+    public static boolean isReportViewable(Container c, Report report)
+    {
+        if (c != null && report != null)
+        {
+            if (!c.getId().equals(report.getDescriptor().getContainerId()))
+            {
+                return isReportInherited(c, report);
+            }
+            else
+                return true;
         }
         return false;
     }
