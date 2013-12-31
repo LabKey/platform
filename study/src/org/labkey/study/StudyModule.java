@@ -125,7 +125,9 @@ import org.labkey.study.model.ContinuousDatasetDomainKind;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.DateDatasetDomainKind;
 import org.labkey.study.model.ParticipantGroupManager;
+import org.labkey.study.model.ParticipantIdImportHelper;
 import org.labkey.study.model.SecurityType;
+import org.labkey.study.model.SequenceNumImportHelper;
 import org.labkey.study.model.SpecimenDomainKind;
 import org.labkey.study.model.SpecimenEventDomainKind;
 import org.labkey.study.model.StudyDomainKind;
@@ -743,6 +745,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         set.add(AssaySchemaImpl.TestCase.class);
         set.add(AssayProviderSchema.TestCase.class);
         set.add(WindowsCommandLineSplitter.TestCase.class);
+        set.add(SequenceNumImportHelper.SequenceNumTest.class);
+        set.add(ParticipantIdImportHelper.ParticipantIdTest.class);
         return set;
     }
 

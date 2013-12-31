@@ -2554,7 +2554,7 @@ public class SpecimenImporter
         {
             try
             {
-                pair = replaceTable(schema, file, tempTable, true, false, lsidCol, sequencenumCol);
+                pair = replaceTable(schema, file, tempTable, true, false, lsidCol, sequencenumCol, computedParticipantIdCol);
 
                 loadedColumns = pair.first;
                 rowCount = pair.second;
