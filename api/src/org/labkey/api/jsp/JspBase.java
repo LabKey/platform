@@ -699,9 +699,9 @@ abstract public class JspBase extends JspContext implements HasViewContext
 
     /**
      * This is just a marker for JspBase helper methods that return Html and do not need to be encoded
-     * No one should ever see this class it should just get pass directly from the helper to out.write()
+     * No one should ever see this class it should just get passed directly from the helper to out.write()
      *
-     * As an aside Java 7 claims to be very good at optimizing usages like this (avoiding the object allocation)
+     * As an aside, Java 7 claims to be very good at optimizing usages like this (avoiding the object allocation)
      * http://docs.oracle.com/javase/7/docs/technotes/guides/vm/performance-enhancements-7.html
      */
     final protected static class _HtmlString

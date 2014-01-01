@@ -719,6 +719,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         private final Map<String, ActionDescriptor> _nameToDescriptor;
         private HTMLFileActionResolver _htmlResolver;
 
+        @SafeVarargs
         public DefaultActionResolver(Class<? extends Controller> outerClass, Class<? extends Controller>... otherClasses)
         {
             _outerClass = outerClass;
