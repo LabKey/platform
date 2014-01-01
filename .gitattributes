@@ -813,6 +813,7 @@ api/src/org/labkey/api/pipeline/ToolExecutionException.java -text
 api/src/org/labkey/api/pipeline/WorkDirFactory.java -text
 api/src/org/labkey/api/pipeline/WorkDirectory.java -text
 api/src/org/labkey/api/pipeline/WorkDirectoryTask.java -text
+api/src/org/labkey/api/pipeline/XMLBeanTaskFactoryFactory.java -text
 api/src/org/labkey/api/pipeline/browse/PipelinePathForm.java -text
 api/src/org/labkey/api/pipeline/cmd/AbstractValueToNamedSwitch.java -text
 api/src/org/labkey/api/pipeline/cmd/BooleanToCommandArgs.java -text
@@ -1373,6 +1374,8 @@ api/src/org/labkey/api/study/assay/ThawListResolverType.java -text
 api/src/org/labkey/api/study/assay/TsvDataHandler.java -text
 api/src/org/labkey/api/study/assay/bulkPropertiesInput.jsp -text
 api/src/org/labkey/api/study/assay/fileUpload.jsp -text
+api/src/org/labkey/api/study/assay/pipeline/AssayImportRunTaskFactorySettings.java -text
+api/src/org/labkey/api/study/assay/pipeline/AssayImportRunTaskId.java -text
 api/src/org/labkey/api/study/assay/pipeline/AssayRunAsyncContext.java -text
 api/src/org/labkey/api/study/assay/pipeline/AssayUploadPipelineJob.java -text
 api/src/org/labkey/api/study/assay/plate/ExcelPlateReader.java -text

@@ -15,10 +15,14 @@
  */
 package org.labkey.api.pipeline;
 
+import org.apache.xmlbeans.SchemaType;
+import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
+import org.labkey.api.util.Path;
+import org.labkey.pipeline.xml.TaskType;
 
 import java.util.Collection;
 
@@ -31,7 +35,7 @@ public interface TaskPipelineRegistry
 {
     /**
      * Registers all tasks and pipelines found in the module under the module's "pipeline/tasks" and "pipeline/pipelines"
-     * directories. The directories will be watch for file changes and tasks will be added or removed as they appear or disappear.
+     * directories. The directories will be watched for file changes and tasks will be added or removed as they appear or disappear.
      * TaskFactory or TaskPipeline objects created by Spring bean config xml files are added to the registry via
      * the {@link TaskPipelineRegistrar} on startup.
      *
@@ -104,4 +108,18 @@ public interface TaskPipelineRegistry
     void removeTaskPipeline(TaskId pipelineId);
 
     void removeTaskFactory(TaskId taskId);
+
+    /**
+     * Register a XMLBeanTaskFactoryFactory that will parse the xml task factory definition into a TaskFactory instance.
+     * @param schemaType The SchemaType key.
+     * @param factoryFactory The XMLBeanTaskFactoryFactory that will parse the xml task factory definition.
+     */
+    void registerTaskFactoryFactory(SchemaType schemaType, XMLBeanTaskFactoryFactory factoryFactory);
+
+    /**
+     * Create a TaskFactory using the schema type associated with the registered XMLBeanTaskFactoryFactory.
+     * The TaskFactory is created, but won't be added to the registry.
+     */
+    TaskFactory createTaskFactory(TaskId taskId, TaskType xtask, Path tasksDir);
+
 }
