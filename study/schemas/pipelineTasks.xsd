@@ -1,0 +1,40 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://labkey.org/pipeline/xml"
+           xmlns:p="http://labkey.org/pipeline/xml"
+           targetNamespace="http://labkey.org/pipeline/xml"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+
+    <xs:import namespace="http://labkey.org/pipeline/xml" schemaLocation="../../../../schemas/pipelineTasks.xsd"/>
+
+    <!-- Intermediate type introduced only to remove the 'outputs' element from base TaskType -->
+    <xs:complexType name="AssayImportRunTaskIntermediateType" abstract="true">
+        <xs:complexContent>
+            <xs:restriction base="p:TaskType">
+                <xs:sequence>
+                    <xs:group ref="InfoGroup"/>
+                    <xs:element name="author" type="xs:string" minOccurs="0"/>
+                    <xs:element name="location" type="xs:string" minOccurs="0"/>
+                    <xs:element name="inputs" type="InputsType" minOccurs="0"/>
+                    <!-- removed 'outputs' element -->
+                </xs:sequence>
+                <xs:attributeGroup ref="NameVersionAttrGroup"/>
+            </xs:restriction>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="AssayImportRunTaskType">
+        <xs:annotation>
+            <xs:documentation>Import an output file from a previous task into the target assay.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="p:AssayImportRunTaskIntermediateType">
+                <xs:sequence>
+                    <xs:element name="providerName" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                    <xs:element name="protocolName" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+</xs:schema>

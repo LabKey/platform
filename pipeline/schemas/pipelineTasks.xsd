@@ -1,0 +1,54 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://labkey.org/pipeline/xml"
+           xmlns:p="http://labkey.org/pipeline/xml"
+           targetNamespace="http://labkey.org/pipeline/xml"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+
+    <xs:import namespace="http://labkey.org/pipeline/xml" schemaLocation="../../../../schemas/pipelineTasks.xsd"/>
+
+    <xs:complexType name="ExecTaskType">
+        <xs:complexContent>
+            <xs:extension base="p:TaskType">
+                <xs:sequence>
+                    <xs:element name="exec" type="ExecType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="ScriptTaskType">
+        <xs:complexContent>
+            <xs:extension base="p:TaskType">
+                <xs:sequence>
+                    <xs:element name="script" type="ScriptType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="ScriptType">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="interpreter" type="xs:string" />
+                <xs:attribute name="file" type="xs:string" />
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="ExecType">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="exe" type="xs:string" />
+                <!-- TODO:
+                <xs:attribute name="softwarePackage" type="xs:string" />
+                  - version could be literal "1.0" or a parameter name, e.g "exeVersion"
+                  - the ${version} token in the exe path will be replaced by the version provided.
+                <xs:attribute name="version" type="xs:string" />
+                <xs:attribute name="installPath" type="xs:string" />
+                -->
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+</xs:schema>

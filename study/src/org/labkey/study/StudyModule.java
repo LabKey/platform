@@ -44,6 +44,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryService;
@@ -87,6 +88,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.pipeline.xml.AssayImportRunTaskType;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.FileBasedModuleDataHandler;
@@ -137,6 +139,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.TestDatasetDomainKind;
 import org.labkey.study.model.VialDomainKind;
 import org.labkey.study.model.VisitDatasetDomainKind;
+import org.labkey.study.pipeline.AssayImportRunTask;
 import org.labkey.study.pipeline.SampleMindedTransform;
 import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.pipeline.StudyPipeline;
@@ -367,6 +370,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         PipelineService.get().registerPipelineProvider(new StudyPipeline(this));
         PipelineService.get().registerPipelineProvider(new StudyImportProvider(this));
+
+        PipelineJobService.get().registerTaskFactoryFactory(AssayImportRunTaskType.type, new AssayImportRunTask.FactoryFactory());
+
         // This is in the First group because when a container is deleted,
         // the Experiment listener needs to be called after the Study listener,
         // because Study needs the metadata held by Experiment to delete properly.

@@ -15,7 +15,9 @@
  */
 package org.labkey.pipeline.analysis;
 
+import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.HasViewContext;
@@ -29,11 +31,12 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.ViewContext;
+import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.api.TaskPipelineImpl;
-import org.labkey.pipeline.xml.LocalOrRefTaskType;
 import org.labkey.pipeline.xml.PipelineDocument;
 import org.labkey.pipeline.xml.TaskPipelineType;
-import org.labkey.pipeline.xml.TasksType;
+import org.labkey.pipeline.xml.TaskRefType;
+import org.labkey.pipeline.xml.TaskType;
 
 import java.io.FileFilter;
 import java.io.IOException;
@@ -224,9 +227,15 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
             doc = PipelineDocument.Factory.parse(pipelineConfig.getInputStream(), options);
             XmlBeansUtil.validateXmlDocument(doc, "Task pipeline config '" + pipelineConfig.getPath() + "'");
         }
-        catch (XmlException |XmlValidationException |IOException e)
+        catch (XmlValidationException e)
         {
-            throw new IllegalArgumentException(e);
+            Logger.getLogger(PipelineJobServiceImpl.class).error(e);
+            return null;
+        }
+        catch (XmlException |IOException e)
+        {
+            Logger.getLogger(PipelineJobServiceImpl.class).error("Error loading task pipeline '" + pipelineConfig.getPath() + "':\n" + e.getMessage());
+            return null;
         }
 
         FileAnalysisTaskPipelineImpl pipeline = new FileAnalysisTaskPipelineImpl(pipelineTaskId);
@@ -246,38 +255,78 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
             pipeline._analyzeURL = xpipeline.getAnalyzeURL();
 
         // Resolve all the steps in the pipeline
-        TaskFactory initialTaskFactory = null;
         List<TaskId> progression = new ArrayList<>();
-        TasksType xtasks = xpipeline.getTasks();
-        for (LocalOrRefTaskType task : xtasks.getTaskArray())
+        XmlObject[] xtasks = xpipeline.getTasks().selectPath("./*");
+        for (int taskIndex = 0; taskIndex < xtasks.length; taskIndex++)
         {
-            // UNDONE: provide task parameters
-
-            if (task.isSetRef())
+            XmlObject xobj = xtasks[taskIndex];
+            if (xobj instanceof TaskRefType)
             {
+                TaskRefType xtaskref = (TaskRefType)xobj;
                 try
                 {
-                    TaskId taskId = TaskId.valueOf(task.getRef());
+                    TaskId taskId = TaskId.valueOf(xtaskref.getRef());
                     TaskFactory factory = PipelineJobService.get().getTaskFactory(taskId);
                     if (factory == null)
-                        throw new IllegalArgumentException("Task factory ref not found: " + task.getRef());
+                        throw new IllegalArgumentException("Task factory ref not found: " + xtaskref.getRef());
 
-                    if (initialTaskFactory == null)
-                        initialTaskFactory = factory;
+                    // UNDONE: Use settings to configure a task reference
+                    /*
+                    if (xtaskref.isSetSettings())
+                    {
+                        // Create settings from xml
+                        TaskFactorySettings settings = createSettings(pipelineTaskId, factory, xtaskref.getSettings());
+                        if (settings.getId().equals(taskId))
+                            throw new IllegalArgumentException("Task factory settings must not be identical to parent task: " + settings.getId());
+
+                        // Register locally configured task
+                        try
+                        {
+                            PipelineJobServiceImpl.get().addLocalTaskFactory(pipeline, settings);
+                        }
+                        catch (CloneNotSupportedException e)
+                        {
+                            throw new IllegalArgumentException("Failed to register task with settings: " + taskId, e);
+                        }
+
+                        taskId = settings.getId();
+                    }
+                    */
 
                     progression.add(taskId);
                 }
                 catch (ClassNotFoundException cnfe)
                 {
-                    throw new IllegalArgumentException("Task factory class not found: " + task.getRef());
+                    throw new IllegalArgumentException("Task factory class not found: " + xtaskref.getRef());
                 }
+
             }
-            else
+            else if (xobj instanceof TaskType)
             {
-                // UNDONE: local task definition
+                // Create a new local task definition
+                TaskType xtask = (TaskType)xobj;
+
+                String name = xtask.schemaType().getName().getLocalPart() + "-" + String.valueOf(taskIndex);
+                if (xtask.isSetName())
+                    name = xtask.getName();
+
+                TaskId taskId = createLocalTaskId(pipelineTaskId, name);
+
+                Path tasksDir = pipelineConfig.getPath().getParent();
+                TaskFactory factory = PipelineJobServiceImpl.get().createTaskFactory(taskId, xtask, tasksDir);
+                if (factory == null)
+                    throw new IllegalArgumentException("Task factory not found: " + taskId);
+
+                PipelineJobServiceImpl.get().addLocalTaskFactory(pipeline, factory);
+
+                progression.add(taskId);
             }
         }
 
+        if (progression.isEmpty())
+            throw new IllegalArgumentException("Expected at least one task factory in the task pipeline");
+
+        TaskFactory initialTaskFactory = PipelineJobService.get().getTaskFactory(progression.get(0));
         if (initialTaskFactory == null)
             throw new IllegalArgumentException("Expected at least one task factory in the task pipeline");
 
@@ -305,4 +354,79 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
         return pipeline;
     }
+
+    private static TaskId createLocalTaskId(TaskId pipelineTaskId, String name)
+    {
+        String taskName = pipelineTaskId.getName() + "/" + name;
+        return new TaskId(pipelineTaskId.getModuleName(), TaskId.Type.task, taskName, pipelineTaskId.getVersion());
+    }
+
+    /*
+    private static TaskFactorySettings createSettings(TaskId pipelineTaskId, TaskFactory factory, XmlObject xsettings)
+    {
+        TaskId parentTaskId = factory.getId();
+        TaskId taskId = createLocalTaskId(pipelineTaskId, parentTaskId.getName());
+
+        TaskFactorySettings settings = createFactorySettings(factory, taskId);
+
+        // UNDONE: I'm tired. Need to set the values on the settings reflectivly using xml->bean stuff
+        if (settings instanceof org.labkey.api.assay.pipeline.AssayImportRunTaskFactorySettings)
+        {
+            org.labkey.api.assay.pipeline.AssayImportRunTaskFactorySettings airtfs = (org.labkey.api.assay.pipeline.AssayImportRunTaskFactorySettings)settings;
+
+            XmlObject xproviderName = xsettings.selectChildren("http://labkey.org/pipeline/xml", "providerName")[0];
+            String providerName = ((XmlObjectBase)xproviderName).getStringValue();
+            airtfs.setProviderName(providerName);
+
+            XmlObject xprotocolName = xsettings.selectChildren("http://labkey.org/pipeline/xml", "protocolName")[0];
+            String protocolName = ((XmlObjectBase)xprotocolName).getStringValue();
+            airtfs.setProtocolName(protocolName);
+        }
+
+        return settings;
+    }
+
+    // Reflection hack to create instance of appropriate TaskFactorySettings class
+    private static TaskFactorySettings createFactorySettings(TaskFactory factory, TaskId taskId)
+    {
+        Class clazz = factory.getClass();
+
+        // Look for a "configure" method up the class hierarchy
+        Class<? extends TaskFactorySettings> typeBest = null;
+        while (clazz != null)
+        {
+            for (Method m : clazz.getDeclaredMethods())
+            {
+                if (m.getName().equals("configure") || m.getName().equals("cloneAndConfigure"))
+                {
+                    Class[] types = m.getParameterTypes();
+                    if (types.length != 1)
+                        continue;
+
+                    Class typeCurrent = types[0];
+                    if (!TaskFactorySettings.class.isAssignableFrom(typeCurrent))
+                        continue;
+
+                    if (typeBest == null || typeBest.isAssignableFrom(typeCurrent))
+                        typeBest = typeCurrent.asSubclass(TaskFactorySettings.class);
+                }
+            }
+
+            clazz = clazz.getSuperclass();
+        }
+
+        if (typeBest == null)
+            throw new IllegalArgumentException("TaskFactory settings class not found for type: " + clazz.getName());
+
+        try
+        {
+            Constructor<? extends TaskFactorySettings> ctor = typeBest.getConstructor(TaskId.class);
+            return ctor.newInstance(taskId);
+        }
+        catch (ReflectiveOperationException e)
+        {
+            throw new IllegalArgumentException("Error creating TaskFactorySettings: " + typeBest.getName(), e);
+        }
+    }
+    */
 }

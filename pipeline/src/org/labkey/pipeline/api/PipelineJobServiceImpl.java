@@ -16,6 +16,10 @@
 package org.labkey.pipeline.api;
 
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.SchemaType;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlObject;
+import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -39,23 +43,30 @@ import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.TaskPipelineSettings;
 import org.labkey.api.pipeline.WorkDirFactory;
+import org.labkey.api.pipeline.XMLBeanTaskFactoryFactory;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.resource.MergedDirectoryResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Filter;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URIUtil;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.pipeline.analysis.FileAnalysisTaskPipelineImpl;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesImpl;
 import org.labkey.pipeline.api.properties.ConfigPropertiesImpl;
 import org.labkey.pipeline.api.properties.GlobusClientPropertiesImpl;
 import org.labkey.pipeline.cluster.NoOpPipelineStatusWriter;
 import org.labkey.pipeline.mule.JMSStatusWriter;
+import org.labkey.pipeline.xml.TaskDocument;
+import org.labkey.pipeline.xml.TaskType;
 import org.labkey.pipeline.xstream.PathMapperImpl;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.StandardWatchEventKinds;
 import java.util.ArrayList;
@@ -126,6 +137,9 @@ public class PipelineJobServiceImpl extends PipelineJobService
     private HashMap<TaskId, TaskPipeline> _taskPipelineStore =
             new HashMap<>();
     private HashMap<TaskId, TaskFactory> _taskFactoryStore =
+            new HashMap<>();
+
+    private HashMap<SchemaType, XMLBeanTaskFactoryFactory> _taskFactoryFactories =
             new HashMap<>();
 
     private final Set<Module> _pipelineModules = new CopyOnWriteArraySet<>();
@@ -265,10 +279,36 @@ public class PipelineJobServiceImpl extends PipelineJobService
             _cache.remove(module.getName());
         }
 
-        private void removeTaskId(TaskId taskId)
+        private void removeTaskId(final TaskId taskId)
         {
             if (taskId != null)
+            {
                 _cache.remove(taskId.toString());
+
+                if (taskId.getType() == TaskId.Type.pipeline)
+                {
+                    // Remove any tasks that were locally defined in the pipeline xml file.
+                    // The locally defined tasks will have a TaskId name that is prefixed by the pipeline's name.
+                    TASK_FACTORY_CACHE.removeUsingFilter(new Filter<String>()
+                    {
+                        @Override
+                        public boolean accept(String s)
+                        {
+                            try
+                            {
+                                TaskId id = TaskId.valueOf(s);
+                                if (id != null && id.getType() == TaskId.Type.task && id.getName().startsWith(taskId.getName()))
+                                    return true;
+                            }
+                            catch (ClassNotFoundException e)
+                            {
+                                // ignore
+                            }
+                            return false;
+                        }
+                    });
+                }
+            }
         }
     }
 
@@ -311,7 +351,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
             // Remove a cached 'miss' entry if it is present
             _taskPipelineStore.put(pipeline.getId(), pipeline);
             Module module = pipeline.getDeclaringModule();
-            assert module != null; // TODO: is this true?
+            assert module != null;
             _pipelineModules.add(module);
         }
     }
@@ -397,6 +437,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
         addTaskFactory(factory.cloneAndConfigure(settings));
     }
 
+    @Override
     public void addTaskFactory(TaskFactory factory)
     {
         TASK_FACTORY_CACHE.remove(factory.getId().toString());
@@ -405,9 +446,44 @@ public class PipelineJobServiceImpl extends PipelineJobService
             // Remove a cached 'miss' entry if present
             _taskFactoryStore.put(factory.getId(), factory);
             Module module = factory.getDeclaringModule();
-            assert module != null; // TODO: is this true?
+            assert module != null;
             _pipelineModules.add(module);
         }
+    }
+
+    /**
+     * Add a TaskFactory defined locally within a pipeline xml file.
+     * NOTE: Don't use this for registering standard TaskFactories.
+     */
+    public void addLocalTaskFactory(TaskPipeline pipeline, TaskFactory factory)
+    {
+        if (!factory.getId().getName().startsWith(pipeline.getId().getName()))
+            throw new IllegalArgumentException("local TaskFactory name '" + factory.getId() + "' must be prefixed with TaskPipeline name '" + pipeline.getId() + "'.");
+
+        // Not allowed to put a value directly into the cache -- use a CacheLoader that immediately returns the value.
+        //TASK_FACTORY_CACHE.put(factory.getId().toString(), factory);
+        TASK_FACTORY_CACHE.get(factory.getId().toString(), factory, new CacheLoader<String, Object>()
+        {
+            @Override
+            public Object load(String key, @Nullable Object argument)
+            {
+                assert argument instanceof TaskFactory;
+                return argument;
+            }
+        });
+    }
+
+    /**
+     * Configure and add a TaskFactory locally defined within a pipeline xml file.
+     * NOTE: Don't use this for registering standard TaskFactories.
+     */
+    public void addLocalTaskFactory(TaskPipeline pipeline, TaskFactorySettings settings) throws CloneNotSupportedException
+    {
+        TaskFactory factory = getTaskFactory(settings.getCloneId());
+        if (factory == null)
+            throw new IllegalArgumentException("Base task factory implementation " + settings.getCloneId() + " not found in registry.");
+
+        addLocalTaskFactory(pipeline, factory.cloneAndConfigure(settings));
     }
 
     @NotNull
@@ -431,6 +507,29 @@ public class PipelineJobServiceImpl extends PipelineJobService
         }
 
         return Collections.unmodifiableList(pipelineList);
+    }
+
+    @Override
+    public void registerTaskFactoryFactory(SchemaType schemaType, XMLBeanTaskFactoryFactory factoryFactory)
+    {
+        synchronized (_taskFactoryFactories)
+        {
+            _taskFactoryFactories.put(schemaType, factoryFactory);
+        }
+    }
+
+    @Override
+    public TaskFactory createTaskFactory(TaskId taskId, TaskType xtask, Path tasksDir)
+    {
+        SchemaType schemaType = xtask.schemaType();
+        synchronized (_taskFactoryFactories)
+        {
+            XMLBeanTaskFactoryFactory factoryFactory = _taskFactoryFactories.get(schemaType);
+            if (factoryFactory == null)
+                throw new IllegalArgumentException("TaskFactoryFactory not found for schema type: " + schemaType);
+
+            return factoryFactory.create(taskId, xtask, tasksDir);
+        }
     }
 
     public ParamParser createParamParser()
@@ -918,13 +1017,55 @@ public class PipelineJobServiceImpl extends PipelineJobService
         {
             try
             {
-                return SimpleTaskFactory.create(taskId, taskConfig);
+                return create(taskId, taskConfig);
             }
             catch (IllegalArgumentException|IllegalStateException e)
             {
                 Logger.getLogger(PipelineJobServiceImpl.class).warn("Error registering '" + taskId + "' task: " + e.getMessage());
                 return null;
             }
+        }
+
+        private TaskFactory create(TaskId taskId, Resource taskConfig)
+        {
+            if (taskId.getName() == null)
+                throw new IllegalArgumentException("Task factory must by named");
+
+            if (taskId.getType() != TaskId.Type.task)
+                throw new IllegalArgumentException("Task factory must by of type 'task'");
+
+            TaskDocument doc;
+            try
+            {
+                XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
+                doc = TaskDocument.Factory.parse(taskConfig.getInputStream(), options);
+                XmlBeansUtil.validateXmlDocument(doc, "Task factory config '" + taskConfig.getPath() + "'");
+            }
+            catch (XmlValidationException e)
+            {
+                Logger.getLogger(PipelineJobServiceImpl.class).error(e);
+                return null;
+            }
+            catch (XmlException |IOException e)
+            {
+                Logger.getLogger(PipelineJobServiceImpl.class).error("Error loading task factory '" + taskConfig.getPath() + "':\n" + e.getMessage());
+                return null;
+            }
+
+            TaskType xtask = doc.getTask();
+            if (xtask == null)
+                throw new IllegalArgumentException("task element required");
+
+            if (!taskId.getName().equals(xtask.getName()))
+                throw new IllegalArgumentException(String.format("Task factory config must have the name '%s'", taskId.getName()));
+
+            Path taskDir = taskConfig.getPath().getParent();
+            return create(taskId, xtask, taskDir);
+        }
+
+        private TaskFactory create(TaskId taskId, TaskType xtask, Path taskDir)
+        {
+            return createTaskFactory(taskId, xtask, taskDir);
         }
 
     };

@@ -96,7 +96,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
         if (mgr == null)
             throw new PipelineJobException("Script engine manager not available");
 
-        SimpleTaskFactory factory = (SimpleTaskFactory)_factory;
+        ScriptTaskFactory factory = (ScriptTaskFactory)_factory;
         String extension = factory._scriptExtension;
         ScriptEngine engine = mgr.getEngineByName(extension);
         if (engine == null)

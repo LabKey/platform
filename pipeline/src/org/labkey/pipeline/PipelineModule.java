@@ -48,6 +48,7 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.pipeline.analysis.AnalysisController;
 import org.labkey.pipeline.analysis.CommandTaskImpl;
 import org.labkey.pipeline.analysis.FileAnalysisPipelineProvider;
+import org.labkey.pipeline.api.ExecTaskFactory;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.api.PipelineManager;
@@ -57,6 +58,8 @@ import org.labkey.pipeline.api.PipelineSchema;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
+import org.labkey.pipeline.api.ScriptTaskFactory;
+import org.labkey.pipeline.api.SimpleTaskFactory;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesSiteSettings;
 import org.labkey.pipeline.api.properties.GlobusClientPropertiesImpl;
 import org.labkey.pipeline.importer.FolderImportProvider;
@@ -67,6 +70,8 @@ import org.labkey.pipeline.mule.PipelineJobRunnerGlobus;
 import org.labkey.pipeline.mule.RemoteServerStartup;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.status.StatusController;
+import org.labkey.pipeline.xml.ExecTaskType;
+import org.labkey.pipeline.xml.ScriptTaskType;
 import org.labkey.pipeline.xstream.PathMapperImpl;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
@@ -115,6 +120,9 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         // Set up default PipelineJobServiceImpl, which may be overriden by Spring config.
         PipelineJobServiceImpl pjs = PipelineJobServiceImpl.initDefaults(PipelineJobService.LocationType.WebServer);
         pjs.setAppProperties(new ApplicationPropertiesSiteSettings());
+
+        pjs.registerTaskFactoryFactory(ScriptTaskType.type, new ScriptTaskFactory.FactoryFactory());
+        pjs.registerTaskFactoryFactory(ExecTaskType.type, new ExecTaskFactory.FactoryFactory());
 
         addController("pipeline", PipelineController.class);
         addController("pipeline-status", StatusController.class);

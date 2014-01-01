@@ -15,10 +15,9 @@
  */
 package org.labkey.pipeline.api;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.xmlbeans.XmlException;
+import org.labkey.pipeline.analysis.CommandTaskImpl;
+
 import org.apache.xmlbeans.XmlObject;
-import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -26,71 +25,52 @@ import org.junit.Test;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.WorkDirectory;
-import org.labkey.api.pipeline.cmd.CommandTask;
-import org.labkey.api.pipeline.cmd.ExeToCommandArgs;
 import org.labkey.api.pipeline.cmd.JobParamToCommandArgs;
-import org.labkey.api.pipeline.cmd.ListToCommandArgs;
 import org.labkey.api.pipeline.cmd.PathInLine;
-import org.labkey.api.pipeline.cmd.RequiredInLine;
 import org.labkey.api.pipeline.cmd.TaskPath;
-import org.labkey.api.pipeline.cmd.TaskToCommandArgs;
 import org.labkey.api.pipeline.cmd.ValueInLine;
 import org.labkey.api.pipeline.cmd.ValueToCommandArgs;
 import org.labkey.api.pipeline.cmd.ValueWithSwitch;
-import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.util.XmlValidationException;
-import org.labkey.pipeline.analysis.CommandTaskImpl;
 import org.labkey.pipeline.xml.DoubleInputType;
-import org.labkey.pipeline.xml.ExecType;
 import org.labkey.pipeline.xml.FileInputOutputType;
 import org.labkey.pipeline.xml.FileInputType;
 import org.labkey.pipeline.xml.FileOutputType;
 import org.labkey.pipeline.xml.InputsType;
 import org.labkey.pipeline.xml.IntInputType;
-import org.labkey.pipeline.xml.NamedTaskType;
 import org.labkey.pipeline.xml.OutputsType;
 import org.labkey.pipeline.xml.PropertyInputType;
-import org.labkey.pipeline.xml.ScriptType;
 import org.labkey.pipeline.xml.SimpleInputType;
-import org.labkey.pipeline.xml.TaskDocument;
+import org.labkey.pipeline.xml.TaskType;
 import org.labkey.pipeline.xml.TextInputType;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * User: kevink
  * Date: 11/18/13
  *
- * SimpleTaskFactory is created from a file-based module task definition and will create pipeline
- * Tasks for running command-line tasks (CommandTaskImpl) or execute scripts (ScriptTaskImpl).
+ * SimpleTaskFactory is a base class for creating file-based module task definitions.
+ * Modules register a XMLBean SchemaType with a XMLBeanTaskFactoryFactory to create concerte TaskFactory types.
+ * CONSIDER: Move to API or Internal so other modules can create subclasses.
+ *
+ * @see ExecTaskFactory
+ * @see ScriptTaskFactory
  */
-public class SimpleTaskFactory extends CommandTaskImpl.Factory
+public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
 {
-    private enum Type { exec, script }
-
-    protected Type _type;
-    protected Path _scriptPath = null;
-    protected String _scriptExtension = null;
-    protected String _scriptInline = null;
+    protected Map<String, JobParamToCommandArgs> _params;
 
     public SimpleTaskFactory(TaskId taskId)
     {
@@ -98,51 +78,20 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
         setStatusName(taskId.getName());
     }
 
-    public static SimpleTaskFactory create(TaskId taskId, Resource taskConfig)
+    public static TaskFactory create(SimpleTaskFactory factory, TaskType xtask, Path tasksDir)
     {
-        if (taskId.getName() == null)
-            throw new IllegalArgumentException("Task factory must by named");
-
-        if (taskId.getType() != TaskId.Type.task)
-            throw new IllegalArgumentException("Task factory must by of type 'task'");
-
+        TaskId taskId = factory.getId();
         if (taskId.getModuleName() == null)
             throw new IllegalArgumentException("Task factory must be defined by a module");
 
         Module module = ModuleLoader.getInstance().getModule(taskId.getModuleName());
 
-        TaskDocument doc;
-        try
-        {
-            XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
-            doc = TaskDocument.Factory.parse(taskConfig.getInputStream(), options);
-            XmlBeansUtil.validateXmlDocument(doc, "Task factory config '" + taskConfig.getPath() + "'");
-        }
-        catch (XmlValidationException e)
-        {
-            ScriptTaskImpl.LOG.error(e);
-            return null;
-        }
-        catch (XmlException |IOException e)
-        {
-            ScriptTaskImpl.LOG.error(e.getMessage());
-            return null;
-        }
-
-        NamedTaskType xtask = doc.getTask();
-        if (xtask == null)
-            throw new IllegalArgumentException("<task> element required");
-
-        if (!taskId.getName().equals(xtask.getName()))
-            throw new IllegalArgumentException(String.format("Task factory config must have the name '%s'", taskId.getName()));
-
-        SimpleTaskFactory factory = new SimpleTaskFactory(taskId);
+        //SimpleTaskFactory factory = new SimpleTaskFactory(taskId);
         factory.setDeclaringModule(module);
-
-        Path taskDir = taskConfig.getPath().getParent();
-        factory.setModuleTaskPath(taskDir);
+        factory.setModuleTaskPath(tasksDir);
 
         Map<String, JobParamToCommandArgs> params = createInputParams(xtask.getInputs());
+        factory._params = params;
 
         Map<String, TaskPath> inputs = createInputPaths(xtask.getInputs());
         factory.setInputPaths(inputs);
@@ -155,22 +104,6 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
 
 //            if (xtask.isSetLargeWork())
 //                factory.setLargeWork(xtask.isLargeWork());
-
-        if (xtask.isSetExec())
-        {
-            ListToCommandArgs converter = createExecConverter(module, taskDir, xtask.getExec(), inputs, params, outputs);
-            factory.setConverter(converter);
-            factory._type = Type.exec;
-        }
-        else if (xtask.isSetScript())
-        {
-            createScript(factory, xtask.getScript(), inputs, params, outputs);
-            factory._type = Type.script;
-        }
-        else
-        {
-            throw new IllegalArgumentException("Task factory config must specify one of either <exec> or <script>");
-        }
 
         return factory;
 
@@ -294,12 +227,16 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
         }
         else
         {
-            // UNDONE: FileAnalysisTaskPipelineImpl expects all inputs to have FileTypes -- inputs matching by exact name aren't supported very well.
-//            // Task expects to match inputs based complete filename, not just suffix. See TaskPath.setName().
-//            taskPath = new TaskPath();
-//            taskPath.setName(xfile.getName());
-            throw new IllegalArgumentException("Task inputs and outputs must specify suffixes");
+            String name = xfile.getName();
+            String ext = FileUtil.getExtension(name);
+            if (ext == null)
+                throw new IllegalArgumentException("Task inputs and outputs must specify suffixes or use a name with an extension (e.g., 'input.txt')");
+
+            ext = "." + ext;
+            FileType fileType = createFileType(Collections.singletonList(ext), false, null);
+            taskPath = new TaskPath(fileType);
         }
+
         taskPath.setOptional(!required);
         return taskPath;
     }
@@ -311,165 +248,21 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
         //noinspection unchecked
         List<String> suffixes = new ArrayList<String>(xfile.getSuffixes());
 
-        String defaultSuffix = null;
-        if (suffixes.size() > 0)
-            defaultSuffix = suffixes.get(0);
-
         boolean dir = xfile.isSetDirectory() && xfile.getDirectory();
 
         String contentType = xfile.isSetContentType() ? xfile.getContentType() : null;
 
+        return createFileType(suffixes, dir, contentType);
+    }
+
+    private static FileType createFileType(List<String> suffixes, boolean dir, String contentType)
+    {
+        String defaultSuffix = null;
+        if (suffixes.size() > 0)
+            defaultSuffix = suffixes.get(0);
+
         FileType ft = new FileType(suffixes, defaultSuffix, dir, FileType.gzSupportLevel.NO_GZ, contentType);
         return ft;
-    }
-
-    private static ListToCommandArgs createExecConverter(Module module, Path taskDir, ExecType xexec, Map<String, TaskPath> inputs, Map<String, JobParamToCommandArgs> params, Map<String, TaskPath> outputs)
-    {
-        ListToCommandArgs args = new ListToCommandArgs();
-
-        String exeName = xexec.getExe();
-        String command = xexec.getStringValue();
-        if (command != null)
-            command = command.trim();
-
-        List<TaskToCommandArgs> converters = parseCommand(module, taskDir, command, exeName, inputs, params, outputs);
-        args.setConverters(converters);
-
-        return args;
-    }
-
-    /**
-     * Parse the command
-     * New inputs and outputs may be created if the command contains references that don't exist yet.
-     * References to files within the module are converted into module relative paths which will be resolved
-     * to an absolute path by CommandTaskImpl.getProcessPaths() at execution time.
-     */
-    private static List<TaskToCommandArgs> parseCommand(
-            Module module, Path taskDir,
-            @NotNull String command, @Nullable String exeName,
-            Map<String, TaskPath> inputs,
-            Map<String, JobParamToCommandArgs> params,
-            Map<String, TaskPath> outputs)
-    {
-        List<TaskToCommandArgs> ret = new ArrayList<>();
-
-        // TODO: Better parsing: handle quoting and whitespace in tokens
-        String[] parts = command.split(" ");
-        for (int i = 0; i < parts.length; i++)
-        {
-            String part = parts[i];
-            part = part.trim();
-            if (part.length() == 0)
-                continue;
-
-            TaskToCommandArgs arg = null;
-
-            if (part.startsWith("${") && part.endsWith("}"))
-            {
-                //
-                // Token replacement
-                //
-
-                String key = part.substring("${".length(), part.length() - "}".length());
-                if (exeName != null && (key.equals("exe") || key.equals(exeName)))
-                {
-                    ExeToCommandArgs exe = new ExeToCommandArgs();
-                    exe.setExePath(exeName);
-                    arg = exe;
-                }
-                else if (inputs.containsKey(key))
-                {
-                    TaskPath taskPath = inputs.get(key);
-                    // TODO: Get help, switch, optional/required settings
-                    PathInLine path = new PathInLine();
-                    path.setFunction(WorkDirectory.Function.input);
-                    path.setKey(key);
-                    arg = path;
-                }
-                else if (outputs.containsKey(key))
-                {
-                    TaskPath taskPath = outputs.get(key);
-                    PathInLine path = new PathInLine();
-                    path.setFunction(WorkDirectory.Function.output);
-                    path.setKey(key);
-                    arg = path;
-                }
-                else if (params.containsKey(key))
-                {
-                    arg = params.get(key);
-                }
-                else
-                {
-                    //
-                    // Unknown token
-                    //
-
-                    if (key.startsWith("input"))
-                    {
-                        // Attempt to resolve unknown input
-                        arg = parseUnknownInput(inputs, key);
-                    }
-                    else if (key.startsWith("output"))
-                    {
-                        // Attempt to resolve unknown output
-                        arg = parseUnknownOutput(outputs, key);
-                    }
-
-                    if (arg == null)
-                    {
-                        // Not found in inputs, outputs, or params and doesn't start with "input" or "output".
-                        // Treat as a unknown parameter
-                        ValueInLine param = new ValueInLine();
-                        param.setParameter(key);
-                        params.put(key, param);
-                        arg = param;
-                    }
-                }
-            }
-            else
-            {
-                //
-                // String literal
-                //
-
-                // Attempt to resolve the token to a resource within the module.
-                // For example, if "script.R" resolves to "pipeline/tasks/script.R", add it as a PathInLine argument.
-                Resource r = findResource(module, taskDir, part);
-
-                // If we don't have an exe name yet, the first token MUST be the executable name
-                if (exeName == null)
-                {
-                    // CONSIDER: If we resolved the part to a resource in the module, use it as the executable name.
-                    exeName = part;
-                    ExeToCommandArgs exe = new ExeToCommandArgs();
-                    exe.setExePath(exeName);
-                    arg = exe;
-                }
-                else
-                {
-                    if (r != null)
-                    {
-                        // Add a refernce to the path relative from the module root.
-                        PathInLine p = new PathInLine();
-                        p.setFunction(WorkDirectory.Function.module);
-                        p.setKey(r.getPath().toString());
-                        arg = p;
-                    }
-                    else
-                    {
-                        // Add the part as a literal string.
-                        RequiredInLine literal = new RequiredInLine();
-                        literal.setValue(part);
-                        arg = literal;
-                    }
-                }
-            }
-
-            if (arg != null)
-                ret.add(arg);
-        }
-
-        return ret;
     }
 
     /**
@@ -484,7 +277,7 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
      * </pre>
      */
     @Nullable
-    private static Resource findResource(@NotNull Module module, @NotNull Path taskDir, @NotNull String part)
+    protected static Resource findResource(@NotNull Module module, @NotNull Path taskDir, @NotNull String part)
     {
         Path partPath = Path.parse(part);
         Path path = taskDir.append(partPath);
@@ -517,12 +310,12 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
      * @param key The token.
      * @return A PathInLine for the resolved or created input.
      */
-    private static PathInLine parseUnknownInput(Map<String, TaskPath> inputs, String key)
+    protected static PathInLine parseUnknownInput(Map<String, TaskPath> inputs, String key)
     {
         return parseUnknownInputOutput(WorkDirectory.Function.input, inputs, key);
     }
 
-    private static PathInLine parseUnknownOutput(Map<String, TaskPath> outputs, String key)
+    protected static PathInLine parseUnknownOutput(Map<String, TaskPath> outputs, String key)
     {
         return parseUnknownInputOutput(WorkDirectory.Function.output, outputs, key);
     }
@@ -631,141 +424,10 @@ public class SimpleTaskFactory extends CommandTaskImpl.Factory
     }
 
 
-    private static void createScript(SimpleTaskFactory factory, ScriptType xscript, Map<String, TaskPath> inputs, Map<String, JobParamToCommandArgs> params, Map<String, TaskPath> outputs)
-    {
-        Set<String> tokens;
-
-        if (xscript.getFile() != null)
-        {
-            // find the file
-            String file = xscript.getFile();
-            Resource r = findResource(factory.getDeclaringModule(), factory.getModuleTaskPath(), file);
-            if (r == null || !r.isFile())
-                throw new IllegalArgumentException("script file not found: " + file);
-
-            String source;
-            try (InputStream is = r.getInputStream())
-            {
-                source = IOUtils.toString(is);
-                tokens = tokens(source);
-            }
-            catch (IOException e)
-            {
-                throw new IllegalArgumentException("Failed to read script file.");
-            }
-
-            String ext = xscript.getInterpreter();
-            if (ext == null)
-                ext = FileUtil.getExtension(file);
-            if (ext == null)
-                throw new IllegalArgumentException("Failed to determine script interpreter from script filename.  Please add an 'interpreter' attribute or an extension to the script filename.");
-
-            factory._scriptPath = r.getPath();
-            factory._scriptExtension = ext;
-        }
-        else if (xscript.getInterpreter() != null)
-        {
-            // inline script
-            String script = xscript.getStringValue();
-            if (script == null)
-                throw new IllegalArgumentException("<script> element must have one of either 'file' attribute or 'interpreter' attribute with an inline script.");
-
-            tokens = tokens(script);
-            factory._scriptInline = script;
-            factory._scriptExtension = xscript.getInterpreter();
-        }
-        else
-        {
-            throw new IllegalArgumentException("<script> element must have one of either 'file' attribute or 'interpreter' attribute with an inline script.");
-        }
-
-        // Check script engine available for the extension
-        ensureEngine(factory._scriptExtension);
-
-        // Add any implicit inputs and outputs from the script
-        for (String key : tokens)
-        {
-            if (!(inputs.containsKey(key) || outputs.containsKey(key) || params.containsKey(key)))
-            {
-                TaskToCommandArgs arg = null;
-                if (key.startsWith("input"))
-                {
-                    // Attempt to resolve unknown input
-                    arg = parseUnknownInput(inputs, key);
-                }
-                else if (key.startsWith("output"))
-                {
-                    // Attempt to resolve unknown output
-                    arg = parseUnknownOutput(outputs, key);
-                }
-
-                if (arg == null)
-                {
-                    // Not found in inputs, outputs, or params and doesn't start with "input" or "output".
-                    // Treat as a unknown parameter
-                    ValueInLine param = new ValueInLine();
-                    param.setParameter(key);
-                    params.put(key, param);
-                }
-            }
-        }
-    }
-
-    private static ScriptEngine ensureEngine(String interpreter)
-    {
-        ScriptEngineManager mgr = ServiceRegistry.get().getService(ScriptEngineManager.class);
-        if (mgr == null)
-            throw new IllegalStateException("Script engine manager not available");
-
-        ScriptEngine engine = mgr.getEngineByName(interpreter);
-        if (engine == null)
-            engine = mgr.getEngineByExtension(interpreter);
-        if (engine == null)
-            throw new IllegalArgumentException("Script engine not found: " + interpreter);
-        return engine;
-    }
-
-    private static Set<String> tokens(String script)
-    {
-        // Preserving the order the tokens is found is important -- ${input1.txt} must be found before ${input2.txt}
-        Set<String> tokens = new LinkedHashSet<>();
-        Pattern pattern = ParamReplacementSvc.defaultScriptPattern;
-        Matcher m = pattern.matcher(script);
-
-        while (m.find())
-        {
-            String token = m.group(1);
-            if (token != null && token.length() > 0)
-                tokens.add(token);
-        }
-
-        return tokens;
-    }
-
-    @Override
-    public boolean isParticipant(PipelineJob job) throws IOException
-    {
-        if (_type == Type.exec)
-            return super.isParticipant(job);
-        else
-            return true;
-    }
-
     @Override
     public CommandTaskImpl createTask(PipelineJob job)
     {
-        if (_type == Type.exec)
-            return new CommandTaskImpl(job, this);
-        else if (_type == Type.script)
-            return new ScriptTaskImpl(job, this);
-        throw new IllegalStateException();
-    }
-
-    @Override
-    public String[] toArgs(CommandTask task) throws IOException
-    {
-        assert _type == Type.exec;
-        return super.toArgs(task);
+        throw new UnsupportedOperationException("Derived class should return specific task type");
     }
 
 

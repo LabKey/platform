@@ -13,6 +13,8 @@
 
                 <bean class="org.labkey.study.pipeline.StandaloneDatasetTask$Factory"/>
                 <bean class="org.labkey.study.pipeline.StandaloneSpecimenTask$Factory"/>
+
+                <bean class="org.labkey.study.pipeline.AssayImportRunTask$Factory"/>
             </list>
         </property>
 
