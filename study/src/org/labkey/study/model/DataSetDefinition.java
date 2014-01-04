@@ -1771,6 +1771,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             Map<String,Integer> outputMap = DataIteratorUtil.createColumnAndPropertyMap(it);
 
             // find important columns in the input (CONSIDER: use standard etl alt
+            Integer indexPTIDInput = inputMap.get(DataSetDefinition.getParticipantIdURI());
             Integer indexPTID = outputMap.get(DataSetDefinition.getParticipantIdURI());
             Integer indexKeyProperty = null==keyColumn ? null : outputMap.get(keyColumn.getPropertyURI());
             Integer indexVisitDate = outputMap.get(DataSetDefinition.getVisitDateURI());
@@ -1780,7 +1781,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             Integer translatedIndexPTID = indexPTID;
             try
             {
-                translatedIndexPTID = it.translatePtid(indexPTID, user);
+                translatedIndexPTID = it.translatePtid(indexPTIDInput, user);
             }
             catch (ValidationException e)
             {
@@ -1788,7 +1789,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
 
             // For now, just specify null for sequence num index... we'll add it below
-            it.setSpecialOutputColumns(translatedIndexPTID, null, indexVisitDate, indexKeyProperty);
+            it.setSpecialOutputColumns(indexPTID, null, indexVisitDate, indexKeyProperty);
             it.setTimepointType(timetype);
 
             /* NOTE: these columns must be added in dependency order
@@ -1904,7 +1905,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             it.setDebugName(getName());
 
             // don't bother going on if we don't have these required columns
-            if (null == indexPTID)
+            if (null == indexPTIDInput) // input
                 setupError("All dataset rows must include a value for " + _study.getSubjectColumnName());
 
             if (!timetype.isVisitBased() && null == indexVisitDate)
@@ -1925,11 +1926,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             {
                 Integer indexVisit = timetype.isVisitBased() ? it.indexSequenceNumOutput : indexVisitDate;
                 // no point if required columns are missing
-                if (null != indexPTID && null != indexVisit)
+                if (null != translatedIndexPTID && null != indexVisit)
                 {
                     ScrollableDataIterator scrollable = DataIteratorUtil.wrapScrollable(ret);
                     checkForDuplicates(scrollable, indexLSID,
-                            indexPTID, null == indexVisit ? -1 : indexVisit, null == indexKeyProperty ? -1 : indexKeyProperty, null == indexReplace ? -1 : indexReplace,
+                            translatedIndexPTID, null == indexVisit ? -1 : indexVisit, null == indexKeyProperty ? -1 : indexKeyProperty, null == indexReplace ? -1 : indexReplace,
                             context, logger);
                     scrollable.beforeFirst();
                     ret = scrollable;
@@ -2097,7 +2098,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         int translatePtid(Integer indexPtidInput, User user) throws ValidationException
         {
-            ColumnInfo col = new ColumnInfo("ParticipantId", JdbcType.INTEGER);
+            ColumnInfo col = new ColumnInfo("ParticipantId", JdbcType.VARCHAR);
             ParticipantIdImportHelper piih = new ParticipantIdImportHelper(_study, user, DataSetDefinition.this);
             Callable call = piih.getCallable(getInput(), indexPtidInput);
             return addColumn(col, call);
