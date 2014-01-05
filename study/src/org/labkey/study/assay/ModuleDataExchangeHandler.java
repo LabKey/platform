@@ -16,9 +16,13 @@
 
 package org.labkey.study.assay;
 
+import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.qc.TsvDataExchangeHandler;
+import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayRunUploadContext;
 
 import java.io.File;
@@ -37,20 +41,20 @@ public class ModuleDataExchangeHandler extends TsvDataExchangeHandler
     @Override
     protected Set<File> writeRunData(AssayRunUploadContext form, ExpRun run, File scriptDir, PrintWriter pw) throws Exception
     {
-        Set<File> result = new HashSet<>();
-        for (ExpData expData : run.getDataInputs().keySet())
+        if (form instanceof ModuleRunUploadForm)
         {
-            // the original uploaded path
-            pw.append(TsvDataExchangeHandler.Props.runDataUploadedFile.name());
-            pw.append('\t');
-            File file = expData.getFile();
-            pw.println(file.getAbsolutePath());
-            result.add(file);
-        }
+            Set<File> result = new HashSet<>();
+            ModuleRunUploadForm context = (ModuleRunUploadForm)form;
 
-        if (form instanceof ModuleRunUploadContext)
-        {
-            ModuleRunUploadContext context = (ModuleRunUploadContext)form;
+            for (ExpData expData : run.getDataInputs().keySet())
+            {
+                // the original uploaded path
+                pw.append(TsvDataExchangeHandler.Props.runDataUploadedFile.name());
+                pw.append('\t');
+                File file = expData.getFile();
+                pw.println(file.getAbsolutePath());
+                result.add(file);
+            }
 
             List<Map<String, Object>> data = context.getRawData();
             if (data.size() > 0)
@@ -61,9 +65,33 @@ public class ModuleDataExchangeHandler extends TsvDataExchangeHandler
 
                 pw.append(Props.runDataFile.name());
                 pw.append('\t');
-                pw.println(runData.getAbsolutePath());
+                pw.append(runData.getAbsolutePath());
+
+                ExpData expData = ExperimentService.get().createData(context.getContainer(), context.getProvider().getDataType(), "ModuleRunTSVData");
+                expData.setRun(run);
+
+                ExperimentDataHandler handler = expData.findDataHandler();
+                if (handler instanceof TransformDataHandler)
+                {
+                    File dir = AssayFileWriter.ensureUploadDirectory(context.getContainer());
+                    pw.append('\t');
+                    pw.append(form.getProvider().getDataType().getNamespacePrefix());
+
+                    // if the handler supports data transformation, we will include an additional column for the location of
+                    // a transformed data file that a transform script may create.
+                    File transformedData = AssayFileWriter.createFile(context.getProtocol(), dir, "tsv");
+
+                    pw.append('\t');
+                    pw.append(transformedData.getAbsolutePath());
+                }
+                pw.append('\n');
             }
+            return result;
         }
-        return result;
+        else
+        {
+            // this is the codepath for module assays without a custom upload page
+            return _writeRunData(form, run, scriptDir, pw);
+        }
     }
 }

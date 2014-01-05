@@ -139,7 +139,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     @Override
     public AssayRunUploadContext createRunUploadContext(ViewContext context, int protocolId, JSONObject runJson, List<Map<String, Object>> uploadedData)
     {
-        return new ModuleRunUploadContext(context, protocolId, runJson, uploadedData);
+        return new ModuleRunUploadForm(context, protocolId, runJson, uploadedData);
     }
 
     @Override @NotNull

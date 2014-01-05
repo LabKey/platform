@@ -18,17 +18,20 @@ package org.labkey.study.assay;
 
 import org.json.JSONObject;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.ModuleRunUploadContext;
 import org.labkey.api.view.ViewContext;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This is a utility class to help with validation/transformation of uploaded
@@ -37,14 +40,19 @@ import java.util.List;
  * User: klum
  * Date: Apr 29, 2009
  */
-public class ModuleRunUploadContext extends AssayRunUploadForm<ModuleAssayProvider>
+public class ModuleRunUploadForm extends AssayRunUploadForm<ModuleAssayProvider> implements ModuleRunUploadContext<ModuleAssayProvider>
 {
-    JSONObject _jsonObject;
+    JSONObject _runJsonObject;
     List<Map<String, Object>> _uploadedData;
 
-    public ModuleRunUploadContext(ViewContext context, int protocolId, JSONObject jsonObject, List<Map<String, Object>> uploadedData)
+    private Map<ExpData, String> inputDatas = new HashMap<>();
+    private Map<ExpData, String> outputDatas = new HashMap<>();
+    private Map<ExpMaterial, String> inputMaterials = new HashMap<>();
+    private Map<ExpMaterial, String> outputMaterials = new HashMap<>();
+
+    public ModuleRunUploadForm(ViewContext context, int protocolId, JSONObject jsonObject, List<Map<String, Object>> uploadedData)
     {
-        _jsonObject = jsonObject;
+        _runJsonObject = jsonObject;
         _uploadedData = uploadedData;
 
         setViewContext(context);
@@ -59,9 +67,9 @@ public class ModuleRunUploadContext extends AssayRunUploadForm<ModuleAssayProvid
             AssayProvider provider = AssayService.get().getProvider(getProtocol());
             _runProperties = new HashMap<>();
 
-            if (_jsonObject.has(ExperimentJSONConverter.PROPERTIES))
+            if (_runJsonObject.has(ExperimentJSONConverter.PROPERTIES))
             {
-                for (Map.Entry<DomainProperty, Object> entry : ExperimentJSONConverter.convertProperties(_jsonObject.getJSONObject(ExperimentJSONConverter.PROPERTIES),
+                for (Map.Entry<DomainProperty, Object> entry : ExperimentJSONConverter.convertProperties(_runJsonObject.getJSONObject(ExperimentJSONConverter.PROPERTIES),
                         provider.getRunDomain(getProtocol()).getProperties(), getContainer(), false).entrySet())
                 {
                     _runProperties.put(entry.getKey(), String.valueOf(entry.getValue()));
@@ -79,9 +87,9 @@ public class ModuleRunUploadContext extends AssayRunUploadForm<ModuleAssayProvid
             AssayProvider provider = AssayService.get().getProvider(getProtocol());
             _uploadSetProperties = new HashMap<>();
 
-            if (_jsonObject.has(ExperimentJSONConverter.PROPERTIES))
+            if (_runJsonObject.has(ExperimentJSONConverter.PROPERTIES))
             {
-                for (Map.Entry<DomainProperty, Object> entry : ExperimentJSONConverter.convertProperties(_jsonObject.getJSONObject(ExperimentJSONConverter.PROPERTIES),
+                for (Map.Entry<DomainProperty, Object> entry : ExperimentJSONConverter.convertProperties(_runJsonObject.getJSONObject(ExperimentJSONConverter.PROPERTIES),
                         provider.getBatchDomain(getProtocol()).getProperties(), getContainer(), false).entrySet())
                 {
                     _uploadSetProperties.put(entry.getKey(), String.valueOf(entry.getValue()));
@@ -94,5 +102,53 @@ public class ModuleRunUploadContext extends AssayRunUploadForm<ModuleAssayProvid
     public List<Map<String, Object>> getRawData()
     {
         return _uploadedData;
+    }
+
+    @Override
+    public Map<ExpData, String> getInputDatas()
+    {
+        return inputDatas;
+    }
+
+    @Override
+    public void setInputDatas(Map<ExpData, String> inputDatas)
+    {
+        this.inputDatas = inputDatas;
+    }
+
+    @Override
+    public Map<ExpData, String> getOutputDatas()
+    {
+        return outputDatas;
+    }
+
+    @Override
+    public void setOutputDatas(Map<ExpData, String> outputDatas)
+    {
+        this.outputDatas = outputDatas;
+    }
+
+    @Override
+    public Map<ExpMaterial, String> getInputMaterials()
+    {
+        return inputMaterials;
+    }
+
+    @Override
+    public void setInputMaterials(Map<ExpMaterial, String> inputMaterials)
+    {
+        this.inputMaterials = inputMaterials;
+    }
+
+    @Override
+    public Map<ExpMaterial, String> getOutputMaterials()
+    {
+        return outputMaterials;
+    }
+
+    @Override
+    public void setOutputMaterials(Map<ExpMaterial, String> outputMaterials)
+    {
+        this.outputMaterials = outputMaterials;
     }
 }

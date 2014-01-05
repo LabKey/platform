@@ -3247,8 +3247,9 @@ study/src/org/labkey/study/assay/AssayServiceImpl.java -text
 study/src/org/labkey/study/assay/FileBasedModuleDataHandler.java -text
 study/src/org/labkey/study/assay/ModuleAssayLoader.java -text
 study/src/org/labkey/study/assay/ModuleAssayProvider.java -text
+study/src/org/labkey/study/assay/ModuleAssayRunCreator.java -text
 study/src/org/labkey/study/assay/ModuleDataExchangeHandler.java -text
-study/src/org/labkey/study/assay/ModuleRunUploadContext.java -text
+study/src/org/labkey/study/assay/ModuleRunUploadForm.java -text
 study/src/org/labkey/study/assay/TSVProtocolSchema.java -text
 study/src/org/labkey/study/assay/TsvAssayProvider.java -text
 study/src/org/labkey/study/assay/TsvImportAction.java -text
