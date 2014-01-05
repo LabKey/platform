@@ -162,7 +162,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     /**
      * Called to write out any uploaded run data in preparation for a validation or transform script.
      */
-    private Set<File> _writeRunData(AssayRunUploadContext context, ExpRun run, File scriptDir, PrintWriter pw) throws Exception
+    protected Set<File> _writeRunData(AssayRunUploadContext context, ExpRun run, File scriptDir, PrintWriter pw) throws Exception
     {
         List<File> dataFiles = new ArrayList<>();
 
@@ -253,7 +253,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     /**
      * Called to write out uploaded run data that has been previously transformed.
      */
-    private Set<File> _writeTransformedRunData(AssayRunUploadContext context, TransformResult transformResult, ExpRun run, File scriptDir, PrintWriter pw) throws Exception
+    protected Set<File> _writeTransformedRunData(AssayRunUploadContext context, TransformResult transformResult, ExpRun run, File scriptDir, PrintWriter pw) throws Exception
     {
         assert (!transformResult.getTransformedData().isEmpty());
 

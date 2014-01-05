@@ -110,7 +110,7 @@ public interface AssaySaveHandler
      * protocol application change or choose not add its own data for saving.
      * Called from DefaultAssaySaveHandler.handleRun.
      */
-    void handleProtocolApplications(ViewContext context, ExpProtocol protocol, ExpRun run, JSONArray inputDataArray,
+    void handleProtocolApplications(ViewContext context, ExpProtocol protocol, ExpExperiment batch, ExpRun run, JSONArray inputDataArray,
             JSONArray dataArray, JSONArray inputMaterialArray, JSONObject runJsonObject, JSONArray outputDataArray,
             JSONArray outputMaterialArray) throws ExperimentException, ValidationException;
 

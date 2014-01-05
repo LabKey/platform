@@ -377,22 +377,26 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    private void importResultData(AssayRunUploadContext<ProviderType> context, ExpRun run, Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, ViewBackgroundInfo info, XarContext xarContext, TransformResult transformResult, List<ExpData> insertedDatas) throws ExperimentException
+    protected void importStandardResultData(AssayRunUploadContext<ProviderType> context, ExpRun run, Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, ViewBackgroundInfo info, XarContext xarContext, TransformResult transformResult, List<ExpData> insertedDatas) throws ExperimentException, ValidationException
+    {
+        insertedDatas.addAll(inputDatas.keySet());
+        insertedDatas.addAll(outputDatas.keySet());
+
+        for (ExpData insertedData : insertedDatas)
+        {
+            insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, LOG, xarContext);
+        }
+    }
+
+    private void importResultData(AssayRunUploadContext<ProviderType> context, ExpRun run, Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, ViewBackgroundInfo info, XarContext xarContext, TransformResult transformResult, List<ExpData> insertedDatas) throws ExperimentException, ValidationException
     {
         if (transformResult.getTransformedData().isEmpty())
         {
-            insertedDatas.addAll(inputDatas.keySet());
-            insertedDatas.addAll(outputDatas.keySet());
-
-            for (ExpData insertedData : insertedDatas)
-            {
-                insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, LOG, xarContext);
-            }
+            importStandardResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult, insertedDatas);
         }
         else
         {
-            AssayDataType dataType = getProvider().getDataType();
-            ExpData data = ExperimentService.get().createData(context.getContainer(), dataType);
+            ExpData data = ExperimentService.get().createData(context.getContainer(), getProvider().getDataType());
             ExperimentDataHandler handler = data.findDataHandler();
 
             // this should assert to always be true
@@ -609,7 +613,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     {
         List<ValidationError> errors = new ArrayList<>();
         for (Map.Entry<ColumnInfo, String> entry : properties.entrySet())
-        {      
+        {
             validateProperty(entry.getValue(), entry.getKey().getName(), false, entry.getKey().getJavaClass(), errors);
         }
         return errors;

@@ -17,6 +17,7 @@
 package org.labkey.api.study.assay;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -263,7 +264,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
                 materialOutputs = runJsonObject.getJSONArray(ExperimentJSONConverter.MATERIAL_OUTPUTS);
             }
 
-            handleProtocolApplications(context, protocol, run, dataInputs, dataRows, materialInputs, runJsonObject, dataOutputs, materialOutputs);
+            handleProtocolApplications(context, protocol, batch, run, dataInputs, dataRows, materialInputs, runJsonObject, dataOutputs, materialOutputs);
             AssayPublishService.get().autoCopyResults(protocol, run, context.getUser(), context.getContainer());
         }
 
@@ -338,6 +339,10 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
         return inputMaterial;
     }
 
+    /**
+     * @deprecated Should migrate applications to use saveExperimentRun which delegates most of the work to the AssayRunCreator
+     * and ensures that transform and validation get handled correctly.
+     */
     protected void importRows(ViewContext context, ExpRun run, ExpData tsvData, ExpProtocol protocol, JSONObject runJsonObject, JSONArray dataArray)
             throws ValidationException, ExperimentException
     {
@@ -368,9 +373,9 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
     }
 
     @Override
-    public void handleProtocolApplications(ViewContext context, ExpProtocol protocol, ExpRun run, JSONArray inputDataArray,
-        JSONArray dataArray, JSONArray inputMaterialArray, JSONObject runJsonObject, JSONArray outputDataArray,
-        JSONArray outputMaterialArray) throws ExperimentException, ValidationException
+    public void handleProtocolApplications(ViewContext context, ExpProtocol protocol, ExpExperiment batch, ExpRun run, JSONArray inputDataArray,
+                                           JSONArray dataArray, JSONArray inputMaterialArray, JSONObject runJsonObject, JSONArray outputDataArray,
+                                           JSONArray outputMaterialArray) throws ExperimentException, ValidationException
     {
         // First, clear out any old data analysis results
         clearOutputDatas(context, run);
@@ -401,15 +406,6 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
                 outputMaterial.put(material, materialObject.optString(ExperimentJSONConverter.ROLE, "Material"));
         }
 
-        run = ExperimentService.get().saveSimpleExperimentRun(run,
-                inputMaterial,
-                inputData,
-                outputMaterial,
-                outputData,
-                Collections.<ExpData, String>emptyMap(),
-                new ViewBackgroundInfo(context.getContainer(),
-                        context.getUser(), context.getActionURL()), LOG, false);
-
         ExpData tsvData = newData;
         // Try to find a data object to attach our data rows to
         if (tsvData == null && !outputData.isEmpty())
@@ -426,7 +422,42 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
             }
         }
 
-        importRows(context, run, tsvData, protocol, runJsonObject, dataArray);
+        if (tsvData != null && dataArray != null)
+        {
+            AssayRunUploadContext uploadContext = createRunUploadContext(context, protocol, runJsonObject, dataArray,
+                    inputData, outputData, inputMaterial, outputMaterial);
+
+            saveExperimentRun(uploadContext, batch, run);
+        }
+    }
+
+    @Nullable
+    protected AssayRunUploadContext createRunUploadContext(ViewContext context, ExpProtocol protocol, JSONObject runJsonObject, JSONArray runDataArray,
+                                                           Map<ExpData, String> inputData, Map<ExpData, String> outputData,
+                                                           Map<ExpMaterial, String> inputMaterial, Map<ExpMaterial, String> outputMaterial)
+    {
+        if (runDataArray != null)
+        {
+            AssayRunUploadContext uploadContext = getProvider().createRunUploadContext(context, protocol.getRowId(), runJsonObject, runDataArray.toMapList());
+
+            if (uploadContext instanceof ModuleRunUploadContext)
+            {
+                ModuleRunUploadContext moduleContext = (ModuleRunUploadContext)uploadContext;
+
+                moduleContext.setInputDatas(inputData);
+                moduleContext.setOutputDatas(outputData);
+                moduleContext.setInputMaterials(inputMaterial);
+                moduleContext.setOutputMaterials(outputMaterial);
+            }
+            return uploadContext;
+        }
+        return null;
+    }
+
+    protected ExpExperiment saveExperimentRun(AssayRunUploadContext context, ExpExperiment batch, ExpRun run) throws ExperimentException, ValidationException
+    {
+        AssayRunCreator runCreator = getProvider().getRunCreator();
+        return runCreator.saveExperimentRun(context, batch, run, false);
     }
 
     @Override
