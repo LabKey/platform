@@ -28,6 +28,7 @@ import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -444,6 +445,14 @@ public class DomainUtil
         defaultValues.put(p, pd.getDefaultValue());
         _copyProperties(p, pd, errors);
         updatePropertyValidators(p, null, pd);
+
+        // For string, we have been setting scale to 100 and then ignoring it when creating provisioned tables on favor of 4000
+        // So, maintain that behavior; also, we had always set scale to be STRING.size, but that's wrong for other types
+        if (p.getPropertyDescriptor().getPropertyType() == PropertyType.STRING)
+            p.getPropertyDescriptor().setScale(PropertyStorageSpec.DEFAULT_SIZE);
+        else
+            p.getPropertyDescriptor().setScale(p.getPropertyDescriptor().getPropertyType().getScale());
+
         return p;
     }
 
