@@ -46,8 +46,8 @@
 <div style="max-width: 1000px">
     <p>
         If a(n) <%= h(subjectNounSingular) %>  in your study has been loaded with an incorrect <%= h(subjectNounColumnName) %>,
-        you can change the <%= h(subjectNounColumnName) %> of that <%= h(subjectNounSingular.toLowerCase()) %>. If you change the <%= h(subjectNounColumnName) %>
-        to an existing <%= h(subjectNounColumnName) %>, data will be merged into a single <%= h(subjectNounSingular) %>.
+        you can change the identifier. If you change the <%= h(subjectNounColumnName) %> to one that is already in the study,
+        data will be merged into a single <%= h(subjectNounSingular) %>.
     </p>
 </div>
 <div id="mergeParticipantsPanel-div"></div>
@@ -104,9 +104,11 @@
             });
 
             createAliasCB = Ext4.create('Ext.form.field.Checkbox', {
+                id: 'createAliasCB',
                 boxLabel: 'Create an Alias for the old ' + jsSubjectNounColumnName,
+                checked: allowAliasCreation,
                 listeners : {
-                    change : function() {aliasSourceField.setDisabled(!createAliasCB.getValue());}
+                    change : function() {aliasSourceField.setDisabled(!createAliasCB.getValue()); resetPreview(true);}
                 }
             });
 
@@ -119,7 +121,10 @@
                 labelWidth: 40,
                 maxLength: 20,
                 enforceMaxLength: true,
-                disabled: true
+                disabled: !allowAliasCreation,
+                listeners : {
+                    blur : function() {resetPreview(true);}
+                }
             });
 
             mergeButton = Ext4.create('Ext.Button', {
@@ -274,15 +279,10 @@
                         // if table has both new and old ids, then make an update clause
                         // and check to see if we have any conflict errors
                         //
-                        if ((table.oldIds.length > 0 && table.newIds.length > 0) ||
-                                ( (table.oldIds.length > 0 || table.newIds.length > 0 ) && table.name == aliasDatasetName && createAlias))
+                        if (table.name != aliasDatasetName && table.oldIds.length > 0 && table.newIds.length > 0)
                         {
-                            var commands = [];
-                            commands.push(buildUpdateCommand(table, newId));
-                            if (table.name == aliasDatasetName && createAlias)
-                                commands.push(buildInsertCommand(oldId, newId, aliasSource));
                             LABKEY.Query.saveRows({
-                                commands : commands,
+                                commands : [buildUpdateCommand(table, newId)],
                                 success : function(data) {
                                    checkMoveToSpecimenDetail(table, false, oldId, newId, filters);
                                 },
@@ -291,6 +291,21 @@
                                 },
                                 validateOnly : true
                             });
+                        }
+                        else if (table.name == aliasDatasetName) {
+                            table.hasConflict = false;
+                            if (table.oldIds.length > 0) {
+                                table.hasConflict = true;
+                            }
+                            if (createAlias) {
+                                LABKEY.Query.saveRows({
+                                    commands : [buildInsertCommand(oldId, newId, aliasSource)],
+                                    success : function() {},
+                                    failure : function(response) {updateMergeResults("Error creating alias. " + response.exception, true); },
+                                    validateOnly : true
+                                })
+                            }
+                            checkMoveToSpecimenDetail(table, table.hasConflict, oldId, newId, filters);
                         }
                         else {
                             checkMoveToSpecimenDetail(table, false, oldId, newId, filters);
@@ -432,7 +447,7 @@
             var saveRowsCommands = [];
             for (var tableName in this.tables) {
                 var table = this.tables[tableName];
-                if (false == table.isEditable)
+                if (false == table.isEditable || tableName == aliasDatasetName)
                     continue;
                 //
                 // dataset had both old and new values (this is a conflict that we have to resolve)
@@ -518,15 +533,16 @@
             }
             url = "<a href='" + url + "' target='_blank'/>";
             return url;
-        }
+        };
 
         var renderPreviewTable = function(oldId, newId){
             var html = [];
-
+            var encodedOldId = Ext4.util.Format.htmlEncode(oldId);
+            var encodedNewId = Ext4.util.Format.htmlEncode(newId);
             html.push("<table class='labkey-data-region labkey-show-borders'>");
             html.push("<tr><td class='labkey-column-header'>Data Source</td>");
-            html.push("<td class='labkey-column-header'>" + Ext4.util.Format.htmlEncode(oldId) + " Row Count</td>");
-            html.push("<td class='labkey-column-header'>" + Ext4.util.Format.htmlEncode(newId) + " Row Count</td>");
+            html.push("<td class='labkey-column-header'>" + encodedOldId + " Row Count</td>");
+            html.push("<td class='labkey-column-header'>" + encodedNewId + " Row Count</td>");
             html.push("<td class='labkey-column-header'>Status</td>");
             html.push("<td class='labkey-column-header'>&nbsp;</td></tr>");
 
@@ -559,6 +575,9 @@
                         if (false == table.isEditable) {
                             html.push("<td><span style='color:red;'>Warning:  Specimen data is not editable</span></td>");
                         }
+                        else if (table.name == aliasDatasetName) {
+                            html.push("<td>Aliases are not updated by this process<br/>" + oldIdURL + "<span style='color:red;'>Warning:  " + encodedOldId + " has existing aliases</span></td>");
+                        }
                         else {
                             //
                             // build a radio group to allow the user to select old or new id values when merging
@@ -569,19 +588,18 @@
                             var group = getConflictHintGroupName(table);
                             html.push("<td>" + bothIdURL + "Conflict!</td>");
                             html.push("<td>");
-                            if (table.name == aliasDatasetName)
-                            {
-                                html.push("Duplicate alias would be created. Conflict must be resolved manually.");
-                            }
-                            else
-                            {
-                                html.push("<input type='radio' name='" + group + "' value='old'>Use old Id values ");
-                                html.push("<input type='radio' name='" + group + "' value='new'>Use new Id values ");
-                            }
+                            html.push("<input type='radio' name='" + group + "' value='old'>Retain '" + encodedOldId + "' rows ");
+                            html.push("<input type='radio' name='" + group + "' value='new'>Retain '" + encodedNewId + "' rows ");
+
                             html.push("</td>");
                         }
                     } else {
-                        html.push("<td>" + bothIdURL + "No conflicts</td>");
+                        if (table.name == aliasDatasetName) {
+                            html.push("<td>Aliases are not updated by this process</td>");
+                        }
+                        else {
+                            html.push("<td>" + bothIdURL + "No conflicts</td>");
+                        }
                         html.push("<td>&nbsp;</td></tr>");
                     }
                 }
@@ -595,7 +613,7 @@
             if (hasOldValues && !stillChecking && !globalError)
                 enableMerge();
             return 0;
-        }
+        };
 
         Ext4.onReady(init);
 
