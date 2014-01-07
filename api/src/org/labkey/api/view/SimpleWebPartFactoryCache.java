@@ -51,7 +51,7 @@ public class SimpleWebPartFactoryCache extends ModuleResourceCache<SimpleWebPart
 
     private SimpleWebPartFactoryCache()
     {
-        super(SimpleController.VIEWS_DIRECTORY, "File-based webpart definitions");
+        super(new org.labkey.api.util.Path(SimpleController.VIEWS_DIRECTORY), "File-based webpart definitions");
     }
 
     @Nullable
@@ -99,7 +99,7 @@ public class SimpleWebPartFactoryCache extends ModuleResourceCache<SimpleWebPart
     }
 
     @Override
-    protected String getResourceName(String filename)
+    protected String getResourceName(Module module, String filename)
     {
         return filename;
     }

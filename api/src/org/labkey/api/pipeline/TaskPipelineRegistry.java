@@ -16,7 +16,6 @@
 package org.labkey.api.pipeline;
 
 import org.apache.xmlbeans.SchemaType;
-import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -33,6 +32,8 @@ import java.util.Collection;
 */
 public interface TaskPipelineRegistry
 {
+    public static final String LOCAL_TASK_PREFIX = "#";
+
     /**
      * Registers all tasks and pipelines found in the module under the module's "pipeline/tasks" and "pipeline/pipelines"
      * directories. The directories will be watched for file changes and tasks will be added or removed as they appear or disappear.
@@ -92,6 +93,12 @@ public interface TaskPipelineRegistry
      * or memory limits, etc.
      */
     void addTaskFactory(TaskFactory factory);
+
+    /**
+     * Adds a TaskFactory that is locally defined in a TaskPipeline and is not intended to be shared.
+     * The factory's id must be prefixed with the pipeline id and LOCAL_TASK_PREFIX.
+     */
+    void addLocalTaskFactory(TaskId pipelineId, TaskFactory factory);
 
     /**
      * Get a list of task factories from the set of active modules in the container.

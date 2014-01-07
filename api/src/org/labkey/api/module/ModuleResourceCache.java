@@ -55,9 +55,9 @@ public abstract class ModuleResourceCache<T>
     private final BlockingStringKeyCache<Object> _cache;
     private final FileSystemWatcher _watcher;
 
-    protected final String _dirName;
+    protected final Path _dirName;
 
-    public ModuleResourceCache(String dirName, String description)
+    public ModuleResourceCache(Path dirName, String description)
     {
         _cache = CacheManager.getBlockingStringKeyCache(1000, CacheManager.DAY, description, null);
         _dirName = dirName;
@@ -74,7 +74,7 @@ public abstract class ModuleResourceCache<T>
      */
     protected abstract @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module);
     protected abstract boolean isResourceFile(String filename);
-    protected abstract String getResourceName(String filename);
+    protected abstract String getResourceName(Module module, String filename);
     protected abstract String createCacheKey(Module module, String resourceName);
     protected abstract CacheLoader<String, T> getResourceLoader();
 
@@ -82,8 +82,7 @@ public abstract class ModuleResourceCache<T>
     // monitor for changes. Loading the list of resources in each module and the resources themselves happens lazily.
     public void registerModule(Module module)
     {
-        Path path = new Path(_dirName);
-        Resource dirResource = module.getModuleResolver().lookup(path);
+        Resource dirResource = module.getModuleResolver().lookup(_dirName);
 
         if (null != dirResource && dirResource.isCollection())
         {
@@ -169,9 +168,8 @@ public abstract class ModuleResourceCache<T>
         @Override
         public List<String> load(String moduleName, @Nullable Object argument)
         {
-            Path path = new Path(_dirName);
             Module module = ModuleLoader.getInstance().getModule(moduleName);
-            Resource resourceDir = module.getModuleResolver().lookup(path);
+            Resource resourceDir = module.getModuleResolver().lookup(_dirName);
             List<String> resourceNames = new LinkedList<>();
 
             if (resourceDir != null && resourceDir.isCollection())
@@ -185,7 +183,7 @@ public abstract class ModuleResourceCache<T>
                         String filename = r.getName();
 
                         if (isResourceFile(filename))
-                            resourceNames.add(getResourceName(filename));
+                            resourceNames.add(getResourceName(module, filename));
                     }
                 }
             }
@@ -225,7 +223,7 @@ public abstract class ModuleResourceCache<T>
             if (isResourceFile(filename))
             {
                 removeResourceNames(_module);
-                removeResource(_module, getResourceName(filename));
+                removeResource(_module, getResourceName(_module, filename));
 
                 if (null != _chainedListener)
                     _chainedListener.entryDeleted(directory, entry);
@@ -238,7 +236,7 @@ public abstract class ModuleResourceCache<T>
             String filename = entry.toString();
             if (isResourceFile(filename))
             {
-                removeResource(_module, getResourceName(filename));
+                removeResource(_module, getResourceName(_module, filename));
 
                 if (null != _chainedListener)
                     _chainedListener.entryModified(directory, entry);
