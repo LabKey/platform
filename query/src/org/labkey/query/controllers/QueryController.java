@@ -846,7 +846,10 @@ public class QueryController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return _appendSchemaActionNavTrail(root, _form.getSchema().getSchemaPath(), _form.getQueryName());
+            if (_form.getSchema() != null)
+                return _appendSchemaActionNavTrail(root, SchemaKey.decode(_form.getSchemaName()), _form.getQueryName());
+            else
+                return root;
         }
     }
 

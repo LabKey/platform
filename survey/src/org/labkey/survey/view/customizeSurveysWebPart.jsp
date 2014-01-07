@@ -94,6 +94,7 @@ This webpart displays a list of survey instances created by the end user. Select
                         if (surveyDesignPanel && surveyDesignPanel.getForm().isValid())
                         {
                             surveyDesignPanel.getForm().submit({
+                                submitEmptyText: false,
                                 url : <%=PageFlowUtil.jsString(h(part.getCustomizePostURL(ctx)))%>,
                                 success : function(){},
                                 failure : function(){}
