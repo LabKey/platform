@@ -342,11 +342,12 @@ public class ViewServlet extends HttpServlet
             if (null != url.getController() && path.size() > 0 && null != ModuleLoader.getInstance().getModuleForController(path.get(0).toLowerCase()))
             {
                 String controllerPart = path.get(0);
-                Path pathPart = path.subpath(1,path.size());
-                c = ContainerManager.getForPath(pathPart);
-                if (null != c && ("GET".equals(request.getMethod()) || controllerPart.equalsIgnoreCase(url.getController())))
+                Path pathFixUp = path.subpath(1,path.size());
+                Container cFixUp = ContainerManager.getForPath(pathFixUp);
+                if (null != cFixUp && ("GET".equals(request.getMethod()) || controllerPart.equalsIgnoreCase(url.getController())))
                 {
-                    path = pathPart;
+                    c = cFixUp;
+                    path = pathFixUp;
                     url.setPath(path);
                     if ("GET".equals(request.getMethod()))
                         throw new RedirectException(url.getLocalURIString());
