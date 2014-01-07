@@ -104,7 +104,7 @@
  &lt;div id='plot'&gt;
  &lt;/div id='plot'&gt;
  &lt;script type="text/javascript"&gt;
-var scatterData = [];
+var _scatterData = [];
 
 // Here we're creating some fake data to create a plot with.
 for(var i = 0; i < 1000; i++){
@@ -112,7 +112,7 @@ for(var i = 0; i < 1000; i++){
         x: {value: parseInt((Math.random()*(150)))},
         y: Math.random() * 1500
     };
-    scatterData.push(point);
+    _scatterData.push(point);
 }
 
 // Create a new layer object.
@@ -126,7 +126,7 @@ var scatterPlot = new LABKEY.vis.Plot({
 	renderTo: 'plot',
 	width: 900,
 	height: 700,
-	data: scatterData,
+	data: _scatterData,
 	layers: [pointLayer],
 	aes: {
 		// Aesthetic mappings can be functions or strings.
@@ -137,7 +137,7 @@ var scatterPlot = new LABKEY.vis.Plot({
 
 scatterPlot.render();
  &lt;/script&gt;
- 
+
  @example
  In this example we create a simple box plot.
 
@@ -277,13 +277,13 @@ LABKEY.vis.Plot = function(config){
         return scales;
     };
 
-    var setDefaultMargins = function(margins, legendPos, allAes, scales){
-        var top = 75, right = 75, bottom = 50, left = 75; // Defaults.
+    var configureMargins = function(userMargins, legendPos, allAes, scales){
+        console.log(allAes);
+        var margins = {}, top = 75, right = 75, bottom = 50, left = 75; // Defaults.
         var foundLegendScale = false, foundYRight = false;
 
         for(var i = 0; i < allAes.length; i++){
             var aes = allAes[i];
-
             if(!foundLegendScale && (aes.shape || (aes.color && (!scales.color || (scales.color && scales.color.scaleType == 'discrete'))) || aes.outlierColor || aes.outlierShape) && legendPos != 'none'){
                 foundLegendScale = true;
                 right = right + 150;
@@ -295,21 +295,29 @@ LABKEY.vis.Plot = function(config){
             }
         }
 
-        if(!margins){
-            margins = {};
+        if(!userMargins){
+            userMargins = {};
         }
 
-        if(!margins.top || margins.top < 0){
+        if(!userMargins.top || userMargins.top < 0){
             margins.top = top;
+        } else {
+            margins.top = userMargins.top;
         }
-        if(!margins.right || margins.right < 0){
+        if(!userMargins.right || userMargins.right < 0){
             margins.right = right;
+        } else {
+            margins.right = userMargins.right;
         }
-        if(!margins.bottom || margins.bottom < 0){
+        if(!userMargins.bottom || userMargins.bottom < 0){
             margins.bottom = bottom;
+        } else {
+            margins.bottom = userMargins.bottom;
         }
-        if(!margins.left || margins.left < 0){
+        if(!userMargins.left || userMargins.left < 0){
             margins.left = left;
+        } else {
+            margins.left = userMargins.left;
         }
 
         return margins;
@@ -334,7 +342,9 @@ LABKEY.vis.Plot = function(config){
     this.legendPos = config.legendPos;
     this.throwErrors = config.throwErrors || false; // Allows the configuration to specify whether chart errors should be thrown or logged (default).
 
-    var allAes = [];
+    // Stash the user's margins so when we re-configure margins during re-renders or setAes we don't forget the user's settings.
+    var allAes = [], margins = {}, userMargins = config.margins ? config.margins : {};
+
     if(this.aes){
         allAes.push(this.aes);
     }
@@ -343,8 +353,6 @@ LABKEY.vis.Plot = function(config){
             allAes.push(this.layers[i].aes);
         }
     }
-
-    var margins = setDefaultMargins(config.margins, this.legendPos, allAes, this.scales);
 
     if(this.labels.y){
         this.labels.yLeft = this.labels.y;
@@ -387,6 +395,14 @@ LABKEY.vis.Plot = function(config){
             if(this.scales[scale].max && (this.originalScales[scale] && !this.originalScales[scale].max)){
                 delete this.scales[scale].max;
             }
+
+            if(this.scales[scale].domain && (this.originalScales[scale] && !this.originalScales[scale].domain)){
+                delete this.scales[scale].domain;
+            }
+
+            if(this.scales[scale].range && (this.originalScales[scale] && !this.originalScales[scale].range)){
+                delete this.scales[scale].range;
+            }
         }
 
         var setupDefaultScales = function(scales, aes){
@@ -422,7 +438,8 @@ LABKEY.vis.Plot = function(config){
                         if(origScales[scale] && origScales[scale].min != null && origScales[scale].min != undefined){
                             scales[scale].min = origScales[scale].min;
                         } else {
-                            if(aes.error){
+                            // Note: error bar geom only goes on the y axis so we don't subtract if the scale is x.
+                            if(scale != 'x' && aes.error){
                                 acc = function(row){return aes[scale].getValue(row) - aes.error.getValue(row);}
                             } else {
                                 acc = aes[scale].getValue;
@@ -438,12 +455,13 @@ LABKEY.vis.Plot = function(config){
                         if(origScales[scale] && origScales[scale].max != null && origScales[scale].max != undefined){
                             scales[scale].max = origScales[scale].max;
                         } else {
-                            if(aes.error){
+                            // Note: error bar geom only goes on the y axis so we don't subtract if the scale is x.
+                            if(scale != 'x' && aes.error){
                                 acc = function(row){return aes[scale].getValue(row) + aes.error.getValue(row);}
                             } else {
                                 acc = aes[scale].getValue;
                             }
-                                                        
+
                             var tempMax = d3.max(data, acc);
 
                             if(scales[scale].max == null || scales[scale].max == undefined || tempMax > scales[scale].max){
@@ -600,6 +618,7 @@ LABKEY.vis.Plot = function(config){
      * Renders the plot.
      */
 	this.render = function(){
+        margins = configureMargins(userMargins, this.legendPos, allAes, this.scales);
         this.renderer.initCanvas(); // Get the canvas prepped for render time.
 
         if(!initScales.call(this)){  // Sets up the scales.
@@ -615,7 +634,8 @@ LABKEY.vis.Plot = function(config){
         this.renderer.renderLabels();
 
         for(var i = 0; i < this.layers.length; i++){
-            this.layers[i].render(this.renderer, this.grid, this.scales, this.data, this.aes);
+            this.layers[i].plot = this; // Add reference to the layer so it can trigger a re-render during setAes.
+            this.layers[i].render(this.renderer, this.grid, this.scales, this.data, this.aes, i);
         }
 
         if(!this.legendPos || (this.legendPos && !(this.legendPos == "none"))){
@@ -696,7 +716,7 @@ LABKEY.vis.Plot = function(config){
 
         this.grid.height = h;
 
-        if(render){
+        if(render === true){
             this.render();
         }
     };
@@ -713,7 +733,7 @@ LABKEY.vis.Plot = function(config){
 
         this.grid.width = w;
         
-        if(render){
+        if(render === true){
             this.render();
         }
     };
@@ -755,8 +775,18 @@ LABKEY.vis.Plot = function(config){
      *          <li><strong>right:</strong> Size of right margin in pixels.</li>
      *      </ul>
      */
-    this.setMargins = function(newMargins){
-        margins = setDefaultMargins(newMargins, this.legendPos, allAes, this.scales);
+    this.setMargins = function(newMargins, render){
+        userMargins = newMargins;
+        margins = configureMargins(userMargins, this.legendPos, allAes, this.scales);
+
+        if(render !== undefined && render !== null && render === true) {
+            this.render();
+        }
+    };
+
+    this.setAes = function(newAes){
+        LABKEY.vis.mergeAes(this.aes, newAes);
+        this.render();
     };
 
 	return this;

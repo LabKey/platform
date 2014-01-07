@@ -12,10 +12,11 @@ LABKEY.vis.internal.Axis = function() {
     // This emulates a lot of the d3.svg.axis() functionality, but adds in the ability for us to have tickHovers,
     // different colored tick & gridlines, etc.
     var scale, orientation, tickFormat = function(v) {return v}, tickHover, ticks, tickSize, tickPadding, gridLineColor,
-            tickLines, tickSel, tickText, gridLines, grid;
+            transform, axisSel = null, tickSel, textSel, gridLineSel, borderSel, grid;
 
     var axis = function(selection) {
-        var data, textAnchor, textXFn, textYFn, gridLineFn, tickFn, border, gridLineData, hasOverlap, bBoxA, bBoxB, i;
+        var data, textAnchor, textXFn, textYFn, gridLineFn, tickFn, border, gridLineData, hasOverlap, bBoxA, bBoxB, i,
+                tickEls, gridLineEls, textEls;
 
         if (scale.ticks) {
             data = scale.ticks(ticks);
@@ -48,6 +49,7 @@ LABKEY.vis.internal.Axis = function() {
             }
         } else {
             // Assume bottom otherwise.
+            orientation = 'bottom';
             textAnchor = 'middle';
             textXFn = function(v) {return (Math.floor(scale(v)) +.5);};
             textYFn = function() {return tickSize + 2 + tickPadding};
@@ -60,34 +62,51 @@ LABKEY.vis.internal.Axis = function() {
             }
         }
 
-        if (tickSize && tickSize > 0) {
-            tickLines = selection.selectAll('.tick-line').data(data);
-            tickLines.enter().append('path')
-                    .attr('d', tickFn)
-                    .attr('stroke', '#000000');
-
-            tickLines.exit().remove();
+        if (!axisSel) {
+            axisSel = selection.append('g').attr('class', 'axis');
         }
 
-        // Don't plot the first gridline if it will overlap the border of the adjacent axis.
-        gridLines = selection.selectAll('.grid-line').data(gridLineData);
-        gridLines.enter().append('path')
-                .attr('d', gridLineFn)
-                .attr('stroke', gridLineColor);
-        gridLines.exit().remove();
+        if (transform) {
+            axisSel.attr('transform', transform);
+        }
 
-        tickSel = selection.selectAll('.tick-text').data(data);
-        tickSel.exit().remove();
+        if (!tickSel) {
+            tickSel = axisSel.append('g').attr('class', 'tick');
+        }
+
+        if (!gridLineSel) {
+            gridLineSel = axisSel.append('g').attr('class', 'grid-line');
+        }
+
+        if (!textSel) {
+            textSel = axisSel.append('g').attr('class', 'tick-text');
+        }
+
+        if (tickSize && tickSize > 0) {
+            tickEls = tickSel.selectAll('path').data(data);
+            tickEls.exit().remove();
+            tickEls.enter().append('path');
+            tickEls.attr('d', tickFn).attr('stroke', '#000000');
+        }
+
+        gridLineEls = gridLineSel.selectAll('path').data(gridLineData);
+        gridLineEls.exit().remove();
+        gridLineEls.enter().append('path');
+        gridLineEls.attr('d', gridLineFn).attr('stroke', gridLineColor);
 
         if (tickHover) {
-            tickText = tickSel.enter().append('a')
-                    .attr('xlink:title', tickHover);
+            textSel.selectAll('text').data([]).exit().remove(); // If we added a tick hover we'll need to remove the old elements.
+            textEls = textSel.selectAll('a').data(data);
+            textEls.exit().remove();
+            textEls = textEls.enter().append('a').attr('xlink:title', tickHover).append('text');
         } else {
-            tickText = tickSel.enter();
+            textSel.selectAll('a').data([]).exit().remove(); // If we removed tick hovers we'll need to remove all of the anchors.
+            textEls = textSel.selectAll('text').data(data);
+            textEls.exit().remove();
+            textEls.enter().append('text');
         }
 
-        tickText = tickText.append('text')
-                .attr('x', textXFn)
+        textEls.attr('x', textXFn)
                 .attr('y', textYFn)
                 .attr('text-anchor', textAnchor)
                 .text(tickFormat)
@@ -95,9 +114,9 @@ LABKEY.vis.internal.Axis = function() {
 
         if (orientation == 'bottom') {
             hasOverlap = false;
-            for (i = 0; i < tickSel[0].length-1; i++) {
-                bBoxA = tickSel[0][i].getBBox();
-                bBoxB = tickSel[0][i+1].getBBox();
+            for (i = 0; i < textEls[0].length-1; i++) {
+                bBoxA = textEls[0][i].getBBox();
+                bBoxB = textEls[0][i+1].getBBox();
                 if (bBoxA.x + bBoxA.width >= bBoxB.x) {
                     hasOverlap = true;
                     break;
@@ -105,12 +124,19 @@ LABKEY.vis.internal.Axis = function() {
             }
 
             if (hasOverlap) {
-                tickText.attr('transform', function(v) {return 'rotate(15,' + textXFn(v) + ',' + textYFn(v) + ')';})
+                textEls.attr('transform', function(v) {return 'rotate(15,' + textXFn(v) + ',' + textYFn(v) + ')';})
                         .attr('text-anchor', 'start');
+            } else {
+                textEls.attr('transform', '');
             }
         }
 
-        selection.append('path')
+        if (!borderSel) {
+            borderSel = axisSel.append('g').attr('class', 'border');
+        }
+
+        borderSel.selectAll('path').remove();
+        borderSel.append('path')
                 .attr('stroke', '#000000')
                 .attr('d', border);
     };
@@ -125,12 +151,13 @@ LABKEY.vis.internal.Axis = function() {
     axis.gridLineColor = function(c) {gridLineColor = c; return axis;};
     // This is a reference to the plot's grid object that stores the grid dimensions and positions of edges.
     axis.grid = function(g) {grid = g; return axis;};
+    axis.transform = function(t) {transform = t; return axis;};
     
     return axis;
 };
 
 LABKEY.vis.internal.D3Renderer = function(plot) {
-    var errorMsg, labelElements = null;
+    var errorMsg, labelElements = null, xAxis = null, leftAxis = null, rightAxis = null;
     var initLabelElements = function() {
         labelElements = {};
         var labels, mainLabel = {}, yLeftLabel = {}, yRightLabel = {}, xLabel = {};
@@ -183,18 +210,20 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
     var initCanvas = function() {
         if (!this.canvas) {
-            this.canvas = d3.select('#' + plot.renderTo).append('svg')
-                    .attr('width', plot.grid.width)
-                    .attr('height', plot.grid.height);
-        } else {
-            if (errorMsg) {
-                errorMsg.text('');
-            }
+            this.canvas = d3.select('#' + plot.renderTo).append('svg');
         }
+
+        if (errorMsg) {
+            errorMsg.text('');
+        }
+
+        this.canvas.attr('width', plot.grid.width).attr('height', plot.grid.height);
     };
 
     var renderError = function(msg) {
-        // TODO: clear the canvas first.
+        // Clear the canvas first.
+        this.canvas.selectAll('*').remove();
+
         if (!errorMsg) {
             errorMsg = this.canvas.append('text')
                     .attr('class', 'vis-error')
@@ -208,72 +237,77 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderXAxis = function() {
-        var axis = LABKEY.vis.internal.Axis().orient('bottom')
-                .scale(plot.scales.x.scale)
+        if (!xAxis) {
+            xAxis = LABKEY.vis.internal.Axis().orient('bottom');
+        }
+
+        xAxis.scale(plot.scales.x.scale)
                 .grid(plot.grid)
                 .tickSize(8)
                 .tickPadding(10)
                 .ticks(7)
-                .gridLineColor(plot.gridLinecolor ? plot.gridLineColor : '#dddddd');
+                .gridLineColor(plot.gridLinecolor ? plot.gridLineColor : '#dddddd')
+                .transform('translate(0,' + (plot.grid.height - plot.grid.bottomEdge) + ')');
 
         if (plot.scales.x.tickFormat) {
-            axis.tickFormat(plot.scales.x.tickFormat);
+            xAxis.tickFormat(plot.scales.x.tickFormat);
         }
 
         if (plot.scales.x.tickHoverText) {
-            axis.tickHover(plot.scales.x.tickHoverText);
+            xAxis.tickHover(plot.scales.x.tickHoverText);
         }
 
-        this.canvas.append('g').attr('class', 'axis')
-                .attr('transform', 'translate(0,' + (plot.grid.height - plot.grid.bottomEdge) + ')')
-                .call(axis);
+        this.canvas.call(xAxis);
     };
 
     var renderYLeftAxis = function() {
+        if (!leftAxis) {
+            leftAxis = LABKEY.vis.internal.Axis().orient('left');
+        }
+
         if (plot.scales.yLeft && plot.scales.yLeft.scale) {
-            var axis = LABKEY.vis.internal.Axis().orient('left')
-                    .scale(plot.scales.yLeft.scale)
+            leftAxis.scale(plot.scales.yLeft.scale)
                     .grid(plot.grid)
                     .tickSize(8)
                     .tickPadding(0)
                     .ticks(10)
-                    .gridLineColor(plot.gridLinecolor ? plot.gridLineColor : '#dddddd');
+                    .gridLineColor(plot.gridLinecolor ? plot.gridLineColor : '#dddddd')
+                    .transform('translate(' + plot.grid.leftEdge + ',' + plot.grid.height + ')');
 
             if (plot.scales.yLeft.tickFormat) {
-                axis.tickFormat(plot.scales.yLeft.tickFormat);
+                leftAxis.tickFormat(plot.scales.yLeft.tickFormat);
             }
 
             if (plot.scales.yLeft.tickHoverText) {
-                axis.tickHover(plot.scales.yLeft.tickHoverText);
+                leftAxis.tickHover(plot.scales.yLeft.tickHoverText);
             }
 
-            this.canvas.append('g').attr('class', 'axis')
-                    .attr('transform', 'translate(' + plot.grid.leftEdge + ',' + plot.grid.height + ')')
-                    .call(axis);
+            this.canvas.call(leftAxis);
         }
     };
 
     var renderYRightAxis = function() {
+        if (!rightAxis) {
+            rightAxis = LABKEY.vis.internal.Axis().orient('right');
+        }
         if (plot.scales.yRight && plot.scales.yRight.scale) {
-            var axis = LABKEY.vis.internal.Axis().orient('right')
-                    .scale(plot.scales.yRight.scale)
+            rightAxis.scale(plot.scales.yRight.scale)
                     .grid(plot.grid)
                     .tickSize(8)
                     .tickPadding(0)
                     .ticks(10)
-                    .gridLineColor(plot.gridLinecolor ? plot.gridLineColor : '#dddddd');
+                    .gridLineColor(plot.gridLinecolor ? plot.gridLineColor : '#dddddd')
+                    .transform('translate(' + plot.grid.rightEdge + ',' + plot.grid.height + ')');
 
             if (plot.scales.yRight.tickFormat) {
-                axis.tickFormat(plot.scales.yRight.tickFormat);
+                rightAxis.tickFormat(plot.scales.yRight.tickFormat);
             }
 
             if (plot.scales.yRight.tickHoverText) {
-                axis.tickHover(plot.scales.yRight.tickHoverText);
+                rightAxis.tickHover(plot.scales.yRight.tickHoverText);
             }
 
-            this.canvas.append('g').attr('class', 'axis')
-                    .attr('transform', 'translate(' + plot.grid.rightEdge + ',' + plot.grid.height + ')')
-                    .call(axis);
+            this.canvas.call(rightAxis);
         }
     };
 
@@ -502,17 +536,32 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var renderLegend = function() {
         var legendData = plot.getLegendData(), legendGroup, legendItems;
         if(legendData.length > 0) {
-            legendGroup = this.canvas.append('g').attr('class', 'legend');
+            if(this.canvas.selectAll('.legend').size() == 0) {
+                this.canvas.append('g').attr('class', 'legend');
+            }
+            legendGroup = this.canvas.select('.legend');
+            legendGroup.selectAll('.legend-item').remove(); // remove previous legend items.
             legendItems = legendGroup.selectAll('.legend-item').data(legendData);
             legendItems.exit().remove();
             legendItems.enter().append('g').attr('class', 'legend-item').call(renderLegendItem, plot);
         }
     };
 
+    var getLayer = function(geom){
+        var id = plot.renderTo + '-' + geom.index;
+        var layer = this.canvas.select('#' + id);
+
+        if(layer.size() == 0) {
+            layer = this.canvas.append('g').attr('class', 'layer').attr('id', id);
+        }
+
+        return layer;
+    };
+
     var renderPointGeom = function(data, geom) {
-        var layer, pointsSel, xAcc, yAcc, xBinWidth = null, yBinWidth = null, defaultShape, translateAcc, colorAcc, sizeAcc, shapeAcc;
-        // TODO: Make sure on re-render we just select this layer again, instead of re-creating it.
-        layer = this.canvas.append('g').attr('class', 'layer').attr('transform', 'translate(0,' + plot.grid.height + ')');
+        var layer, anchorSel, pointsSel, xAcc, yAcc, xBinWidth = null, yBinWidth = null, defaultShape, translateAcc,
+                colorAcc, sizeAcc, shapeAcc, hoverTextAcc;
+        layer = getLayer.call(this, geom).attr('transform', 'translate(0,' + plot.grid.height + ')');
 
         if (geom.xScale.scaleType == 'discrete' && geom.position == 'jitter') {
             xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
@@ -544,7 +593,6 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             var x = xAcc(row), y = yAcc(row);
             if(x == null || isNaN(x) || y == null || isNaN(y)){
                 // Remove the dom node if x/y is null.
-                this.parentNode.removeChild(this);
                 return null;
             }
             return 'translate(' + xAcc(row) + ',' + yAcc(row) + ')';
@@ -562,20 +610,22 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         shapeAcc = geom.shapeAes && geom.shapeScale ? function(row) {
             return geom.shapeScale.scale(geom.shapeAes.getValue(row) + geom.layerName)(sizeAcc(row));
         } : defaultShape;
+        hoverTextAcc = geom.hoverTextAes ? geom.hoverTextAes.getValue : null;
 
-        pointsSel = layer.selectAll('.point').data(data);
-        pointsSel.exit().remove();
+        data = data.filter(function(d) {
+            var x = xAcc(d), y = yAcc(d);
+            // Note: while we don't actually use the color or shape here, we need to calculate them so so they show up in
+            // the legend, even if the points are null.
+            if(typeof colorAcc == 'function') { colorAcc(d); }
+            if (shapeAcc != defaultShape) { shapeAcc(d);}
+            return x !== null && y !== null;
+        }, this);
 
-        if (geom.hoverTextAes) {
-            // NOTE: If x/y is null and plotNullPoints is false we don't render the path, but we do add <a> tags to the DOM.
-            // We might want to consider removing the <a> tags as well.
-            pointsSel = pointsSel.enter().append('a')
-                    .attr('class', 'point').attr('xlink:title', geom.hoverTextAes.getValue)
-                    .append('path').attr('class', 'point');
-        } else {
-            pointsSel = pointsSel.enter().append('path').attr('class', 'point');
-        }
-
+        anchorSel = layer.selectAll('.point').data(data);
+        anchorSel.exit().remove();
+        anchorSel.enter().append('a').attr('class', 'point').append('path');
+        anchorSel.attr('xlink:title', hoverTextAcc);
+        pointsSel = anchorSel.selectAll('path');
         pointsSel.attr('d', shapeAcc)
                 .attr('fill', colorAcc)
                 .attr('stroke', colorAcc)
@@ -594,8 +644,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
-    var renderErrorBar = function(selection, plot, geom) {
-        var colorAcc, sizeAcc, topFn, bottomFn, middleFn;
+    var renderErrorBar = function(layer, plot, geom, data) {
+        var colorAcc, sizeAcc, topFn, bottomFn, middleFn, selection, newBars;
 
         colorAcc = geom.colorAes && geom.colorScale ? function(row) {return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);} : geom.color;
         sizeAcc = geom.sizeAes && geom.sizeScale ? function(row) {return geom.sizeScale.scale(geom.sizeAes.getValue(row));} : geom.size;
@@ -605,11 +655,6 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
             y = -geom.yScale.scale(value + error);
-            if(x == null || isNaN(x) || y == null || isNaN(y) || value == null || isNaN(value) || y == null || isNaN(y)) {
-                // Remove the dom node if we can't actually render a path.
-                this.parentNode.removeChild(this);
-                return null;
-            }
             return LABKEY.vis.makeLine(x - 6, y, x + 6, y);
         };
         bottomFn = function(d) {
@@ -618,11 +663,6 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
             y = -geom.yScale.scale(value - error);
-            if(x == null || isNaN(x) || y == null || isNaN(y) || value == null || isNaN(value) || y == null || isNaN(y)) {
-                // Remove the dom node if we can't actually render a path.
-                this.parentNode.removeChild(this);
-                return null;
-            }
             return LABKEY.vis.makeLine(x - 6, y, x + 6, y);
         };
         middleFn = function(d) {
@@ -630,25 +670,25 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             x = geom.getX(d);
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
-            if(x == null || isNaN(x) || value == null || isNaN(value) || error == null || isNaN(error)) {
-                // Remove the dom node if we can't actually render a path.
-                this.parentNode.removeChild(this);
-                return null;
-            }
             return LABKEY.vis.makeLine(x, -geom.yScale.scale(value + error), x, -geom.yScale.scale(value - error));
         };
-        selection.append('path').attr('class', 'bar').attr('d', topFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
-        selection.append('path').attr('class', 'bar').attr('d', bottomFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
-        selection.append('path').attr('class', 'bar').attr('d', middleFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
+
+        selection = layer.selectAll('.error-bar').data(data);
+        selection.exit().remove();
+
+        newBars = selection.enter().append('g').attr('class', 'error-bar');
+        newBars.append('path').attr('class','error-bar-top');
+        newBars.append('path').attr('class','error-bar-mid');
+        newBars.append('path').attr('class','error-bar-bottom');
+
+        selection.selectAll('.error-bar-top').attr('d', topFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
+        selection.selectAll('.error-bar-mid').attr('d', bottomFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
+        selection.selectAll('.error-bar-bottom').attr('d', middleFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
     };
 
     var renderErrorBarGeom = function(data, geom) {
-        // TODO: Make sure on re-render we just select this layer again, instead of re-creating it.
-        var layer = this.canvas.append('g').attr('class', 'layer').attr('transform', 'translate(0,' + plot.grid.height + ')');
-        var errorBars = layer.selectAll('.error-bar').data(data);
-
-        errorBars.enter().append('g').attr('class', 'error-bar').call(renderErrorBar, plot, geom);
-        errorBars.exit().remove();
+        var layer = getLayer.call(this, geom).attr('transform', 'translate(0,' + plot.grid.height + ')');
+        layer.call(renderErrorBar, plot, geom, data);
 
         if (plot.clipRect) {
             applyClipRect.call(this, layer);
@@ -671,8 +711,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         return summary.sortedValues[i] > summary.Q3 ? summary.sortedValues[i] : null;
     };
 
-    var renderBox = function(selection, plot, geom) {
-        var rectSel, heightFn, bBarFn, bWhiskerFn, tBarFn, tWhiskerFn, mLineFn;
+    var renderBox = function(layer, plot, geom, data) {
+        var heightFn, bBarFn, bWhiskerFn, tBarFn, tWhiskerFn, mLineFn, hoverTextFn, boxSelection, newBoxes;
         var binWidth = (plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length);
         var width = binWidth / 2;
 
@@ -727,27 +767,42 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             x = geom.xScale.scale(d.name);
             return LABKEY.vis.makeLine(x, yTop, x, yBottom);
         };
+        hoverTextFn = geom.hoverTextAes ? function(d) {return geom.hoverTextAes.value(d.name, d.summary)} : null;
 
-        if (geom.hoverTextAes) {
-            rectSel = selection.append('a').attr('xlink:title', function(d) {return geom.hoverTextAes.value(d.name, d.summary)});
-        } else {
-            rectSel = selection;
-        }
+        // Here we group each box with an a tag. Each part of a box plot (rect, whisker, etc.) gets its own class.
+        boxSelection = layer.selectAll('.box').data(data);
+        boxSelection.exit().remove();
 
-        rectSel.append('rect')
-                .attr('x', function(d) {return geom.xScale.scale(d.name) - (binWidth / 4)})
+        // Append new rects, whiskers, etc. as necessary.
+        newBoxes = boxSelection.enter().append('a').attr('class', 'box');
+        newBoxes.append('rect').attr('class', 'box-rect');
+        newBoxes.append('path').attr('class', 'box-mline');
+        newBoxes.append('path').attr('class', 'box-tbar');
+        newBoxes.append('path').attr('class', 'box-bbar');
+        newBoxes.append('path').attr('class', 'box-twhisker');
+        newBoxes.append('path').attr('class', 'box-bwhisker');
+
+        // Set all attributes.
+        boxSelection.attr('xlink:title', hoverTextFn);
+        boxSelection.selectAll('.box-rect').attr('x', function(d) {return geom.xScale.scale(d.name) - (binWidth / 4)})
                 .attr('y', function(d) {return Math.floor(-geom.yScale.scale(d.summary.Q3)) + .5})
                 .attr('width', width).attr('height', heightFn)
-                .attr('stroke', geom.color).attr('fill', geom.fill).attr('stroke-width', geom.lineWidth).attr('fill-opacity', geom.opacity);
-        selection.append('path').attr('d', mLineFn).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
-        selection.append('path').attr('d', tBarFn).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
-        selection.append('path').attr('d', tWhiskerFn).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
-        selection.append('path').attr('d', bBarFn).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
-        selection.append('path').attr('d', bWhiskerFn).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
+                .attr('stroke', geom.color).attr('fill', geom.fill).attr('stroke-width', geom.lineWidth).attr('fill-opacity', geom.opacity);;
+        boxSelection.selectAll('.box-mline').attr('d', mLineFn).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
+        boxSelection.selectAll('.box-tbar').attr('d', tBarFn).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
+        boxSelection.selectAll('.box-twhisker').attr('d', tWhiskerFn).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
+        boxSelection.selectAll('.box-bbar').attr('d', bBarFn).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
+        boxSelection.selectAll('.box-bwhisker').attr('d', bWhiskerFn).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
     };
 
-    var renderOutliers = function(selection, plot, geom) {
-        var xAcc, yAcc, xBinWidth = null, yBinWidth = null, defaultShape, translateAcc, colorAcc, shapeAcc;
+    var renderOutliers = function(layer, plot, geom, data) {
+        var xAcc, yAcc, xBinWidth = null, yBinWidth = null, defaultShape, translateAcc, colorAcc, shapeAcc, hoverAcc,
+                outlierSel, pathSel;
+
+        data = data.filter(function(d) {
+            var x = geom.getX(d), y = geom.getY(d);
+            return x !== null && y !== null;
+        });
 
         defaultShape = function() {
             var circle = function(s) {return "M0," + s + "A" + s + "," + s + " 0 1,1 0," + -s + "A" + s + "," + s + " 0 1,1 0," + s + "Z";};
@@ -775,20 +830,24 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         shapeAcc = geom.outlierShapeAes && geom.shapeScale ? function(row) {
             return geom.shapeScale.scale(geom.outlierShapeAes.getValue(row))(geom.outlierSize);
         } : defaultShape;
+        hoverAcc = geom.outlierHoverTextAes ? geom.outlierHoverTextAes.getValue : null;
 
-        if (geom.outlierHoverTextAes) {
-           selection = selection.append('a').attr('xlink:title', geom.outlierHoverTextAes.getValue);
-        }
+        outlierSel = layer.selectAll('.outlier').data(data);
+        outlierSel.exit().remove();
 
-        selection.append('path')
+        outlierSel.enter().append('a').attr('class', 'outlier').append('path');
+        outlierSel.attr('xlink:title', hoverAcc).attr('class', 'outlier');
+        pathSel = outlierSel.selectAll('path');
+        pathSel.attr('class', 'outlier')
                 .attr('d', shapeAcc)
                 .attr('transform', translateAcc)
                 .attr('fill', colorAcc)
                 .attr('stroke', colorAcc)
                 .attr('fill-opacity', geom.outlierOpacity)
                 .attr('stroke-opacity', geom.outlierOpacity);
+
         if (geom.pointClickFnAes) {
-            selection.on('click', function(data) {
+            pathSel.on('click', function(data) {
                geom.pointClickFnAes.value(d3.event, data);
             });
         }
@@ -812,8 +871,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderBoxPlotGeom = function(data, geom) {
-        // TODO: Make sure on re-render we just select this layer again, instead of re-creating it.
-        var layer = this.canvas.append('g').attr('class', 'layer').attr('transform', 'translate(0,' + plot.grid.height + ')');
+        var layer = getLayer.call(this, geom).attr('transform', 'translate(0,' + plot.grid.height + ')');
         var groupName, groupedData, summary, summaries = [];
 
         if (geom.xScale.scaleType == 'continuous') {
@@ -836,14 +894,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
         if (summaries.length > 0) {
             // Render box
-            var boxes = layer.selectAll('.box').data(summaries);
-            boxes.exit().remove();
-            boxes.enter().append('g').attr('class', 'box').call(renderBox, plot, geom);
+            layer.call(renderBox, plot, geom, summaries);
             if (geom.showOutliers) {
                 //Render the outliers.
-                var outliers = layer.selectAll('.outlier').data(getOutliers(summaries, geom));
-                outliers.exit().remove();
-                outliers.enter().call(renderOutliers, plot, geom);
+                layer.call(renderOutliers, plot, geom, getOutliers(summaries, geom));
             }
         }
 
@@ -852,43 +906,50 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
-    var renderLine = function(data, geom, groupName, layerSelection) {
+    var renderLines = function(layer, data, geom) {
         var xAcc = function(d) {return geom.getX(d);},
             yAcc = function(d) {var val = geom.getY(d); return val == null ? null : -val;},
             size = geom.sizeAes && geom.sizeScale ? geom.sizeScale.scale(geom.sizeAes.getValue(data)) : function() {return geom.size},
-            color = function() {return geom.color},
-            line = function(d) {return LABKEY.vis.makePath(d, xAcc, yAcc);};
+            color = geom.color,
+            line = function(d) {return LABKEY.vis.makePath(d.data, xAcc, yAcc);};
 
-        if (groupName != null && geom.colorScale) {
+        if (geom.groupAes && geom.colorScale) {
             // TODO: This is probably a bug. We totally skip the colorAes. We should alter this so we pass this.colorAes
             // the entire chunk of data then pass that value to the colorScale. This means colorAes for paths would always
             // need to be functions that expect an array of data. Making this change might break already existing charts,
             // so I'm going to leave this as is for now.
-            color = function() {return geom.colorScale.scale(groupName + geom.layerName);};
+            color = function(d) {return geom.colorScale.scale(d.group + geom.layerName);};
         }
 
-        layerSelection.append('path').datum(data)
-                .attr('d', line)
+        var pathSel = layer.selectAll('path').data(data);
+        pathSel.exit().remove();
+        pathSel.enter().append('path');
+        pathSel.attr('d', line)
                 .attr('stroke', color)
-                .attr('stroke-opacity', function() {return geom.opacity;})
                 .attr('stroke-width', size)
+                .attr('stroke-opacity', geom.opacity)
                 .attr('fill', 'none');
     };
 
     var renderLineGeom = function(data, geom) {
-        // TODO: Make sure on re-render we just select this layer again, instead of re-creating it.
-        var layer = this.canvas.append('g').attr('class', 'layer').attr('transform', 'translate(0,' + plot.grid.height + ')');
+        var layer = getLayer.call(this, geom).attr('transform', 'translate(0,' + plot.grid.height + ')');
+        var renderableData = [];
 
         if (geom.groupAes) {
             var groupedData = LABKEY.vis.groupData(data, geom.groupAes.getValue);
             for (var group in groupedData) {
                 if (groupedData.hasOwnProperty(group)) {
-                    renderLine.call(this, groupedData[group], geom, group, layer);
+                    renderableData.push({
+                        group: group,
+                        data: groupedData[group]
+                    });
                 }
             }
         } else { // No groupAes specified, so we connect all points.
-            renderLine.call(this, data, geom, null, layer);
+            renderableData = [{group: null, data: data}];
         }
+
+        layer.call(renderLines, renderableData, geom);
 
         if (plot.clipRect) {
             applyClipRect.call(this, layer);

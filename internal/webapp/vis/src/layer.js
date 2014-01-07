@@ -39,16 +39,23 @@ LABKEY.vis.Layer = function(config){
         return this.data && this.data.length > 0;
     };
 
-	this.render = function(renderer, grid, scales, data, parentAes){
+	this.render = function(renderer, grid, scales, data, parentAes, index){
 		// This function takes the data an renders it according the mappings, geoms, stats, and positions passed in.
 
 		if(this.geom){
-			this.geom.render(renderer, grid, scales, this.data ? this.data : data, this.aes, parentAes, this.name);
+			this.geom.render(renderer, grid, scales, this.data ? this.data : data, this.aes, parentAes, this.name, index);
 		} else {
 			// Without a geom the render function will not do anything.
 			console.log("Unable to render this layer. No geom present");
 		}
 	};
+
+    this.setAes = function(aes){
+        LABKEY.vis.mergeAes(this.aes, aes);
+        if (this.plot) {
+            this.plot.render();
+        }
+    };
 
 	return this;
 };

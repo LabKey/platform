@@ -26,8 +26,9 @@ LABKEY.vis.Geom.XY = function(){
     this.colorScale = null;
     return this;
 };
-LABKEY.vis.Geom.XY.prototype.initAesthetics = function(scales, layerAes, parentAes, layerName){
+LABKEY.vis.Geom.XY.prototype.initAesthetics = function(scales, layerAes, parentAes, layerName, index){
     this.layerName = layerName;
+    this.index = index;
     this.xAes = layerAes.x ? layerAes.x : parentAes.x;
     this.xScale = scales.x;
     if(!this.xAes){
@@ -117,8 +118,8 @@ LABKEY.vis.Geom.Point = function(config){
     return this;
 };
 LABKEY.vis.Geom.Point.prototype = new LABKEY.vis.Geom.XY();
-LABKEY.vis.Geom.Point.prototype.render = function(renderer, grid, scales, data, layerAes, parentAes, name){
-    if(!this.initAesthetics(scales, layerAes, parentAes, name)){
+LABKEY.vis.Geom.Point.prototype.render = function(renderer, grid, scales, data, layerAes, parentAes, name, index){
+    if(!this.initAesthetics(scales, layerAes, parentAes, name, index)){
         return false;
     }
 
@@ -158,8 +159,8 @@ LABKEY.vis.Geom.Path = function(config){
     return this;
 };
 LABKEY.vis.Geom.Path.prototype = new LABKEY.vis.Geom.XY();
-LABKEY.vis.Geom.Path.prototype.render = function(renderer, grid, scales, data, layerAes, parentAes, name){
-    if(!this.initAesthetics(scales, layerAes, parentAes, name)){
+LABKEY.vis.Geom.Path.prototype.render = function(renderer, grid, scales, data, layerAes, parentAes, name, index){
+    if(!this.initAesthetics(scales, layerAes, parentAes, name, index)){
         return false;
     }
 
@@ -192,8 +193,8 @@ LABKEY.vis.Geom.ErrorBar = function(config){
     return this;
 };
 LABKEY.vis.Geom.ErrorBar.prototype = new LABKEY.vis.Geom.XY();
-LABKEY.vis.Geom.ErrorBar.prototype.render = function(renderer, grid, scales, data, layerAes, parentAes, name){
-    if(!this.initAesthetics(scales, layerAes, parentAes, name)){
+LABKEY.vis.Geom.ErrorBar.prototype.render = function(renderer, grid, scales, data, layerAes, parentAes, name, index){
+    if(!this.initAesthetics(scales, layerAes, parentAes, name, index)){
         return false;
     }
 
@@ -264,8 +265,8 @@ LABKEY.vis.Geom.Boxplot = function(config){
     return this;
 };
 LABKEY.vis.Geom.Boxplot.prototype = new LABKEY.vis.Geom.XY();
-LABKEY.vis.Geom.Boxplot.prototype.render = function(renderer, grid, scales, data, layerAes, parentAes, name){
-    if(!this.initAesthetics(scales, layerAes, parentAes, name)){
+LABKEY.vis.Geom.Boxplot.prototype.render = function(renderer, grid, scales, data, layerAes, parentAes, name, index){
+    if(!this.initAesthetics(scales, layerAes, parentAes, name, index)){
         return false;
     }
     this.hoverTextAes = layerAes.hoverText ? layerAes.hoverText : parentAes.hoverText;
@@ -277,28 +278,5 @@ LABKEY.vis.Geom.Boxplot.prototype.render = function(renderer, grid, scales, data
     this.shapeScale = scales.shape;
 
     renderer.renderBoxPlotGeom(data, this);
-    return true;
-};
-
-// The text Geom is not yet complete, do not use it.
-
-LABKEY.vis.Geom.Text = function(config){
-    this.type = "Text";
-
-    if(!config){
-        config = {};
-    }
-    this.color = config.color ? config.color : '#000000';
-    this.fontSize = config.size ? config.fontSize : 12;
-
-    return this;
-};
-LABKEY.vis.Geom.Text.prototype = new LABKEY.vis.Geom.XY();
-LABKEY.vis.Geom.Text.prototype.render = function(paper, grid, scales, data, layerAes, parentAes){
-    if(!this.initAesthetics(scales, layerAes, parentAes)){
-        return false;
-    }
-    var yScale = this.yMap.side == "left" ? scales.yLeft.scale : scales.yRight.scale;
-    
     return true;
 };

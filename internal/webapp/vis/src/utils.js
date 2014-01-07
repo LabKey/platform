@@ -47,9 +47,7 @@ LABKEY.vis.makePath = function(data, xAccessor, yAccessor){
 
 LABKEY.vis.createGetter = function(aes){
     if(typeof aes.value === 'function'){
-        aes.getValue = function(row){
-            return aes.value(row);
-        };
+        aes.getValue = aes.value;
     } else {
         aes.getValue = function(row){
             return row[aes.value];
@@ -65,6 +63,19 @@ LABKEY.vis.convertAes = function(aes){
         newAes[newAesName].value = aes[aesthetic];
     }
     return newAes;
+};
+
+LABKEY.vis.mergeAes = function(oldAes, newAes) {
+    newAes = LABKEY.vis.convertAes(newAes);
+    for(var attr in newAes) {
+        if(newAes.hasOwnProperty(attr)) {
+            if (newAes[attr].value != null) {
+                LABKEY.vis.createGetter(newAes[attr]);
+            }
+
+            oldAes[attr] = newAes[attr];
+        }
+    }
 };
 
 LABKEY.vis.groupData = function(data, groupAccessor){
