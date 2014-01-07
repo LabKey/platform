@@ -30,6 +30,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.clientLibrary.xml.DependenciesType;
@@ -169,7 +170,11 @@ public class ClientDependency
 
     private void logError(String message)
     {
-        URLHelper url = HttpView.getContextURLHelper();
+        URLHelper url = null;
+        ViewContext ctx = HttpView.getRootContext();
+
+        if (null != ctx)
+            url = HttpView.getContextURLHelper();
 
         _log.error(message + (null != url ? " URL: " + url.getLocalURIString() : ""));
     }
