@@ -80,7 +80,7 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
             }
 
             toAdd.push({
-                title: '<h3>Module: ' + module + '</h3>',
+                title: '<b>Module: ' + module + '</b>',
                 border: true,
                 bodyStyle: 'padding: 5px;',
                 style: 'padding-bottom: 10px;',
