@@ -1647,7 +1647,7 @@ public class QueryServiceImpl extends QueryService
             try
             {
                 Object converted = p.getJdbcType().convert(value);
-                list.set(i, new Parameter.TypedValue(converted, p.getJdbcType()));
+                frag.set(i, new Parameter.TypedValue(converted, p.getJdbcType()));
             }
             catch (ConversionException e)
             {
