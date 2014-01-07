@@ -36,9 +36,9 @@ public class SingleQueryFormSection extends SimpleFormSection
     }
 
     @Override
-    public JSONObject toJSON(Container c, User u)
+    public JSONObject toJSON(DataEntryFormContext ctx)
     {
-        JSONObject ret = super.toJSON(c, u);
+        JSONObject ret = super.toJSON(ctx);
 
         Map<String, Object> formConfig = new HashMap<>();
         Map<String, Object> bindConfig = new HashMap<>();

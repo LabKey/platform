@@ -18,6 +18,7 @@ package org.labkey.api.ldk.notification;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.ValidEmail;
 
 import javax.mail.Address;
 import java.util.Date;
@@ -61,4 +62,8 @@ abstract public class NotificationService
     abstract public boolean isServiceEnabled();
 
     abstract public Address getReturnEmail(Container c);
+
+    abstract public Set<UserPrincipal> getRecipients(Notification n, Container c);
+
+    abstract public List<Address> getEmailsForPrincipal(UserPrincipal user) throws ValidEmail.InvalidEmailException;
 }

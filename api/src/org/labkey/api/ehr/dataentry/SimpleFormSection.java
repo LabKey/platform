@@ -44,6 +44,8 @@ public class SimpleFormSection extends AbstractFormSection
     private String _schemaName;
     private String _queryName;
 
+    protected boolean _showLocation = false;
+
     public SimpleFormSection(String schemaName, String queryName, String label, String xtype)
     {
         this(schemaName, queryName, label, xtype, EHRService.FORM_SECTION_LOCATION.Body);
@@ -65,9 +67,9 @@ public class SimpleFormSection extends AbstractFormSection
     }
 
     @Override
-    public JSONObject toJSON(Container c, User u)
+    public JSONObject toJSON(DataEntryFormContext ctx)
     {
-        JSONObject json = super.toJSON(c, u);
+        JSONObject json = super.toJSON(ctx);
 
         JSONArray queries = new JSONArray();
 
@@ -77,16 +79,22 @@ public class SimpleFormSection extends AbstractFormSection
         queries.put(q);
 
         json.put("queries", queries);
+
         return json;
     }
 
     @Override
-    protected List<FormElement> getFormElements(Container c, User u)
+    protected List<FormElement> getFormElements(DataEntryFormContext ctx)
     {
         List<FormElement> list = new ArrayList<>();
-        for (TableInfo ti : getTables(c, u))
+        for (TableInfo ti : getTables(ctx))
         {
             List<FieldKey> keys = EHRService.get().getDefaultFieldKeys(ti);
+            if (_showLocation == true)
+            {
+                keys.add(0, FieldKey.fromString("Id/curLocation/location"));
+            }
+
             Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(ti, keys);
             for (FieldKey key : keys)
             {

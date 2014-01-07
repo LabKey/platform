@@ -20,10 +20,13 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.ehr.EHRService;
+import org.labkey.api.ehr.security.AbstractEHRPermission;
+import org.labkey.api.ehr.security.EHRDataEntryPermission;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.study.DataSetTable;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.template.ClientDependency;
 
@@ -48,6 +51,8 @@ abstract public class AbstractFormSection implements FormSection
     private String _clientModelClass = "EHR.model.DefaultClientModel";
     private String _clientStoreClass = "EHR.data.DataEntryClientStore";
     private EHRService.FORM_SECTION_LOCATION _location = EHRService.FORM_SECTION_LOCATION.Body;
+    private String _tabName = null;
+    private TEMPLATE_MODE _templateMode = TEMPLATE_MODE.MULTI;
 
     private List<String> _configSources = new ArrayList<String>();
 
@@ -66,6 +71,8 @@ abstract public class AbstractFormSection implements FormSection
         _label = label;
         _xtype = xtype;
         _location = location;
+
+        addClientDependency(ClientDependency.fromFilePath("ehr/window/CopyFromSectionWindow.js"));
     }
 
     public String getName()
@@ -86,6 +93,11 @@ abstract public class AbstractFormSection implements FormSection
     public void setXtype(String xtype)
     {
         _xtype = xtype;
+    }
+
+    protected void setTabName(String tabName)
+    {
+        _tabName = tabName;
     }
 
     public EHRService.FORM_SECTION_LOCATION getLocation()
@@ -133,12 +145,44 @@ abstract public class AbstractFormSection implements FormSection
         _configSources.add(source);
     }
 
-    public boolean hasPermission(Container c, User u, Class<? extends Permission> perm)
+    public void setTemplateMode(TEMPLATE_MODE mode)
     {
-        for (TableInfo ti : getTables(c, u))
+        _templateMode = mode;
+    }
+
+    public static enum TEMPLATE_MODE
+    {
+        MULTI("TEMPLATE"),
+        NO_ID("TEMPLATE_NO_ID"),
+        ENCOUNTER("TEMPLATE_ENCOUNTER"),
+        NONE(null);
+
+        private String _button;
+
+        TEMPLATE_MODE(String button)
         {
-            if (!ti.hasPermission(u, perm))
-                return false;
+            _button = button;
+        }
+
+        public String getButton()
+        {
+            return _button;
+        }
+    }
+
+    public boolean hasPermission(DataEntryFormContext ctx, Class<? extends Permission> perm)
+    {
+        for (TableInfo ti : getTables(ctx))
+        {
+            if (AbstractEHRPermission.class.isAssignableFrom(perm) && !(ti instanceof DataSetTable))
+            {
+                return ctx.getContainer().hasPermission(ctx.getUser(), EHRDataEntryPermission.class);
+            }
+            else
+            {
+                if (!ti.hasPermission(ctx.getUser(), perm))
+                    return false;
+            }
         }
 
         return true;
@@ -149,25 +193,14 @@ abstract public class AbstractFormSection implements FormSection
         return new HashSet<>();
     }
 
-    public Set<TableInfo> getTables(Container c, User u)
+    public Set<TableInfo> getTables(DataEntryFormContext ctx)
     {
         Set<TableInfo> tables = new HashSet<>();
-        Map<String, UserSchema> schemas = new HashMap<>();
-
         Set<Pair<String, String>> pairs = getTableNames();
 
         for (Pair<String, String> pair : pairs)
         {
-            UserSchema us = schemas.containsKey(pair.first) ? schemas.get(pair.first) : QueryService.get().getUserSchema(u, c, pair.first);
-            if (us == null)
-            {
-                _log.error("Unable to create schema: " + pair.second);
-                continue;
-            }
-
-            schemas.put(pair.first, us);
-
-            TableInfo ti = us.getTable(pair.second);
+            TableInfo ti = ctx.getTable(pair.first, pair.second);
             if (ti == null)
             {
                 _log.error("Unable to create table: " + pair.first + "." + pair.second);
@@ -180,7 +213,7 @@ abstract public class AbstractFormSection implements FormSection
         return tables;
     }
 
-    public JSONObject toJSON(Container c, User u)
+    public JSONObject toJSON(DataEntryFormContext ctx)
     {
         JSONObject json = new JSONObject();
 
@@ -190,10 +223,14 @@ abstract public class AbstractFormSection implements FormSection
         json.put("clientModelClass", getClientModelClass());
         json.put("clientStoreClass", getClientStoreClass());
         json.put("location", getLocation().name());
-        json.put("fieldConfigs", getFieldConfigs(c, u));
+        json.put("fieldConfigs", getFieldConfigs(ctx));
+        json.put("supportsTemplates", _templateMode != TEMPLATE_MODE.NONE);
         json.put("configSources", getConfigSources());
         json.put("tbarButtons", getTbarButtons());
         json.put("tbarMoreActionButtons", getTbarMoreActionButtons());
+
+        if (_tabName != null)
+            json.put("tabName", _tabName);
 
         return json;
     }
@@ -211,8 +248,10 @@ abstract public class AbstractFormSection implements FormSection
         if (!sources.contains("Encounter") && !sources.contains("Labwork"))
         {
             defaultButtons.add("COPYFROMSECTION");
-            defaultButtons.add("TEMPLATE");
         }
+
+        if (_templateMode.getButton() != null)
+            defaultButtons.add(_templateMode.getButton());
 
         return defaultButtons;
     }
@@ -223,25 +262,26 @@ abstract public class AbstractFormSection implements FormSection
 
         //omit the template btn from any formtype with specialized parent->child inheritance
         List<String> sources = getConfigSources();
-        if (!sources.contains("Encounter") && !sources.contains("Labwork"))
+        if (!sources.contains("Encounter"))
         {
             defaultButtons.add("DUPLICATE");
         }
 
         defaultButtons.add("BULKEDIT");
         defaultButtons.add("GUESSPROJECT");
+        defaultButtons.add("REFRESH");
 
         return defaultButtons;
     }
 
-    abstract protected List<FormElement> getFormElements(Container c, User u);
+    abstract protected List<FormElement> getFormElements(DataEntryFormContext ctx);
 
-    private List<JSONObject> getFieldConfigs(Container c, User u)
+    private List<JSONObject> getFieldConfigs(DataEntryFormContext ctx)
     {
         List<JSONObject> ret = new ArrayList<>();
-        for (FormElement fe : getFormElements(c, u))
+        for (FormElement fe : getFormElements(ctx))
         {
-            ret.add(fe.toJSON(c, u));
+            ret.add(fe.toJSON(ctx.getContainer(), ctx.getUser()));
         }
 
         return ret;

@@ -481,6 +481,8 @@ LABKEY.ext.Ext4Helper = new function(){
                 else
                     displayValue = value;
 
+                displayValue = Ext4.util.Format.htmlEncode(displayValue);
+
                 if(meta.buildDisplayString){
                     displayValue = meta.buildDisplayString({
                         displayValue: displayValue,
@@ -492,8 +494,6 @@ LABKEY.ext.Ext4Helper = new function(){
                         store: store
                     });
                 }
-
-                displayValue = Ext4.util.Format.htmlEncode(displayValue);
 
                 //if meta.file is true, add an <img> for the file icon
                 if(meta.file){
@@ -526,12 +526,12 @@ LABKEY.ext.Ext4Helper = new function(){
                 }
 
                 if(cellStyles.length){
-                    cellMetaData.style = cellMetaData.style || '';
+                    cellMetaData.style = cellMetaData.style ? cellMetaData.style + ';' : '';
                     cellMetaData.style += (cellStyles.join(';'));
                 }
 
                 if (tdCls.length){
-                    cellMetaData.tdCls = cellMetaData.tdCls || '';
+                    cellMetaData.tdCls = cellMetaData.tdCls ? cellMetaData.tdCls + ' ' : '';
                     cellMetaData.tdCls += tdCls.join(' ');
                 }
 
@@ -706,12 +706,21 @@ LABKEY.ext.Ext4Helper = new function(){
 
             meta.lookupStore = lookupStore;
             var lookupRecord;
-            var recIdx = lookupStore.find(meta.lookup.keyColumn, data);
-            if(recIdx != -1)
-                lookupRecord = lookupStore.getAt(recIdx);
 
-            if (lookupRecord)
+            //NOTE: preferentially used snapshot instead of data to allow us to find the record even if the store is currently filtered
+            var records = lookupStore.snapshot || lookupStore.data;
+            var matcher = records.createValueMatcher(data, false, true, true);
+            var property = meta.lookup.keyColumn;
+            var recIdx = records.findIndexBy(function(o){
+                return o && matcher.test(o.get(property));
+            }, null);
+
+            if (recIdx != -1)
+                lookupRecord = records.getAt(recIdx);
+
+            if (lookupRecord){
                 return lookupRecord.get(meta.lookup.displayColumn);
+            }
             else {
                 //NOTE: shift this responsibility to the grid or other class consuming this
     //            //if store not loaded yet, retry rendering on store load

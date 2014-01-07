@@ -40,12 +40,14 @@ public class EncounterFormSection extends SimpleFormSection
         setConfigSources(sources);
         setClientModelClass("EHR.data.ClinicalEncountersClientStore");
         addClientDependency(ClientDependency.fromFilePath("ehr/data/ClinicalEncountersClientStore.js"));
+
+        setTemplateMode(TEMPLATE_MODE.ENCOUNTER);
     }
 
     @Override
-    public JSONObject toJSON(Container c, User u)
+    public JSONObject toJSON(DataEntryFormContext ctx)
     {
-        JSONObject ret = super.toJSON(c, u);
+        JSONObject ret = super.toJSON(ctx);
 
         Map<String, Object> formConfig = new HashMap<>();
         Map<String, Object> bindConfig = new HashMap<>();

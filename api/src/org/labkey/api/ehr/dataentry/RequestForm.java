@@ -31,9 +31,9 @@ import java.util.List;
  */
 public class RequestForm extends AbstractDataEntryForm
 {
-    protected RequestForm(Module owner, String name, String label, String category, List<FormSection> sections)
+    protected RequestForm(DataEntryFormContext ctx, Module owner, String name, String label, String category, List<FormSection> sections)
     {
-        super(owner, name, label, category, sections);
+        super(ctx, owner, name, label, category, sections);
         setJavascriptClass("EHR.panel.RequestDataEntryPanel");
         setStoreCollectionClass("EHR.data.RequestStoreCollection");
 
@@ -43,14 +43,14 @@ public class RequestForm extends AbstractDataEntryForm
         }
     }
 
-    public static RequestForm create(Module owner, String category, String name, String label, List<FormSection> formSections)
+    public static RequestForm create(DataEntryFormContext ctx, Module owner, String category, String name, String label, List<FormSection> formSections)
     {
         List<FormSection> sections = new ArrayList<FormSection>();
         sections.add(new RequestFormSection());
         sections.add(new AnimalDetailsFormSection());
         sections.addAll(formSections);
 
-        return new RequestForm(owner, name, label, category, sections);
+        return new RequestForm(ctx, owner, name, label, category, sections);
     }
 
     @Override

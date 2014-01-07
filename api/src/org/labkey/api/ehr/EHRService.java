@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableCustomizer;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.ehr.dataentry.DataEntryForm;
+import org.labkey.api.ehr.dataentry.DataEntryFormFactory;
 import org.labkey.api.ehr.dataentry.FormSection;
 import org.labkey.api.ehr.demographics.DemographicsProvider;
 import org.labkey.api.ehr.history.HistoryDataSource;
@@ -128,13 +129,9 @@ abstract public class EHRService
     @NotNull
     abstract public Map<String, EHRQCState> getQCStates(Container c);
 
-    abstract public void registerFormType(DataEntryForm form);
+    abstract public void registerFormType(DataEntryFormFactory fact);
 
     abstract public DataEntryForm getDataEntryForm(String name, Container c, User u);
-
-    abstract public void registerSimpleFormType(FORM_TYPE type, Module m, String category, String label, String schema, String query);
-
-    abstract public void registerFormType(FORM_TYPE type, Module m, String category, String name, String label, List<FormSection> sections);
 
     public static enum FORM_TYPE
     {

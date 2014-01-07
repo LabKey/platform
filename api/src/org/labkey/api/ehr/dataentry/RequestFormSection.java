@@ -34,12 +34,13 @@ public class RequestFormSection extends SimpleFormSection
     {
         super("ehr", "requests", "Request", "ehr-formpanel");
         setConfigSources(Collections.singletonList("Task"));
+        setTemplateMode(TEMPLATE_MODE.NONE);
     }
 
     @Override
-    public JSONObject toJSON(Container c, User u)
+    public JSONObject toJSON(DataEntryFormContext ctx)
     {
-        JSONObject ret = super.toJSON(c, u);
+        JSONObject ret = super.toJSON(ctx);
 
         Map<String, Object> formConfig = new HashMap<String, Object>();
         Map<String, Object> bindConfig = new HashMap<String, Object>();

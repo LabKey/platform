@@ -47,6 +47,7 @@ import java.util.Set;
  */
 public class AbstractDataEntryForm implements DataEntryForm
 {
+    private DataEntryFormContext _ctx;
     private String _name;
     private String _label;
     private String _category;
@@ -56,8 +57,9 @@ public class AbstractDataEntryForm implements DataEntryForm
     private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
     private Module _owner;
 
-    public AbstractDataEntryForm(Module owner, String name, String label, String category, List<FormSection> sections)
+    public AbstractDataEntryForm(DataEntryFormContext ctx, Module owner, String name, String label, String category, List<FormSection> sections)
     {
+        _ctx = ctx;
         _owner = owner;
         _name = name;
         _label = label;
@@ -90,11 +92,11 @@ public class AbstractDataEntryForm implements DataEntryForm
         return _category;
     }
 
-    public boolean hasPermission(Container c, User u, Class<? extends Permission> clazz)
+    public boolean hasPermission(Class<? extends Permission> clazz)
     {
         for (FormSection section : getFormSections())
         {
-            if (!section.hasPermission(c, u, clazz))
+            if (!section.hasPermission(_ctx, clazz))
                 return false;
         }
 
@@ -126,15 +128,15 @@ public class AbstractDataEntryForm implements DataEntryForm
         return Collections.<Class<? extends Permission>>singletonList(InsertPermission.class);
     }
 
-    public boolean isAvailable(Container c, User u)
+    public boolean isAvailable()
     {
-        if (!c.getActiveModules().contains(_owner))
+        if (!_ctx.getContainer().getActiveModules().contains(_owner))
             return false;
 
         return true;
     }
 
-    public JSONObject toJSON(Container c, User u)
+    public JSONObject toJSON()
     {
         JSONObject json = new JSONObject();
 
@@ -143,16 +145,16 @@ public class AbstractDataEntryForm implements DataEntryForm
         json.put("category", getCategory());
         json.put("javascriptClass", getJavascriptClass());
         json.put("storeCollectionClass", getStoreCollectionClass());
-        json.put("isAvailable", isAvailable(c, u));
-        json.put("isVisible", isVisible(c, u));
+        json.put("isAvailable", isAvailable());
+        json.put("isVisible", isVisible());
 
         JSONArray sections = new JSONArray();
         for (FormSection section : getFormSections())
         {
-            sections.put(section.toJSON(c, u));
+            sections.put(section.toJSON(_ctx));
         }
         json.put("sections", sections);
-        json.put("permissions", getPermissionMap(c, u));
+        json.put("permissions", getPermissionMap());
         json.put("buttons", getButtonConfigs());
         json.put("moreActionButtons", getMoreActionButtonConfigs());
 
@@ -161,7 +163,7 @@ public class AbstractDataEntryForm implements DataEntryForm
         {
             for (Class<? extends Permission> clazz : getAvailabilityPermissions())
             {
-                if (!section.hasPermission(c, u, clazz))
+                if (!section.hasPermission(_ctx, clazz))
                 {
                     canInsert = false;
                     break;
@@ -187,17 +189,19 @@ public class AbstractDataEntryForm implements DataEntryForm
     {
         List<String> defaultButtons = new ArrayList<String>();
         defaultButtons.add("VALIDATEALL");
+        defaultButtons.add("APPLYFORMTEMPLATE");
         defaultButtons.add("REVIEW");
+        defaultButtons.add("SUBMITANDNEXT");
         defaultButtons.add("FORCESUBMIT");
         defaultButtons.add("DISCARD");
 
         return defaultButtons;
     }
 
-    private Map<String, Map<String, Map<String, String>>> getPermissionMap(Container c, User u)
+    private Map<String, Map<String, Map<String, String>>> getPermissionMap()
     {
         Map<String, Map<String, Map<String, String>>> permissionMap = new HashMap<>();
-        for (TableInfo ti : getTables(c, u))
+        for (TableInfo ti : getTables())
         {
             String schemaName= ti.getPublicSchemaName();
             String queryName = ti.getPublicName();
@@ -218,12 +222,12 @@ public class AbstractDataEntryForm implements DataEntryForm
             }
             else
             {
-                policy = SecurityPolicyManager.getPolicy(c);
+                policy = SecurityPolicyManager.getPolicy(_ctx.getContainer());
             }
 
             if (policy != null)
             {
-                for (Class<? extends Permission> p : policy.getPermissions(u))
+                for (Class<? extends Permission> p : policy.getPermissions(_ctx.getUser()))
                 {
                     queryPerms.put(p.getName(), p.getCanonicalName());
                 }
@@ -236,12 +240,12 @@ public class AbstractDataEntryForm implements DataEntryForm
         return permissionMap;
     }
 
-    public Set<TableInfo> getTables(Container c, User u)
+    public Set<TableInfo> getTables()
     {
         Set<TableInfo> tables = new HashSet<>();
         for (FormSection section : getFormSections())
         {
-            tables.addAll(section.getTables(c, u));
+            tables.addAll(section.getTables(_ctx));
         }
         return tables;
     }
@@ -264,7 +268,7 @@ public class AbstractDataEntryForm implements DataEntryForm
     }
 
     @Override
-    public boolean isVisible(Container c, User u)
+    public boolean isVisible()
     {
         return true;
     }

@@ -135,7 +135,7 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
         var fields = this.store.getFields();
         var toAdd = [];
         fields.each(function(field){
-            if (LABKEY.ext.Ext4Helper.shouldShowInDetailsView(field)){
+            if (LABKEY.ext4.Util.shouldShowInDetailsView(field)){
                 var value;
 
                 if(rec.raw && rec.raw[field.name]){

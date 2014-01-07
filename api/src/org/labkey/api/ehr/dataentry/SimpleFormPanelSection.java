@@ -29,19 +29,27 @@ import java.util.Map;
  */
 public class SimpleFormPanelSection extends SimpleFormSection
 {
+    private boolean _createRecordOnLoad;
+
     public SimpleFormPanelSection(String schemaName, String queryName, String label)
     {
+        this(schemaName, queryName, label, true);
+    }
+
+    public SimpleFormPanelSection(String schemaName, String queryName, String label, boolean createRecordOnLoad)
+    {
         super(schemaName, queryName, label, "ehr-formpanel");
+        _createRecordOnLoad = createRecordOnLoad;
     }
 
     @Override
-    public JSONObject toJSON(Container c, User u)
+    public JSONObject toJSON(DataEntryFormContext ctx)
     {
-        JSONObject ret = super.toJSON(c, u);
+        JSONObject ret = super.toJSON(ctx);
 
         Map<String, Object> formConfig = new HashMap<>();
         Map<String, Object> bindConfig = new HashMap<>();
-        bindConfig.put("createRecordOnLoad", true);
+        bindConfig.put("createRecordOnLoad", _createRecordOnLoad);
         formConfig.put("bindConfig", bindConfig);
         ret.put("formConfig", formConfig);
 

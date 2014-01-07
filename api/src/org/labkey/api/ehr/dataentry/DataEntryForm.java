@@ -39,22 +39,22 @@ public interface DataEntryForm
 
     abstract public String getCategory();
 
-    abstract public boolean hasPermission(Container c, User u, Class<? extends Permission> clazz);
+    abstract public boolean hasPermission(Class<? extends Permission> clazz);
 
     /**
      * Intended for checks like testing whether an owning module is active
      */
-    abstract public boolean isAvailable(Container c, User u);
+    abstract public boolean isAvailable();
 
-    abstract public boolean isVisible(Container c, User u);
+    abstract public boolean isVisible();
 
     abstract public String getJavascriptClass();
 
-    abstract public JSONObject toJSON(Container c, User u);
+    abstract public JSONObject toJSON();
 
     abstract public List<FormSection> getFormSections();
 
     abstract public LinkedHashSet<ClientDependency> getClientDependencies();
 
-    abstract public Set<TableInfo> getTables(Container c, User u);
+    abstract public Set<TableInfo> getTables();
 }

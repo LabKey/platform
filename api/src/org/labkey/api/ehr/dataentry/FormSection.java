@@ -42,13 +42,13 @@ public interface FormSection
 
     abstract public String getClientModelClass();
 
-    abstract public boolean hasPermission(Container c, User u, Class<? extends Permission> perm);
+    abstract public boolean hasPermission(DataEntryFormContext ctx, Class<? extends Permission> perm);
 
     abstract public Set<Pair<String, String>> getTableNames();
 
-    abstract public Set<TableInfo> getTables(Container c, User u);
+    abstract public Set<TableInfo> getTables(DataEntryFormContext ctx);
 
-    abstract public JSONObject toJSON(Container c, User u);
+    abstract public JSONObject toJSON(DataEntryFormContext ctx);
 
     abstract public LinkedHashSet<ClientDependency> getClientDependencies();
 

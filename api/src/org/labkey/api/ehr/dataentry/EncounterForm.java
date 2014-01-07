@@ -18,6 +18,7 @@ package org.labkey.api.ehr.dataentry;
 import org.labkey.api.ehr.security.EHRInProgressInsertPermission;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.view.template.ClientDependency;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,10 +31,11 @@ import java.util.List;
  */
 public class EncounterForm extends TaskForm
 {
-    protected EncounterForm(Module owner, String name, String label, String category, List<FormSection> sections)
+    protected EncounterForm(DataEntryFormContext ctx, Module owner, String name, String label, String category, List<FormSection> sections)
     {
-        super(owner, name, label, category, sections);
+        super(ctx, owner, name, label, category, sections);
         setStoreCollectionClass("EHR.data.EncounterStoreCollection");
+        addClientDependency(ClientDependency.fromFilePath("ehr/data/EncounterStoreCollection.js"));
 
         for (FormSection s : getFormSections())
         {
@@ -41,7 +43,7 @@ public class EncounterForm extends TaskForm
         }
     }
 
-    public static EncounterForm create(Module owner, String category, String name, String label, List<FormSection> formSections)
+    public static EncounterForm create(DataEntryFormContext ctx, Module owner, String category, String name, String label, List<FormSection> formSections)
     {
         List<FormSection> sections = new ArrayList<FormSection>();
         sections.add(new TaskFormSection());
@@ -49,7 +51,7 @@ public class EncounterForm extends TaskForm
         sections.add(new AnimalDetailsFormSection());
         sections.addAll(formSections);
 
-        return new EncounterForm(owner, name, label, category, sections);
+        return new EncounterForm(ctx, owner, name, label, category, sections);
     }
 
     @Override

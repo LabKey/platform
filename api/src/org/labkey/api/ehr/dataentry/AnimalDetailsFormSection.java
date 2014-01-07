@@ -39,7 +39,7 @@ public class AnimalDetailsFormSection extends AbstractFormSection
     }
 
     @Override
-    protected List<FormElement> getFormElements(Container c, User u)
+    protected List<FormElement> getFormElements(DataEntryFormContext ctx)
     {
         return Collections.emptyList();
     }

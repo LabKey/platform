@@ -424,6 +424,8 @@
                 else
                     displayValue = value;
 
+                displayValue = Ext4.util.Format.htmlEncode(displayValue);
+
                 if(meta.buildDisplayString){
                     displayValue = meta.buildDisplayString({
                         displayValue: displayValue,
@@ -435,8 +437,6 @@
                         store: store
                     });
                 }
-
-                displayValue = Ext4.util.Format.htmlEncode(displayValue);
 
                 //if meta.file is true, add an <img> for the file icon
                 if (meta.file) {
@@ -469,12 +469,12 @@
                 }
 
                 if(cellStyles.length){
-                    cellMetaData.style = cellMetaData.style || '';
+                    cellMetaData.style = cellMetaData.style ? cellMetaData.style + ';' : '';
                     cellMetaData.style += (cellStyles.join(';'));
                 }
 
                 if (tdCls.length){
-                    cellMetaData.tdCls = cellMetaData.tdCls || '';
+                    cellMetaData.tdCls = cellMetaData.tdCls ? cellMetaData.tdCls + ' ' : '';
                     cellMetaData.tdCls += tdCls.join(' ');
                 }
 
@@ -551,7 +551,7 @@
                         displayValue = date.format(format);
                         break;
                     case "int":
-                        displayValue = (Ext4.util.Format.numberRenderer(this.format || '0'))(displayValue);
+                        displayValue = (Ext4.util.Format.numberRenderer(meta.extFormat || this.format || '0'))(displayValue);
                         break;
                     case "boolean":
                         var t = this.trueText || 'true', f = this.falseText || 'false', u = this.undefinedText || ' ';
@@ -566,7 +566,7 @@
                         }
                         break;
                     case "float":
-                        displayValue = (Ext4.util.Format.numberRenderer(this.format || '0,000.00'))(displayValue);
+                        displayValue = (Ext4.util.Format.numberRenderer(meta.extFormat || this.format || '0,000.00'))(displayValue);
                         break;
                     case "string":
                     default:
@@ -685,12 +685,21 @@
 
             meta.lookupStore = lookupStore;
             var lookupRecord;
-            var recIdx = lookupStore.find(meta.lookup.keyColumn, data);
-            if(recIdx != -1)
-                lookupRecord = lookupStore.getAt(recIdx);
 
-            if (lookupRecord)
+            //NOTE: preferentially used snapshot instead of data to allow us to find the record even if the store is currently filtered
+            var records = lookupStore.snapshot || lookupStore.data;
+            var matcher = records.createValueMatcher(data, false, true, true);
+            var property = meta.lookup.keyColumn;
+            var recIdx = records.findIndexBy(function(o){
+                return o && matcher.test(o.get(property));
+            }, null);
+
+            if (recIdx != -1)
+                lookupRecord = records.getAt(recIdx);
+
+            if (lookupRecord){
                 return lookupRecord.get(meta.lookup.displayColumn);
+            }
             else {
                 if (data!==null){
                     return "[" + data + "]";

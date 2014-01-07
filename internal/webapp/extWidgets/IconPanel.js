@@ -100,7 +100,7 @@ Ext4.define('LABKEY.ext.IconPanel', {
 
     onAfterRender : function(panel, opts) {
         this._previousWidth = this.container.getWidth();
-        Ext4.EventManager.onWindowResize(this.onResize, this);
+        Ext4.EventManager.onWindowResize(this.onWindowResize, this);
 
         // configure initial sizing
         if (this.sizeContainer) {
@@ -110,7 +110,7 @@ Ext4.define('LABKEY.ext.IconPanel', {
         }
     },
 
-    onResize : function(h, w, opts) {
+    onWindowResize : function(h, w, opts) {
         if (this._previousWidth && this._previousWidth == this.container.getWidth()) {
             return;
         }

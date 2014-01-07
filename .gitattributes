@@ -433,8 +433,12 @@ api/src/org/labkey/api/ehr/dataentry/AbstractDataEntryForm.java -text
 api/src/org/labkey/api/ehr/dataentry/AbstractFormSection.java -text
 api/src/org/labkey/api/ehr/dataentry/AnimalDetailsFormSection.java -text
 api/src/org/labkey/api/ehr/dataentry/DataEntryForm.java -text
+api/src/org/labkey/api/ehr/dataentry/DataEntryFormContext.java -text
+api/src/org/labkey/api/ehr/dataentry/DataEntryFormFactory.java -text
+api/src/org/labkey/api/ehr/dataentry/DefaultDataEntryFormFactory.java -text
 api/src/org/labkey/api/ehr/dataentry/EncounterForm.java -text
 api/src/org/labkey/api/ehr/dataentry/EncounterFormSection.java -text
+api/src/org/labkey/api/ehr/dataentry/ExtendedAnimalDetailsFormSection.java -text
 api/src/org/labkey/api/ehr/dataentry/FormElement.java -text
 api/src/org/labkey/api/ehr/dataentry/FormSection.java -text
 api/src/org/labkey/api/ehr/dataentry/RequestForm.java -text
