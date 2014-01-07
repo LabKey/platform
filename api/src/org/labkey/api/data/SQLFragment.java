@@ -156,6 +156,7 @@ public class SQLFragment implements Appendable, CharSequence
         return null == params ? emptyArray : params.toArray();
     }
 
+
     private List<Object> getModfiableParams()
     {
         if (!(params instanceof ArrayList))
@@ -218,6 +219,12 @@ public class SQLFragment implements Appendable, CharSequence
         if (values == null)
             return;
         addAll(Arrays.asList(values));
+    }
+
+
+    public void set(int i, Object p)
+    {
+        getModfiableParams().set(i,p);
     }
 
 
