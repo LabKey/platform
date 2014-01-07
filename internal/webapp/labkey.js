@@ -554,6 +554,11 @@ if (typeof LABKEY == "undefined")
                 // Support both LabKey and external JavaScript files
                 var src = file.substr(0, 4) != "http" ? configs.contextPath + "/" + file + '?' + configs.hash : file;
 
+                var cacheLoader = function()
+                {
+                    scriptCache.callbacksOnCache(file);
+                };
+
                 if (configs.isDocumentClosed || callback)
                 {
                     //create a new script element and append it to the head element
@@ -561,11 +566,6 @@ if (typeof LABKEY == "undefined")
                         src: src,
                         type: "text/javascript"
                     });
-
-                    var cacheLoader = function()
-                    {
-                        scriptCache.callbacksOnCache(file);
-                    };
 
                     // IE has a different way of handling <script> loads
                     if (script.readyState)
@@ -585,6 +585,7 @@ if (typeof LABKEY == "undefined")
                 else
                 {
                     document.write('\n<script type="text/javascript" src="' + src + '"></script>\n');
+                    cacheLoader();
                 }
             }
         };

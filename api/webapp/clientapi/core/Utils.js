@@ -966,16 +966,17 @@ LABKEY.Utils.convertToTable(
                 onLoaded();
             }
 
-            if (json.implicitJsIncludes)
-                LABKEY.loadedScripts(json.implicitJsIncludes);
-
-            function onLoaded(){
-                if(json.html) {
+            function onLoaded() {
+                if (json.html) {
                     //execute scripts
                     targetElem.update(json.html, true, function() {
-                        if (success)
+                        if (success) {
                             success.call(scope || window);
+                        }
                     }); //execute scripts
+
+                    if (json.implicitJsIncludes)
+                        LABKEY.loadedScripts(json.implicitJsIncludes);
                 }
             }
         }
