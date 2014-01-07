@@ -44,7 +44,7 @@ public class OlapSchemaCache extends ModuleResourceCache<OlapSchemaDescriptor>
 
     private OlapSchemaCache()
     {
-        super("olap", "Olap cube defintions");
+        super(new Path("olap"), "Olap cube defintions");
     }
 
     @Nullable
@@ -59,7 +59,7 @@ public class OlapSchemaCache extends ModuleResourceCache<OlapSchemaDescriptor>
         return filename.endsWith(".xml");
     }
 
-    protected String getResourceName(String filename)
+    protected String getResourceName(Module module, String filename)
     {
         assert isResourceFile(filename) : "Configuration filename \"" + filename + "\" does not end with .xml";
         return FileUtil.getBaseName(filename);
@@ -114,7 +114,7 @@ public class OlapSchemaCache extends ModuleResourceCache<OlapSchemaDescriptor>
             Module module = pair.first;
             String configName = pair.second;
 
-            Path configPath = new Path(_dirName, configName + ".xml");
+            Path configPath = _dirName.append(configName + ".xml");
             Resource config = pair.first.getModuleResolver().lookup(configPath);
 
             if (config != null && config.isFile())

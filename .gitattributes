@@ -1892,6 +1892,8 @@ pipeline/src/org/labkey/pipeline/api/PipelineStatusManager.java -text
 pipeline/src/org/labkey/pipeline/api/ScriptTaskFactory.java -text
 pipeline/src/org/labkey/pipeline/api/ScriptTaskImpl.java -text
 pipeline/src/org/labkey/pipeline/api/SimpleTaskFactory.java -text
+pipeline/src/org/labkey/pipeline/api/TaskFactoryCache.java -text
+pipeline/src/org/labkey/pipeline/api/TaskPipelineCache.java -text
 pipeline/src/org/labkey/pipeline/api/TaskPipelineImpl.java -text
 pipeline/src/org/labkey/pipeline/api/WorkDirectoryLocal.java -text
 pipeline/src/org/labkey/pipeline/api/WorkDirectoryRemote.java -text

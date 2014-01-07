@@ -47,6 +47,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
+import org.labkey.api.pipeline.TaskPipelineRegistry;
 import org.labkey.api.pipeline.TaskPipelineSettings;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resolver;
@@ -426,7 +427,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             {
                 TransformTaskFactory factory = new TransformTaskFactory(taskId);
                 factory.setDeclaringModule(declaringModule);
-                PipelineJobService.get().addTaskFactory(factory);
+                PipelineJobService.get().addLocalTaskFactory(pipelineId, factory);
             }
             else
             {
@@ -451,7 +452,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
     private String getFullTaskName(StepMeta meta)
     {
-        return getId() + ":" + meta.getId();
+        return getId() + TaskPipelineRegistry.LOCAL_TASK_PREFIX + meta.getId();
     }
 
     @Override

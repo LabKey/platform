@@ -202,7 +202,8 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     }
 
     /**
-     * Creates TaskPipeline from a file-based module <code>&lt;name>.pipeline.xml</code> config file.
+     * Creates TaskPipeline from a file-based module <code>&lt;name>.pipeline.xml</code> config file
+     * and registers any local TaskFactory definitions and this TaskPipeline with the PipelineJobService.
      *
      * @param pipelineTaskId The taskid of the TaskPipeline
      * @param pipelineConfig The task pipeline definition.
@@ -310,16 +311,16 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
                 if (xtask.isSetName())
                     name = xtask.getName();
 
-                TaskId taskId = createLocalTaskId(pipelineTaskId, name);
+                TaskId localTaskId = createLocalTaskId(pipelineTaskId, name);
 
                 Path tasksDir = pipelineConfig.getPath().getParent();
-                TaskFactory factory = PipelineJobServiceImpl.get().createTaskFactory(taskId, xtask, tasksDir);
+                TaskFactory factory = PipelineJobServiceImpl.get().createTaskFactory(localTaskId, xtask, tasksDir);
                 if (factory == null)
-                    throw new IllegalArgumentException("Task factory not found: " + taskId);
+                    throw new IllegalArgumentException("Task factory not found: " + localTaskId);
 
-                PipelineJobServiceImpl.get().addLocalTaskFactory(pipeline, factory);
+                PipelineJobServiceImpl.get().addLocalTaskFactory(pipelineTaskId, factory);
 
-                progression.add(taskId);
+                progression.add(localTaskId);
             }
         }
 
@@ -352,12 +353,13 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 //        if (xpipeline.isSetDefaultDisplay())
 //            pipeline._defaultDisplayState = PipelineActionConfig.displayState.valueOf(xpipeline.getDefaultDisplayState());
 
+        //PipelineJobService.get().addTaskPipeline(pipeline);
         return pipeline;
     }
 
     private static TaskId createLocalTaskId(TaskId pipelineTaskId, String name)
     {
-        String taskName = pipelineTaskId.getName() + "/" + name;
+        String taskName = pipelineTaskId.getName() + TaskPipelineRegistry.LOCAL_TASK_PREFIX + name;
         return new TaskId(pipelineTaskId.getModuleName(), TaskId.Type.task, taskName, pipelineTaskId.getVersion());
     }
 

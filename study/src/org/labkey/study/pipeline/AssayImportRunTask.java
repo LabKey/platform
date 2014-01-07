@@ -7,6 +7,8 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.AbstractTaskFactory;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -54,10 +56,16 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         @Override
         public TaskFactory create(TaskId taskId, TaskType xobj, Path taskDir)
         {
+            if (taskId.getModuleName() == null)
+                throw new IllegalArgumentException("Task factory must be defined by a module");
+
+            Module module = ModuleLoader.getInstance().getModule(taskId.getModuleName());
+
             if (!(xobj instanceof AssayImportRunTaskType))
                 throw new IllegalArgumentException("XML instance must be a AssayImportRunTaskType");
 
             Factory factory = new Factory(taskId);
+            factory.setDeclaringModule(module);
 
             AssayImportRunTaskType xtask = (AssayImportRunTaskType)xobj;
             factory._providerName = xtask.getProviderName();
@@ -111,7 +119,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
         public String getStatusName()
         {
-            return "IMPORTING ASSAY RUN";
+            return "IMPORT ASSAY RUN";
         }
 
         public List<String> getProtocolActionNames()

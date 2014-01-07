@@ -15,7 +15,6 @@
  */
 package org.labkey.di.pipeline;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
@@ -24,7 +23,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
-import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
@@ -47,7 +45,7 @@ public class DescriptorCache extends ModuleResourceCache<ScheduledPipelineJobDes
 
     private DescriptorCache()
     {
-       super("etls", "ETL job descriptors");
+       super(new Path("etls"), "ETL job descriptors");
     }
 
     @Nullable
@@ -70,7 +68,7 @@ public class DescriptorCache extends ModuleResourceCache<ScheduledPipelineJobDes
     }
 
     @Override
-    protected String getResourceName(String filename)
+    protected String getResourceName(Module module, String filename)
     {
         assert isResourceFile(filename) : "Configuration filename \"" + filename + "\" does not end with .xml";
         return FileUtil.getBaseName(filename);
@@ -141,16 +139,7 @@ public class DescriptorCache extends ModuleResourceCache<ScheduledPipelineJobDes
 
             final String configName = _transformManager.getConfigName(filename);
             final TaskId pipelineId = new TaskId(_module.getName(), TaskId.Type.pipeline, _transformManager.createConfigId(_module, configName),0);
-            final TaskPipeline pipeline = PipelineJobService.get().getTaskPipeline(pipelineId);
-            if (pipeline != null)
-            {
-                for (TaskId taskId : pipeline.getTaskProgression())
-                {
-                    if (StringUtils.startsWith(taskId.getName(), pipelineId.getName() + ":"))
-                        PipelineJobService.get().removeTaskFactory(taskId);
-                }
-                PipelineJobService.get().removeTaskPipeline(pipelineId);
-             }
+            PipelineJobService.get().removeTaskPipeline(pipelineId);
         }
     }
 }
