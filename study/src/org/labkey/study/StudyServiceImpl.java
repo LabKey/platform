@@ -971,7 +971,7 @@ public class StudyServiceImpl implements StudyService.Service
                     sqlf.append(col.getValueSql(tableAlias));
                     col.declareJoins(tableAlias,joins);
                 }
-                if (!dontAliasColumns)
+                if (!dontAliasColumns || "container".equalsIgnoreCase(colUnion.getAlias()))
                     sqlf.append(" AS ").append(colUnion.getAlias());
                 comma = ", ";
             }
