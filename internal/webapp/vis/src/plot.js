@@ -104,7 +104,7 @@
  &lt;div id='plot'&gt;
  &lt;/div id='plot'&gt;
  &lt;script type="text/javascript"&gt;
-var _scatterData = [];
+var scatterData = [];
 
 // Here we're creating some fake data to create a plot with.
 for(var i = 0; i < 1000; i++){
@@ -112,7 +112,7 @@ for(var i = 0; i < 1000; i++){
         x: {value: parseInt((Math.random()*(150)))},
         y: Math.random() * 1500
     };
-    _scatterData.push(point);
+    scatterData.push(point);
 }
 
 // Create a new layer object.
@@ -126,7 +126,7 @@ var scatterPlot = new LABKEY.vis.Plot({
 	renderTo: 'plot',
 	width: 900,
 	height: 700,
-	data: _scatterData,
+	data: scatterData,
 	layers: [pointLayer],
 	aes: {
 		// Aesthetic mappings can be functions or strings.
@@ -784,6 +784,10 @@ LABKEY.vis.Plot = function(config){
     };
 
     this.setAes = function(newAes){
+        // Note: this is only valid for plots using the D3Renderer.
+        // Used to add or remove aesthetics to a plot. Also availalbe on LABKEY.vis.Layer objects to set aesthetics on
+        // specific layers only.
+        // To delete an aesthetic set it to null i.e. plot.setAes({color: null});
         LABKEY.vis.mergeAes(this.aes, newAes);
         this.render();
     };

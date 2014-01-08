@@ -71,9 +71,10 @@ LABKEY.vis.mergeAes = function(oldAes, newAes) {
         if(newAes.hasOwnProperty(attr)) {
             if (newAes[attr].value != null) {
                 LABKEY.vis.createGetter(newAes[attr]);
+                oldAes[attr] = newAes[attr];
+            } else {
+                delete oldAes[attr];
             }
-
-            oldAes[attr] = newAes[attr];
         }
     }
 };
