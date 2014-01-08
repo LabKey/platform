@@ -37,23 +37,11 @@ public abstract class ReportThumbnail
         this.report = report;
         this.container = container;
     }
-    public String getThumbnailType()
-    {
-        return null;
-    }
     public void setAutoThumbnailType()
     {
     }
-    public String getFilename()
-    {
-        return null;
-    }
-    public boolean shouldSerialize()
-    {
-        return false;
-    }
-    public boolean shouldDeserialize()
-    {
-        return false;
-    }
+    public abstract String getThumbnailType();
+    public abstract String getFilename();
+    public abstract boolean shouldSerialize();
+    public abstract boolean shouldDeserialize();
 }
