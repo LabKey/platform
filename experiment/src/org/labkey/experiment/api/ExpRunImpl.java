@@ -378,47 +378,40 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     public void deleteProtocolApplications(ExpData[] datasToDelete, User user)
     {
-        try
+        if (user == null || !getContainer().hasPermission(user, DeletePermission.class))
         {
-            if (user == null || !getContainer().hasPermission(user, DeletePermission.class))
-            {
-                throw new SQLException("Attempting to delete an ExperimentRun without having delete permissions for its container");
-            }
-            DbCache.remove(ExperimentServiceImpl.get().getTinfoExperimentRun(), ExperimentServiceImpl.get().getCacheKey(getLSID()));
-
-            ExperimentServiceImpl.get().beforeDeleteData(datasToDelete);
-
-            String sql = " ";
-            sql += "DELETE FROM exp.ProtocolApplicationParameter WHERE ProtocolApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ");\n";
-
-            //per Josh: break relation between all datas with this run id and don't delete them
-            sql += "UPDATE " + ExperimentServiceImpl.get().getTinfoData() + " SET SourceApplicationId = NULL, RunId = NULL " +
-                    " WHERE RunId = " + getRowId() + ";\n";
-
-            sql += "UPDATE " + ExperimentServiceImpl.get().getTinfoMaterial() + " SET SourceApplicationId = NULL, RunId = NULL " +
-                    " WHERE RunId = " + getRowId() + ";\n";
-
-            sql += "DELETE FROM exp.DataInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ");\n";
-            sql += "DELETE FROM exp.MaterialInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ");\n";
-            sql += "DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE RunId = " + getRowId() + ");\n";
-            sql += "DELETE FROM exp.MaterialInput WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = " + getRowId() + ");\n";
-
-            new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute(sql);
-
-            ExpMaterial[] materialsToDelete = ExperimentServiceImpl.get().getExpMaterialsForRun(getRowId());
-            for (ExpMaterial expMaterial : materialsToDelete)
-            {
-                expMaterial.delete(user);
-            }
-
-            new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute("DELETE FROM exp.ProtocolApplication WHERE RunId = " + getRowId());
-
-            ExperimentRunGraph.clearCache(getContainer());
+            throw new UnauthorizedException("Attempting to delete an ExperimentRun without having delete permissions for its container");
         }
-        catch (SQLException e)
+        DbCache.remove(ExperimentServiceImpl.get().getTinfoExperimentRun(), ExperimentServiceImpl.get().getCacheKey(getLSID()));
+
+        ExperimentServiceImpl.get().beforeDeleteData(datasToDelete);
+
+        String sql = " ";
+        sql += "DELETE FROM exp.ProtocolApplicationParameter WHERE ProtocolApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ");\n";
+
+        //per Josh: break relation between all datas with this run id and don't delete them
+        sql += "UPDATE " + ExperimentServiceImpl.get().getTinfoData() + " SET SourceApplicationId = NULL, RunId = NULL " +
+                " WHERE RunId = " + getRowId() + ";\n";
+
+        sql += "UPDATE " + ExperimentServiceImpl.get().getTinfoMaterial() + " SET SourceApplicationId = NULL, RunId = NULL " +
+                " WHERE RunId = " + getRowId() + ";\n";
+
+        sql += "DELETE FROM exp.DataInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ");\n";
+        sql += "DELETE FROM exp.MaterialInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ");\n";
+        sql += "DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE RunId = " + getRowId() + ");\n";
+        sql += "DELETE FROM exp.MaterialInput WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = " + getRowId() + ");\n";
+
+        new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute(sql);
+
+        ExpMaterial[] materialsToDelete = ExperimentServiceImpl.get().getExpMaterialsForRun(getRowId());
+        for (ExpMaterial expMaterial : materialsToDelete)
         {
-            throw new RuntimeSQLException(e);
+            expMaterial.delete(user);
         }
+
+        new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute("DELETE FROM exp.ProtocolApplication WHERE RunId = " + getRowId());
+
+        ExperimentRunGraph.clearCache(getContainer());
     }
 
     private synchronized void ensureFullyPopulated()

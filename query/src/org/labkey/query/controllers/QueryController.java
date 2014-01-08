@@ -1987,7 +1987,7 @@ public class QueryController extends SpringActionController
                 }
             }
 
-            // NOTE: Updaing, saving, and deleting the view may throw an exception
+            // NOTE: Updating, saving, and deleting the view may throw an exception
             ((CustomViewImpl)view).update(jsonView, saveFilter);
             if (canSaveForAllUsers && !session)
             {
