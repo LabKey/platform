@@ -709,7 +709,7 @@ LABKEY.ext.Ext4Helper = new function(){
 
             //NOTE: preferentially used snapshot instead of data to allow us to find the record even if the store is currently filtered
             var records = lookupStore.snapshot || lookupStore.data;
-            var matcher = records.createValueMatcher(data, false, true, true);
+            var matcher = records.createValueMatcher((data == null ? '' : data), false, true, true);
             var property = meta.lookup.keyColumn;
             var recIdx = records.findIndexBy(function(o){
                 return o && matcher.test(o.get(property));
