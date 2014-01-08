@@ -5,6 +5,15 @@
     word-wrap: break-word;
 }
 
+.rpf .x4-grid-with-row-lines .x4-grid-table {
+    border-top: 1px solid transparent;
+}
+
+.rpf .x4-grid-row .x4-grid-cell
+{
+    border-bottom: none;
+}
+
 .rpf .x4-grid-row .x4-grid-cell,
 .rpf .x4-grid-body,
 .rpf .x4-column-header {
