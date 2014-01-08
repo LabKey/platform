@@ -250,21 +250,21 @@
             Ext4.define('aliasModel',{
                 extend : 'Ext.data.Model',
                 fields : [
-                    { name : 'header', type : 'string' }
+                    { name : 'name', type : 'string' }
                 ]
             });
 
              this.aliasStore = Ext4.create('Ext.data.Store', {
                 model : 'aliasModel',
-                sorters : {property : 'header', direction : 'ASC'}
+                sorters : {property : 'name', direction : 'ASC'}
             });
 
             var aliasCombo = Ext4.create('Ext.form.field.ComboBox',{
                 name : 'aliasCombo',
                 queryMode : 'local',
                 store: this.aliasStore,
-                valueField : 'header',
-                displayField : 'header',
+                valueField : 'name',
+                displayField : 'name',
                 labelWidth : 200,
                 labelSeparator: '',
                 fieldLabel : 'Alias Column',
@@ -276,8 +276,8 @@
                 name : 'sourceCombo',
                 queryMode : 'local',
                 store: this.aliasStore,
-                valueField : 'header',
-                displayField : 'header',
+                valueField : 'name',
+                displayField : 'name',
                 labelWidth : 200,
                 labelSeparator: '',
                 fieldLabel : 'Source Column',
@@ -306,17 +306,31 @@
 
                     success : function(details)
                     {
-                        this.aliasStore.loadData(details.columnModel);
+                        var filteredFields = [];
+                        for (var i = 0; i < details.metaData.fields.length; i++)
+                        {
+                            var field = details.metaData.fields[i];
+                            // Filter out irrelevant columns based on type
+                            if (field.jsonType == 'string' || field.jsonType == 'int')
+                            {
+                                // Filter out some built-in columns
+                                if (field.name != 'lsid' && field.name != <%= PageFlowUtil.jsString(subjectNounColName)%>)
+                                {
+                                    filteredFields.push({ name: field.name });
+                                }
+                            }
+                        }
+                        this.aliasStore.loadData(filteredFields);
                         aliasCombo.fireEvent('dataloaded', aliasCombo);
                         sourceCombo.fireEvent('dataloaded', sourceCombo);
                         if(setup){
                             if('<%=h(aliasColumn)%>' != "")
                             {
-                                aliasCombo.select(aliasCombo.findRecord('header', '<%=h(aliasColumn)%>'));
+                                aliasCombo.select(aliasCombo.findRecord('name', '<%=h(aliasColumn)%>'));
                             }
                             if('<%=h(sourceColumn)%>' != "")
                             {
-                                sourceCombo.select(sourceCombo.findRecord('header', '<%=h(sourceColumn)%>'));
+                                sourceCombo.select(sourceCombo.findRecord('name', '<%=h(sourceColumn)%>'));
                             }
                         }
                     },
