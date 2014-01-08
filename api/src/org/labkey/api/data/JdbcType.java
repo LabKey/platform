@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.DateUtil;
@@ -308,8 +309,12 @@ public enum JdbcType
     }
 
 
-    public static JdbcType promote(@NotNull JdbcType a, @NotNull JdbcType b)
+    public static JdbcType promote(@Nullable JdbcType a, @Nullable JdbcType b)
     {
+        if (null == a)
+            a = NULL;
+        if (null == b)
+            b = NULL;
         if (a == b)
             return a;
         if (a == NULL) return b;
@@ -337,15 +342,18 @@ public enum JdbcType
         return OTHER;
     }
 
+
     public boolean isText()
     {
         return this.cls == String.class;
     }
 
+
     public boolean isNumeric()
     {
         return Number.class.isAssignableFrom(this.cls);
     }
+
 
     public boolean isInteger()
     {
