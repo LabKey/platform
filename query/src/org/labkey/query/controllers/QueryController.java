@@ -5673,21 +5673,29 @@ public class QueryController extends SpringActionController
     {
         public ApiResponse execute(QueryForm form, BindException errors) throws Exception
         {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-
             UserSchema schema = form.getSchema();
             TableInfo table = schema.getTable(form.getQueryName());
-            QueryManager.get().validateQuery(table, true);
-
-            SchemaKey schemaKey = SchemaKey.fromString(form.getSchemaName());
-            Set<String> queryErrors = QueryManager.get().validateQueryMetadata(schemaKey, form.getQueryName(), getUser(), getContainer());
-            queryErrors.addAll(QueryManager.get().validateQueryViews(schemaKey, form.getQueryName(), getUser(), getContainer()));
-
-            for (String e : queryErrors)
+            if (null == table)
             {
-                errors.reject(ERROR_MSG, e);
+                errors.reject(ERROR_MSG, "could not resolve table: " + form.getQueryName());
+                return null;
             }
-            return response;
+            else
+            {
+                ApiSimpleResponse response = new ApiSimpleResponse();
+
+                QueryManager.get().validateQuery(table, true);
+
+                SchemaKey schemaKey = SchemaKey.fromString(form.getSchemaName());
+                Set<String> queryErrors = QueryManager.get().validateQueryMetadata(schemaKey, form.getQueryName(), getUser(), getContainer());
+                queryErrors.addAll(QueryManager.get().validateQueryViews(schemaKey, form.getQueryName(), getUser(), getContainer()));
+
+                for (String e : queryErrors)
+                {
+                    errors.reject(ERROR_MSG, e);
+                }
+                return response;
+            }
         }
     }
 
