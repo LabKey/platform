@@ -557,7 +557,16 @@ public abstract class VisitManager
         String union = "";
         for (DataSetDefinition d : defs)
         {
-            TableInfo sti = d.getStorageTableInfo();
+            TableInfo sti = null;
+            try
+            {
+                sti = d.getStorageTableInfo();
+            }
+            catch (Exception x)
+            {
+                // 19189: IllegalArgumentException in org.labkey.api.exp.api.StorageProvisioner.createTableInfo()
+                // parial fix, but see 14603 and related
+            }
             if (null == sti)
                 continue;
             f.append(union);
