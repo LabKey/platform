@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -599,15 +600,19 @@ public class StringExpressionFactory
 
     private static class FieldPart extends SubstitutePart
     {
-        private FieldKey _key;
+        @NotNull private FieldKey _key;
 
-        FieldPart(String s, boolean urlEncodeSubstitutions)
+        FieldPart(@NotNull String s, boolean urlEncodeSubstitutions)
         {
             super(s, urlEncodeSubstitutions);
             _key = FieldKey.decode(_value);
+            if (_key == null)
+            {
+                throw new IllegalArgumentException("Could not parse FieldKey from '" + s + "'");
+            }
         }
 
-        FieldPart(FieldKey key, SubstitutionFormat sf)
+        FieldPart(@NotNull FieldKey key, SubstitutionFormat sf)
         {
             super(key.toString(), sf);
             _key = key;
@@ -793,7 +798,7 @@ public class StringExpressionFactory
         protected void parse()
         {
             super.parse();
-            // special case if entire pattern consists of one substituion, don't encode
+            // special case if entire pattern consists of one substitution, don't encode
             if (1 == _parsedExpression.size())
             {
                 StringPart p = _parsedExpression.get(0);

@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import com.google.gwt.user.client.rpc.IsSerializable;
+
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.io.PrintStream;
@@ -26,7 +28,7 @@ import java.io.PrintWriter;
  * Date: Mar 23, 2005
  * Time: 9:58:08 AM
  */
-public class RuntimeSQLException extends RuntimeException implements Serializable
+public class RuntimeSQLException extends RuntimeException implements Serializable, IsSerializable
 {
     // don't want to use cause, I want to impersonate the cause
     SQLException sqlx;

@@ -804,7 +804,7 @@ quickScan:
 
     public static String makeFileNameWithTimestamp(String prefix, String extension)
     {
-        return prefix + "_" + getTimestamp() + "." + extension;
+        return makeLegalName(prefix + "_" + getTimestamp() + "." + extension);
     }
 
 
