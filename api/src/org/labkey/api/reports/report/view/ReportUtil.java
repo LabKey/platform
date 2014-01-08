@@ -196,6 +196,14 @@ public class ReportUtil
         {
             queryName = descriptor.getProperty(dataRegion + '.' + QueryParam.queryName.toString());
         }
+
+        // issue 19206: if we don't have either a query or a schema, just return the name of the report as the
+        // report key.  This will ensure we don't duplicate reports with empty query keys when importing
+        if (StringUtils.isEmpty(schemaName) && StringUtils.isEmpty(queryName))
+        {
+            return descriptor.getReportName();
+        }
+
         return getReportKey(schemaName, queryName);
     }
 
