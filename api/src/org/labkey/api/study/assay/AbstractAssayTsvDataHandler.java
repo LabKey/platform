@@ -600,10 +600,22 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 // the pipeline root. Otherwise, they could get access to any file on the server
                 if (o instanceof File)
                 {
+                    File file = (File)o;
                     PipeRoot root = PipelineService.get().findPipelineRoot(container);
-                    if (root == null || !root.isUnderRoot((File)o))
+                    if (root == null)
                     {
-                        throw new ValidationException("Cannot reference file " + o + " from container " + container);
+                        throw new ValidationException("Pipeline root not available in container " + container);
+                    }
+
+                    if (!root.isUnderRoot(file))
+                    {
+                        File resolved = root.resolvePath(file.toString());
+                        if (resolved == null)
+                            throw new ValidationException("Cannot reference file " + file + " from container " + container);
+                        o = resolved;
+
+                        // File column values are stored as the absolute resolved path
+                        map.put(pd.getName(), o);
                     }
                 }
 
