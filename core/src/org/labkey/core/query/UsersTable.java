@@ -144,11 +144,12 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         {
             UsersDomainKind domainKind = (UsersDomainKind)PropertyService.get().getDomainKindByName(UsersDomainKind.NAME);
             Set<String> reserved = domainKind.getWrappedColumns();
+            User user = getUserSchema().getUser();
 
             for (DomainProperty dp : domain.getProperties())
             {
                 PropertyDescriptor pd = dp.getPropertyDescriptor();
-                ColumnInfo propColumn = new PropertyColumn(pd, getObjectUriColumn(), getContainer(), getUserSchema().getUser(), false);
+                ColumnInfo propColumn = new PropertyColumn(pd, getObjectUriColumn(), getContainer(), user, false);
 
                 if (reserved.contains(propColumn.getName()))
                 {
@@ -156,6 +157,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                     ColumnInfo col = getColumn(propColumn.getName());
                     if (col != null)
                     {
+                        assert col.getScale() == pd.getScale();
                         pd.copyTo(col);
                         if (!col.isHidden())
                             defaultCols.add(FieldKey.fromParts(col.getName()));

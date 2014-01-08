@@ -299,4 +299,19 @@ public class CoreUpgradeCode implements UpgradeCode
             }
         });
     }
+
+    // invoked by core-13.14-13.15.sql
+    @SuppressWarnings({"UnusedDeclaration"})
+    @DeferredUpgrade
+    public void ensureCoreUserPropertyDescriptorScales(final ModuleContext context)
+    {
+        String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), context.getUpgradeUser());
+        Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
+
+        if (domain == null)
+            domain = PropertyService.get().createDomain(UsersDomainKind.getDomainContainer(), domainURI, CoreQuerySchema.USERS_TABLE_NAME);
+
+        if (domain != null)
+            UsersDomainKind.ensureDomainPropertyScales(domain, context.getUpgradeUser());
+    }
 }

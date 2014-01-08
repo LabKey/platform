@@ -204,13 +204,49 @@ public class UsersDomainKind extends SimpleTableDomainKind
             map.remove("UserInfoRequiredFields");
             PropertyManager.saveProperties(map);
 
-            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "FirstName", PropertyType.STRING, false)|| dirty);
-            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "LastName", PropertyType.STRING, false) || dirty);
-            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "Phone", PropertyType.STRING, false)    || dirty);
-            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "Mobile", PropertyType.STRING, false)   || dirty);
-            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "Pager", PropertyType.STRING, isNewInstallation)    || dirty);
-            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "IM", PropertyType.STRING, isNewInstallation)       || dirty);
-            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "Description", PropertyType.STRING, isNewInstallation) || dirty);
+            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "FirstName", PropertyType.STRING, 64, false)|| dirty);
+            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "LastName", PropertyType.STRING, 64, false) || dirty);
+            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "Phone", PropertyType.STRING, 64, false)    || dirty);
+            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "Mobile", PropertyType.STRING, 64, false)   || dirty);
+            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "Pager", PropertyType.STRING, 64, isNewInstallation)    || dirty);
+            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "IM", PropertyType.STRING, 64, isNewInstallation)       || dirty);
+            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "Description", PropertyType.STRING, 255, isNewInstallation) || dirty);
+
+            if (dirty)
+                domain.save(user);
+
+            transaction.commit();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void ensureDomainPropertyScales(Domain domain, User user)
+    {
+        DbScope scope = CoreSchema.getInstance().getSchema().getScope();
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
+            Map<String, DomainProperty> existingProps = new HashMap<>();
+            boolean dirty = false;
+
+            if (user == null)
+                user = UserManager.getGuestUser();
+
+            for (DomainProperty dp : domain.getProperties())
+            {
+                existingProps.put(dp.getName(), dp);
+            }
+
+
+            dirty = (ensurePropertyDescriptorScale(existingProps.get("FirstName"), 64)|| dirty);
+            dirty = (ensurePropertyDescriptorScale(existingProps.get("LastName"), 64) || dirty);
+            dirty = (ensurePropertyDescriptorScale(existingProps.get("Phone"), 64)    || dirty);
+            dirty = (ensurePropertyDescriptorScale(existingProps.get("Mobile"), 64)   || dirty);
+            dirty = (ensurePropertyDescriptorScale(existingProps.get("Pager"), 64)    || dirty);
+            dirty = (ensurePropertyDescriptorScale(existingProps.get("IM"), 64)       || dirty);
+            dirty = (ensurePropertyDescriptorScale(existingProps.get("Description"), 255) || dirty);
 
             if (dirty)
                 domain.save(user);
@@ -224,7 +260,7 @@ public class UsersDomainKind extends SimpleTableDomainKind
     }
 
     private static boolean createPropertyDescriptor(Domain domain, User user, Map<String, DomainProperty> existing,
-                                             Map<String, Boolean> required, String name, PropertyType type, boolean hidden)
+                                             Map<String, Boolean> required, String name, PropertyType type, int scale, boolean hidden)
     {
         if (!existing.containsKey(name))
         {
@@ -233,6 +269,7 @@ public class UsersDomainKind extends SimpleTableDomainKind
             DomainProperty prop = domain.addProperty();
             prop.setName(name);
             prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
+            prop.getPropertyDescriptor().setScale(scale);
             prop.setPropertyURI(propertyURI);
             prop.setRequired(required.containsKey(name));
 
@@ -243,6 +280,21 @@ public class UsersDomainKind extends SimpleTableDomainKind
                 prop.setShownInUpdateView(false);
                 prop.setHidden(true);
             }
+            return true;
+        }
+        else
+        {
+            DomainProperty prop = existing.get(name);
+            return ensurePropertyDescriptorScale(prop, scale);
+        }
+//        return false;
+    }
+
+    private static boolean ensurePropertyDescriptorScale(DomainProperty prop, int scale)
+    {
+        if (null != prop && prop.getScale() != scale)
+        {
+            prop.getPropertyDescriptor().setScale(scale);
             return true;
         }
         return false;
