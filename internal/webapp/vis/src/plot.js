@@ -278,7 +278,6 @@ LABKEY.vis.Plot = function(config){
     };
 
     var configureMargins = function(userMargins, legendPos, allAes, scales){
-        console.log(allAes);
         var margins = {}, top = 75, right = 75, bottom = 50, left = 75; // Defaults.
         var foundLegendScale = false, foundYRight = false;
 
