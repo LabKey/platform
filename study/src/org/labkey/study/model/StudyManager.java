@@ -3388,14 +3388,77 @@ public class StudyManager
      */
     public static void dataSetModified(DataSetDefinition def, User user, boolean fireNotification)
     {
-        def = def.createMutable();
-        def.setModified(new Date());
-        def.save(user);
-
-        if (fireNotification)
-            fireDatasetChanged(def);
+        // Issue 19285 - run this as a commit task.  This has the benefit of only running per set of batch changes
+        // under the same transaction and only running if the transaction is committed.  If no transaction is active then
+        // the code is run immediately
+        DbScope scope = StudySchema.getInstance().getScope();
+        scope.addCommitTask(getInstance().getDataSetModifiedRunnable(def, user, fireNotification), CommitTaskOption.POSTCOMMIT);
     }
-    
+
+    public Runnable getDataSetModifiedRunnable(DataSetDefinition def, User user, boolean fireNotification)
+    {
+        return new DataSetModifiedRunnable(def, user, fireNotification);
+    }
+
+    private class DataSetModifiedRunnable implements Runnable
+    {
+        private final @NotNull User _user;
+        private final @NotNull DataSetDefinition _def;
+        private final @NotNull boolean _fireNotification;
+
+        private DataSetModifiedRunnable(@NotNull DataSetDefinition def, @NotNull User user, @NotNull boolean fireNotification)
+        {
+            _def = def;
+            _user = user;
+            _fireNotification = fireNotification;
+        }
+
+        private int getDatasetId()
+        {
+            return _def.getDataSetId();
+        }
+
+        private Container getContainer()
+        {
+            return _def.getContainer();
+        }
+
+        @Override
+        public void run()
+        {
+            DataSetDefinition def = _def.createMutable();
+            def.setModified(new Date());
+            def.save(_user);
+            if (_fireNotification)
+                fireDatasetChanged(def);
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+
+            DataSetModifiedRunnable that = (DataSetModifiedRunnable) o;
+            if (getDatasetId() != that.getDatasetId())
+                return false;
+            if (!getContainer().equals(that.getContainer()))
+                return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = getContainer().hashCode();
+            result = 31 * result + this.getDatasetId();
+            return result;
+        }
+    }
+
     public static void fireDatasetChanged(DataSet def)
     {
         for (DatasetManager.DatasetListener l : DatasetManager.getListeners())
