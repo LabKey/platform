@@ -400,19 +400,25 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
     private String getAttachmentFile(VirtualFile reportDir)
     {
         String[] attachments = reportDir.list();
+        String attachmentName = null;
+
+        // verify on import that we only alow two thumbnails (thumbnail and icon) and the
+        // attachment.  The Thumbnail and Icon files are optional
         if (attachments.length > 0)
         {
-            if (attachments.length > 3)
-                throw new IllegalStateException("Only one attachment file expected for an attachment report.");
-
             for (String attachment : attachments)
             {
                 if (!ThumbnailService.ImageFilenames.contains(attachment))
-                    return attachment;
+                {
+                    if (attachmentName != null)
+                        throw new IllegalStateException("Only one attchment file is expected for an attachment report");
+
+                    attachmentName = attachment;
+                }
             }
         }
 
-        return null;
+        return attachmentName;
     }
 
     private InputStream getInputStream() throws FileNotFoundException
