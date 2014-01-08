@@ -60,7 +60,7 @@ import java.util.Set;
  * User: jeckels
  * Date: May 7, 2009
  *
- * If you touch this file, run AssayTest, FlowSpecimenTest, and TargetStudyTest
+ * If you touch this file, run AssayTest, FlowSpecimenTest, ElispotAssay, and TargetStudyTest
  */
 public class SpecimenForeignKey extends LookupForeignKey
 {
@@ -341,21 +341,39 @@ public class SpecimenForeignKey extends LookupForeignKey
 
             String baseAlias = getBaseAlias(parentAlias, foreignKey.getAlias());
             String assaySubqueryAlias = baseAlias + ASSAY_SUBQUERY_SUFFIX;
-            String specimenSubqueryAlias = baseAlias + SPECIMEN_SUBQUERY_SUFFIX;
             String vialSubqueryAlias = baseAlias + VIAL_SUBQUERY_SUFFIX;
-            String studySubqueryAlias = baseAlias + STUDY_SUBQUERY_SUFFIX;
+
+
+            // TODO the SFK should really be attached to the PK instead of the spceimenid
+            // As it is, there is no completely correct strategy for finding the join columns
+            //
+            // Try to work backward from the given specimen lookup column
+            // for instance if the specimen columns is lsid/property/specimenid and the foreignkey field key is
+            // a/b/c/lsid/property/specimendid we should probably prefix the PK with a/b/c, but even this is not
+            // guaranteed to be right
+            FieldKey fkBase = foreignKey.getFieldKey();
+            FieldKey fkSpecimen = _tableMetadata.getSpecimenIDFieldKey();
+            while (null != fkBase && null != fkSpecimen && fkBase.getName().equalsIgnoreCase(fkSpecimen.getName()))
+            {
+                fkBase = fkBase.getParent();
+                fkSpecimen = fkSpecimen.getParent();
+            }
 
             sql.append(") AS " + assaySubqueryAlias + " ON ");
             ArrayList<FieldKey> pkFieldKeys = new ArrayList<>();
             for (ColumnInfo pk : _assayDataTable.getPkColumns())
-                pkFieldKeys.add(new FieldKey(foreignKey.getFieldKey().getParent(), pk.getFieldKey().getName()));
+            {
+                pkFieldKeys.add(new FieldKey(fkBase,pk.getName()));
+                if (null != fkBase)
+                    pkFieldKeys.add(new FieldKey(null,pk.getName()));
+            }
             Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(foreignKey.getParentTable(), pkFieldKeys);
             String sep = "";
-            // TODO this is really suspect, but better than it used to be
-            // TODO if we supported remapFieldKeys(), we could make this more robust wrt the columns on the LHS of the join.
             for (ColumnInfo pk : _assayDataTable.getPkColumns())
             {
-                ColumnInfo fkCol = cols.get(new FieldKey(foreignKey.getFieldKey().getParent(), pk.getFieldKey().getName()));
+                ColumnInfo fkCol = cols.get(new FieldKey(fkBase, pk.getFieldKey().getName()));
+                if (null == fkCol && fkBase != null)
+                    fkCol = cols.get(new FieldKey(null, pk.getFieldKey().getName()));
                 ColumnInfo pkCol = _assayColumns.get(pk.getFieldKey());
                 if (null == fkCol || null == pkCol)
                     throw new IllegalStateException("Could not find column needed for SpecimenForeignKey: " + pk.getName());
