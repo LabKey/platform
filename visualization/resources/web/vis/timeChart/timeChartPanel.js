@@ -18,10 +18,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     // study subject noun information
     SUBJECT : {
-        tableName: LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.tableName : 'Participant',
-        columnName: LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.columnName : 'ParticipantId',
-        nounPlural: LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.nounPlural : 'Participants',
-        nounSingular: LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.nounSingular : 'Participant'
+        tableName: LABKEY.moduleContext.study && LABKEY.moduleContext.study.subject ? LABKEY.moduleContext.study.subject.tableName : 'Participant',
+        columnName: LABKEY.moduleContext.study && LABKEY.moduleContext.study.subject ? LABKEY.moduleContext.study.subject.columnName : 'ParticipantId',
+        nounPlural: LABKEY.moduleContext.study && LABKEY.moduleContext.study.subject ? LABKEY.moduleContext.study.subject.nounPlural : 'Participants',
+        nounSingular: LABKEY.moduleContext.study && LABKEY.moduleContext.study.subject ? LABKEY.moduleContext.study.subject.nounSingular : 'Participant'
     },
 
     constructor : function(config){

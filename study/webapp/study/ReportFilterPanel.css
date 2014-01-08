@@ -18,7 +18,7 @@
 
 .rpf .x4-grid-body .x4-grid-table-over-first
 {
-    border-top: none !important;
+    border-top-color: transparent;
 }
 
 .rpf .x4-grid-row.x4-grid-row-over,

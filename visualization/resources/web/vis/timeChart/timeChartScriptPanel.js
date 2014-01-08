@@ -19,8 +19,14 @@ Ext4.define('LABKEY.vis.TimeChartScriptPanel', {
             "    var DEFAULT_WIDTH = 1075;\n" +
             "    var DEFAULT_SINGLE_CHART_HEIGHT = 600;\n" +
             "    var DEFAULT_MULTI_CHART_HEIGHT = 380;\n" +
-            "    var STUDY_NOUN = LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.nounSingular : '{{studyNounSingular}}';\n" +
-            "    var STUDY_NOUN_COLUMN = LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.columnName : '{{studyNounColumnName}}';\n" +
+            "    var STUDY_NOUN = '{{studyNounSingular}}';\n" +
+            "    var STUDY_NOUN_COLUMN = '{{studyNounColumnName}}';\n" +
+            "\n" +
+            "    if (LABKEY.moduleContext.study && LABKEY.moduleContext.study.subject)\n" +
+            "    {\n" +
+            "        STUDY_NOUN = LABKEY.moduleContext.study.subject.nounSingular;\n" +
+            "        STUDY_NOUN_COLUMN = LABKEY.moduleContext.study.subject.columnName;\n" +
+            "    }\n" +
             "\n" +
             "    // chartConfig is the saved information about the chart (measures, dimensions, labels, scales, etc.)\n" +
             "    var chartConfig = {{chartConfig}};\n" +

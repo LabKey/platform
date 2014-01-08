@@ -13,8 +13,13 @@ if(!LABKEY.vis) {
  */
 LABKEY.vis.TimeChartHelper = new function() {
 
-    var studyNounSingular = LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.nounSingular : 'Participant';
-    var studyNounColumnName = LABKEY.moduleContext.study ? LABKEY.moduleContext.study.subject.columnName : 'ParticipantId';
+    var studyNounSingular = 'Participant';
+    var studyNounColumnName = 'ParticipantId';
+    if (LABKEY.moduleContext.study && LABKEY.moduleContext.study.subject)
+    {
+        studyNounSingular = LABKEY.moduleContext.study.subject.nounSingular;
+        studyNounColumnName = LABKEY.moduleContext.study.subject.columnName;
+    }
 
     /**
      * Generate the main title and axis labels for the chart based on the specified x-axis and y-axis (left and right) labels.
