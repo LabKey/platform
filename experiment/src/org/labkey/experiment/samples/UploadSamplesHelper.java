@@ -286,6 +286,7 @@ public class UploadSamplesHelper
                 {
                     throw new ExperimentException("Duplicate material: " + name);
                 }
+
                 for (Map.Entry<String, Object> entry : map.entrySet())
                 {
                     DomainProperty prop = domain.getPropertyByURI(entry.getKey());
@@ -298,10 +299,22 @@ public class UploadSamplesHelper
                     // the pipeline root. Otherwise, they could get access to any file on the server
                     if (entry.getValue() instanceof File)
                     {
+                        File file = (File)entry.getValue();
                         PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-                        if (root == null || !root.isUnderRoot((File)entry.getValue()))
+                        if (root == null)
                         {
-                            throw new ExperimentException("Cannot reference file '" + entry.getValue() + "' from " + getContainer().getPath());
+                            throw new ExperimentException("Pipeline root not available in container " + getContainer().getPath());
+
+                        }
+
+                        if (!root.isUnderRoot(file))
+                        {
+                            File resolved = root.resolvePath(file.toString());
+                            if (resolved == null)
+                                throw new ExperimentException("Cannot reference file '" + entry.getValue() + "' from " + getContainer().getPath());
+
+                            // File column values are stored as the absolute resolved path.
+                            map.put(entry.getKey(), resolved);
                         }
                     }
                 }
