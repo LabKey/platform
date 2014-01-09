@@ -62,7 +62,6 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryView;
@@ -1119,7 +1118,7 @@ public class SpecimenController extends BaseStudyController
 
         public boolean handlePost(ManageRequestForm form, BindException errors) throws Exception
         {
-            if (!getViewContext().getContainer().hasPermission(getViewContext().getUser(), ManageRequestsPermission.class))
+            if (!getContainer().hasPermission(getUser(), ManageRequestsPermission.class))
                 throw new UnauthorizedException("You do not have permissions to create new specimen request requirements!");
 
             SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), form.getId());
@@ -1203,7 +1202,7 @@ public class SpecimenController extends BaseStudyController
             grid.setExtraLinks(true);
             grid.setShowCustomizeLink(false);
             grid.setShowDetailsColumn(false);
-            if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), RequestSpecimensPermission.class))
+            if (getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))
             {
                 ActionButton insertButton = new ActionButton(SpecimenController.ShowCreateSampleRequestAction.class, "Create New Request", DataRegion.MODE_GRID, ActionButton.Action.LINK);
                 grid.setButtons(Collections.singletonList((DisplayElement) insertButton));
@@ -2283,7 +2282,7 @@ public class SpecimenController extends BaseStudyController
 
         public boolean handlePost(final ManageRequirementForm form, BindException errors) throws Exception
         {
-            if (!getViewContext().getContainer().hasPermission(getViewContext().getUser(), ManageRequestsPermission.class))
+            if (!getContainer().hasPermission(getUser(), ManageRequestsPermission.class))
                 throw new UnauthorizedException("You do not have permission to update requirements!");
 
             _sampleRequest = SampleManager.getInstance().getRequest(getContainer(), form.getId());
@@ -4880,7 +4879,7 @@ public class SpecimenController extends BaseStudyController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             List<Map<String,Object>> defaultSpecimens = new ArrayList<>();
-            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getViewContext().getContainer(), getViewContext().getUser(),
+            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getContainer(), getUser(),
                     getStudyRedirectIfNull().getTimepointType(),  StudyService.get().getSubjectNounSingular(getContainer()));
             MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
             for (ExcelColumn col : xlWriter.getColumns())
@@ -5396,7 +5395,7 @@ public class SpecimenController extends BaseStudyController
             if (request == null)
                 throw new NotFoundException();
 
-            if (!SampleManager.getInstance().hasEditRequestPermissions(getViewContext().getUser(), request) ||
+            if (!SampleManager.getInstance().hasEditRequestPermissions(getUser(), request) ||
                     SampleManager.getInstance().isInFinalState(request))
             {
                 return new HtmlView("<div class=\"labkey-error\">You do not have permissions to modify this request.</div>");
@@ -5414,7 +5413,7 @@ public class SpecimenController extends BaseStudyController
             {
                 SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), _requestId);
 
-                if (!SampleManager.getInstance().hasEditRequestPermissions(getViewContext().getUser(), request) ||
+                if (!SampleManager.getInstance().hasEditRequestPermissions(getUser(), request) ||
                         SampleManager.getInstance().isInFinalState(request))
                 {
                     // No permission

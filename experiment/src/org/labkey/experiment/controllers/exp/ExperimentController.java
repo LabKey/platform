@@ -352,7 +352,7 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("Could not find an experiment with RowId " + form.getRowId());
             }
 
-            if (!_experiment.getContainer().equals(getViewContext().getContainer()))
+            if (!_experiment.getContainer().equals(getContainer()))
             {
                 throw new RedirectException(getViewContext().cloneActionURL().setContainer(_experiment.getContainer()));
             }
@@ -538,9 +538,9 @@ public class ExperimentController extends SpringActionController
 
                     ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete Set", DataRegion.MODE_DETAILS, ActionButton.Action.POST);
                     deleteButton.setDisplayPermission(DeletePermission.class);
-                    ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, getViewContext().getContainer());
+                    ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, getContainer());
                     deleteURL.addParameter("singleObjectRowId", _source.getRowId());
-                    deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getShowSampleSetListURL(getViewContext().getContainer()).toString());
+                    deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()).toString());
 
                     deleteButton.setURL(deleteURL);
                     deleteButton.setActionType(ActionButton.Action.LINK);
@@ -550,7 +550,7 @@ public class ExperimentController extends SpringActionController
 
             if (_source.canImportMoreSamples())
             {
-                ActionURL urlUploadSamples = new ActionURL(ShowUploadMaterialsAction.class, getViewContext().getContainer());
+                ActionURL urlUploadSamples = new ActionURL(ShowUploadMaterialsAction.class, getContainer());
                 urlUploadSamples.addParameter("name", _source.getName());
                 urlUploadSamples.addParameter("importMoreSamples", "true");
                 ActionButton uploadButton = new ActionButton(urlUploadSamples, "Import More Samples", DataRegion.MODE_ALL, ActionButton.Action.LINK);
@@ -1173,11 +1173,11 @@ public class ExperimentController extends SpringActionController
 
             if (form.isIncluded())
             {
-                exp.addRuns(getViewContext().getUser(), run);
+                exp.addRuns(getUser(), run);
             }
             else
             {
-                exp.removeRun(getViewContext().getUser(), run);
+                exp.removeRun(getUser(), run);
             }
 
             return null;
@@ -1764,7 +1764,7 @@ public class ExperimentController extends SpringActionController
             if (!base.endsWith("/")) base += "/";
 
             String baseTag = "<base href=\"" + PageFlowUtil.filter(base) + "\"/>";
-            String css = PageFlowUtil.getStylesheetIncludes(getViewContext().getContainer(), getViewContext().getUser());
+            String css = PageFlowUtil.getStylesheetIncludes(getContainer(), getUser());
             String htmlFragment = StringUtils.trimToEmpty(form.getHtmlFragment());
             String html = "<html><head>" + baseTag + css + "</head><body>" + htmlFragment + "</body></html>";
 
@@ -2369,7 +2369,7 @@ public class ExperimentController extends SpringActionController
         {
             for (ExpData data : getDatas(deleteForm, true))
             {
-                data.delete(getViewContext().getUser());
+                data.delete(getUser());
             }
         }
 
@@ -3845,7 +3845,7 @@ public class ExperimentController extends SpringActionController
     private List<ExpSampleSet> getUploadableSampleSets()
     {
         // Make a copy so we can modify it
-        List<ExpSampleSet> sampleSets = new ArrayList<>(ExperimentService.get().getSampleSets(getContainer(), getViewContext().getUser(), true));
+        List<ExpSampleSet> sampleSets = new ArrayList<>(ExperimentService.get().getSampleSets(getContainer(), getUser(), true));
         Iterator<ExpSampleSet> iter = sampleSets.iterator();
         while (iter.hasNext())
         {
@@ -3905,7 +3905,7 @@ public class ExperimentController extends SpringActionController
             InsertView insertView = new InsertView(new DataRegion(), errors);
 
             DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleSet, form.getOutputCount(), c, getUser());
-            helper.addSampleColumns(insertView, getViewContext().getUser());
+            helper.addSampleColumns(insertView, getUser());
 
             int[] rowIds = form.getRowIds();
             for (int i = 0; i < rowIds.length; i++)
@@ -4447,7 +4447,7 @@ public class ExperimentController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild(new NavTree("Experiments", ExperimentUrlsImpl.get().getShowExperimentsURL(getViewContext().getContainer())));
+            root.addChild(new NavTree("Experiments", ExperimentUrlsImpl.get().getShowExperimentsURL(getContainer())));
             ExpRun run = ExperimentService.get().getExpRun(_form.getRowId());
             if (run != null)
             {
@@ -4476,7 +4476,7 @@ public class ExperimentController extends SpringActionController
                 }
             }
             
-            return HttpView.redirect(getContainer().getStartURL(getViewContext().getUser()));
+            return HttpView.redirect(getContainer().getStartURL(getUser()));
         }
 
         public NavTree appendNavTrail(NavTree root)

@@ -4450,7 +4450,7 @@ public class AdminController extends SpringActionController
             JspView statusView = new JspView<>("/org/labkey/core/admin/setFolderPermissions.jsp", form, errors);
             vbox.addView(statusView);
 
-            Container c = this.getViewContext().getContainer();
+            Container c = getContainer();
             getPageConfig().setTitle("Users / Permissions");
             getPageConfig().setNavTrail(ContainerManager.getCreateContainerWizardSteps(c, c.getParent()));
             getPageConfig().setTemplate(Template.Wizard);
@@ -4491,7 +4491,7 @@ public class AdminController extends SpringActionController
                 MutableSecurityPolicy policy = new MutableSecurityPolicy(c);
                 Role role = RoleManager.getRole(c.isProject() ? ProjectAdminRole.class : FolderAdminRole.class);
 
-                policy.addRoleAssignment(this.getViewContext().getUser(), role);
+                policy.addRoleAssignment(getUser(), role);
                 SecurityPolicyManager.savePolicy(policy);
             }
             else if (permissionType.equals("Inherit"))
@@ -4595,7 +4595,7 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(ProjectSettingsForm form, boolean reshow, BindException errors) throws Exception
         {
             VBox vbox = new VBox();
-            Container c = getViewContext().getContainer();
+            Container c = getContainer();
 
             JspView statusView = new JspView<>("/org/labkey/core/admin/setInitialFolderSettings.jsp", form, errors);
             vbox.addView(statusView);

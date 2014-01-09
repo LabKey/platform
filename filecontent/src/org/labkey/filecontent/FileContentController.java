@@ -414,7 +414,7 @@ public class FileContentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             String name = _resource == null ? "<not found>" : _resource.getName();
-            return (new BeginAction()).appendNavTrail(root)
+            return (new BeginAction(getViewContext())).appendNavTrail(root)
                     .addChild(name);
         }
     }
@@ -455,6 +455,15 @@ public class FileContentController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction<FileContentForm>
     {
+        public BeginAction()
+        {
+        }
+
+        public BeginAction(ViewContext ctx)
+        {
+            setViewContext(ctx);
+        }
+
         public ModelAndView getView(FileContentForm form, BindException errors) throws Exception
         {
             FilesWebPart part;
@@ -669,15 +678,6 @@ public class FileContentController extends SpringActionController
    @RequiresSiteAdmin
    public class ShowAdminAction extends FormViewAction<FileContentForm>
    {
-       public ShowAdminAction()
-       {
-       }
-
-       public ShowAdminAction(ViewContext context)
-       {
-           setViewContext(context);
-       }
-
        public ModelAndView getView(FileContentForm form, boolean reshow, BindException errors) throws Exception
        {
            FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
@@ -720,7 +720,7 @@ public class FileContentController extends SpringActionController
 
        public NavTree appendNavTrail(NavTree root)
        {
-           return (new BeginAction()).appendNavTrail(root)
+           return (new BeginAction(getViewContext())).appendNavTrail(root)
                    .addChild("Administer File System Access");
        }
    }
@@ -731,6 +731,7 @@ public class FileContentController extends SpringActionController
    {
        public static final int MAX_NAME_LENGTH = 80;
        public static final int MAX_PATH_LENGTH = 255;
+
        public boolean handlePost(FileContentForm form, BindException errors) throws Exception
        {
            String name = StringUtils.trimToNull(form.getFileSetName());
@@ -1528,7 +1529,7 @@ public class FileContentController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return new BeginAction().appendNavTrail(root).addChild("Send mail digest");
+            return new BeginAction(getViewContext()).appendNavTrail(root).addChild("Send mail digest");
         }
     }
 

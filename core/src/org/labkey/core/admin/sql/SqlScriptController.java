@@ -865,7 +865,7 @@ public class SqlScriptController extends SpringActionController
             String reorderedScript = reorderer.getReorderedScript(false);
             ((FileSqlScriptProvider)script.getProvider()).saveScript(script.getSchema(), script.getDescription(), reorderedScript, true);
             
-            final ActionURL url = new ActionURL(ScriptAction.class, getViewContext().getContainer());
+            final ActionURL url = new ActionURL(ScriptAction.class, getContainer());
             url.addParameter("moduleName", script.getProvider().getProviderName());
             url.addParameter("filename", script.getDescription());
 

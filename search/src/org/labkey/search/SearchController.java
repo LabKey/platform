@@ -309,26 +309,26 @@ public class SearchController extends SpringActionController
             {
                 ss.startCrawler();
                 SearchPropertyManager.setCrawlerRunningState(true);
-                audit(getViewContext().getUser(), null, "(admin action)", "Crawler Started");
+                audit(getUser(), null, "(admin action)", "Crawler Started");
             }
             else if (form.isPause())
             {
                 ss.pauseCrawler();
                 SearchPropertyManager.setCrawlerRunningState(false);
-                audit(getViewContext().getUser(), null, "(admin action)", "Crawler Paused");
+                audit(getUser(), null, "(admin action)", "Crawler Paused");
             }
             else if (form.isDelete())
             {
                 ss.clear();
                 _msgid = 1;
-                audit(getViewContext().getUser(), null, "(admin action)", "Index Deleted");
+                audit(getUser(), null, "(admin action)", "Index Deleted");
             }
             else if (form.isPath())
             {
                 SearchPropertyManager.setPrimaryIndexPath(form.getPrimaryIndexPath()); 
                 ss.updatePrimaryIndex();
                 _msgid = 2;
-                audit(getViewContext().getUser(), null, "(admin action)", "Index Path Set");
+                audit(getUser(), null, "(admin action)", "Index Path Set");
             }
 
             return true;
@@ -510,7 +510,7 @@ public class SearchController extends SpringActionController
             {
                 if (SearchPropertyManager.getExternalIndexProperties().hasExternalIndex())
                 {
-                    List<SecurableResource> resources = ss.getSecurableResources(getViewContext().getUser());
+                    List<SecurableResource> resources = ss.getSecurableResources(getUser());
 
                     if (resources.size() < 1)
                     {
@@ -634,7 +634,7 @@ public class SearchController extends SpringActionController
             }
             else
             {
-                task = ss.indexContainer(null, getViewContext().getContainer(), null);
+                task = ss.indexContainer(null, getContainer(), null);
             }
 
             if (wait && null != task)
@@ -679,7 +679,7 @@ public class SearchController extends SpringActionController
             {
                 //UNDONE: paging, rowlimit etc
                 int limit = form.getLimit() < 0 ? 1000 : form.getLimit();
-                SearchService.SearchResult result = ss.search(query, null, getViewContext().getUser(), getContainer(), form.getSearchScope(),
+                SearchService.SearchResult result = ss.search(query, null, getUser(), getContainer(), form.getSearchScope(),
                         form.getOffset(), limit);
                 List<SearchService.SearchHit> hits = result.hits;
                 totalHits = result.totalHits;

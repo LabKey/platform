@@ -294,7 +294,7 @@ public class CBCAssayController extends SpringActionController
             // XXX: need to debug why I can't use the provider's queryView in the UpdateView
             //QueryView queryView = getProvider().createResultsQueryView(getViewContext(), _protocol);
 
-            AssayProtocolSchema schema = getProvider().createProtocolSchema(getViewContext().getUser(), getViewContext().getContainer(), _protocol, null);
+            AssayProtocolSchema schema = getProvider().createProtocolSchema(getUser(), getContainer(), _protocol, null);
             QuerySettings settings = schema.getSettings(getViewContext(), AssayProtocolSchema.DATA_TABLE_NAME, AssayProtocolSchema.DATA_TABLE_NAME);
             return new ResultsQueryView(_protocol, getViewContext(), settings);
         }

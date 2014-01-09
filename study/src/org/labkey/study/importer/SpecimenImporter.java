@@ -167,6 +167,7 @@ public class SpecimenImporter
             }
             else
                 _dbType = databaseType.toUpperCase();
+
             if (_dbType.startsWith("VARCHAR("))
             {
                 assert _dbType.charAt(_dbType.length() - 1) == ')' : "Unexpected VARCHAR type format: " + _dbType;

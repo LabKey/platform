@@ -613,16 +613,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         return root;
     }
 
-    private Container getContainer()
-    {
-        return getViewContext().getContainer();
-    }
-
-    private User getUser()
-    {
-        return getViewContext().getUser();
-    }
-
     public static class FolderManagementForm extends SetupForm implements AdminController.FileManagementForm, AdminController.DefaultFormatsForm
     {
         // folder type settings

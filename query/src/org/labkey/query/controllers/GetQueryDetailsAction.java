@@ -69,8 +69,8 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
     {
         ApiSimpleResponse resp = new ApiSimpleResponse();
 
-        Container container = getViewContext().getContainer();
-        User user = getViewContext().getUser();
+        Container container = getContainer();
+        User user = getUser();
         QuerySchema schema = DefaultSchema.get(user, container, form.getSchemaName());
         if (null == schema)
             throw new NotFoundException("Could not find the schema '" + form.getSchemaName() + "' in the folder '" + container.getPath() + "'!");
@@ -210,7 +210,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             // Include information about where these views might be saved and if the user has permission
             // to share views in that container
             JSONArray targetContainers = new JSONArray();
-            JSONObject targetContainer = new JSONObject(container.toJSON(getViewContext().getUser()));
+            JSONObject targetContainer = new JSONObject(container.toJSON(getUser()));
             targetContainer.put("canEditSharedViews", container.hasPermission(user, EditSharedViewPermission.class));
             targetContainers.put(targetContainer);
 
@@ -219,14 +219,14 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
                 Container c = container.getParent();
                 while (c != null && !c.equals(ContainerManager.getRoot()))
                 {
-                    targetContainer = new JSONObject(c.toJSON(getViewContext().getUser()));
+                    targetContainer = new JSONObject(c.toJSON(getUser()));
                     targetContainer.put("canEditSharedViews", c.hasPermission(user, EditSharedViewPermission.class));
                     targetContainers.put(targetContainer);
                     c = c.getParent();
                 }
 
                 c = ContainerManager.getSharedContainer();
-                targetContainer = new JSONObject(c.toJSON(getViewContext().getUser()));
+                targetContainer = new JSONObject(c.toJSON(getUser()));
                 targetContainer.put("canEditSharedViews", c.hasPermission(user, EditSharedViewPermission.class));
                 targetContainers.put(targetContainer);
             }

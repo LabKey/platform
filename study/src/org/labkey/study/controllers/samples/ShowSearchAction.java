@@ -43,7 +43,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
 
     public ModelAndView getView(SearchForm form, boolean reshow, BindException errors) throws Exception
     {
-        _study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
+        _study = StudyManager.getInstance().getStudy(getContainer());
         if (null == _study)
             throw new NotFoundException("No study exists in this folder.");
 
@@ -65,7 +65,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
 
     public ActionURL getSuccessURL(SearchForm form)
     {
-        ActionURL url = SpecimenController.getSamplesURL(getViewContext().getContainer());
+        ActionURL url = SpecimenController.getSamplesURL(getContainer());
         url.addParameter("showVials", Boolean.toString(form.isShowVials()));
         for (ShowSearchAction.SearchForm.SearchParam param : form.getSearchParams())
         {
@@ -81,8 +81,8 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
 
     public NavTree appendNavTrail(NavTree root)
     {
-        root.addChild(_study.getLabel(), BaseStudyController.getStudyOverviewURL(getViewContext().getContainer()));
-        root.addChild("Specimen Overview", new ActionURL(SpecimenController.OverviewAction.class, getViewContext().getContainer()));
+        root.addChild(_study.getLabel(), BaseStudyController.getStudyOverviewURL(getContainer()));
+        root.addChild("Specimen Overview", new ActionURL(SpecimenController.OverviewAction.class, getContainer()));
         root.addChild(_title);
 
         return root;

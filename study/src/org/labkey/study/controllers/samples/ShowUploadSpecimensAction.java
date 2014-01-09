@@ -59,12 +59,12 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
 
     public ModelAndView getView(UploadSpecimensForm form, boolean reshow, BindException errors) throws Exception
     {
-        Container container = getViewContext().getContainer();
+        Container container = getContainer();
         RepositorySettings settings =  SampleManager.getInstance().getRepositorySettings(container);
         if (!settings.isSimple())
             return HttpView.redirect(PageFlowUtil. urlProvider(PipelineUrls.class).urlBrowse(container));
 
-        boolean isEmpty = SampleManager.getInstance().isSpecimensEmpty(container, getViewContext().getUser());
+        boolean isEmpty = SampleManager.getInstance().isSpecimensEmpty(container, getUser());
         if (isEmpty)
         {
             form.setNoSpecimens(true);
@@ -75,8 +75,8 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
 
     public boolean handlePost(UploadSpecimensForm form, BindException errors) throws Exception
     {
-        Container container = getViewContext().getContainer();
-        User user = getViewContext().getUser();
+        Container container = getContainer();
+        User user = getUser();
         SimpleSpecimenImporter importer = new SimpleSpecimenImporter(container, user);
 
         TabLoader loader = new TabLoader(form.getTsv(), true);
@@ -256,12 +256,12 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         if (null != StringUtils.trimToNull(redir))
             return new ActionURL(redir);
         else
-            return new ActionURL(ImportCompleteAction.class, getViewContext().getContainer());
+            return new ActionURL(ImportCompleteAction.class, getContainer());
     }
 
     public NavTree appendNavTrail(NavTree root)
     {
-        Container c = getViewContext().getContainer();
+        Container c = getContainer();
         Study s = StudyManager.getInstance().getStudy(c);
 
         root.addChild(s.getLabel(), new ActionURL(StudyController.OverviewAction.class, c));
@@ -276,8 +276,8 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            ActionURL homeLink = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getViewContext().getContainer());
-            ActionURL samplesLink = new ActionURL(SpecimenController.BeginAction.class, getViewContext().getContainer());
+            ActionURL homeLink = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer());
+            ActionURL samplesLink = new ActionURL(SpecimenController.BeginAction.class, getContainer());
             samplesLink.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
             return new HtmlView("Specimens uploaded successfully.<br><br>" +
                     PageFlowUtil.textLink("study home", homeLink) + " " +
@@ -286,10 +286,10 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
 
         public NavTree appendNavTrail(NavTree root)
         {
-            Study study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
+            Study study = StudyManager.getInstance().getStudy(getContainer());
 
-            root.addChild(study.getLabel(), new ActionURL(StudyController.OverviewAction.class, getViewContext().getContainer()));
-            root.addChild("Specimen Overview", new ActionURL(SpecimenController.OverviewAction.class, getViewContext().getContainer()));
+            root.addChild(study.getLabel(), new ActionURL(StudyController.OverviewAction.class, getContainer()));
+            root.addChild("Specimen Overview", new ActionURL(SpecimenController.OverviewAction.class, getContainer()));
             root.addChild("Sample Import Complete");
 
             return root;

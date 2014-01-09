@@ -118,6 +118,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ZipFile;
@@ -342,7 +343,7 @@ public class QueryController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            new BeginAction().appendNavTrail(root);
+            new BeginAction(getViewContext()).appendNavTrail(root);
             root.addChild("Create/Edit Remote Connection", new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer()));
             return root;
         }
@@ -387,7 +388,7 @@ public class QueryController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            new BeginAction().appendNavTrail(root);
+            new BeginAction(getViewContext()).appendNavTrail(root);
             root.addChild("Confirm Delete Connection", new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer()));
             return root;
         }
@@ -448,7 +449,7 @@ public class QueryController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            new BeginAction().appendNavTrail(root);
+            new BeginAction(getViewContext()).appendNavTrail(root);
             root.addChild("Manage Remote Connections", new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer()));
             return root;
         }
@@ -816,6 +817,16 @@ public class QueryController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends QueryViewAction
     {
+        @SuppressWarnings("UnusedDeclaration")
+        public BeginAction()
+        {
+        }
+
+        public BeginAction(ViewContext ctx)
+        {
+            setViewContext(ctx);
+        }
+
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             return new JspView<>("/org/labkey/query/view/browse.jsp", form);
@@ -866,7 +877,7 @@ public class QueryController extends SpringActionController
                 ActionURL url = new ActionURL(BeginAction.class, getContainer());
                 url.addParameter("schemaName", schemaKey.toString());
                 url.addParameter("queryName", queryName);
-                (new BeginAction()).appendNavTrail(root)
+                (new BeginAction(getViewContext())).appendNavTrail(root)
                         .addChild(schemaName + " Schema", url);
             }
             catch (NullPointerException e)
@@ -2037,7 +2048,7 @@ public class QueryController extends SpringActionController
         Map<String, Object> ret = new HashMap<>();
         ret.put("redirect", returnURL);
         if (view != null)
-            ret.put("view", CustomViewUtil.toMap(view, getViewContext().getUser(), true));
+            ret.put("view", CustomViewUtil.toMap(view, getUser(), true));
         return ret;
     }
 
@@ -2106,7 +2117,7 @@ public class QueryController extends SpringActionController
                 else
                 {
                     // Otherwise, save it in the current container
-                    container = getViewContext().getContainer();
+                    container = getContainer();
                 }
 
                 if (container == null)
@@ -2375,7 +2386,7 @@ public class QueryController extends SpringActionController
 
             if (_schema != null && _table != null)
             {
-                if (_table.hasPermission(getViewContext().getUser(), UpdatePermission.class))
+                if (_table.hasPermission(getUser(), UpdatePermission.class))
                 {
                     StringExpression updateExpr = _form.getQueryDef().urlExpr(QueryAction.updateQueryRow, _schema.getContainer());
                     if (updateExpr != null)
@@ -2414,7 +2425,7 @@ public class QueryController extends SpringActionController
 
             VBox view = new VBox(detailsView);
 
-            DetailsURL detailsURL = QueryService.get().getAuditDetailsURL(getViewContext().getUser(), getViewContext().getContainer(), _table);
+            DetailsURL detailsURL = QueryService.get().getAuditDetailsURL(getUser(), getContainer(), _table);
 
             if (detailsURL != null)
             {
@@ -2708,7 +2719,7 @@ public class QueryController extends SpringActionController
 
     protected boolean isQueryEditable(TableInfo table)
     {
-        if (!getViewContext().getContainer().hasPermission("isQueryEditable", getUser(), DeletePermission.class))
+        if (!getContainer().hasPermission("isQueryEditable", getUser(), DeletePermission.class))
             return false;
         QueryUpdateService updateService = null;
         try
@@ -3142,7 +3153,7 @@ public class QueryController extends SpringActionController
             if (null == sql)
                 throw new NotFoundException("No value was supplied for the required parameter 'sql'");
 
-            UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), schemaName);
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaName);
 
             //create a temp query settings object initialized with the posted LabKey SQL
             //this will provide a temporary QueryDefinition to Query
@@ -3331,8 +3342,8 @@ public class QueryController extends SpringActionController
         protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws IOException, BatchValidationException, SQLException, DuplicateKeyException, InvalidKeyException, QueryUpdateServiceException
         {
             JSONObject response = new JSONObject();
-            Container container = getViewContext().getContainer();
-            User user = getViewContext().getUser();
+            Container container = getContainer();
+            User user = getUser();
 
             if (json == null)
                 throw new IllegalArgumentException("Empty request");
@@ -3408,7 +3419,7 @@ public class QueryController extends SpringActionController
             try
             {
                 List<Map<String, Object>> responseRows =
-                        commandType.saveRows(qus, rowsToProcess, getViewContext().getUser(), getViewContext().getContainer(), extraContext);
+                        commandType.saveRows(qus, rowsToProcess, getUser(), getContainer(), extraContext);
 
                 if (commandType != CommandType.importRows)
                     response.put("rows", responseRows);
@@ -3685,6 +3696,16 @@ public class QueryController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public class AdminAction extends SimpleViewAction<QueryForm>
     {
+        @SuppressWarnings("UnusedDeclaration")
+        public AdminAction()
+        {
+        }
+
+        public AdminAction(ViewContext ctx)
+        {
+            setViewContext(ctx);
+        }
+
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
            setHelpTopic(new HelpTopic("externalSchemas"));
@@ -3693,7 +3714,7 @@ public class QueryController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            new BeginAction().appendNavTrail(root);
+            new BeginAction(getViewContext()).appendNavTrail(root);
             root.addChild("Schema Administration", new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer()));
             return root;
         }
@@ -3719,7 +3740,7 @@ public class QueryController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            new BeginAction().appendNavTrail(root);
+            new BeginAction(getViewContext()).appendNavTrail(root);
             root.addChild("Manage Remote Connections", new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer()));
             return root;
         }
@@ -3764,7 +3785,7 @@ public class QueryController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            new AdminAction().appendNavTrail(root);
+            new AdminAction(getViewContext()).appendNavTrail(root);
             root.addChild("Define Schema", new ActionURL(getClass(), getContainer()));
             return root;
         }
@@ -3939,7 +3960,7 @@ public class QueryController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            new AdminAction().appendNavTrail(root);
+            new AdminAction(getViewContext()).appendNavTrail(root);
             root.addChild("Edit Schema", new ActionURL(getClass(), getContainer()));
             return root;
         }
@@ -4031,7 +4052,7 @@ public class QueryController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            new AdminAction().appendNavTrail(root);
+            new AdminAction(getViewContext()).appendNavTrail(root);
             root.addChild("Define Multiple Schemas", new ActionURL(QueryController.InsertMultipleExternalSchemasAction.class, getContainer()));
             return root;
         }
@@ -4531,7 +4552,7 @@ public class QueryController extends SpringActionController
 
             if (view.isShared())
             {
-                if (!getViewContext().getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
+                if (!getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
                     throw new UnauthorizedException();
             }
 
@@ -4544,7 +4565,7 @@ public class QueryController extends SpringActionController
                 CustomView shadowed = form.getCustomView();
                 if (shadowed != null && shadowed.isEditable())
                 {
-                    if (!shadowed.isShared() || getViewContext().getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
+                    if (!shadowed.isShared() || getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
                         shadowed.delete(getUser(), getViewContext().getRequest());
                 }
             }
@@ -4642,7 +4663,7 @@ public class QueryController extends SpringActionController
             else
             {
                 // Otherwise, save it in the current container
-                container = getViewContext().getContainer();
+                container = getContainer();
             }
 
             if (container == null)
@@ -4763,17 +4784,24 @@ public class QueryController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public class ManageViewsAction extends SimpleViewAction<QueryForm>
     {
-        QueryForm _form;
+        @SuppressWarnings("UnusedDeclaration")
+        public ManageViewsAction()
+        {
+        }
+
+        public ManageViewsAction(ViewContext ctx)
+        {
+            setViewContext(ctx);
+        }
 
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            _form = form;
             return new JspView<>("/org/labkey/query/view/manageViews.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            new BeginAction().appendNavTrail(root);
+            new BeginAction(getViewContext()).appendNavTrail(root);
             root.addChild("Manage Views", QueryController.this.getViewContext().getActionURL());
             return root;
         }
@@ -4838,12 +4866,12 @@ public class QueryController extends SpringActionController
 
         public ActionURL getSuccessURL(InternalSourceViewForm form)
         {
-            return new ActionURL(ManageViewsAction.class, getViewContext().getContainer());
+            return new ActionURL(ManageViewsAction.class, getContainer());
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            new ManageViewsAction().appendNavTrail(root);
+            new ManageViewsAction(getViewContext()).appendNavTrail(root);
             root.addChild("Edit source of Grid View");
             return root;
         }
@@ -5115,8 +5143,8 @@ public class QueryController extends SpringActionController
     {
         public ApiResponse execute(GetSchemasForm form, BindException errors) throws Exception
         {
-            final Container container = getViewContext().getContainer();
-            final User user = getViewContext().getUser();
+            final Container container = getContainer();
+            final User user = getUser();
 
             if (getRequestedApiVersion() >= 9.3)
             {
@@ -5225,10 +5253,10 @@ public class QueryController extends SpringActionController
                 throw new IllegalArgumentException("You must supply a value for the 'schemaName' parameter!");
 
             ApiSimpleResponse response = new ApiSimpleResponse();
-            UserSchema uschema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), form.getSchemaName());
+            UserSchema uschema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
             if (null == uschema)
                 throw new NotFoundException("The schema name '" + form.getSchemaName()
-                        + "' was not found within the folder '" + getViewContext().getContainer().getPath() + "'");
+                        + "' was not found within the folder '" + getContainer().getPath() + "'");
 
             response.put("schemaName", form.getSchemaName());
 
@@ -5379,18 +5407,18 @@ public class QueryController extends SpringActionController
             if (null == StringUtils.trimToNull(form.getQueryName()))
                 throw new IllegalArgumentException("You must pass a value for the 'queryName' parameter!");
 
-            UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), form.getSchemaName());
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
             if (null == schema)
                 throw new NotFoundException("The schema name '" + form.getSchemaName()
-                        + "' was not found within the folder '" + getViewContext().getContainer().getPath() + "'");
+                        + "' was not found within the folder '" + getContainer().getPath() + "'");
 
             QueryDefinition querydef = QueryService.get().createQueryDefForTable(schema, form.getQueryName());
             if (null == querydef || querydef.getTable(null, true) == null)
                 throw new NotFoundException("The query '" + form.getQueryName() + "' was not found within the '"
                         + form.getSchemaName() + "' schema in the container '"
-                        + getViewContext().getContainer().getPath() + "'!");
+                        + getContainer().getPath() + "'!");
 
-            Map<String, CustomView> views = querydef.getCustomViews(getViewContext().getUser(), getViewContext().getRequest(), true, false);
+            Map<String, CustomView> views = querydef.getCustomViews(getUser(), getViewContext().getRequest(), true, false);
             if (null == views)
                 views = Collections.emptyMap();
 
@@ -5404,7 +5432,7 @@ public class QueryController extends SpringActionController
                 CustomView view = views.get(viewName);
                 if (view != null)
                 {
-                    viewInfos = Collections.singletonList(CustomViewUtil.toMap(view, getViewContext().getUser(), form.isMetadata()));
+                    viewInfos = Collections.singletonList(CustomViewUtil.toMap(view, getUser(), form.isMetadata()));
                 }
                 else if (viewName == null)
                 {
@@ -5420,7 +5448,7 @@ public class QueryController extends SpringActionController
                 {
                     if (view.getName() == null)
                         foundDefault = true;
-                    viewInfos.add(CustomViewUtil.toMap(view, getViewContext().getUser(), form.isMetadata()));
+                    viewInfos.add(CustomViewUtil.toMap(view, getUser(), form.isMetadata()));
                 }
 
                 if (!foundDefault)

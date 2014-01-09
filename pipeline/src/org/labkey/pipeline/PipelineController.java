@@ -590,7 +590,7 @@ public class PipelineController extends SpringActionController
     {
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
-            Container container = getViewContext().getContainer();
+            Container container = getContainer();
 
             PipeRoot pr = PipelineService.get().findPipelineRoot(container);
             if (pr == null || !pr.isValid())
@@ -1033,7 +1033,7 @@ public class PipelineController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<JSONObject> completions = new ArrayList<>();
 
-            for (AjaxCompletion completion : UserManager.getAjaxCompletions(getViewContext().getUser()))
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(getUser()))
                 completions.add(completion.toJSON());
 
             response.put("completions", completions);
@@ -1211,7 +1211,7 @@ public class PipelineController extends SpringActionController
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
+            PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
             resp.put("containerPath", null != root ? root.getContainer().getPath() : null);
             resp.put("webDavURL", null != root ? root.getWebdavURL() : null);
             return resp;

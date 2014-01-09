@@ -479,7 +479,7 @@ public class UserController extends SpringActionController
             if (null == form.getUserId())
                 return false;
 
-            User curUser = getViewContext().getUser();
+            User curUser = getUser();
             for (Integer userId : form.getUserId())
             {
                 if (null != userId && userId != curUser.getUserId())
@@ -531,7 +531,7 @@ public class UserController extends SpringActionController
         {
             String siteUsersUrl = new UserUrlsImpl().getSiteUsersURL().getLocalURIString();
             DeleteUsersBean bean = new DeleteUsersBean();
-            User user = getViewContext().getUser();
+            User user = getUser();
 
             if (null != form.getUserId())
             {
@@ -567,7 +567,7 @@ public class UserController extends SpringActionController
             if (null == form.getUserId())
                 return false;
 
-            User curUser = getViewContext().getUser();
+            User curUser = getUser();
 
             for (Integer userId : form.getUserId())
             {
@@ -857,7 +857,7 @@ public class UserController extends SpringActionController
 
         public ModelAndView getView(QueryUpdateForm form, boolean reshow, BindException errors) throws Exception
         {
-            User user = getViewContext().getUser();
+            User user = getUser();
             _userId = user.getUserId();
             if (null == form.getPkVal())
                 form.setPkVal(_userId);
@@ -962,7 +962,7 @@ public class UserController extends SpringActionController
 
         public boolean handlePost(QueryUpdateForm form, BindException errors) throws Exception
         {
-            User user = getViewContext().getUser();
+            User user = getUser();
             _userId = user.getUserId();
             boolean isOwnRecord = NumberUtils.toInt(form.getPkVal().toString()) == _userId;
 

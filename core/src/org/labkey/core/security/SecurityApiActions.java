@@ -109,7 +109,7 @@ public class SecurityApiActions
     {
         public ApiResponse execute(GetGroupPermsForm form, BindException errors) throws Exception
         {
-            Container container = getViewContext().getContainer();
+            Container container = getContainer();
 
             ApiSimpleResponse response = new ApiSimpleResponse();
 
@@ -137,7 +137,7 @@ public class SecurityApiActions
                 List<Map<String,Object>> childPerms = new ArrayList<>();
                 for (Container child : container.getChildren())
                 {
-                    if (child.hasPermission(getViewContext().getUser(), ReadPermission.class))
+                    if (child.hasPermission(getUser(), ReadPermission.class))
                     {
                         childPerms.add(getContainerPerms(child,
                                 child.isProject() ? SecurityManager.getGroups(child, true) : groups,
@@ -239,8 +239,8 @@ public class SecurityApiActions
     {
         public ApiResponse execute(GetUserPermsForm form, BindException errors) throws Exception
         {
-            User currentUser = getViewContext().getUser();
-            Container container = getViewContext().getContainer();
+            User currentUser = getUser();
+            Container container = getContainer();
 
             //if user id and user email is null, assume current user
             User user;
@@ -266,7 +266,7 @@ public class SecurityApiActions
             userInfo.put("displayName", user.getDisplayName(currentUser));
             response.put("user", userInfo);
 
-            response.put("container", getContainerPerms(getViewContext().getContainer(), user, form.isIncludeSubfolders()));
+            response.put("container", getContainerPerms(getContainer(), user, form.isIncludeSubfolders()));
             return response;
         }
 
@@ -346,7 +346,7 @@ public class SecurityApiActions
                 List<Map<String,Object>> childPerms = new ArrayList<>();
                 for(Container child : container.getChildren())
                 {
-                    if (child.hasPermission(getViewContext().getUser(), ReadPermission.class))
+                    if (child.hasPermission(getUser(), ReadPermission.class))
                     {
                         childPerms.add(getContainerPerms(child, user, recurse));
                     }
@@ -366,7 +366,7 @@ public class SecurityApiActions
         {
             List<Map<String, Object>> groupInfos = new ArrayList<>();
             //include both project and global groups
-            List<Group> groups = SecurityManager.getGroups(getViewContext().getContainer(), getViewContext().getUser());
+            List<Group> groups = SecurityManager.getGroups(getContainer(), getUser());
             for(Group group : groups)
             {
                 Map<String, Object> groupInfo = new HashMap<>();
@@ -387,8 +387,8 @@ public class SecurityApiActions
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            User user = getViewContext().getUser();
-            Container container = getViewContext().getContainer();
+            User user = getUser();
+            Container container = getContainer();
 
             //return similar info as is already exposed on LABKEY.user & LABKEY.Security.currentUser
             //so we can swap it out
@@ -510,7 +510,7 @@ public class SecurityApiActions
         {
             _includeSubfolders = form.isIncludeSubfolders();
             _includePermissions = form.isIncludeEffectivePermissions();
-            Container container = getViewContext().getContainer();
+            Container container = getContainer();
             return new ApiSimpleResponse("resources", getResourceProps(container));
         }
 
@@ -533,7 +533,7 @@ public class SecurityApiActions
             }
             if (_includePermissions)
             {
-                User user = getViewContext().getUser();
+                User user = getUser();
                 List<String> permNames = new ArrayList<>();
 
                 //horrible, nasty, icky, awful HACK! See bug 8183.
@@ -565,7 +565,7 @@ public class SecurityApiActions
         protected List<Map<String,Object>> getChildrenProps(SecurableResource resource)
         {
             List<Map<String,Object>> childProps = new ArrayList<>();
-            for(SecurableResource child : resource.getChildResources(getViewContext().getUser()))
+            for(SecurableResource child : resource.getChildResources(getUser()))
             {
                 if(_includeSubfolders || !(child instanceof Container))
                     childProps.add(getResourceProps(child));
@@ -597,8 +597,8 @@ public class SecurityApiActions
             if(null == form.getResourceId())
                 throw new IllegalArgumentException("You must supply a resourceId parameter!");
 
-            Container container = getViewContext().getContainer();
-            User user = getViewContext().getUser();
+            Container container = getContainer();
+            User user = getUser();
 
             //resolve the resource
             SecurableResource resource = container.findSecurableResource(form.getResourceId(), user);
@@ -637,7 +637,7 @@ public class SecurityApiActions
             {
                 if (resource.equals(container))
                 {
-                    // Troubleshooter is the only role assignable in the root container
+                    // Troubleshooter & SeeEmailAddressesRole are the only roles assignable in the root container
                     relevantRoles.add(RoleManager.getRole(TroubleshooterRole.class).getUniqueName());
                     relevantRoles.add(RoleManager.getRole(SeeEmailAddressesRole.class).getUniqueName());
                 }
@@ -687,8 +687,8 @@ public class SecurityApiActions
 
         public ApiResponse execute(SavePolicyForm form, BindException errors) throws Exception
         {
-            Container container = getViewContext().getContainer();
-            User user = getViewContext().getUser();
+            Container container = getContainer();
+            User user = getUser();
 
             //resolve the resource
             String resourceId = (String)form.getProps().get("resourceId");
@@ -820,12 +820,12 @@ public class SecurityApiActions
             sb.append(role.getName());
             sb.append(".");
 
-            Container c = getViewContext().getContainer();
+            Container c = getContainer();
             AuditLogEvent event = new AuditLogEvent();
             event.setComment(sb.toString());
             event.setContainerId(c.getId());
             event.setProjectId(c.getProject() != null ? c.getProject().getId() : null);
-            event.setCreatedBy(getViewContext().getUser());
+            event.setCreatedBy(getUser());
             event.setIntKey1(principal.getUserId());
             event.setEntityId(resource.getResourceId());
             event.setEventType(GroupManager.GROUP_AUDIT_EVENT);
@@ -839,8 +839,8 @@ public class SecurityApiActions
     {
         public ApiResponse execute(PolicyIdForm form, BindException errors) throws Exception
         {
-            Container container = getViewContext().getContainer();
-            User user = getViewContext().getUser();
+            Container container = getContainer();
+            User user = getUser();
 
             //resolve the resource
             String resourceId = form.getResourceId();
@@ -874,7 +874,7 @@ public class SecurityApiActions
             if(null != resource.getResourceContainer().getProject())
                 event.setProjectId(resource.getResourceContainer().getProject().getId());
             event.setEventType(GroupManager.GROUP_AUDIT_EVENT);
-            event.setCreatedBy(getViewContext().getUser());
+            event.setCreatedBy(getUser());
             event.setEntityId(resource.getResourceId());
             AuditLogService.get().addEvent(event);
         }
@@ -916,7 +916,7 @@ public class SecurityApiActions
     {
         public ApiResponse execute(NameForm form, BindException errors) throws Exception
         {
-            Container container = getViewContext().getContainer();
+            Container container = getContainer();
             if(!container.isRoot() && !container.isProject())
                 throw new IllegalArgumentException("You may not create groups at the folder level. Call this API at the project or root level.");
 
@@ -924,7 +924,7 @@ public class SecurityApiActions
             if(null == name)
                 throw new IllegalArgumentException("You must specify a name parameter!");
 
-            Group newGroup = SecurityManager.createGroup(getViewContext().getContainer().getProject(), name);
+            Group newGroup = SecurityManager.createGroup(getContainer().getProject(), name);
             writeToAuditLog(newGroup);
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -950,8 +950,8 @@ public class SecurityApiActions
                 throw new IllegalArgumentException("You must specify an id parameter!");
 
             Group group = SecurityManager.getGroup(form.getId());
-            Container c = getViewContext().getContainer();
-            if (null == group || (c.isRoot() && null != group.getContainer()) || (!c.isRoot() && !getViewContext().getContainer().getId().equals(group.getContainer())))
+            Container c = getContainer();
+            if (null == group || (c.isRoot() && null != group.getContainer()) || (!c.isRoot() && !c.getId().equals(group.getContainer())))
             {
                 String containerInfo = "this container!";
                 if (!c.isRoot())
@@ -985,7 +985,7 @@ public class SecurityApiActions
             if (null == user)
                 throw new IllegalArgumentException("User id " + form.getId() + " does not exist");
 
-            Container c = getViewContext().getContainer();
+            Container c = getContainer();
             List<User> projectUsers = SecurityManager.getProjectUsers(c);
             if (!projectUsers.contains(user))
                 throw new IllegalArgumentException("User id " + form.getId() + " does not exist in the folder: " + c.getPath());
@@ -1033,8 +1033,8 @@ public class SecurityApiActions
             if (form.getId() < 0)
                 return null;
             Group group = SecurityManager.getGroup(form.getId());
-            Container c = getViewContext().getContainer();
-            if (null == group || (c.isRoot() && null != group.getContainer()) || (!c.isRoot() && !getViewContext().getContainer().getId().equals(group.getContainer())))
+            Container c = getContainer();
+            if (null == group || (c.isRoot() && null != group.getContainer()) || (!c.isRoot() && !c.getId().equals(group.getContainer())))
                 return null;
             return group;
         }
@@ -1051,8 +1051,8 @@ public class SecurityApiActions
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Permissions", new ActionURL(SecurityController.ProjectAction.class, getViewContext().getContainer()));
-            root.addChild("Manage Group", new ActionURL(SecurityController.GroupAction.class, getViewContext().getContainer()).addParameter("id",group.getUserId()));
+            root.addChild("Permissions", new ActionURL(SecurityController.ProjectAction.class, getContainer()));
+            root.addChild("Manage Group", new ActionURL(SecurityController.GroupAction.class, getContainer()).addParameter("id",group.getUserId()));
             root.addChild("Rename Group: " + group.getName());
             return root;
 
@@ -1071,14 +1071,14 @@ public class SecurityApiActions
                 throw new IllegalArgumentException("You must specify an id parameter!");
 
             group = getGroup(form);
-            Container c = getViewContext().getContainer();
+            Container c = getContainer();
             if (null == group)
                 throw new IllegalArgumentException("Group id " + form.getId() + " does not exist within this container!");
 
             String oldName = group.getName();
             try
             {
-                SecurityManager.renameGroup(group, form.getNewName().toString(), getViewContext().getUser());
+                SecurityManager.renameGroup(group, form.getNewName().toString(), getUser());
                 writeToAuditLog(group, oldName);
             }
             catch (IllegalArgumentException x)
@@ -1149,7 +1149,7 @@ public class SecurityApiActions
             Group group = SecurityManager.getGroup(form.getGroupId());
             if(null == group)
                 throw new IllegalArgumentException("Invalid group id (" + form.getGroupId() + ")");
-            Container c = getViewContext().getContainer();
+            Container c = getContainer();
             if ((c.isRoot() && null == group.getContainer()) || c.getId().equals(group.getContainer()))
                 return group;
             throw new IllegalArgumentException("Group id " + form.getGroupId() + " does not exist within this container!");
@@ -1258,8 +1258,8 @@ public class SecurityApiActions
                 throw new IllegalArgumentException("You must specify a valid email address in the 'email' parameter!");
 
             //FIX: 8585 -- must have Admin perm on the project as well as the current container
-            Container c = getViewContext().getContainer();
-            if (!c.isRoot() && !c.getProject().hasPermission(getViewContext().getUser(), AdminPermission.class))
+            Container c = getContainer();
+            if (!c.isRoot() && !c.getProject().hasPermission(getUser(), AdminPermission.class))
                 throw new UnauthorizedException("You must be an administrator at the project level to add new users");
 
             ValidEmail email;

@@ -45,7 +45,7 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
             form.bindProperties(new JSONObject());
         }
 
-        Pair<ExpProtocol, AssayProvider> pair = getProtocolProvider(form.getJsonObject(), getViewContext().getContainer());
+        Pair<ExpProtocol, AssayProvider> pair = getProtocolProvider(form.getJsonObject(), getContainer());
         ExpProtocol protocol = pair.first;
         AssayProvider provider = pair.second;
 

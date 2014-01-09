@@ -41,9 +41,9 @@ public class GetAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFor
         if (form.getJsonObject().has(AssayJSONConverter.BATCH_ID))
         {
             int batchId = form.getJsonObject().getInt(AssayJSONConverter.BATCH_ID);
-            batch = DefaultAssaySaveHandler.lookupBatch(getViewContext().getContainer(), batchId);
+            batch = DefaultAssaySaveHandler.lookupBatch(getContainer(), batchId);
         }
 
-        return AssayJSONConverter.serializeResult(provider, assay, batch, getViewContext().getUser());
+        return AssayJSONConverter.serializeResult(provider, assay, batch, getUser());
     }
 }

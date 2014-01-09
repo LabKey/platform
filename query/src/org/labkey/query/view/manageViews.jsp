@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.QueryController.InternalDeleteView" %>
@@ -145,12 +144,12 @@
         </td>
         <td><%=h(view.getName())%>
         </td>
-        <td><%=StringUtils.join(flags, ",")%></td>
+        <td><%=text(StringUtils.join(flags, ","))%></td>
         <td><%=h(userIdToString(view.getCustomViewOwner(), user))%>
         </td>
-        <td><%=h(DateUtil.formatDateTime(c, view.getCreated()).replaceAll(" ", "&nbsp;"))%></td>
+        <td><%=formatDateTime(view.getCreated())%></td>
         <td><%=h(userIdToString(view.getCreatedBy(), user))%></td>
-        <td><%=h(DateUtil.formatDateTime(c, view.getModified()).replaceAll(" ", "&nbsp;"))%></td>
+        <td><%=formatDateTime(view.getModified())%></td>
         <td><%=h(userIdToString(view.getModifiedBy(), user))%></td>
         <td><% ActionURL urlDelete = new ActionURL(InternalDeleteView.class, c);
         urlDelete.addParameter("customViewId", Integer.toString(view.getCustomViewId())); %>

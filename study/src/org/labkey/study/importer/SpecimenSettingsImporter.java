@@ -110,9 +110,9 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
             if (null != xmlGroupings)
             {
                 ArrayList<String[]> groupings = new ArrayList<>(2);
-                for (int i = 0; i < xmlGroupings.length; i++)
+                for (SpecimenSettingsType.WebPartGroupings.Grouping xmlGrouping : xmlGroupings)
                 {
-                    String[] groupBys = xmlGroupings[i].getGroupByArray();
+                    String[] groupBys = xmlGrouping.getGroupByArray();
                     groupings.add(groupBys);
                 }
                 reposSettings.setSpecimenWebPartGroupings(groupings);

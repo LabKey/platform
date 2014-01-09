@@ -237,13 +237,10 @@ public class ProjectController extends SpringActionController
 
             if (c.isProject())
             {
-                // This block is to handle the case where a user does not have permissions
-                // to a project folder, but does have access to a subfolder.  In this case, we'd like
-                // to let them see something at the project root (since this is where you land after
-                // selecting the project from the projects menu), so we display an access-denied
-                // message within the frame.  If the user isn't logged on, we simply show an
-                // access-denied error.  This is necessary to force the login prompt to show up
-                // for users with access who simply haven't logged on yet.  (brittp, 5.4.2007)
+                // This block is to handle the case where a user does not have permissions to a project folder, but does have access to a
+                // subfolder. In this case, we'd like to let them see something at the project root (since this is where you land after
+                // selecting the project from the projects menu), so we display an access-denied message within the frame. If the user
+                // isn't logged in, we throw UnauthorizedException to show the login prompt. (brittp, 5.4.2007)
                 if (!c.hasPermission(getUser(), ReadPermission.class))
                 {
                     if (getUser().isGuest())
@@ -254,7 +251,7 @@ public class ProjectController extends SpringActionController
                             "you may be able to choose a specific subfolder.");
                 }
             }
-            return HttpView.redirect(c.getStartURL(getViewContext().getUser()));
+            return HttpView.redirect(c.getStartURL(getUser()));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -415,7 +412,7 @@ public class ProjectController extends SpringActionController
         {
             String p = StringUtils.trimToEmpty(getViewContext().getRequest().getParameter("path"));
             Path path = Path.decode(p);
-            Container c = getViewContext().getContainer();
+            Container c = getContainer();
             Path containerPath = c.getParsedPath();
             Path webdavPath = WebdavService.getPath().append(containerPath);
 
@@ -480,7 +477,7 @@ public class ProjectController extends SpringActionController
         {
             // UNDONE: this is used as a link, fix to make POST
             handlePost(form, errors);
-            return HttpView.redirect(getContainer().getStartURL(getViewContext().getUser()));
+            return HttpView.redirect(getContainer().getStartURL(getUser()));
         }
 
         @Override
@@ -521,7 +518,7 @@ public class ProjectController extends SpringActionController
             URLHelper successURL = getSuccessURL(form);
             if (null != successURL)
                 return HttpView.redirect(successURL);
-            return HttpView.redirect(getContainer().getStartURL(getViewContext().getUser()));
+            return HttpView.redirect(getContainer().getStartURL(getUser()));
         }
 
         @Override
@@ -603,7 +600,7 @@ public class ProjectController extends SpringActionController
             URLHelper successURL = getSuccessURL(form);
             if (null != successURL)
                 return HttpView.redirect(successURL);
-            return HttpView.redirect(getContainer().getStartURL(getViewContext().getUser()));
+            return HttpView.redirect(getContainer().getStartURL(getUser()));
         }
 
         public boolean handlePost(AddWebPartForm form, BindException errors) throws Exception
@@ -699,7 +696,7 @@ public class ProjectController extends SpringActionController
         public ApiResponse execute(CustomizePortletApiForm customizePortletForm, BindException errors) throws Exception
         {
             Portal.WebPart webPart = Portal.getPart(getContainer(), customizePortletForm.getWebPartId());
-            if (webPart != null && handleDeleteWebPart(getViewContext().getContainer(), webPart.getPageId(), webPart.getIndex()))
+            if (webPart != null && handleDeleteWebPart(getContainer(), webPart.getPageId(), webPart.getIndex()))
                 return getWebPartLayoutApiResponse(customizePortletForm.getPageId());
             else
                 throw new NotFoundException("Unable to delete the specified web part.  Please refresh the page and try again.");
@@ -734,7 +731,7 @@ public class ProjectController extends SpringActionController
 
     private ApiResponse getWebPartLayoutApiResponse(String pageId)
     {
-        Collection<Portal.WebPart> parts = Portal.getParts(getViewContext().getContainer(), pageId);
+        Collection<Portal.WebPart> parts = Portal.getParts(getContainer(), pageId);
         final Map<String, List<Map<String, Object>>> properties = new HashMap<>();
         int lastIndex = -1;
 
@@ -850,7 +847,7 @@ public class ProjectController extends SpringActionController
             URLHelper successURL = getSuccessURL(customizePortletForm);
             if (null != successURL)
                 return HttpView.redirect(successURL);
-            return HttpView.redirect(getContainer().getStartURL(getViewContext().getUser()));
+            return HttpView.redirect(getContainer().getStartURL(getUser()));
         }
 
         public boolean handlePost(CustomizePortletForm form, BindException errors) throws Exception
@@ -864,7 +861,7 @@ public class ProjectController extends SpringActionController
                 index = webPart.getIndex();
             }
 
-            return handleDeleteWebPart(getViewContext().getContainer(), pageId, index);
+            return handleDeleteWebPart(getContainer(), pageId, index);
         }
 
         public URLHelper getSuccessURL(CustomizePortletForm customizePortletForm)
@@ -1011,9 +1008,9 @@ public class ProjectController extends SpringActionController
         {
             // lookup the webpart by webpartId OR pageId/index
             if (form.getWebPartId() > 0)
-                _webPart = Portal.getPart(getViewContext().getContainer(), form.getWebPartId());
+                _webPart = Portal.getPart(getContainer(), form.getWebPartId());
             else
-                _webPart = Portal.getPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
+                _webPart = Portal.getPart(getContainer(), form.getPageId(), form.getIndex());
 
             ActionURL returnUrl = null != form.getReturnActionURL() ? form.getReturnActionURL() : beginURL();
             if (null == _webPart)
@@ -1041,9 +1038,9 @@ public class ProjectController extends SpringActionController
             // lookup the webpart by webpartId OR pageId/index
             Portal.WebPart webPart;
             if (form.getWebPartId() > 0)
-                webPart = Portal.getPart(getViewContext().getContainer(), form.getWebPartId());
+                webPart = Portal.getPart(getContainer(), form.getWebPartId());
             else
-                webPart = Portal.getPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
+                webPart = Portal.getPart(getContainer(), form.getPageId(), form.getIndex());
             
             if (null == webPart)
             {
@@ -1383,7 +1380,7 @@ public class ProjectController extends SpringActionController
             _requestedDepth = form.isIncludeSubfolders() ? form.getDepth() : 1;
             _includeEffectivePermissions = form.isIncludeEffectivePermissions();
             ApiSimpleResponse response = new ApiSimpleResponse();
-            User user = getViewContext().getUser();
+            User user = getUser();
 
             // Figure out what set of module properties should be included in the reply
             List<ModuleProperty> propertiesToSerialize = new ArrayList<>();
@@ -1422,7 +1419,7 @@ public class ProjectController extends SpringActionController
                     containers.addAll(Arrays.asList(form.getContainer()));
 
                 if (containers.isEmpty())
-                    containers.add(getViewContext().getContainer());
+                    containers.add(getContainer());
 
                 List<Map<String, Object>> containerJSON = new ArrayList<>();
                 for (Container c : containers)
@@ -1434,7 +1431,7 @@ public class ProjectController extends SpringActionController
             }
             else
             {
-                Container c = getViewContext().getContainer();
+                Container c = getContainer();
                 if (form.getContainer() != null && form.getContainer().length > 0)
                     c = form.getContainer()[0];
                 if (null != c) // 17166

@@ -92,7 +92,7 @@ public class TestController extends SpringActionController
 
     private ActionURL actionURL(Class<? extends Controller> actionClass)
     {
-        return new ActionURL(actionClass, getViewContext().getContainer());
+        return new ActionURL(actionClass, getContainer());
     }
 
 

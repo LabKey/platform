@@ -50,8 +50,8 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
     public ApiResponse execute(Form form, BindException errors) throws Exception
     {
         JSONArray respArray = new JSONArray();
-        Container container = getViewContext().getContainer();
-        User user = getViewContext().getUser();
+        Container container = getContainer();
+        User user = getUser();
         DefaultSchema defSchema = DefaultSchema.get(user, container);
 
         if ("root".equals(form.getNode()))

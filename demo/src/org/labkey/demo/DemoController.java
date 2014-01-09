@@ -17,15 +17,34 @@
 package org.labkey.demo;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.labkey.api.action.*;
-import org.labkey.api.data.*;
+import org.labkey.api.action.FormArrayList;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.NavTrailAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.BeanViewForm;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.GridView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.InsertView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UpdateView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.demo.model.DemoManager;
 import org.labkey.demo.model.Person;
@@ -41,7 +60,12 @@ import org.springframework.web.servlet.mvc.SimpleFormController;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 
 /**
@@ -49,7 +73,6 @@ import java.util.*;
  */
 public class DemoController extends SpringActionController
 {
-    private final static Logger _log = Logger.getLogger(DemoController.class);
     private final static DefaultActionResolver _actionResolver = new DefaultActionResolver(DemoController.class);
 
     public DemoController()
@@ -63,9 +86,6 @@ public class DemoController extends SpringActionController
     }
 
 
-    /**
-     * This is a minimal Spring controller, so it doesn't have getViewContext()
-     */
     @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends AbstractController implements NavTrailAction
     {
@@ -122,7 +142,7 @@ public class DemoController extends SpringActionController
 
             try
             {
-                DemoManager.getInstance().insertPerson(getViewContext().getContainer(), getViewContext().getUser(), person);
+                DemoManager.getInstance().insertPerson(getContainer(), getUser(), person);
                 return HttpView.redirect(new BeginAction().getURL());
             }
             catch (SQLException x)
@@ -148,14 +168,12 @@ public class DemoController extends SpringActionController
 
 
     /**
-     * This uses my own home-brewed base class FormViewAction
-     *
-     * Using PersonForm (rather than Person) to make UpdateView reshow work  
+     * Using PersonForm (rather than Person) to make UpdateView reshow work
      */
     @RequiresPermissionClass(UpdatePermission.class)
     public class UpdateAction extends FormViewAction<PersonForm>
     {
-        Person _person = null;
+        private Person _person = null;
         
         public boolean handlePost(PersonForm form, BindException errors) throws Exception
         {
@@ -231,9 +249,19 @@ public class DemoController extends SpringActionController
     @RequiresPermissionClass(UpdatePermission.class)
     public class BulkUpdateAction extends FormViewAction<BulkUpdateForm> implements NavTrailAction
     {
+        @SuppressWarnings("UnusedDeclaration")
+        public BulkUpdateAction()
+        {
+        }
+
+        public BulkUpdateAction(ViewContext ctx)
+        {
+            setViewContext(ctx);
+        }
+
         public ModelAndView getView(BulkUpdateForm form, boolean reshow, BindException errors) throws Exception
         {
-            List<Person> people = Arrays.asList(DemoManager.getInstance().getPeople(getViewContext().getContainer()));
+            List<Person> people = Arrays.asList(DemoManager.getInstance().getPeople(getContainer()));
             return new JspView<>("/org/labkey/demo/view/bulkUpdate.jsp", people, errors);
         }
 
@@ -251,13 +279,13 @@ public class DemoController extends SpringActionController
                 String lastName = lastNames[i];
                 Integer age = StringUtils.trimToNull(ageStrings[i]) == null ? null : Integer.parseInt(ageStrings[i]);
 
-                Person old = DemoManager.getInstance().getPerson(getViewContext().getContainer(), rowId);
+                Person old = DemoManager.getInstance().getPerson(getContainer(), rowId);
                 Person update = new Person(firstName, lastName, age);
 
                 if (!update.equals(old))
                 {
                     update.setRowId(old.getRowId());
-                    DemoManager.getInstance().updatePerson(getViewContext().getContainer(), getViewContext().getUser(), update, null);
+                    DemoManager.getInstance().updatePerson(getContainer(), getUser(), update, null);
                 }
             }
 
@@ -304,7 +332,7 @@ public class DemoController extends SpringActionController
             if (personIds != null)
             {
                 for (String userId : personIds)
-                    DemoManager.getInstance().deletePerson(getViewContext().getContainer(), Integer.parseInt(userId));
+                    DemoManager.getInstance().deletePerson(getContainer(), Integer.parseInt(userId));
             }
             return true;
         }
@@ -350,7 +378,7 @@ public class DemoController extends SpringActionController
         insert.setDisplayPermission(InsertPermission.class);
         gridButtonBar.add(insert);
 
-        ActionButton update = new ActionButton("Bulk Update", new BulkUpdateAction().getURL());
+        ActionButton update = new ActionButton("Bulk Update", new BulkUpdateAction(getViewContext()).getURL());
         update.setDisplayPermission(UpdatePermission.class);
         gridButtonBar.add(update);
 
@@ -364,13 +392,6 @@ public class DemoController extends SpringActionController
         public PersonForm()
         {
             super(Person.class, DemoSchema.getInstance().getTableInfoPerson());
-        }
-
-
-        public PersonForm(int rowid)
-        {
-            this();
-            set("rowid", String.valueOf(rowid));
         }
     }
 

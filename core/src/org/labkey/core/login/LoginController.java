@@ -1747,7 +1747,7 @@ public class LoginController extends SpringActionController
         @Override
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            User user = getViewContext().getUser();
+            User user = getUser();
             ApiSimpleResponse res = new ApiSimpleResponse();
             res.put("id", user.getUserId());
             res.put("displayName", user.getDisplayName(user));

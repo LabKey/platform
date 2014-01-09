@@ -116,7 +116,7 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
         addMsgRecipients(msg, recipients);
         addMsgContents(msg, contents);
 
-        MailHelper.send(msg, getViewContext().getUser(), getViewContext().getContainer());
+        MailHelper.send(msg, getUser(), getContainer());
 
         response.put("success", true);
         return response;

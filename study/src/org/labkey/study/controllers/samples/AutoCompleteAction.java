@@ -47,7 +47,7 @@ public class AutoCompleteAction extends ApiAction<AutoCompleteAction.AutoComplet
     @Override
     public ApiResponse execute(AutoCompletionForm form, BindException errors) throws Exception
     {
-        Container container = getViewContext().getContainer();
+        Container container = getContainer();
         String column;
         TableInfo tinfo;
         boolean insensitiveCompare = false;

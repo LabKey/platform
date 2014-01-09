@@ -246,7 +246,7 @@ public class AssayController extends SpringActionController
     {
         public ApiResponse execute(AssayListForm form, BindException errors) throws Exception
         {
-            Container c = getViewContext().getContainer();
+            Container c = getContainer();
             HashMap<ExpProtocol, AssayProvider> assayProtocols = new HashMap<>();
             List<ExpProtocol> protocols = AssayManager.get().getAssayProtocols(c);
             for (ExpProtocol protocol : protocols)
@@ -258,7 +258,7 @@ public class AssayController extends SpringActionController
                 }
             }
 
-            return serializeAssayDefinitions(assayProtocols, c, getViewContext().getUser());
+            return serializeAssayDefinitions(assayProtocols, c, getUser());
         }
 
     }
@@ -406,8 +406,8 @@ public class AssayController extends SpringActionController
         {
             _protocol = form.getProtocol(false);
 
-            final Container currentContainer = getViewContext().getContainer();
-            final User user = getViewContext().getUser();
+            final Container currentContainer = getContainer();
+            final User user = getUser();
             final ProjectUrls projectUrls = PageFlowUtil.urlProvider(ProjectUrls.class);
 
             ContainerTree tree = new ContainerTree("/", getUser(), DesignAssayPermission.class, null)
@@ -606,7 +606,7 @@ public class AssayController extends SpringActionController
         {
             ContainerFilter containerFilter = ContainerFilter.CURRENT;
             if (form.getContainerFilterName() != null)
-                containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getViewContext().getUser());
+                containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getUser());
 
             _protocol = form.getProtocol();
             VBox view = new VBox();
@@ -746,7 +746,7 @@ public class AssayController extends SpringActionController
 
                 data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
                 data.setName(originalName);
-                data.save(getViewContext().getUser());
+                data.save(getUser());
 
                 JSONObject jsonData = ExperimentJSONConverter.serializeData(data);
 

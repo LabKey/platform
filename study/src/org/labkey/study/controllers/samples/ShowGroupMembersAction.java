@@ -113,7 +113,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
 
             for (ValidEmail email : emails)
             {
-                if (getViewContext().getUser().isSiteAdmin())
+                if (getUser().isSiteAdmin())
                 {
                     String result = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), null, null);
                     newMembers.add(UserManager.getUser(email));
@@ -147,18 +147,18 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
             return new ActionURL(returnURL.getSource());
         else
         {
-            return new ActionURL(SpecimenController.ManageActorsAction.class, getViewContext().getContainer());
+            return new ActionURL(SpecimenController.ManageActorsAction.class, getContainer());
         }
     }
 
     public NavTree appendNavTrail(NavTree root)
     {
-        BaseStudyController._appendManageStudy(root, getViewContext().getContainer(), getViewContext().getUser());
+        BaseStudyController._appendManageStudy(root, getContainer(), getUser());
 
         if (_location != null)
-            root.addChild("Manage Actors", new ActionURL(SpecimenController.ManageActorsAction.class, getViewContext().getContainer()).addParameter("showMemberSites", _actor.getRowId()));
+            root.addChild("Manage Actors", new ActionURL(SpecimenController.ManageActorsAction.class, getContainer()).addParameter("showMemberSites", _actor.getRowId()));
         else
-            root.addChild("Manage Actors", new ActionURL(SpecimenController.ManageActorsAction.class, getViewContext().getContainer()));
+            root.addChild("Manage Actors", new ActionURL(SpecimenController.ManageActorsAction.class, getContainer()));
 
         String title = _actor.getLabel();
         if (_location != null)
@@ -172,7 +172,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
     private SampleRequestActor getActor(UpdateGroupForm form)
     {
         if (_actor == null)
-            _actor = SampleManager.getInstance().getRequirementsProvider().getActor(getViewContext().getContainer(), form.getId());
+            _actor = SampleManager.getInstance().getRequirementsProvider().getActor(getContainer(), form.getId());
 
         return _actor;
     }
@@ -180,7 +180,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
     private LocationImpl getLocation(UpdateGroupForm form)
     {
         if (_location == null && form.getLocationId() != null)
-            _location = StudyManager.getInstance().getLocation(getViewContext().getContainer(), form.getLocationId());
+            _location = StudyManager.getInstance().getLocation(getContainer(), form.getLocationId());
 
         return _location;
     }

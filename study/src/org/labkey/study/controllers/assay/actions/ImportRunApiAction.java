@@ -65,7 +65,7 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         JSONObject json = form.getJson();
         if (json != null)
         {
-            Pair<ExpProtocol, AssayProvider> pp = AbstractAssayAPIAction.getProtocolProvider(json, getViewContext().getContainer());
+            Pair<ExpProtocol, AssayProvider> pp = AbstractAssayAPIAction.getProtocolProvider(json, getContainer());
             protocol = pp.first;
             provider = pp.second;
 
@@ -93,7 +93,7 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         }
         else
         {
-            Pair<ExpProtocol, AssayProvider> pp = AbstractAssayAPIAction.getProtocolProvider(form.getAssayId(), getViewContext().getContainer());
+            Pair<ExpProtocol, AssayProvider> pp = AbstractAssayAPIAction.getProtocolProvider(form.getAssayId(), getContainer());
             protocol = pp.first;
             provider = pp.second;
 
@@ -144,7 +144,7 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
 
     protected ActionURL getUploadWizardCompleteURL(ExpProtocol protocol, ExpRun run)
     {
-        Container c = getViewContext().getContainer();
+        Container c = getContainer();
         if (run == null)
         {
             return PageFlowUtil.urlProvider(AssayUrls.class).getShowUploadJobsURL(c, protocol, null);

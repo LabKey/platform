@@ -215,6 +215,18 @@ public class AnnouncementsController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
+        // Invoked via reflection
+        @SuppressWarnings("UnusedDeclaration")
+        public BeginAction()
+        {
+        }
+
+        // Called directly by other actions
+        public BeginAction(ViewContext ctx)
+        {
+            setViewContext(ctx);
+        }
+
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             Settings settings = getSettings();
@@ -226,7 +238,7 @@ public class AnnouncementsController extends SpringActionController
             else
                 v.setFrame(WebPartView.FrameType.PORTAL);
             v.setShowTitle(false);
-            getPageConfig().setRssProperties(new RssAction().getURL(), settings.getBoardName());
+            getPageConfig().setRssProperties(new RssAction(getViewContext()).getURL(), settings.getBoardName());
 
             return v;
         }
@@ -252,7 +264,7 @@ public class AnnouncementsController extends SpringActionController
             AnnouncementListView view = new AnnouncementListView(getViewContext());
             view.setFrame(WebPartView.FrameType.PORTAL);
             view.setShowTitle(false);
-            getPageConfig().setRssProperties(new RssAction().getURL(), getSettings().getBoardName());
+            getPageConfig().setRssProperties(new RssAction(getViewContext()).getURL(), getSettings().getBoardName());
 
             return view;
         }
@@ -710,7 +722,7 @@ public class AnnouncementsController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            new BeginAction().appendNavTrail(root)
+            new BeginAction(getViewContext()).appendNavTrail(root)
                              .addChild("Customize " + getSettings().getBoardName());
 
             return root;
@@ -873,7 +885,7 @@ public class AnnouncementsController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            new BeginAction().appendNavTrail(root).addChild("New " + getSettings().getConversationName());
+            new BeginAction(getViewContext()).appendNavTrail(root).addChild("New " + getSettings().getConversationName());
             return root;
         }
     }
@@ -933,7 +945,7 @@ public class AnnouncementsController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            new BeginAction().appendNavTrail(root)
+            new BeginAction(getViewContext()).appendNavTrail(root)
                              .addChild(_parent.getTitle(), "thread.view?rowId=" + _parent.getRowId())
                              .addChild("Respond to " + getSettings().getConversationName());
             return root;
@@ -1015,7 +1027,7 @@ public class AnnouncementsController extends SpringActionController
             Set<Class<? extends Permission>> perms = Collections.<Class<? extends Permission>>singleton(ReadPermission.class);
             List<User> completionUsers = SecurityManager.getUsersWithPermissions(getContainer(), perms);
 
-            for (AjaxCompletion completion : UserManager.getAjaxCompletions(completionUsers, getViewContext().getUser()))
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(completionUsers, getUser()))
                 completions.add(completion.toJSON());
 
             response.put("completions", completions);
@@ -1285,7 +1297,7 @@ public class AnnouncementsController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            new BeginAction().appendNavTrail(root)
+            new BeginAction(getViewContext()).appendNavTrail(root)
                              .addChild(_ann.getTitle(), "thread.view?rowId=" + _ann.getRowId())
                              .addChild("Respond to " + getSettings().getConversationName());
             return root;
@@ -1335,7 +1347,7 @@ public class AnnouncementsController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            new BeginAction().appendNavTrail(root).addChild(_title, getActionURL());
+            new BeginAction(getViewContext()).appendNavTrail(root).addChild(_title, getActionURL());
             return root;
         }
     }
@@ -1365,6 +1377,17 @@ public class AnnouncementsController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class RssAction extends SimpleViewAction
     {
+        // Invoked via reflection
+        @SuppressWarnings("UnusedDeclaration")
+        public RssAction()
+        {
+        }
+
+        public RssAction(ViewContext ctx)
+        {
+            setViewContext(ctx);
+        }
+
         // Support basic auth challenge #8520
         @Override
         public void checkPermissions() throws UnauthorizedException
@@ -1508,7 +1531,7 @@ public class AnnouncementsController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            new BeginAction().appendNavTrail(root)
+            new BeginAction(getViewContext()).appendNavTrail(root)
                              .addChild("Email Preferences");
 
             return root;

@@ -30,25 +30,17 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
@@ -306,6 +298,17 @@ public class WikiController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
+        @SuppressWarnings("UnusedDeclaration")
+        public BeginAction()
+        {
+        }
+
+        public BeginAction(ViewContext ctx)
+        {
+            setViewContext(ctx);
+        }
+
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             return HttpView.redirect(getUrl());
@@ -316,6 +319,7 @@ public class WikiController extends SpringActionController
             return getBeginURL(getContainer());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Start Page", getUrl());
@@ -350,13 +354,15 @@ public class WikiController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class) //will test explicitly below
     public class DeleteAction extends ConfirmAction<WikiNameForm>
     {
-        Wiki _wiki = null;
+        private Wiki _wiki = null;
 
+        @Override
         public String getConfirmText()
         {
             return "Delete";
         }
 
+        @Override
         public ModelAndView getConfirmView(WikiNameForm form, BindException errors) throws Exception
         {
             _wiki = WikiSelectManager.getWiki(getContainer(), form.getName());
@@ -370,6 +376,7 @@ public class WikiController extends SpringActionController
             return new JspView<>("/org/labkey/wiki/view/wikiDelete.jsp", _wiki);
         }
 
+        @Override
         public boolean handlePost(WikiNameForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
@@ -393,24 +400,27 @@ public class WikiController extends SpringActionController
             return true;
         }
 
+        @Override
         public void validateCommand(WikiNameForm wikiNameForm, Errors errors)
         {
         }
 
+        @Override
         public ActionURL getSuccessURL(WikiNameForm wikiNameForm)
         {
-            return new BeginAction().getUrl();
+            return new BeginAction(getViewContext()).getUrl();
         }
 
         @Override
         public ActionURL getCancelUrl()
         {
-            return new PageAction(_wiki,null).getUrl();
+            return new PageAction(getViewContext(), _wiki, null).getUrl();
         }
 
+        @Override
         public ActionURL getFailURL(WikiNameForm wikiNameForm, BindException errors)
         {
-            return new ManageAction(_wiki).getUrl();
+            return new ManageAction(getViewContext(), _wiki).getUrl();
         }
     }
 
@@ -426,8 +436,9 @@ public class WikiController extends SpringActionController
         {
         }
 
-        ManageAction(Wiki wiki)
+        ManageAction(ViewContext ctx, Wiki wiki)
         {
+            setViewContext(ctx);
             _wiki = wiki;
         }
 
@@ -548,7 +559,7 @@ public class WikiController extends SpringActionController
         {
             if (null == _wikiVersion)
                 _wikiVersion = _wiki.getLatestVersion();
-            return (new PageAction(_wiki, _wikiVersion).appendNavTrail(root))
+            return (new PageAction(getViewContext(), _wiki, _wikiVersion).appendNavTrail(root))
                     .addChild("Manage \"" + _wikiVersion.getTitle().getSource() + "\"");
         }
 
@@ -688,7 +699,7 @@ public class WikiController extends SpringActionController
 
         public ModelAndView getView(WikiNameForm form, BindException errors) throws Exception
         {
-            Container c = getViewContext().getContainer();
+            Container c = getContainer();
 
             if (null == form.getName() || form.getName().trim().length() == 0)
                 throw new NotFoundException("You must supply a page name!");
@@ -1090,8 +1101,8 @@ public class WikiController extends SpringActionController
     public class PageAction extends SimpleViewAction<WikiNameForm>
     {
         boolean _source = false;
-        Wiki _wiki = null;
-        WikiVersion _wikiversion = null;
+        private Wiki _wiki = null;
+        private WikiVersion _wikiversion = null;
 
         boolean isSource()
         {
@@ -1102,8 +1113,9 @@ public class WikiController extends SpringActionController
         {
         }
 
-        public PageAction(Wiki wiki, WikiVersion wikiversion)
+        public PageAction(ViewContext ctx, Wiki wiki, WikiVersion wikiversion)
         {
+            setViewContext(ctx);
             _wiki = wiki;
             _wikiversion = wikiversion;
         }
@@ -1114,7 +1126,7 @@ public class WikiController extends SpringActionController
             //if there's no name parameter, find default page and reload with parameter.
             //default page is not necessarily same page displayed in wiki web part
             if (null == name || name.isEmpty())
-                throw new RedirectException(new BeginAction().getUrl());
+                throw new RedirectException(new BeginAction(getViewContext()).getUrl());
 
             //page may be existing page, or may be new page
             _wiki = WikiSelectManager.getWiki(getContainer(), name);
@@ -1170,7 +1182,7 @@ public class WikiController extends SpringActionController
                 // get discussion view
                 if (existing)
                 {
-                    ActionURL pageUrl = new PageAction(_wiki, _wikiversion).getUrl();
+                    ActionURL pageUrl = new PageAction(getViewContext(), _wiki, _wikiversion).getUrl();
                     String discussionTitle = "discuss page - " +  _wikiversion.getTitle();
                     HttpView discussionView = getDiscussionView(_wiki.getEntityId(), pageUrl, discussionTitle);
                     v.setView("discussion", discussionView);
@@ -1183,7 +1195,7 @@ public class WikiController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            new BeginAction().appendNavTrail(root);
+            new BeginAction(getViewContext()).appendNavTrail(root);
             appendWikiTrail(root, _wiki);
             if (isSource())
                 root.addChild("source");
@@ -1231,16 +1243,17 @@ public class WikiController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class VersionAction extends SimpleViewAction<WikiNameForm>
     {
-        Wiki _wiki = null;
-        WikiVersion _wikiversion = null;
+        private Wiki _wiki = null;
+        private WikiVersion _wikiversion = null;
 
         @SuppressWarnings({"UnusedDeclaration"})
         public VersionAction()
         {
         }
 
-        public VersionAction(Wiki wiki, WikiVersion wikiversion)
+        public VersionAction(ViewContext ctx, Wiki wiki, WikiVersion wikiversion)
         {
+            setViewContext(ctx);
             _wiki = wiki;
             _wikiversion = wikiversion;
         }
@@ -1283,7 +1296,7 @@ public class WikiController extends SpringActionController
             HString pageTitle = _wikiversion.getTitle();
             pageTitle = pageTitle.concat(" (Version " + _wikiversion.getVersion() + " of " + WikiSelectManager.getVersionCount(_wiki) + ")");
 
-            return new VersionsAction(_wiki, _wikiversion).appendNavTrail(root)
+            return new VersionsAction(getViewContext(), _wiki, _wikiversion).appendNavTrail(root)
                     .addChild(pageTitle, getUrl());
         }
 
@@ -1391,7 +1404,7 @@ public class WikiController extends SpringActionController
             HString pageTitle = _wikiVersion1.getTitle();
             pageTitle = pageTitle.concat(" (Comparing version " + _wikiVersion1.getVersion() + " to version " + _wikiVersion2.getVersion() + ")");
 
-            return new VersionAction(_wiki, _wikiVersion1).appendNavTrail(root).addChild(pageTitle);
+            return new VersionAction(getViewContext(), _wiki, _wikiVersion1).appendNavTrail(root).addChild(pageTitle);
         }
     }
 
@@ -1468,8 +1481,9 @@ public class WikiController extends SpringActionController
         {
         }
 
-        public VersionsAction(Wiki wiki, WikiVersion wikiversion)
+        public VersionsAction(ViewContext ctx, Wiki wiki, WikiVersion wikiversion)
         {
+            setViewContext(ctx);
             _wiki = wiki;
             _wikiversion = wikiversion;
         }
@@ -1511,7 +1525,7 @@ public class WikiController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return new PageAction(_wiki,_wikiversion).appendNavTrail(root).
+            return new PageAction(getViewContext(), _wiki,_wikiversion).appendNavTrail(root).
                     addChild("History for Page \"" + _wiki.getName() + "\"", getUrl());
         }
 
@@ -1571,7 +1585,7 @@ public class WikiController extends SpringActionController
 
         public ActionURL getSuccessURL(WikiNameForm wikiNameForm)
         {
-            return new VersionAction(_wiki,_wikiversion).getUrl();
+            return new VersionAction(getViewContext(), _wiki,_wikiversion).getUrl();
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1966,7 +1980,7 @@ public class WikiController extends SpringActionController
 
             if (null != form.getName() && form.getName().length() > 0)
             {
-                wiki = WikiSelectManager.getWiki(getViewContext().getContainer(), form.getName());
+                wiki = WikiSelectManager.getWiki(getContainer(), form.getName());
                 if (null == wiki)
                     throw new NotFoundException("There is no wiki in the current folder named '" + form.getName() + "'!");
 
@@ -1977,8 +1991,8 @@ public class WikiController extends SpringActionController
             }
 
             //check permissions
-            Container container = getViewContext().getContainer();
-            User user = getViewContext().getUser();
+            Container container = getContainer();
+            User user = getUser();
             BaseWikiPermissions perms = new BaseWikiPermissions(user, container);
 
             if (null == wiki)
@@ -2018,7 +2032,7 @@ public class WikiController extends SpringActionController
         {
             if (null != _wiki && null != _wikiVer)
             {
-                ActionURL pageUrl = new ActionURL(WikiController.PageAction.class, getViewContext().getContainer());
+                ActionURL pageUrl = new ActionURL(WikiController.PageAction.class, getContainer());
                 pageUrl.addParameter("name", _wiki.getName());
                 return root.addChild(_wikiVer.getTitle(), pageUrl).addChild("Edit");
             }
@@ -2203,8 +2217,8 @@ public class WikiController extends SpringActionController
 
         public void validateForm(SaveWikiForm form, Errors errors)
         {
-            User user = getViewContext().getUser();
-            Container container = getViewContext().getContainer();
+            User user = getUser();
+            Container container = getContainer();
             HString name = null != form.getName() ? form.getName().trim() : null;
 
             //must have a name
@@ -2252,8 +2266,8 @@ public class WikiController extends SpringActionController
 
         protected ApiResponse insertWiki(SaveWikiForm form) throws Exception
         {
-            Container c = getViewContext().getContainer();
-            User user = getViewContext().getUser();
+            Container c = getContainer();
+            User user = getUser();
             SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
             if (!policy.hasPermission(user, InsertPermission.class))
                 throw new UnauthorizedException("You do not have permissions to create a new wiki page in this folder!");
@@ -2296,7 +2310,7 @@ public class WikiController extends SpringActionController
             //save the user's new page format so we can use it
             //as the default for the next new page
             PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(
-                    getViewContext().getUser(), getViewContext().getContainer(),
+                    getUser(), getContainer(),
                     SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE, true);
             properties.put(PROP_DEFAULT_FORMAT, wikiversion.getRendererTypeEnum().name());
             PropertyManager.saveProperties(properties);
@@ -2326,11 +2340,11 @@ public class WikiController extends SpringActionController
 
         private ApiResponse updateWiki(SaveWikiForm form) throws Exception
         {
-            User user = getViewContext().getUser();
+            User user = getUser();
             if (null == form.getEntityId())
                 throw new IllegalArgumentException("The entityId parameter must be supplied.");
 
-            Wiki wikiUpdate = getWikiManager().getWikiByEntityId(getViewContext().getContainer(), form.getEntityId().toString());
+            Wiki wikiUpdate = getWikiManager().getWikiByEntityId(getContainer(), form.getEntityId().toString());
             if (wikiUpdate == null)
                 throw new NotFoundException("Could not find the wiki page matching the passed id; if it was a valid page, it may have been deleted by another user.");
 
@@ -2340,7 +2354,7 @@ public class WikiController extends SpringActionController
 
             LOG.debug("Updating wiki " + wikiUpdate.getName());
 
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(getViewContext().getContainer());
+            SecurityPolicy policy = SecurityPolicyManager.getPolicy(getContainer());
             Set<Role> contextualRoles = new HashSet<>();
             if (wikiUpdate.getCreatedBy() == user.getUserId())
                 contextualRoles.add(RoleManager.getRole(OwnerRole.class));
@@ -2372,7 +2386,7 @@ public class WikiController extends SpringActionController
                 wikiversion.setTitle(title);
                 wikiversion.setBody(form.getBody());
                 wikiversion.setRendererTypeEnum(currentRendererType);
-                getWikiManager().updateWiki(getViewContext().getUser(), wikiUpdate, wikiversion);
+                getWikiManager().updateWiki(getUser(), wikiUpdate, wikiversion);
             }
 
             //return an API response containing the current wiki and version data
@@ -2430,7 +2444,7 @@ public class WikiController extends SpringActionController
                 throw new IllegalArgumentException("The entityId parameter is required!");
 
             //get the wiki using the entity id
-            Wiki wiki = getWikiManager().getWikiByEntityId(getViewContext().getContainer(), form.getEntityId());
+            Wiki wiki = getWikiManager().getWikiByEntityId(getContainer(), form.getEntityId());
             if (null == wiki)
                 throw new IllegalArgumentException("Could not find the wiki with entity id '" + form.getEntityId() + "'!");
 
@@ -2454,7 +2468,7 @@ public class WikiController extends SpringActionController
             }
 
             // uncache just this wiki
-            WikiCache.uncache(getViewContext().getContainer(), wiki, false);
+            WikiCache.uncache(getContainer(), wiki, false);
 
             //build the response
             ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -2462,7 +2476,7 @@ public class WikiController extends SpringActionController
             if (warnings.size() > 0)
                 resp.put("warnings", warnings);
 
-            Wiki wikiUpdated = WikiSelectManager.getWiki(getViewContext().getContainer(), wiki.getName());
+            Wiki wikiUpdated = WikiSelectManager.getWiki(getContainer(), wiki.getName());
             assert(null != wikiUpdated);
             List<Object> attachments = new ArrayList<>();
 
@@ -2531,7 +2545,7 @@ public class WikiController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             String newBody = form.getBody();
-            Container container = getViewContext().getContainer();
+            Container container = getContainer();
 
             //currently, we can only transform from wiki to HTML
             if (HString.eq(WikiRendererType.RADEOX.name(),form.getFromFormat())
@@ -2545,7 +2559,7 @@ public class WikiController extends SpringActionController
                     wikiver.setBody(form.getBody());
 
                 wikiver.setRendererType(form.getFromFormat());
-                newBody = wikiver.getHtmlForConvert(getViewContext().getContainer(), wiki);
+                newBody = wikiver.getHtmlForConvert(getContainer(), wiki);
             }
 
             response.put("toFormat", form.getToFormat());
@@ -2579,7 +2593,7 @@ public class WikiController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            Container container = getViewContext().getContainer();
+            Container container = getContainer();
 
             NavTree[] toc = WikiSelectManager.getNavTree(container);
 
@@ -2598,7 +2612,7 @@ public class WikiController extends SpringActionController
 
             //include the user's TOC displayed preference
             Map<String, String> properties = PropertyManager.getProperties(
-                    getViewContext().getUser(), getViewContext().getContainer(),
+                    getUser(), getContainer(),
                     SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE);
 
             response.put("displayToc", "true".equals(properties.get(SetTocPreferenceAction.PROP_TOC_DISPLAYED)));
@@ -2619,7 +2633,7 @@ public class WikiController extends SpringActionController
 
             if (null != currentPage)
             {
-                Wiki wiki = WikiSelectManager.getWiki(getViewContext().getContainer(), currentPage);
+                Wiki wiki = WikiSelectManager.getWiki(getContainer(), currentPage);
                 if (null != wiki && null != wiki.getLatestVersion())
                 {
                     LinkedList<String> path = new LinkedList<>();
@@ -2705,7 +2719,7 @@ public class WikiController extends SpringActionController
         {
             //save user's editor preference
             PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(
-                    getViewContext().getUser(), getViewContext().getContainer(),
+                    getUser(), getContainer(),
                     CAT_EDITOR_PREFERENCE, true);
             properties.put(PROP_USE_VISUAL_EDITOR, String.valueOf(form.isUseVisual()));
             PropertyManager.saveProperties(properties);
@@ -2739,7 +2753,7 @@ public class WikiController extends SpringActionController
         {
             //use the same category as editor preference to save on storage
             PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(
-                    getViewContext().getUser(), getViewContext().getContainer(),
+                    getUser(), getContainer(),
                     SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE, true);
             properties.put(PROP_TOC_DISPLAYED, String.valueOf(form.isDisplayed()));
             PropertyManager.saveProperties(properties);

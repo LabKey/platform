@@ -40,7 +40,7 @@ public class ValidateQueriesAction extends ApiAction
     public ApiResponse execute(Object o, BindException errors) throws Exception
     {
         ValidateQueriesVisitor validator = new ValidateQueriesVisitor();
-        validator.visitTop(DefaultSchema.get(getViewContext().getUser(), getViewContext().getContainer()), null);
+        validator.visitTop(DefaultSchema.get(getUser(), getContainer()), null);
         if (validator.getInvalidCount() > 0)
         {
             JSONArray warnings = new JSONArray();

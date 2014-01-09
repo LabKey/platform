@@ -239,7 +239,7 @@ public class SecurityController extends SpringActionController
             }
         }
     }
-    
+
 
     private static void ensureGroupInContainer(String group, Container c) throws ServletException
     {
@@ -368,7 +368,7 @@ public class SecurityController extends SpringActionController
                 Integer gid = SecurityManager.getGroupId(group);
                 if (gid == null)
                     return null;
-                id = gid.intValue();
+                id = gid;
             }
             Group group = SecurityManager.getGroup(id);
             Container p = c == null ? null : c.getProject();
@@ -425,51 +425,6 @@ public class SecurityController extends SpringActionController
         public ActionURL getSuccessURL(GroupForm form)
         {
             return new ActionURL(ProjectAction.class, getContainer());
-        }
-    }
-
-    public static class GroupsBean
-    {
-        Container _container;
-        Group[] _groups;
-        String _expandedGroupPath;
-        List<String> _messages;
-
-        public GroupsBean(ViewContext context, Group expandedGroupPath, List<String> messages)
-        {
-            Container c = context.getContainer();
-            if (null == c || c.isRoot())
-            {
-                _groups = SecurityManager.getGroups(null, false);
-                _container = ContainerManager.getRoot();
-            }
-            else
-            {
-                _groups = SecurityManager.getGroups(c.getProject(), false);
-                _container = c;
-            }
-            _expandedGroupPath = expandedGroupPath == null ? null : expandedGroupPath.getPath();
-            _messages = messages != null ? messages : Collections.<String>emptyList();
-        }
-
-        public Container getContainer()
-        {
-            return _container.isRoot() ? _container : _container.getProject();
-        }
-
-        public Group[] getGroups()
-        {
-            return _groups;
-        }
-
-        public boolean isExpandedGroup(String groupPath)
-        {
-            return _expandedGroupPath != null && _expandedGroupPath.equals(groupPath);
-        }
-
-        public List<String> getMessages()
-        {
-            return _messages;
         }
     }
 
@@ -973,7 +928,7 @@ public class SecurityController extends SpringActionController
 
             List<JSONObject> completions = new ArrayList<>();
 
-            for (AjaxCompletion completion : UserManager.getAjaxCompletions(validGroups, validUsers, getViewContext().getUser(), true, false))
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(validGroups, validUsers, getUser(), true, false))
                 completions.add(completion.toJSON());
 
             response.put("completions", completions);
@@ -1006,7 +961,7 @@ public class SecurityController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<JSONObject> completions = new ArrayList<>();
 
-            for (AjaxCompletion completion : UserManager.getAjaxCompletions(getViewContext().getUser()))
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(getUser()))
                 completions.add(completion.toJSON());
 
             response.put("completions", completions);
@@ -1199,7 +1154,7 @@ public class SecurityController extends SpringActionController
         private void addAuditEvent(User user, String comment, int groupId)
         {
             if (user != null)
-                SecurityManager.addAuditEvent(getViewContext().getContainer(), user, comment, groupId);
+                SecurityManager.addAuditEvent(getContainer(), user, comment, groupId);
         }
 
         // UNDONE move to SecurityManager
@@ -2009,20 +1964,6 @@ public class SecurityController extends SpringActionController
             context.setUser(u);
             context.setRequest(w);
             return context;
-        }
-
-
-        private static class TestUser extends User
-        {
-            TestUser(String name, int id, Integer... groups)
-            {
-                super(name,id);
-                _groups = new int[groups.length+1];
-                for (int i=0 ; i<groups.length; i++)
-                    _groups[i] = groups[i];
-                _groups[groups.length] = id;
-                Arrays.sort(_groups);
-            }
         }
     }
 }

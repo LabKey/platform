@@ -3851,7 +3851,7 @@ public class DavController extends SpringActionController
     @Nullable WebdavResource resolvePath() throws DavException
     {
         // NOTE: security is enforced via WebFolderInfo, however we expect the container to be a parent of the path
-        Container c = getViewContext().getContainer();
+        Container c = getContainer();
         Path path = getResourcePath();
         if (null == path)
             return null;

@@ -894,7 +894,7 @@ public class StudyController extends BaseStudyController
             boolean showEditLinks = !QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), def.getName()) &&
                 !def.isAssayData();
 
-            UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), StudyQuerySchema.SCHEMA_NAME);
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), StudyQuerySchema.SCHEMA_NAME);
             DataSetQuerySettings settings = (DataSetQuerySettings)schema.getSettings(getViewContext(), DataSetQueryView.DATAREGION, def.getName());
 
             settings.setShowEditLinks(showEditLinks);
@@ -1496,7 +1496,7 @@ public class StudyController extends BaseStudyController
         protected TableViewForm getCommand(HttpServletRequest request) throws Exception
         {
             User user = getUser();
-            UserSchema schema = QueryService.get().getUserSchema(user, getViewContext().getContainer(), SchemaKey.fromParts(StudyQuerySchema.SCHEMA_NAME));
+            UserSchema schema = QueryService.get().getUserSchema(user, getContainer(), SchemaKey.fromParts(StudyQuerySchema.SCHEMA_NAME));
             TableViewForm form = new TableViewForm(schema.getTable("StudyProperties"));
             form.setViewContext(getViewContext());
             return form;
@@ -2082,7 +2082,7 @@ public class StudyController extends BaseStudyController
             if (null == _def.getTypeURI())
                 return;
 
-            User user = getViewContext().getUser();
+            User user = getUser();
             TableInfo t = new StudyQuerySchema(_study, user, true).createDatasetTableInternal(_def);
             setTarget(t);
 
@@ -2543,13 +2543,13 @@ public class StudyController extends BaseStudyController
                 for (String lsid : lsids)
                     keys.add(Collections.<String, Object>singletonMap("lsid", lsid));
 
-                StudyQuerySchema schema = new StudyQuerySchema(study, getViewContext().getUser(), true);
+                StudyQuerySchema schema = new StudyQuerySchema(study, getUser(), true);
                 TableInfo datasetTable = schema.createDatasetTableInternal((DataSetDefinition) dataset);
 
                 QueryUpdateService qus = datasetTable.getUpdateService();
                 assert qus != null;
 
-                qus.deleteRows(getViewContext().getUser(), getContainer(), keys, null);
+                qus.deleteRows(getUser(), getContainer(), keys, null);
 
                 transaction.commit();
                 return true;
@@ -3751,7 +3751,7 @@ public class StudyController extends BaseStudyController
             ViewContext context = getViewContext();
             int datasetId = null == context.get(DataSetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DataSetDefinition.DATASETKEY));
 
-            ActionURL url = getViewContext().cloneActionURL();
+            ActionURL url = context.cloneActionURL();
             url.setAction(DatasetReportAction.class);
 
             String defaultView = getDefaultView(context, datasetId);
@@ -3890,7 +3890,7 @@ public class StudyController extends BaseStudyController
                     List<Pair<String, String>> views = ReportManager.get().getReportLabelsForDataset(getViewContext(), def);
                     if (defaultView != null)
                     {
-                        setDefaultView(getViewContext(), dsid, defaultView);
+                        setDefaultView(dsid, defaultView);
                     }
                     else
                     {
@@ -3907,7 +3907,7 @@ public class StudyController extends BaseStudyController
                                 }
                             }
                             if (!defaultExists)
-                                setDefaultView(getViewContext(), dsid, "");
+                                setDefaultView(dsid, "");
                         }
                     }
 
@@ -5512,10 +5512,10 @@ public class StudyController extends BaseStudyController
         return "";
     }
 
-    private void setDefaultView(ViewContext context, int datasetId, String view)
+    private void setDefaultView(int datasetId, String view)
     {
-        Map<String, String> viewMap = PropertyManager.getWritableProperties(context.getUser(),
-                context.getContainer(), DEFAULT_DATASET_VIEW, true);
+        Map<String, String> viewMap = PropertyManager.getWritableProperties(getUser(),
+                getContainer(), DEFAULT_DATASET_VIEW, true);
 
         viewMap.put(Integer.toString(datasetId), view);
         PropertyManager.saveProperties(viewMap);

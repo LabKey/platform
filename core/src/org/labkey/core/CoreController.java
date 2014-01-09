@@ -931,14 +931,14 @@ public class CoreController extends SpringActionController
                 Container container = ContainerManager.getForRowId(id);
                 //if found, ensure it's a descendant of the current container, and redirect
                 if (null != container && container.isDescendant(getContainer()))
-                    throw new RedirectException(container.getStartURL(getViewContext().getUser()));
+                    throw new RedirectException(container.getStartURL(getUser()));
             }
             catch (NumberFormatException e) { /* continue on with other approaches */ }
 
             //next try to lookup based on name
             Container container = getContainer().findDescendant(form.getId());
             if (null != container)
-                throw new RedirectException(container.getStartURL(getViewContext().getUser()));
+                throw new RedirectException(container.getStartURL(getUser()));
 
             //otherwise, return a workbooks list with the search view
             HtmlView message = new HtmlView("<p class='labkey-error'>Could not find a workbook with id '" + form.getId() + "' in this folder or subfolders. Try searching or entering a different id.</p>");
@@ -1152,7 +1152,7 @@ public class CoreController extends SpringActionController
             aliasList.add(target.getPath());
             
             // Perform move
-            ContainerManager.move(target, parent, getViewContext().getUser());
+            ContainerManager.move(target, parent, getUser());
 
             Container afterMoveTarget = ContainerManager.getForId(target.getId());
             if (null != afterMoveTarget)
@@ -1181,7 +1181,7 @@ public class CoreController extends SpringActionController
             {
                 //suggest a name
                 //per spec it should be "<user-display-name> YYYY-MM-DD"
-                bean.setTitle(getViewContext().getUser().getDisplayName(getUser()) + " " + DateUtil.formatDateISO8601());
+                bean.setTitle(getUser().getDisplayName(getUser()) + " " + DateUtil.formatDateISO8601());
             }
 
             return new JspView<>("/org/labkey/core/workbook/createWorkbook.jsp", bean, errors);
@@ -1250,10 +1250,10 @@ public class CoreController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            Container parentContainer = getViewContext().getContainer();
+            Container parentContainer = getContainer();
             Set<String> ids = DataRegionSelection.getSelected(getViewContext(), true);
             if (null == ids || ids.size() == 0)
-                throw new RedirectException(parentContainer.getStartURL(getViewContext().getUser()));
+                throw new RedirectException(parentContainer.getStartURL(getUser()));
 
             MoveWorkbooksBean bean = new MoveWorkbooksBean();
             for (String id : ids)
@@ -1338,7 +1338,7 @@ public class CoreController extends SpringActionController
         
         public ApiResponse execute(ExtContainerTreeForm form, BindException errors) throws Exception
         {
-            User user = getViewContext().getUser();
+            User user = getUser();
             JSONArray children = new JSONArray();
             _move = form.getMove();
 
@@ -1433,7 +1433,7 @@ public class CoreController extends SpringActionController
             String text = PageFlowUtil.filter(c.getName());
             if (!c.getPolicy().getResourceId().equals(c.getResourceId()))
                 text += "*";
-            if (c.equals(getViewContext().getContainer()))
+            if (c.equals(getContainer()))
                 props.put("cls", "x-tree-node-current");
 
             props.put("text", text);
@@ -1443,7 +1443,7 @@ public class CoreController extends SpringActionController
 
             //if the current container is an ancestor of the request container
             //recurse into the children so that we can show the request container
-            if (getViewContext().getContainer().isDescendant(c))
+            if (getContainer().isDescendant(c))
             {
                 JSONArray childrenProps = new JSONArray();
                 for (Container child : c.getChildren())
@@ -1459,7 +1459,7 @@ public class CoreController extends SpringActionController
                                 // Disable so they can't act on it directly, since they have no permission
                                 childProps.put("disabled", true);
                             }
-                            childProps.put("expanded", getViewContext().getContainer().isDescendant(child));
+                            childProps.put("expanded", getContainer().isDescendant(child));
                             childrenProps.put(childProps);
                         }
                     }
@@ -1479,7 +1479,7 @@ public class CoreController extends SpringActionController
         protected JSONObject getContainerProps(Container c, boolean showContainerTabs)
         {
             JSONObject props = super.getContainerProps(c, showContainerTabs);
-            if (c.equals(getViewContext().getContainer()))
+            if (c.equals(getContainer()))
                 props.put("disabled", true);
             return props;
         }
@@ -1492,7 +1492,7 @@ public class CoreController extends SpringActionController
         protected JSONObject getContainerProps(Container c, boolean showContainerTabs)
         {
             JSONObject props = super.getContainerProps(c, showContainerTabs);
-            if (c.equals(getViewContext().getContainer()))
+            if (c.equals(getContainer()))
             {
                 props.put("cls", "x-tree-node-current");
                 if (_move)
@@ -1509,7 +1509,7 @@ public class CoreController extends SpringActionController
 
             //if the current container is an ancestor of the request container
             //recurse into the children so that we can show the request container
-            if (getViewContext().getContainer().isDescendant(c))
+            if (getContainer().isDescendant(c))
             {
                 JSONArray childrenProps = new JSONArray();
                 for (Container child : c.getChildren())
@@ -1576,7 +1576,7 @@ public class CoreController extends SpringActionController
                 throw new IllegalArgumentException("You must specify a newParentId parameter!");
 
             Container wb = ContainerManager.getForRowId(form.getWorkbookId());
-            if (null == wb || !(wb.isWorkbook()) || !(wb.isDescendant(getViewContext().getContainer())))
+            if (null == wb || !(wb.isWorkbook()) || !(wb.isDescendant(getContainer())))
                 throw new IllegalArgumentException("No workbook found with id '" + form.getWorkbookId() + "'");
 
             Container newParent = ContainerManager.getForRowId(form.getNewParentId());
@@ -1587,14 +1587,14 @@ public class CoreController extends SpringActionController
                 throw new IllegalArgumentException("Workbook is already in the target folder.");
 
             //user must be allowed to create workbooks in the new parent folder
-            if (!newParent.hasPermission(getViewContext().getUser(), InsertPermission.class))
+            if (!newParent.hasPermission(getUser(), InsertPermission.class))
                 throw new UnauthorizedException("You do not have permission to move workbooks to the folder '" + newParent.getName() + "'.");
 
             //workbook name must be unique within parent
             if (newParent.hasChild(wb.getName()))
                 throw new RuntimeException("Can't move workbook '" + wb.getTitle() + "' because another workbook or subfolder in the target folder has the same name.");
 
-            ContainerManager.move(wb, newParent, getViewContext().getUser());
+            ContainerManager.move(wb, newParent, getUser());
 
             return new ApiSimpleResponse("moved", true);
         }

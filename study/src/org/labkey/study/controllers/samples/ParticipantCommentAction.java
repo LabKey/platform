@@ -62,8 +62,8 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Specim
         if (super.handlePost(form, errors))
         {
             // clear any vial comments specified
-            User user = getViewContext().getUser();
-            Container container = getViewContext().getContainer();
+            User user = getUser();
+            Container container = getContainer();
             for (int rowId : form.getVialCommentsToClear())
             {
                 Specimen specimen = SampleManager.getInstance().getSpecimen(container, user, rowId);
@@ -94,7 +94,7 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Specim
             ModelAndView view = super.getView(form, reshow, errors);
             if (!reshow && _dataView instanceof InsertView)
             {
-                ((InsertView)_dataView).setInitialValue(StudyService.get().getSubjectColumnName(getViewContext().getContainer()), form.getParticipantId());
+                ((InsertView)_dataView).setInitialValue(StudyService.get().getSubjectColumnName(getContainer()), form.getParticipantId());
                 ((InsertView)_dataView).setInitialValue("SequenceNum", form.getVisitId());
 
                 if (!StringUtils.isBlank(form.getComment()))

@@ -89,7 +89,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             transaction.commit();
         }
         saveHandler.afterSave(getViewContext(), batches, protocol);
-        return AssayJSONConverter.serializeResult(provider, protocol, batches, getViewContext().getUser());
+        return AssayJSONConverter.serializeResult(provider, protocol, batches, getUser());
 
     }
 
@@ -105,7 +105,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             transaction.commit();
         }
         saveHandler.afterSave(getViewContext(), batches, protocol);
-        return AssayJSONConverter.serializeResult(provider, protocol, batches[0], getViewContext().getUser());
+        return AssayJSONConverter.serializeResult(provider, protocol, batches[0], getUser());
     }
 }
 

@@ -110,8 +110,8 @@ public class TypesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Experiment", new ActionURL(ExperimentController.BeginAction.class, getViewContext().getContainer()));
-            root.addChild("Types", new ActionURL(TypesController.BeginAction.class, getViewContext().getContainer()));
+            root.addChild("Experiment", new ActionURL(ExperimentController.BeginAction.class, getContainer()));
+            root.addChild("Types", new ActionURL(TypesController.BeginAction.class, getContainer()));
             return root;
         }
     }
@@ -153,7 +153,7 @@ public class TypesController extends SpringActionController
         {
             if (null == form.getDomainUri())
                 throw new NotFoundException();
-            form.domain = PropertyService.get().getDomain(getViewContext().getContainer(), form.getDomainUri());
+            form.domain = PropertyService.get().getDomain(getContainer(), form.getDomainUri());
             if (null == form.domain)
                 throw new NotFoundException();
         }
@@ -238,7 +238,7 @@ public class TypesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             (new BeginAction(getViewContext())).appendNavTrail(root);
-            root.addChild("Import Vocabulary", new ActionURL(ImportVocabularyAction.class, getViewContext().getContainer()));
+            root.addChild("Import Vocabulary", new ActionURL(ImportVocabularyAction.class, getContainer()));
             return root;
         }
     }
@@ -254,7 +254,7 @@ public class TypesController extends SpringActionController
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            Collection<DomainDescriptor> types = OntologyManager.getDomainDescriptors(getViewContext().getContainer());
+            Collection<DomainDescriptor> types = OntologyManager.getDomainDescriptors(getContainer());
             TypeBean bean = new TypeBean();
             Container shared = ContainerManager.getSharedContainer();
 
@@ -272,7 +272,7 @@ public class TypesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             (new BeginAction(getViewContext())).appendNavTrail(root);
-            root.addChild("Defined Types", new ActionURL(TypesAction.class, getViewContext().getContainer()));
+            root.addChild("Defined Types", new ActionURL(TypesAction.class, getContainer()));
             return root;
         }
     }
@@ -313,7 +313,7 @@ public class TypesController extends SpringActionController
             typeName = StringUtils.trimToEmpty(form.getType());             
 
             if (null != typeName)
-                properties = OntologyManager.getPropertiesForType(typeName, getViewContext().getContainer());
+                properties = OntologyManager.getPropertiesForType(typeName, getContainer());
 
             return new JspView<>("/org/labkey/experiment/types/typeDetails.jsp", this);
         }
@@ -321,7 +321,7 @@ public class TypesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             (new TypesAction(getViewContext())).appendNavTrail(root);
-            root.addChild("Type -- " + StringUtils.defaultIfEmpty(typeName,"unspecified"), new ActionURL(TypeDetailsAction.class, getViewContext().getContainer()));
+            root.addChild("Type -- " + StringUtils.defaultIfEmpty(typeName,"unspecified"), new ActionURL(TypeDetailsAction.class, getContainer()));
             return root;
         }
     }
@@ -476,7 +476,7 @@ public class TypesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             (new BeginAction(getViewContext())).appendNavTrail(root);
-            root.addChild("Find Concepts", new ActionURL(FindConceptsAction.class, getViewContext().getContainer()));
+            root.addChild("Find Concepts", new ActionURL(FindConceptsAction.class, getContainer()));
             return root;
         }
     }

@@ -478,7 +478,7 @@ public class ReportsController extends SpringActionController
 
             if (report != null)
             {
-                if (!report.canDelete(getViewContext().getUser(), getViewContext().getContainer()))
+                if (!report.canDelete(getUser(), getContainer()))
                     throw new UnauthorizedException();
                 ReportService.get().deleteReport(getViewContext(), report);
             }
@@ -1285,7 +1285,7 @@ public class ReportsController extends SpringActionController
 
             try
             {
-                if (getViewContext().getUser().isGuest())
+                if (getUser().isGuest())
                 {
                     errors.reject("saveScriptReport", "You must be logged in to be able to save reports");
                     return null;
@@ -1332,12 +1332,12 @@ public class ReportsController extends SpringActionController
                     {
                         // User checked the "no thumbnail" radio... need to proactively delete the thumbnail
                         svc.deleteThumbnail(provider, ImageType.Large);
-                        ReportPropsManager.get().setPropertyValue(report.getEntityId(), getViewContext().getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.NONE.name());
+                        ReportPropsManager.get().setPropertyValue(report.getEntityId(), getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.NONE.name());
                     }
                     else if (form.getThumbnailType().equals(DataViewProvider.EditInfo.ThumbnailType.AUTO.name()))
                     {
                         svc.replaceThumbnail(provider, ImageType.Large, getViewContext());
-                        ReportPropsManager.get().setPropertyValue(report.getEntityId(), getViewContext().getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.AUTO.name());
+                        ReportPropsManager.get().setPropertyValue(report.getEntityId(), getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.AUTO.name());
                     }
                 }
             }
@@ -1616,7 +1616,7 @@ public class ReportsController extends SpringActionController
             if (null == report.getDescriptor().getOwner())
             {
                 List<ValidationError> errors = new ArrayList<>();
-                report.getDescriptor().setOwner(getViewContext().getUser().getUserId());
+                report.getDescriptor().setOwner(getUser().getUserId());
                 form.setCanChangeSharing(ReportService.get().tryValidateReportPermissions(getViewContext(), report, errors));
                 report.getDescriptor().setOwner(null);
             }
@@ -1719,7 +1719,7 @@ public class ReportsController extends SpringActionController
             if (null != id)
             {
                 Report r = id.getReport(getViewContext());
-                defaultURL = new ReportUrlsImpl().urlReportDetails(getViewContext().getContainer(), r);
+                defaultURL = new ReportUrlsImpl().urlReportDetails(getContainer(), r);
             }
 
             return uploadForm.getReturnActionURL(defaultURL);
@@ -1841,7 +1841,7 @@ public class ReportsController extends SpringActionController
                 List<AttachmentFile> attachments = getAttachmentFileList();
                 if (attachments != null && attachments.size() > 0)
                 {
-                    AttachmentService.get().addAttachments(report, attachments, getViewContext().getUser());
+                    AttachmentService.get().addAttachments(report, attachments, getUser());
                 }
             }
 
@@ -1908,7 +1908,7 @@ public class ReportsController extends SpringActionController
                 {
                     // be sure to remove any existing local attachments
                     AttachmentService.get().deleteAttachments(report);
-                    AttachmentService.get().addAttachments(report, attachments, getViewContext().getUser());
+                    AttachmentService.get().addAttachments(report, attachments, getUser());
                 }
             }
             else
@@ -2268,7 +2268,7 @@ public class ReportsController extends SpringActionController
 
                     if (_report != null)
                     {
-                        if (!_report.canEdit(getViewContext().getUser(), getViewContext().getContainer()))
+                        if (!_report.canEdit(getUser(), getContainer()))
                         {
                             errors.reject("renameReportAction", "Unauthorized operation");
                             return;
@@ -2620,7 +2620,7 @@ public class ReportsController extends SpringActionController
             Map<String, Map<String, Object>> types = new TreeMap<>();
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            Portal.WebPart webPart = Portal.getPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
+            Portal.WebPart webPart = Portal.getPart(getContainer(), form.getPageId(), form.getIndex());
 
             Map<String, String> props;
             if (webPart != null)
@@ -3080,7 +3080,7 @@ public class ReportsController extends SpringActionController
         @Nullable
         private Portal.WebPart getWebPart(BrowseDataForm form)
         {
-            return Portal.getPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
+            return Portal.getPart(getContainer(), form.getPageId(), form.getIndex());
         }
 
         private Boolean getCheckedState(String prop, Map<String, String> propMap, boolean defaultState)

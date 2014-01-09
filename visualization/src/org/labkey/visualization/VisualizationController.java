@@ -890,7 +890,7 @@ public class VisualizationController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     abstract class ExportSVGAction extends BaseViewAction
     {
-        String _svgSource;
+        private String _svgSource;
 
         @Override
         protected String getCommandClassMethodName()
@@ -1333,7 +1333,7 @@ public class VisualizationController extends SpringActionController
                 vizDescriptor.setProperty(ReportDescriptor.Prop.queryName, form.getQueryName());
             if (_currentReport.getDescriptor().getReportId() != null)
                 vizDescriptor.setReportId(_currentReport.getDescriptor().getReportId());
-            vizDescriptor.setOwner(form.isShared() ? null : getViewContext().getUser().getUserId());
+            vizDescriptor.setOwner(form.isShared() ? null : getUser().getUserId());
             int reportId = ReportService.get().saveReport(getViewContext(), vizDescriptor.getReportKey(), _currentReport);
 
             // Re-select the saved report to make sure it has an entityId

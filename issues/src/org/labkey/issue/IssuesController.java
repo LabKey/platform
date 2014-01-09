@@ -210,7 +210,7 @@ public class IssuesController extends SpringActionController
         {
             Container issueContainer = ContainerManager.getForId(result.getContainerId());
             // Make sure the user has read permission before redirecting
-            if (issueContainer.hasPermission(getViewContext().getUser(), ReadPermission.class))
+            if (issueContainer.hasPermission(getUser(), ReadPermission.class))
             {
                 ActionURL url = getViewContext().getActionURL().clone();
                 url.setContainer(issueContainer);
@@ -287,7 +287,7 @@ public class IssuesController extends SpringActionController
 
         public ModelAndView getView(ListForm form, BindException errors) throws Exception
         {
-            EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
 
             // convert AssignedTo/Email to AssignedTo/DisplayName: old bookmarks
             // reference Email, which is no longer displayed.
@@ -307,7 +307,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
             return root.addChild(names.pluralName.getSource() + " List", getURL());
         }
 
@@ -450,7 +450,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
             return new ListAction(getViewContext()).appendNavTrail(root).addChild(names.singularName.getSource() + " Details");
         }
     }
@@ -594,7 +594,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
             return new ListAction(getViewContext()).appendNavTrail(root).addChild("Insert New " + names.singularName.getSource());
         }
     }
@@ -928,7 +928,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
             return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Resolve " + names.singularName.getSource());
         }
     }
@@ -971,7 +971,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
             return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Close " + names.singularName.getSource());
         }
     }
@@ -1017,7 +1017,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
             return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Reopen " + names.singularName.getSource());
         }
     }
@@ -1167,8 +1167,8 @@ public class IssuesController extends SpringActionController
             List<JSONObject> completions = new ArrayList<>();
 
             boolean showEmailAddresses = SecurityManager.canSeeEmailAddresses(getContainer(), getUser());
-            List<User> possibleUsers = SecurityManager.getUsersWithPermissions(getViewContext().getContainer(), Collections.<Class<? extends Permission>>singleton(ReadPermission.class));
-            for (AjaxCompletion completion : UserManager.getAjaxCompletions(possibleUsers, getViewContext().getUser(), showEmailAddresses, true))
+            List<User> possibleUsers = SecurityManager.getUsersWithPermissions(getContainer(), Collections.<Class<? extends Permission>>singleton(ReadPermission.class));
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(possibleUsers, getUser(), showEmailAddresses, true))
                     completions.add(completion.toJSON());
 
             response.put("completions", completions);
@@ -1299,7 +1299,7 @@ public class IssuesController extends SpringActionController
 
         public ModelAndView getView(EmailPrefsForm form, boolean reshow, BindException errors) throws Exception
         {
-            if (getViewContext().getUser().isGuest())
+            if (getUser().isGuest())
             {
                 throw new UnauthorizedException();
             }
@@ -1354,7 +1354,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
             return (new ListAction(getViewContext())).appendNavTrail(root).addChild(names.pluralName.getSource() + " Admin Page", getUrl());
         }
 

@@ -188,7 +188,7 @@ public class UmlsController extends SpringActionController
 
         public URLHelper getSuccessURL(PathForm o)
         {
-            return new ActionURL(IndexAction.class, getViewContext().getContainer());
+            return new ActionURL(IndexAction.class, getContainer());
         }
 
         public boolean handlePost(PathForm form, BindException errors) throws Exception

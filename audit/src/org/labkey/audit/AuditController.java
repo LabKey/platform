@@ -73,7 +73,7 @@ public class AuditController extends SpringActionController
 
         protected ModelAndView getHtmlView(ShowAuditLogForm form, BindException errors) throws Exception
         {
-            if (!getViewContext().getUser().isSiteAdmin())
+            if (!getUser().isSiteAdmin())
             {
                 throw new UnauthorizedException();
             }

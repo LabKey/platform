@@ -82,14 +82,14 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         if (newStudy != null)
         {
             List<AttachmentFile> files = getAttachmentFileList();
-            newStudy.attachProtocolDocument(files, getViewContext().getUser());
+            newStudy.attachProtocolDocument(files, getUser());
 
             // run the remainder of the study creation as a pipeline job
-            PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
+            PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
             CreateChildStudyPipelineJob job = new CreateChildStudyPipelineJob(getViewContext(), root, form, _destFolderCreated);
             PipelineService.get().getPipelineQueue().addJob(job);
 
-            String redirect = PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getViewContext().getContainer()).getLocalURIString();
+            String redirect = PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()).getLocalURIString();
 
             resp.put("redirect", redirect);
             resp.put("success", true);
@@ -171,7 +171,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
             {
                 String[] specimenIds = form.getSpecimenIds();
                 ArrayList<Specimen> list = new ArrayList<>(specimenIds.length);
-                User user = getViewContext().getUser();
+                User user = getUser();
                 for (String specimenId : specimenIds)
                 {
                     Specimen specimen = sm.getSpecimen(sourceContainer, user, specimenId);
@@ -218,7 +218,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         study.setDescription(form.getDescription());
         study.setInvestigator(form.getInvestigator());
 
-        StudyManager.getInstance().createStudy(getViewContext().getUser(), study);
+        StudyManager.getInstance().createStudy(getUser(), study);
 
         FolderType folderType = ModuleLoader.getInstance().getFolderType(StudyFolderType.NAME);
         _dstContainer.setFolderType(folderType, ModuleLoader.getInstance().getUpgradeUser());

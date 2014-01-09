@@ -39,7 +39,6 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
@@ -115,11 +114,11 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
             redirectTypeNotFound(form.getDatasetId());
             return null;
         }
-        if (!_ds.canRead(getViewContext().getUser()))
+        if (!_ds.canRead(getUser()))
         {
             throw new UnauthorizedException("User does not have permission to view this dataset");
         }
-        if (!_ds.canWrite(getViewContext().getUser()))
+        if (!_ds.canWrite(getUser()))
         {
             throw new UnauthorizedException("User does not have permission to edit this dataset");
         }
@@ -132,7 +131,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         // than a text entry box:
         if (!study.isManualCohortAssignment() && Objects.equals(_ds.getDataSetId(), study.getParticipantCohortDataSetId()))
         {
-            final List<? extends Cohort> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), getViewContext().getUser());
+            final List<? extends Cohort> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), getUser());
             ColumnInfo cohortCol = datasetTable.getColumn(study.getParticipantCohortProperty());
             if (cohortCol != null && cohortCol.getSqlTypeInt() == Types.VARCHAR)
             {
@@ -172,17 +171,17 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         {
             if (!reshow)
             {
-                Domain domain = PropertyService.get().getDomain(getViewContext().getContainer(), _ds.getTypeURI());
+                Domain domain = PropertyService.get().getDomain(getContainer(), _ds.getTypeURI());
                 if (domain != null)
                 {
-                    Map<DomainProperty, Object> defaults = DefaultValueService.get().getDefaultValues(getViewContext().getContainer(), domain, getViewContext().getUser());
+                    Map<DomainProperty, Object> defaults = DefaultValueService.get().getDefaultValues(getContainer(), domain, getUser());
                     Map<String, Object> formDefaults = new HashMap<>();
                     for (Map.Entry<DomainProperty, Object> entry : defaults.entrySet())
                     {
                         if (entry.getValue() != null)
                         {
                             String stringValue = entry.getValue().toString();
-                            ColumnInfo temp = entry.getKey().getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", getViewContext().getUser(), getViewContext().getContainer());
+                            ColumnInfo temp = entry.getKey().getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", getUser(), getContainer());
                             formDefaults.put(updateForm.getFormFieldName(temp), stringValue);
                         }
                     }
@@ -200,7 +199,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
 
         if (referer.isEmpty())
         {
-            cancelURL = new ActionURL(StudyController.DatasetAction.class, getViewContext().getContainer());
+            cancelURL = new ActionURL(StudyController.DatasetAction.class, getContainer());
             cancelURL.addParameter(DataSetDefinition.DATASETKEY, ""+form.getDatasetId());
         }
         else
@@ -211,7 +210,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
 
         ButtonBar buttonBar = new ButtonBar();
         buttonBar.setStyle(ButtonBar.Style.separateButtons);
-        ActionButton btnSubmit = new ActionButton(new ActionURL(getClass(), getViewContext().getContainer()).addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId()), "Submit");
+        ActionButton btnSubmit = new ActionButton(new ActionURL(getClass(), getContainer()).addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId()), "Submit");
         ActionButton btnCancel = new ActionButton("Cancel", cancelURL);
         buttonBar.add(btnSubmit);
         buttonBar.add(btnCancel);
@@ -226,18 +225,18 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         try
         {
             Study study = getStudy();
-            Container container = getViewContext().getContainer();
+            Container container = getContainer();
             ActionURL rootURL;
             if (container.getFolderType().getDefaultModule() instanceof StudyModule)
             {
-                rootURL = container.getFolderType().getStartURL(container, getViewContext().getUser());
+                rootURL = container.getFolderType().getStartURL(container, getUser());
             }
             else
             {
                 rootURL = new ActionURL(StudyController.BeginAction.class, container);
             }
             root.addChild(study.getLabel(), rootURL);
-            ActionURL grid = new ActionURL(StudyController.DatasetAction.class, getViewContext().getContainer());
+            ActionURL grid = new ActionURL(StudyController.DatasetAction.class, getContainer());
             grid.addParameter(DataSetDefinition.DATASETKEY, _ds.getDataSetId());
             grid.addParameter(DataRegion.LAST_FILTER_PARAM, "true");
             root.addChild(_ds.getLabel(), grid);
@@ -267,8 +266,8 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
             redirectTypeNotFound(form.getDatasetId());
             return false;
         }
-        final Container c = getViewContext().getContainer();
-        final User user = getViewContext().getUser();
+        final Container c = getContainer();
+        final User user = getUser();
         if (!_ds.canWrite(user))
         {
             throw new UnauthorizedException("User does not have permission to edit this dataset");
@@ -309,7 +308,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                 Map<DomainProperty, Object> dataMap = new HashMap<>(requestMap.size());
                 for (DomainProperty property : properties)
                 {
-                    ColumnInfo currentColumn = property.getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", user, getViewContext().getContainer());
+                    ColumnInfo currentColumn = property.getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", user, getContainer());
                     Object value = requestMap.get(updateForm.getFormFieldName(currentColumn));
                     if (property.isMvEnabled())
                     {
@@ -357,11 +356,11 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         if (null != url)
             return url;
 
-        url = new ActionURL(StudyController.DatasetAction.class, getViewContext().getContainer());
+        url = new ActionURL(StudyController.DatasetAction.class, getContainer());
         url.addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId());
-        if (StudyManager.getInstance().showQCStates(getViewContext().getContainer()))
+        if (StudyManager.getInstance().showQCStates(getContainer()))
         {
-            QCStateSet stateSet = QCStateSet.getAllStates(getViewContext().getContainer());
+            QCStateSet stateSet = QCStateSet.getAllStates(getContainer());
             url.addParameter(BaseStudyController.SharedFormParameters.QCState, stateSet.getFormValue());
         }
         return url;
@@ -370,19 +369,19 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
     protected StudyImpl getStudy() throws ServletException
     {
         if (null == _study)
-            _study = BaseStudyController.getStudyRedirectIfNull(getViewContext().getContainer());
+            _study = BaseStudyController.getStudyRedirectIfNull(getContainer());
         return _study;
     }
 
     protected void redirectTypeNotFound(int datasetId) throws RedirectException
     {
-        throw new RedirectException(new ActionURL(StudyController.TypeNotFoundAction.class, getViewContext().getContainer()).addParameter("id", datasetId));
+        throw new RedirectException(new ActionURL(StudyController.TypeNotFoundAction.class, getContainer()).addParameter("id", datasetId));
     }
 
 
     TableInfo getQueryTable() throws ServletException
     {
-        StudyQuerySchema schema = new StudyQuerySchema(getStudy(), getViewContext().getUser(), true);
+        StudyQuerySchema schema = new StudyQuerySchema(getStudy(), getUser(), true);
         TableInfo datasetQueryTable = schema.createDatasetTableInternal(_ds);
         if (null == datasetQueryTable) // shouldn't happen...
             throw new NotFoundException("table: study." + _ds.getName());

@@ -87,7 +87,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
     {
         super.checkPermissions();
 
-        if (getViewContext().getContainer().isRoot() && !getViewContext().getUser().isSiteAdmin())
+        if (getContainer().isRoot() && !getUser().isSiteAdmin())
             throw new UnauthorizedException();
     }
 
@@ -114,7 +114,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     public ModelAndView getView(AdminController.ProjectSettingsForm form, boolean reshow, BindException errors) throws Exception
     {
-        Container c = getViewContext().getContainer();
+        Container c = getContainer();
         validateContainer(c);
 
         return new ProjectSettingsTabStrip(form, reshow, errors);
@@ -128,7 +128,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     public boolean handlePost(AdminController.ProjectSettingsForm form, BindException errors) throws Exception
     {
-        Container c = getViewContext().getContainer();
+        Container c = getContainer();
         validateContainer(c);
 
         if (form.isResourcesTab())
@@ -167,7 +167,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
         if (form.getShouldInherit() != SecurityManager.shouldNewSubfoldersInheritPermissions(c))
         {
-            SecurityManager.setNewSubfoldersInheritPermissions(c, getViewContext().getUser(), form.getShouldInherit());
+            SecurityManager.setNewSubfoldersInheritPermissions(c, getUser(), form.getShouldInherit());
         }
 
         try
@@ -213,7 +213,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         props.setFolderDisplayMode(folderDisplayMode);
         props.setHelpMenuEnabled(form.isEnableHelpMenu());
 
-        if (!saveFolderSettings(form, props, getViewContext().getUser(), errors))
+        if (!saveFolderSettings(form, props, getUser(), errors))
             return false;
 
 //        String defaultDateFormat = StringUtils.trimToNull(form.getDefaultDateFormat());
@@ -309,7 +309,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     private boolean handleMenuPost(Container c, AdminController.ProjectSettingsForm form)
     {
-        ContainerManager.setMenuEnabled(c, getViewContext().getUser(), form.isEnableMenuBar());
+        ContainerManager.setMenuEnabled(c, getUser(), form.isEnableMenuBar());
         return true;
     }
 
@@ -334,7 +334,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     public ActionURL getSuccessURL(AdminController.ProjectSettingsForm form)
     {
-        Container c = getViewContext().getContainer();
+        Container c = getContainer();
         if (form.isResourcesTab())
             return new AdminController.AdminUrlsImpl().getLookAndFeelResourcesURL(c);
         else if (form.isMenuTab())
@@ -352,7 +352,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
     {
         setHelpTopic(new HelpTopic("customizeLook"));
 
-        Container c = getViewContext().getContainer();
+        Container c = getContainer();
 
         if (c.isRoot())
             root.addChild("Admin Console", AdminController.getShowAdminURL()).addChild("Look and Feel Settings");
@@ -363,7 +363,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     private void handleLogoFile(MultipartFile file, Container c) throws ServletException, SQLException, IOException
     {
-        User user = getViewContext().getUser();
+        User user = getUser();
 
         // Set the name to something we'll recognize as a logo file
         String uploadedFileName = file.getOriginalFilename();
@@ -385,7 +385,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     private void handleIconFile(MultipartFile file, Container c) throws SQLException, IOException, ServletException
     {
-        User user = getViewContext().getUser();
+        User user = getUser();
 
         if (!file.getOriginalFilename().toLowerCase().endsWith(".ico"))
         {
@@ -402,7 +402,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     private void handleCustomStylesheetFile(MultipartFile file, Container c) throws SQLException, IOException, ServletException
     {
-        User user = getViewContext().getUser();
+        User user = getUser();
 
         AdminController.deleteExistingCustomStylesheet(c, user);
 

@@ -377,7 +377,7 @@ public class JunitController extends SpringActionController
     {
         public ModelAndView getView(TestForm form, BindException errors) throws Exception
         {
-            TestContext.setTestContext(getViewContext().getRequest(), getViewContext().getUser());
+            TestContext.setTestContext(getViewContext().getRequest(), getUser());
 
             String testCase = form.getTestCase();
             if (testCase == null)
