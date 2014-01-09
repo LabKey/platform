@@ -20,12 +20,15 @@ import org.json.JSONObject;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.ModuleRunUploadContext;
+import org.labkey.api.study.assay.TsvDataHandler;
 import org.labkey.api.view.ViewContext;
 
 import java.util.Collections;
@@ -150,5 +153,35 @@ public class ModuleRunUploadForm extends AssayRunUploadForm<ModuleAssayProvider>
     public void setOutputMaterials(Map<ExpMaterial, String> outputMaterials)
     {
         this.outputMaterials = outputMaterials;
+    }
+
+    @Override
+    public void importResultData(ExpRun run, Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, List<ExpData> insertedDatas) throws ExperimentException, ValidationException
+    {
+        insertedDatas.addAll(outputDatas.keySet());
+        List<Map<String, Object>> rawData = getRawData();
+
+        for (ExpData insertedData : insertedDatas)
+        {
+            TsvDataHandler dataHandler = new TsvDataHandler();
+            dataHandler.setAllowEmptyData(true);
+            dataHandler.importRows(insertedData, getUser(), run, getProtocol(), getProvider(), rawData);
+        }
+    }
+
+    @Override
+    public void addDataAndMaterials(Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials)
+    {
+        if (!getInputDatas().isEmpty())
+            inputDatas.putAll(getInputDatas());
+
+        if (!getOutputDatas().isEmpty())
+            outputDatas.putAll(getOutputDatas());
+
+        if (!getInputMaterials().isEmpty())
+            inputMaterials.putAll(getInputMaterials());
+
+        if (!getOutputMaterials().isEmpty())
+            outputMaterials.putAll(getOutputMaterials());
     }
 }

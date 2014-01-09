@@ -819,10 +819,4 @@ public class ModuleAssayProvider extends TsvAssayProvider
     {
         return _relatedDataTypes;
     }
-
-    @Override
-    public AssayRunCreator getRunCreator()
-    {
-        return new ModuleAssayRunCreator(this);
-    }
 }
