@@ -21,6 +21,8 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.util.XmlBeansUtil;
@@ -133,7 +135,25 @@ public class SchemaXmlReader implements SchemaReader
                     }
 
                     if (t == null)
+                        t = Type.getTypeByLabel(dataType);
+
+                    if (t == null)
                         throw new IllegalStateException("Unknown property type '" + dataType + "' for property '" + columnXml.getColumnName() + "' in dataset '" + datasetName + "'.");
+
+                    PropertyType propertyType = PropertyType.getFromURI(columnXml.getConceptURI(), dataType, null);
+                    if (propertyType == null)
+                    {
+                        JdbcType jdbcType = JdbcType.valueOfSQLTypeName(dataType);
+                        if (jdbcType == null || jdbcType == JdbcType.OTHER)
+                            throw new IllegalStateException("Unknown property type '" + dataType + "' for property '" + columnXml.getColumnName() + "' in dataset '" + datasetName + "'.");
+
+                        propertyType = PropertyType.getFromJdbcType(jdbcType);
+                    }
+
+                    if (propertyType == null)
+                        throw new IllegalStateException("Unknown property type '" + dataType + "' for property '" + columnXml.getColumnName() + "' in dataset '" + datasetName + "'.");
+
+                    assert propertyType == PropertyType.getFromURI(t.getXsdType(), null) : ("WORK IN PROGRESS: type=" + t + ", propertyType=" + propertyType + ", dataType=" + dataType + ", conceptURI=" + columnXml.getConceptURI());
 
                     // Assume nullable if not specified
                     boolean notNull = columnXml.isSetNullable() && !columnXml.getNullable();
@@ -149,7 +169,7 @@ public class SchemaXmlReader implements SchemaReader
                     if (columnXml.isSetMeasure())
                         measure = columnXml.getMeasure();
                     else
-                        measure = ColumnRenderProperties.inferIsMeasure(columnXml.getColumnName(), columnXml.getColumnTitle(), t.isNumeric(), columnXml.getIsAutoInc(), columnXml.getFk() != null, columnXml.getIsHidden());
+                        measure = ColumnRenderProperties.inferIsMeasure(columnXml.getColumnName(), columnXml.getColumnTitle(), propertyType.isNumeric(), columnXml.getIsAutoInc(), columnXml.getFk() != null, columnXml.getIsHidden());
 
                     boolean dimension;
                     if (columnXml.isSetDimension())
@@ -179,7 +199,7 @@ public class SchemaXmlReader implements SchemaReader
                         columnXml.getPropertyURI(),
                         columnXml.getColumnTitle(),
                         columnXml.getDescription(),
-                        t.getXsdType(),
+                        propertyType.getTypeUri(),
                         notNull,
                         columnXml.getConceptURI(),
                         columnXml.getFormatString(),

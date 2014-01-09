@@ -19,7 +19,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
@@ -91,7 +93,15 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, ImportCo
                 if (null == t)
                     throw new IllegalStateException(col.getName() + " in dataset " + def.getName() + " (" + def.getLabel() + ") has unknown java class " + clazz.getName());
 
-                writer.print(t.getXsdType());
+                JdbcType jdbcType = col.getJdbcType();
+                if (jdbcType == JdbcType.OTHER)
+                    jdbcType = JdbcType.valueOf(col.getJavaClass());
+
+                PropertyType propertyType = PropertyType.getFromJdbcType(jdbcType);
+
+                assert PropertyType.getFromURI(null, t.getXsdType()) == propertyType : ("WORK IN PROGRESS: type=" + t + ", propertyType=" + propertyType + ", col.clazz=" + col.getJavaClass() + ", col.jdbcType=" + col.getJdbcType());
+
+                writer.print(propertyType.getTypeUri());
                 writer.print('\t');
                 writer.print(col.isNullable() ? "optional\t" : "required\t");
                 writer.print(StringUtils.trimToEmpty(col.getFormat()) + "\t");     // TODO: Only export if non-null / != default

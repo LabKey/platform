@@ -25,11 +25,13 @@ import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListDefinition.KeyType;
 import org.labkey.api.exp.list.ListService;
@@ -352,6 +354,21 @@ public class ListImporter
             if (t == null)
                 throw new ImportException("Unknown property type \"" + dataType + "\" for property \"" + columnXml.getColumnName() + "\".");
 
+            PropertyType propertyType = PropertyType.getFromURI(columnXml.getConceptURI(), dataType, null);
+            if (propertyType == null)
+            {
+                JdbcType jdbcType = JdbcType.valueOfSQLTypeName(dataType);
+                if (jdbcType == null || jdbcType == JdbcType.OTHER)
+                    throw new IllegalStateException("Unknown property type '" + dataType + "' for property '" + columnXml.getColumnName() + "' in list '" + listName + "'.");
+
+                propertyType = PropertyType.getFromJdbcType(jdbcType);
+            }
+
+            if (propertyType == null)
+                throw new IllegalStateException("Unknown property type '" + dataType + "' for property '" + columnXml.getColumnName() + "' in list '" + listName + "'.");
+
+            assert propertyType == PropertyType.getFromURI(t.getXsdType(), null) : ("WORK IN PROGRESS: type=" + t + ", propertyType=" + propertyType + ", dataType=" + dataType + ", conceptURI=" + columnXml.getConceptURI());
+
             // Assume nullable if not specified
             boolean notNull = columnXml.isSetNullable() && !columnXml.getNullable();
 
@@ -362,8 +379,17 @@ public class ListImporter
             boolean shownInUpdateView = !columnXml.isSetShownInUpdateView() || columnXml.getShownInUpdateView();
             boolean shownInDetailsView = !columnXml.isSetShownInDetailsView() || columnXml.getShownInDetailsView();
 
-            boolean measure = columnXml.isSetMeasure() && columnXml.getMeasure();
-            boolean dimension = columnXml.isSetDimension() && columnXml.getDimension();
+            boolean measure;
+            if (columnXml.isSetMeasure())
+                measure = columnXml.getMeasure();
+            else
+                measure = ColumnRenderProperties.inferIsMeasure(columnXml.getColumnName(), columnXml.getColumnTitle(), propertyType.isNumeric(), columnXml.getIsAutoInc(), columnXml.getFk() != null, columnXml.getIsHidden());
+
+            boolean dimension;
+            if (columnXml.isSetDimension())
+                dimension = columnXml.getDimension();
+            else
+                dimension = ColumnRenderProperties.inferIsDimension(columnXml.getColumnName(), columnXml.getFk() != null, columnXml.getIsHidden());
 
             FacetingBehaviorType.Enum type = columnXml.getFacetingBehavior();
             String facetingBehaviorType = FacetingBehaviorType.AUTOMATIC.toString();
@@ -387,7 +413,7 @@ public class ListImporter
                 columnXml.getPropertyURI(),
                 columnXml.getColumnTitle(),
                 columnXml.getDescription(),
-                t.getXsdType(),
+                propertyType.getTypeUri(),
                 notNull,
                 columnXml.getConceptURI(),
                 columnXml.getFormatString(),
