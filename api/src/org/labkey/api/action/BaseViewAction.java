@@ -62,13 +62,13 @@ import java.util.*;
  */
 public abstract class BaseViewAction<FORM> extends BaseCommandController implements Controller, HasViewContext, HasPageConfig, Validator, PermissionCheckable
 {
-    ViewContext _context = null;
-    PageConfig _pageConfig = null;
-    PropertyValues _pvs;
-    boolean _useBasicAuthentication = false;
-
-    private boolean _robot = false;  // Is this request form GoogleBot or some other crawler?
+    private ViewContext _context = null;
+    private PageConfig _pageConfig = null;
+    private PropertyValues _pvs;
+    private boolean _robot = false;  // Is this request from GoogleBot or some other crawler?
     private boolean _debug = false;
+
+    protected boolean _useBasicAuthentication = false;
     protected boolean _print = false;
 
     // shared construction code
@@ -216,6 +216,18 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     public void setPageConfig(PageConfig page)
     {
         _pageConfig = page;
+    }
+
+
+    public Container getContainer()
+    {
+        return getViewContext().getContainer();
+    }
+
+
+    public User getUser()
+    {
+        return getViewContext().getUser();
     }
 
 

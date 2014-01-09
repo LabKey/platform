@@ -138,8 +138,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     public ModelAndView getDefaultImportView(FORM form, BindException errors) throws Exception
     {
         ActionURL url = getViewContext().getActionURL();
-        User user = getViewContext().getUser();
-        Container c = getViewContext().getContainer();
+        User user = getUser();
+        Container c = getContainer();
 
         validatePermission(user, errors);
         ImportViewBean bean = new ImportViewBean();
@@ -215,7 +215,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     {
         initRequest(form);
 
-        User user = getViewContext().getUser();
+        User user = getUser();
         validatePermission(user, errors);
 
         if (errors.hasErrors())
@@ -363,8 +363,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         {
             try (DbScope.Transaction transction = _target.getSchema().getScope().ensureTransaction())
             {
-//                List res = _updateService.insertRows(getViewContext().getUser(), getViewContext().getContainer(), dl.load(), errors, new HashMap<String, Object>());
-                int count = _updateService.importRows(getViewContext().getUser(), getViewContext().getContainer(), dl, errors, new HashMap<String, Object>());
+//                List res = _updateService.insertRows(getUser(), getContainer(), dl.load(), errors, new HashMap<String, Object>());
+                int count = _updateService.importRows(getUser(), getContainer(), dl, errors, new HashMap<String, Object>());
                 if (errors.hasErrors())
                     return 0;
                 transction.commit();

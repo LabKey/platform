@@ -160,7 +160,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         rgn.setTable(baseTable);
         for (DomainProperty dp : properties)
         {
-            ColumnInfo info = dp.getPropertyDescriptor().createColumnInfo(baseTable, "objecturi", getViewContext().getUser(), getViewContext().getContainer());
+            ColumnInfo info = dp.getPropertyDescriptor().createColumnInfo(baseTable, "objecturi", getUser(), getContainer());
             rgn.addDisplayColumn(new DefaultableDataColumn(dp, info));
         }
         InsertView view = new InsertView(rgn, errors);
@@ -215,8 +215,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         else
             headerHtml.append("Defaults are currently defined for this table in this folder.");
         headerHtml.append("</span>");
-        if (!domain.getContainer().equals(getViewContext().getContainer()) &&
-                domain.getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class))
+        if (!domain.getContainer().equals(getContainer()) && domain.getContainer().hasPermission(getUser(), AdminPermission.class))
         {
             ActionURL url = new ActionURL(this.getClass(), domain.getContainer());
             url.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());

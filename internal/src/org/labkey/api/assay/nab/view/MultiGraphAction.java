@@ -42,7 +42,7 @@ public class MultiGraphAction<FormType extends GraphSelectedForm> extends Simple
         int[] ids = form.getId();
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(form.getProtocolId());
         DilutionAssayProvider provider = (DilutionAssayProvider)AssayService.get().getProvider(protocol);
-        Map<DilutionSummary, DilutionAssayRun> summaries = provider.getDataHandler().getDilutionSummaries(getViewContext().getUser(), form.getFitTypeEnum(), ids);
+        Map<DilutionSummary, DilutionAssayRun> summaries = provider.getDataHandler().getDilutionSummaries(getUser(), form.getFitTypeEnum(), ids);
         Set<Integer> cutoffSet = new HashSet<>();
         for (DilutionSummary summary : summaries.keySet())
         {
@@ -58,7 +58,7 @@ public class MultiGraphAction<FormType extends GraphSelectedForm> extends Simple
         NabGraph.Config config = getGraphConfig(form);
 
         config.setCutoffs(cutoffs);
-        NabGraph.renderChartPNG(getViewContext().getContainer(), getViewContext().getResponse(), summaries, config);
+        NabGraph.renderChartPNG(getContainer(), getViewContext().getResponse(), summaries, config);
         return null;
     }
 

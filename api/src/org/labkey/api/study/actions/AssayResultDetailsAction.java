@@ -62,7 +62,7 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
             throw new NotFoundException("Assay ExpData not found for dataRowId: " + _dataRowId);
         }
 
-        if (!_data.getContainer().equals(getViewContext().getContainer()))
+        if (!_data.getContainer().equals(getContainer()))
         {
             throw new RedirectException(getViewContext().cloneActionURL().setContainer(_data.getContainer()));
         }

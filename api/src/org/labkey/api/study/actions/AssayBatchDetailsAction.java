@@ -69,7 +69,7 @@ public class AssayBatchDetailsAction extends BaseAssayAction<AssayBatchDetailsAc
             throw new NotFoundException("Assay batch not found for runId: " + form.getBatchId());
         }
 
-        if (!_exp.getContainer().equals(getViewContext().getContainer()))
+        if (!_exp.getContainer().equals(getContainer()))
         {
             throw new RedirectException(getViewContext().cloneActionURL().setContainer(_exp.getContainer()));
         }

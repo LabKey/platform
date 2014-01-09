@@ -241,7 +241,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             attemptCopy(publishConfirmForm, errors, context, provider, selectedObjects, allObjects, targetStudy, postedTargetStudies, postedVisits, postedDates, postedPtids);
         }
 
-        AssayProtocolSchema schema = provider.createProtocolSchema(context.getUser(), getContainer(), _protocol, targetStudy);
+        AssayProtocolSchema schema = provider.createProtocolSchema(getUser(), getContainer(), _protocol, targetStudy);
 
         boolean mismatched = AssayPublishService.get().hasMismatchedInfo(allObjects, schema);
 
@@ -349,7 +349,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
                     rowLevelTargetStudy = resolvedStudies.get(targetStudies[index]);
                 else
                 {
-                    Set<Study> studies = StudyService.get().findStudy(targetStudies[index], context.getUser());
+                    Set<Study> studies = StudyService.get().findStudy(targetStudies[index], getUser());
                     if (studies != null && !studies.isEmpty())
                     {
                         rowLevelTargetStudy = studies.iterator().next().getContainer();
@@ -445,7 +445,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         if (errors.getErrorCount() == 0 && !publishConfirmForm.isValidate())
         {
             List<String> publishErrors = new ArrayList<>();
-            ActionURL successURL  = provider.copyToStudy(context.getUser(), context.getContainer(), _protocol, targetStudy, publishData, publishErrors);
+            ActionURL successURL  = provider.copyToStudy(getUser(), getContainer(), _protocol, targetStudy, publishData, publishErrors);
             if (publishErrors.isEmpty())
             {
                 DataRegionSelection.clearAll(getViewContext(), publishConfirmForm.getDataRegionSelectionKey());

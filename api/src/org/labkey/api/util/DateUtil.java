@@ -823,7 +823,7 @@ validNum:       {
     }
 
 
-    public static long parseDate(String s, MonthDayOption md)
+    private static long parseDate(String s, MonthDayOption md)
     {
         try
         {

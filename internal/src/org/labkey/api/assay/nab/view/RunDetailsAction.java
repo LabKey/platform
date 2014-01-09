@@ -21,14 +21,11 @@ import org.labkey.api.assay.dilution.DilutionAssayRun;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionDataHandler;
 import org.labkey.api.assay.nab.RenderAssayBean;
-import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.security.ContextualRoles;
 import org.labkey.api.security.LimitedUser;
-import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
@@ -37,7 +34,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.assay.AbstractPlateBasedAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.study.assay.RunDataSetContextualRoles;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -125,15 +121,5 @@ public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends
             }
         }
         return null;
-    }
-
-    protected User getUser()
-    {
-        return getViewContext().getUser();
-    }
-
-    protected Container getContainer()
-    {
-        return getViewContext().getContainer();
     }
 }

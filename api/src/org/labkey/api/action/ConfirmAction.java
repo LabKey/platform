@@ -35,8 +35,6 @@ import org.labkey.api.util.URLHelper;
  */
 public abstract class ConfirmAction<FORM> extends BaseViewAction
 {
-    boolean includeHeader = true;
-
     protected ConfirmAction()
     {
     }
@@ -171,16 +169,5 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction
     {
         getPageConfig().setTemplate(PageConfig.Template.Dialog);
         return new SimpleErrorView(errors);
-    }
-
-    // return false for no header (e.g. for a dialog)
-    public boolean getIncludeHeader()
-    {
-        return includeHeader;
-    }
-
-    public void setIncludeHeader(boolean h)
-    {
-        includeHeader = h;
     }
 }

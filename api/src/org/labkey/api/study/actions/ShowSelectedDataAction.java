@@ -62,9 +62,9 @@ public class ShowSelectedDataAction extends RedirectAction<ShowSelectedDataActio
             selectedIds[i++] = Integer.parseInt(id);
         ContainerFilter containerFilter = null;
         if (form.getContainerFilterName() != null)
-            containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getViewContext().getUser());
+            containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getUser());
 
-        ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getViewContext().getContainer(), form.getProtocol(), containerFilter, selectedIds);
+        ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getContainer(), form.getProtocol(), containerFilter, selectedIds);
         String maxRowsKey = AssayProtocolSchema.DATA_TABLE_NAME + ".maxRows";
         applyLastFilterParameter(url, maxRowsKey);
         String sortKey = AssayProtocolSchema.DATA_TABLE_NAME + ".sort";

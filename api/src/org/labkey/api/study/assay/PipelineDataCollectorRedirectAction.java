@@ -50,7 +50,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
 {
     public ModelAndView getView(UploadRedirectForm form, BindException errors) throws Exception
     {
-        Container container = getViewContext().getContainer();
+        Container container = getContainer();
         // Can't trust the form's getPath() because it translates the empty string into null, and we
         // need to know if the parameter was present
         String path = getViewContext().getRequest().getParameter("path");
@@ -133,7 +133,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
     {
         for (File file : files)
         {
-            ExpData data = ExperimentService.get().getExpDataByURL(file, getViewContext().getContainer());
+            ExpData data = ExperimentService.get().getExpDataByURL(file, getContainer());
             if (data != null && data.getRun() != null)
             {
                 errors.addError(new LabkeyError("The file " + file.getAbsolutePath() + " has already been imported"));

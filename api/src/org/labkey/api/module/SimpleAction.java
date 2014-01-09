@@ -119,8 +119,8 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
     @Override
     public void checkPermissions() throws TermsOfUseException, UnauthorizedException
     {
-        User user = getViewContext().getUser();
-        Container container = getViewContext().getContainer();
+        User user = getUser();
+        Container container = getContainer();
         if (null == container)
             throw new NotFoundException("The folder path '" + getViewContext().getActionURL().getExtraPath() + "' does not match an existing folder on the server!");
 

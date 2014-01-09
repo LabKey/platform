@@ -60,9 +60,9 @@ public class ShowSelectedRunsAction extends RedirectAction<ShowSelectedRunsActio
             selectedIds[i++] = Integer.parseInt(id);
         ContainerFilter containerFilter = null;
         if (form.getContainerFilterName() != null)
-            containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getViewContext().getUser());
+            containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getUser());
 
-        ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getViewContext().getContainer(), form.getProtocol(), containerFilter, selectedIds);
+        ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), form.getProtocol(), containerFilter, selectedIds);
         if (form.getContainerFilterName() != null)
             url.addParameter("containerFilterName", form.getContainerFilterName());
         return url;

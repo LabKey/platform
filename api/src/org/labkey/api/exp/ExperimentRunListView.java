@@ -156,7 +156,7 @@ public class ExperimentRunListView extends QueryView
             MenuButton addToExperimentButton = new MenuButton("Add to run group");
             addToExperimentButton.setRequiresSelection(true);
 
-            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateRunGroupURL(getViewContext().getContainer(), getReturnURL(), true);
+            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateRunGroupURL(getContainer(), getReturnURL(), true);
             String javascript = view.getDataRegion().getJavascriptFormReference(false) + ".method = \"POST\";\n " +
                     view.getDataRegion().getJavascriptFormReference(false) + ".action = " + PageFlowUtil.jsString(url + "&noPost=true") + ";\n " +
                     view.getDataRegion().getJavascriptFormReference(false) + ".submit();";

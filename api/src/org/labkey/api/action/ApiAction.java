@@ -47,7 +47,7 @@ import java.net.SocketTimeoutException;
  */
 public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 {
-    protected ApiResponseWriter.Format _reqFormat = null;
+    private ApiResponseWriter.Format _reqFormat = null;
     private ApiResponseWriter.Format _respFormat = ApiResponseWriter.Format.JSON;
     private String _contentTypeOverride = null;
     private double _requestedApiVersion = -1;

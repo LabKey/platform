@@ -739,7 +739,7 @@ public class AuthenticationManager
                 throw new ServletException(file.getOriginalFilename() + " does not appear to be an image file");
 
             AttachmentFile aFile = new SpringAttachmentFile(file, prefix + getProviderName());
-            AttachmentService.get().addAttachments(ContainerManager.RootContainer.get(), Arrays.asList(aFile), getViewContext().getUser());
+            AttachmentService.get().addAttachments(ContainerManager.RootContainer.get(), Arrays.asList(aFile), getUser());
 
             return true;
         }
@@ -753,7 +753,7 @@ public class AuthenticationManager
                 return false;
 
             for (String logoName : deletedLogos)
-                AttachmentService.get().deleteAttachment(ContainerManager.RootContainer.get(), logoName, getViewContext().getUser());
+                AttachmentService.get().deleteAttachment(ContainerManager.RootContainer.get(), logoName, getUser());
 
             return true;
         }

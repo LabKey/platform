@@ -34,7 +34,7 @@ import org.springframework.web.servlet.ModelAndView;
  */
 public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implements NavTrailAction
 {
-    boolean _reshow = false;
+    private boolean _reshow = false;
 
     public FormViewAction()
     {

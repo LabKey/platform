@@ -53,11 +53,6 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
         return PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), protocol);
     }
 
-    protected Container getContainer()
-    {
-        return getViewContext().getContainer();
-    }
-
     protected DataRegion createDataRegionForInsert(TableInfo baseTable, String lsidCol, DomainProperty[] domainProperties, Map<String, String> columnNameToPropertyName)
     {
         DataRegion rgn = new DataRegion();
@@ -66,7 +61,7 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
         {
             if (dp.isShownInInsertView())
             {
-                ColumnInfo info = dp.getPropertyDescriptor().createColumnInfo(baseTable, lsidCol, getViewContext().getUser(), getContainer());
+                ColumnInfo info = dp.getPropertyDescriptor().createColumnInfo(baseTable, lsidCol, getUser(), getContainer());
                 rgn.addColumn(info);
                 if (columnNameToPropertyName != null)
                     columnNameToPropertyName.put(info.getName(), dp.getName());

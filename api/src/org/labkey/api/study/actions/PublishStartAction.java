@@ -142,7 +142,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             {
                 return _returnURL;
             }
-            return new HString(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getViewContext().getContainer(), getProtocol()).addParameter("clearDataRegionSelectionKey", getDataRegionSelectionKey()).toString());
+            return new HString(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), getProtocol()).addParameter("clearDataRegionSelectionKey", getDataRegionSelectionKey()).toString());
         }
 
         public List<Integer> getIds()
@@ -199,11 +199,11 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             List<Integer> runIds = getCheckboxIds();
             DataRegionSelection.clearAll(getViewContext(), null);
             // Get the assay results table
-            UserSchema schema = provider.createProtocolSchema(getViewContext().getUser(), getViewContext().getContainer(), _protocol, null);
+            UserSchema schema = provider.createProtocolSchema(getUser(), getContainer(), _protocol, null);
             TableInfo table = schema.getTable(AssayProtocolSchema.DATA_TABLE_NAME);
             if (table.supportsContainerFilter() && publishForm.getContainerFilterName() != null)
             {
-                ((ContainerFilterable)table).setContainerFilter(ContainerFilter.getContainerFilterByName(publishForm.getContainerFilterName(), getViewContext().getUser()));
+                ((ContainerFilterable)table).setContainerFilter(ContainerFilter.getContainerFilterByName(publishForm.getContainerFilterName(), getUser()));
             }
             final ColumnInfo dataRowIdColumn = QueryService.get().getColumns(table, Collections.singleton(tableMetadata.getResultRowIdFieldKey())).get(tableMetadata.getResultRowIdFieldKey());
             assert dataRowIdColumn  != null : "Could not find dataRowId column in assay results table";
@@ -265,7 +265,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
                     nullsFound = true;
                 else
                 {
-                    if (!studyContainer.hasPermission(getViewContext().getUser(), InsertPermission.class))
+                    if (!studyContainer.hasPermission(getUser(), InsertPermission.class))
                         insufficientPermissions = true;
                     containers.add(studyContainer);
                 }

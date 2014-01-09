@@ -19,11 +19,9 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionAssayRun;
 import org.labkey.api.assay.dilution.DilutionSummary;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayHeaderView;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
@@ -102,15 +100,5 @@ public abstract class GraphSelectedAction<FormType extends GraphSelectedForm> ex
         ActionURL runListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol);
         return root.addChild("Assay List", assayListURL).addChild(_protocol.getName() +
                 " Runs", runListURL).addChild("Graph Selected Specimens");
-    }
-
-    protected User getUser()
-    {
-        return getViewContext().getUser();
-    }
-
-    protected Container getContainer()
-    {
-        return getViewContext().getContainer();
     }
 }

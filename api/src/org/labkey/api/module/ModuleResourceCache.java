@@ -67,7 +67,7 @@ public abstract class ModuleResourceCache<T>
     /**
      * If needed, return a FileSystemDirectoryListener that implements resource-specific change handling. The standard
      * listener clears the resources and resource names from the cache (as appropropriate), if isResourceFile() returns
-     * true. It will then invoke the corresponding method of the chained listener.     *
+     * true. It will then invoke the corresponding method of the chained listener.
      *
      * @param module Module for which to create the listener
      * @return A directory listener with implementation specific handling. Return null for no special behavior.

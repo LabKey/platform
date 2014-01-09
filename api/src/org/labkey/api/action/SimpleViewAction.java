@@ -16,7 +16,6 @@
 
 package org.labkey.api.action;
 
-import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.view.WebPartView;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;

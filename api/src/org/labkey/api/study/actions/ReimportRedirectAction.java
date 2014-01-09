@@ -50,7 +50,7 @@ public class ReimportRedirectAction extends RedirectAction<ProtocolIdForm>
         {
             throw new NotFoundException("Unable to reimport a run for assays of type " + provider.getName());
         }
-        ActionURL url = provider.getImportURL(getViewContext().getContainer(), form.getProtocol());
+        ActionURL url = provider.getImportURL(getContainer(), form.getProtocol());
         String runIdString = selectedRunIds.iterator().next();
         try
         {

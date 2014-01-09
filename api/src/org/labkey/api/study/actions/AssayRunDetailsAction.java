@@ -69,7 +69,7 @@ public class AssayRunDetailsAction extends BaseAssayAction<AssayRunDetailsAction
             throw new NotFoundException("Assay run not found for runId: " + form.getRunId());
         }
 
-        if (!_run.getContainer().equals(getViewContext().getContainer()))
+        if (!_run.getContainer().equals(getContainer()))
         {
             throw new RedirectException(getViewContext().cloneActionURL().setContainer(_run.getContainer()));
         }

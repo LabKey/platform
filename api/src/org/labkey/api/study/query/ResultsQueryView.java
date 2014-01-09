@@ -133,7 +133,7 @@ public class ResultsQueryView extends AssayBaseQueryView
 
                 bar.add(publishButton);
 
-                bar.addAll(AssayService.get().getImportButtons(_protocol, getViewContext().getUser(), getViewContext().getContainer(), false));
+                bar.addAll(AssayService.get().getImportButtons(_protocol, getUser(), getContainer(), false));
 
                 FieldKey runFK = _provider.getTableMetadata(_protocol).getRunRowIdFieldKeyFromResults();
 
@@ -149,7 +149,7 @@ public class ResultsQueryView extends AssayBaseQueryView
                         ExpRun run = ExperimentService.get().getExpRun(Integer.parseInt(runId));
                         if (run != null && run.getReplacedByRun() == null)
                         {
-                            ActionURL reRunURL = _provider.getImportURL(getViewContext().getContainer(), _protocol);
+                            ActionURL reRunURL = _provider.getImportURL(getContainer(), _protocol);
                             reRunURL.addParameter("reRunId", runId);
                             bar.add(new ActionButton("Re-import run", reRunURL));
                         }

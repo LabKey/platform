@@ -93,7 +93,7 @@ public class FolderSettingsCache
         @Override
         public void containerCreated(Container c, User user)
         {
-            // Don't care... nothing should be cached for a brand new container, and it must be a leaf not (doesn't
+            // Don't care... nothing should be cached for a brand new container, and it must be a leaf node (doesn't
             // affect other folders' settings.
         }
 

@@ -1584,7 +1584,7 @@ public class QueryView extends WebPartView<Object>
 
     public void addManageViewItems(MenuButton button, Map<String, String> params)
     {
-        ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer());
+        ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer());
         for (Map.Entry<String, String> entry : params.entrySet())
             url.addParameter(entry.getKey(), entry.getValue());
 
