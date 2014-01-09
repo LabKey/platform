@@ -179,12 +179,11 @@ public class DemoController extends SpringActionController
         {
             // Pass in timestamp for optimistic concurrency
             Object ts = null; // ((Map)form.getOldValues()).get("_ts");
-            ViewContext context = getViewContext();
 
             try
             {
                 Person person = form.getBean();
-                DemoManager.getInstance().updatePerson(context.getContainer(), context.getUser(), person, ts);
+                DemoManager.getInstance().updatePerson(getContainer(), getUser(), person, ts);
                 return true;
             }
             catch (Table.OptimisticConflictException x)

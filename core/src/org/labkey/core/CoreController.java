@@ -17,7 +17,6 @@
 package org.labkey.core;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
@@ -103,9 +102,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.WebTheme;
-import org.labkey.api.view.WebThemeManager;
-import org.labkey.api.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.writer.ZipUtil;
@@ -128,17 +124,14 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * User: jeckels
@@ -148,8 +141,8 @@ public class CoreController extends SpringActionController
 {
     private static final Map<Container, Content> _themeStylesheetCache = new ConcurrentHashMap<>();
     private static final Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<>();
-    private static final Map<Container, Content> _combinedStylesheetCache = new ConcurrentHashMap<>();
-    private static final Map<Content, Content> _setCombinedStylesheet = new ConcurrentHashMap<>();
+//    private static final Map<Container, Content> _combinedStylesheetCache = new ConcurrentHashMap<>();
+//    private static final Map<Content, Content> _setCombinedStylesheet = new ConcurrentHashMap<>();
     private static final Logger _log = Logger.getLogger(CoreController.class);
 
     private static ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
@@ -168,11 +161,13 @@ public class CoreController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getThemeStylesheetURL()
         {
             return getRevisionURL(ThemeStylesheetAction.class, ContainerManager.getRoot());
         }
 
+        @Override
         public ActionURL getThemeStylesheetURL(Container c)
         {
             Container project = c.getProject();
@@ -183,11 +178,13 @@ public class CoreController extends SpringActionController
             return null;
         }
 
+        @Override
         public ActionURL getCustomStylesheetURL()
         {
             return getCustomStylesheetURL(ContainerManager.getRoot());
         }
 
+        @Override
         public ActionURL getCustomStylesheetURL(Container c)
         {
             Container settingsContainer = LookAndFeelProperties.getSettingsContainer(c);
@@ -204,12 +201,6 @@ public class CoreController extends SpringActionController
             if (css instanceof NoContent)
                 return null;
             return getRevisionURL(CustomStylesheetAction.class, settingsContainer);
-        }
-
-        public ActionURL getCombinedStylesheetURL(Container c)
-        {
-            Container s = LookAndFeelProperties.getSettingsContainer(c);
-            return getRevisionURL(CombinedStylesheetAction.class, s);
         }
 
         @Override
@@ -567,6 +558,9 @@ public class CoreController extends SpringActionController
     }
 
 
+/*
+    TODO: Delete... no longer used
+
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
@@ -646,7 +640,6 @@ public class CoreController extends SpringActionController
         }
     }
 
-
     void _appendCss(StringWriter out, WebdavResource r)
     {
         if (null == r || !r.isFile())
@@ -665,7 +658,7 @@ public class CoreController extends SpringActionController
         // relative URLs aren't really going to work (/labkey/core/container/), so path=null
         _appendCss(out, null, content.content);
     }
-    
+
 
     void _appendCss(StringWriter out, Path p, String s)
     {
@@ -675,7 +668,8 @@ public class CoreController extends SpringActionController
         out.write(compiled);
         out.write("\n");
     }
-    
+*/
+
 
     private static String compileCSS(String s)
     {
@@ -714,6 +708,8 @@ public class CoreController extends SpringActionController
         return Compress.compressGzip(c.trim());
     }
 
+/*
+    TODO: Delete... no longer used
 
     static AtomicReference<Content> _combinedJavascript = new AtomicReference<>();
 
@@ -741,7 +737,7 @@ public class CoreController extends SpringActionController
                     assert(script != null && script.isFile()) : "Failed to find: " + path;
                     if (script == null || !script.isFile())
                         continue;
-                    concat.add("/* ---- " + path + " ---- */");
+                    concat.add("/* ---- " + path + " ---- *" + "/");
                     List<String> content = PageFlowUtil.getStreamContentsAsList(script.getInputStream(getUser()));
                     concat.addAll(content);
                 }
@@ -771,7 +767,7 @@ public class CoreController extends SpringActionController
             return "text/javascript";
         }
     }
-
+*/
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
