@@ -544,6 +544,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             legendItems = legendGroup.selectAll('.legend-item').data(legendData);
             legendItems.exit().remove();
             legendItems.enter().append('g').attr('class', 'legend-item').call(renderLegendItem, plot);
+        } else {
+            // Remove the legend if it was there previously. Issue 19351.
+            this.canvas.select('.legend').remove();
         }
     };
 
