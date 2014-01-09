@@ -15,6 +15,11 @@
  * limitations under the License.
  */
 %>
+
+
+<%-- Note that after any changes to this page you should run the StudyMergeParticipantsTest --%>
+
+
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
@@ -123,7 +128,7 @@
                 enforceMaxLength: true,
                 disabled: !allowAliasCreation,
                 listeners : {
-                    blur : function() {resetPreview(true);}
+                    focus : function() {resetPreview(true);}
                 }
             });
 
@@ -255,6 +260,7 @@
 
         var previewMerge = function(oldId, newId, createAlias, aliasSource) {
             var filters = [ LABKEY.Filter.create(jsSubjectNounColumnName, oldId + ';' + newId, LABKEY.Filter.Types.IN) ];
+            var hasOldValues = false;
             this.datasetsToProcess = this.numDatasets;
 
             // wipe away our status
@@ -276,22 +282,31 @@
                     success: function(data) {
                         var table = this.tables[data.queryName];
                         gatherIds(table, data.rows, oldId, newId);
-                        //
-                        // if table has both new and old ids, then make an update clause
-                        // and check to see if we have any conflict errors
-                        //
-                        if (table.name != aliasDatasetName && table.oldIds.length > 0 && table.newIds.length > 0)
+
+                        // if table has old ids, we know there's work that could be done and allow a merge
+                        if (table.name != aliasDatasetName && table.oldIds.length > 0)
                         {
-                            LABKEY.Query.saveRows({
-                                commands : [buildUpdateCommand(table, newId)],
-                                success : function(data) {
-                                   checkMoveToSpecimenDetail(table, false, oldId, newId, filters);
-                                },
-                                failure : function(errorInfo, response) {
-                                    checkMoveToSpecimenDetail(table, true, oldId, newId, filters);
-                                },
-                                validateOnly : true
-                            });
+                            hasOldValues = true;
+                             //
+                            // if table has both new and old ids, then make an update clause
+                            // and check to see if we have any conflict errors
+                            //
+                            if (table.newIds.length > 0)
+                            {
+                                LABKEY.Query.saveRows({
+                                    commands : [buildUpdateCommand(table, newId)],
+                                    success : function(data) {
+                                       checkMoveToSpecimenDetail(table, false, oldId, newId, filters, hasOldValues);
+                                    },
+                                    failure : function(errorInfo, response) {
+                                        checkMoveToSpecimenDetail(table, true, oldId, newId, filters, hasOldValues);
+                                    },
+                                    validateOnly : true
+                                });
+                            }
+                            else {
+                                    checkMoveToSpecimenDetail(table, false, oldId, newId, filters, hasOldValues);
+                            }
                         }
                         else if (table.name == aliasDatasetName) {
                             table.hasConflict = false;
@@ -301,15 +316,19 @@
                             if (createAlias) {
                                 LABKEY.Query.saveRows({
                                     commands : [buildInsertCommand(oldId, newId, aliasSource)],
-                                    success : function() {},
-                                    failure : function(response) {updateMergeResults("Error creating alias. " + response.exception, true); },
+                                    success : function() {checkMoveToSpecimenDetail(table, table.hasConflict, oldId, newId, filters, hasOldValues);},
+                                    failure : function(response) {updateMergeResults("Error creating alias. " + response.exception, true);
+                                        checkMoveToSpecimenDetail(table, table.hasConflict, oldId, newId, filters, hasOldValues);
+                                    },
                                     validateOnly : true
                                 })
                             }
-                            checkMoveToSpecimenDetail(table, table.hasConflict, oldId, newId, filters);
+                            else {
+                                checkMoveToSpecimenDetail(table, table.hasConflict, oldId, newId, filters, hasOldValues);
+                            }
                         }
                         else {
-                            checkMoveToSpecimenDetail(table, false, oldId, newId, filters);
+                            checkMoveToSpecimenDetail(table, false, oldId, newId, filters, hasOldValues);
                         }
 
                         // update progress
@@ -319,14 +338,14 @@
             }
         };
 
-        var checkMoveToSpecimenDetail = function(table, hasConflict, oldId, newId, filters) {
+        var checkMoveToSpecimenDetail = function(table, hasConflict, oldId, newId, filters, hasOldValues) {
             table.hasConflict = hasConflict;
             this.datasetsToProcess--;
             if (this.datasetsToProcess == 0)
-                checkSpecimenDetail(oldId, newId, filters);
+                checkSpecimenDetail(oldId, newId, filters, hasOldValues);
         };
 
-        var checkSpecimenDetail = function(oldId, newId, filters) {
+        var checkSpecimenDetail = function(oldId, newId, filters, hasOldValues) {
             var specimenDetail = this.tables['SpecimenDetail'];
             // now check the specimen details table
             LABKEY.Query.selectRows( {
@@ -351,6 +370,7 @@
                             success : function(data) {
                                 specimenDetail.hasConflict = false;
                                 renderPreviewTable(oldId, newId);
+                                enableMerge(hasOldValues);
                             },
                             failure : function(errorInfo, response) {
                                 specimenDetail.hasConflict = true;
@@ -361,18 +381,21 @@
                                     specimenDetail.isEditable = false;
                                 }
                                 renderPreviewTable(oldId, newId);
+                                enableMerge(hasOldValues);
                             }
                         });
                     }
                     else {
                         specimenDetail.hasConflict = false;
                         renderPreviewTable(oldId, newId);
+                        enableMerge(hasOldValues);
                     }
                 },
               failure : function(response) {
                   // it's okay if no specimen details exist
                   specimenDetail.hasConflict = false;
                   renderPreviewTable(oldId, newId);
+                  enableMerge(hasOldValues);
               }
             });
         };
@@ -490,7 +513,6 @@
                 success : function(data) {
                     oldIdField.setValue("");
                     newIdField.setValue("");
-                    createAliasCB.setValue(false);
                     aliasSourceField.setValue("");
                     resetPreview(true);
                     updateMergeResults("Successfully merged " + jsSubjectNounColumnName + " from " + oldId + " to " + newId, false);
@@ -501,8 +523,11 @@
             });
         };
 
-        var enableMerge = function() {
-            mergeButton.setDisabled(false);
+        var enableMerge = function(hasOldValues) {
+            if (hasOldValues && !globalError) {
+                mergeButton.setDisabled(false);
+                updateMergeResults("Preview Complete", false);
+            }
         };
 
         // build links to filtered datasets
@@ -548,8 +573,6 @@
             html.push("<td class='labkey-column-header'>&nbsp;</td></tr>");
 
             var row = 0;
-            var hasOldValues = false;
-            var stillChecking = false;
 
             for (var tableName in this.tables) {
                 var table = this.tables[tableName];
@@ -559,14 +582,13 @@
                 var bothIdURL = buildDataURL(table, oldId, newId);
                 var oldIdURL = buildDataURL(table, oldId, null);
                 var newIdURL = buildDataURL(table, null, newId);
-                html.push("<td>" + bothIdURL + tableName + "</td>");
+                html.push("<td>" + bothIdURL + table.htmlName + "</td>");
 
                 if (null == table.hasConflict) {
                     html.push("<td>Loading...</td>");
                     html.push("<td>Loading...</td>");
                     html.push("<td>Checking...</td>");
                     html.push("<td>&nbsp;</td></tr>");
-                    stillChecking = true;
                 }
                 else
                 {
@@ -604,15 +626,10 @@
                         html.push("<td>&nbsp;</td></tr>");
                     }
                 }
-                // if any editable dataset has any rows with the old value then there is work to do
-                if ((table.oldIds.length > 0) && (false != table.isEditable))
-                    hasOldValues = true;
                 row++;
             }
             html.push("</table>");
             document.getElementById('previewPanel-div').innerHTML = html.join("");
-            if (hasOldValues && !stillChecking && !globalError)
-                enableMerge();
             return 0;
         };
 
