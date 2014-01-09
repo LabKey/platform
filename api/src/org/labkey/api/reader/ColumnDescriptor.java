@@ -18,6 +18,7 @@ package org.labkey.api.reader;
 import org.apache.commons.beanutils.Converter;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Type;
 
 import java.lang.reflect.Method;
@@ -56,6 +57,7 @@ public class ColumnDescriptor
     public Class clazz = String.class;
     public String name = null;
     public String propertyURI = null;
+    public String rangeURI = null;
     public boolean load = true;
     public boolean isProperty = false; //Load as a class property
     public Object missingValues = null;
@@ -77,14 +79,24 @@ public class ColumnDescriptor
         return name + ":" + clazz.getSimpleName();
     }
 
+    /** Return the PropertyType URI for this column. */
     public String getRangeURI()
     {
+        if (rangeURI != null)
+            return rangeURI;
+
         Type type = Type.getTypeByClass(clazz);
 
         if (null == type)
             throw new IllegalArgumentException("Unknown class for column: " + clazz);
 
-        return type.getXsdType();
+        PropertyType propertyType = PropertyType.getFromClass(clazz);
+        if (null == propertyType)
+            throw new IllegalArgumentException("Unknown class for column: " + clazz);
+
+        assert propertyType == PropertyType.getFromURI(null, type.getXsdType()) : ("WORK IN PROGRESS: type=" + type + ", propertyType=" + propertyType + ", clazz=" + clazz);
+
+        return propertyType.getTypeUri();
     }
 
     public boolean isMvEnabled()

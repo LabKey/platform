@@ -443,6 +443,11 @@ public enum PropertyType
         return xarName;
     }
 
+    public boolean isNumeric()
+    {
+        return getJdbcType().isNumeric();
+    }
+
     public static PropertyType getFromURI(String concept, String datatype)
     {
         return getFromURI(concept, datatype, RESOURCE);

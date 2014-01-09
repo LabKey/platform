@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.DateUtil;
 
 import java.math.BigDecimal;
@@ -211,6 +212,7 @@ public enum JdbcType
 
     public final int sqlType;
     public final Class cls;
+    // TODO: Move 'xtype' field to higher-level, say PropertyType instead
     public final String xtype;
     public final String json;
     private final org.apache.commons.beanutils.Converter converter;
@@ -306,6 +308,23 @@ public enum JdbcType
         if (java.util.Date.class.isAssignableFrom(cls))
             return JdbcType.TIMESTAMP;
         return null;
+    }
+
+
+    public static JdbcType valueOfSQLTypeName(@NotNull String sqlTypeName)
+    {
+        try
+        {
+            return valueOf(sqlTypeName.toUpperCase());
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new RuntimeException("WORK IN PROGRESS: Failed to handle sqlTypeName: " + sqlTypeName);
+        }
+
+        //SqlDialect d = CoreSchema.getInstance().getSqlDialect();
+        //int type = d.sqlTypeIntFromSqlTypeName(sqlTypeName);
+        //return d.getJdbcType(type, sqlTypeName);
     }
 
 

@@ -28,6 +28,7 @@ import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -531,7 +532,10 @@ public class DomainUtil
         else
         {
             Type type = Type.getTypeByXsdType(from.getRangeURI());
-            to.setMeasure(ColumnRenderProperties.inferIsMeasure(from.getName(), from.getLabel(), type != null && type.isNumeric(),
+            PropertyType propertyType = PropertyType.getFromURI(from.getConceptURI(), from.getRangeURI());
+            JdbcType jdbcType = propertyType.getJdbcType();
+            assert type == null || type.isNumeric() == jdbcType.isNumeric() : ("WORK IN PROGRESS: type=" + type + ", propertyType=" + propertyType + ", conceptURI=" + from.getConceptURI() + ", rangeURI=" + from.getRangeURI());
+            to.setMeasure(ColumnRenderProperties.inferIsMeasure(from.getName(), from.getLabel(), jdbcType != null && jdbcType.isNumeric(),
                                                                 false, from.getLookupQuery() != null, from.isHidden()));
         }
 
