@@ -2988,39 +2988,22 @@ public class QueryController extends SpringActionController
             // Attach any URL-based filters. This would apply to 'filterArray' from the JavaScript API.
             SimpleFilter filter = new SimpleFilter(settings.getBaseFilter());
 
-            // Support for 'viewName'
-            if (null != settings.getViewName())
-            {
-                try
-                {
-                    CustomView view = service.getCustomView(getUser(), getContainer(), getUser(), settings.getSchemaName(), settings.getQueryName(), settings.getViewName());
-                    if (null != view)
-                    {
-                        CustomViewInfo.FilterAndSort fs = CustomViewInfo.FilterAndSort.fromString(view.getFilterAndSort());
-                        if (null != fs)
-                        {
-                            for (FilterInfo fi : fs.getFilter())
-                            {
-                                ColumnInfo column = columns.get(fi.getField());
-                                Object value = fi.getValue();
-                                if (null != column)
-                                {
-                                    value = CompareType.convertParamValue(column, value);
-                                }
-                                filter.addClause(new CompareType.CompareClause(fi.getField(), fi.getOp(), value));
-                            }
-                        }
-                    }
-                }
-                catch (URISyntaxException e)
-                {
-                    //ignore
-                }
-            }
-
             String dataRegionName = form.getDataRegionName();
             if (StringUtils.trimToNull(dataRegionName) == null)
                 dataRegionName = QueryView.DATAREGIONNAME_DEFAULT;
+
+            // Support for 'viewName'
+            if (null != settings.getViewName())
+            {
+                CustomView view = service.getCustomView(getUser(), getContainer(), getUser(), settings.getSchemaName(), settings.getQueryName(), settings.getViewName());
+                if (null != view)
+                {
+                    ActionURL url = new ActionURL(SelectDistinctAction.class, getContainer());
+                    view.applyFilterAndSortToURL(url, dataRegionName);
+                    filter.addAllClauses(new SimpleFilter(url, dataRegionName));
+                }
+            }
+
             filter.addUrlFilters(getViewContext().getActionURL(), dataRegionName);
 
             SQLFragment selectSql = service.getSelectSQL(table, columns.values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
