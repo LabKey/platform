@@ -41,7 +41,7 @@
                 <em>Standard Specimen Repository</em>: allows you to upload a list of available specimens
             </div>
             <div>
-                <input type="radio" name="simple" value="false"<%=checked(settings.isSimple())%> onChange="document.getElementById('enableRequestsBlock').style.display = 'block';">
+                <input type="radio" name="simple" value="false"<%=checked(!settings.isSimple())%> onChange="document.getElementById('enableRequestsBlock').style.display = 'block';">
                 <em>Advanced (External) Specimen Repository</em>:
                         relies on an external set of tools to track movement of specimens between locations. The advanced system also optionally enables a customizable specimen
                         request system.
