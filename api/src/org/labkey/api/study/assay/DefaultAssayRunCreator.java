@@ -223,6 +223,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
         }
 
+        if (context instanceof ModuleRunUploadContext)
+        {
+            // allow module contexts to add data and materials directly
+            ((ModuleRunUploadContext)context).addDataAndMaterials(inputDatas, outputDatas, inputMaterials, outputMaterials);
+        }
         addInputMaterials(context, inputMaterials, resolverType);
         addInputDatas(context, inputDatas, resolverType);
         addOutputMaterials(context, outputMaterials, resolverType);
@@ -379,12 +384,21 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     protected void importStandardResultData(AssayRunUploadContext<ProviderType> context, ExpRun run, Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, ViewBackgroundInfo info, XarContext xarContext, TransformResult transformResult, List<ExpData> insertedDatas) throws ExperimentException, ValidationException
     {
-        insertedDatas.addAll(inputDatas.keySet());
-        insertedDatas.addAll(outputDatas.keySet());
-
-        for (ExpData insertedData : insertedDatas)
+        if (context instanceof ModuleRunUploadContext)
         {
-            insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, LOG, xarContext);
+            // delegate the data import to the upload context as the imported data will not exist as uploaded files
+            // but will have been parsed as row maps
+            ((ModuleRunUploadContext)context).importResultData(run, inputDatas, outputDatas, insertedDatas);
+        }
+        else
+        {
+            insertedDatas.addAll(inputDatas.keySet());
+            insertedDatas.addAll(outputDatas.keySet());
+
+            for (ExpData insertedData : insertedDatas)
+            {
+                insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, LOG, xarContext);
+            }
         }
     }
 
