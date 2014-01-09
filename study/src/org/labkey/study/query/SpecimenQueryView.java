@@ -608,7 +608,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 + "join ");
         sql.append(tableInfoVial.getFromSQL("v")).append(" on rs.SpecimenGlobalUniqueId=v.GlobalUniqueId "
                 + "join study.SamplerequestStatus status ON r.StatusId=status.RowId "
-                + "where r.DestinationSiteId=? AND AND status.SpecimensLocked=?)");
+                + "where r.DestinationSiteId=? AND status.SpecimensLocked=?)");
         sql.add(locationId);
         sql.add(Boolean.TRUE);
 
