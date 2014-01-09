@@ -132,6 +132,11 @@ public class PropertyColumn extends LookupColumn
 
         to.setPropertyURI(pd.getPropertyURI());
         to.setConceptURI(pd.getConceptURI());
+
+        if (PropertyType.STRING.equals(pd.getPropertyType()))
+            to.setInputType("text");
+        else if (PropertyType.MULTI_LINE.equals(pd.getPropertyType()))
+            to.setInputType("textarea");
     }
 
 

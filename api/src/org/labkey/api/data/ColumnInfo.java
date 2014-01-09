@@ -1632,7 +1632,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 col.setLabel("Modified");
         }
 
-        if (col.getJdbcType().getJavaClass().equals(String.class) && col.scale > 255)
+        if (null == col.getInputType() && col.getJdbcType().getJavaClass().equals(String.class) && col.scale > 255)
         {
             col.setInputType("textarea");
         }
