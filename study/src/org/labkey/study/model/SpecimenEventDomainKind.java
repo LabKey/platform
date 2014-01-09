@@ -25,6 +25,8 @@ import org.labkey.study.query.SpecimenTablesProvider;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -87,7 +89,7 @@ public class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
     private static final String INPUTHASH = "InputHash";
     private static final String OBSOLETE = "Obsolete";
 
-    private static final Set<PropertyStorageSpec> BASE_PROPERTIES;
+    private static final List<PropertyStorageSpec> BASE_PROPERTIES;
     private static final Set<PropertyStorageSpec.Index> BASE_INDICES;
     static
     {
@@ -147,7 +149,7 @@ public class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
             new PropertyStorageSpec(INPUTHASH,  JdbcType.BINARY, 16),
             new PropertyStorageSpec(OBSOLETE,  JdbcType.BOOLEAN, 0, false, false)
         };
-        BASE_PROPERTIES = new HashSet<>(Arrays.asList(props));
+        BASE_PROPERTIES = Arrays.asList(props);
 
         PropertyStorageSpec.Index[] indices =
         {
@@ -178,7 +180,7 @@ public class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
     @Override
     public Set<PropertyStorageSpec> getBaseProperties()
     {
-        Set<PropertyStorageSpec> specs = new HashSet<>(BASE_PROPERTIES);
+        Set<PropertyStorageSpec> specs = new LinkedHashSet<>(BASE_PROPERTIES);
 //        specs.addAll(super.getBaseProperties());
         return specs;
     }

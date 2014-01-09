@@ -22,6 +22,8 @@ import org.labkey.api.study.SpecimenTablesTemplate;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -57,7 +59,7 @@ public class SpecimenDomainKind extends AbstractSpecimenDomainKind
     private final static String PROCESSINGLOCATION = "ProcessingLocation";
     private final static String FIRSTPROCESSEDBYINITIALS = "FirstProcessedByInitials";
 
-    private final static Set<PropertyStorageSpec> BASE_PROPERTIES;
+    private final static List<PropertyStorageSpec> BASE_PROPERTIES;
     private static final Set<PropertyStorageSpec.Index> BASE_INDICES;
     static
     {
@@ -91,7 +93,7 @@ public class SpecimenDomainKind extends AbstractSpecimenDomainKind
             new PropertyStorageSpec(FIRSTPROCESSEDBYINITIALS, JdbcType.VARCHAR, 32)
         };
 
-        BASE_PROPERTIES = new HashSet<>(Arrays.asList(props));
+        BASE_PROPERTIES = Arrays.asList(props);
 
         PropertyStorageSpec.Index[] indices =
         {
@@ -122,7 +124,7 @@ public class SpecimenDomainKind extends AbstractSpecimenDomainKind
     @Override
     public Set<PropertyStorageSpec> getBaseProperties()
     {
-        Set<PropertyStorageSpec> specs = new HashSet<>(BASE_PROPERTIES);
+        Set<PropertyStorageSpec> specs = new LinkedHashSet<>(BASE_PROPERTIES);
 //        specs.addAll(super.getBaseProperties());
         return specs;
     }

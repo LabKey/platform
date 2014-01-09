@@ -24,6 +24,8 @@ import org.labkey.study.query.SpecimenTablesProvider;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -51,32 +53,32 @@ public class VialDomainKind extends AbstractSpecimenDomainKind
     private static final String PROCESSINGLOCATION = "ProcessingLocation";
     private static final String FIRSTPROCESSEDBYINITIALS = "FirstProcessedByInitials";
 
-    private static final Set<PropertyStorageSpec> BASE_PROPERTIES;
+    private static final List<PropertyStorageSpec> BASE_PROPERTIES;
     private static final Set<PropertyStorageSpec.Index> BASE_INDICES;
     static
     {
         PropertyStorageSpec[] props =
         {
             new PropertyStorageSpec(ROWID, JdbcType.BIGINT, 0, PropertyStorageSpec.Special.PrimaryKey, false, false, null),
-            new PropertyStorageSpec(SPECIMENHASH, JdbcType.VARCHAR, 256),
-            new PropertyStorageSpec(VOLUME, JdbcType.DOUBLE, 0),
             new PropertyStorageSpec(GLOBALUNIQUEID, JdbcType.VARCHAR, 50, false, null),
+            new PropertyStorageSpec(VOLUME, JdbcType.DOUBLE, 0),
+            new PropertyStorageSpec(SPECIMENHASH, JdbcType.VARCHAR, 256),
             new PropertyStorageSpec(REQUESTABLE, JdbcType.BOOLEAN, 0),
             new PropertyStorageSpec(CURRENTLOCATION, JdbcType.INTEGER, 0, true, null),
+            new PropertyStorageSpec(ATREPOSITORY, JdbcType.BOOLEAN, 0, false, false),
+            new PropertyStorageSpec(LOCKEDINREQUEST, JdbcType.BOOLEAN, 0, false, false),
+            new PropertyStorageSpec(AVAILABLE, JdbcType.BOOLEAN, 0, false, false),
+            new PropertyStorageSpec(PROCESSINGLOCATION, JdbcType.INTEGER, 0),
+            new PropertyStorageSpec(SPECIMENID, JdbcType.BIGINT, 0, false, null),
             new PropertyStorageSpec(PRIMARYVOLUME, JdbcType.DOUBLE, 0),
             new PropertyStorageSpec(PRIMARYVOLUMEUNITS, JdbcType.VARCHAR, 20),
-            new PropertyStorageSpec(TOTALCELLCOUNT, JdbcType.DOUBLE, 0),
-            new PropertyStorageSpec(SPECIMENID, JdbcType.BIGINT, 0, false, null),
-            new PropertyStorageSpec(LOCKEDINREQUEST, JdbcType.BOOLEAN, 0, false, false),
-            new PropertyStorageSpec(ATREPOSITORY, JdbcType.BOOLEAN, 0, false, false),
-            new PropertyStorageSpec(AVAILABLE, JdbcType.BOOLEAN, 0, false, false),
+            new PropertyStorageSpec(FIRSTPROCESSEDBYINITIALS, JdbcType.VARCHAR, 32),
             new PropertyStorageSpec(AVAILABILITYREASON, JdbcType.VARCHAR, 256),
+            new PropertyStorageSpec(TOTALCELLCOUNT, JdbcType.DOUBLE, 0),
             new PropertyStorageSpec(LATESTCOMMENTS, JdbcType.VARCHAR, 500),
-            new PropertyStorageSpec(LATESTQUALITYCOMMENTS, JdbcType.VARCHAR, 500),
-            new PropertyStorageSpec(PROCESSINGLOCATION, JdbcType.INTEGER, 0),
-            new PropertyStorageSpec(FIRSTPROCESSEDBYINITIALS, JdbcType.VARCHAR, 32)
+            new PropertyStorageSpec(LATESTQUALITYCOMMENTS, JdbcType.VARCHAR, 500)
         };
-        BASE_PROPERTIES = new HashSet<>(Arrays.asList(props));
+        BASE_PROPERTIES = Arrays.asList(props);
 
         PropertyStorageSpec.Index[] indices =
         {
@@ -110,7 +112,7 @@ public class VialDomainKind extends AbstractSpecimenDomainKind
     @Override
     public Set<PropertyStorageSpec> getBaseProperties()
     {
-        Set<PropertyStorageSpec> specs = new HashSet<>(BASE_PROPERTIES);
+        Set<PropertyStorageSpec> specs = new LinkedHashSet<>(BASE_PROPERTIES);
 //        specs.addAll(super.getBaseProperties());
         return specs;
     }
