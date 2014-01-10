@@ -938,19 +938,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return _notificationKey;
     }
 
-    @Override
-    public String getDefaultDateFormat()
-    {
-        return null;
-    }
-
-    @Override
-    public String getDefaultNumberFormat()
-    {
-        return null;
-    }
-
-
     private void checkLocked()
     {
         if (_locked)
