@@ -145,7 +145,7 @@ public abstract class AbstractDataRegion extends DisplayElement
     {
         SimpleFilter urlFilter = new SimpleFilter(ctx.getViewContext().getActionURL(), getName());
         for (FieldKey fk : ctx.getIgnoredFilterColumns())
-            urlFilter.deleteConditions(fk.toString());
+            urlFilter.deleteConditions(fk);
         if (urlFilter.getClauses().isEmpty())
             return null;
         return urlFilter;

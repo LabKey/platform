@@ -1989,7 +1989,7 @@ public class OntologyManager
         return dd;
     }
 
-
+    /** Get all the domains in the same project as the specified container. They may not be in use in the container directly */
     public static Collection<DomainDescriptor> getDomainDescriptors(Container container)
     {
         Map<String, DomainDescriptor> ret = new LinkedHashMap<>();
@@ -2015,7 +2015,7 @@ public class OntologyManager
                 }
             }
         }
-        return ret.values();
+        return Collections.unmodifiableCollection(ret.values());
     }
     
     public static String getCacheKey (DomainDescriptor dd)

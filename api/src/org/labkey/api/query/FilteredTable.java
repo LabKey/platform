@@ -16,7 +16,6 @@
 
 package org.labkey.api.query;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
@@ -51,7 +50,6 @@ import java.util.Set;
 public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableInfo implements ContainerFilterable
 {
     final private SimpleFilter _filter;
-    private String _innerAlias = null;
     @NotNull protected final TableInfo _rootTable;
     AliasManager _aliasManager = null;
     protected String _publicSchemaName = null;
@@ -63,9 +61,12 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
 
     protected SchemaType _userSchema;
 
-    /** CAREFUL: This constructor does not take a schema... call one of the other constructors to filter based on container */
-    // TODO: Should be protected?
-    public FilteredTable(@NotNull TableInfo table)
+    public FilteredTable(@NotNull TableInfo table, @NotNull SchemaType userSchema)
+    {
+        this(table, userSchema, null);
+    }
+
+    public FilteredTable(@NotNull TableInfo table, @NotNull SchemaType userSchema, @Nullable ContainerFilter containerFilter)
     {
         super(table.getSchema());
         _filter = new SimpleFilter();
@@ -82,16 +83,6 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
 
         // We used to copy the titleColumn from table, but this forced all ColumnInfos to load.  Now, delegate
         // to _rootTable lazily, allowing overrides.
-    }
-
-    public FilteredTable(@NotNull TableInfo table, SchemaType userSchema)
-    {
-        this(table, userSchema, null);
-    }
-
-    public FilteredTable(@NotNull TableInfo table, SchemaType userSchema, @Nullable ContainerFilter containerFilter)
-    {
-        this(table);
         _userSchema = userSchema;
 
         if (_userSchema.getContainer() == null)
@@ -152,15 +143,6 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
             _hasDefaultTitleColumn = _rootTable.hasDefaultTitleColumn();
         }
     }
-
-
-    // This is for special case where filter depends on alias
-    // should probably only be used if a column from the _rootTable needs to be disambiguated
-    public void setInnerAlias(String a)
-    {
-        _innerAlias = a;
-    }
-
 
     public void wrapAllColumns(boolean preserveHidden)
     {
@@ -307,11 +289,6 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
         return wrapColumn(underlyingColumn.getName(), underlyingColumn);
     }
 
-    public void clearConditions(String columnName)
-    {
-        _filter.deleteConditions(columnName);
-    }
-
     public void clearConditions(FieldKey fieldKey)
     {
         _filter.deleteConditions(fieldKey);
@@ -414,10 +391,10 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
         // FROM
         //   NOTE some filters depend on knowing the name of this table in the simple case, so don't alias it
         String selectName = _rootTable.getSelectName();
-        if (null != selectName && null == _innerAlias)
+        if (null != selectName)
             ret.append(selectName);
         else
-            ret.append(getFromTable().getFromSQL(StringUtils.defaultString(_innerAlias,"x")));
+            ret.append(getFromTable().getFromSQL("x"));
 
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());

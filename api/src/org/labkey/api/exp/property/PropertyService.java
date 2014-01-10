@@ -49,7 +49,9 @@ public class PropertyService
         Domain getDomain(Container container, String domainURI);
         @Nullable Domain getDomain(int domainId);
         List<DomainKind> getDomainKinds();
-        Domain[] getDomains(Container container);
+        /** Get all the domains in the same project as the specified container. They may not be in use in the container directly */
+        List<? extends Domain> getDomains(Container container);
+        /** Creates an in-memory Domain. It is not automatically saved to the database */
         Domain createDomain(Container container, String typeURI, String name);
 
         /** Same as QueryService.get().getUserSchema(user, container, schemaName).getDomainURI(queryName) */
@@ -57,7 +59,6 @@ public class PropertyService
 
         /**
          * Create a Domain from the DomainDescriptorType xmlbean.
-         * @param container
          * @param context context in which LSIDs are resolved; may be null
          * @param xDomain the xmlbean containing the Domain description.
          */

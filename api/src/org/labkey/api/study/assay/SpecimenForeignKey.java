@@ -209,7 +209,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         }
 
         TableInfo vialTableInfo = getVialTableInfo();
-        FilteredTable ft = new FilteredTable(vialTableInfo)
+        FilteredTable ft = new FilteredTable<AssaySchema>(vialTableInfo, _schema)
         {
             @NotNull
             @Override

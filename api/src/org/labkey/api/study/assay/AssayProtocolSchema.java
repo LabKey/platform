@@ -686,8 +686,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
             {
                 public TableInfo getLookupTableInfo()
                 {
-
-                    FilteredTable table = new FilteredTable(DbSchema.get("study").getTable("study"));
+                    FilteredTable table = new FilteredTable<>(DbSchema.get("study").getTable("study"), AssayProtocolSchema.this);
                     table.setContainerFilter(new StudyContainerFilter(AssayProtocolSchema.this));
                     ExprColumn col = new ExprColumn(table, "Folder", new SQLFragment("CAST (" + ExprColumn.STR_TABLE_ALIAS + ".Container AS VARCHAR(200))"), JdbcType.VARCHAR);
                     col.setKeyField(true);

@@ -20,9 +20,11 @@ import org.labkey.api.data.*;
 
 public class UserIdForeignKey extends LookupForeignKey
 {
+    private final UserSchema _userSchema;
+
     static public ColumnInfo initColumn(ColumnInfo column)
     {
-        column.setFk(new UserIdForeignKey());
+        column.setFk(new UserIdForeignKey(column.getParentTable().getUserSchema()));
         column.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -34,15 +36,16 @@ public class UserIdForeignKey extends LookupForeignKey
     }
 
 
-    public UserIdForeignKey()
+    public UserIdForeignKey(UserSchema userSchema)
     {
         super("UserId", "DisplayName");
+        _userSchema = userSchema;
     }
 
     public TableInfo getLookupTableInfo()
     {
         TableInfo tinfoUsersData = CoreSchema.getInstance().getTableInfoUsersData();
-        FilteredTable ret = new FilteredTable(tinfoUsersData);
+        FilteredTable ret = new FilteredTable<>(tinfoUsersData, _userSchema);
         ret.addWrapColumn(tinfoUsersData.getColumn("UserId"));
         ret.addColumn(ret.wrapColumn("DisplayName", tinfoUsersData.getColumn("DisplayName")));
         ret.setTitleColumn("DisplayName");

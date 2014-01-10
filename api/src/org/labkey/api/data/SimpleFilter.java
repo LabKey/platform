@@ -1009,20 +1009,9 @@ public class SimpleFilter implements Filter
         return result;
     }
 
-    @Deprecated // Use getAllFieldKeys() instead.
-    public List<String> getAllColumnNames()
-    {
-        List<String> result = new ArrayList<>();
-        for (FilterClause clause : _clauses)
-        {
-            result.addAll(clause.getColumnNames());
-        }
-        return result;
-    }
-
     public SimpleFilter deleteConditions(FieldKey fieldKey)
     {
-        for (Iterator<SimpleFilter.FilterClause> it = _clauses.iterator() ; it.hasNext(); )
+        for (Iterator<FilterClause> it = _clauses.iterator() ; it.hasNext(); )
         {
             SimpleFilter.FilterClause clause = it.next();
             if (clause.getFieldKeys().contains(fieldKey))
@@ -1031,15 +1020,7 @@ public class SimpleFilter implements Filter
         return this;
     }
 
-    @Deprecated // Use FieldKey version instead
-    public SimpleFilter deleteConditions(String colName)
-    {
-        FieldKey fieldKey = FieldKey.fromString(colName);
-        deleteConditions(fieldKey);
-        return this;
-    }
-
-    @Deprecated // Use FieldKey version instead
+    @Deprecated /** Use FieldKey version instead */
     public SimpleFilter addCondition(String colName, Object value)
     {
         return addCondition(FieldKey.fromString(colName), value);
