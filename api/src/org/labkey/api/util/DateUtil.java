@@ -993,7 +993,7 @@ validNum:       {
     }
 
 
-    /** Format specified date using standard date & time pattern */
+    /** Format specified date using hard-coded, standard date & time pattern */
     @Deprecated
     public static String formatDateTime(Date date)
     {
@@ -1001,19 +1001,25 @@ validNum:       {
     }
 
 
-    /** Format current date & time using using folder-specified default date pattern plus standard time format */
+    /** Format current date & time using using folder-specified default date/time pattern */
     public static String formatDateTime(Container c)
     {
         return formatDateTime(c, new Date());
     }
 
 
+    /** Get the default date/time format string set in this Container (or one of its parents) */
+    // TODO: In the future, let administrators explicitly set a full date time format in look & feel settings. For now, just tack on a hard-coded time portion.
+    public static String getDateTimeFormatString(Container c)
+    {
+        return getDateFormatString(c) + " " + ISO_TIME_FORMAT_STRING;
+    }
+
+
     /** Format date & time using using folder-specified default date pattern plus standard time format */
-    // TODO: In the future, allow administrators to explicitly set a full date time format
     public static String formatDateTime(Container c, Date date)
     {
-        String pattern = getDateFormatString(c) + " " + ISO_TIME_FORMAT_STRING;
-        return formatDateTime(date, pattern);
+        return formatDateTime(date, getDateTimeFormatString(c));
     }
 
 

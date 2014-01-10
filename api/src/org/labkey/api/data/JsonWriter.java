@@ -166,7 +166,6 @@ public class JsonWriter
 
         if (cinfo != null)
         {
-
             if (!cinfo.getImportAliasSet().isEmpty())
             {
                 props.put("importAliases", new ArrayList<>(cinfo.getImportAliasSet()));

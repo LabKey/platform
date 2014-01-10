@@ -83,11 +83,12 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
         {
             Date testDate2 = new Date(DateUtil.parseDate(format.format(testDate)));
             if (!testDate.equals(testDate2))
-                throw new IllegalArgumentException("Can't parse using that date format: " + testDate + " does not match " + testDate2);
+                throw new IllegalArgumentException("Can't parse using date format \"" + defaultDateFormat + "\": " + testDate + " does not match " + testDate2);
+
         }
         catch (Exception e)
         {
-            throw new IllegalArgumentException("Can't parse using that date format", e);
+            throw new IllegalArgumentException("Can't parse using date format \"" + defaultDateFormat + "\"", e);
         }
         storeStringValue(DEFAULT_DATE_FORMAT, defaultDateFormat);
     }

@@ -1305,7 +1305,7 @@ abstract public class AbstractTableInfo implements TableInfo
 
         String triggerMethod = (before ? "init" : "complete");
         Boolean success = invokeTableScript(c, Boolean.class, triggerMethod, extraContext, type.name().toLowerCase(), batchErrors);
-        if (success != null && !success.booleanValue())
+        if (success != null && !success)
             batchErrors.addRowError(new ValidationException(triggerMethod + " validation failed"));
 
         if (batchErrors.hasErrors())
@@ -1347,7 +1347,7 @@ abstract public class AbstractTableInfo implements TableInfo
             }
         }
         Boolean success = invokeTableScript(c, Boolean.class, triggerMethod, extraContext, args);
-        if (success != null && !success.booleanValue())
+        if (success != null && !success)
             errors.addGlobalError(triggerMethod + " validation failed");
 
         if (errors.hasErrors())
@@ -1361,19 +1361,6 @@ abstract public class AbstractTableInfo implements TableInfo
     {
         return null;
     }
-
-    @Override
-    public String getDefaultDateFormat()
-    {
-        return null;
-    }
-
-    @Override
-    public String getDefaultNumberFormat()
-    {
-        return null;
-    }
-
 
     protected void checkLocked()
     {

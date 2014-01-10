@@ -377,7 +377,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
             sb.append(separator);
             separator = ", ";
             alias = alias.trim();
-            if (alias.indexOf(" ") != -1)
+            if (alias.contains(" "))
             {
                 // Quote any values with spaces
                 sb.append("\"");
@@ -463,39 +463,6 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public boolean isNumericType()
     {
         return getJdbcType().isNumeric();
-    }
-
-    public static String javaTypeFromSqlType(int sqlType, boolean isObj)
-    {
-        switch (sqlType)
-        {
-            case Types.DOUBLE:
-                if (isObj)
-                    return "Double";
-                else
-                    return "double";
-            case Types.BIT:
-            case Types.BOOLEAN:
-                if (isObj)
-                    return "Boolean";
-                else
-                    return "boolean";
-            case Types.INTEGER:
-                if (isObj)
-                    return "Integer";
-                else
-                    return "int";
-            case Types.TIMESTAMP:
-            case Types.TIME:
-            case Types.DATE:
-                return "java.util.Date";
-            case Types.VARCHAR:
-            case Types.CHAR:
-            case Types.LONGVARCHAR:
-                return "String";
-            default:
-                return "String";
-        }
     }
 
     public static Class javaClassFromSqlType(int sqlType, boolean isObj)

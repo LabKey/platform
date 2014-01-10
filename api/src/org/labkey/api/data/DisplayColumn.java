@@ -221,6 +221,8 @@ public abstract class DisplayColumn extends RenderColumn
     }
 
 
+    // Ideally, this would just set the string... and defer creation of the Format object until render time, when we would
+    // have a Container and other context. That would avoid creating multiple Formats per DisplayColumn.
     public void setFormatString(String formatString)
     {
         super.setFormatString(formatString);

@@ -429,16 +429,12 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
 
     /**
-     * TableInfo's that can be associated with a DbCache need a reliable key other than a TableInfo instance.
+     * TableInfos that can be associated with a DbCache need a reliable key other than a TableInfo instance.
      * Return null if DbCache is not supported.
      *
      * We should probably kill DbCache, but let's fix this for now (https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=10508)
      */
     public Path getNotificationKey();
-
-    /* for internal use by ColumnInfo.getFormat() */
-    public String getDefaultDateFormat();
-    public String getDefaultNumberFormat();
 
     /* for asserting that tableinfo is not changed unexpectedly */
     public void setLocked(boolean b);

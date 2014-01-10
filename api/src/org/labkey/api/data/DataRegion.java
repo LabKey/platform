@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
@@ -39,6 +40,8 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.Formats;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -58,6 +61,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -808,14 +812,15 @@ public class DataRegion extends AbstractDataRegion
         //determine number of HTML table columns...watch out for hidden display columns
         //and include one extra if showing record selectors
         int colCount = 0;
+
         for (DisplayColumn col : renderers)
         {
             if (col.isVisible(ctx))
                 colCount++;
         }
+
         if (showRecordSelectors)
             colCount++;
-
 
         if (rs instanceof TableResultSet && ((TableResultSet) rs).getSize() != -1)
         {
@@ -826,7 +831,6 @@ public class DataRegion extends AbstractDataRegion
 
         StringBuilder viewMsg = new StringBuilder();
         StringBuilder filterMsg = new StringBuilder();
-
         Map<String, String> messages = new LinkedHashMap<>();
 
         if (errorCreatingResults)
@@ -881,7 +885,6 @@ public class DataRegion extends AbstractDataRegion
 
             if (_aggregateRowConfig.getAggregateRowLast())
                 renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
-
         }
 
         renderFooter(ctx, out, renderButtons, colCount);
@@ -2350,6 +2353,9 @@ public class DataRegion extends AbstractDataRegion
 
         DataRegion oldRegion = ctx.getCurrentRegion();
         ctx.setCurrentRegion(this);
+
+        prepareDisplayColumns(ctx.getContainer());
+
         try
         {
             switch (mode)
@@ -2374,6 +2380,37 @@ public class DataRegion extends AbstractDataRegion
         finally
         {
             ctx.setCurrentRegion(oldRegion);
+        }
+    }
+
+    // This is the chance for one-time DisplayColumn setup that requires the current context. At the moment, all
+    // we do is override the date & number formats to reflect the folder defaults. TODO: A more general approach would be
+    // to push this into DisplayColumn itself, e.g., prepare(Container c).
+    private void prepareDisplayColumns(Container c)
+    {
+        final String defaultDate = DateUtil.getDateFormatString(c);
+        final String defaultDateTime = DateUtil.getDateTimeFormatString(c);
+        final String defaultNumber = Formats.getNumberFormatString(c);
+
+        for (DisplayColumn dc : getDisplayColumns())
+        {
+            String formatString = dc.getFormatString();
+            ColumnInfo col = dc.getColumnInfo();
+
+            if (null == col)
+                continue;
+
+            if (col.isDateTimeType())
+            {
+                if (null == formatString || "Date".equalsIgnoreCase(formatString))
+                    dc.setFormatString(defaultDate);
+                else if ("DateTime".equalsIgnoreCase(formatString))
+                    dc.setFormatString(defaultDateTime);
+            }
+            else if (null == formatString && col.isNumericType())
+            {
+                dc.setFormatString(defaultNumber);
+            }
         }
     }
 

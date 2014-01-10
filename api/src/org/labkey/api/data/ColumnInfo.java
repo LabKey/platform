@@ -37,7 +37,6 @@ import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserIdRenderer;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -507,45 +506,9 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
 
-    String _cachedFormat = null;
-
-    @Override
-    public synchronized String getFormat()
-    {
-        if (_cachedFormat == null)
-        {
-            _cachedFormat = format;
-            if (null == _cachedFormat && null != getParentTable())
-            {
-                if (isDateTimeType())
-                    _cachedFormat = getParentTable().getDefaultDateFormat();
-                else if (isNumericType())
-                    _cachedFormat = getParentTable().getDefaultNumberFormat();
-            }
-            if (isDateTimeType())
-                _cachedFormat = convertSpecialDateFormatString(_cachedFormat);
-            if (null == _cachedFormat)
-                _cachedFormat = "";
-        }
-        return _cachedFormat.isEmpty() ? null : _cachedFormat;
-    }
-
-
-    private static String convertSpecialDateFormatString(String f)
-    {
-        if (null == f || "Date".equalsIgnoreCase(f))
-            return DateUtil.getStandardDateFormatString();
-
-        if ("DateTime".equalsIgnoreCase(f))
-            return DateUtil.getStandardDateTimeFormatString();
-
-        return f;
-    }
-
-
     public boolean isFormatStringSet()
     {
-        return (format != null);
+        return format != null;
     }
 
     public String getTextAlign()
@@ -598,10 +561,10 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         if (getParentTable() == null)
             return Collections.singletonList(this);
 
-        List<ColumnInfo> sortCols = new ArrayList<ColumnInfo>();
+        List<ColumnInfo> sortCols = new ArrayList<>();
         if (sortFieldKeys != null)
         {
-            List<FieldKey> translatedFieldKeys = new ArrayList<FieldKey>();
+            List<FieldKey> translatedFieldKeys = new ArrayList<>();
             for (FieldKey sortFieldKey : sortFieldKeys)
             {
                 translatedFieldKeys.add(FieldKey.fromParts(getFieldKey().getParent(), sortFieldKey));

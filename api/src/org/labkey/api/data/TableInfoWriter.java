@@ -16,14 +16,12 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.util.DateUtil;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.FacetingBehaviorType;
 import org.labkey.data.xml.TableType;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
-import java.util.Date;
 
 /*
 * User: adam
@@ -35,14 +33,12 @@ public class TableInfoWriter
     private final Container _c;
     private final TableInfo _ti;
     private final Collection<ColumnInfo> _columns;
-    private final String _defaultDateFormat;
 
     protected TableInfoWriter(Container c, TableInfo ti, Collection<ColumnInfo> columns)
     {
         _c = c;
         _ti = ti;
         _columns = columns;
-        _defaultDateFormat = DateUtil.getDateFormatString(_c);
     }
 
     // Append a new table to the Tables document
@@ -129,11 +125,8 @@ public class TableInfoWriter
             }
         }
 
-        String formatString = column.getFormat();
-
-        // Write only if it's non-null (and in the case of dates, different from the global default)
-        if (null != formatString && (!Date.class.isAssignableFrom(column.getJavaClass()) || !formatString.equals(_defaultDateFormat)))
-            columnXml.setFormatString(formatString);
+        if (column.isFormatStringSet())
+            columnXml.setFormatString(column.getFormat());
 
         if (column.isMvEnabled())
             columnXml.setIsMvEnabled(true);
