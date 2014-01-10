@@ -123,9 +123,17 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
         {
             GWTPropertyDescriptor prop = col.getPropertyDescriptor();
             Class javaType = null;
-            PropertyType propType = PropertyType.getFromURI(prop.getConceptURI(), prop.getRangeURI());
-            if (propType != null)
-                javaType = propType.getJavaType();
+            Type type = Type.getTypeByXsdType(prop.getRangeURI());
+
+            if (type != null)
+                javaType = type.getJavaClass();
+
+            if (javaType == null)
+            {
+                PropertyType propType = PropertyType.getFromURI(prop.getConceptURI(), prop.getRangeURI());
+                if (propType != null)
+                    javaType = propType.getJavaType();
+            }
 
             if (javaType != null)
             {
