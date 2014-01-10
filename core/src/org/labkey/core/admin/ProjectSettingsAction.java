@@ -216,36 +216,6 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         if (!saveFolderSettings(form, props, getUser(), errors))
             return false;
 
-//        String defaultDateFormat = StringUtils.trimToNull(form.getDefaultDateFormat());
-//        if (null != defaultDateFormat)
-//        {
-//            try
-//            {
-//                FastDateFormat.getInstance(defaultDateFormat);
-//            }
-//            catch (IllegalArgumentException e)
-//            {
-//                errors.reject(SpringActionController.ERROR_MSG, "Invalid date format: " + e.getMessage());
-//                return false;
-//            }
-//        }
-//        props.setDefaultDateFormat(defaultDateFormat);
-//
-//        String defaultNumberFormat = StringUtils.trimToNull(form.getDefaultNumberFormat());
-//        if (null != defaultNumberFormat)
-//        {
-//            try
-//            {
-//                new DecimalFormat(defaultNumberFormat);
-//            }
-//            catch (IllegalArgumentException e)
-//            {
-//                errors.reject(SpringActionController.ERROR_MSG, "Invalid number format: " + e.getMessage());
-//                return false;
-//            }
-//        }
-//        props.setDefaultNumberFormat(defaultNumberFormat);
-
         // Bump the look & feel revision so browsers retrieve the new theme stylesheet
         WriteableAppProps.incrementLookAndFeelRevisionAndSave();
 
@@ -542,14 +512,14 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     private static abstract class LookAndFeelBean
     {
-        public String helpLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
+        public final String helpLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
     }
 
     public static class LookAndFeelResourcesBean extends LookAndFeelBean
     {
-        public Attachment customLogo;
-        public Attachment customFavIcon;
-        public Attachment customStylesheet;
+        public final Attachment customLogo;
+        public final Attachment customFavIcon;
+        public final Attachment customStylesheet;
 
         private LookAndFeelResourcesBean(Container c)
         {
@@ -561,11 +531,11 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     public static class LookAndFeelPropertiesBean extends LookAndFeelBean
     {
-        public Collection<WebTheme> themes = WebThemeManager.getWebThemes();
-        public List<ThemeFont> themeFonts = ThemeFont.getThemeFonts();
-        public ThemeFont currentThemeFont;
-        public WebTheme currentTheme;
-        public @Nullable WebTheme newTheme = null;
+        public final Collection<WebTheme> themes = WebThemeManager.getWebThemes();
+        public final List<ThemeFont> themeFonts = ThemeFont.getThemeFonts();
+        public final ThemeFont currentThemeFont;
+        public final WebTheme currentTheme;
+        public final @Nullable WebTheme newTheme;
 
         private LookAndFeelPropertiesBean(Container c, @Nullable String newThemeName)
         {
@@ -573,8 +543,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
             currentThemeFont = ThemeFont.getThemeFont(c);
 
             //if new color scheme defined, get new theme name from url
-            if (newThemeName != null)
-                newTheme = WebThemeManager.getTheme(newThemeName);
+            newTheme = newThemeName != null ? WebThemeManager.getTheme(newThemeName) : null;
         }
     }
 
@@ -583,7 +552,11 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
     public static boolean saveFolderSettings(AdminController.DefaultFormatsForm form, WriteableFolderLookAndFeelProperties props, User user, BindException errors)
     {
         String defaultDateFormat = StringUtils.trimToNull(form.getDefaultDateFormat());
-        if (null != defaultDateFormat)
+        if (null == defaultDateFormat)
+        {
+            props.clearDefaultDateFormat();
+        }
+        else
         {
             try
             {
@@ -597,7 +570,11 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         }
 
         String defaultNumberFormat = StringUtils.trimToNull(form.getDefaultNumberFormat());
-        if (null != defaultNumberFormat)
+        if (null == defaultNumberFormat)
+        {
+            props.clearDefaultNumberFormat();
+        }
+        else
         {
             try
             {
