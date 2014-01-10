@@ -48,14 +48,6 @@ public class ContinuousDatasetDomainKind extends DatasetDomainKind
     }
 
     @Override
-    public Set<PropertyStorageSpec> getBaseProperties()
-    {
-        Set<PropertyStorageSpec> ret = super.getBaseProperties();
-        ret.add(DATE_PROPERTY);
-        return ret;
-    }
-
-    @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
         return Collections.unmodifiableSet(DataSetDefinition.DEFAULT_ABSOLUTE_DATE_FIELDS);

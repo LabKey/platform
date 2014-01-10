@@ -25,8 +25,10 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DeferredUpgrade;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
@@ -512,5 +514,61 @@ public class StudyUpgradeCode implements UpgradeCode
         }
 
         new SqlExecutor(StudySchema.getInstance().getScope()).execute(f);
+    }
+
+
+    /* upgrade provisioned dataset domains to always include data and container */
+
+    public void migrateProvisionedDatasetTables141(final ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        List<String> containerIds = new SqlSelector(scope, "SELECT DISTINCT Container FROM study.dataset").getArrayList(String.class);
+
+        for (String containerId : containerIds)
+        {
+            Container c = ContainerManager.getForId(containerId);
+            if (null == c)
+                continue;
+            Study study = StudyManager.getInstance().getStudy(c);
+            if (null == study)
+                continue;
+            for (DataSetDefinition def : (List<DataSetDefinition>)study.getDataSets())
+            {
+                migrateDatasetStorage(def);
+                StudyManager.getInstance().uncache(def);
+            }
+        }
+
+        DbScope.getLabkeyScope().invalidateSchema("studydataset", DbSchemaType.Module);
+    }
+
+
+    private void migrateDatasetStorage(DataSetDefinition def)
+    {
+        TableInfo t = def.getStorageTableInfo();
+        ColumnInfo dt = t.getColumn("date");
+        if (null != dt && dt.getJdbcType() != JdbcType.TIMESTAMP)
+            throw new IllegalStateException("Column named 'Date' is of type " + dt.getJdbcType());
+        ColumnInfo ct = t.getColumn("container");
+        if (null != ct && ct.getJdbcType() != JdbcType.GUID && ct.getJdbcType() != JdbcType.VARCHAR)
+            throw new IllegalStateException("Column named 'Container' is of type " + ct.getJdbcType());
+
+        if (null == dt)
+        {
+            new SqlExecutor(t.getSchema()).execute("ALTER TABLE " + t.getSelectName() + " ADD Date " + t.getSqlDialect().getDefaultDateTimeDataType());
+        }
+
+        if (null == ct)
+        {
+            new SqlExecutor(t.getSchema()).execute("ALTER TABLE " + t.getSelectName() + " ADD Container " + t.getSqlDialect().getGuidType());
+            new SqlExecutor(t.getSchema()).execute("UPDATE " + t.getSelectName() + " SET Container = ?", def.getContainer());
+            if (t.getSqlDialect().isSqlServer())
+                new SqlExecutor(t.getSchema()).execute("ALTER TABLE " + t.getSelectName() + " ALTER COLUMN Container " + t.getSqlDialect().getGuidType() + " NOT NULL");
+            else
+                new SqlExecutor(t.getSchema()).execute("ALTER TABLE " + t.getSelectName() + " ALTER COLUMN Container SET NOT NULL");
+        }
     }
 }

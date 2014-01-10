@@ -815,7 +815,10 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
     @Override
     public Container getContainer()
     {
-        return _dsd.getContainer();
+        if (null != _dsd)
+            return _dsd.getContainer();
+        // NOTE _dsd can be null within FilteredTable constructor
+        return getUserSchema().getContainer();
     }
 
     @Override

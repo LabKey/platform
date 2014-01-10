@@ -620,6 +620,7 @@
         <ns:datatype>numeric</ns:datatype>
         <ns:importAliases>
             <ns:importAlias>visit</ns:importAlias>
+            <ns:importAlias>visitid</ns:importAlias>
         </ns:importAliases>
       </ns:column>
         <!-- the actual column name is Date, should migrate this -->

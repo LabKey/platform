@@ -954,6 +954,21 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
+    private void _hideColumn(ColumnInfo col)
+    {
+        col.setHidden(true);
+        col.setShownInInsertView(false);
+        col.setShownInUpdateView(false);
+    }
+
+    private void _showColumn(ColumnInfo col)
+    {
+        col.setHidden(false);
+        col.setShownInInsertView(true);
+        col.setShownInUpdateView(true);
+    }
+
+
     /**
      * NOTE the constructor takes a USER in order that some lookup columns can be properly
      * verified/constructed
@@ -1022,7 +1037,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             // base columns
 
-            for (String name : Arrays.asList("lsid","ParticipantSequenceNum","sourcelsid","Created","CreatedBy","Modified","ModifiedBy"))
+            for (String name : Arrays.asList("Container","lsid","ParticipantSequenceNum","sourcelsid","Created","CreatedBy","Modified","ModifiedBy"))
             {
                 ColumnInfo col = getStorageColumn(name);
                 if (null == col) continue;
@@ -1065,16 +1080,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             // Date
 
-            if (!study.getTimepointType().isVisitBased())
+//            if (!study.getTimepointType().isVisitBased())
             {
                 ColumnInfo column = getStorageColumn("Date");
-                if (column == null)
-                {
-                    // Template table calls the column VisitDate instead
-                    column = getStorageColumn("VisitDate");
-                }
                 ColumnInfo visitDateCol = newDatasetColumnInfo(this, column, getVisitDateURI());
-                visitDateCol.setNullable(false);
+                if (study.getTimepointType().isVisitBased())
+                    _hideColumn(visitDateCol);
+                else
+                    visitDateCol.setNullable(false);
                 addColumn(visitDateCol);
             }
 
@@ -1094,6 +1107,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             for (DomainProperty p : properties)
             {
+                if (null != getColumn(p.getName()))
+                {
+                    ColumnInfo builtin = getColumn(p.getName());
+                    // CONSIDER: Call PropertyColumn.copyAttributes()
+                    if (!p.isHidden())
+                        _showColumn(builtin);
+                    if (null != p.getLabel())
+                        builtin.setLabel(p.getLabel());
+                    continue;
+                }
                 ColumnInfo col = getStorageColumn(d, p);
 
                 if (col == null)
@@ -1403,7 +1426,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private static String uriForName(String name)
     {
         final String StudyURI = "http://cpas.labkey.com/Study#";
-        assert getStandardPropertiesMap().get(name).getPropertyURI().equalsIgnoreCase(StudyURI + name);
+        assert "container".equalsIgnoreCase(name)  || getStandardPropertiesMap().get(name).getPropertyURI().equalsIgnoreCase(StudyURI + name);
         return getStandardPropertiesMap().get(name).getPropertyURI();
     }
 

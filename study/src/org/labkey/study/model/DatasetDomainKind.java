@@ -47,6 +47,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
 {
     public final static String LSID_PREFIX = "StudyDataset";
 
+    final static String CONTAINER = "container";
     final static String DATE = "date";
     final static String PARTICIPANTID = "participantid";
     final static String LSID = "lsid";
@@ -67,12 +68,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
      */
     private final static Set<PropertyStorageSpec> BASE_PROPERTIES;
     private final static Set<PropertyStorageSpec.Index> PROPERTY_INDICES;
-    protected final static PropertyStorageSpec DATE_PROPERTY = new PropertyStorageSpec(DATE, JdbcType.TIMESTAMP);
 
     static
     {
         PropertyStorageSpec[] props =
         {
+            new PropertyStorageSpec(CONTAINER, JdbcType.GUID),
             new PropertyStorageSpec(PARTICIPANTID, JdbcType.VARCHAR, 32),
             new PropertyStorageSpec(LSID, JdbcType.VARCHAR, 200, PropertyStorageSpec.Special.PrimaryKey),
             new PropertyStorageSpec(SEQUENCENUM, JdbcType.DECIMAL),
@@ -83,7 +84,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
             new PropertyStorageSpec(CREATED, JdbcType.TIMESTAMP),
             new PropertyStorageSpec(MODIFIED, JdbcType.TIMESTAMP),
             new PropertyStorageSpec(CREATED_BY, JdbcType.INTEGER),
-            new PropertyStorageSpec(MODIFIED_BY, JdbcType.INTEGER)
+            new PropertyStorageSpec(MODIFIED_BY, JdbcType.INTEGER),
+            new PropertyStorageSpec(DATE, JdbcType.TIMESTAMP)
         };
 
         BASE_PROPERTIES = new HashSet<>(Arrays.asList(props));
