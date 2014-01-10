@@ -357,7 +357,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
 
         if (measures.color) {
-            measureInfo.pointName = measures.shape.name
+            measureInfo.pointName = measures.color.name;
         }
 
         // using new Function is quicker than eval(), even in IE.

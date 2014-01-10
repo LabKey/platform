@@ -265,9 +265,6 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
 
     public GWTStudyDefinition createCohorts(GWTStudyDefinition studyDefinition)
     {
-        if (!getContainer().hasPermission(getUser(), AdminPermission.class))
-            throw new UnauthorizedException("Only admins can create timepoints.");
-
         StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
         if (study == null || studyDefinition.getGroups().size() == 0)
             return studyDefinition;
