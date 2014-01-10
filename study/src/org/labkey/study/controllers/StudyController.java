@@ -1374,6 +1374,9 @@ public class StudyController extends BaseStudyController
             study.setAllowReqLocClinic(form.isAllowReqLocClinic());
             study.setAllowReqLocSal(form.isAllowReqLocSal());
             study.setAllowReqLocEndpoint(form.isAllowReqLocEndpoint());
+            if (study.getTimepointType() != TimepointType.VISIT && c.isProject())
+                study.setShareDatasetDefinitions(form.isShareDatasets());
+
             study = StudyManager.getInstance().createStudy(user, study);
             RequestabilityManager.getInstance().setDefaultRules(c, user);
         }
@@ -5620,6 +5623,7 @@ public class StudyController extends BaseStudyController
         private boolean _allowReqLocClinic = true;
         private boolean _allowReqLocSal = true;
         private boolean _allowReqLocEndpoint = true;
+        private boolean _shareDatasets = false;
 
         public String getLabel()
         {
@@ -5859,6 +5863,16 @@ public class StudyController extends BaseStudyController
         public void setSpecies(String species)
         {
             _species = species;
+        }
+
+        public boolean isShareDatasets()
+        {
+            return _shareDatasets;
+        }
+
+        public void setShareDatasets(boolean shareDatasets)
+        {
+            _shareDatasets = shareDatasets;
         }
     }
 

@@ -64,6 +64,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.study.SampleManager;
+import org.labkey.study.StudyModule;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.samples.settings.RepositorySettings;
@@ -141,6 +142,10 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private String _participantAliasSourceProperty;
     private String _participantAliasProperty;
     private Integer _lastSpecimenRequest = null;
+
+    // experimental
+    private boolean _shareDatasetDefinitions = false;
+
 
     public StudyImpl()
     {
@@ -1085,6 +1090,21 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     {
         _participantAliasProperty = participantAliasProperty;
     }
+
+    public boolean isShareDatasetDefinitions()
+    {
+        return _shareDatasetDefinitions &&
+            AppProps.getInstance().isExperimentalFeatureEnabled(StudyModule.EXPERIMENTALFEATURE_SHARED_DATASET) &&
+            getContainer().isProject() &&
+            !getTimepointType().isVisitBased();
+    }
+
+
+    public void setShareDatasetDefinitions(boolean shareDatasetDefinitions)
+    {
+        _shareDatasetDefinitions = shareDatasetDefinitions;
+    }
+
 
     @Override
     public Visit getVisit(String participantID, Double visitID, Date date, boolean returnPotentialTimepoints)

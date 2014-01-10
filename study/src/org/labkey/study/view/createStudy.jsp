@@ -19,6 +19,8 @@
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.study.StudyModule" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -86,6 +88,7 @@
                 relies on an external set of tools to track movement of specimens between locations. The advanced system also enables a customizable specimen
                 request system.</p></td>
         </tr>
+
         <tr>
             <td colspan="2" class="labkey-announcement-title"><span>Security</span></td>
         </tr>
@@ -105,6 +108,33 @@
                 </select>
             </td>
         </tr>
+
+
+<%
+    boolean isProject = getContainer().isProject();
+    boolean enableSharedDataset = AppProps.getInstance().isExperimentalFeatureEnabled(StudyModule.EXPERIMENTALFEATURE_SHARED_DATASET);
+
+    if (isProject && enableSharedDataset)
+    {
+%>
+        <tr>
+            <td colspan="2" class="labkey-announcement-title"><span>Experimental Features</span></td>
+        </tr>
+        <tr><td colspan="3" class="labkey-title-area-line"></td></tr>
+        <tr>
+            <th style="text-align:left;width:18em">Shared Datasets</th>
+            <td align="left">
+                <input type="radio" name="shareDatasets" value="false" checked> disabled
+                <input type="radio" name="shareDatasets" value="true"> enabled
+            </td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+            <td align="left"><p><br>Enable sharing of dataset definitions created in this project-level study.  For now, this feature only works with date-based studies.
+                This is meant for development and testing purposes only.  You have been warned.</p></td>
+        </tr>
+<%}%>
+
         <tr>
             <td><br><br><%= generateSubmitButton("Create Study")%>&nbsp;<%= generateBackButton()%></td>
             <td>&nbsp;</td>

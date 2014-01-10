@@ -163,6 +163,8 @@
       <ns:column columnName="AssayPlan">
         <ns:description>The description of the assay plan for the study.</ns:description>
       </ns:column>
+      <ns:column columnName="ShareDatasetDefinitions">
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Site" tableDbType="TABLE">

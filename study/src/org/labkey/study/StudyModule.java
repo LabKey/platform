@@ -213,6 +213,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 {
     public static final String MODULE_NAME = "Study";
 
+    public static final String EXPERIMENTALFEATURE_SHARED_DATASET = "SharedDatasets";
+
     public static final BaseWebPartFactory reportsPartFactory = new ReportsWebPartFactory();
     public static final WebPartFactory reportsWidePartFactory = new ReportsWideWebPartFactory();
     public static final WebPartFactory samplesPartFactory = new SamplesWebPartFactory(WebPartFactory.LOCATION_RIGHT);
@@ -249,7 +251,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 13.37;
+        return 13.38;
     }
 
     protected void init()
@@ -466,6 +468,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         AdminConsole.addExperimentalFeatureFlag(CreateChildStudyAction.CREATE_SPECIMEN_STUDY, "Create Specimen Study",
             "Adds a button to the specimen request details page that creates a new child study containing the selected specimens, associated participants, and selected datasets.", false);
+
+        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTALFEATURE_SHARED_DATASET, "Allow Shared Datasets",
+                "Allows study dataset definitions created at the project root to be used by studies in sub-folders.", false);
     }
 
     @Override
