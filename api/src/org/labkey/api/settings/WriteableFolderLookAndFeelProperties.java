@@ -93,12 +93,24 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
         storeStringValue(DEFAULT_DATE_FORMAT, defaultDateFormat);
     }
 
+    // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
+    public void clearDefaultDateFormat()
+    {
+        remove(DEFAULT_DATE_FORMAT);
+    }
+
     // Convenience method to support import: validate and save just this property
     public static void saveDefaultDateFormat(Container c, String defaultDateFormat) throws IllegalArgumentException
     {
         WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
         props.setDefaultDateFormat(defaultDateFormat);
         props.save();
+    }
+
+    // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
+    public void clearDefaultNumberFormat()
+    {
+        remove(DEFAULT_NUMBER_FORMAT);
     }
 
     // Validate inside the set method, since this is called from multiple places

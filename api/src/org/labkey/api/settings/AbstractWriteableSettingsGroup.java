@@ -90,6 +90,12 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
         _properties.put(name, value);
     }
 
+    // Clear out a single property... should then inherit this value from parent
+    public void remove(String name)
+    {
+        _properties.remove(name);
+    }
+
     public void writeAuditLogEvent(User user, Map<String,String> oldProps)
     {
         String diff = genDiffHtml(oldProps);
