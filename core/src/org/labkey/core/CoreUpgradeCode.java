@@ -35,6 +35,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
@@ -43,6 +44,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.settings.AbstractSettingsGroup;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.Portal;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UsersDomainKind;
@@ -300,7 +302,7 @@ public class CoreUpgradeCode implements UpgradeCode
         });
     }
 
-    // invoked by core-13.14-13.15.sql
+    // invoked by core-13.31-13.32.sql and core-13.32-13.33.sql
     @SuppressWarnings({"UnusedDeclaration"})
     @DeferredUpgrade
     public void ensureCoreUserPropertyDescriptorScales(final ModuleContext context)
@@ -309,7 +311,18 @@ public class CoreUpgradeCode implements UpgradeCode
         Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
 
         if (domain == null)
+        {
+            // Create the domain if we didn't have it already
             domain = PropertyService.get().createDomain(UsersDomainKind.getDomainContainer(), domainURI, CoreQuerySchema.USERS_TABLE_NAME);
+            try
+            {
+                domain.save(context.getUpgradeUser());
+            }
+            catch (ChangePropertyDescriptorException e)
+            {
+                throw new UnexpectedException(e);
+            }
+        }
 
         if (domain != null)
             UsersDomainKind.ensureDomainPropertyScales(domain, context.getUpgradeUser());
