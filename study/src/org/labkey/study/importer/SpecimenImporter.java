@@ -1980,7 +1980,7 @@ public class SpecimenImporter
     private interface ComputedColumn
     {
         String getName();
-        Object getValue(Map<String, Object> row);
+        Object getValue(Map<String, Object> row) throws ValidationException;
     }
 
     private class EntityIdComputedColumn implements ComputedColumn
@@ -2270,7 +2270,7 @@ public class SpecimenImporter
 
 
     private void replaceTable(DbSchema schema, SpecimenImportFile file, boolean addEntityId, boolean hasContainerColumn)
-        throws IOException, SQLException
+        throws IOException, SQLException, ValidationException
     {
         ComputedColumn entityIdCol = null;
         if (addEntityId)
@@ -2296,7 +2296,7 @@ public class SpecimenImporter
     public <T extends ImportableColumn> Pair<List<T>, Integer> replaceTable(
             DbSchema schema, SpecimenImportFile file, String tableName, boolean generateGlobaluniqueIds,
             boolean hasContainerColumn, ComputedColumn... computedColumns)
-        throws IOException, SQLException
+        throws IOException, SQLException, ValidationException
     {
         if (file == null)
         {
@@ -2518,7 +2518,7 @@ public class SpecimenImporter
             }
 
             @Override
-            public Object getValue(Map<String, Object> row)
+            public Object getValue(Map<String, Object> row) throws ValidationException
             {
                 Object p = SpecimenImporter.this.getValue(participantIdCol, row);
                 String participantId = piih.translateParticipantId(p);

@@ -26,10 +26,10 @@ import org.labkey.api.etl.DataIterator;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.TimepointType;
+import org.labkey.study.query.StudyQuerySchema;
 
-import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -43,6 +43,7 @@ public class ParticipantIdImportHelper
     Study _study;
     User _user;
     HashMap<String, String> _aliasLookup;
+    HashSet<String> _duplicateAliasLookup;
 
     /*
      * Default constructor for the ParticipantIdImportHelper saves parameter values for future use.
@@ -55,6 +56,7 @@ public class ParticipantIdImportHelper
     {
         _study = study;
         _user = user;
+        _duplicateAliasLookup = new HashSet<>();
         _aliasLookup = generateAliasHashMap(def);
     }
 
@@ -63,6 +65,7 @@ public class ParticipantIdImportHelper
             @Nullable HashMap<String,String> aliasLookupMap)
     {
         _aliasLookup = aliasLookupMap;
+        _duplicateAliasLookup = new HashSet<>();
     }
 
     /*
@@ -84,6 +87,10 @@ public class ParticipantIdImportHelper
             DataSetDefinition aliasDataset = studyManager.getDataSetDefinition(studyImpl, participantAliasDatasetId);
             if (aliasDataset != null) // possible if the alias dataset has been deleted
             {
+                // Build up a HashSet of ptids to check for conflicts in the alias table
+                HashSet<String> ptids = generatePtidHashSet(studyImpl);
+
+                //  Build up a HashMap of aliases
                 TableInfo aliasTableInfo = studyManager.getDataSetDefinition(studyImpl, participantAliasDatasetId).getTableInfo(_user);
                 Map<String, Object>[] rows = new TableSelector(aliasTableInfo, ImmutableSet.of(studyImpl.getSubjectColumnName(), participantAliasSourceProperty, participantAliasProperty), null, null).getMapArray();
                 for (Map<String, Object> row : rows)
@@ -96,22 +103,36 @@ public class ParticipantIdImportHelper
                         throw new ValidationException("Invalid configuration of alternate " + studyImpl.getSubjectNounSingular() + " " + studyImpl.getSubjectColumnName() + "s and aliases.");
                     String id = idObj.toString();
                     String alias = aliasObj.toString();
-                    result.put(alias, id);
+                    if (result.containsKey(alias))  // maintain a conflict set in the case that there are multiple entries for one key, error on access
+                        _duplicateAliasLookup.add(alias);
+                    else
+                    {
+                        result.put(alias, id);
+                        if (ptids.contains(alias))
+                            throw new ValidationException("There is an alias " + alias + " for " + id + " but data has already been entered for this alias.  You must correct the data in the dataset (possibly using the replace tool) to continue.");
+                    }
                 }
             }
         }
         return result;
     }
 
-    // for testing
-    public ParticipantIdImportHelper(
-            TimepointType timetype,
-            Date startDate,
-            @Nullable String defaultParticipantId,
-            Map<String, Double> visitNameMap)
+    /*
+     * Build up a HashSet of ptids to check for conflicts in the alias table
+     */
+    protected HashSet<String> generatePtidHashSet(StudyImpl studyImpl)
     {
+        HashSet<String> ptids = new HashSet<>();
+        StudyQuerySchema studySchema = new StudyQuerySchema(studyImpl, _user, true);
+        TableInfo ptidTableInfo = studySchema.getTable(studyImpl.getSubjectNounSingular());
+        Map<String, Object>[] tmp_rows = new TableSelector(ptidTableInfo, ImmutableSet.of(studyImpl.getSubjectColumnName()), null, null).getMapArray();
+        for (Map<String, Object> row : tmp_rows)
+        {
+            Object idObj = row.get(studyImpl.getSubjectColumnName());
+            ptids.add((String) idObj);
+        }
+        return ptids;
     }
-
 
     /*
      * The getCallable method returns a collable object that translates the participantId to its alias on lookup
@@ -133,7 +154,7 @@ public class ParticipantIdImportHelper
     /*
      * translateParticipantId performs the lookup of the participantId value using the alias created on helper setup
      */
-    public String translateParticipantId(@Nullable Object p)
+    public String translateParticipantId(@Nullable Object p) throws ValidationException
     {
         String participantId = null;
 
@@ -144,6 +165,9 @@ public class ParticipantIdImportHelper
             else
                 participantId = p.toString();
         }
+
+        if (_duplicateAliasLookup.contains(participantId))
+            throw new ValidationException("There are multiple entries for the alias " + participantId + " which must be corrected before the import may continue.");
 
         String value = _aliasLookup.get(participantId);
         if (value != null)
@@ -168,10 +192,16 @@ public class ParticipantIdImportHelper
                     map
                     );
             // the map is populated with values to return upon translation
-            String result1 = h.translateParticipantId((Object) "IdAnimal01");
-            assertEquals(result1, "IdAnimal01_ID");
-            String result3 = h.translateParticipantId((Object) "IdAnimal03");
-            assertEquals(result3, "IdAnimal03_ID");
+            try
+            {
+                String result1 = h.translateParticipantId((Object) "IdAnimal01");
+                assertEquals(result1, "IdAnimal01_ID");
+                String result3 = h.translateParticipantId((Object) "IdAnimal03");
+                assertEquals(result3, "IdAnimal03_ID");
+            }
+            catch (ValidationException e) {
+                assert(false); // fail
+            }
         }
 
         @Test
@@ -181,11 +211,18 @@ public class ParticipantIdImportHelper
             ParticipantIdImportHelper h = new ParticipantIdImportHelper(
                     map
             );
-            // the map is empty, so values should be "translated" back to themselves
-            String result1 = h.translateParticipantId((Object) "IdAnimal01");
-            assertEquals(result1, "IdAnimal01");
-            String result3 = h.translateParticipantId((Object) "IdAnimal03");
-            assertEquals(result3, "IdAnimal03");
+            try
+            {
+                // the map is empty, so values should be "translated" back to themselves
+                String result1 = h.translateParticipantId((Object) "IdAnimal01");
+                assertEquals(result1, "IdAnimal01");
+                String result3 = h.translateParticipantId((Object) "IdAnimal03");
+                assertEquals(result3, "IdAnimal03");
+            }
+            catch (ValidationException e)
+            {
+                assert(false); // fail
+            }
         }
     }
 }
