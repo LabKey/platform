@@ -1159,9 +1159,8 @@ Ext4.define('File.panel.Browser', {
         return Ext4.apply({}, configs, {
             xtype : 'treepanel',
             itemId : 'treenav',
-            id : 'treeNav',
             region : 'west',
-            cls : 'themed-panel',
+            cls : 'themed-panel treenav-panel',
             width : 225,
             store : store,
             collapsed: !this.expandFolderTree,
