@@ -116,6 +116,10 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 {
     private ActionURL _successURL;
 
+    // TODO: A much better approach would be to declare an enum of mini-actions that each define validate(), getView(), and handlePost().
+    // Create an EnumSet of the currently valid mini-actions, based on folder vs. project vs. site
+    // Convert tabId into an Enum and validate against EnumSet before dispatch. Then dispatch to validate(), getView() or handlePost().
+
     public void validateCommand(FolderManagementForm form, Errors errors)
     {
         if (form.isFolderTypeTab())
