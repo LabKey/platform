@@ -126,7 +126,7 @@ public class CoreQuerySchema extends UserSchema
     public TableInfo getGroups()
     {
         TableInfo principalsBase = CoreSchema.getInstance().getTableInfoPrincipals();
-        FilteredTable groups = new FilteredTable(principalsBase);
+        FilteredTable groups = new FilteredTable<>(principalsBase, this);
         groups.setName("Groups");
 
         //expose UserId, Name, Container, and Type
@@ -207,7 +207,7 @@ public class CoreQuerySchema extends UserSchema
     public TableInfo getPrincipals()
     {
         TableInfo principalsBase = CoreSchema.getInstance().getTableInfoPrincipals();
-        FilteredTable principals = new FilteredTable(principalsBase);
+        FilteredTable principals = new FilteredTable<>(principalsBase, this);
 
         //we expose userid, name and type via query
         ColumnInfo col = principals.wrapColumn(principalsBase.getColumn("UserId"));
@@ -258,7 +258,7 @@ public class CoreQuerySchema extends UserSchema
     public TableInfo getMembers()
     {
         TableInfo membersBase = CoreSchema.getInstance().getTableInfoMembers();
-        FilteredTable members = new FilteredTable(membersBase);
+        FilteredTable members = new FilteredTable<>(membersBase, this);
 
         ColumnInfo col = members.wrapColumn(membersBase.getColumn("UserId"));
         col.setKeyField(true);
@@ -372,7 +372,7 @@ public class CoreQuerySchema extends UserSchema
     protected TableInfo getMembersTable()
     {
         TableInfo membersBase = CoreSchema.getInstance().getTableInfoMembers();
-        FilteredTable result = new FilteredTable(membersBase);
+        FilteredTable result = new FilteredTable<>(membersBase, this);
 
         ColumnInfo userColumn = result.wrapColumn("User", membersBase.getColumn("UserId"));
         result.addColumn(userColumn);

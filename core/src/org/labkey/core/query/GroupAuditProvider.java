@@ -128,7 +128,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
     }
 
     @Override
-    public TableInfo createTableInfo(UserSchema userSchema)
+    public TableInfo createTableInfo(final UserSchema userSchema)
     {
         Domain domain = getDomain();
         DbSchema dbSchema =  DbSchema.get(SCHEMA_NAME);
@@ -141,7 +141,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
                 if (COLUMN_NAME_GROUP.equalsIgnoreCase(col.getName()))
                 {
                     col.setLabel("Group");
-                    col.setFk(new GroupAuditViewFactory.GroupForeignKey());
+                    col.setFk(new GroupAuditViewFactory.GroupForeignKey(userSchema));
                     col.setDisplayColumnFactory(new DisplayColumnFactory()
                     {
                         public DisplayColumn createRenderer(ColumnInfo colInfo)

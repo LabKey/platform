@@ -72,13 +72,13 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
                 return wrapColumn(alias, _rootTable.getColumn("Created"));
             case CreatedBy:
                 ColumnInfo createdByColumn = wrapColumn(alias, _rootTable.getColumn("CreatedBy"));
-                createdByColumn.setFk(new UserIdForeignKey());
+                createdByColumn.setFk(new UserIdForeignKey(getUserSchema()));
                 return createdByColumn;
             case Modified:
                 return wrapColumn(alias, _rootTable.getColumn("Modified"));
             case ModifiedBy:
                 ColumnInfo modifiedByColumn = wrapColumn(alias, _rootTable.getColumn("ModifiedBy"));
-                modifiedByColumn.setFk(new UserIdForeignKey());
+                modifiedByColumn.setFk(new UserIdForeignKey(getUserSchema()));
                 return modifiedByColumn;
             case IntKey1:
                 _columnMapping.put(column.name(), alias);

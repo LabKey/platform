@@ -295,13 +295,14 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
 
     protected SimpleFilter replaceFilterParameterName(SimpleFilter filter, String oldKey, String newKey)
     {
+        FieldKey oldFieldKey = FieldKey.fromString(oldKey);
         for (SimpleFilter.FilterClause clause : filter.getClauses())
         {
-            if (clause.getColumnNames().size() == 1 && oldKey.equalsIgnoreCase(clause.getColumnNames().get(0)))
+            if (clause.getFieldKeys().size() == 1 && oldFieldKey.equals(clause.getFieldKeys().get(0)))
             {
                 if (clause.getParamVals().length > 1)
                     throw new UnsupportedOperationException("Only single filters are supported on column " + newKey);
-                filter.deleteConditions(oldKey);
+                filter.deleteConditions(oldFieldKey);
                 if (clause.getParamVals().length != 1)
                     throw new UnsupportedOperationException("Reports that provide custom SQL filters must override getFilterQueryString.");
                 filter.addCondition(newKey, clause.getParamVals()[0]);

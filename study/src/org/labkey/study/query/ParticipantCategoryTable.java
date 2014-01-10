@@ -58,7 +58,7 @@ public class ParticipantCategoryTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("OwnerId"));
 
         ColumnInfo createdBy = wrapColumn("CreatedBy", getRealTable().getColumn("CreatedBy"));
-        createdBy.setFk(new UserIdForeignKey());
+        createdBy.setFk(new UserIdForeignKey(getUserSchema()));
         createdBy.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)

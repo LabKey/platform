@@ -461,11 +461,11 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         List<SimpleFilter.FilterClause> clauses = new ArrayList<>(filter.getClauses());
         for (SimpleFilter.FilterClause clause : clauses)
         {
-            List<String> colNames = clause.getColumnNames();
+            List<FieldKey> fieldKeys = clause.getFieldKeys();
             boolean allColsFound = true;
-            for (String colName : colNames)
+            for (FieldKey fieldKey : fieldKeys)
             {
-                if (!filterColTypes.containsKey(FieldKey.fromString(colName)))
+                if (!filterColTypes.containsKey(fieldKey))
                     allColsFound = false;
             }
             if (allColsFound)
@@ -477,8 +477,8 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
             {
                 // Remove filter clauses for columns that are no longer found on the specified query.
                 // Removing them here ensures that we send an accurate description of the current filters to the client.
-                for (String colName : colNames)
-                    filter.deleteConditions(colName);
+                for (FieldKey fieldKey : fieldKeys)
+                    filter.deleteConditions(fieldKey);
             }
         }
         return separator;

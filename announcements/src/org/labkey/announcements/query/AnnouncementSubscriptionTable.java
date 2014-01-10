@@ -74,7 +74,7 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
     protected void applyContainerFilter(ContainerFilter filter)
     {
         // We need to filter on the announcement's container, since we don't have a container column directly on userlist
-        getFilter().deleteConditions("Container");
+        getFilter().deleteConditions(FieldKey.fromParts("Container"));
 
         SQLFragment sql = new SQLFragment("MessageId IN (SELECT RowId FROM ");
         sql.append(CommSchema.getInstance().getTableInfoAnnouncements(), "a");

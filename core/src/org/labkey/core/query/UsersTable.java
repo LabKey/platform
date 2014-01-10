@@ -157,7 +157,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                     ColumnInfo col = getColumn(propColumn.getName());
                     if (col != null)
                     {
-                        assert col.getScale() == pd.getScale();
+                        assert col.getScale() == pd.getScale() : "Scale doesn't match for column " + col.getName() + ": " + col.getScale() + " vs " + pd.getScale();
                         pd.copyTo(col);
                         if (!col.isHidden())
                             defaultCols.add(FieldKey.fromParts(col.getName()));

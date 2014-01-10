@@ -68,7 +68,7 @@ public class AuditLogTable extends FilteredTable<UserSchema>
         setInsertURL(LINK_DISABLER);
 
         ColumnInfo createdBy = wrapColumn("CreatedBy", getRealTable().getColumn("CreatedBy"));
-        createdBy.setFk(new UserIdForeignKey());
+        createdBy.setFk(new UserIdForeignKey(getUserSchema()));
         createdBy.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -79,7 +79,7 @@ public class AuditLogTable extends FilteredTable<UserSchema>
         addColumn(createdBy);
 
         ColumnInfo impersonatedBy = wrapColumn("ImpersonatedBy", getRealTable().getColumn("ImpersonatedBy"));
-        impersonatedBy.setFk(new UserIdForeignKey());
+        impersonatedBy.setFk(new UserIdForeignKey(getUserSchema()));
         impersonatedBy.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)

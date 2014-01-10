@@ -150,8 +150,7 @@ public class DomainForm extends ViewForm
         {
             ret.put(pt.getTypeUri(), typeURItoString(pt.getTypeUri()));
         }
-        Domain[] dds = PropertyService.get().getDomains(getContainer());
-        for (Domain dd : dds)
+        for (Domain dd : PropertyService.get().getDomains(getContainer()))
         {
             if (allowDomainAsRangeURI(dd))
             {

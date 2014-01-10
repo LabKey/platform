@@ -48,7 +48,7 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
 
     private void applyFilters()
     {
-        clearConditions("FolderRunType");
+        clearConditions(FieldKey.fromParts("FolderRunType"));
 
         SQLFragment sqlFragment = new SQLFragment("(SELECT er.Container FROM ");
         sqlFragment.append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "er");

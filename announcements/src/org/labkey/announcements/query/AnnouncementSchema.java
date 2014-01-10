@@ -109,7 +109,7 @@ public class AnnouncementSchema extends UserSchema
 
     public TableInfo createEmailFormatTable()
     {
-        FilteredTable result = new FilteredTable(CommSchema.getInstance().getTableInfoEmailFormats());
+        FilteredTable result = new FilteredTable<>(CommSchema.getInstance().getTableInfoEmailFormats(), this);
         result.setName(EMAIL_FORMAT_TABLE_NAME);
         result.wrapAllColumns(true);
         result.setPublicSchemaName(getName());
@@ -118,7 +118,7 @@ public class AnnouncementSchema extends UserSchema
 
     public TableInfo createEmailOptionTable()
     {
-        FilteredTable result = new FilteredTable(CommSchema.getInstance().getTableInfoEmailOptions());
+        FilteredTable result = new FilteredTable<>(CommSchema.getInstance().getTableInfoEmailOptions(), this);
         result.setName(EMAIL_OPTION_TABLE_NAME);
         result.addWrapColumn(result.getRealTable().getColumn("EmailOptionId"));
         result.addWrapColumn(result.getRealTable().getColumn("EmailOption"));

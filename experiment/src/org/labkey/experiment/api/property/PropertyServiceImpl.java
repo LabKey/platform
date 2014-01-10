@@ -140,15 +140,15 @@ public class PropertyServiceImpl implements PropertyService.Interface
         return Collections.unmodifiableList(l);
     }
 
-    public Domain[] getDomains(Container container)
+    public List<? extends Domain> getDomains(Container container)
     {
-        List<DomainDescriptor> dds = new ArrayList<>(OntologyManager.getDomainDescriptors(container));
-        Domain[] ret = new Domain[dds.size()];
-        for (int i = 0; i < dds.size(); i ++)
+        List<Domain> result = new ArrayList<>();
+        for (DomainDescriptor dd : OntologyManager.getDomainDescriptors(container))
         {
-            ret[i] = new DomainImpl(dds.get(i));
+            result.add(new DomainImpl(dd));
         }
-        return ret;
+
+        return Collections.unmodifiableList(result);
     }
 
     public void registerValidatorKind(ValidatorKind validatorKind)

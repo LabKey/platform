@@ -92,7 +92,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
         addColumn(new AliasedColumn(this, getCustomCaption("Area", ccc), _rootTable.getColumn("Area")));
         addWrapColumn(_rootTable.getColumn("Title"));
         ColumnInfo assignedTo = wrapColumn("AssignedTo", _rootTable.getColumn("AssignedTo"));
-        assignedTo.setFk(new UserIdForeignKey());
+        assignedTo.setFk(new UserIdForeignKey(getUserSchema()));
         assignedTo.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)

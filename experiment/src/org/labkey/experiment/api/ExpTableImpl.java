@@ -134,7 +134,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     public ColumnInfo createUserColumn(String name, ColumnInfo userIdColumn)
     {
         ColumnInfo ret = wrapColumn(name, userIdColumn);
-        ret.setFk(new UserIdForeignKey());
+        ret.setFk(new UserIdForeignKey(getUserSchema()));
         ret.setShownInInsertView(false);
         ret.setShownInUpdateView(false);
         ret.setUserEditable(false);

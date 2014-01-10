@@ -138,7 +138,7 @@ public class GroupAuditViewFactory extends SimpleAuditViewFactory
         if (col != null)
         {
             col.setLabel("Group");
-            col.setFk(new GroupForeignKey());
+            col.setFk(new GroupForeignKey(schema));
             col.setDisplayColumnFactory(new DisplayColumnFactory()
             {
                 public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -201,15 +201,18 @@ public class GroupAuditViewFactory extends SimpleAuditViewFactory
 
     public static class GroupForeignKey extends LookupForeignKey
     {
-        public GroupForeignKey()
+        private final UserSchema _userSchema;
+
+        public GroupForeignKey(UserSchema userSchema)
         {
             super("UserId", "Name");
+            _userSchema = userSchema;
         }
 
         public TableInfo getLookupTableInfo()
         {
             TableInfo tinfoUsers = CoreSchema.getInstance().getTableInfoPrincipals();
-            FilteredTable ret = new FilteredTable(tinfoUsers);
+            FilteredTable ret = new FilteredTable<>(tinfoUsers, _userSchema);
             ret.addWrapColumn(tinfoUsers.getColumn("UserId"));
             ret.addColumn(ret.wrapColumn("Name", tinfoUsers.getColumn("Name")));
             ret.setTitleColumn("Name");
