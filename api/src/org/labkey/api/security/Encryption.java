@@ -285,6 +285,19 @@ public class Encryption
             }
         }
 
+        @Test(expected = DecryptionException.class)
+        public void testBadKeyException()
+        {
+            String textToEncrypt = "this is some text I want to encrypt";
+            String passPhrase = "Here's my super secret pass phrase";
+
+            Algorithm aesPassPhrase = new AES(passPhrase, 128, "test pass phrase");
+            byte[] encrypted = aesPassPhrase.encrypt(textToEncrypt);
+
+            Algorithm aesWrongPassPhrase = new AES(passPhrase + " not", 128, "test pass phrase");
+            aesWrongPassPhrase.decrypt(encrypted);
+        }
+
         private void test(Algorithm algorithm)
         {
             test(algorithm, algorithm);
