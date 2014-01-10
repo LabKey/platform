@@ -43,6 +43,7 @@
     ProjectSettingsAction.LookAndFeelPropertiesBean bean = ((JspView<ProjectSettingsAction.LookAndFeelPropertiesBean>)HttpView.currentView()).getModelBean();
     Container c = getContainer();
     boolean folder = !c.isRoot() && !c.isProject();
+    String clearMessage = folder ? "the default format properties" : "all look & feel properties";
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
 %>
 <%=formatMissedErrors("form")%>
@@ -247,7 +248,7 @@
 
     function confirmReset()
     {
-        if (confirm('Are you sure you want to clear all look & feel properties?'))
+        if (confirm('Are you sure you want to clear <%=text(clearMessage)%>?'))
         {
             _form.setClean();
             return true;
