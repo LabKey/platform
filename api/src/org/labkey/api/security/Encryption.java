@@ -26,7 +26,9 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.PropertyStore;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.util.ConfigurationException;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -162,9 +164,11 @@ public class Encryption
     public static class AES implements Algorithm
     {
         private final @Nullable SecretKeySpec _keySpec;
+        private final String _keySource;
 
-        public AES(String passPhrase, int keyLength)
+        public AES(String passPhrase, int keyLength, String keySource)
         {
+            _keySource = keySource;
             if (null == passPhrase)
                 throw new IllegalStateException("Pass phrase cannot be null");
 
@@ -214,10 +218,25 @@ public class Encryption
                 cipher.init(Cipher.DECRYPT_MODE, _keySpec, new IvParameterSpec(iv));
                 return new String(cipher.doFinal(encrypted), "UTF-8");
             }
+            catch (BadPaddingException e)
+            {
+                // For now, assume that BadPaddingException means the key has been changed and all other
+                // exceptions are coding issues. That might change in the future...
+                throw new DecryptionException("Could not decrypt this content using the " + _keySource, e);
+            }
             catch (Exception e)
             {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+
+    public static class DecryptionException extends ConfigurationException
+    {
+        public DecryptionException(String message, Throwable cause)
+        {
+            super(message, cause);
         }
     }
 
@@ -229,7 +248,7 @@ public class Encryption
     public static Algorithm getAES128()
     {
         if (isMasterEncryptionPassPhraseSpecified())
-            return new AES(getMasterEncryptionPassPhrase(), 128);
+            return new AES(getMasterEncryptionPassPhrase(), 128, "currently configured MasterEncryptionKey; has the key changed in labkey.xml?");
         else
             throw new IllegalStateException("MasterEncryptionKey has not been specified in labkey.xml; this method should not be called");
     }
@@ -242,7 +261,7 @@ public class Encryption
         {
             String passPhrase = "Here's my super secret pass phrase";
 
-            Algorithm aesPassPhrase = new AES(passPhrase, 128);
+            Algorithm aesPassPhrase = new AES(passPhrase, 128, "test pass phrase");
 
             test(aesPassPhrase);
 
@@ -252,7 +271,7 @@ public class Encryption
                 test(aes);
 
                 // Test that static factory method matches this configuration
-                Algorithm aes2 = new AES(getMasterEncryptionPassPhrase(), 128);
+                Algorithm aes2 = new AES(getMasterEncryptionPassPhrase(), 128, "test pass phrase");
 
                 test(aes, aes2);
                 test(aes2, aes);
@@ -260,9 +279,9 @@ public class Encryption
 
             if (Cipher.getMaxAllowedKeyLength("AES") >= 1024)
             {
-                test(new AES(passPhrase, 256));
-                test(new AES(passPhrase, 512));
-                test(new AES(passPhrase, 1024));
+                test(new AES(passPhrase, 256, "test pass phrase"));
+                test(new AES(passPhrase, 512, "test pass phrase"));
+                test(new AES(passPhrase, 1024, "test pass phrase"));
             }
         }
 
