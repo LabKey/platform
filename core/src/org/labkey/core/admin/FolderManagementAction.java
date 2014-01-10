@@ -1050,15 +1050,31 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             return tabs;
         }
 
+        private boolean isValidTab(String tabId)
+        {
+            List<NavTree> validTabs = getTabList();
+
+            for (NavTree validTab : validTabs)
+                if (validTab.getId().equals(tabId))
+                    return true;
+
+            return false;
+        }
+
         public HttpView getTabView(String tabId) throws Exception
         {
+            // Use the tab list as the canonical list of currently valid tabs. This means we shouldn't have to validate
+            // inside the switch statement below. TODO: Move this checking (and helper) up to TabStripView?
+            if (!isValidTab(tabId))
+                return null;  // tabstrip.jsp will display a "tab does not exist" message
+
             switch (tabId)
             {
                 case "folderTree":
-                    assert !_container.isRoot() : "No folder tree for the root folder";
+                    assert !_container.isRoot() : "No folder tree for the root folder";     // TODO: Not needed
                     return new JspView<>("/org/labkey/core/admin/manageFolders.jsp", _form, _errors);
                 case "folderType":
-                    assert !_container.isRoot() : "No folder type settings for the root folder";
+                    assert !_container.isRoot() : "No folder type settings for the root folder";    // TODO: Not needed
                     return new JspView<>("/org/labkey/core/admin/folderType.jsp", _form, _errors);
                 case "mvIndicators":
                     return new JspView<>("/org/labkey/core/admin/mvIndicators.jsp", _form, _errors);
@@ -1080,11 +1096,11 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 case "messages":
                     return getMessageTabView();
                 case "export":
-                    assert !_container.isRoot() : "No export for the root folder";
+                    assert !_container.isRoot() : "No export for the root folder";    // TODO: Not needed
                     _form.setExportType(PageFlowUtil.filter(getViewContext().getActionURL().getParameter("exportType")));
                     return new JspView<>("/org/labkey/core/admin/exportFolder.jsp", _form, _errors);
                 case "import":
-                    assert !_container.isRoot() : "No import for the root folder";
+                    assert !_container.isRoot() : "No import for the root folder";    // TODO: Not needed
                     return new JspView<>("/org/labkey/core/admin/importFolder.jsp", _form, _errors);
                 case "info":
                     return AdminController.getContainerInfoView(_container, getViewContext().getUser());
@@ -1093,7 +1109,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 case "settings":
                     return new ProjectSettingsAction.LookAndFeelView(_container, null, _errors);
                 default:
-                    return null; // tabstrip.jsp will handle display for unknown tabIds
+                    throw new IllegalStateException("isValidTab() should have prevented this");
             }
         }
 
