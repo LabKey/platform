@@ -104,7 +104,7 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, ImportCo
                 writer.print(propertyType.getTypeUri());
                 writer.print('\t');
                 writer.print(col.isNullable() ? "optional\t" : "required\t");
-                writer.print(StringUtils.trimToEmpty(col.getFormat()) + "\t");     // TODO: Only export if non-null / != default
+                writer.print(StringUtils.trimToEmpty(col.getFormat()) + "\t");
 
                 // TODO: Export all ConceptURIs, not just visit date tag?
                 if (col.getColumnName().equals(visitDatePropertyName))

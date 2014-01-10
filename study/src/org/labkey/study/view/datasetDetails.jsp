@@ -128,14 +128,14 @@ if (!pipelineSet)
     </tr>
     <tr>
         <td class=labkey-form-label>Cohort Association</td>
-        <td><%= dataset.getCohort() != null ? h(dataset.getCohort().getLabel()) : "All" %></td>
+        <td><%=h(dataset.getCohort() != null ? dataset.getCohort().getLabel() : "All")%></td>
 
-        <td class=labkey-form-label><%=visitManager.getLabel()%> Date Column</td>
+        <td class=labkey-form-label><%=h(visitManager.getLabel())%> Date Column</td>
         <td><%= h(dataset.getVisitDateColumnName()) %></td>
     </tr>
     <tr>
         <td class=labkey-form-label>Additional Key Column</td>
-        <td><%= dataset.getKeyPropertyName() != null ? h(dataset.getKeyPropertyName()) : "None" %></td>
+        <td><%=h(dataset.getKeyPropertyName() != null ? h(dataset.getKeyPropertyName()) : "None")%></td>
 
         <td rowspan="3" class=labkey-form-label>Description</td>
         <td rowspan="3"><%= h(dataset.getDescription()) %></td>
@@ -144,11 +144,11 @@ if (!pipelineSet)
         <td class=labkey-form-label>Demographic Data <%=helpPopup("Demographic Data", "Demographic data appears only once for each " +
         StudyService.get().getSubjectNounSingular(c).toLowerCase() +
         " in the study.")%></td>
-        <td><%= dataset.isDemographicData() ? "true" : "false" %></td>
+        <td><%=text(dataset.isDemographicData() ? "true" : "false")%></td>
     </tr>
     <tr>
         <td class=labkey-form-label>Show In Overview</td>
-        <td><%= dataset.isShowByDefault() ? "true" : "false" %></td>
+        <td><%=text(dataset.isShowByDefault() ? "true" : "false")%></td>
     </tr>
 </table>
 <% WebPartView.endTitleFrame(out); %>

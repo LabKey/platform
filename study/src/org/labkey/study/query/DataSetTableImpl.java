@@ -69,9 +69,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.SpecimenForeignKey;
 import org.labkey.api.util.ContainerContext;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
-import org.labkey.api.util.Formats;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -98,8 +96,10 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
 {
     public static final String QCSTATE_ID_COLNAME = "QCState";
     public static final String QCSTATE_LABEL_COLNAME = "QCStateLabel";
-    DataSetDefinition _dsd;
-    TableInfo _fromTable;
+
+    private final DataSetDefinition _dsd;
+
+    private TableInfo _fromTable;
     private ContainerFilterable _assayResultTable;
 
     public DataSetTableImpl(final StudyQuerySchema schema, DataSetDefinition dsd)
@@ -816,18 +816,6 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
     public Container getContainer()
     {
         return _dsd.getContainer();
-    }
-
-    @Override
-    public String getDefaultDateFormat()
-    {
-        return DateUtil.getDateFormatString(getContainer());
-    }
-
-    @Override
-    public String getDefaultNumberFormat()
-    {
-        return Formats.getNumberFormatString(getContainer());
     }
 
     @Override

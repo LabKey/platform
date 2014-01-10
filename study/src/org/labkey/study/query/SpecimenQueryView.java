@@ -747,7 +747,6 @@ public class SpecimenQueryView extends BaseStudyQueryView
             containerIdCol.setVisible(false);
 
         rgn.setShowRecordSelectors(_showRecordSelectors);
-        StudyManager.getInstance().applyDefaultFormats(getContainer(), rgn.getDisplayColumns());
 
         if (_hiddenFormFields != null)
         {

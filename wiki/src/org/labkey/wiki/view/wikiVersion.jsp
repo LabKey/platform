@@ -58,7 +58,7 @@ else
     }
     else
     {
-        out.print(formattedHtml);
+        out.print(text(formattedHtml));
 
         %><br><br></td></tr> <%
 
@@ -75,8 +75,8 @@ else
        <tr><td colspan=2 class="labkey-title-area-line"></td></tr>
        <tr>
            <td align=left>
-               <i>created by:</i> <%=bean.createdBy%><br>
-               <i>date:</i> <%=bean.created%><br>
+               <i>created by:</i> <%=h(bean.createdBy)%><br>
+               <i>date:</i> <%=formatDateTime(bean.created)%><br>
            </td>
            <td align=right>
                <%=textLink("page", bean.pageURL)%>&nbsp;<%=textLink("history", bean.versionsURL)%>&nbsp;<%=textLink("source", bean.sourceURL)%>&nbsp;<%
@@ -104,7 +104,7 @@ else
             compare.render(new RenderContext(getViewContext()), out);
         }
 
-        out.print("[versions:");
+        out.print(text("[versions:"));
 
         for (WikiVersion v : versions)
         {
@@ -118,7 +118,7 @@ else
                 <a href="<%=h(bean.versionLink + "&version=" + n)%>"><%=n%></a><%
             }
         }
-        out.print("]");
+        out.print(text("]"));
     }%>
     </td></tr></table>
     <%

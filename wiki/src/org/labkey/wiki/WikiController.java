@@ -112,6 +112,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -1323,7 +1324,7 @@ public class WikiController extends SpringActionController
         public final boolean hasAdminPermission;
         public final boolean hasSetCurVersionPermission;
         public final String createdBy;
-        public final String created;
+        public final Date created;
         public final String versionLink;            //base url for different versions of this page
         public final String compareLink;            //base url for comparing to another version
 
@@ -1341,7 +1342,7 @@ public class WikiController extends SpringActionController
             hasAdminPermission = perms.allowAdmin();
             hasSetCurVersionPermission = perms.allowUpdate(wiki);
             createdBy = UserManager.getDisplayName(wikiVersion.getCreatedBy(), getUser());
-            created = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG).format(wikiVersion.getCreated());
+            created = wikiVersion.getCreated();
             versionLink = getVersionURL(wiki.getName()).toString();
             compareLink = getCompareVersionsURL(wiki.getName()).toString();
         }

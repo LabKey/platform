@@ -95,8 +95,8 @@
         boolean isKeyColumn = (StringUtils.equalsIgnoreCase(col.getName(), dataset.getKeyPropertyName()));
 %>
         <tr>
-            <td><%=isKeyColumn?"<b>":""%><%= col.getName()%><%=isKeyColumn?"</b>":""%></td>
-            <td><%= col.getLabel() %></td>
+            <td><%=text(isKeyColumn ? "<b>" : "")%><%=h(col.getName())%><%=text(isKeyColumn ? "</b>" : "")%></td>
+            <td><%=h(col.getLabel())%></td>
             <td><%=h(col.getFriendlyTypeName())%></td>
             <td><%=h(col.getFormat())%></td>
             <td align="center"><input type=checkbox disabled<%=checked(!col.isNullable())%>></td>

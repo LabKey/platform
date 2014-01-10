@@ -3215,27 +3215,6 @@ public class StudyManager
         }
     }
 
-    public void applyDefaultFormats(Container c, List<DisplayColumn> columns)
-    {
-        final String defaultDate = DateUtil.getDateFormatString(c);
-        final String defaultNumber = Formats.getNumberFormatString(c);
-
-        if (!StringUtils.isEmpty(defaultDate) || !StringUtils.isEmpty(defaultNumber))
-        {
-            for (DisplayColumn dc : columns)
-            {
-                if (canFormat(dc))
-                {
-                    Class valueClass = dc.getDisplayValueClass();
-                    if (!StringUtils.isEmpty(defaultNumber) && (valueClass.isPrimitive() || Number.class.isAssignableFrom(valueClass)))
-                        dc.setFormatString(defaultNumber);
-                    else if (!StringUtils.isEmpty(defaultDate) && Date.class.isAssignableFrom(valueClass))
-                        dc.setFormatString(defaultDate);
-                }
-            }
-        }
-    }
-
     //Create a fixed point number encoding the date.
     public static double sequenceNumFromDate(Date d)
     {
@@ -3252,15 +3231,6 @@ public class StudyManager
         sql.append("(100 * ").append(dialect.getDatePart(Calendar.MONTH, dateColumnName)).append(") + ");
         sql.append("(").append(dialect.getDatePart(Calendar.DAY_OF_MONTH, dateColumnName)).append(")");
         return sql;
-    }
-
-
-    private boolean canFormat(DisplayColumn dc)
-    {
-        final ColumnInfo col = dc.getColumnInfo();
-        if (col != null)
-            return !col.isFormatStringSet();
-        return dc.getFormatString() == null;
     }
 
     private String getParticipantCacheName(Container container)

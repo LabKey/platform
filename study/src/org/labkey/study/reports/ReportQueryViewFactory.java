@@ -143,13 +143,6 @@ public class ReportQueryViewFactory
             super(schema, settings);
         }
 
-        public DataRegion createDataRegion()
-        {
-            DataRegion data = super.createDataRegion();
-            StudyManager.getInstance().applyDefaultFormats(getContainer(), data.getDisplayColumns());
-            return data;
-        }
-
         public MenuButton createViewButton(ReportService.ItemFilter filter)
         {
             MenuButton button = super.createViewButton(StudyReportUIProvider.getItemFilter());

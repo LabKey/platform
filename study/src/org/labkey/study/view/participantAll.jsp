@@ -77,7 +77,6 @@
 <%@ page import="org.labkey.study.query.StudyQuerySchema" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();

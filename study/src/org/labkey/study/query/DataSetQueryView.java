@@ -181,6 +181,7 @@ public class DataSetQueryView extends StudyQueryView
             }
             _visit.addVisitFilter(filter);
         }
+
         if (null != _cohortFilter)
         {
             SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();
@@ -191,6 +192,7 @@ public class DataSetQueryView extends StudyQueryView
             }
             _cohortFilter.addFilterCondition(table, getContainer(), filter);
         }
+
         if (null != _qcStateSet)
         {
             SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();
@@ -205,12 +207,13 @@ public class DataSetQueryView extends StudyQueryView
             filter.addClause(new SimpleFilter.SQLClause(_qcStateSet.getStateInClause(qcStateColumn.getAlias()), null, qcStateColumn.getFieldKey()));
         }
 
-        StudyManager.getInstance().applyDefaultFormats(getContainer(), view.getDataRegion().getDisplayColumns());
         ColumnInfo sourceLsidCol = table.getColumn("SourceLsid");
         DisplayColumn sourceLsidDisplayCol = view.getDataRegion().getDisplayColumn("SourceLsid");
+
         if (sourceLsidCol != null)
         {
-            try {
+            try
+            {
                 if (sourceLsidDisplayCol != null)
                     sourceLsidDisplayCol.setVisible(false);
                 if (_showSourceLinks && hasSourceLsids() && hasUsefulDetailsPage())
