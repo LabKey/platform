@@ -25,7 +25,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.util.ContainerContext;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -64,12 +63,12 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
 
 
     @Override
-    public Collection<QueryService.ParameterDecl> getNamedParameters()
+    public @NotNull Collection<QueryService.ParameterDecl> getNamedParameters()
     {
         Query query = _relation._query;
         Collection<QueryService.ParameterDecl> ret = query.getParameters();
         if (null == ret)
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         return ret;
     }
 

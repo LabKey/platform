@@ -15,9 +15,8 @@
  */
 package org.labkey.query.sql;
 
-import org.labkey.api.data.UnionTableInfo;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UnionTableInfo;
 
 import java.util.ArrayList;
 import java.util.List;
