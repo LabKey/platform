@@ -52,7 +52,7 @@ public abstract class TabStripView extends JspView<TabStripView>
         setBody(selectedView);
     }
 
-    /** set prefix for tab id's and content div */
+    /** set prefix for tab ids and content div */
     public TabStripView(String prefix)
     {
         this();

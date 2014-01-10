@@ -70,7 +70,7 @@
             }
             else
             {
-                %>No handler for view: <%=h(tabId)%><%
+                %>Tab does not exist: <%=h(tabId)%><%
             }
         %>
         </div>
