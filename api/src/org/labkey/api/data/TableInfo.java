@@ -80,7 +80,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      *     "Issues.Issues <alias>"
      *     "(SELECT * FROM Issues.Issues WHERE Container='...') <alias>"
      **/
-    @NotNull
+    @NotNull  // TODO: Override in QueryPivot.PivotTableInfo returns null!
     SQLFragment getFromSQL(String alias);
 
     /* For most tables this is the same as getFromSQL().
@@ -381,7 +381,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      * @param before true if the trigger is before the event, false if after the event.
      * @param errors Any errors created by the validation script will be added to the errors collection.
      * @param extraContext Optional additional bindings to set in the script's context when evaluating.
-     * @throws ValidationException if the trigger function returns false or the errors map isn't empty.
+     * @throws BatchValidationException if the trigger function returns false or the errors map isn't empty.
      */
     public void fireBatchTrigger(Container c, TriggerType type, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
             throws BatchValidationException;
