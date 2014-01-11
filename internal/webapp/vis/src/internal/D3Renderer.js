@@ -485,7 +485,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         selection.selectAll('tspan').data(segments).enter().append('tspan')
                 .text(function(d){return d})
-                .attr('dy', function(d, i){return i * 12})
+                .attr('dy', function(d, i){return i > 0 ? 12 : 0;})
                 .attr('x', selection.attr('x'));
     };
 
@@ -841,8 +841,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         outlierSel.enter().append('a').attr('class', 'outlier').append('path');
         outlierSel.attr('xlink:title', hoverAcc).attr('class', 'outlier');
         pathSel = outlierSel.selectAll('path');
-        pathSel.attr('class', 'outlier')
-                .attr('d', shapeAcc)
+        pathSel.attr('d', shapeAcc)
                 .attr('transform', translateAcc)
                 .attr('fill', colorAcc)
                 .attr('stroke', colorAcc)
