@@ -2976,10 +2976,13 @@ public class StudyController extends BaseStudyController
             VisitImpl visit = getBean();
             if (visit.getSequenceNumMin() > visit.getSequenceNumMax())
             {
+                errors.reject(null, "The minimum value cannot be greater than the maximum value for the visit range.");
+/*
                 double min = visit.getSequenceNumMax();
                 double max = visit.getSequenceNumMin();
                 visit.setSequenceNumMax(max);
                 visit.setSequenceNumMin(min);
+*/
             }
             setBean(visit);
         }
