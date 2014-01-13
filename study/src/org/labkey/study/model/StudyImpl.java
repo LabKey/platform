@@ -1091,7 +1091,8 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _participantAliasProperty = participantAliasProperty;
     }
 
-    public boolean isShareDatasetDefinitions()
+    @NotNull
+    public Boolean isShareDatasetDefinitions()
     {
         return _shareDatasetDefinitions &&
             AppProps.getInstance().isExperimentalFeatureEnabled(StudyModule.EXPERIMENTALFEATURE_SHARED_DATASET) &&
@@ -1100,9 +1101,9 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
 
-    public void setShareDatasetDefinitions(boolean shareDatasetDefinitions)
+    public void setShareDatasetDefinitions(Boolean shareDatasetDefinitions)
     {
-        _shareDatasetDefinitions = shareDatasetDefinitions;
+        _shareDatasetDefinitions = Boolean.TRUE == shareDatasetDefinitions;
     }
 
 
