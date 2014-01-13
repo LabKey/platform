@@ -107,7 +107,6 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -2918,7 +2917,7 @@ public class StudyManager
     {
         parseData(user, def, loader, columnMap);
         DataIteratorContext context = new DataIteratorContext(errors);
-        context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
+        context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
         return def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, logger, false);
     }
     
@@ -2938,19 +2937,6 @@ public class StudyManager
         batchValidateExceptionToList(context.getErrors(),errors);
         return lsids;
     }
-
-
-    public List<String> importDatasetData(User user, DataSetDefinition def, List<Map<String, Object>> data, BatchValidationException errors, boolean checkDuplicates, QCState defaultQCState, Logger logger)
-            throws SQLException
-    {
-        if (data.isEmpty())
-            return Collections.emptyList();
-
-        DataIteratorBuilder it = new ListofMapsDataIterator.Builder(data.get(0).keySet(), data);
-        DataIteratorContext context = new DataIteratorContext(errors);
-        return def.importDatasetData(user, it, context, checkDuplicates, defaultQCState, logger, false);
-    }
-
 
     public boolean importDatasetSchemas(StudyImpl study, final User user, SchemaReader reader, BindException errors) throws IOException, SQLException
     {
