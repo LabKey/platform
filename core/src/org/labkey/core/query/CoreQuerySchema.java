@@ -17,6 +17,7 @@ package org.labkey.core.query;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerTable;
 import org.labkey.api.data.CoreSchema;
@@ -126,7 +127,8 @@ public class CoreQuerySchema extends UserSchema
     public TableInfo getGroups()
     {
         TableInfo principalsBase = CoreSchema.getInstance().getTableInfoPrincipals();
-        FilteredTable groups = new FilteredTable<>(principalsBase, this);
+        // We apply a special filter for containers below, so don't filter here too
+        FilteredTable groups = new FilteredTable<>(principalsBase, this, ContainerFilter.EVERYTHING);
         groups.setName("Groups");
 
         //expose UserId, Name, Container, and Type
@@ -207,7 +209,7 @@ public class CoreQuerySchema extends UserSchema
     public TableInfo getPrincipals()
     {
         TableInfo principalsBase = CoreSchema.getInstance().getTableInfoPrincipals();
-        FilteredTable principals = new FilteredTable<>(principalsBase, this);
+        FilteredTable principals = new FilteredTable<>(principalsBase, this, ContainerFilter.EVERYTHING);
 
         //we expose userid, name and type via query
         ColumnInfo col = principals.wrapColumn(principalsBase.getColumn("UserId"));
