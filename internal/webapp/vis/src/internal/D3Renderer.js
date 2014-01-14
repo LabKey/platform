@@ -595,7 +595,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         translateAcc = function(row) {
             var x = xAcc(row), y = yAcc(row);
             if(x == null || isNaN(x) || y == null || isNaN(y)){
-                // Remove the dom node if x/y is null.
+                // If x or y isn't a valid value then we just don't translate the node.
                 return null;
             }
             return 'translate(' + xAcc(row) + ',' + yAcc(row) + ')';
@@ -908,19 +908,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
-    var renderLines = function(layer, data, geom) {
+    var renderPaths = function(layer, data, geom) {
         var xAcc = function(d) {return geom.getX(d);},
             yAcc = function(d) {var val = geom.getY(d); return val == null ? null : -val;},
             size = geom.sizeAes && geom.sizeScale ? geom.sizeScale.scale(geom.sizeAes.getValue(data)) : function() {return geom.size},
             color = geom.color,
             line = function(d) {return LABKEY.vis.makePath(d.data, xAcc, yAcc);};
-
-        if (geom.groupAes && geom.colorScale) {
-            // TODO: This is probably a bug. We totally skip the colorAes. We should alter this so we pass this.colorAes
-            // the entire chunk of data then pass that value to the colorScale. This means colorAes for paths would always
-            // need to be functions that expect an array of data. Making this change might break already existing charts,
-            // so I'm going to leave this as is for now.
-            color = function(d) {return geom.colorScale.scale(d.group + geom.layerName);};
+        if (geom.pathColorAes && geom.colorScale) {
+            color = function(d) {return geom.colorScale.scale(geom.pathColorAes.getValue(d.data) + geom.layerName);};
         }
 
         var pathSel = layer.selectAll('path').data(data);
@@ -933,7 +928,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 .attr('fill', 'none');
     };
 
-    var renderLineGeom = function(data, geom) {
+    var renderPathGeom = function(data, geom) {
         var layer = getLayer.call(this, geom).attr('transform', 'translate(0,' + plot.grid.height + ')');
         var renderableData = [];
 
@@ -951,7 +946,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             renderableData = [{group: null, data: data}];
         }
 
-        layer.call(renderLines, renderableData, geom);
+        layer.call(renderPaths, renderableData, geom);
 
         if (plot.clipRect) {
             applyClipRect.call(this, layer);
@@ -968,7 +963,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         addLabelListener: addLabelListener,
         renderLegend: renderLegend,
         renderPointGeom: renderPointGeom,
-        renderLineGeom: renderLineGeom,
+        renderPathGeom: renderPathGeom,
         renderErrorBarGeom: renderErrorBarGeom,
         renderBoxPlotGeom: renderBoxPlotGeom
     };

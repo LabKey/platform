@@ -283,7 +283,7 @@ LABKEY.vis.Plot = function(config){
 
         for(var i = 0; i < allAes.length; i++){
             var aes = allAes[i];
-            if(!foundLegendScale && (aes.shape || (aes.color && (!scales.color || (scales.color && scales.color.scaleType == 'discrete'))) || aes.outlierColor || aes.outlierShape) && legendPos != 'none'){
+            if(!foundLegendScale && (aes.shape || (aes.color && (!scales.color || (scales.color && scales.color.scaleType == 'discrete'))) || aes.outlierColor || aes.outlierShape || aes.pathColor) && legendPos != 'none'){
                 foundLegendScale = true;
                 right = right + 150;
             }
@@ -410,8 +410,8 @@ LABKEY.vis.Plot = function(config){
                     // Not all aesthetics get a scale (like hoverText), so we have to be pretty specific.
                     if(aesthetic === 'x' || aesthetic === 'yLeft' || aesthetic === 'yRight' || aesthetic === 'size'){
                         scales[aesthetic] = {scaleType: 'continuous', trans: 'linear'};
-                    } else if(aesthetic == 'color' || aesthetic == 'shape' || aesthetic == 'outlierColor' || aesthetic == 'outlierShape'){
-                        if(aesthetic == 'outlierColor'){
+                    } else if(aesthetic == 'color' || aesthetic == 'shape' || aesthetic == 'outlierColor' || aesthetic == 'outlierShape' || aesthetic == 'pathColor'){
+                        if(aesthetic == 'outlierColor' || aesthetic == 'pathColor'){
                             scales['color'] = {scaleType: 'discrete'};
                         } else if(aesthetic == 'outlierShape'){
                             scales['shape'] = {scaleType: 'discrete'};

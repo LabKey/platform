@@ -166,9 +166,10 @@ LABKEY.vis.Geom.Path.prototype.render = function(renderer, grid, scales, data, l
 
     this.groupAes = layerAes.group ? layerAes.group : parentAes.group;
     this.sizeAes = layerAes.size ? layerAes.size : parentAes.size;
+    this.pathColorAes = layerAes.pathColor ? layerAes.pathColor : parentAes.pathColor;
     this.sizeScale = scales.size;
 
-    renderer.renderLineGeom(data, this);
+    renderer.renderPathGeom(data, this);
     return true;
 };
 

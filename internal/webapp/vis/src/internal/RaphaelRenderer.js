@@ -411,19 +411,15 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
         applyTransform(this.paper.setFinish(), plot);
     };
 
-    var renderLine = function(data, geom, groupName) {
+    var renderPath = function(data, geom, groupName) {
         var xAcc = function(d) {return geom.getX(d);},
             yAcc = function(d) {var val = geom.getY(d); return val == null ? null : -val;},
             path = LABKEY.vis.makePath(data, xAcc, yAcc),
             size = geom.sizeAes && geom.sizeScale ? geom.sizeScale.scale(geom.sizeAes.getValue(data)) : geom.size,
             color;
 
-        if (groupName != null) {
-            // TODO: This is probably a bug. We totally skip the colorAes. We should alter this so we pass this.colorAes
-            // the entire chunk of data then pass that value to the colorScale. This means colorAes for paths would always
-            // need to be functions that expect an array of data. Making this change might break already existing charts,
-            // so I'm going to leave this as is for now.
-            color = geom.colorScale ? geom.colorScale.scale(groupName + geom.layerName) : geom.color;
+        if (geom.pathColorAes && geom.colorScale) {
+            color = geom.colorScale.scale(geom.pathColorAes.getValue(data) + geom.layerName);
         } else {
             color = geom.color;
         }
@@ -434,18 +430,18 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
                 .attr('opacity', geom.opacity);
     };
 
-    var renderLineGeom = function(data, geom) {
+    var renderPathGeom = function(data, geom) {
         this.paper.setStart();
 
         if (geom.groupAes) {
             var groupedData = LABKEY.vis.groupData(data, geom.groupAes.getValue);
             for (var group in groupedData) {
                 if (groupedData.hasOwnProperty(group)) {
-                    renderLine.call(this, groupedData[group], geom, group);
+                    renderPath.call(this, groupedData[group], geom, group);
                 }
             }
         } else { // No groupAes specified, so we connect all points.
-            renderLine.call(this, data, geom, null);
+            renderPath.call(this, data, geom, null);
         }
 
         applyTransform(this.paper.setFinish(), plot);
@@ -681,7 +677,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
         addLabelListener: addLabelListener,
         renderLegend: renderLegend,
         renderPointGeom: renderPointGeom,
-        renderLineGeom: renderLineGeom,
+        renderPathGeom: renderPathGeom,
         renderErrorBarGeom: renderErrorBarGeom,
         renderBoxPlotGeom: renderBoxPlotGeom
     };

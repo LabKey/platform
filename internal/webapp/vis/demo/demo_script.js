@@ -14,7 +14,7 @@ var CD4PointLayer = new LABKEY.vis.Layer({
 });
 
 var CD4PathLayer = new LABKEY.vis.Layer({
-	geom: new LABKEY.vis.Geom.Path({size: 3, opacity: .2}),
+	geom: new LABKEY.vis.Geom.Path({size: 3, opacity: .4}),
 	name: 'Really Long Name That Gets Wrapped',
 	aes: {
 		y: function(row){return row.study_LabResults_CD4.value}
@@ -31,14 +31,14 @@ var hemoglobinPointLayer = new LABKEY.vis.Layer({
 });
 
 var hemoglobinPathLayer = new LABKEY.vis.Layer({
-	geom: new LABKEY.vis.Geom.Path({opacity: .2}),
+	geom: new LABKEY.vis.Geom.Path({opacity: .4}),
 	name: 'Hemoglobin',
 	aes: {
 		yRight: function(row){return row.study_LabResults_Hemoglobin.value}
 	}
 });
 
-var plotConfig = {
+var labResultsPlotConfig = {
     rendererType: 'd3',
 	renderTo: 'chart',
     labels: {
@@ -50,14 +50,15 @@ var plotConfig = {
     width: 900,
 	height: 300,
     clipRect: true,
-//    legendPos: 'none',
-//    bgColor: '#777777',
-//    gridColor: '#FF00FF',
-//    gridLineColor: "#FFFFFF",
+    // TODO: Fix bg, grid, gridLine colors for D3Renderer (Issue 19375)
+    bgColor: '#777777',
+    gridColor: '#FF00FF',
+    gridLineColor: "#FFFFFF",
 	data: labResultsRows,
 	aes: {
 		x: function(row){return row.Days.value},
 		color: function(row){return row.study_LabResults_ParticipantId.value},
+		pathColor: function(rows){return rows[0].study_LabResults_ParticipantId.value},
 		group: function(row){return row.study_LabResults_ParticipantId.value},
         shape: function(row){return row.study_LabResults_ParticipantId.value}
 	},
@@ -82,109 +83,11 @@ var plotConfig = {
     }
 };
 
-var plot = new LABKEY.vis.Plot(plotConfig);
-plot.addLayer(CD4PathLayer);
-plot.addLayer(CD4PointLayer);
-//plot.addLayer(hemoglobinPathLayer);
-//plot.addLayer(hemoglobinPointLayer);
-
-var errorPointLayer = new LABKEY.vis.Layer({
-    name: "Weight (kg)",
-    geom: new LABKEY.vis.Geom.Point(),
-    data: aggregateData.rows,
-    aes: {
-        color: function(row){return row.GroupId.displayValue;},
-        hoverText: function(row){return row.GroupId.displayValue + ' Temperature, day ' + row.study_PhysicalExam_ParticipantVisitsequencenum.value + ', ' + row.study_PhysicalExam_Weight_kg.value;}
-    }
-});
-
-var errorPathLayer = new LABKEY.vis.Layer({
-    name: "Weight (kg)",
-    geom: new LABKEY.vis.Geom.Path(),
-    data: aggregateData.rows,
-    aes: {
-        group: function(row){return row.GroupId.displayValue;},
-        color: function(row){return row.GroupId.displayValue;}
-    }
-});
-
-var errorBarLayer = new LABKEY.vis.Layer({
-    name: "Weight (kg)",
-    geom: new LABKEY.vis.Geom.ErrorBar(),
-    data: aggregateData.rows,
-    aes: {
-        error: function(row){return row.study_PhysicalExam_Weight_kg_STDDEV.value},
-//        error: function(row){return row.study_PhysicalExam_Weight_kg_STDERR.value},
-        color: function(row){return row.GroupId.displayValue},
-        yLeft: function(row){return row.study_PhysicalExam_Weight_kg.value;}
-    }
-});
-
-var individualPointLayer = new LABKEY.vis.Layer({
-    name: "Weight (kg)",
-    geom: new LABKEY.vis.Geom.Point(),
-    aes: {
-        color: function(row){return row.study_PhysicalExam_ParticipantId.value},
-        hoverText: function(row){return row.study_PhysicalExam_ParticipantId.value + ' Temperature, day ' + row.study_PhysicalExam_ParticipantVisitsequencenum.value + ', ' + row.study_PhysicalExam_Weight_kg.value;}
-    }
-});
-
-var individualPathLayer = new LABKEY.vis.Layer({
-    name: "Weight (kg)",
-    geom: new LABKEY.vis.Geom.Path(),
-    aes: {
-        color: function(row){return row.study_PhysicalExam_ParticipantId.value},
-        group: function(row){return row.study_PhysicalExam_ParticipantId.value}
-    }
-});
-
-var errorPlotConfig = {
-    renderTo: 'errorChart',
-    rendererType: 'd3',
-    width: 900,
-    height: 300,
-    labels: {
-        main: {value: 'Testing error bar geom'},
-        yLeft: {value: 'Temperature (C)'},
-        x: {value: 'Sequence Number'}
-    },
-    data: aggregateData.rows,
-//    data: individualData.rows,
-    layers: [/*individualPathLayer, individualPointLayer,*/ errorPathLayer, errorBarLayer, errorPointLayer],
-    aes: {
-        yLeft: function(row){
-            if(row.study_PhysicalExam_Weight_kg.value < 40){
-                console.log(row.study_PhysicalExam_Weight_kg.value);
-            }
-            return row.study_PhysicalExam_Weight_kg.value;
-        },
-        x: function(row){return row.study_PhysicalExam_ParticipantVisitsequencenum.value}
-    },
-    scales: {
-        x: {
-            scaleType: 'continuous',
-			trans: 'linear',
-            tickHoverText: function(value) {
-                return "HOVER: " + value;
-            },
-            tickFormat: function(value){
-                if(value > 0) {
-                    return "Day " + value;
-                } else {
-                    return "Baseline";
-                }
-            }
-        },
-        yLeft: {
-            scaleType: 'continuous',
-			trans: 'linear'
-        },
-        color: {
-            scaleType: 'discrete'
-        }
-    }
-};
-var errorPlot = new LABKEY.vis.Plot(errorPlotConfig);
+var labResultsPlot = new LABKEY.vis.Plot(labResultsPlotConfig);
+labResultsPlot.addLayer(CD4PathLayer);
+labResultsPlot.addLayer(CD4PointLayer);
+labResultsPlot.addLayer(hemoglobinPathLayer);
+labResultsPlot.addLayer(hemoglobinPointLayer);
 
 var coffeePointLayer = new LABKEY.vis.Layer({
     name: "Efficiency",
@@ -198,9 +101,9 @@ var coffeePointLayer = new LABKEY.vis.Layer({
 
 var coffeePathLayer = new LABKEY.vis.Layer({
     name: "Efficiency",
-    geom: new LABKEY.vis.Geom.Path({color: '#66c2a5'}),
+    geom: new LABKEY.vis.Geom.Path({}),
     aes: {
-        color: 'person',
+        pathColor: 'person',
         group: 'person'
     }
 });
@@ -227,7 +130,7 @@ var coffeePlot = new LABKEY.vis.Plot({
         },
         yLeft: {
             scaleType: 'continuous',
-			trans: 'linear',
+            trans: 'linear',
             min: 0
         }
     }
@@ -236,14 +139,9 @@ var coffeePlot = new LABKEY.vis.Plot({
 var boxLayer = new LABKEY.vis.Layer({
     geom: new LABKEY.vis.Geom.Boxplot({
         position: 'jitter',
-//        color: 'teal',
-//        fill: '#FFFF00',
         outlierOpacity: '1',
         outlierFill: 'red',
         showOutliers: true
-//        showOutliers: false
-//        opacity: '.5'
-//        lineWidth: 3
     }),
     aes: {
         hoverText: function(x, stats){
@@ -273,7 +171,7 @@ var boxPointLayer = new LABKEY.vis.Layer({
 
 var medianLineLayer = new LABKEY.vis.Layer({
     geom: new LABKEY.vis.Geom.Path({size: 2}),
-    aes: {x: 'x', y: 'y', color: 'color', group: 'color'},
+    aes: {x: 'x', y: 'y', pathColor: 'color', group: 'color'},
     data: medianLineData
 });
 
@@ -420,6 +318,11 @@ var colorScatter = new LABKEY.vis.Plot({
     width: 900,
     height: 700,
     clipRect: false,
+    brushing: {
+        brushstart: function(){console.log('BRUSH START')},
+        brush: function(){console.log('BRUSH')},
+        brushend: function(){console.log('BRUSH END')}
+    },
     labels: {
         main: {
             value:'Scatter With Continuous Color Scale'
@@ -441,6 +344,85 @@ var colorScatter = new LABKEY.vis.Plot({
         color: {scaleType: 'continuous', trans: 'linear', range: ['#660000', '#FF6666']}
     }
 });
+
+var errorPointLayer = new LABKEY.vis.Layer({
+    name: "Weight (kg)",
+    geom: new LABKEY.vis.Geom.Point(),
+    data: aggregateData.rows,
+    aes: {
+        color: function(row){return row.GroupId.displayValue;},
+        hoverText: function(row){return row.GroupId.displayValue + ' Temperature, day ' + row.study_PhysicalExam_ParticipantVisitsequencenum.value + ', ' + row.study_PhysicalExam_Weight_kg.value;}
+    }
+});
+
+var errorPathLayer = new LABKEY.vis.Layer({
+    name: "Weight (kg)",
+    geom: new LABKEY.vis.Geom.Path(),
+    data: aggregateData.rows,
+    aes: {
+        group: function(row){return row.GroupId.displayValue;},
+        pathColor: function(rows){return rows[0].GroupId.displayValue;}
+    }
+});
+
+var errorBarLayer = new LABKEY.vis.Layer({
+    name: "Weight (kg)",
+    geom: new LABKEY.vis.Geom.ErrorBar(),
+    data: aggregateData.rows,
+    aes: {
+        error: function(row){return row.study_PhysicalExam_Weight_kg_STDDEV.value},
+//        error: function(row){return row.study_PhysicalExam_Weight_kg_STDERR.value},
+        color: function(row){return row.GroupId.displayValue},
+        yLeft: function(row){return row.study_PhysicalExam_Weight_kg.value;}
+    }
+});
+
+var errorPlotConfig = {
+    renderTo: 'errorChart',
+    rendererType: 'd3',
+    width: 900,
+    height: 300,
+    labels: {
+        main: {value: 'Testing error bar geom'},
+        yLeft: {value: 'Temperature (C)'},
+        x: {value: 'Sequence Number'}
+    },
+    data: aggregateData.rows,
+    layers: [errorPathLayer, errorBarLayer, errorPointLayer],
+    aes: {
+        yLeft: function(row){
+            if(row.study_PhysicalExam_Weight_kg.value < 40){
+                console.log(row.study_PhysicalExam_Weight_kg.value);
+            }
+            return row.study_PhysicalExam_Weight_kg.value;
+        },
+        x: function(row){return row.study_PhysicalExam_ParticipantVisitsequencenum.value}
+    },
+    scales: {
+        x: {
+            scaleType: 'continuous',
+            trans: 'linear',
+            tickHoverText: function(value) {
+                return "HOVER: " + value;
+            },
+            tickFormat: function(value){
+                if(value > 0) {
+                    return "Day " + value;
+                } else {
+                    return "Baseline";
+                }
+            }
+        },
+        yLeft: {
+            scaleType: 'continuous',
+            trans: 'linear'
+        },
+        color: {
+            scaleType: 'discrete'
+        }
+    }
+};
+var errorPlot = new LABKEY.vis.Plot(errorPlotConfig);
 
 var statFnPlot = new LABKEY.vis.Plot({
     renderTo: 'statFn',
@@ -476,12 +458,14 @@ var renderStats = function(){
     statsDiv.appendChild(p);
 };
 
-plot.render();
-boxPlot.render();
-errorPlot.render();
+var start = new Date().getTime();
+labResultsPlot.render();
 coffeePlot.render();
+boxPlot.render();
 discreteScatter.render();
 scatterPlot.render();
 colorScatter.render();
+errorPlot.render();
 statFnPlot.render();
+console.log(new Date().getTime() - start);
 renderStats();

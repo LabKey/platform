@@ -50,6 +50,18 @@ LABKEY.vis.createGetter = function(aes){
         aes.getValue = aes.value;
     } else {
         aes.getValue = function(row){
+            if(row instanceof Array) {
+                /*
+                 * For Path geoms we pass in the entire array of values for the path to the aesthetic. So if the user
+                 * provides only a string for an Aes value we'll assume they want the first object in the path array to
+                 * determing the value.
+                */
+                if(row.length > 0) {
+                    row = row[0];
+                } else {
+                    return null;
+                }
+            }
             return row[aes.value];
         };
     }
