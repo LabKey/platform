@@ -120,7 +120,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
         this.label = caption;
         setContainer(container);
         if (PropertyType.STRING.getTypeUri().equals(rangeURI))
-            setScale(PropertyStorageSpec.DEFAULT_SIZE);       // Make sure to det default scale
+            setScale(PropertyStorageSpec.DEFAULT_SIZE);       // Make sure to set default scale
     }
 
     public int getPropertyId()
