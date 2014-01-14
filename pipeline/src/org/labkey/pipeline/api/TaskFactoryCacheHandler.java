@@ -23,8 +23,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCache;
-import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.resource.Resource;
@@ -40,40 +39,28 @@ import java.io.IOException;
  * User: kevink
  * Date: 1/6/14
  */
-/* package */ class TaskFactoryCache extends ModuleResourceCache<TaskFactory>
+/* package */ class TaskFactoryCacheHandler implements ModuleResourceCacheHandler<TaskFactory>
 {
-    private static final Logger LOG = Logger.getLogger(TaskFactoryCache.class);
+    private static final Logger LOG = Logger.getLogger(TaskFactoryCacheHandler.class);
     private static final String TASK_CONFIG_EXTENSION = ".task.xml";
-    private static final String MODULE_TASKS_DIR = "tasks";
 
-    private static final TaskFactoryCache _instance = new TaskFactoryCache();
-
-    public static TaskFactoryCache get()
-    {
-        return _instance;
-    }
-
-    private TaskFactoryCache()
-    {
-        super(new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, MODULE_TASKS_DIR), "TaskFactory cache");
-    }
-
+    public static final String MODULE_TASKS_DIR = "tasks";
 
     @Nullable
     @Override
-    protected FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+    public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
     {
         return null;
     }
 
     @Override
-    protected boolean isResourceFile(String filename)
+    public boolean isResourceFile(String filename)
     {
         return filename.endsWith(TASK_CONFIG_EXTENSION) && filename.length() > TASK_CONFIG_EXTENSION.length();
     }
 
     @Override
-    protected String getResourceName(Module module, String filename)
+    public String getResourceName(Module module, String filename)
     {
         String taskName = filename.substring(0, filename.length() - TASK_CONFIG_EXTENSION.length());
         TaskId taskId = createId(module, taskName);
@@ -102,14 +89,14 @@ import java.io.IOException;
     }
 
     @Override
-    protected String createCacheKey(Module module, String resourceName)
+    public String createCacheKey(Module module, String resourceName)
     {
         TaskId taskId = parseId(module, resourceName);
         return taskId.toString();
     }
 
     @Override
-    protected CacheLoader<String, TaskFactory> getResourceLoader()
+    public CacheLoader<String, TaskFactory> getResourceLoader()
     {
         return new CacheLoader<String, TaskFactory>()
         {
@@ -199,9 +186,6 @@ import java.io.IOException;
             {
                 return PipelineJobServiceImpl.get().createTaskFactory(taskId, xtask, taskDir);
             }
-
         };
-
     }
-
 }

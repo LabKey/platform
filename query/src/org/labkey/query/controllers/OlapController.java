@@ -45,7 +45,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.query.olap.Olap4Js;
-import org.labkey.query.olap.OlapSchemaCache;
 import org.labkey.query.olap.OlapSchemaDescriptor;
 import org.labkey.query.olap.QubeQuery;
 import org.labkey.query.olap.ServerManager;
@@ -248,7 +247,7 @@ public class OlapController extends SpringActionController
             CellSet cs = null;
             try
             {
-                OlapSchemaDescriptor sd = OlapSchemaCache.get().getDescriptor(getContainer(), form.getConfigId());
+                OlapSchemaDescriptor sd = ServerManager.getDescriptor(getContainer(), form.getConfigId());
                 OlapConnection conn = controller.getConnection(sd);
                 stmt = conn.createStatement();
                 String query = form.getQuery();
@@ -391,7 +390,7 @@ public class OlapController extends SpringActionController
                 }
             };
 
-            OlapSchemaDescriptor d = OlapSchemaCache.get().getDescriptor(getContainer(), form.getConfigId());
+            OlapSchemaDescriptor d = ServerManager.getDescriptor(getContainer(), form.getConfigId());
 
             // TODO cache servlet, maybe in session?
             MondrianXmlaServlet servlet = new MondrianXmlaServlet()
@@ -442,7 +441,7 @@ public class OlapController extends SpringActionController
         {
             OlapSchemaDescriptor d = null;
             if (StringUtils.isNotEmpty(form.getConfigId()))
-                d = OlapSchemaCache.get().getDescriptor(getContainer(), form.getConfigId());
+                d = ServerManager.getDescriptor(getContainer(), form.getConfigId());
             if (null == d && StringUtils.isNotEmpty(form.getConfigId()))
             {
                 errors.reject(ERROR_MSG, "Olap configuration not found: " + form.getSchemaName());
@@ -463,7 +462,7 @@ public class OlapController extends SpringActionController
     {
         OlapSchemaDescriptor d = null;
         if (StringUtils.isNotEmpty(form.getConfigId()))
-            d = OlapSchemaCache.get().getDescriptor(getContainer(), form.getConfigId());
+            d = ServerManager.getDescriptor(getContainer(), form.getConfigId());
 
         if (null == d)
         {

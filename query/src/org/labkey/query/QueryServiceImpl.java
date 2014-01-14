@@ -68,7 +68,6 @@ import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.query.audit.QueryAuditViewFactory;
 import org.labkey.query.audit.QueryUpdateAuditViewFactory;
 import org.labkey.query.controllers.QueryController;
-import org.labkey.query.olap.OlapSchemaCache;
 import org.labkey.query.olap.ServerManager;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
@@ -2190,7 +2189,7 @@ public class QueryServiceImpl extends QueryService
     @Override
     public void registerOlapDescriptors(Module module)
     {
-        OlapSchemaCache.get().registerModule(module);
+        ServerManager.SCHEMA_DESCRIPTOR_CACHE.registerModule(module);
     }
 
     @Override

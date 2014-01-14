@@ -46,6 +46,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
@@ -118,6 +119,8 @@ public class TransformManager implements DataIntegrationService
     private static final TransformManager INSTANCE = new TransformManager();
     private static final Logger LOG = Logger.getLogger(TransformManager.class);
     private static final String JOB_GROUP_NAME = "org.labkey.di.pipeline.ETLManager";
+    private static final ModuleResourceCache<ScheduledPipelineJobDescriptor> DESCRIPTOR_CACHE = new ModuleResourceCache<>(new Path(DescriptorCacheHandler.DIR_NAME), "ETL job descriptors", new DescriptorCacheHandler());
+
     private List<StepProvider> _providers = new ArrayList<>();
 
     public static TransformManager get()
@@ -324,14 +327,14 @@ public class TransformManager implements DataIntegrationService
     @NotNull
     public Collection<ScheduledPipelineJobDescriptor> getDescriptors(Container c)
     {
-        return DescriptorCache.get().getResources(c);
+        return DESCRIPTOR_CACHE.getResources(c);
     }
 
 
     @Nullable
     public ScheduledPipelineJobDescriptor getDescriptor(String id)
     {
-        return DescriptorCache.get().getResource(id);
+        return DESCRIPTOR_CACHE.getResource(id);
     }
 
 
@@ -609,7 +612,7 @@ public class TransformManager implements DataIntegrationService
                 int runAsUserId = config.getModifiedBy();
                 User runAsUser = UserManager.getUser(runAsUserId);
 
-                ScheduledPipelineJobDescriptor descriptor = DescriptorCache.get().getResource(config.getTransformId());
+                ScheduledPipelineJobDescriptor descriptor = DESCRIPTOR_CACHE.getResource(config.getTransformId());
                 if (null == descriptor)
                     return;
                 Container c = ContainerManager.getForId(config.getContainerId());
@@ -726,7 +729,7 @@ public class TransformManager implements DataIntegrationService
     public void registerDescriptors(Module module)
     {
         // Delegate to the cache
-        DescriptorCache.get().registerModule(module);
+        DESCRIPTOR_CACHE.registerModule(module);
     }
 
     @Override

@@ -1253,7 +1253,7 @@ public class QubeQuery
         // REQUIRES CDS selenium test to be run first, so this is not part of the Junit suite
         public void parseTest(Container c, User u) throws Exception
         {
-            OlapSchemaDescriptor d = OlapSchemaCache.get().getDescriptor(c, "CDS:/CDS");
+            OlapSchemaDescriptor d = ServerManager.getDescriptor(c, "CDS:/CDS");
             Schema s = d.getSchema(d.getConnection(c, u), c, u, "CDS");
             Cube cube = s.getCubes().get("ParticipantCube");
 

@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineStatusFile;
@@ -109,13 +110,14 @@ public class PipelineJobServiceImpl extends PipelineJobService
         return pjs;
     }
     
-    private HashMap<TaskId, TaskPipeline> _taskPipelineStore =
-            new HashMap<>();
-    private HashMap<TaskId, TaskFactory> _taskFactoryStore =
-            new HashMap<>();
+    private HashMap<TaskId, TaskPipeline> _taskPipelineStore = new HashMap<>();
+    private HashMap<TaskId, TaskFactory> _taskFactoryStore = new HashMap<>();
+    private HashMap<SchemaType, XMLBeanTaskFactoryFactory> _taskFactoryFactories = new HashMap<>();
 
-    private HashMap<SchemaType, XMLBeanTaskFactoryFactory> _taskFactoryFactories =
-            new HashMap<>();
+    private final ModuleResourceCache<TaskFactory> TASK_FACTORY_CACHE = new ModuleResourceCache<>(
+        new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskFactoryCacheHandler.MODULE_TASKS_DIR), "TaskFactory cache", new TaskFactoryCacheHandler());
+    private final ModuleResourceCache<TaskPipeline> TASK_PIPELINE_CACHE = new ModuleResourceCache<>(
+        new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskPipelineCacheHandler.MODULE_PIPELINES_DIR), "TaskPipeline cache", new TaskPipelineCacheHandler());
 
     private final Set<Module> _pipelineModules = new CopyOnWriteArraySet<>();
 
@@ -175,8 +177,8 @@ public class PipelineJobServiceImpl extends PipelineJobService
     // Loading the list of configurations in each module and the descriptors themselves happens lazily.
     public void registerModule(Module module)
     {
-        TaskFactoryCache.get().registerModule(module);
-        TaskPipelineCache.get().registerModule(module);
+        TASK_FACTORY_CACHE.registerModule(module);
+        TASK_PIPELINE_CACHE.registerModule(module);
         _pipelineModules.add(module);
     }
 
@@ -197,7 +199,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
                 return pipeline;
         }
 
-        return TaskPipelineCache.get().getResource(id.toString());
+        return TASK_PIPELINE_CACHE.getResource(id.toString());
     }
 
     public void addTaskPipeline(TaskPipelineSettings settings) throws CloneNotSupportedException
@@ -262,7 +264,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
             }
         }
 
-        pipelines.addAll(TaskPipelineCache.get().getResources(module));
+        pipelines.addAll(TASK_PIPELINE_CACHE.getResources(module));
         return pipelines;
     }
 
@@ -306,7 +308,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
                 return factory;
         }
 
-        return TaskFactoryCache.get().getResource(id.toString());
+        return TASK_FACTORY_CACHE.getResource(id.toString());
     }
 
     public void addTaskFactory(TaskFactorySettings settings) throws CloneNotSupportedException
@@ -369,7 +371,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
             }
         }
 
-        factories.addAll(TaskFactoryCache.get().getResources(module));
+        factories.addAll(TASK_FACTORY_CACHE.getResources(module));
 
         return factories;
     }

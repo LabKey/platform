@@ -879,7 +879,7 @@ dataintegration/src/org/labkey/di/filters/FilterStrategy.java -text
 dataintegration/src/org/labkey/di/filters/ModifiedSinceFilterStrategy.java -text
 dataintegration/src/org/labkey/di/filters/RunFilterStrategy.java -text
 dataintegration/src/org/labkey/di/filters/SelectAllFilterStrategy.java -text
-dataintegration/src/org/labkey/di/pipeline/DescriptorCache.java -text
+dataintegration/src/org/labkey/di/pipeline/DescriptorCacheHandler.java -text
 dataintegration/src/org/labkey/di/pipeline/ETLPipelineProvider.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformConfiguration.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformDescriptor.java -text
@@ -1896,8 +1896,8 @@ pipeline/src/org/labkey/pipeline/api/PipelineStatusManager.java -text
 pipeline/src/org/labkey/pipeline/api/ScriptTaskFactory.java -text
 pipeline/src/org/labkey/pipeline/api/ScriptTaskImpl.java -text
 pipeline/src/org/labkey/pipeline/api/SimpleTaskFactory.java -text
-pipeline/src/org/labkey/pipeline/api/TaskFactoryCache.java -text
-pipeline/src/org/labkey/pipeline/api/TaskPipelineCache.java -text
+pipeline/src/org/labkey/pipeline/api/TaskFactoryCacheHandler.java -text
+pipeline/src/org/labkey/pipeline/api/TaskPipelineCacheHandler.java -text
 pipeline/src/org/labkey/pipeline/api/TaskPipelineImpl.java -text
 pipeline/src/org/labkey/pipeline/api/WorkDirectoryLocal.java -text
 pipeline/src/org/labkey/pipeline/api/WorkDirectoryRemote.java -text
@@ -2420,7 +2420,7 @@ query/src/org/labkey/query/jdbc/QueryStatement.java -text
 query/src/org/labkey/query/metadata/MetadataServiceImpl.java -text
 query/src/org/labkey/query/olap/MemberSet.java -text
 query/src/org/labkey/query/olap/Olap4Js.java -text
-query/src/org/labkey/query/olap/OlapSchemaCache.java -text
+query/src/org/labkey/query/olap/OlapSchemaCacheHandler.java -text
 query/src/org/labkey/query/olap/OlapSchemaDescriptor.java -text
 query/src/org/labkey/query/olap/OlapSchemaLoader.java -text
 query/src/org/labkey/query/olap/Qube.java -text

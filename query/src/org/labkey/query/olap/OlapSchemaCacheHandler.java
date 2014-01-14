@@ -16,14 +16,12 @@
 
 package org.labkey.query.olap;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
-import org.labkey.api.data.Container;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
@@ -33,39 +31,32 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-public class OlapSchemaCache extends ModuleResourceCache<OlapSchemaDescriptor>
+public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<OlapSchemaDescriptor>
 {
-    private static final OlapSchemaCache _instance = new OlapSchemaCache();
-
-    public static OlapSchemaCache get()
-    {
-        return _instance;
-    }
-
-    private OlapSchemaCache()
-    {
-        super(new Path("olap"), "Olap cube defintions");
-    }
+    public static final String DIR_NAME = "olap";
 
     @Nullable
     @Override
-    protected FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+    public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
     {
         return new OlapDirectoryListener();
     }
 
-    protected boolean isResourceFile(String filename)
+    @Override
+    public boolean isResourceFile(String filename)
     {
         return filename.endsWith(".xml");
     }
 
-    protected String getResourceName(Module module, String filename)
+    @Override
+    public String getResourceName(Module module, String filename)
     {
         assert isResourceFile(filename) : "Configuration filename \"" + filename + "\" does not end with .xml";
         return FileUtil.getBaseName(filename);
     }
 
-    protected String createCacheKey(Module module, String name)
+    @Override
+    public String createCacheKey(Module module, String name)
     {
         return module.getName() + ":/" + name;
     }
@@ -90,17 +81,8 @@ public class OlapSchemaCache extends ModuleResourceCache<OlapSchemaDescriptor>
         return new Pair<>(module, filename);
     }
 
-    @Nullable   // TODO: Doesn't really belong in the cache implementation...
-    public OlapSchemaDescriptor getDescriptor(@NotNull Container c, @NotNull String schemaId)
-    {
-        OlapSchemaDescriptor d = getResource(schemaId);
-        if (null != d && c.getActiveModules().contains(d.getModule()))
-            return d;
-        return null;
-    }
-
     @Override
-    protected CacheLoader<String, OlapSchemaDescriptor> getResourceLoader()
+    public CacheLoader<String, OlapSchemaDescriptor> getResourceLoader()
     {
         return DESCRIPTOR_LOADER;
     }
@@ -114,7 +96,7 @@ public class OlapSchemaCache extends ModuleResourceCache<OlapSchemaDescriptor>
             Module module = pair.first;
             String configName = pair.second;
 
-            Path configPath = _dirName.append(configName + ".xml");
+            Path configPath = new Path(DIR_NAME, configName + ".xml");
             Resource config = pair.first.getModuleResolver().lookup(configPath);
 
             if (config != null && config.isFile())
@@ -123,6 +105,7 @@ public class OlapSchemaCache extends ModuleResourceCache<OlapSchemaDescriptor>
                 return null;
         }
     };
+
 
     private class OlapDirectoryListener implements FileSystemDirectoryListener
     {

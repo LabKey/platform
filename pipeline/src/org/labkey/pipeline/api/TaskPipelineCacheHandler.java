@@ -21,7 +21,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
@@ -36,39 +36,21 @@ import org.labkey.pipeline.analysis.FileAnalysisTaskPipelineImpl;
  * Loads TaskPipeline from file-based modules from a /pipelines/pipeline/&lt;name&gt;.pipeline.xml file.
  * Similar to the ETL DescriptorCache's ScheduledPipelineJobDescriptor, the TaskPipeline may register some locally defined TaskFactories as well.
  */
-/* package */ class TaskPipelineCache extends ModuleResourceCache<TaskPipeline>
+/* package */ class TaskPipelineCacheHandler implements ModuleResourceCacheHandler<TaskPipeline>
 {
-    private static final Logger LOG = Logger.getLogger(TaskPipelineCache.class);
+    private static final Logger LOG = Logger.getLogger(TaskPipelineCacheHandler.class);
     private static final String PIPELINE_CONFIG_EXTENSION = ".pipeline.xml";
-    private static final String MODULE_PIPELINES_DIR = "pipelines";
 
-    private static final TaskPipelineCache _instance = new TaskPipelineCache();
-
-    public static TaskPipelineCache get()
-    {
-        return _instance;
-    }
-
-    private TaskPipelineCache()
-    {
-        super(new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, MODULE_PIPELINES_DIR), "TaskPipeline cache");
-    }
-
-    @Nullable
-    @Override
-    protected FileSystemDirectoryListener createChainedDirectoryListener(Module module)
-    {
-        return null;
-    }
+    static final String MODULE_PIPELINES_DIR = "pipelines";
 
     @Override
-    protected boolean isResourceFile(String filename)
+    public boolean isResourceFile(String filename)
     {
         return filename.endsWith(PIPELINE_CONFIG_EXTENSION) && filename.length() > PIPELINE_CONFIG_EXTENSION.length();
     }
 
     @Override
-    protected String getResourceName(Module module, String filename)
+    public String getResourceName(Module module, String filename)
     {
         String name = filename.substring(0, filename.length() - PIPELINE_CONFIG_EXTENSION.length());
         TaskId taskId = createId(module, name);
@@ -97,25 +79,14 @@ import org.labkey.pipeline.analysis.FileAnalysisTaskPipelineImpl;
     }
 
     @Override
-    protected String createCacheKey(Module module, String resourceName)
+    public String createCacheKey(Module module, String resourceName)
     {
         TaskId pipelineId = parseId(module, resourceName);
         return pipelineId.toString();
     }
 
     @Override
-    protected void removeResource(Module module, String resourceName)
-    {
-        super.removeResource(module, resourceName);
-
-        // We aren't really removing the TaskPipeline since it only lives in this cache.
-        // We are calling removeTaskPipeline so any locally defined tasks will be cleaned up.
-        TaskId pipelineId = parseId(module, resourceName);
-        PipelineJobService.get().removeTaskPipeline(pipelineId);
-    }
-
-    @Override
-    protected CacheLoader<String, TaskPipeline> getResourceLoader()
+    public CacheLoader<String, TaskPipeline> getResourceLoader()
     {
         return new CacheLoader<String, TaskPipeline>()
         {
@@ -161,10 +132,46 @@ import org.labkey.pipeline.analysis.FileAnalysisTaskPipelineImpl;
                     return null;
                 }
             }
-
         };
-
     }
 
+    @Nullable
+    @Override
+    public FileSystemDirectoryListener createChainedDirectoryListener(final Module module)
+    {
+        return new FileSystemDirectoryListener()
+        {
+            @Override
+            public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
+            {
+            }
+
+            @Override
+            public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
+            {
+                removeResource(entry);
+            }
+
+            @Override
+            public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
+            {
+                removeResource(entry);
+            }
+
+            @Override
+            public void overflow()
+            {
+            }
+
+            private void removeResource(java.nio.file.Path entry)
+            {
+                // We aren't really removing the TaskPipeline since it only lives in this cache.
+                // We are calling removeTaskPipeline so any locally defined tasks will be cleaned up.
+                String resourceName = getResourceName(module, entry.toString());
+                TaskId pipelineId = parseId(module, resourceName);
+                PipelineJobService.get().removeTaskPipeline(pipelineId);
+            }
+        };
+    }
 }
 

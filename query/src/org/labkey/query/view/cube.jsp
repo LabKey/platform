@@ -18,7 +18,6 @@
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.OlapController" %>
-<%@ page import="org.labkey.query.olap.OlapSchemaCache" %>
 <%@ page import="org.labkey.query.olap.OlapSchemaDescriptor" %>
 <%@ page import="org.olap4j.OlapConnection" %>
 <%@ page import="org.olap4j.metadata.Cube" %>
@@ -28,12 +27,13 @@
 <%@ page import="org.olap4j.metadata.Member" %>
 <%@ page import="org.olap4j.metadata.Schema" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.query.olap.ServerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <labkey:errors></labkey:errors>
 <%
-    Collection<OlapSchemaDescriptor> list = OlapSchemaCache.get().getResources(getContainer());
+    Collection<OlapSchemaDescriptor> list = ServerManager.SCHEMA_DESCRIPTOR_CACHE.getResources(getContainer());
     for (OlapSchemaDescriptor sd : list)
     {
         %><h3><%=h(sd.getName())%></h3><%

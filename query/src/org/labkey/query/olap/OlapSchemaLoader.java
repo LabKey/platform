@@ -43,6 +43,6 @@ public class OlapSchemaLoader implements ModuleResourceLoader
     @Override
     public void registerResources(Module module) throws IOException, ModuleResourceLoadException
     {
-        OlapSchemaCache.get().registerModule(module);
+        ServerManager.SCHEMA_DESCRIPTOR_CACHE.registerModule(module);
     }
 }

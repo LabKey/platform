@@ -20,7 +20,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.resource.Resource;
@@ -33,49 +33,33 @@ import org.labkey.api.util.Path;
  * Date: 9/13/13
  * Time: 4:26 PM
  */
-public class DescriptorCache extends ModuleResourceCache<ScheduledPipelineJobDescriptor>
+public class DescriptorCacheHandler implements ModuleResourceCacheHandler<ScheduledPipelineJobDescriptor>
 {
     private static final TransformManager _transformManager = TransformManager.get();
-    private static final DescriptorCache _instance = new DescriptorCache();
 
-    public static DescriptorCache get()
-    {
-        return _instance;
-    }
-
-    private DescriptorCache()
-    {
-       super(new Path("etls"), "ETL job descriptors");
-    }
-
-    @Nullable
-    @Override
-    protected FileSystemDirectoryListener createChainedDirectoryListener(Module module)
-    {
-        return new EtlDirectoryListener(module);
-    }
+    static final String DIR_NAME = "etls";
 
     @Override
-    protected String createCacheKey(Module module, String resourceName)
+    public String createCacheKey(Module module, String resourceName)
     {
         return _transformManager.createConfigId(module, resourceName);
     }
 
     @Override
-    protected boolean isResourceFile(String filename)
+    public boolean isResourceFile(String filename)
     {
         return _transformManager.isConfigFile(filename);
     }
 
     @Override
-    protected String getResourceName(Module module, String filename)
+    public String getResourceName(Module module, String filename)
     {
         assert isResourceFile(filename) : "Configuration filename \"" + filename + "\" does not end with .xml";
         return FileUtil.getBaseName(filename);
     }
 
     @Override
-    protected CacheLoader<String, ScheduledPipelineJobDescriptor> getResourceLoader()
+    public CacheLoader<String, ScheduledPipelineJobDescriptor> getResourceLoader()
     {
         return DESCRIPTOR_LOADER;
     }
@@ -89,7 +73,7 @@ public class DescriptorCache extends ModuleResourceCache<ScheduledPipelineJobDes
             Module module = pair.first;
             String configName = pair.second;
 
-            Path configPath = new Path("etls", configName + ".xml");
+            Path configPath = new Path(DIR_NAME, configName + ".xml");
             Resource config = pair.first.getModuleResolver().lookup(configPath);
 
             if (config != null && config.isFile())
@@ -99,6 +83,13 @@ public class DescriptorCache extends ModuleResourceCache<ScheduledPipelineJobDes
         }
     };
 
+
+    @Nullable
+    @Override
+    public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+    {
+        return new EtlDirectoryListener(module);
+    }
 
     private class EtlDirectoryListener implements FileSystemDirectoryListener
     {

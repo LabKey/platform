@@ -25,11 +25,14 @@ import mondrian.server.StringRepositoryContentFinder;
 import mondrian.spi.CatalogLocator;
 import mondrian.spi.DataSourceChangeListener;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
 import org.olap4j.OlapConnection;
 
@@ -53,14 +56,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Date: 10/31/13
  * Time: 8:12 AM
 
-
-
-
  [ ] try to have exactly one MondrianServer (start with one per container)
  [ ] figure out cube/catalog reload, or do we have to blow away the server(s)?
  [ ] investigate shutdown, ref counting?, mondrian 3.5
  [ ] what is change listener for?
-
 
 */
 
@@ -71,12 +70,22 @@ public class ServerManager
     static final Map<String,ServerReferenceCount> _servers = new HashMap<>();
     static final Object _serverLock = new Object();
 
+    public static final ModuleResourceCache<OlapSchemaDescriptor> SCHEMA_DESCRIPTOR_CACHE = new ModuleResourceCache<>(new Path(OlapSchemaCacheHandler.DIR_NAME), "Olap cube defintions", new OlapSchemaCacheHandler());
 
     static String getServerCacheKey(Container c)
     {
         return MondrianServer.class.getName() + "/" + c.getId();
     }
 
+
+    @Nullable
+    public static OlapSchemaDescriptor getDescriptor(@NotNull Container c, @NotNull String schemaId)
+    {
+        OlapSchemaDescriptor d = SCHEMA_DESCRIPTOR_CACHE.getResource(schemaId);
+        if (null != d && c.getActiveModules().contains(d.getModule()))
+            return d;
+        return null;
+    }
 
     /*
      * Start with one MondrianServer per container.  We'd like to get down to one MondrianServer.
@@ -94,7 +103,7 @@ public class ServerManager
             MondrianServer s = null != ref ? ref.get() : null;
             if (null == s)
             {
-                Collection<OlapSchemaDescriptor> descriptors = OlapSchemaCache.get().getResources(c);
+                Collection<OlapSchemaDescriptor> descriptors = SCHEMA_DESCRIPTOR_CACHE.getResources(c);
 
                 StringBuilder sb = new StringBuilder();
                 sb.append(
@@ -244,7 +253,7 @@ public class ServerManager
             try
             {
                 // Need a way to get a URL or something to the resource
-                OlapSchemaDescriptor d = OlapSchemaCache.get().getResource(catalogPath);
+                OlapSchemaDescriptor d = SCHEMA_DESCRIPTOR_CACHE.getResource(catalogPath);
                 if (null == d)
                     throw new IOException("catalog not found: " + catalogPath);
                 File f = d.getFile();
