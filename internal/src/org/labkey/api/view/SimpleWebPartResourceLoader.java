@@ -42,6 +42,6 @@ public class SimpleWebPartResourceLoader implements ModuleResourceLoader
     @Override
     public void registerResources(Module module) throws IOException, ModuleResourceLoadException
     {
-        SimpleWebPartFactoryCache.get().registerModule(module);
+        Portal.WEB_PART_FACTORY_CACHE.registerModule(module);
     }
 }

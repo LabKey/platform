@@ -41,6 +41,9 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.SimpleController;
+import org.labkey.api.module.SimpleWebPartFactory;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.SecurityPolicy;
@@ -53,6 +56,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -82,6 +86,8 @@ public class Portal
     public static final int MOVE_DOWN = 1;
 
     private static final WebPartBeanLoader FACTORY = new WebPartBeanLoader();
+    public static final ModuleResourceCache<SimpleWebPartFactory> WEB_PART_FACTORY_CACHE =
+            new ModuleResourceCache<>(new Path(SimpleController.VIEWS_DIRECTORY), "File-based webpart definitions", new SimpleWebPartFactoryCacheHandler());
 
     private static HashMap<String, WebPartFactory> _viewMap = null;
     private static MultiHashMap<String, String> _regionMap = null;

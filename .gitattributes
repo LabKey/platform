@@ -751,6 +751,7 @@ api/src/org/labkey/api/module/ModuleHtmlViewDefinition.java -text
 api/src/org/labkey/api/module/ModuleLoader.java -text
 api/src/org/labkey/api/module/ModuleProperty.java -text
 api/src/org/labkey/api/module/ModuleResourceCache.java -text
+api/src/org/labkey/api/module/ModuleResourceCacheHandler.java -text
 api/src/org/labkey/api/module/ModuleResourceLoadException.java -text
 api/src/org/labkey/api/module/ModuleResourceLoader.java -text
 api/src/org/labkey/api/module/ModuleResourceResolver.java -text
@@ -1550,7 +1551,7 @@ api/src/org/labkey/api/view/ServletView.java -text
 api/src/org/labkey/api/view/SimpleFolderTab.java -text
 api/src/org/labkey/api/view/SimpleTextDisplayElement.java -text
 api/src/org/labkey/api/view/SimpleWebPartFactory.java -text
-api/src/org/labkey/api/view/SimpleWebPartFactoryCache.java -text
+api/src/org/labkey/api/view/SimpleWebPartFactoryCacheHandler.java -text
 api/src/org/labkey/api/view/SpringErrorView.java -text
 api/src/org/labkey/api/view/Stats.java -text
 api/src/org/labkey/api/view/TabBoxView.java -text

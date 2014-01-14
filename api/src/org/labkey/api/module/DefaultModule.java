@@ -60,7 +60,6 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
-import org.labkey.api.view.SimpleWebPartFactoryCache;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
@@ -399,9 +398,9 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             {
                 Collection<WebPartFactory> wpf = new ArrayList<>();
                 wpf.addAll(createWebPartFactories());
-                wpf.addAll(SimpleWebPartFactoryCache.get().getResources(this));
+                wpf.addAll(Portal.WEB_PART_FACTORY_CACHE.getResources(this));
 
-                // Not sure why module isn't set at construction time...
+                // Not sure why module isn't set at WebPartFactory construction time...
                 for (WebPartFactory webPartFactory : wpf)
                     webPartFactory.setModule(this);
 
