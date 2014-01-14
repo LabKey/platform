@@ -207,6 +207,16 @@ public class DavController extends SpringActionController
         return userAgent.startsWith("Mozilla/") || userAgent.startsWith("Opera/");
     }
 
+    // best guess is this a browser vs. a WebDAV client
+    boolean isMacFinder()
+    {
+        String userAgent = getRequest().getHeader("user-agent");
+        if (null == userAgent)
+            return false;
+        return userAgent.startsWith("WebDAVFS/") && userAgent.contains("Darwin/");
+    }
+
+
     // clients that support following redirects when getting a resource
     boolean supportsGetRedirect()
     {
@@ -639,7 +649,12 @@ public class DavController extends SpringActionController
                 StringBuilder methodsAllowed = determineMethodsAllowed(resource);
                 getResponse().setMethodsAllowed(methodsAllowed);
             }
-            return WebdavStatus.SC_METHOD_NOT_ALLOWED;
+            WebdavStatus ret = WebdavStatus.SC_METHOD_NOT_ALLOWED;
+            // Finder ignores the fact that this method is not allowed
+            if (isMacFinder())
+                ret = WebdavStatus.SC_OK;
+            getResponse().setStatus(ret);
+            return ret;
         }
     }
 
@@ -2535,11 +2550,9 @@ public class DavController extends SpringActionController
                 }
                 catch (NumberFormatException x)
                 {
+                    throw new DavException(WebdavStatus.SC_BAD_REQUEST, "Content-Length: " + contentLength);
                 }
-                if (-1 == size)
-                {
-                    throw new DavException(WebdavStatus.SC_BAD_REQUEST, "Content-Length not provided");
-                }
+                // NOTE Mac Finder does not set content-length, but we don't really need it
                 final long _size = size;
                 FileStream fis = new FileStream()
                 {
@@ -2583,7 +2596,12 @@ public class DavController extends SpringActionController
             {
                 boolean overwrite = getOverwriteParameter();
                 if (!overwrite)
-                    throw new DavException(WebdavStatus.SC_FILE_MATCH, "Cannot overwrite file");
+                {
+                    // allow finder to overwrite zero byte files without overwrite header
+                    boolean finderException = isMacFinder() && 0 == resource.getContentLength();
+                    if (!finderException)
+                        throw new DavException(WebdavStatus.SC_FILE_MATCH, "Cannot overwrite file");
+                }
             }
 
             Range range = parseContentRange();
@@ -2674,6 +2692,13 @@ public class DavController extends SpringActionController
                 if (deleteFileOnFail)
                 {
                     resource.delete(getUser());
+                }
+
+                if (_log.isDebugEnabled())
+                {
+                    File f = resource.getFile();
+                    if (null != f && f.exists())
+                        _log.debug(f.getName() + " length=" + f.length());
                 }
             }
 
@@ -3046,7 +3071,7 @@ public class DavController extends SpringActionController
             if (exists)
             {
                 if (!overwrite)
-                    return WebdavStatus.SC_FILE_MATCH;
+                    throw new DavException(WebdavStatus.SC_PRECONDITION_FAILED);
                 if (dest.isCollection())
                 {
                     if (!_overwriteCollection)
