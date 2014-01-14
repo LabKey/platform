@@ -625,7 +625,7 @@ public class DavController extends SpringActionController
                     _log.debug(getResponse().sbLogResponse);
                 WebdavStatus status = getResponse().getStatus();
                 String message = getResponse().getMessage();
-                _log.debug("<<<< " + (status != null ? status.code : 0) + " " + StringUtils.defaultString(message, status.message));
+                _log.debug("<<<< " + (status != null ? status.code : 0) + " " + StringUtils.defaultString(message, null != status ? status.message : ""));
             }
 
             return null;
