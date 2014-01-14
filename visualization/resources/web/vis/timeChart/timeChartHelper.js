@@ -215,7 +215,8 @@ LABKEY.vis.TimeChartHelper = new function() {
             x: xAes,
             color: function(row) { return (row[individualSubjectColumn] ? row[individualSubjectColumn].value : null) },
             group: function(row) { return (row[individualSubjectColumn] ? row[individualSubjectColumn].value : null) },
-            shape: function(row) { return (row[individualSubjectColumn] ? row[individualSubjectColumn].value : null) }
+            shape: function(row) { return (row[individualSubjectColumn] ? row[individualSubjectColumn].value : null) },
+            pathColor: function(rows) { return (rows[0][individualSubjectColumn] ? rows[0][individualSubjectColumn].value : null) }
         };
     };
 
@@ -254,6 +255,7 @@ LABKEY.vis.TimeChartHelper = new function() {
             var aes = {};
             aes[yName] = function(row){return (row[columnName] ? parseFloat(row[columnName].value) : null)}; // Have to parseFloat because for some reason ObsCon from Luminex was returning strings not floats/ints.
             aes.group = aes.color = aes.shape = function(row){return row[subjectColumn].displayValue};
+            aes.pathColor = function(rows){return rows[0][subjectColumn].displayValue};
             aes.error = function(row){return (row[errorColumn] ? row[errorColumn].value : null)};
             return aes;
         };
