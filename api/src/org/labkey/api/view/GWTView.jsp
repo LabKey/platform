@@ -30,8 +30,8 @@ String contextPath = request.getContextPath();
 String jsPath = bean.getModuleName() + "/" + bean.getModuleName() + ".nocache.js";
 String hashedPath = contextPath + "/" + jsPath + "?" + PageFlowUtil.getServerSessionHash();
 %>
-<script id="__gwt_marker_<%=bean.getModuleName()%>"></script>
-<script type="text/javascript" src="<%=hashedPath%>"></script>
+<script id="__gwt_marker_<%=h(bean.getModuleName())%>"></script>
+<script type="text/javascript" src="<%=h(hashedPath)%>"></script>
 <%-- 14005: ExtJS popup menus broken on GWT pages -- removed gwt specific stylesheets --%>
 <%--<script type="text/javascript">--%>
     <%--LABKEY.requiresCss("gxt/css/gxt-all.css");--%>
@@ -39,11 +39,11 @@ String hashedPath = contextPath + "/" + jsPath + "?" + PageFlowUtil.getServerSes
 <%--</script>--%>
 <script type="text/javascript">
     <!-- Pass through name/value property map to GWT app so it can initialize itself appropriately -->
-<%= GWTView.PROPERTIES_OBJECT_NAME %> = {<%
+<%= text(GWTView.PROPERTIES_OBJECT_NAME) %> = {<%
     String comma ="\n\t";
     for (Map.Entry<String, String> entry : bean.getProperties().entrySet())
     {
-        %><%=comma%><%=PageFlowUtil.jsString(entry.getKey())%>:<%= PageFlowUtil.jsString(entry.getValue()) %><%
+        %><%=text(comma)%><%=PageFlowUtil.jsString(entry.getKey())%>:<%= PageFlowUtil.jsString(entry.getValue()) %><%
         comma=",\n\t";
     }
 %>};
