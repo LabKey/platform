@@ -141,8 +141,6 @@ public class CoreController extends SpringActionController
 {
     private static final Map<Container, Content> _themeStylesheetCache = new ConcurrentHashMap<>();
     private static final Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<>();
-//    private static final Map<Container, Content> _combinedStylesheetCache = new ConcurrentHashMap<>();
-//    private static final Map<Content, Content> _setCombinedStylesheet = new ConcurrentHashMap<>();
     private static final Logger _log = Logger.getLogger(CoreController.class);
 
     private static ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
@@ -558,119 +556,6 @@ public class CoreController extends SpringActionController
     }
 
 
-/*
-    TODO: Delete... no longer used
-
-    @RequiresNoPermission
-    @IgnoresTermsOfUse
-    @AllowedDuringUpgrade
-    @AllowedBeforeInitialUserIsSet
-    public class CombinedStylesheetAction extends BaseStylesheetAction
-    {
-        Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
-        {
-            Container c = getContainer();
-            if (null == c)
-                c = ContainerManager.getRoot();
-            c = LookAndFeelProperties.getSettingsContainer(c);
-
-            Content content = _combinedStylesheetCache.get(c);
-            Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
-
-            if (null == content || !dependsOn.equals(content.dependencies) || AppProps.getInstance().isDevMode())
-            {
-                InputStream is = null;
-                try
-                {
-                    // get the root resolver
-                    WebdavResolver r = ModuleStaticResolverImpl.get(); //ServiceRegistry.get(WebdavResolver.class);
-                    WebTheme webTheme = WebThemeManager.getTheme(c);
-
-                    WebdavResource stylesheet = r.lookup(new Path(webTheme.getStyleSheet()));
-
-                    Content root = getCustomStylesheetContent(ContainerManager.getRoot());
-                    Content theme = c.isRoot() ? null : (new ThemeStylesheetAction().getContent(request,response));
-                    Content custom = c.isRoot() ? null : getCustomStylesheetContent(c);
-                    WebdavResource extAll = r.lookup(Path.parse("/" + PageFlowUtil.extJsRoot() + "/resources/css/ext-all.css"));
-                    WebdavResource extPatches = r.lookup(Path.parse("/" + PageFlowUtil.extJsRoot() + "/resources/css/ext-patches.css"));
-                    WebdavResource ext4All = r.lookup(Path.parse(PageFlowUtil.resolveExtThemePath(c)));
-                    StringWriter out = new StringWriter();
-
-                    _appendCss(out, extAll);     // Ext 3
-                    _appendCss(out, extPatches);
-                    _appendCss(out, ext4All);    // Ext 4
-                    _appendCss(out, stylesheet);
-                    _appendCss(out, root);
-                    _appendCss(out, theme);
-                    _appendCss(out, custom);
-
-                    String css = out.toString();
-                    content = new Content(css);
-                    content.compressed = compressCSS(css);
-                    content.dependencies = dependsOn;
-                    // save space
-                    content.content = null; out = null;
-
-                    synchronized (_setCombinedStylesheet)
-                    {
-                        Content shared = content.copy();
-                        shared.modified = 0;
-                        shared.dependencies = "";
-                        if (!_setCombinedStylesheet.containsKey(shared))
-                        {
-                            _setCombinedStylesheet.put(shared,shared);
-                        }
-                        else
-                        {
-                            shared = _setCombinedStylesheet.get(shared);
-                            content.content = shared.content;
-                            content.encoded = shared.encoded;
-                            content.compressed = shared.compressed;
-                        }
-                    }
-                    _combinedStylesheetCache.put(c, content);
-                }
-                finally
-                {
-                    IOUtils.closeQuietly(is);
-                }
-            }
-
-            return content;
-        }
-    }
-
-    void _appendCss(StringWriter out, WebdavResource r)
-    {
-        if (null == r || !r.isFile())
-            return;
-        assert null != r.getFile();
-        String s = PageFlowUtil.getFileContentsAsString(r.getFile());
-        Path p = Path.parse(getViewContext().getContextPath()).append(r.getPath()).getParent();
-        _appendCss(out, p, s);
-    }
-
-
-    void _appendCss(StringWriter out, Content content)
-    {
-        if (null == content || content instanceof NoContent)
-            return;
-        // relative URLs aren't really going to work (/labkey/core/container/), so path=null
-        _appendCss(out, null, content.content);
-    }
-
-
-    void _appendCss(StringWriter out, Path p, String s)
-    {
-        String compiled = compileCSS(s);
-        if (null != p)
-            compiled = compiled.replaceAll("url\\(\\s*([^/])", "url(" + p.toString("/","/") + "$1");
-        out.write(compiled);
-        out.write("\n");
-    }
-*/
-
-
     private static String compileCSS(String s)
     {
         if (!StringUtilsLabKey.isText(s))
@@ -708,66 +593,6 @@ public class CoreController extends SpringActionController
         return Compress.compressGzip(c.trim());
     }
 
-/*
-    TODO: Delete... no longer used
-
-    static AtomicReference<Content> _combinedJavascript = new AtomicReference<>();
-
-    @RequiresNoPermission
-    @IgnoresTermsOfUse
-    @AllowedDuringUpgrade
-    @AllowedBeforeInitialUserIsSet
-    public class CombinedJavascriptAction extends BaseStylesheetAction
-    {
-        Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
-        {
-            Content ret = _combinedJavascript.get();
-            if (null == ret)
-            {
-                // get the root resolver
-                WebdavResolver r = ModuleStaticResolverImpl.get();
-                
-                Set<String> scripts = new LinkedHashSet<>();
-                Set<String> includes = new LinkedHashSet<>();
-                PageFlowUtil.getJavaScriptPaths(getContainer(), getUser(), scripts, includes);
-                List<String> concat = new ArrayList<>();
-                for (String path : scripts)
-                {
-                    WebdavResource script = r.lookup(Path.parse(path));
-                    assert(script != null && script.isFile()) : "Failed to find: " + path;
-                    if (script == null || !script.isFile())
-                        continue;
-                    concat.add("/* ---- " + path + " ---- *" + "/");
-                    List<String> content = PageFlowUtil.getStreamContentsAsList(script.getInputStream(getUser()));
-                    concat.addAll(content);
-                }
-                int len = 0;
-                for (String s : concat)
-                    len = s.length()+1;
-                StringBuilder sb = new StringBuilder(len);
-                for (String s : concat)
-                {
-                    String t = StringUtils.trimToNull(s);
-                    if (t == null) continue;
-                    if (t.startsWith("//"))
-                        continue;
-                    sb.append(t).append('\n');
-                }
-                ret = new Content(sb.toString());
-                ret.content = null;
-                ret.compressed = Compress.compressGzip(ret.encoded);
-                _combinedJavascript.set(ret);
-            }
-            return ret;
-        }
-
-        @Override
-        String getContentType()
-        {
-            return "text/javascript";
-        }
-    }
-*/
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
@@ -861,22 +686,14 @@ public class CoreController extends SpringActionController
 
                 byte[] buf = new byte[4096];
                 WebdavResolver staticFiles = ServiceRegistry.get().getService(WebdavResolver.class);
-
                 WebdavResource file = staticFiles.lookup(Path.parse(path));
+
                 if (file != null)
                 {
-                    InputStream is = file.getInputStream();
-                    OutputStream os = response.getOutputStream();
-
-                    try
+                    try (OutputStream os = response.getOutputStream(); InputStream is = file.getInputStream())
                     {
-                        for(int len; (len=is.read(buf))!=-1; )
-                            os.write(buf,0,len);
-                    }
-                    finally
-                    {
-                        os.close();
-                        is.close();
+                        for (int len; (len = is.read(buf)) != -1; )
+                            os.write(buf, 0, len);
                     }
                 }
                 else
