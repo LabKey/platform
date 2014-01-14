@@ -1389,6 +1389,7 @@ public class AdminController extends SpringActionController
         private String _fileRootOption;
         private String _supportEmail;
         private String[] _enabledCloudStore;
+        private String _dateParsingMode;
         private String _defaultDateFormat;
         private String _defaultNumberFormat;
 
@@ -1463,6 +1464,17 @@ public class AdminController extends SpringActionController
         public void setFolderDisplayMode(String folderDisplayMode)
         {
             _folderDisplayMode = folderDisplayMode;
+        }
+
+        public String getDateParsingMode()
+        {
+            return _dateParsingMode;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setDateParsingMode(String dateParsingMode)
+        {
+            _dateParsingMode = dateParsingMode;
         }
 
         public boolean isEnableHelpMenu()

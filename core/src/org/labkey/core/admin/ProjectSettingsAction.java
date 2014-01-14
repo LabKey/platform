@@ -39,6 +39,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.DateParsingMode;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
@@ -212,6 +213,9 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         FolderDisplayMode folderDisplayMode = FolderDisplayMode.fromString(form.getFolderDisplayMode());
         props.setFolderDisplayMode(folderDisplayMode);
         props.setHelpMenuEnabled(form.isEnableHelpMenu());
+
+        DateParsingMode dateParsingMode = DateParsingMode.fromString(form.getDateParsingMode());
+        props.setDateParsingMode(dateParsingMode);
 
         if (!saveFolderSettings(form, props, getUser(), errors))
             return false;

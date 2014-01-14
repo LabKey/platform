@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
+<%@ page import="org.labkey.api.settings.DateParsingMode" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.FolderDisplayMode" %>
@@ -218,15 +219,34 @@
             "<tr class=\"labkey-alternate-row\"><td><code>h</code><td>Hour in am/pm (1-12)<td><code>12</code></tr></table>";
 %>
 <tr>
-    <td colspan=2>Customize default formats (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Customize date and number formats (<%=text(bean.helpLink)%>)</td>
 </tr>
-<tr><td colspan=3 class=labkey-title-area-line></td></tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr><%
+
+    // TODO: This check is temporary and should switch to "if (!folder) {}" once the date parsing methods pass Container consistently
+    if (c.isRoot())
+    {
+        DateParsingMode dateParsingMode = laf.getDateParsingMode();
+        String dateParsingHelp = "LabKey needs to understand how to interpret (parse) dates that users enter into input forms. " +
+                "For example, if a user enters the date \"10/4/2013\" does that person mean October 4, 2013 (typical interpretation " +
+                "in the United States) or April 10, 2013 (typical interpretation in most other countries)? Choose the " +
+                "parsing mode that matches your users' expectations.";
+%>
 <tr>
-    <td class="labkey-form-label">Default date format<%=PageFlowUtil.helpPopup("Date format", dateFormatHelp, true)%></td>
+    <td class="labkey-form-label">Date parsing mode<%=PageFlowUtil.helpPopup("Date parsing", dateParsingHelp, false)%></td>
+    <td>
+        <input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.US)%>> <%=h(DateParsingMode.US.getDisplayString())%><br>
+        <input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.NON_US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.NON_US)%>> <%=h(DateParsingMode.NON_US.getDisplayString())%><br>
+    </td>
+</tr><%
+    }
+%>
+<tr>
+    <td class="labkey-form-label">Default display format for dates<%=PageFlowUtil.helpPopup("Date format", dateFormatHelp, true)%></td>
     <td><input type="text" name="defaultDateFormat" size="50" value="<%= h(laf.getDefaultDateFormat()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Default number format<%=PageFlowUtil.helpPopup("Number format", decimalFormatHelp, true)%></td>
+    <td class="labkey-form-label">Default display format for numbers<%=PageFlowUtil.helpPopup("Number format", decimalFormatHelp, true)%></td>
     <td><input type="text" name="defaultNumberFormat" size="50" value="<%= h(laf.getDefaultNumberFormat()) %>"></td>
 </tr>
 <tr>
