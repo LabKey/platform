@@ -52,6 +52,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
 import org.labkey.api.view.ActionURL;
@@ -918,16 +919,11 @@ public class PageFlowUtil
      */
     public static void streamFile(HttpServletResponse response, @NotNull Map<String, String> responseHeaders, File file, boolean asAttachment) throws IOException
     {
-        InputStream is = new FileInputStream(file);
-        try
+        try (InputStream is = new FileInputStream(file))
         {
             prepareResponseForFile(response, responseHeaders, file, asAttachment);
             ServletOutputStream out = response.getOutputStream();
             FileUtil.copyData(is, out);
-        }
-        finally
-        {
-            IOUtils.closeQuietly(is);
         }
     }
 
@@ -993,7 +989,7 @@ public class PageFlowUtil
     }
 
 
-    static Charset utf8 = Charset.forName("UTF-8");
+    private static final Charset utf8 = Charset.forName("UTF-8");
 
     public static class Content
     {
@@ -1188,18 +1184,13 @@ public class PageFlowUtil
     public static List<String> getStreamContentsAsList(InputStream is, boolean skipComments) throws IOException
     {
         List<String> contents = new ArrayList<>();
-        BufferedReader input = new BufferedReader(new InputStreamReader(is));
 
-        try
+        try (BufferedReader input = new BufferedReader(new InputStreamReader(is)))
         {
             String line;
             while ((line = input.readLine()) != null)
                 if (!skipComments || !line.startsWith("#"))
                     contents.add(line);
-        }
-        finally
-        {
-            IOUtils.closeQuietly(input);
         }
 
         return contents;
@@ -1655,11 +1646,7 @@ public class PageFlowUtil
         {
             parser.setFeature(feature, b);
         }
-        catch (SAXNotSupportedException e)
-        {
-            _log.error("parserSetFeature", e);
-        }
-        catch (SAXNotRecognizedException e)
+        catch (SAXNotSupportedException | SAXNotRecognizedException e)
         {
             _log.error("parserSetFeature", e);
         }
@@ -2072,7 +2059,6 @@ public class PageFlowUtil
         String contextPath = appProps.getContextPath();
         JSONObject json = new JSONObject();
         json.put("experimentalContainerRelativeURL", appProps.getUseContainerRelativeURL());
-        json.put("useMDYDateParsing", appProps.getUseMDYDateParsing());
         json.put("contextPath", contextPath);
         json.put("imagePath", contextPath + "/_images");
         json.put("extJsRoot", extJsRoot());
@@ -2086,11 +2072,15 @@ public class PageFlowUtil
         //TODO: these should be passed in by callers
         ViewContext context = HttpView.currentView().getViewContext();
         Container container = context.getContainer();
-        User user = HttpView.currentView().getViewContext().getUser();
+        User user = context.getUser();
         HttpServletRequest request = context.getRequest();
 
-        if(container != null)
+        if (container != null)
             json.put("moduleContext", getModuleClientContext(container, user, resources));
+
+        // Look and feel properties in this container determines date parsing mode; fall back on root setting
+        Container dateParsingModeContainer = null != container ? container : ContainerManager.getRoot();
+        json.put("useMDYDateParsing", LookAndFeelProperties.getInstance(dateParsingModeContainer).getDateParsingMode().getDayMonth() == DateUtil.MonthDayOption.MONTH_DAY);
 
         JSONObject userProps = new JSONObject();
 

@@ -57,11 +57,11 @@ public class TableViewFormTestCase extends Assert
         Assert.assertNull("Turn string to null", tf.getTypedValue("text"));
 
         tf.set("bitNull", "1");
-        Assert.assertTrue(((Boolean) tf.getTypedValue("bitNull")).booleanValue());
+        Assert.assertTrue((Boolean) tf.getTypedValue("bitNull"));
 
-        tf.setPkVal(new Integer(20));
+        tf.setPkVal(20);
         Assert.assertEquals(tf.get("rowId"), "20");
-        Assert.assertEquals(tf.getTypedValue("rowId"), new Integer(20));
+        Assert.assertEquals(tf.getTypedValue("rowId"), 20);
     }
 
     @Test

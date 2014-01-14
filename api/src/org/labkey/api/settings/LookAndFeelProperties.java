@@ -44,6 +44,8 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     protected static final String SUPPORT_EMAIL = "supportEmail";
     protected static final String REPORT_A_PROBLEM_PATH_PROP = "reportAProblemPath";
 
+    protected static final String DATE_PARSING_MODE = "dateParsingMode";
+
     private final Container _settingsContainer;
 
     public static LookAndFeelProperties getInstance(Container c)
@@ -168,6 +170,11 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     public boolean isShowMenuBar()
     {
         return isMenuUIEnabled() || getFolderDisplayMode().isShowInMenu();    
+    }
+
+    public DateParsingMode getDateParsingMode()
+    {
+        return DateParsingMode.fromString(lookupStringValue(DATE_PARSING_MODE, DateParsingMode.US.toString()));
     }
 
     public static Container getSettingsContainer(Container c)

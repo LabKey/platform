@@ -96,7 +96,6 @@ public class AppProps
         public String getMascotUserAccount();
         public String getWebappConfigurationFilename();
         public String getAdministratorContactEmail();
-        public boolean getUseMDYDateParsing();
         public boolean getUseContainerRelativeURL();
     }
 

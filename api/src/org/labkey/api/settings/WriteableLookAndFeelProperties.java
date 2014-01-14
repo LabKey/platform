@@ -41,6 +41,11 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         storeStringValue(FOLDER_DISPLAY_MODE, folderDisplayMode.toString());
     }
 
+    public void setDateParsingMode(DateParsingMode dateParsingMode)
+    {
+        storeStringValue(DATE_PARSING_MODE, dateParsingMode.toString());
+    }
+
     public void setHelpMenuEnabled(boolean enabled)
     {
         storeBooleanValue(HELP_MENU_ENABLED_PROP, enabled);

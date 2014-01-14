@@ -545,13 +545,6 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         return format.format(ModuleLoader.getInstance().getCoreModule().getVersion());
     }
 
-    @Override
-    public boolean getUseMDYDateParsing()
-    {
-        return true;
-    }
-
-
     final static boolean useContainerRelativeURLByDefault = false;
 
     @Override

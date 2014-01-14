@@ -28,8 +28,9 @@ public enum FolderDisplayMode
     ALWAYS("Always", false),
     ADMIN("Only for Administrators", false);
 
-    private String displayString;
-    private boolean showInMenu;
+    private final String displayString;
+    private final boolean showInMenu;
+
     FolderDisplayMode(String displayString, boolean showInMenu)
     {
         this.displayString = displayString;

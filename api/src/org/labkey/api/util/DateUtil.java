@@ -22,8 +22,9 @@ import org.apache.commons.lang3.time.FastDateFormat;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.settings.FolderSettingsCache;
+import org.labkey.api.settings.LookAndFeelProperties;
 
 import javax.xml.bind.DatatypeConverter;
 import java.sql.Timestamp;
@@ -317,7 +318,7 @@ public class DateUtil
     }
 
 
-    private enum MonthDayOption
+    public enum MonthDayOption
     {
         MONTH_DAY,
         DAY_MONTH
@@ -774,16 +775,24 @@ validNum:       {
 
 
     // Lenient parsing using a variety of standard formats
+    @Deprecated  // Use version that takes a Container instead
     public static long parseDateTime(String s)
     {
-        if (AppProps.getInstance().getUseMDYDateParsing())
-            return parseDateTime(s, MonthDayOption.MONTH_DAY);
-        else
-            return parseDateTime(s, MonthDayOption.DAY_MONTH);
+        return parseDateTime(ContainerManager.getRoot(), s);
     }
 
 
-    public static long parseDateTime(String s, MonthDayOption md)
+    // Lenient parsing using a variety of standard formats
+    public static long parseDateTime(Container c, String s)
+    {
+        String displayFormat = getDateFormatString(c);  // TODO: Pass this into parseDate() as a bonus format?
+        MonthDayOption monthDayOption = LookAndFeelProperties.getInstance(c).getDateParsingMode().getDayMonth();
+
+        return parseDateTime(s, monthDayOption);
+    }
+
+
+    private static long parseDateTime(String s, MonthDayOption md)
     {
         int ms = 0;
         try
@@ -814,12 +823,20 @@ validNum:       {
 
 
     // Lenient parsing using a variety of standard formats
+    @Deprecated  // Use version that takes a Container instead
     public static long parseDate(String s)
     {
-        if (AppProps.getInstance().getUseMDYDateParsing())
-            return parseDate(s, MonthDayOption.MONTH_DAY);
-        else
-            return parseDate(s, MonthDayOption.DAY_MONTH);
+        return parseDate(ContainerManager.getRoot(), s);
+    }
+
+
+    // Lenient parsing using a variety of standard formats
+    public static long parseDate(Container c, String s)
+    {
+        String displayFormat = getDateFormatString(c);  // TODO: Pass this into parseDate() as a bonus format
+        MonthDayOption monthDayOption = LookAndFeelProperties.getInstance(c).getDateParsingMode().getDayMonth();
+
+        return parseDate(s, monthDayOption);
     }
 
 
