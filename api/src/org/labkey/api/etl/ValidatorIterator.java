@@ -158,6 +158,9 @@ checkRequired:
         @Override
         public String validate(Object value)
         {
+            // Don't validate null values, #15683, #19352
+            if (null == value)
+                return null;
             if (kind.validate(propertyValidator, pd , value, errors, validatorContext))
                 return null;
             if (errors.isEmpty())
