@@ -39,6 +39,7 @@ import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.IPropertyType;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
@@ -248,6 +249,8 @@ public class PropertyServiceImpl implements PropertyService.Interface
         prop.setLabel(xProp.getLabel());
         prop.setName(xProp.getName());
         prop.setRangeURI(xProp.getRangeURI());
+        DomainUtil.setPropertyDescriptorScale(prop);
+
         String propertyURI = xProp.getPropertyURI();
         // Deal with legacy property URIs that don't have % in the name part properly encoded
         propertyURI = Lsid.fixupPropertyURI(propertyURI);
