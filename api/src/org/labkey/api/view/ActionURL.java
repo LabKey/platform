@@ -332,7 +332,17 @@ public class ActionURL extends URLHelper implements Cloneable
         return addParameter(key.name(), value);
     }
 
+    public ActionURL addParameter(Enum key, long value)
+    {
+        return addParameter(key.name(), value);
+    }
+
     public ActionURL addParameter(String key, int value)
+    {
+        return (ActionURL) super.addParameter(key, String.valueOf(value));
+    }
+
+    public ActionURL addParameter(String key, long value)
     {
         return (ActionURL) super.addParameter(key, String.valueOf(value));
     }

@@ -48,6 +48,7 @@ public interface Domain extends IPropertyType
     void setDescription(String description);
     void setPropertyIndex(DomainProperty prop, int index);
     DomainProperty[] getProperties();
+    List<DomainProperty> getNonBaseProperties();
     DomainProperty getProperty(int id);
     @Nullable
     DomainProperty getPropertyByURI(String propertyURI);
