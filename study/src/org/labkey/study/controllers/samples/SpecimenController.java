@@ -790,19 +790,19 @@ public class SpecimenController extends BaseStudyController
         {
             SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), addToSampleRequestForm.getId());
             requiresEditRequestPermissions(request);
-            int ids[];
+            long ids[];
             if (addToSampleRequestForm.getSpecimenIds() != null && addToSampleRequestForm.getSpecimenIds().length() > 0)
-                ids = toIntArray(addToSampleRequestForm.getSpecimenIds().split(","));
+                ids = toLongArray(addToSampleRequestForm.getSpecimenIds().split(","));
             else
-                ids = toIntArray(DataRegionSelection.getSelected(getViewContext(), true));
+                ids = toLongArray(DataRegionSelection.getSelected(getViewContext(), true));
 
             // get list of specimens that are not already part of the request: we don't want to double-add
             List<Specimen> currentSpecimens = SampleManager.getInstance().getRequestSpecimens(request);
-            Set<Integer> currentSpecimenIds = new HashSet<>();
+            Set<Long> currentSpecimenIds = new HashSet<>();
             for (Specimen specimen : currentSpecimens)
                 currentSpecimenIds.add(specimen.getRowId());
             List<Specimen> specimensToAdd = new ArrayList<>();
-            for (int id : ids)
+            for (long id : ids)
             {
                 if (!currentSpecimenIds.contains(id))
                     specimensToAdd.add(SampleManager.getInstance().getSpecimen(getContainer(), getUser(), id));
@@ -1233,7 +1233,10 @@ public class SpecimenController extends BaseStudyController
         {
             SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), form.getId());
             requiresEditRequestPermissions(request);
-            int[] sampleIds = toIntArray(DataRegionSelection.getSelected(getViewContext(), true));
+            long[] ids = toLongArray(DataRegionSelection.getSelected(getViewContext(), true));
+            List<Long> sampleIds = new ArrayList<>();
+            for (long id : ids)
+                sampleIds.add(id);
             try
             {
                 SampleManager.getInstance().deleteRequestSampleMappings(getUser(), request, sampleIds, true);
@@ -1443,7 +1446,7 @@ public class SpecimenController extends BaseStudyController
 
         private String[] _inputs;
         private int _destinationLocation;
-        private int[] _sampleRowIds;
+        private long[] _sampleRowIds;
         private boolean[] _required;
         private boolean _fromGroupedView;
         private Integer _preferredLocation;
@@ -1466,7 +1469,7 @@ public class SpecimenController extends BaseStudyController
                 builder.append("<input type=\"hidden\" name=\"returnUrl\" value=\"").append(PageFlowUtil.filter(_returnUrl)).append("\">\n");
             if (_sampleRowIds != null)
             {
-                for (int sampleId : _sampleRowIds)
+                for (long sampleId : _sampleRowIds)
                     builder.append("<input type=\"hidden\" name=\"sampleRowIds\" value=\"").append(sampleId).append("\">\n");
             }
             else
@@ -1501,12 +1504,12 @@ public class SpecimenController extends BaseStudyController
             return builder.toString();
         }
 
-        public int[] getSampleRowIds()
+        public long[] getSampleRowIds()
         {
             return _sampleRowIds;
         }
 
-        public void setSampleRowIds(int[] sampleRowIds)
+        public void setSampleRowIds(long[] sampleRowIds)
         {
             _sampleRowIds = sampleRowIds;
         }
@@ -1719,7 +1722,7 @@ public class SpecimenController extends BaseStudyController
             getUtils().ensureSpecimenRequestsConfigured(true);
 
             String[] inputs = form.getInputs();
-            int[] sampleIds = form.getSampleRowIds();
+            long[] sampleIds = form.getSampleRowIds();
             StringBuilder comments = new StringBuilder();
             SampleManager.SpecimenRequestInput[] expectedInputs =
                     SampleManager.getInstance().getNewSpecimenRequestInputs(getContainer());
@@ -1767,7 +1770,7 @@ public class SpecimenController extends BaseStudyController
                 if (sampleIds != null && sampleIds.length > 0)
                 {
                     samples = new ArrayList<>();
-                    for (int sampleId : sampleIds)
+                    for (long sampleId : sampleIds)
                     {
                         Specimen specimen = SampleManager.getInstance().getSpecimen(container, user, sampleId);
                         if (specimen != null)
@@ -1801,7 +1804,7 @@ public class SpecimenController extends BaseStudyController
                     }
                     else
                     {
-                        int[] validSampleIds = new int[samples.size()];
+                        long[] validSampleIds = new long[samples.size()];
                         int index = 0;
                         for (Specimen sample : samples)
                             validSampleIds[index++] = sample.getRowId();
@@ -3576,7 +3579,7 @@ public class SpecimenController extends BaseStudyController
         private boolean _mixedComments;
         private boolean _currentFlagState;
         private boolean _mixedFlagState;
-        private Map<String, Map<String, Integer>> _participantVisitMap = new TreeMap<>();
+        private Map<String, Map<String, Long>> _participantVisitMap = new TreeMap<>();
 
         public UpdateSpecimenCommentsBean(ViewContext context, List<Specimen> samples, String referrer) throws ServletException
         {
@@ -3612,9 +3615,9 @@ public class SpecimenController extends BaseStudyController
             }
         }
 
-        protected Map<String, Map<String, Integer>> generateParticipantVisitMap(List<Specimen> samples, Study study)
+        protected Map<String, Map<String, Long>> generateParticipantVisitMap(List<Specimen> samples, Study study)
         {
-            Map<String, Map<String, Integer>> pvMap = new TreeMap<>();
+            Map<String, Map<String, Long>> pvMap = new TreeMap<>();
 
             for (Specimen sample : samples)
             {
@@ -3626,7 +3629,7 @@ public class SpecimenController extends BaseStudyController
                     if (ptid != null && v != null)
                     {
                         if (!pvMap.containsKey(ptid))
-                            pvMap.put(ptid, new HashMap<String, Integer>());
+                            pvMap.put(ptid, new HashMap<String, Long>());
                         pvMap.get(ptid).put(v.getDisplayString(), sample.getRowId());
                     }
                 }
@@ -3659,7 +3662,7 @@ public class SpecimenController extends BaseStudyController
             return _mixedFlagState;
         }
 
-        public Map<String, Map<String, Integer>> getParticipantVisitMap()
+        public Map<String, Map<String, Long>> getParticipantVisitMap()
         {
             return _participantVisitMap;
         }

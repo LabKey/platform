@@ -48,10 +48,11 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
-        Collection<SpecimenColumn> columns = SpecimenImporter.SPECIMEN_COLUMNS;
         StudySchema schema = StudySchema.getInstance();
         StudyQuerySchema querySchema = new StudyQuerySchema(study, ctx.getUser(), true); // to use for checking overlayed XMl metadata
         Container c = ctx.getContainer();
+        SpecimenImporter specimenImporter = new SpecimenImporter(c, ctx.getUser());
+        Collection<SpecimenColumn> columns = specimenImporter.getSpecimenColumns();
 
         PrintWriter pw = vf.getPrintWriter("specimens.tsv");
 

@@ -207,7 +207,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         clearCaches((Container)evt.getSource());
     }
 
-    public Specimen getSpecimen(Container container, User user, int rowId)
+    public Specimen getSpecimen(Container container, User user, long rowId)
     {
 //        return _specimenDetailHelper.get(container, rowId);
         SimpleFilter filter = new SimpleFilter("RowId", rowId);
@@ -253,19 +253,14 @@ public class SampleManager implements ContainerManager.ContainerListener
     public List<SpecimenEvent> getSpecimenEvents(@NotNull Specimen sample)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("VialId"), sample.getRowId());
-//        return _specimenEventHelper.get(sample.getContainer(), filter);
-        TableInfo tableInfo = StudySchema.getInstance().getTableInfoSpecimenEvent(sample.getContainer());
-        if (null != tableInfo)
-            return fillInContainer(new TableSelector(tableInfo, filter, null).getArrayList(SpecimenEvent.class), sample.getContainer());
-        else
-            return Collections.emptyList();
+        return getSpecimenEvents(sample.getContainer(), filter);
     }
 
     public List<SpecimenEvent> getSpecimenEvents(List<Specimen> samples, boolean includeObsolete)
     {
         if (samples == null || samples.size() == 0)
             return Collections.emptyList();
-        Collection<Integer> vialIds = new HashSet<>();
+        Collection<Long> vialIds = new HashSet<>();
         Container container = null;
         for (Specimen sample : samples)
         {
@@ -279,12 +274,18 @@ public class SampleManager implements ContainerManager.ContainerListener
         filter.addInClause(FieldKey.fromString("VialId"), vialIds);
         if (!includeObsolete)
             filter.addCondition(FieldKey.fromString("Obsolete"), false);
+        return getSpecimenEvents(container, filter);
+    }
+
+    private List<SpecimenEvent> getSpecimenEvents(Container container, Filter filter)
+    {
 //        return _specimenEventHelper.get(container, filter);
         TableInfo tableInfo = StudySchema.getInstance().getTableInfoSpecimenEvent(container);
-        if (null != tableInfo)
-            return fillInContainer(new TableSelector(tableInfo, filter, null).getArrayList(SpecimenEvent.class), container);
-        else
-            return Collections.emptyList();
+        List<Map> rowMaps = new TableSelector(tableInfo, filter, null).getArrayList(Map.class);
+        List<SpecimenEvent> specimenEvents = new ArrayList<>();
+        for (Map rowMap : rowMaps)
+            specimenEvents.add(new SpecimenEvent(rowMap));
+        return fillInContainer(specimenEvents, container);
     }
 
     private static class SpecimenEventDateComparator implements Comparator<SpecimenEvent>
@@ -309,7 +310,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                 return event.getLabReceiptDate();
             else
             {
-                Date storageDate = convertToDate(event.getStorageDate());
+                Date storageDate = event.getStorageDate();
                 if (storageDate != null)
                     return storageDate;
                 else
@@ -324,7 +325,7 @@ public class SampleManager implements ContainerManager.ContainerListener
             // and a storage date always comes after a receipt date.
             if (event.getLabReceiptDate() != null)
                 return 1;
-            else if (convertToDate(event.getStorageDate()) != null)
+            else if (event.getStorageDate() != null)
                 return 2;
             else if (event.getShipDate() != null)
                 return 3;
@@ -367,7 +368,7 @@ public class SampleManager implements ContainerManager.ContainerListener
     public Map<Specimen, List<SpecimenEvent>> getDateOrderedEventLists(List<Specimen> specimens, boolean includeObsolete)
     {
         List<SpecimenEvent> allEvents = getSpecimenEvents(specimens, includeObsolete);
-        Map<Integer, List<SpecimenEvent>> vialIdToEvents = new HashMap<>();
+        Map<Long, List<SpecimenEvent>> vialIdToEvents = new HashMap<>();
         for (SpecimenEvent event : allEvents)
         {
             List<SpecimenEvent> vialEvents = vialIdToEvents.get(event.getVialId());
@@ -430,7 +431,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         return allNullDates && !safeComp(event.getLabId(), event.getOriginatingLocationId());
     }
 
-    private SpecimenEvent getFirstEvent(List<SpecimenEvent> dateOrderedEvents)
+    public SpecimenEvent getFirstEvent(List<SpecimenEvent> dateOrderedEvents)
     {
         if (!dateOrderedEvents.isEmpty())
         {
@@ -527,7 +528,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         for (Specimen specimen : specimens)
         {
             specimen.setLockedInRequest(lockedInRequest);
-            Table.update(user, StudySchema.getInstance().getTableInfoVial(specimen.getContainer()), specimen, specimen.getRowId());
+            Table.update(user, StudySchema.getInstance().getTableInfoVial(specimen.getContainer()), specimen.getRowMap(), specimen.getRowId());
         }
         updateRequestabilityAndCounts(specimens, user);
         if (specimens.size() > 0)
@@ -596,7 +597,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
         if (specimens != null && specimens.size() > 0)
         {
-            Set<Integer> specimenIds = new HashSet<>();
+            Set<Long> specimenIds = new HashSet<>();
             for (Specimen specimen : specimens)
                 specimenIds.add(specimen.getSpecimenId());
 
@@ -604,7 +605,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                     .append(tableInfoVial.getColumn("SpecimenId").getValueSql(tableInfoVialSelectName))
                     .append(" IN (");
             String sep = "";
-            for (Integer id : specimenIds)
+            for (Long id : specimenIds)
             {
                 updateSql.append(sep).append("?");
                 updateSql.add(id);
@@ -924,7 +925,11 @@ public class SampleManager implements ContainerManager.ContainerListener
         sql.add(container);
         sql.add(request.getRowId());
 
-        return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArrayList(Specimen.class);
+        List<Map> rows = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArrayList(Map.class);
+        List<Specimen> specimens = new ArrayList<>();
+        for (Map row : rows)
+            specimens.add(new Specimen(row));
+        return specimens;
     }
 
     public RepositorySettings getRepositorySettings(Container container)
@@ -1365,9 +1370,9 @@ public class SampleManager implements ContainerManager.ContainerListener
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             List<Specimen> specimens = request.getSpecimens();
-            int[] specimenIds = new int[specimens.size()];
+            List<Long> specimenIds = new ArrayList<>(specimens.size());
             for (int i = 0; i < specimens.size(); i++)
-                specimenIds[i] = specimens.get(i).getRowId();
+                specimenIds.add(specimens.get(i).getRowId());
 
             deleteRequestSampleMappings(user, request, specimenIds, false);
 
@@ -1382,10 +1387,10 @@ public class SampleManager implements ContainerManager.ContainerListener
         }
     }
 
-    public void deleteRequestSampleMappings(User user, SampleRequest request, int[] sampleIds, boolean createEvents)
+    public void deleteRequestSampleMappings(User user, SampleRequest request, List<Long> sampleIds, boolean createEvents)
             throws SQLException, RequestabilityManager.InvalidRuleException, AttachmentService.DuplicateFilenameException
     {
-        if (sampleIds == null || sampleIds.length == 0)
+        if (sampleIds == null || sampleIds.size() == 0)
             return;
         List<Specimen> specimens = getSpecimens(request.getContainer(), user, sampleIds);
         List<String> globalUniqueIds = new ArrayList<>(specimens.size());
@@ -3278,7 +3283,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public List<Specimen> getSpecimens(final Container container, final User user, SimpleFilter filter)
     {
-        QueryHelper<Specimen> queryHelper = _specimenDetailHelper.get(container.getId());
+/*        QueryHelper<Specimen> queryHelper = _specimenDetailHelper.get(container.getId());
         if (null == queryHelper)
         {
             queryHelper = new QueryHelper<>(new TableInfoGetter()
@@ -3295,6 +3300,15 @@ public class SampleManager implements ContainerManager.ContainerListener
             _specimenDetailHelper.put(container.getId(), queryHelper);
         }
         return queryHelper.get(container, filter);
+        */
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
+        StudyQuerySchema schema = new StudyQuerySchema(study, user, true);
+        TableInfo specimenTable = schema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
+        List<Map> specimenMaps = new TableSelector(specimenTable, filter, null).getArrayList(Map.class);
+        List<Specimen> specimens = new ArrayList<>();
+        for (Map map : specimenMaps)
+            specimens.add(new Specimen(map));
+        return specimens;
     }
 
     public static <T extends AbstractStudyCachable> List<T> fillInContainer(List<T> list, Container container)

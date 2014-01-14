@@ -140,7 +140,7 @@
 %>
 
 <%!
-    private NavTree createCopyCommentButton(Map<String, Map<String, Integer>> pvMap, StudyImpl study, User user)
+    private NavTree createCopyCommentButton(Map<String, Map<String, Long>> pvMap, StudyImpl study, User user)
     {
         boolean hasParticipantMenu = study.getParticipantCommentDataSetId() != null && study.getParticipantCommentDataSetId() != -1;
         boolean hasParticipantVisitMenu = study.getParticipantVisitCommentDataSetId() != null && study.getParticipantVisitCommentDataSetId() != -1;
@@ -177,7 +177,7 @@
         return null;
     }
 
-    private void addParticipantMenuItems(NavTree button, Map<String, Map<String, Integer>> pvMap,
+    private void addParticipantMenuItems(NavTree button, Map<String, Map<String, Long>> pvMap,
                                          boolean hasParticipantMenu, boolean hasParticipantVisitMenu, boolean isMove)
     {
         String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
@@ -218,12 +218,12 @@
             NavTree participantVisitItem = new NavTree("To " + subjectNoun + "/Visit", "#");
             participantVisitItem.setId(isMove ? "Move:ToParticipantVisit" : "Copy:ToParticipantVisit");
             button.addChild(participantVisitItem);
-            for (Map.Entry<String, Map<String, Integer>> entry : pvMap.entrySet())
+            for (Map.Entry<String, Map<String, Long>> entry : pvMap.entrySet())
             {
                 NavTree ptidItem = new NavTree(entry.getKey());
                 ptidItem.setId("PtidVisit:" + entry.getKey());
 
-                for (Map.Entry<String, Integer> visitEntry : entry.getValue().entrySet())
+                for (Map.Entry<String, Long> visitEntry : entry.getValue().entrySet())
                 {
                     NavTree visitItem = new NavTree(visitEntry.getKey());
                     sb.setLength(0);

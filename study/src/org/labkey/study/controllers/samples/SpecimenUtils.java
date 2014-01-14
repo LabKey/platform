@@ -670,13 +670,13 @@ public class SpecimenUtils
     }
 
 
-    public List<Specimen> getSpecimensFromRowIds(int[] requestedSampleIds)
+    public List<Specimen> getSpecimensFromRowIds(long[] requestedSampleIds)
     {
         List<Specimen> requestedSpecimens = null;
         if (requestedSampleIds != null)
         {
             List<Specimen> specimens = new ArrayList<>();
-            for (int requestedSampleId : requestedSampleIds)
+            for (long requestedSampleId : requestedSampleIds)
             {
                 Specimen current = SampleManager.getInstance().getSpecimen(getContainer(), getUser(), requestedSampleId);
                 if (current != null)
@@ -710,7 +710,7 @@ public class SpecimenUtils
 
     public List<Specimen> getSpecimensFromRowIds(Collection<String> ids)
     {
-        return getSpecimensFromRowIds(BaseStudyController.toIntArray(ids));
+        return getSpecimensFromRowIds(BaseStudyController.toLongArray(ids));
     }
 
     public List<Specimen> getSpecimensFromPost(boolean fromGroupedView, boolean onlyAvailable)

@@ -52,6 +52,7 @@ public class VialDomainKind extends AbstractSpecimenDomainKind
     private static final String AVAILABILITYREASON = "AvailabilityReason";
     private static final String PROCESSINGLOCATION = "ProcessingLocation";
     private static final String FIRSTPROCESSEDBYINITIALS = "FirstProcessedByInitials";
+    private static final String TUBETYPE = "TubeType";
 
     private static final List<PropertyStorageSpec> BASE_PROPERTIES;
     private static final Set<PropertyStorageSpec.Index> BASE_INDICES;
@@ -76,7 +77,8 @@ public class VialDomainKind extends AbstractSpecimenDomainKind
             new PropertyStorageSpec(AVAILABILITYREASON, JdbcType.VARCHAR, 256),
             new PropertyStorageSpec(TOTALCELLCOUNT, JdbcType.DOUBLE, 0),
             new PropertyStorageSpec(LATESTCOMMENTS, JdbcType.VARCHAR, 500),
-            new PropertyStorageSpec(LATESTQUALITYCOMMENTS, JdbcType.VARCHAR, 500)
+            new PropertyStorageSpec(LATESTQUALITYCOMMENTS, JdbcType.VARCHAR, 500),
+            new PropertyStorageSpec(TUBETYPE, JdbcType.VARCHAR, 64, "The type of vial.")
         };
         BASE_PROPERTIES = Arrays.asList(props);
 
@@ -113,7 +115,6 @@ public class VialDomainKind extends AbstractSpecimenDomainKind
     public Set<PropertyStorageSpec> getBaseProperties()
     {
         Set<PropertyStorageSpec> specs = new LinkedHashSet<>(BASE_PROPERTIES);
-//        specs.addAll(super.getBaseProperties());
         return specs;
     }
 

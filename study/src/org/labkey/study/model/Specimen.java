@@ -17,9 +17,12 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.study.StudyService;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: brittp
@@ -28,160 +31,75 @@ import java.util.Date;
  */
 public class Specimen extends AbstractStudyCachable<Specimen>
 {
-    private int _rowId; // INT NOT NULL, -- FK exp.Material
-    private int _specimenId; // INT NOT NULL, -- FK exp.Material
-    private Container _container; // ENTITYID NOT NULL,
-    private String _globalUniqueId; // NVARCHAR(20) NOT NULL,
-    private String _ptid; // NVARCHAR(32),
-    private Date _drawTimestamp; // DATETIME,
-    private Date _salReceiptDate; // DATETIME,
-    private String _classId; // NVARCHAR(4),
-    private Double _visitValue; // FLOAT,
-    private String _protocolNumber; // NVARCHAR(10),
-    private String _visitDescription; // NVARCHAR(3),
-    private Float _volume; // FLOAT,
-    private String _volumeUnits; // NVARCHAR(3),
-    private String _subAdditiveDerivative; // NVARCHAR(20),
-    private Integer _primaryTypeId; // INT,
-    private Integer _derivativeTypeId; // INT,
-    private Integer _derivativeTypeId2; // INT,
-    private Integer _additiveTypeId; // INT,
-    private Integer _originatingLocationId;
-    private Integer _processingLocation;
-    private Integer _currentLocation;
-    private String _specimenHash;
-    private Date _frozenTime;
-    private Date _processingTime;
-    private Float _primaryVolume;
-    private String _primaryVolumeUnits;
-    private boolean _atRepository = false;
-    private boolean _available = false;
-    private boolean _lockedInRequest = false;
-    private Boolean _requestable;
-    private String _firstProcessedByInitials;
-    private String _availabilityReason;
-    private String _latestDeviationCode1;
-    private String _latestDeviationCode2;
-    private String _latestDeviationCode3;
-    private String _latestComments;
-    private String _latestQualityComments;
-    private Float _latestYield;
-    private Float _latestConcentration;
-    private Float _latestRatio;
-    private Float _latestIntegrity;
-    private String _freezer;
-    private String _fr_container;
-    private String _fr_position;
-    private String _fr_level1;
-    private String _fr_level2;
+    private Map _rowMap;
+
+    public Specimen()
+    {
+        _rowMap = new HashMap<String, Object>();
+    }
+
+    public Specimen(Map rowMap)
+    {
+        _rowMap = rowMap;
+    }
+
+    public Object get(String key)
+    {
+        return _rowMap.get(key);
+    }
+
+    public Map getRowMap()
+    {
+        return _rowMap;
+    }
 
     public Integer getAdditiveTypeId()
     {
-        return _additiveTypeId;
+        return (Integer)get("additivetypeid");
     }
 
-    public int getSpecimenId()
+    public long getSpecimenId()
     {
-        return _specimenId;
-    }
-
-    public void setSpecimenId(int specimenId)
-    {
-        _specimenId = specimenId;
-    }
-
-    public void setAdditiveTypeId(Integer additiveTypeId)
-    {
-        verifyMutability();
-        _additiveTypeId = additiveTypeId;
-    }
-
-    public String getClassId()
-    {
-        return _classId;
-    }
-
-    public void setClassId(String classId)
-    {
-        verifyMutability();
-        _classId = classId;
+        Long specimenId = (Long)get("specimenid");
+        if (null != specimenId)
+            return specimenId;
+        return 0;
     }
 
     public Container getContainer()
     {
-        return _container;
+        return ContainerManager.getForId((String)get("container"));
     }
 
     public void setContainer(Container container)
     {
         verifyMutability();
-        _container = container;
+        _rowMap.put("container", container.getId());
     }
 
     public Integer getDerivativeTypeId()
     {
-        return _derivativeTypeId;
-    }
-
-    public void setDerivativeTypeId(Integer derivativeTypeId)
-    {
-        verifyMutability();
-        _derivativeTypeId = derivativeTypeId;
+        return (Integer)get("derivativetypeid");
     }
 
     public Date getDrawTimestamp()
     {
-        return _drawTimestamp;
-    }
-
-    public void setDrawTimestamp(Date drawTimestamp)
-    {
-        verifyMutability();
-        _drawTimestamp = drawTimestamp;
+        return (Date)get("_derivativetypeid");
     }
 
     public String getGlobalUniqueId()
     {
-        return _globalUniqueId;
-    }
-
-    public void setGlobalUniqueId(String globalUniqueId)
-    {
-        verifyMutability();
-        _globalUniqueId = globalUniqueId;
+        return (String)get("globaluniqueid");
     }
 
     public Integer getPrimaryTypeId()
     {
-        return _primaryTypeId;
-    }
-
-    public void setPrimaryTypeId(Integer primaryTypeId)
-    {
-        verifyMutability();
-        _primaryTypeId = primaryTypeId;
-    }
-
-    public String getProtocolNumber()
-    {
-        return _protocolNumber;
-    }
-
-    public void setProtocolNumber(String protocolNumber)
-    {
-        verifyMutability();
-        _protocolNumber = protocolNumber;
+        return (Integer)get("primarytypeid");
     }
 
     public String getPtid()
     {
-        return _ptid;
-    }
-
-    public void setPtid(String ptid)
-    {
-        verifyMutability();
-        _ptid = ptid;
+        return (String)get("ptid");
     }
 
     public Object getPrimaryKey()
@@ -189,388 +107,128 @@ public class Specimen extends AbstractStudyCachable<Specimen>
         return getRowId();
     }
 
-    public int getRowId()
+    public long getRowId()
     {
-        return _rowId;
+        Long rowId = (Long)get("rowid");
+        if (null != rowId)
+            return rowId;
+        return 0;
     }
 
-    public void setRowId(int rowId)
+    public void setRowId(long rowId)
     {
         verifyMutability();
-        _rowId = rowId;
-    }
-
-    public Date getSalReceiptDate()
-    {
-        return _salReceiptDate;
-    }
-
-    public void setSalReceiptDate(Date salReceiptDate)
-    {
-        verifyMutability();
-        _salReceiptDate = salReceiptDate;
+        _rowMap.put("rowid", rowId);
     }
 
     public String getSubAdditiveDerivative()
     {
-        return _subAdditiveDerivative;
-    }
-
-    public void setSubAdditiveDerivative(String subAdditiveDerivative)
-    {
-        verifyMutability();
-        _subAdditiveDerivative = subAdditiveDerivative;
+        return (String)get("subAdditiveDerivative");
     }
 
     public String getVisitDescription()
     {
-        return _visitDescription;
-    }
-
-    public void setVisitDescription(String visitDescription)
-    {
-        verifyMutability();
-        _visitDescription = visitDescription;
+        return (String)get("visitDescription");
     }
 
     public Double getVisitValue()
     {
-        return _visitValue;
+        return (Double)get("visitvalue");
     }
 
-    public void setVisitValue(Double visitValue)
+    public Double getVolume()
+    {
+        return (Double)get("volume");
+    }
+
+    public void setVolume(Double volume)
     {
         verifyMutability();
-        _visitValue = visitValue;
-    }
-
-    public Float getVolume()
-    {
-        return _volume;
-    }
-
-    public void setVolume(Float volume)
-    {
-        verifyMutability();
-        _volume = volume;
+        _rowMap.put("volume", volume);
     }
 
     public String getVolumeUnits()
     {
-        return _volumeUnits;
-    }
-
-    public void setVolumeUnits(String volumeUnits)
-    {
-        verifyMutability();
-        _volumeUnits = volumeUnits;
+        return (String)get("volumeunits");
     }
 
     public Integer getOriginatingLocationId()
     {
-        return _originatingLocationId;
-    }
-
-    public void setOriginatingLocationId(Integer originatingLocationId)
-    {
-        _originatingLocationId = originatingLocationId;
+        return (Integer)get("originatinglocationid");
     }
 
     public Integer getCurrentLocation()
     {
-        return _currentLocation;
-    }
-
-    public void setCurrentLocation(Integer currentLocation)
-    {
-        _currentLocation = currentLocation;
+        return (Integer)get("currentlocation");
     }
 
     public String getSampleDescription()
     {
         StringBuilder builder = new StringBuilder();
-        builder.append("Global ID ").append(_globalUniqueId);
-        builder.append(", ").append(StudyService.get().getSubjectNounSingular(getContainer())).append(" ").append(_ptid);
-        builder.append(", ").append(_visitDescription).append(" ").append(_visitValue);
+        builder.append("Global ID ").append(getGlobalUniqueId());
+        builder.append(", ").append(StudyService.get().getSubjectNounSingular(getContainer())).append(" ").append(getPtid());
+        builder.append(", ").append(getVisitDescription()).append(" ").append(getVisitValue());
         return builder.toString();
     }
 
     public String getSpecimenHash()
     {
-        return _specimenHash;
-    }
-
-    public void setSpecimenHash(String specimenHash)
-    {
-        _specimenHash = specimenHash;
-    }
-
-    public Integer getDerivativeTypeId2()
-    {
-        return _derivativeTypeId2;
-    }
-
-    public void setDerivativeTypeId2(Integer derivativeTypeId2)
-    {
-        _derivativeTypeId2 = derivativeTypeId2;
-    }
-
-    public Date getFrozenTime()
-    {
-        return _frozenTime;
-    }
-
-    public void setFrozenTime(Date frozenTime)
-    {
-        _frozenTime = frozenTime;
-    }
-
-    public Date getProcessingTime()
-    {
-        return _processingTime;
-    }
-
-    public void setProcessingTime(Date processingTime)
-    {
-        _processingTime = processingTime;
-    }
-
-    public Float getPrimaryVolume()
-    {
-        return _primaryVolume;
-    }
-
-    public void setPrimaryVolume(Float primaryVolume)
-    {
-        _primaryVolume = primaryVolume;
-    }
-
-    public String getPrimaryVolumeUnits()
-    {
-        return _primaryVolumeUnits;
-    }
-
-    public void setPrimaryVolumeUnits(String primaryVolumeUnits)
-    {
-        _primaryVolumeUnits = primaryVolumeUnits;
+        return (String)get("specimenhash");
     }
 
     public Integer getProcessingLocation()
     {
-        return _processingLocation;
-    }
-
-    public void setProcessingLocation(Integer processingLocation)
-    {
-        _processingLocation = processingLocation;
+        return (Integer)get("processinglocation");
     }
 
     public boolean isAtRepository()
     {
-        return _atRepository;
-    }
-
-    public void setAtRepository(boolean atRepository)
-    {
-        _atRepository = atRepository;
+        Boolean available = (Boolean)get("atrepository");
+        if (null != available)
+            return available;
+        return false;
     }
 
     public boolean isAvailable()
     {
-        return _available;
+        Boolean available = (Boolean)get("available");
+        if (null != available)
+            return available;
+        return false;
     }
 
     public void setAvailable(boolean available)
     {
-        _available = available;
-    }
-
-    public boolean isLockedInRequest()
-    {
-        return _lockedInRequest;
+        _rowMap.put("available", available);
     }
 
     public void setLockedInRequest(boolean lockedInRequest)
     {
-        _lockedInRequest = lockedInRequest;
-    }
-
-    public Boolean isRequestable()
-    {
-        return _requestable;
+        _rowMap.put("lockedinrequest", lockedInRequest);
     }
 
     public void setRequestable(Boolean requestable)
     {
-        _requestable = requestable;
+        _rowMap.put("requestable", requestable);
     }
 
     public String getFirstProcessedByInitials()
     {
-        return _firstProcessedByInitials;
-    }
-
-    public void setFirstProcessedByInitials(String firstProcessedByInitials)
-    {
-        _firstProcessedByInitials = firstProcessedByInitials;
+        return (String)get("firstprocessedbyinitials");
     }
 
     public String getAvailabilityReason()
     {
-        return _availabilityReason;
-    }
-
-    public void setAvailabilityReason(String availabilityReason)
-    {
-        _availabilityReason = availabilityReason;
-    }
-
-    public String getLatestDeviationCode1()
-    {
-        return _latestDeviationCode1;
-    }
-
-    @SuppressWarnings("UnusedDeclaration")
-    public void setLatestDeviationCode1(String latestDeviationCode1)
-    {
-        _latestDeviationCode1 = latestDeviationCode1;
-    }
-
-    public String getLatestDeviationCode2()
-    {
-        return _latestDeviationCode2;
-    }
-
-    @SuppressWarnings("UnusedDeclaration")
-    public void setLatestDeviationCode2(String latestDeviationCode2)
-    {
-        _latestDeviationCode2 = latestDeviationCode2;
-    }
-
-    public String getLatestDeviationCode3()
-    {
-        return _latestDeviationCode3;
-    }
-
-    @SuppressWarnings("UnusedDeclaration")
-    public void setLatestDeviationCode3(String latestDeviationCode3)
-    {
-        _latestDeviationCode3 = latestDeviationCode3;
+        return (String)get("availabilityreason");
     }
 
     public String getLatestComments()
     {
-        return _latestComments;
-    }
-
-    @SuppressWarnings("UnusedDeclaration")
-    public void setLatestComments(String comments)
-    {
-        _latestComments = comments;
+        return (String)get("latestcomments");
     }
 
     public String getLatestQualityComments()
     {
-        return _latestQualityComments;
-    }
-
-    @SuppressWarnings("UnusedDeclaration")
-    public void setLatestQualityComments(String latestQualityComments)
-    {
-        _latestQualityComments = latestQualityComments;
-    }
-
-    public Float getLatestYield()
-    {
-        return _latestYield;
-    }
-
-    @SuppressWarnings("UnusedDeclaration")
-    public void setLatestYield(Float latestYield)
-    {
-        _latestYield = latestYield;
-    }
-
-    public Float getLatestConcentration()
-    {
-        return _latestConcentration;
-    }
-
-    @SuppressWarnings("UnusedDeclaration")
-    public void setLatestConcentration(Float latestConcentration)
-    {
-        _latestConcentration = latestConcentration;
-    }
-
-    public Float getLatestRatio()
-    {
-        return _latestRatio;
-    }
-
-    @SuppressWarnings("UnusedDeclaration")
-    public void setLatestRatio(Float latestRatio)
-    {
-        _latestRatio = latestRatio;
-    }
-
-    public Float getLatestIntegrity()
-    {
-        return _latestIntegrity;
-    }
-
-    @SuppressWarnings("UnusedDeclaration")
-    public void setLatestIntegrity(Float latestIntegrity)
-    {
-        _latestIntegrity = latestIntegrity;
-    }
-
-    public String getFreezer()
-    {
-        return _freezer;
-    }
-
-    public void setFreezer(String freezer)
-    {
-        _freezer = freezer;
-    }
-
-    public String getFr_container()
-    {
-        return _fr_container;
-    }
-
-    public void setFr_container(String fr_container)
-    {
-        _fr_container = fr_container;
-    }
-
-    public String getFr_position()
-    {
-        return _fr_position;
-    }
-
-    public void setFr_position(String fr_position)
-    {
-        _fr_position = fr_position;
-    }
-
-    public String getFr_level1()
-    {
-        return _fr_level1;
-    }
-
-    public void setFr_level1(String fr_level1)
-    {
-        _fr_level1 = fr_level1;
-    }
-
-    public String getFr_level2()
-    {
-        return _fr_level2;
-    }
-
-    public void setFr_level2(String fr_level2)
-    {
-        _fr_level2 = fr_level2;
+        return (String)get("latestqualitycomments");
     }
 }

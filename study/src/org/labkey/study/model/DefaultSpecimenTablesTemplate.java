@@ -21,12 +21,12 @@ import org.labkey.api.study.SpecimenTablesTemplate;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 public class DefaultSpecimenTablesTemplate implements SpecimenTablesTemplate
 {
-    private static final String TUBETYPE = "TubeType";
     private static final String LATESTDEVIATIONCODE1 = "LatestDeviationCode1";
     private static final String LATESTDEVIATIONCODE2 = "LatestDeviationCode2";
     private static final String LATESTDEVIATIONCODE3 = "LatestDeviationCode3";
@@ -48,13 +48,12 @@ public class DefaultSpecimenTablesTemplate implements SpecimenTablesTemplate
     private static final String RATIO = "Ratio";
     private static final String YIELD = "Yield";
 
-    private static final Set<PropertyStorageSpec> EXTRAVIAL_PROPERTIES;
-    private static final Set<PropertyStorageSpec> EXTRASPECIMENEVENT_PROPERTIES;
+    private static final List<PropertyStorageSpec> EXTRAVIAL_PROPERTIES;
+    private static final List<PropertyStorageSpec> EXTRASPECIMENEVENT_PROPERTIES;
     static
     {
         PropertyStorageSpec[] vialProps =
         {
-            new PropertyStorageSpec(TUBETYPE, JdbcType.VARCHAR, 64, "The type of vial."),
             new PropertyStorageSpec(LATESTDEVIATIONCODE1, JdbcType.VARCHAR, 50, "Site-defined deviation code from latest event."),
             new PropertyStorageSpec(LATESTDEVIATIONCODE2, JdbcType.VARCHAR, 50, "Site-defined deviation code from latest event."),
             new PropertyStorageSpec(LATESTDEVIATIONCODE3, JdbcType.VARCHAR, 50, "Site-defined deviation code from latest event."),
@@ -68,11 +67,10 @@ public class DefaultSpecimenTablesTemplate implements SpecimenTablesTemplate
             new PropertyStorageSpec(FR_LEVEL1, JdbcType.VARCHAR, 200, "The level 1 location within the storage freezer."),
             new PropertyStorageSpec(FR_LEVEL2, JdbcType.VARCHAR, 200, "The level 2 location within the storage freezer."),
         };
-        EXTRAVIAL_PROPERTIES = new HashSet<>(Arrays.asList(vialProps));
+        EXTRAVIAL_PROPERTIES = Arrays.asList(vialProps);
 
         PropertyStorageSpec[] specimenEventProps =
         {
-            new PropertyStorageSpec(TUBETYPE, JdbcType.VARCHAR, 64, "The type of vial.", "tube_type"),
             new PropertyStorageSpec(DEVIATIONCODE1, JdbcType.VARCHAR, 50, "Site-defined deviation code.", "deviation_code1"),
             new PropertyStorageSpec(DEVIATIONCODE2, JdbcType.VARCHAR, 50, "Site-defined deviation code.", "deviation_code2"),
             new PropertyStorageSpec(DEVIATIONCODE3, JdbcType.VARCHAR, 50, "Site-defined deviation code.", "deviation_code3"),
@@ -86,17 +84,17 @@ public class DefaultSpecimenTablesTemplate implements SpecimenTablesTemplate
             new PropertyStorageSpec(FR_LEVEL1, JdbcType.VARCHAR, 200, "The level 1 location within the storage freezer."),
             new PropertyStorageSpec(FR_LEVEL2, JdbcType.VARCHAR, 200, "The level 2 location within the storage freezer."),
         };
-        EXTRASPECIMENEVENT_PROPERTIES = new HashSet<>(Arrays.asList(specimenEventProps));
+        EXTRASPECIMENEVENT_PROPERTIES = Arrays.asList(specimenEventProps);
     }
 
     public Set<PropertyStorageSpec> getExtraSpecimenEventProperties()
     {
-        return EXTRASPECIMENEVENT_PROPERTIES;
+        return new LinkedHashSet<>(EXTRASPECIMENEVENT_PROPERTIES);
     }
 
     public Set<PropertyStorageSpec> getExtraVialProperties()
     {
-        return EXTRAVIAL_PROPERTIES;
+        return new LinkedHashSet<>(EXTRAVIAL_PROPERTIES);
     }
 
     public Set<PropertyStorageSpec> getExtraSpecimenProperties()

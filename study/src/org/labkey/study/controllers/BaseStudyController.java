@@ -277,25 +277,25 @@ public abstract class BaseStudyController extends SpringActionController
         return first.equals(second);
     }
 
-    public static int[] toIntArray(Collection<String> intStrings)
+    public static long[] toLongArray(Collection<String> intStrings)
     {
         if (intStrings == null)
             return null;
-        int[] converted = new int[intStrings.size()];
+        long[] converted = new long[intStrings.size()];
         int index = 0;
         for (String intString : intStrings)
-            converted[index++] = Integer.parseInt(intString);
+            converted[index++] = Long.parseLong(intString);
         return converted;
     }
 
-    public static int[] toIntArray(String[] intStrings)
+    public static long[] toLongArray(String[] intStrings)
     {
         if (intStrings == null)
             return null;
-        int[] converted = new int[intStrings.length];
+        long[] converted = new long[intStrings.length];
         int index = 0;
         for (String intString : intStrings)
-            converted[index++] = Integer.parseInt(intString);
+            converted[index++] = Long.parseLong(intString);
         return converted;
     }
 

@@ -511,7 +511,7 @@ public class SpecimenApiController extends BaseStudyController
         public ApiResponse execute(VialRequestForm vialRequestForm, BindException errors) throws Exception
         {
             SampleRequest request = getRequest(getUser(), getContainer(), vialRequestForm.getRequestId(), true, true);
-            List<Integer> rowIds = new ArrayList<>();
+            List<Long> rowIds = new ArrayList<>();
             List<Specimen> currentSpecimens = request.getSpecimens();
             for (String vialId : vialRequestForm.getVialIds())
             {
@@ -528,12 +528,9 @@ public class SpecimenApiController extends BaseStudyController
             }
             if (!rowIds.isEmpty())
             {
-                int[] rowIdArray = new int[rowIds.size()];
-                for (int i = 0; i < rowIdArray.length; i++)
-                    rowIdArray[i] = rowIds.get(i).intValue();
                 try
                 {
-                    SampleManager.getInstance().deleteRequestSampleMappings(getUser(), request, rowIdArray, true);
+                    SampleManager.getInstance().deleteRequestSampleMappings(getUser(), request, rowIds, true);
                 }
                 catch (RequestabilityManager.InvalidRuleException e)
                 {

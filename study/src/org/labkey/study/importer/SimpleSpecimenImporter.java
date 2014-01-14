@@ -217,9 +217,9 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         Container container = getContainer();
         Study study = StudyManager.getInstance().getStudy(container);
         Map<String, LookupTable> lookupTables = new HashMap<>();
-        lookupTables.put("additive_type", new LookupTable(StudySchema.getInstance().getTableInfoAdditiveType(), container, SpecimenTableType.Additives, "additive_type_id", "additive_id", "additive", "Additive"));
-        lookupTables.put("derivative_type", new LookupTable(StudySchema.getInstance().getTableInfoDerivativeType(), container, SpecimenTableType.Derivatives, "derivative_type_id", "derivative_id", "derivative", "Derivative"));
-        lookupTables.put("primary_specimen_type", new LookupTable(StudySchema.getInstance().getTableInfoPrimaryType(), container, SpecimenTableType.PrimaryTypes, "primary_specimen_type_id", "primary_type_id", "primary_type", "PrimaryType"));
+        lookupTables.put("additive_type", new LookupTable(StudySchema.getInstance().getTableInfoAdditiveType(), container, _additivesTableType, "additive_type_id", "additive_id", "additive", "Additive"));
+        lookupTables.put("derivative_type", new LookupTable(StudySchema.getInstance().getTableInfoDerivativeType(), container, _derivativesTableType, "derivative_type_id", "derivative_id", "derivative", "Derivative"));
+        lookupTables.put("primary_specimen_type", new LookupTable(StudySchema.getInstance().getTableInfoPrimaryType(), container, _primaryTypesTableType, "primary_specimen_type_id", "primary_type_id", "primary_type", "PrimaryType"));
         LabLookupTable labLookup =  new LabLookupTable(container);
         lookupTables.put("lab", labLookup);
 
@@ -251,8 +251,8 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         }
 
         SpecimenImportStrategy strategy = new StandardSpecimenImportStrategy(container);
-        Map<SpecimenTableType, SpecimenImportFile> sifMap = new EnumMap<>(SpecimenTableType.class);
-        addSpecimenImportFile(sifMap, SpecimenTableType.Specimens, specimenRows, strategy);
+        Map<SpecimenTableType, SpecimenImportFile> sifMap = new HashMap<>();
+        addSpecimenImportFile(sifMap, _specimensTableType, specimenRows, strategy);
         for (LookupTable lookupTable : lookupTables.values())
             addSpecimenImportFile(sifMap, lookupTable.getTableType(), lookupTable.toMaps(), strategy);
 
@@ -410,7 +410,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
 
         LabLookupTable(Container c) throws SQLException
         {
-            super(StudySchema.getInstance().getTableInfoSite(), c, SpecimenTableType.Labs, "lab_id", "lab_id", "lab_name", "Label");
+            super(StudySchema.getInstance().getTableInfoSite(), c, _labsTableType, "lab_id", "lab_id", "lab_name", "Label");
             defaultLabId = getVal(DEFAULT_LAB);
         }
 

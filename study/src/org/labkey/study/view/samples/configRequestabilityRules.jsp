@@ -79,58 +79,67 @@
 
     function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo)
     {
-        schemaCombo.store.removeAll();
-        schemaCombo.store.loadData(getArrayArray(schemasInfo.schemas));
-        schemaCombo.on("select", function(combo, record, index)
+        if (schemaCombo.store)
         {
-            queryCombo.clearValue();
-            viewCombo.clearValue();
-            LABKEY.Query.getQueries({
-                schemaName: record.data[record.fields.first().name],
-                successCallback: function(queriesInfo) { populateQueries(queryCombo, viewCombo, queriesInfo); }
-            })
-        });
+            schemaCombo.store.removeAll();
+            schemaCombo.store.loadData(getArrayArray(schemasInfo.schemas));
+            schemaCombo.on("select", function(combo, record, index)
+            {
+                queryCombo.clearValue();
+                viewCombo.clearValue();
+                LABKEY.Query.getQueries({
+                    schemaName: record.data[record.fields.first().name],
+                    success: function(queriesInfo) { populateQueries(queryCombo, viewCombo, queriesInfo); }
+                })
+            });
+        }
     }
 
     function populateQueries(queryCombo, viewCombo, queriesInfo)
     {
-        var records = [];
-        for (var i = 0; i < queriesInfo.queries.length; i++)
+        if (queryCombo.store)
         {
-            var queryInfo = queriesInfo.queries[i];
-            records[i] = [queryInfo.name, queryInfo.viewDataUrl];
-        }
+            var records = [];
+            for (var i = 0; i < queriesInfo.queries.length; i++)
+            {
+                var queryInfo = queriesInfo.queries[i];
+                records[i] = [queryInfo.name, queryInfo.viewDataUrl];
+            }
 
-        queryCombo.store.removeAll();
-        queryCombo.store.loadData(records);
-        queryCombo.on("select", function(combo, record, index)
-        {
-            viewCombo.clearValue();
-            LABKEY.Query.getQueryViews({
-                schemaName: queriesInfo.schemaName,
-                queryName: record.data[record.fields.first().name],
-                successCallback: function(queriesInfo) { populateViews(viewCombo, queriesInfo); }
-            })
-        });
+            queryCombo.store.removeAll();
+            queryCombo.store.loadData(records);
+            queryCombo.on("select", function(combo, record, index)
+            {
+                viewCombo.clearValue();
+                LABKEY.Query.getQueryViews({
+                    schemaName: queriesInfo.schemaName,
+                    queryName: record.data[record.fields.first().name],
+                    success: function(queriesInfo) { populateViews(viewCombo, queriesInfo); }
+                })
+            });
+        }
     }
 
     var defaultViewLabel = "[default view]";
 
     function populateViews(viewCombo, queryViews)
     {
-        var records = [[defaultViewLabel]];
-        for (var i = 0; i < queryViews.views.length; i++)
+        if (viewCombo.store)
         {
-            var viewInfo = queryViews.views[i];
-            if (!viewInfo.hidden)
+            var records = [[defaultViewLabel]];
+            for (var i = 0; i < queryViews.views.length; i++)
             {
-                var name =  viewInfo.name != null ? viewInfo.name : defaultViewLabel;
-                records[records.length] = [name, viewInfo.viewDataUrl];
+                var viewInfo = queryViews.views[i];
+                if (!viewInfo.hidden)
+                {
+                    var name =  viewInfo.name != null ? viewInfo.name : defaultViewLabel;
+                    records[records.length] = [name, viewInfo.viewDataUrl];
+                }
             }
-        }
 
-        viewCombo.store.removeAll();
-        viewCombo.store.loadData(records);
+            viewCombo.store.removeAll();
+            viewCombo.store.loadData(records);
+        }
     }
 
     function getArrayArray(simpleArray)
@@ -236,7 +245,7 @@
             });
 
         LABKEY.Query.getSchemas({
-            successCallback: function(schemasInfo) { populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo); }
+            success: function(schemasInfo) { populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo); }
         });
 
         var labelStyle = 'border-bottom:1px solid #AAAAAA;margin:3px';

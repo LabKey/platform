@@ -78,8 +78,8 @@ public class EditableSpecimenImporter extends SpecimenImporter
         }
 
         SpecimenImportStrategy strategy = new StandardSpecimenImportStrategy(getContainer());
-        Map<SpecimenTableType, SpecimenImportFile> sifMap = new EnumMap<>(SpecimenTableType.class);
-        addSpecimenImportFile(sifMap, SpecimenTableType.Specimens, specimenRows, strategy);
+        Map<SpecimenTableType, SpecimenImportFile> sifMap = new HashMap<>();
+        addSpecimenImportFile(sifMap, _specimensTableType, specimenRows, strategy);
 
         try
         {

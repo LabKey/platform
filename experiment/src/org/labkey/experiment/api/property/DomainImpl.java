@@ -217,6 +217,21 @@ public class DomainImpl implements Domain
         return _properties.toArray(new DomainPropertyImpl[_properties.size()]);
     }
 
+    public List<DomainProperty> getNonBaseProperties()
+    {
+        Set<String> basePropertyNames = new HashSet<>();
+        for (PropertyStorageSpec spec : getDomainKind().getBaseProperties())
+            basePropertyNames.add(spec.getName().toLowerCase());
+
+        List<DomainProperty> nonBaseProperties = new ArrayList<>();
+        for (DomainPropertyImpl prop : getProperties())
+        {
+            if (!basePropertyNames.contains(prop.getName().toLowerCase()))
+                nonBaseProperties.add(prop);
+        }
+        return nonBaseProperties;
+    }
+
     public void setPropertyIndex(DomainProperty prop, int index)
     {
         if (index < 0 || index >= _properties.size())

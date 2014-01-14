@@ -88,6 +88,7 @@ public class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
     private static final String QUALITYCOMMENTS = "QualityComments";
     private static final String INPUTHASH = "InputHash";
     private static final String OBSOLETE = "Obsolete";
+    private static final String TUBETYPE = "TubeType";
 
     private static final List<PropertyStorageSpec> BASE_PROPERTIES;
     private static final Set<PropertyStorageSpec.Index> BASE_INDICES;
@@ -147,7 +148,8 @@ public class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
             new PropertyStorageSpec(TOTALCELLCOUNT,  JdbcType.DOUBLE, 0),
             new PropertyStorageSpec(QUALITYCOMMENTS,  JdbcType.VARCHAR, 500),
             new PropertyStorageSpec(INPUTHASH,  JdbcType.BINARY, 16),
-            new PropertyStorageSpec(OBSOLETE,  JdbcType.BOOLEAN, 0, false, false)
+            new PropertyStorageSpec(OBSOLETE,  JdbcType.BOOLEAN, 0, false, false),
+            new PropertyStorageSpec(TUBETYPE, JdbcType.VARCHAR, 64, "The type of vial.")
         };
         BASE_PROPERTIES = Arrays.asList(props);
 
