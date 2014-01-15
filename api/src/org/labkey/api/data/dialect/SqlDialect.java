@@ -755,6 +755,12 @@ public abstract class SqlDialect
 
     public final void checkSqlScript(String sql) throws SQLSyntaxException
     {
+        // SQL script writers can choose to bypass our normal syntax checking by including a @SkipLabKeySyntaxCheck "annotation"
+        // in a comment somewhere in the file. While typically not recommended, this is helpful in cases where clients provide
+        // us SQL scripts that don't conform to our rules.
+        if (sql.contains("@SkipLabKeySyntaxCheck"))
+            return;
+
         Collection<String> errors = new ArrayList<>();
         String lower = sql.toLowerCase();
         String lowerNoWhiteSpace = lower.replaceAll("\\s", "");
