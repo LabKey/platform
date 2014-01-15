@@ -183,7 +183,7 @@ public abstract class SqlScriptManager
         SqlDialect dialect = schema.getSqlDialect();
         String contents = script.getContents();
 
-        if (!contents.isEmpty() && contents.charAt(0) == 0xfffe || contents.charAt(0) == 0xfeff)
+        if (!contents.isEmpty() && (contents.charAt(0) == 0xfffe || contents.charAt(0) == 0xfeff))
             contents = contents.substring(1);
 
         if (contents.isEmpty())
