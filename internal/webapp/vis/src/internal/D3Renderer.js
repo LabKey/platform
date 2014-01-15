@@ -617,7 +617,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         data = data.filter(function(d) {
             var x = xAcc(d), y = yAcc(d);
-            // Note: while we don't actually use the color or shape here, we need to calculate them so so they show up in
+            // Note: while we don't actually use the color or shape here, we need to calculate them so they show up in
             // the legend, even if the points are null.
             if(typeof colorAcc == 'function') { colorAcc(d); }
             if (shapeAcc != defaultShape) { shapeAcc(d);}
@@ -675,6 +675,13 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             error = geom.errorAes.getValue(d);
             return LABKEY.vis.makeLine(x, -geom.yScale.scale(value + error), x, -geom.yScale.scale(value - error));
         };
+
+        data.filter(function(d){
+            // Note: while we don't actually use the color here, we need to calculate it so they show up in the legend,
+            // even if the points are null.
+            var x = geom.getX(d), y = geom.yAes.getValue(d), error = geom.errorAes.getValue(d), color = colorAcc(d);
+            return (isNaN(x) || x == null || isNaN(y) || y == null || isNaN(error) || error == null);
+        });
 
         selection = layer.selectAll('.error-bar').data(data);
         selection.exit().remove();
