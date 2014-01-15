@@ -469,10 +469,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var appendTSpans = function(selection, width) {
         var i, words = selection.datum().text.split(' '), segments = [], partial = '', start = 0;
 
-        for(i = 0; i < words.length; i++) {
+        for (i = 0; i < words.length; i++) {
             partial = partial + words[i] + ' ';
             selection.text(partial);
-            if(selection.node().getBBox().width > width) {
+            if (selection.node().getBBox().width > width) {
                 segments.push(words.slice(start, i).join(' '));
                 partial = words[i];
                 start = i;
@@ -489,7 +489,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 .attr('x', selection.attr('x'));
     };
 
-    var renderLegendItem = function(selection, plot){
+    var renderLegendItem = function(selection, plot) {
         var i, xPad, glyphX, textX, yAcc, colorAcc, shapeAcc, textNodes, currentItem, cBBox, pBBox;
 
         selection.attr('font-family', 'verdana, arial, helvetica, sans-serif').attr('font-size', '10px');
@@ -500,7 +500,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         yAcc = function(d, i) {return (plot.grid.height - plot.grid.topEdge) + (i * 15);};
         colorAcc = function(d) {return d.color ? d.color : '#000';};
         shapeAcc = function(d) {
-            if(d.shape) {
+            if (d.shape) {
                 return d.shape(5);
             }
             return "M" + -5 + "," + -2.5 + "L" + 5 + "," + -2.5 + " " + 5 + "," + 2.5 + " " + -5 + "," + 2.5 + "Z";
@@ -526,7 +526,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 .attr('d', shapeAcc)
                 .attr('stroke', colorAcc)
                 .attr('fill', colorAcc)
-                .attr('transform', function(){
+                .attr('transform', function() {
                     var sibling = this.parentNode.childNodes[0],
                         y = Math.floor(parseInt(sibling.getAttribute('y'))) - 3.5;
                     return 'translate(' + glyphX + ',' + y + ')';
@@ -535,8 +535,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
     var renderLegend = function() {
         var legendData = plot.getLegendData(), legendGroup, legendItems;
-        if(legendData.length > 0) {
-            if(this.canvas.selectAll('.legend').size() == 0) {
+        if (legendData.length > 0) {
+            if (this.canvas.selectAll('.legend').size() == 0) {
                 this.canvas.append('g').attr('class', 'legend');
             }
             legendGroup = this.canvas.select('.legend');
@@ -550,11 +550,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
-    var getLayer = function(geom){
+    var getLayer = function(geom) {
         var id = plot.renderTo + '-' + geom.index;
         var layer = this.canvas.select('#' + id);
 
-        if(layer.size() == 0) {
+        if (layer.size() == 0) {
             layer = this.canvas.append('g').attr('class', 'layer').attr('id', id);
         }
 
@@ -570,7 +570,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
             xAcc = function(row) {
                 var value = geom.getX(row);
-                if(value == null) {return null;}
+                if (value == null) {return null;}
                 return value - (xBinWidth / 2) + (Math.random() * xBinWidth);
             };
         } else {
@@ -581,20 +581,20 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             yBinWidth = ((plot.grid.topEdge - plot.grid.bottomEdge) / (geom.yScale.scale.domain().length)) / 2;
             yAcc = function(row) {
                 var value = geom.getY(row);
-                if(value == null || isNaN(value)) {return null;}
+                if (value == null || isNaN(value)) {return null;}
                 return -(value - (yBinWidth / 2) + (Math.random() * yBinWidth));
             }
         } else {
             yAcc = function(row) {
                 var value = geom.getY(row);
-                if(value == null || isNaN(value)) {return null;}
+                if (value == null || isNaN(value)) {return null;}
                 return -value;
             };
         }
 
         translateAcc = function(row) {
             var x = xAcc(row), y = yAcc(row);
-            if(x == null || isNaN(x) || y == null || isNaN(y)){
+            if (x == null || isNaN(x) || y == null || isNaN(y)) {
                 // If x or y isn't a valid value then we just don't translate the node.
                 return null;
             }
@@ -619,7 +619,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             var x = xAcc(d), y = yAcc(d);
             // Note: while we don't actually use the color or shape here, we need to calculate them so they show up in
             // the legend, even if the points are null.
-            if(typeof colorAcc == 'function') { colorAcc(d); }
+            if (typeof colorAcc == 'function') { colorAcc(d); }
             if (shapeAcc != defaultShape) { shapeAcc(d);}
             return x !== null && y !== null;
         }, this);
@@ -676,10 +676,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return LABKEY.vis.makeLine(x, -geom.yScale.scale(value + error), x, -geom.yScale.scale(value - error));
         };
 
-        data.filter(function(d){
+        data.filter(function(d) {
             // Note: while we don't actually use the color here, we need to calculate it so they show up in the legend,
             // even if the points are null.
-            var x = geom.getX(d), y = geom.yAes.getValue(d), error = geom.errorAes.getValue(d), color = colorAcc(d);
+            var x = geom.getX(d), y = geom.yAes.getValue(d), error = geom.errorAes.getValue(d);
+            if (typeof colorAcc == 'function') { colorAcc(d); }
             return (isNaN(x) || x == null || isNaN(y) || y == null || isNaN(error) || error == null);
         });
 
@@ -739,7 +740,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             var x, y, w;
             w = getTopWhisker(d.summary);
 
-            if(w == null) {return null;}
+            if (w == null) {return null;}
 
             y = Math.floor(-geom.yScale.scale(w)) + .5;
             x = geom.xScale.scale(d.name);
@@ -749,7 +750,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             var x, yTop, yBottom, w;
             w = getTopWhisker(d.summary);
 
-            if(w == null) {return null;}
+            if (w == null) {return null;}
 
             yTop = Math.floor(-geom.yScale.scale(w)) + .5;
             yBottom = Math.floor(-geom.yScale.scale(d.summary.Q3)) + .5;
@@ -760,7 +761,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             var x, y, w;
             w = getBottomWhisker(d.summary);
 
-            if(w == null) {return null;}
+            if (w == null) {return null;}
 
             y = Math.floor(-geom.yScale.scale(w)) + .5;
             x = geom.xScale.scale(d.name);
@@ -770,7 +771,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             var x, yTop, yBottom, w;
             w = getBottomWhisker(d.summary);
 
-            if(w == null) {return null;}
+            if (w == null) {return null;}
 
             yTop = Math.floor(-geom.yScale.scale(d.summary.Q1)) + .5;
             yBottom = Math.floor(-geom.yScale.scale(w)) + .5;
