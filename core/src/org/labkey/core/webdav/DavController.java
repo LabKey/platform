@@ -2592,18 +2592,6 @@ public class DavController extends SpringActionController
             if (resource.isCollectionType() || exists && resource.isCollection())
                 throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED, "Cannot overwrite folder");
 
-            if (exists)
-            {
-                boolean overwrite = getOverwriteParameter();
-                if (!overwrite)
-                {
-                    // allow finder to overwrite zero byte files without overwrite header
-                    boolean finderException = isMacFinder() && 0 == resource.getContentLength();
-                    if (!finderException)
-                        throw new DavException(WebdavStatus.SC_FILE_MATCH, "Cannot overwrite file");
-                }
-            }
-
             Range range = parseContentRange();
             RandomAccessFile raf = null;
             OutputStream os = null;
