@@ -44,6 +44,7 @@ public class ParticipantIdImportHelper
     User _user;
     HashMap<String, String> _aliasLookup;
     HashSet<String> _duplicateAliasLookup;
+    HashSet<String> _conflictAliasLookup;
 
     /*
      * Default constructor for the ParticipantIdImportHelper saves parameter values for future use.
@@ -57,6 +58,7 @@ public class ParticipantIdImportHelper
         _study = study;
         _user = user;
         _duplicateAliasLookup = new HashSet<>();
+        _conflictAliasLookup = new HashSet<>();
         _aliasLookup = generateAliasHashMap(def);
     }
 
@@ -66,6 +68,7 @@ public class ParticipantIdImportHelper
     {
         _aliasLookup = aliasLookupMap;
         _duplicateAliasLookup = new HashSet<>();
+        _conflictAliasLookup = new HashSet<>();
     }
 
     /*
@@ -105,12 +108,10 @@ public class ParticipantIdImportHelper
                     String alias = aliasObj.toString();
                     if (result.containsKey(alias))  // maintain a conflict set in the case that there are multiple entries for one key, error on access
                         _duplicateAliasLookup.add(alias);
+                    else if (ptids.contains(alias))
+                        _conflictAliasLookup.add(alias);
                     else
-                    {
                         result.put(alias, id);
-                        if (ptids.contains(alias))
-                            throw new ValidationException("There is an alias " + alias + " for " + id + " but data has already been entered for this alias.  You must correct the data in the dataset (possibly using the replace tool) to continue.");
-                    }
                 }
             }
         }
@@ -168,6 +169,9 @@ public class ParticipantIdImportHelper
 
         if (_duplicateAliasLookup.contains(participantId))
             throw new ValidationException("There are multiple entries for the alias " + participantId + " which must be corrected before the import may continue.");
+
+        if (_conflictAliasLookup.contains(participantId))
+            throw new ValidationException("There is a conlision for alias " + participantId + ".  You must correct or remove this identifier in the " + _study.getSubjectNounSingular()+ " table (possibly using the replace tool).");
 
         String value = _aliasLookup.get(participantId);
         if (value != null)
