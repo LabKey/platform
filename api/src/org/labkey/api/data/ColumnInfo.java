@@ -63,6 +63,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 {
     public static final String DEFAULT_PROPERTY_URI_PREFIX = "http://terms.fhcrc.org/dbschemas/";
 
+    public enum Phi {NotPHI, Limited, PHI, Restricted}
+
     public static final DisplayColumnFactory DEFAULT_FACTORY = new DisplayColumnFactory()
     {
         public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -139,7 +141,9 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private List<? extends IPropertyValidator> validators = Collections.emptyList();
 
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
+    private Phi _phi = Phi.NotPHI;
     private boolean _lockName = false;
+
     /**
      * True if this column isn't really part of the database. It might be a calculated value, or an alternate
      * representation of another "real" ColumnInfo, like a wrapped column.
@@ -365,6 +369,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setFacetingBehaviorType(col.getFacetingBehaviorType());
         setProtected(col.isProtected());
         setExcludeFromShifting(col.isExcludeFromShifting());
+        setPhi(col.getPhi());
 
         setCrosstabColumnDimension(col.getCrosstabColumnDimension());
         setCrosstabColumnMember(col.getCrosstabColumnMember());
@@ -702,6 +707,17 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         return _displayColumnFactory;
     }
 
+    public Phi getPhi()
+    {
+        return _phi;
+    }
+
+    public void setPhi(Phi phi)
+    {
+        checkLocked();
+        _phi = phi;
+    }
+
     public String getLegalName()
     {
         return legalNameFromName(getName());
@@ -871,6 +887,9 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 xmlCol.setTextAlign(textAlign);
             if (null != description)
                 xmlCol.setDescription(description);
+
+            // Note: This is only called on JDBC meta data, so we don't bother with PHI, faceting behavior, and other
+            // external meta data. But perhaps this code could be shared with TableInfoWriter?
         }
     }
 
@@ -985,6 +1004,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             setConditionalFormats(ConditionalFormat.convertFromXML(xmlCol.getConditionalFormats()));
         }
 
+        if (xmlCol.isSetPhi())
+            _phi = Phi.valueOf(xmlCol.getPhi().toString());
         if (xmlCol.isSetFacetingBehavior())
             facetingBehaviorType = FacetingBehaviorType.valueOf(xmlCol.getFacetingBehavior().toString());
         if (xmlCol.isSetDisplayColumnFactory())

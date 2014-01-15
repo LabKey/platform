@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.FacetingBehaviorType;
+import org.labkey.data.xml.PhiType;
 import org.labkey.data.xml.TableType;
 
 import java.util.Collection;
@@ -180,6 +181,9 @@ public class TableInfoWriter
 
         if (column.isExcludeFromShifting())
             columnXml.setExcludeFromShifting(true);
+
+        if (ColumnInfo.Phi.NotPHI != column.getPhi())
+            columnXml.setPhi(PhiType.Enum.forString(column.getPhi().toString()));
     }
 
     protected String getConceptURI(ColumnInfo column)
