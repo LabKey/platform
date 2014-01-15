@@ -75,7 +75,8 @@ public class ModuleRunUploadForm extends AssayRunUploadForm<ModuleAssayProvider>
                 for (Map.Entry<DomainProperty, Object> entry : ExperimentJSONConverter.convertProperties(_runJsonObject.getJSONObject(ExperimentJSONConverter.PROPERTIES),
                         provider.getRunDomain(getProtocol()).getProperties(), getContainer(), false).entrySet())
                 {
-                    _runProperties.put(entry.getKey(), String.valueOf(entry.getValue()));
+                    Object o = entry.getValue();
+                    _runProperties.put(entry.getKey(), o == null ? null : String.valueOf(o));
                 }
             }
         }
@@ -95,7 +96,8 @@ public class ModuleRunUploadForm extends AssayRunUploadForm<ModuleAssayProvider>
                 for (Map.Entry<DomainProperty, Object> entry : ExperimentJSONConverter.convertProperties(_runJsonObject.getJSONObject(ExperimentJSONConverter.PROPERTIES),
                         provider.getBatchDomain(getProtocol()).getProperties(), getContainer(), false).entrySet())
                 {
-                    _uploadSetProperties.put(entry.getKey(), String.valueOf(entry.getValue()));
+                    Object o = entry.getValue();
+                    _uploadSetProperties.put(entry.getKey(), o == null ? null : String.valueOf(o));
                 }
             }
         }
