@@ -63,7 +63,7 @@ public class ModuleHtmlViewDefinition extends ResourceRef
     public static final String HTML_VIEW_EXTENSION = ".html";
     public static final String VIEW_METADATA_EXTENSION = ".view.xml";
 
-    private String _name;
+    private final String _name;
     private String _html;
     private int _requiredPerms = ACL.PERM_READ;  //8550: Default perms for simple module views should be read
     private boolean _requiresLogin = false;
@@ -75,10 +75,8 @@ public class ModuleHtmlViewDefinition extends ResourceRef
         super(r);
         _name = r.getName().substring(0, r.getName().length() - HTML_VIEW_EXTENSION.length());
 
-        InputStream is = null;
-        try
+        try (InputStream is = r.getInputStream())
         {
-            is = r.getInputStream();
             if (is != null)
             {
                 _html = IOUtils.toString(is);
@@ -87,13 +85,9 @@ public class ModuleHtmlViewDefinition extends ResourceRef
                     _html = _html.substring(1);
             }
         }
-        catch(IOException e)
+        catch (IOException e)
         {
             throw new MinorConfigurationException("Error trying to read HTML content from " + r.getPath(), e);
-        }
-        finally
-        {
-            IOUtils.closeQuietly(is);
         }
 
         Resource parent = r.parent();
@@ -116,7 +110,7 @@ public class ModuleHtmlViewDefinition extends ResourceRef
             try
             {
                 XmlOptions xmlOptions = new XmlOptions();
-                Map<String,String> namespaceMap = new HashMap<>();
+                Map<String, String> namespaceMap = new HashMap<>();
                 namespaceMap.put("", "http://labkey.org/data/xml/view");
                 xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
 
@@ -163,17 +157,16 @@ public class ModuleHtmlViewDefinition extends ResourceRef
     protected void calculatePermissions()
     {
         PermissionsListType permsList = _viewDef.getPermissions();
-        if(null == permsList)
+        if (null == permsList)
             return;
 
         PermissionType[] perms = permsList.getPermissionArray();
-        if(null == perms)
+        if (null == perms)
             return;
 
         for (PermissionType permEntry : perms)
         {
             SimpleAction.Permission perm = SimpleAction.Permission.valueOf(permEntry.getName().toString());
-
 
             if (SimpleAction.Permission.login == perm)
                 _requiresLogin = true;
@@ -185,11 +178,11 @@ public class ModuleHtmlViewDefinition extends ResourceRef
     protected Set<ClientDependency> addResources()
     {
         DependenciesType resourcesList = _viewDef.getDependencies();
-        if(null == resourcesList)
+        if (null == resourcesList)
             return Collections.emptySet();
 
         DependencyType[] resources = resourcesList.getDependencyArray();
-        if(null == resources)
+        if (null == resources)
             return Collections.emptySet();
 
         Set<ClientDependency> result = new LinkedHashSet<>();
@@ -209,11 +202,11 @@ public class ModuleHtmlViewDefinition extends ResourceRef
     protected Set<ClientDependency> addModuleContext()
     {
         ModuleContextType modulesList = _viewDef.getRequiredModuleContext();
-        if(null == modulesList)
+        if (null == modulesList)
             return Collections.emptySet();
 
         RequiredModuleType[] modules = modulesList.getRequiredModuleArray();
-        if(null == modules)
+        if (null == modules)
             return Collections.emptySet();
 
         Set<ClientDependency> result = new HashSet<>();
