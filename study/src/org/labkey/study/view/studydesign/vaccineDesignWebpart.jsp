@@ -27,9 +27,9 @@
 <%@ page import="org.labkey.study.model.ProductImpl" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.security.permissions.ManageStudyPermission" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -45,7 +45,7 @@
     Container c = getContainer();
     StudyImpl study = StudyManager.getInstance().getStudy(c);
     User user = getUser();
-    boolean canManageStudy  = c.hasPermission(user, ManageStudyPermission.class);
+    boolean canEdit  = c.hasPermission(user, UpdatePermission.class);
 
     WebTheme theme = WebThemeManager.getTheme(c);
     String link        = theme.getLinkColor();
@@ -165,9 +165,9 @@
 <%
     }
 
-    if (canManageStudy)
+    if (canEdit)
     {
-        %><br/><%=textLink("Manage Study Products", StudyController.ManageStudyProductsAction.class)%><%
+        %><br/><%=textLink("Edit", StudyController.ManageStudyProductsAction.class)%><%
     }
 %>
 

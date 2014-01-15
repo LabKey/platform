@@ -1193,12 +1193,26 @@ public class StudyManager
         return _assaySpecimenHelper.get(container, "RowId");
     }
 
+    public List<VisitImpl> getVisitsForImmunizationSchedule(Container container)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        List<Integer> visitRowIds = new TableSelector(StudySchema.getInstance().getTableInfoTreatmentVisitMap(),
+                Collections.singleton("VisitId"), filter, new Sort("VisitId")).getArrayList(Integer.class);
+
+        return getSortVisitsByRowIds(container, visitRowIds);
+    }
+
     public List<VisitImpl> getVisitsForAssaySchedule(Container container)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         List<Integer> visitRowIds = new TableSelector(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(),
                 Collections.singleton("VisitId"), filter, new Sort("VisitId")).getArrayList(Integer.class);
 
+        return getSortVisitsByRowIds(container, visitRowIds);
+    }
+
+    private List<VisitImpl> getSortVisitsByRowIds(Container container, List<Integer> visitRowIds)
+    {
         List<VisitImpl> visits = new ArrayList<>();
         Study study = getStudy(container);
         if (study != null)
@@ -1254,6 +1268,14 @@ public class StudyManager
         return new TableSelector(ti, filter, new Sort("RowId")).getArrayList(TreatmentImpl.class);
     }
 
+    public TreatmentImpl getStudyTreatmentByRowId(Container container, User user, int rowId)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("RowId"), rowId);
+        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
+        return new TableSelector(ti, filter, null).getObject(TreatmentImpl.class);
+    }
+
     public List<TreatmentProductImpl> getStudyTreatmentProducts(Container container, User user, int treatmentId)
     {
         return getStudyTreatmentProducts(container, user, treatmentId, new Sort("RowId"));
@@ -1266,6 +1288,83 @@ public class StudyManager
 
         TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
         return new TableSelector(ti, filter, sort).getArrayList(TreatmentProductImpl.class);
+    }
+
+    public List<TreatmentVisitMapImpl> getStudyTreatmentVisitMap(Container container, @Nullable Integer cohortId)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        if (cohortId != null)
+            filter.addCondition(FieldKey.fromParts("CohortId"), cohortId);
+
+        TableInfo ti = StudySchema.getInstance().getTableInfoTreatmentVisitMap();
+        return new TableSelector(ti, filter, new Sort("CohortId")).getArrayList(TreatmentVisitMapImpl.class);
+    }
+
+    public TreatmentVisitMapImpl insertTreatmentVisitMap(User user, Container container, int cohortId, int visitId, int treatmentId) throws SQLException
+    {
+        TreatmentVisitMapImpl newMapping = new TreatmentVisitMapImpl();
+        newMapping.setContainer(container);
+        newMapping.setCohortId(cohortId);
+        newMapping.setVisitId(visitId);
+        newMapping.setTreatmentId(treatmentId);
+
+        return Table.insert(user, StudySchema.getInstance().getTableInfoTreatmentVisitMap(), newMapping);
+    }
+
+    public void deleteTreatmentVisitMapForCohort(Container container, int rowId) throws SQLException
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("CohortId"), rowId);
+        Table.delete(StudySchema.getInstance().getTableInfoTreatmentVisitMap(), filter);
+    }
+
+    public void deleteTreatment(Container container, User user, int rowId)
+    {
+        StudySchema schema = StudySchema.getInstance();
+
+        try (Transaction transaction = schema.getSchema().getScope().ensureTransaction())
+        {
+            // delete the uages of this treatment in the TreatmentVisitMap
+            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+            filter.addCondition(FieldKey.fromParts("TreatmentId"), rowId);
+            Table.delete(schema.getTableInfoTreatmentVisitMap(), filter);
+
+            // delete the associated treatment study product mappings (provision table)
+            TableInfo productMapTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+            if (productMapTable != null)
+            {
+                filter = SimpleFilter.createContainerFilter(container);
+                filter.addCondition(FieldKey.fromParts("TreatmentId"), rowId);
+                TableSelector selector = new TableSelector(productMapTable, Collections.singleton("RowId"), filter, null);
+                Integer[] productMapIds = selector.getArray(Integer.class);
+
+                QueryUpdateService qus = productMapTable.getUpdateService();
+                List<Map<String, Object>> keys = new ArrayList<>();
+                ColumnInfo prodcutMapPk = productMapTable.getColumn(FieldKey.fromParts("RowId"));
+                for (Integer productMapId : productMapIds)
+                {
+                    keys.add(Collections.<String, Object>singletonMap(prodcutMapPk.getName(), productMapId));
+                }
+                qus.deleteRows(user, container, keys, null);
+            }
+
+            // finally delete the record from the Treatment  (provision table)
+            TableInfo treatmentTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
+            if (treatmentTable != null)
+            {
+                QueryUpdateService qus = treatmentTable.getUpdateService();
+                List<Map<String, Object>> keys = new ArrayList<>();
+                ColumnInfo treatmentPk = treatmentTable.getColumn(FieldKey.fromParts("RowId"));
+                keys.add(Collections.<String, Object>singletonMap(treatmentPk.getName(), rowId));
+                qus.deleteRows(user, container, keys, null);
+            }
+
+            transaction.commit();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     public void createVisitDataSetMapping(User user, Container container, int visitId,
@@ -1707,15 +1806,25 @@ public class StudyManager
 
     public void deleteCohort(CohortImpl cohort) throws SQLException
     {
-        _cohortHelper.delete(cohort);
+        StudySchema schema = StudySchema.getInstance();
 
-        // delete extended properties
-        Container container = cohort.getContainer();
-        String lsid = cohort.getLsid();
-        Map<String, ObjectProperty> resourceProperties = OntologyManager.getPropertyObjects(container, lsid);
-        if (resourceProperties != null && !resourceProperties.isEmpty())
+        try (Transaction transaction = schema.getSchema().getScope().ensureTransaction())
         {
-            OntologyManager.deleteOntologyObject(lsid, container, false);
+            Container container = cohort.getContainer();
+
+            deleteTreatmentVisitMapForCohort(container, cohort.getRowId());
+
+            _cohortHelper.delete(cohort);
+
+            // delete extended properties
+            String lsid = cohort.getLsid();
+            Map<String, ObjectProperty> resourceProperties = OntologyManager.getPropertyObjects(container, lsid);
+            if (resourceProperties != null && !resourceProperties.isEmpty())
+            {
+                OntologyManager.deleteOntologyObject(lsid, container, false);
+            }
+
+            transaction.commit();
         }
     }
 

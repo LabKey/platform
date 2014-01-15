@@ -25,6 +25,9 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.study.controllers.CohortController" %>
+<%@ page import="org.labkey.study.security.permissions.ManageStudyPermission" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -39,9 +42,12 @@
 %>
 <%
     Container c = getContainer();
+    User user = getUser();
     ActionURL returnURL = getActionURL();
 
     Study study = StudyManager.getInstance().getStudy(c);
+    boolean canManageStudy = c.hasPermission(user, ManageStudyPermission.class);
+
     String visitDisplayName = "Visit";
     if (study != null && study.getTimepointType() == TimepointType.DATE)
         visitDisplayName = "Timepoint";
@@ -73,7 +79,8 @@
         });
 
         var immunizationScheduleGrid = Ext4.create('LABKEY.ext4.ImmunizationScheduleGrid', {
-            renderTo : "immunization-schedule-grid"
+            renderTo : "immunization-schedule-grid",
+            visitNoun : <%=q(visitDisplayName)%>
         });
 
         var projectMenu = null;
@@ -112,8 +119,10 @@
 Enter immunization information in the grids below.
 <div style="width: 875px;">
     <ul>
-        <li>Each treatment may consist of several adjuvants and immunizations.</li>
-        <li>Use the immunization schedule grid to define which cohorts received a specific treatment at a given timepoint in the study.</li>
+        <li>Use the "Insert New" button in the treatments grid to add a new study treatment.</li>
+        <li>Each treatment may consist of several study products, i.e. immunogens and/or adjuvants.</li>
+        <li>Use the "Insert New" button in the immunization schedule grid to add a new study cohort.</li>
+        <li>Enter the number of subjects for the cohort in the count column.</li>
         <li>
             Configure dropdown options at the project level to be shared across study designs or within this folder for
             study specific properties: <span id='config-dropdown-menu'></span>
@@ -126,12 +135,21 @@ Enter immunization information in the grids below.
 <%=textLink("Manage Study Products", StudyController.ManageStudyProductsAction.class)%>
 <br/><br/>
 <div id="immunization-schedule-grid"></div>
+<div style='font-style: italic; font-size: smaller;'>* Double click to edit a group/cohort and its treatment/visit map definition</div>
 <br/>
-<%=textLink("Create New " + visitDisplayName, new ActionURL(StudyController.CreateVisitAction.class, c).addReturnURL(returnURL))%>
 <%
-    if (study != null && study.getTimepointType() == TimepointType.VISIT && study.getVisits(Visit.Order.DISPLAY).size() > 1)
+    if (canManageStudy)
     {
-%><%= textLink("Change Visit Order", new ActionURL(StudyController.VisitOrderAction.class, c).addReturnURL(returnURL)) %><%
+%>
+        <%=textLink("Create New " + visitDisplayName, new ActionURL(StudyController.CreateVisitAction.class, c).addReturnURL(returnURL))%>
+<%
+        if (study != null && study.getTimepointType() == TimepointType.VISIT && study.getVisits(Visit.Order.DISPLAY).size() > 1)
+        {
+            %><%= textLink("Change Visit Order", new ActionURL(StudyController.VisitOrderAction.class, c).addReturnURL(returnURL)) %><%
+        }
+%>
+        <%=textLink("Manage " + visitDisplayName + "s", StudyController.ManageVisitsAction.class)%>
+        <%=textLink("Manage Cohorts", CohortController.ManageCohortsAction.class)%>
+<%
     }
 %>
-<%=textLink("Manage " + visitDisplayName + "s", StudyController.ManageVisitsAction.class)%>

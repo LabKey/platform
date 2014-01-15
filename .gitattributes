@@ -3318,6 +3318,7 @@ study/src/org/labkey/study/dataset/DatasetAuditViewFactory.java -text
 study/src/org/labkey/study/dataset/DatasetSnapshotProvider.java -text
 study/src/org/labkey/study/dataset/DatasetViewProvider.java -text
 study/src/org/labkey/study/dataset/SnapshotDependency.java -text
+study/src/org/labkey/study/designer/ImmunizationSchedule.java -text
 study/src/org/labkey/study/designer/JSONSerializer.java -text
 study/src/org/labkey/study/designer/MapArrayExcelWriter.java -text
 study/src/org/labkey/study/designer/SaveException.java -text
@@ -3438,6 +3439,7 @@ study/src/org/labkey/study/model/StudySnapshot.java -text
 study/src/org/labkey/study/model/TestDatasetDomainKind.java -text
 study/src/org/labkey/study/model/TreatmentImpl.java -text
 study/src/org/labkey/study/model/TreatmentProductImpl.java -text
+study/src/org/labkey/study/model/TreatmentVisitMapImpl.java -text
 study/src/org/labkey/study/model/UploadLog.java -text
 study/src/org/labkey/study/model/VialDomainKind.java -text
 study/src/org/labkey/study/model/VisitDataSet.java -text
@@ -3569,6 +3571,7 @@ study/src/org/labkey/study/query/studydesign/StudyTreatmentDomainKind.java -text
 study/src/org/labkey/study/query/studydesign/StudyTreatmentProductDomainKind.java -text
 study/src/org/labkey/study/query/studydesign/StudyTreatmentProductTable.java -text
 study/src/org/labkey/study/query/studydesign/StudyTreatmentTable.java -text
+study/src/org/labkey/study/query/studydesign/StudyTreatmentVisitMapTable.java -text
 study/src/org/labkey/study/reports/AbstractReportView.java -text
 study/src/org/labkey/study/reports/BaseStudyView.java -text
 study/src/org/labkey/study/reports/ChartReportView.java -text

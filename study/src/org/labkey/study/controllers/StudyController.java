@@ -159,6 +159,7 @@ import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
+import org.labkey.study.designer.ImmunizationSchedule;
 import org.labkey.study.designer.StudySchedule;
 import org.labkey.study.importer.DatasetImportUtils;
 import org.labkey.study.importer.RequestabilityManager;
@@ -169,27 +170,7 @@ import org.labkey.study.importer.StudyReload;
 import org.labkey.study.importer.StudyReload.ReloadStatus;
 import org.labkey.study.importer.StudyReload.ReloadTask;
 import org.labkey.study.importer.VisitMapImporter;
-import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.CohortManager;
-import org.labkey.study.model.CustomParticipantView;
-import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.DatasetReorderer;
-import org.labkey.study.model.LocationImpl;
-import org.labkey.study.model.Participant;
-import org.labkey.study.model.ProductAntigenImpl;
-import org.labkey.study.model.ProductImpl;
-import org.labkey.study.model.QCState;
-import org.labkey.study.model.QCStateSet;
-import org.labkey.study.model.SecurityType;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.TreatmentImpl;
-import org.labkey.study.model.TreatmentProductImpl;
-import org.labkey.study.model.UploadLog;
-import org.labkey.study.model.VisitDataSet;
-import org.labkey.study.model.VisitDataSetType;
-import org.labkey.study.model.VisitImpl;
-import org.labkey.study.model.VisitMapKey;
+import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetFileReader;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.query.DataSetQuerySettings;
@@ -6783,7 +6764,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class ManageAssaySpecimenAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -6798,7 +6779,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class ManageStudyProductsAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -6813,7 +6794,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class ManageImmunizationsAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -7741,6 +7722,164 @@ public class StudyController extends BaseStudyController
             resp.put("treatments", treatments);
 
             return resp;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetStudyImmunizationSchedule extends ApiAction<Object>
+    {
+        private StudyImpl _study;
+
+        @Override
+        public void validateForm(Object form, Errors errors)
+        {
+            _study = getStudy(getContainer());
+            if (_study == null)
+                errors.reject(ERROR_MSG, "A study does not exist in this folder");
+        }
+
+        @Override
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            ImmunizationSchedule immunizationSchedule = new ImmunizationSchedule(getContainer());
+
+            // include all cohorts for the study, regardless of it they have associated visits or not
+            immunizationSchedule.setCohorts(StudyManager.getInstance().getCohorts(getContainer(), getUser()));
+
+            // include all visits from the study, ordered by visit display order
+            immunizationSchedule.setVisits(StudyManager.getInstance().getVisits(_study, Visit.Order.DISPLAY));
+
+            // include all treatments for the study
+            immunizationSchedule.setTreatments(StudyManager.getInstance().getStudyTreatments(getContainer(), getUser()));
+
+            resp.put("mapping", immunizationSchedule.serializeCohortMapping());
+            resp.put("visits", immunizationSchedule.serializeVisits());
+            resp.put("treatments", immunizationSchedule.serializeTreatments());
+            resp.put("success", true);
+
+            return resp;
+        }
+    }
+
+    @RequiresPermissionClass(DeletePermission.class)
+    public class DeleteTreatmentAction extends ApiAction<IdForm>
+    {
+        @Override
+        public ApiResponse execute(IdForm form, BindException errors) throws Exception
+        {
+            if (form.getId() != 0)
+            {
+                StudyManager.getInstance().deleteTreatment(getContainer(), getUser(), form.getId());
+                return new ApiSimpleResponse("success", true);
+            }
+            return new ApiSimpleResponse("success", false);
+        }
+    }
+
+    @RequiresPermissionClass(UpdatePermission.class)
+    public class UpdateStudyImmunizationScheduleAction extends ApiAction<ImmunizationSchedule>
+    {
+        @Override
+        public void validateForm(ImmunizationSchedule form, Errors errors)
+        {
+            if (form.getCohortLabel() == null)
+                errors.reject(ERROR_MSG, "Cohort label is required.");
+
+            CohortImpl cohortByLabel = StudyManager.getInstance().getCohortByLabel(getContainer(), getUser(), form.getCohortLabel());
+            if (form.getCohortRowId() != null)
+            {
+                CohortImpl cohortByRowId = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getCohortRowId());
+                if (cohortByRowId != null && cohortByLabel != null && cohortByRowId.getRowId() != cohortByLabel.getRowId())
+                    errors.reject(ERROR_MSG, "A cohort with the label '" + form.getCohortLabel() + "' already exists");
+            }
+            else if (cohortByLabel != null)
+            {
+                errors.reject(ERROR_MSG, "A cohort with the label '" + form.getCohortLabel() + "' already exists");
+            }
+        }
+
+        @Override
+        public ApiResponse execute(ImmunizationSchedule form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Study study = StudyManager.getInstance().getStudy(getContainer());
+
+            if (study != null)
+            {
+                CohortImpl cohort = insertOrUpdateCohort(form, study);
+                response.put("cohortId", cohort.getRowId());
+
+                updateTreatmentVisitMapping(form, cohort);
+
+                response.put("success", true);
+                return response;
+            }
+            else
+                throw new IllegalStateException("A study does not exist in this folder");
+        }
+
+        private CohortImpl insertOrUpdateCohort(ImmunizationSchedule form, Study study) throws Exception
+        {
+            CohortImpl cohort;
+            if (form.getCohortRowId() != null)
+            {
+                cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getCohortRowId());
+                cohort = cohort.createMutable();
+                cohort.setLabel(form.getCohortLabel());
+                cohort.setSubjectCount(form.getCohortSubjectCount());
+                StudyManager.getInstance().updateCohort(getUser(), cohort);
+            }
+            else
+            {
+                cohort = CohortManager.getInstance().createCohort(study, getUser(), form.getCohortLabel(), true, form.getCohortSubjectCount(), null);
+            }
+
+            return cohort;
+        }
+
+        private void updateTreatmentVisitMapping(ImmunizationSchedule form, CohortImpl cohort) throws SQLException
+        {
+            if (cohort != null)
+            {
+                StudySchema schema = StudySchema.getInstance();
+
+                try (DbScope.Transaction transaction = schema.getSchema().getScope().ensureTransaction())
+                {
+                    // the mapping that is passed in will have all of the current treatment/visit maps, so we will
+                    // delete all of the existing records and then insert the new ones
+                    StudyManager.getInstance().deleteTreatmentVisitMapForCohort(getContainer(), cohort.getRowId());
+
+                    for (Map.Entry<Integer, Integer> treatmentVisitMap : form.getTreatmentVisitMap().entrySet())
+                    {
+                        // map entry key = visitId and value = treatmentId
+                        StudyManager.getInstance().insertTreatmentVisitMap(getUser(), getContainer(), cohort.getRowId(), treatmentVisitMap.getKey(), treatmentVisitMap.getValue());
+                    }
+
+                    transaction.commit();
+                }
+            }
+        }
+    }
+
+    @RequiresPermissionClass(DeletePermission.class)
+    public class DeleteStudyImmunizationScheduleAction extends ApiAction<IdForm>
+    {
+        @Override
+        public ApiResponse execute(IdForm form, BindException errors) throws Exception
+        {
+            if (form.getId() != 0)
+            {
+                CohortImpl cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getId());
+                // don't delete any in-use cohorts from the study
+                if (cohort != null && !cohort.isInUse())
+                    StudyManager.getInstance().deleteCohort(cohort);
+
+                // TODO: return message about 'unable to delete in-use cohort'
+
+                return new ApiSimpleResponse("success", true);
+            }
+            return new ApiSimpleResponse("success", false);
         }
     }
 }

@@ -67,6 +67,7 @@ import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
 import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
 import org.labkey.study.query.studydesign.StudyTreatmentProductTable;
 import org.labkey.study.query.studydesign.StudyTreatmentTable;
+import org.labkey.study.query.studydesign.StudyTreatmentVisitMapTable;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
@@ -102,6 +103,7 @@ public class StudyQuerySchema extends UserSchema
     public static final String PRODUCT_ANTIGEN_TABLE_NAME = "ProductAntigen";
     public static final String TREATMENT_TABLE_NAME = "Treatment";
     public static final String TREATMENT_PRODUCT_MAP_TABLE_NAME = "TreatmentProductMap";
+    public static final String TREATMENT_VISIT_MAP_TABLE_NAME = "TreatmentVisitMap";
 
     @Nullable // if no study defined in this container
     final StudyImpl _study;
@@ -280,6 +282,7 @@ public class StudyQuerySchema extends UserSchema
             ret.add(PRODUCT_ANTIGEN_TABLE_NAME);
             ret.add(TREATMENT_PRODUCT_MAP_TABLE_NAME);
             ret.add(TREATMENT_TABLE_NAME);
+            ret.add(TREATMENT_VISIT_MAP_TABLE_NAME);
 
             ret.add(OBJECTIVE_TABLE_NAME);
             ret.add(PERSONNEL_TABLE_NAME);
@@ -596,6 +599,10 @@ public class StudyQuerySchema extends UserSchema
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), TREATMENT_TABLE_NAME);
 
             return new StudyTreatmentTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this);
+        }
+        if (TREATMENT_VISIT_MAP_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            return new StudyTreatmentVisitMapTable(this);
         }
         if (SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE.equalsIgnoreCase(name))
         {

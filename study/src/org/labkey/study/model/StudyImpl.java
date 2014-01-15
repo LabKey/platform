@@ -302,6 +302,18 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
+    public List<TreatmentVisitMapImpl> getStudyTreatmentVisitMap(Container container, @Nullable Integer cohortId)
+    {
+        return StudyManager.getInstance().getStudyTreatmentVisitMap(container, cohortId);
+    }
+
+    @Override
+    public List<VisitImpl> getVisitsForImmunizationSchedule()
+    {
+        return StudyManager.getInstance().getVisitsForImmunizationSchedule(getContainer());
+    }
+
+    @Override
     public ParticipantCategory[] getParticipantCategories(User user)
     {
         return ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), user);

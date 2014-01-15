@@ -14,6 +14,7 @@ Ext4.define('LABKEY.ext4.BaseVaccineDesignGrid', {
     emptyText : 'No records defined',
     filterRole : null,
     hiddenColumns : ["RowId"],
+    visitNoun : 'Visit',
     frame  : false,
 
     constructor : function(config) {
@@ -28,6 +29,26 @@ Ext4.define('LABKEY.ext4.BaseVaccineDesignGrid', {
                 {name : 'Role'},
                 {name : 'Type'},
                 {name : 'Antigens'}
+            ]
+        });
+
+        Ext4.define('StudyDesign.Treatment', {
+            extend : 'Ext.data.Model',
+            fields : [
+                {name : 'RowId', type : 'int'},
+                {name : 'Label'},
+                {name : 'Description'},
+                {name : 'Products'}
+            ]
+        });
+
+        Ext4.define('StudyDesign.Visit', {
+            extend : 'Ext.data.Model',
+            fields : [
+                {name : 'RowId', type : 'int'},
+                {name : 'Label'},
+                {name : 'SortOrder', type : 'int'},
+                {name : 'Included', type : 'boolean'}
             ]
         });
 
@@ -105,6 +126,9 @@ Ext4.define('LABKEY.ext4.BaseVaccineDesignGrid', {
                 formItems.push(formItem);
             }
         });
+
+        if (formItems.length == 0)
+            return;
 
         var win = Ext4.create('Ext.window.Window', {
             title: (record ? 'Edit ' : 'Insert ') + this.filterRole,
@@ -512,7 +536,6 @@ Ext4.define('LABKEY.ext4.VaccineDesignDisplayHelper', {
                     + "<td class='labkey-col-header'>Route</td></tr>";
 
             Ext4.each(productArr, function(val){
-console.log(val);
                 html += "<tr><td class='assay-row-padded-view'>" + getValue(val, "ProductId/Label") + "</td>"
                         + "<td class='assay-row-padded-view'>" + getValue(val, "Dose") + "</td>"
                         + "<td class='assay-row-padded-view'>" + getValue(val, "Route") + "</td></tr>";
@@ -546,17 +569,6 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
     productStore: null,
 
     constructor : function(config) {
-
-        Ext4.define('StudyDesign.Treatment', {
-            extend : 'Ext.data.Model',
-            fields : [
-                {name : 'RowId', type : 'int'},
-                {name : 'Label'},
-                {name : 'Description'},
-                {name : 'Products'}
-            ]
-        });
-
         this.callParent([config]);
     },
 
@@ -827,29 +839,64 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
     },
 
     removeSelectedGridRecord : function(grid) {
+        Ext4.Msg.show({
+            cls: 'data-window',
+            title: "Confirm Deletion",
+            msg: "Are you sure you want to delete the selected treatment? Note: this will also delete any usages of this treatment record in the Immunization Schedule grid below.",
+            icon: Ext4.Msg.QUESTION,
+            buttons: Ext4.Msg.YESNO,
+            scope: this,
+            fn: function(button){
+                if (button === 'yes') {
+                    this.deleteTreatmentRecord(grid);
+                }
+            }
+        });
+    },
+
+    deleteTreatmentRecord : function(grid) {
         var record = grid.getSelectionModel().getLastSelected();
         if (record != null && record.get("RowId"))
         {
             // delete the study.Treatment record and any associated study.TreatmentProductMap records
-            var commands = [{schemaName: 'study', queryName: 'Treatment', command: 'delete', rows: [record.data]}];
-            if (record.get("Products").length > 0)
-            {
-                var rows = [];
-                Ext4.each(record.get("Products"), function(rec) {
-                    rows.push(rec);
-                });
-                commands.push({schemaName: 'study', queryName: 'TreatmentProductMap', command: 'delete', rows: rows});
-            }
-
-            LABKEY.Query.saveRows({
-                commands: commands,
-                success: function() {
-                    grid.getStore().reload();
-                },
-                scope: this
+            Ext4.Ajax.request({
+                url     : LABKEY.ActionURL.buildURL('study', 'deleteTreatment.api'),
+                method  : 'POST',
+                jsonData: { id : record.get("RowId") },
+                success : function(resp){
+                    // reload the page so that the treatments grid and the immunizations schedule grid are updated
+                    window.location.reload();
+                }
             });
         }
     }
+});
+
+// Ext4 widget that looks like the labkey textLink and allows for a handler function
+Ext4.define('LinkButton', {
+    extend: 'Ext.Component',
+    alias: 'widget.linkbutton',
+
+    autoEl: {
+        tag: 'a',
+        href: 'javascript:void(0)'
+    },
+    renderTpl: '{text}',
+    baseCls: 'labkey-text-link',
+
+    initComponent: function() {
+        this.renderData = {
+            text: this.text
+        };
+
+        this.callParent(arguments);
+    },
+
+    afterRender: function() {
+        this.mon(this.getEl(), 'click', this.handler, this.scope || this);
+    },
+
+    handler: Ext4.emptyFn
 });
 
 Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
@@ -857,13 +904,405 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
     extend : 'LABKEY.ext4.BaseVaccineDesignGrid',
 
     title : 'Immunization Schedule',
-    disabled : true,
-    width : 400,
+    filterRole : 'Cohort',
+    hiddenColumns : ["RowId"],
+    width : 300, // initial grid width for cohort label and count columns
+    emptyText : 'No groups / cohorts defined',
+    mappingData : null,
+    treatmentStore : null,
+    visitStore : null,
+
+    constructor : function(config) {
+        this.callParent([config]);
+    },
+
+    initComponent : function() {
+        this.callParent();
+
+        this.getImmunizationScheduleData(true);
+    },
+
+    getImmunizationScheduleData : function(init) {
+        // query for the immunization schedule data (including all cohorts, all treatments, and mapping info for each cohort/visit/treatment)
+        Ext4.Ajax.request({
+            url : LABKEY.ActionURL.buildURL("study", "getStudyImmunizationSchedule"),
+            method : 'GET',
+            success : function(resp){
+                var o = Ext4.decode(resp.responseText);
+                if (o.success)
+                {
+                    // hold on to the mapping data
+                    this.mappingData = o;
+
+                    // load the treatment info into a store for easy access
+                    this.mappingData.treatments.splice(0, 0, {Label: '[none]'});
+                    this.treatmentStore = Ext4.create('Ext.data.Store', {
+                        model : 'StudyDesign.Treatment',
+                        data : this.mappingData.treatments,
+                        sorters: [{ property: 'RowId', direction: 'ASC' }]
+                    });
+
+                    // load the visit info into a store for easy access and reuse
+                    this.visitStore = Ext4.create('Ext.data.Store', {
+                        model : 'StudyDesign.Visit',
+                        data : this.mappingData.visits
+                    });
+
+                    if (init)
+                    {
+                        this.add(this.configureGrid());
+                    }
+                    else
+                    {
+                        Ext4.each(this.grid.columns, function(col){
+                            var visitRec = this.visitStore.findRecord('RowId', col.dataIndex.replace('Visit',''));
+                            if (visitRec)
+                            {
+                                if (col.hidden && visitRec.get('Included'))
+                                {
+                                    this.setWidth(this.width + 150);
+                                    col.show();
+                                }
+                                else if (!col.hidden && !visitRec.get('Included'))
+                                {
+                                    this.setWidth(this.width - 150);
+                                    col.hide();
+                                }
+                            }
+                        }, this);
+                    }
+
+                    this.store.loadData(this.mappingData.mapping);
+                }
+            },
+            failure : function(response, options){
+                LABKEY.Utils.displayAjaxErrorResponse(response, options, false);
+            },
+            scope : this
+        });
+    },
+
+    configureGrid : function() {
+        // don't do anything until we have the mapping data
+        return this.mappingData ? this.callParent() : null;
+    },
 
     configureStore : function() {
-        // TODO
-        this.store = Ext4.define('Ext.data.ArrayStore', {});
+        // don't do anything until we have the mapping data
+        if (this.mappingData)
+        {
+            var fields = [
+                {name : 'RowId', type : 'int'},
+                {name : 'Label'},
+                {name : 'SubjectCount'}
+            ];
+
+            Ext4.each(this.visitStore.getRange(), function(visit){
+                fields.push({name : 'Visit'+visit.get('RowId') });
+            });
+
+            Ext4.define('StudyDesign.Mapping', {
+                extend : 'Ext.data.Model',
+                fields : fields
+            });
+
+            this.store = Ext4.create('Ext.data.Store', {
+                model : 'StudyDesign.Mapping',
+                sorters: [{ property: 'CohortId', direction: 'ASC' }]
+            });
+        }
 
         return this.store;
+    },
+
+    getColumnConfig : function(ignoreVisitCols) {
+        var columns = [
+            { header: 'Row ID', dataIndex: 'RowId', editable: false, menuDisabled: true, width: 100 },
+            { header: 'Group / Cohort', dataIndex: 'Label', editable: true, menuDisabled: true, width: 225 },
+            { header: 'Count', dataIndex: 'SubjectCount', editable: true, menuDisabled: true, width: 75 }
+        ];
+
+        if (!ignoreVisitCols && this.visitStore)
+        {
+            Ext4.each(this.visitStore.getRange(), function(visit){
+                columns.push({
+                    header: visit.get('Label'),
+                    dataIndex: 'Visit'+visit.get('RowId'),
+                    editable: false,
+                    menuDisabled: true,
+                    width: 150,
+                    hidden: !visit.get('Included'),
+                    renderer: this.renderTreatment,
+                    scope: this
+                });
+
+                if (visit.get('Included'))
+                    this.width += 150;
+            }, this);
+        }
+
+        // set hidden columns and add editors where necessary
+        Ext4.each(columns, function(col){
+            if (col.dataIndex == 'Label')
+                col.editor = this.getStudyDesignFieldEditor(col.dataIndex, null, false, 'Label', false);
+            else if (col.dataIndex == 'SubjectCount')
+                col.editor = { xtype: 'numberfield', fieldLabel: col.header, name: col.dataIndex, minValue: 0, allowDecimals: false };
+
+            if (this.hiddenColumns.indexOf(col.dataIndex) > -1)
+            {
+                col.hidden = true;
+                col.editable = false;
+                col.editor = null;
+            }
+        }, this);
+
+        return columns;
+    },
+
+    renderTreatment : function(value, metaData, record) {
+        var treatmentRecord = null;
+        if (value != null && value != '')
+            treatmentRecord = this.treatmentStore.findRecord('RowId', value);
+
+        return treatmentRecord ? treatmentRecord.get('Label') : value;
+    },
+
+    showInsertUpdate : function(g, td, cellIndex, record)
+    {
+        var formItems = [];
+        Ext4.each(this.getColumnConfig(true), function(column){
+            if (column.editable && column.editor)
+            {
+                var formItem = column.editor;
+                formItem.value = record ? record.get(column.dataIndex) : null;
+                formItems.push(formItem);
+            }
+        });
+
+        if (record)
+        {
+            formItems.push({ xtype: 'displayfield', value: ' ' }); // spacer
+            formItems.push({ xtype: 'label', html: '<span style="font-weight: bold;">Treatment / ' + this.visitNoun + ' Mapping</span><br/>' });
+            Ext4.each(this.visitStore.getRange(), function(visit){
+                formItems.push(this.createTreatmentVisitCombo(record, visit));
+            }, this);
+
+            if (this.visitStore.getCount() > 0 && this.treatmentStore.getCount() > 1)
+            {
+                formItems.push({
+                    xtype: 'linkbutton',
+                    text: 'Add ' + this.visitNoun,
+                    scope: this,
+                    handler: function() {
+                        this.showAddVisitWindow(record);
+                    }
+                });
+            }
+            else
+            {
+                formItems.push({
+                    xtype: 'fieldcontainer', hideFieldLabel: true,
+                    items: [{ xtype: 'label', text: 'No ' + (this.visitStore.getCount() == 0 ? this.visitNoun.toLowerCase() : 'treatment') + 's defined for this study.' }]
+                });
+            }
+        }
+
+        if (formItems.length == 0)
+            return;
+
+        var win = Ext4.create('Ext.window.Window', {
+            title: (record ? 'Edit ' : 'Insert ') + this.filterRole,
+            cls: 'data-window',
+            modal: true,
+            items: [{
+                xtype: 'form',
+                border: false,
+                bodyStyle: 'padding: 5px;',
+                defaults: {labelWidth: 120, width: 345},
+                items: formItems,
+                buttonAlign: 'center',
+                buttons: [{
+                    text: record ? 'Submit' : 'Next',
+                    tooltip: record ? '' : 'Submit the new cohort record in order to define the treatment / ' + this.visitNoun.toLowerCase() + ' mapping.',
+                    formBind: true,
+                    scope: this,
+                    handler: function() { this.insertUpdateGridRecord(win, record); }
+                },{
+                    text: 'Cancel',
+                    handler: function() { win.close(); }
+                }]
+            }]
+        });
+        win.show();
+    },
+
+    createTreatmentVisitCombo : function(record, visit) {
+        return {
+            xtype: 'fieldcontainer',
+            layout: 'hbox',
+            fieldLabel: visit.get('Label'),
+            visitRowId: visit.get('RowId'),
+            hidden: !visit.get('Included'),
+            items: [{
+                xtype: 'combo',
+                store: this.treatmentStore,
+                editable: false,
+                queryMode: 'local',
+                displayField: 'Label',
+                valueField: 'RowId',
+                comboType: 'TreatmentVisitCombo', // for component query
+                visitRowId: visit.get('RowId'),
+                value: record.get("Visit"+visit.get('RowId'))
+            },{
+                xtype: 'linkbutton',
+                text: 'Remove',
+                visitRowId: visit.get('RowId'),
+                style: 'padding-left: 10px;',
+                handler: function() {
+                    var cmp = Ext4.ComponentQuery.query('.fieldcontainer[visitRowId=' + this.visitRowId + ']');
+                    if (cmp && cmp.length > 0)
+                    {
+                        cmp[0].down('.combo').setValue(null);
+                        cmp[0].hide();
+                    }
+                }
+            }]
+        };
+    },
+
+    showAddVisitWindow : function(record) {
+        var win = Ext4.create('Ext.window.Window', {
+            itemId: 'MappingAddVisitWindow', // for component query
+            title: 'Add ' + this.visitNoun,
+            cls: 'data-window',
+            modal: true,
+            items: [{
+                xtype: 'form',
+                border: false,
+                bodyStyle: 'padding: 5px;',
+                items: [{
+                    xtype: 'combo',
+                    fieldLabel: 'Label',
+                    labelWidth: 50,
+                    width: 300,
+                    store: this.visitStore,
+                    editable: false,
+                    queryMode: 'local',
+                    displayField: 'Label',
+                    valueField: 'RowId'
+                }],
+                buttonAlign: 'center',
+                buttons: [{
+                    text: 'Select',
+                    formBind: true,
+                    scope: this,
+                    handler: function() {
+                        // show the fieldcontainer visit/treatment combo for the select visit
+                        var value = win.down('.form').down('.combo').getValue();
+                        var cmp = Ext4.ComponentQuery.query('.fieldcontainer[visitRowId=' + value + ']');
+                        if (cmp && cmp.length > 0)
+                            cmp[0].show();
+
+                        win.close();
+                    }
+                },{
+                    text: 'Cancel',
+                    handler: function() { win.close(); }
+                }]
+            }]
+        });
+        win.show();
+    },
+
+    insertUpdateGridRecord : function(win, record) {
+        var form = win.down('.form').getForm();
+        var values = form.getValues();
+
+        // either update the given cohort record or add a new one
+        var cohortValues = {label: values.Label};
+        if (values.SubjectCount)
+            cohortValues.subjectCount = parseInt(values.SubjectCount);
+        if (record)
+            cohortValues.rowId = record.get('RowId');
+
+        // pass an array of the form treatment/visit maps and it is up to the server to make insert and delete calls accordingly
+        var treatmentVisitMapping = [];
+        var treatmentVisitCombos = Ext4.ComponentQuery.query('combo[comboType=TreatmentVisitCombo]');
+        Ext4.each(treatmentVisitCombos, function(combo){
+            if (combo.value)
+                treatmentVisitMapping.push({visitId: combo.visitRowId, treatmentId: combo.value});
+        });
+
+        Ext4.Ajax.request({
+            url     : LABKEY.ActionURL.buildURL('study', 'updateStudyImmunizationSchedule.api'),
+            method  : 'POST',
+            jsonData: {
+                cohort: cohortValues,
+                treatmentVisitMapping: treatmentVisitMapping
+            },
+            success: function(response) {
+                win.close();
+
+                // for newly inserted cohort record, reshow the window for treatment / visit mapping definition
+                var data = Ext4.decode(response.responseText);
+                if (!record && data.cohortId)
+                {
+                    this.grid.getStore().on('datachanged', function(store){
+                        var newRecord = store.findRecord('RowId', data.cohortId);
+                        if (newRecord)
+                            this.showInsertUpdate(this.grid, null, 0, newRecord);
+                    }, this, {single: true});
+                }
+
+                // reload the grid store data
+                this.getImmunizationScheduleData(false);
+            },
+            failure: function(response) {
+                var resp = Ext4.decode(response.responseText);
+
+                Ext4.Msg.show({
+                    cls: 'data-window',
+                    title: 'Error',
+                    msg: resp.exception,
+                    icon: Ext4.Msg.ERROR,
+                    buttons: Ext4.Msg.OK
+                });
+            },
+            scope   : this
+        });
+    },
+
+    removeSelectedGridRecord : function(grid) {
+        Ext4.Msg.show({
+            cls: 'data-window',
+            title: "Confirm Deletion",
+            msg: "Are you sure you want to delete the selected group / cohort and its associated treatment / " + this.visitNoun.toLowerCase() + " mapping records?",
+            icon: Ext4.Msg.QUESTION,
+            buttons: Ext4.Msg.YESNO,
+            scope: this,
+            fn: function(button){
+                if (button === 'yes') {
+                    this.deleteCohortRecord(grid);
+                }
+            }
+        });
+    },
+
+    deleteCohortRecord : function(grid) {
+        var record = grid.getSelectionModel().getLastSelected();
+        if (record != null && record.get("RowId"))
+        {
+            // delete the study.Cohort record and any associated study.TreatmentProductMap records
+            Ext4.Ajax.request({
+                url     : LABKEY.ActionURL.buildURL('study', 'deleteStudyImmunizationSchedule.api'),
+                method  : 'POST',
+                jsonData: { id : record.get("RowId") },
+                scope: this,
+                success : function(resp){
+                    // reload the grid store data
+                    this.getImmunizationScheduleData(false);
+                }
+            });
+        }
     }
 });

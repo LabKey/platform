@@ -85,6 +85,18 @@ public class CohortUpdateService extends AbstractQueryUpdateService
         Study study = StudyManager.getInstance().getStudy(container);
         CohortImpl cohort = new CohortImpl();
         cohort.setLabel(row.get("label").toString());
+        if (row.get("enrolled") != null)
+            cohort.setEnrolled((Boolean)row.get("enrolled"));
+        if (row.get("subjectCount") != null)
+            cohort.setSubjectCount((Integer)row.get("subjectCount"));
+        if (row.get("description") != null)
+            cohort.setDescription((String)row.get("description"));
+
+        // Check if there's a conflict based on the label
+        CohortImpl existingCohort = StudyManager.getInstance().getCohortByLabel(container, user, cohort.getLabel());
+        if (existingCohort != null)
+            throw new ValidationException("A cohort with the label '" + cohort.getLabel() + "' already exists");
+
         StudyManager.getInstance().createCohort(study, user, cohort);
 
         cohort.savePropertyBag(row);
@@ -111,13 +123,18 @@ public class CohortUpdateService extends AbstractQueryUpdateService
         if (cohort == null)
             throw new IllegalArgumentException("No cohort found for rowId: " + rowId);
 
+        // Check if there's a conflict based on the label
+        String newLabel = (String)row.get("label");
+        CohortImpl existingCohort = StudyManager.getInstance().getCohortByLabel(container, user, newLabel);
+        if (existingCohort != null && existingCohort.getRowId() != rowId)
+            throw new ValidationException("A cohort with the label '" + newLabel + "' already exists");
+
         // Start a transaction, so that we can rollback if our insert fails
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
 
             // hard table columns handled separately
-            String newLabel = (String)row.get("label");
             boolean newEnrolled = (Boolean)row.get("enrolled");
             Integer newSubjectCount = (Integer)row.get("subjectCount");
             String newDescription = (String)row.get("description");

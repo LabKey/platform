@@ -23,6 +23,9 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.study.security.permissions.ManageStudyPermission" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -34,9 +37,13 @@
   }
 %>
 <%
+    Container c = getContainer();
+    User user = getUser();
     ActionURL returnURL = getActionURL();
 
     Study study = StudyManager.getInstance().getStudy(getContainer());
+    boolean canManageStudy = c.hasPermission(user, ManageStudyPermission.class);
+
     String visitDisplayName = "Visit";
     if (study != null && study.getTimepointType() == TimepointType.DATE)
         visitDisplayName = "Timepoint";
@@ -252,7 +259,7 @@ function createAssayPlanPanel(value)
                     form.submit({
                         url     : LABKEY.ActionURL.buildURL('study', 'manageStudyProperties.view'),
                         success : function(response) { window.location.reload(); },
-                        failure : function(response) { console.log(arguments); }
+                        failure : function(cmp, resp) { Ext4.Msg.alert('Error', resp.response.statusText); }
                     });
                 }
             }]
@@ -528,13 +535,20 @@ function removeSVC(el, scRowId, vRowId)
 <span style='font-style: italic; font-size: smaller;'>* Double click to edit an assay/specimen configuration</span>
 <br/><br/><br/>
 <div id="AssaySpecimenVisitPanel"></div>
-<%=textLink("Create New " + visitDisplayName, new ActionURL(StudyController.CreateVisitAction.class, getContainer()).addReturnURL(returnURL))%>
 <%
-    if (study != null && study.getTimepointType() == TimepointType.VISIT && study.getVisits(Visit.Order.DISPLAY).size() > 1)
+    if (canManageStudy)
     {
-        %><%= textLink("Change Visit Order", new ActionURL(StudyController.VisitOrderAction.class, getContainer()).addReturnURL(returnURL)) %><%
+%>
+        <%=textLink("Create New " + visitDisplayName, new ActionURL(StudyController.CreateVisitAction.class, getContainer()).addReturnURL(returnURL))%>
+<%
+        if (study != null && study.getTimepointType() == TimepointType.VISIT && study.getVisits(Visit.Order.DISPLAY).size() > 1)
+        {
+            %><%= textLink("Change Visit Order", new ActionURL(StudyController.VisitOrderAction.class, getContainer()).addReturnURL(returnURL)) %><%
+        }
+%>
+        <%=textLink("Manage " + visitDisplayName + "s", StudyController.ManageVisitsAction.class)%>
+<%
     }
 %>
-<%=textLink("Manage " + visitDisplayName + "s", StudyController.ManageVisitsAction.class)%>
 <br/><br/><br/>
 <div id="AssayPlanPanel"></div>

@@ -64,20 +64,24 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
     public QueryUpdateService getUpdateService()
     {
         TableInfo table = getRealTable();
-        if (table != null && table.getTableType() == DatabaseTableType.TABLE)
-            return new AdminQueryUpdateService(this, table);
+        if (table.getTableType() == DatabaseTableType.TABLE)
+            return new StudyDesignLookupsQueryUpdateService(this, table);
         return null;
     }
 
     @Override
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
-        return canReadOrIsAdminPermission(user, perm);
+        // Only admins are allowed to insert into these tables at the project level
+        if (getContainer().isProject())
+            return canReadOrIsAdminPermission(user, perm);
+        else
+            return getContainer().hasPermission(user, perm);
     }
 
-    private class AdminQueryUpdateService extends DefaultQueryUpdateService
+    private class StudyDesignLookupsQueryUpdateService extends DefaultQueryUpdateService
     {
-        public AdminQueryUpdateService(TableInfo queryTable, TableInfo dbTable)
+        public StudyDesignLookupsQueryUpdateService(TableInfo queryTable, TableInfo dbTable)
         {
             super(queryTable, dbTable);
         }
@@ -85,8 +89,8 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
         @Override
         protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            if (!hasPermission(user, AdminPermission.class))
-                throw new QueryUpdateServiceException("Only admins are allowed to insert into this table.");
+            if (container.isProject() && !hasPermission(user, AdminPermission.class))
+                throw new QueryUpdateServiceException("Only admins are allowed to insert into this table at the project level.");
 
             validateValues(row);
             return super.insertRow(user, container, row);
@@ -95,8 +99,8 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
         @Override
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            if (!hasPermission(user, AdminPermission.class))
-                throw new QueryUpdateServiceException("Only admins are allowed to update records in this table.");
+            if (container.isProject() && !hasPermission(user, AdminPermission.class))
+                throw new QueryUpdateServiceException("Only admins are allowed to update records in this table at the project level.");
 
             validateValues(row);
             return super.updateRow(user, container, row, oldRow);
@@ -105,8 +109,8 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
         @Override
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
-            if (!hasPermission(user, AdminPermission.class))
-                throw new QueryUpdateServiceException("Only admins are allowed to delete records from this table.");
+            if (container.isProject() && !hasPermission(user, AdminPermission.class))
+                throw new QueryUpdateServiceException("Only admins are allowed to delete records from this table at the project level.");
 
             return super.deleteRow(user, container, oldRowMap);
         }

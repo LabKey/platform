@@ -18,17 +18,23 @@
 
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.api.view.WebThemeManager" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.security.permissions.ManageStudyPermission" %>
+<%@ page import="org.labkey.study.model.CohortImpl" %>
+<%@ page import="org.labkey.study.model.VisitImpl" %>
+<%@ page import="org.labkey.study.model.TreatmentImpl" %>
+<%@ page import="org.labkey.study.model.TreatmentVisitMapImpl" %>
+<%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.study.model.TreatmentImpl" %>
-<%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.HashMap" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
@@ -43,7 +49,7 @@
     StudyImpl study = StudyManager.getInstance().getStudy(c);
 
     User user = getUser();
-    boolean canManageStudy  = c.hasPermission(user, ManageStudyPermission.class);
+    boolean canEdit  = c.hasPermission(user, UpdatePermission.class);
 
     WebTheme theme = WebThemeManager.getTheme(c);
     String link        = theme.getLinkColor();
@@ -95,45 +101,67 @@
     {
 %>
 <table class='study-vaccine-design'>
-    <tr><td><h2>Treatments</h2></td></tr>
-    <%
-        List<TreatmentImpl> treatments = study.getStudyTreatments(user);
-        if (treatments.size() == 0)
+<%
+        List<CohortImpl> cohorts = study.getCohorts(user);
+        if (cohorts.size() == 0)
         {
-            %><tr><td>No treatments have been defined.</td></tr><%
+            %><tr><td>No cohort/treatment/timepoint mappings have been defined.</td></tr><%
         }
         else
         {
+            List<VisitImpl> visits = study.getVisitsForImmunizationSchedule();
 %>
             <tr><td>
                 <table class="labkey-read-only labkey-data-region labkey-show-borders" style="border: solid #ddd 1px;">
                     <tr>
-                        <td class="labkey-col-header">Label</td>
-                        <td class="labkey-col-header">Description</td>
-                        <td class="labkey-col-header">Study Products</td>
+                        <td class="labkey-col-header">Group / Cohort</td>
+                        <td class="labkey-col-header">Count</td>
+<%
+                    for (VisitImpl visit : visits)
+                    {
+%>
+                        <td class="labkey-col-header">
+                            <%=h(visit.getDisplayString())%>
+                            <%=(visit.getDescription() != null ? PageFlowUtil.helpPopup("Description", visit.getDescription()) : "")%>
+                        </td>
+<%
+                    }
+%>
                     </tr>
-                    <%
-                for (TreatmentImpl treatment : treatments)
+<%
+                for (CohortImpl cohort : cohorts)
                 {
-                    String description = treatment.getDescription();
-                    description = description != null ? h(description).replaceAll("\n", "<br/>") : "&nbsp;";
-
-                    %>
+                    List<TreatmentVisitMapImpl> mapping = study.getStudyTreatmentVisitMap(c, cohort.getRowId());
+                    Map<Integer, Integer> visitTreatments = new HashMap<>();
+                    for (TreatmentVisitMapImpl treatmentVisitMap : mapping)
+                    {
+                        visitTreatments.put(treatmentVisitMap.getVisitId(), treatmentVisitMap.getTreatmentId());
+                    }
+%>
                     <tr>
-                        <td class="assay-row-padded-view"><%=h(treatment.getLabel())%></td>
-                        <td class="assay-row-padded-view"><%=description%></td>
-                        <td class="assay-row-padded-view"><div class="treatment-study-products" id="<%=treatment.getRowId()%>">...</div></td>
+                        <td class="assay-row-padded-view"><%=h(cohort.getLabel())%></td>
+                        <td class="assay-row-padded-view"><%=cohort.getSubjectCount()%></td>
+<%
+                    for (VisitImpl visit : visits)
+                    {
+                        Integer treatmentId = visitTreatments.get(visit.getRowId());
+                        TreatmentImpl treatment = null;
+                        if (treatmentId != null)
+                            treatment = StudyManager.getInstance().getStudyTreatmentByRowId(c, user, treatmentId);
+%>
+                        <td class="assay-row-padded-view"><%=h(treatment != null ? treatment.getLabel() : "")%></td>
+<%
+                    }
+%>
                     </tr>
-                    <%
+<%
                 }
-                    %>
+%>
                 </table>
             </td></tr>
-            <%
+<%
         }
 %>
-    <tr><td><h2>Immunization Schedule</h2></td></tr>
-    <tr><td>No cohort/treatment/timepoint mappings have been defined.</td></tr>
 </table>
 <%
     }
@@ -144,28 +172,8 @@
 <%
     }
 
-    if (canManageStudy)
+    if (canEdit)
     {
-%><br/><%=textLink("Manage Immunizations", StudyController.ManageImmunizationsAction.class)%><%
+        %><br/><%=textLink("Edit", StudyController.ManageImmunizationsAction.class)%><%
     }
 %>
-
-<script type="text/javascript">
-    Ext4.onReady(function(){
-
-        // query and display the html table for each treatment's study product definition
-        Ext4.each(Ext4.dom.Query.select('.treatment-study-products'), function(div){
-            LABKEY.Query.selectRows({
-                schemaName: 'study',
-                queryName: 'TreatmentProductMap',
-                columns: 'ProductId/Label,Dose,Route',
-                filterArray: [LABKEY.Filter.create('TreatmentId', div.id)],
-                sort: '-ProductId/Role,ProductId/RowId',
-                success: function(data) {
-                    div.innerHTML = new LABKEY.ext4.VaccineDesignDisplayHelper().getTreatmentProductDisplay(data.rows);
-                }
-            })
-        });
-
-    });
-</script>

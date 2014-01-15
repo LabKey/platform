@@ -31,9 +31,9 @@
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
-<%@ page import="org.labkey.study.security.permissions.ManageStudyPermission" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -48,7 +48,7 @@
     StudyImpl study = StudyManager.getInstance().getStudy(c);
 
     User user = getUser();
-    boolean canManageStudy  = c.hasPermission(user, ManageStudyPermission.class);
+    boolean canEdit  = c.hasPermission(user, UpdatePermission.class);
 
     String assayPlan = "";
     if (study != null && study.getAssayPlan() != null)
@@ -103,7 +103,7 @@
     if (study != null)
     {
         List<AssaySpecimenConfigImpl> assaySpecimenConfigs = study.getAssaySpecimenConfigs();
-        List<VisitImpl> visits = StudyManager.getInstance().getVisitsForAssaySchedule(c);
+        List<VisitImpl> visits = study.getVisitsForAssaySchedule();
 
 %>
         <p><%=assayPlan%></p>
@@ -132,7 +132,7 @@
                         <%=(visit.getDescription() != null ? PageFlowUtil.helpPopup("Description", visit.getDescription()) : "")%>
                     </td>
 <%
-    }
+            }
 %>
                 </tr>
 <%
@@ -194,8 +194,8 @@
 <%
     }
 
-    if (canManageStudy)
+    if (canEdit)
     {
-        %><br/><%=textLink("Manage Assay Schedule", StudyController.ManageAssaySpecimenAction.class)%><%
+        %><br/><%=textLink("Edit", StudyController.ManageAssaySpecimenAction.class)%><%
     }
 %>
