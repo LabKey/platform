@@ -159,7 +159,7 @@ import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
-import org.labkey.study.designer.ImmunizationSchedule;
+import org.labkey.study.designer.StudyImmunizationSchedule;
 import org.labkey.study.designer.StudySchedule;
 import org.labkey.study.importer.DatasetImportUtils;
 import org.labkey.study.importer.RequestabilityManager;
@@ -7742,7 +7742,7 @@ public class StudyController extends BaseStudyController
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            ImmunizationSchedule immunizationSchedule = new ImmunizationSchedule(getContainer());
+            StudyImmunizationSchedule immunizationSchedule = new StudyImmunizationSchedule(getContainer());
 
             // include all cohorts for the study, regardless of it they have associated visits or not
             immunizationSchedule.setCohorts(StudyManager.getInstance().getCohorts(getContainer(), getUser()));
@@ -7778,10 +7778,10 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermissionClass(UpdatePermission.class)
-    public class UpdateStudyImmunizationScheduleAction extends ApiAction<ImmunizationSchedule>
+    public class UpdateStudyImmunizationScheduleAction extends ApiAction<StudyImmunizationSchedule>
     {
         @Override
-        public void validateForm(ImmunizationSchedule form, Errors errors)
+        public void validateForm(StudyImmunizationSchedule form, Errors errors)
         {
             if (form.getCohortLabel() == null)
                 errors.reject(ERROR_MSG, "Cohort label is required.");
@@ -7800,7 +7800,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public ApiResponse execute(ImmunizationSchedule form, BindException errors) throws Exception
+        public ApiResponse execute(StudyImmunizationSchedule form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             Study study = StudyManager.getInstance().getStudy(getContainer());
@@ -7819,7 +7819,7 @@ public class StudyController extends BaseStudyController
                 throw new IllegalStateException("A study does not exist in this folder");
         }
 
-        private CohortImpl insertOrUpdateCohort(ImmunizationSchedule form, Study study) throws Exception
+        private CohortImpl insertOrUpdateCohort(StudyImmunizationSchedule form, Study study) throws Exception
         {
             CohortImpl cohort;
             if (form.getCohortRowId() != null)
@@ -7838,7 +7838,7 @@ public class StudyController extends BaseStudyController
             return cohort;
         }
 
-        private void updateTreatmentVisitMapping(ImmunizationSchedule form, CohortImpl cohort) throws SQLException
+        private void updateTreatmentVisitMapping(StudyImmunizationSchedule form, CohortImpl cohort) throws SQLException
         {
             if (cohort != null)
             {

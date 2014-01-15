@@ -24,7 +24,7 @@ import java.util.Map;
 /**
  * Represents a study's cohort/treatment/visit mapping information. Used to serialize JSON to the immunization schedule.
  */
-public class ImmunizationSchedule implements CustomApiForm
+public class StudyImmunizationSchedule implements CustomApiForm
 {
     Container _container;
     Integer _cohortRowId;
@@ -37,10 +37,10 @@ public class ImmunizationSchedule implements CustomApiForm
     List<VisitImpl> _visits;
     List<CohortImpl> _cohorts;
 
-    public ImmunizationSchedule()
+    public StudyImmunizationSchedule()
     {}
 
-    public ImmunizationSchedule(Container container)
+    public StudyImmunizationSchedule(Container container)
     {
         _container = container;
     }

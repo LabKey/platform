@@ -3318,7 +3318,6 @@ study/src/org/labkey/study/dataset/DatasetAuditViewFactory.java -text
 study/src/org/labkey/study/dataset/DatasetSnapshotProvider.java -text
 study/src/org/labkey/study/dataset/DatasetViewProvider.java -text
 study/src/org/labkey/study/dataset/SnapshotDependency.java -text
-study/src/org/labkey/study/designer/ImmunizationSchedule.java -text
 study/src/org/labkey/study/designer/JSONSerializer.java -text
 study/src/org/labkey/study/designer/MapArrayExcelWriter.java -text
 study/src/org/labkey/study/designer/SaveException.java -text
@@ -3326,6 +3325,7 @@ study/src/org/labkey/study/designer/StudyDefinitionServiceImpl.java -text
 study/src/org/labkey/study/designer/StudyDesignInfo.java -text
 study/src/org/labkey/study/designer/StudyDesignManager.java -text
 study/src/org/labkey/study/designer/StudyDesignVersion.java -text
+study/src/org/labkey/study/designer/StudyImmunizationSchedule.java -text
 study/src/org/labkey/study/designer/StudySchedule.java -text
 study/src/org/labkey/study/designer/XMLSerializer.java -text
 study/src/org/labkey/study/designer/view/CreateRepositoryWizard.jsp -text
