@@ -354,7 +354,8 @@ public class DomainImpl implements Domain
                         finalNames.put(impl, new Pair<>(impl.getName(), sortOrder));
                         // Same any changes with a temp, guaranteed unique name. This is important in case a single save
                         // is renaming "Field1"->"Field2" and "Field2"->"Field1". See issue 17020
-                        impl.setName(new GUID().toStringNoDashes());
+                        if (impl.isDirty())
+                            impl.setName(new GUID().toStringNoDashes());
                         impl.save(user, _dd, sortOrder++);
                     }
                 }
