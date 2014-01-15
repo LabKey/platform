@@ -25,6 +25,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Table;
@@ -298,6 +299,33 @@ public class ParticipantGroupController extends BaseStudyController
             resp.put("success", true);
             resp.put("categories", defs);
 
+            return resp;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetParticipantGroupsWithLiveFilters extends ApiAction
+    {
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            User u = getUser();
+            JSONArray jsonGroups = new JSONArray();
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+
+            for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(c, u))
+            {
+                for (ParticipantGroup group : ParticipantGroupManager.getInstance().getParticipantGroups(c, u, category))
+                {
+                    if (group.hasLiveFilter())
+                    {
+                        jsonGroups.put(group.toJSON(false /*includeParticipants*/));
+                    }
+                }
+            }
+
+            resp.put("success", true);
+            resp.put("participantGroups", jsonGroups);
             return resp;
         }
     }

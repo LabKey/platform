@@ -304,8 +304,8 @@ public class ServerManager
         @Override
         void close()
         {
-            _server = null;
             closeServer(_server);
+            _server = null;
         }
     }
 

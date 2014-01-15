@@ -16,6 +16,7 @@
 package org.labkey.study.model;
 
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -210,6 +211,25 @@ public class ParticipantGroup extends Entity
         return url;
     }
 
+    public boolean hasLiveFilter()
+    {
+        String filters = getFilters();
+        if (StringUtils.isNotEmpty(filters))
+        {
+            // we may have some CDS created participant groups internally with the old style format
+            // so make sure we don't blow up if we encounter them
+            try
+            {
+                JSONObject filter = new JSONObject(filters);
+                if (filter.has("isLive"))
+                    return filter.getBoolean("isLive");
+            }
+            catch(JSONException ignore){}
+        }
+
+        return false;
+    }
+
     @Override
     public boolean equals(Object o)
     {
@@ -231,6 +251,11 @@ public class ParticipantGroup extends Entity
 
     public JSONObject toJSON()
     {
+        return toJSON(true);
+    }
+
+    public JSONObject toJSON(boolean includeParticipants)
+    {
         JSONObject json = new JSONObject();
 
         json.put("rowId", getRowId());
@@ -238,9 +263,11 @@ public class ParticipantGroup extends Entity
         json.put("description", getDescription());
         json.put("categoryId", getCategoryId());
         json.put("categoryLabel", getCategoryLabel());
-        json.put("participantIds", getParticipantIds());
+        if (includeParticipants)
+            json.put("participantIds", getParticipantIds());
         json.put("createdBy", getCreatedBy());
         json.put("modifiedBy", getModifiedBy());
+        json.put("filters", getFilters());
 
         return json;
     }
