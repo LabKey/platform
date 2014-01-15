@@ -40,7 +40,7 @@ public class StudyViewLoader implements ModuleResourceLoader
     @Override
     public Set<String> getModuleDependencies(Module module, File explodedModuleDir)
     {
-        // We used to return any mdoule with a "views" directory... but that made 41 modules study dependencies
+        // We used to return any module with a "views" directory... but that made 41 modules study dependencies
         return Collections.emptySet();
     }
 

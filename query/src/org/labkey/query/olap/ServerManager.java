@@ -28,6 +28,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
@@ -65,16 +66,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ServerManager
 {
-    final static Logger _log = Logger.getLogger(ServerManager.class);
+    private static final Logger _log = Logger.getLogger(ServerManager.class);
 
-    static final Map<String,ServerReferenceCount> _servers = new HashMap<>();
-    static final Object _serverLock = new Object();
+    private static final Map<String, ServerReferenceCount> _servers = new HashMap<>();
+    private static final Object _serverLock = new Object();
 
-    public static final ModuleResourceCache<OlapSchemaDescriptor> SCHEMA_DESCRIPTOR_CACHE = new ModuleResourceCache<>(new Path(OlapSchemaCacheHandler.DIR_NAME), "Olap cube defintions", new OlapSchemaCacheHandler());
+    public static final ModuleResourceCache<OlapSchemaDescriptor> SCHEMA_DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(OlapSchemaCacheHandler.DIR_NAME), "Olap cube defintions", new OlapSchemaCacheHandler());
 
     static String getServerCacheKey(Container c)
-    {
-        return MondrianServer.class.getName() + "/" + c.getId();
+    {        return MondrianServer.class.getName() + "/" + c.getId();
     }
 
 

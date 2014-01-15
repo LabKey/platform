@@ -44,7 +44,7 @@ import java.io.IOException;
     private static final Logger LOG = Logger.getLogger(TaskFactoryCacheHandler.class);
     private static final String TASK_CONFIG_EXTENSION = ".task.xml";
 
-    public static final String MODULE_TASKS_DIR = "tasks";
+    static final String MODULE_TASKS_DIR = "tasks";
 
     @Nullable
     @Override
@@ -67,12 +67,12 @@ import java.io.IOException;
         return taskId.toString();
     }
 
-    protected TaskId createId(Module module, String resourceName)
+    private TaskId createId(Module module, String resourceName)
     {
         return new TaskId(module.getName(), TaskId.Type.task, resourceName, 0);
     }
 
-    protected TaskId parseId(Module module, String resourceName)
+    private TaskId parseId(Module module, String resourceName)
     {
         try
         {

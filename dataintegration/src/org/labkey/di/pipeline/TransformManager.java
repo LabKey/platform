@@ -47,6 +47,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
@@ -119,7 +120,7 @@ public class TransformManager implements DataIntegrationService
     private static final TransformManager INSTANCE = new TransformManager();
     private static final Logger LOG = Logger.getLogger(TransformManager.class);
     private static final String JOB_GROUP_NAME = "org.labkey.di.pipeline.ETLManager";
-    private static final ModuleResourceCache<ScheduledPipelineJobDescriptor> DESCRIPTOR_CACHE = new ModuleResourceCache<>(new Path(DescriptorCacheHandler.DIR_NAME), "ETL job descriptors", new DescriptorCacheHandler());
+    private static final ModuleResourceCache<ScheduledPipelineJobDescriptor> DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(DescriptorCacheHandler.DIR_NAME), "ETL job descriptors", new DescriptorCacheHandler());
 
     private List<StepProvider> _providers = new ArrayList<>();
 
@@ -724,13 +725,6 @@ public class TransformManager implements DataIntegrationService
     // DataIntegrationService
     //
 
-
-    @Override
-    public void registerDescriptors(Module module)
-    {
-        // Delegate to the cache
-        DESCRIPTOR_CACHE.registerModule(module);
-    }
 
     @Override
     public void registerStepProviders()

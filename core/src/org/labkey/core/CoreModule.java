@@ -102,7 +102,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
-import org.labkey.api.view.SimpleWebPartResourceLoader;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
@@ -281,7 +280,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     public Set<? extends ModuleResourceLoader> getResourceLoaders()
     {
-        return PageFlowUtil.set(new FolderTypeResourceLoader(), new SimpleWebPartResourceLoader());
+        return PageFlowUtil.set(new FolderTypeResourceLoader());
     }
 
     @NotNull

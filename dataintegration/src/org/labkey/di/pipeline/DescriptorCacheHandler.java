@@ -86,51 +86,42 @@ public class DescriptorCacheHandler implements ModuleResourceCacheHandler<Schedu
 
     @Nullable
     @Override
-    public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+    public FileSystemDirectoryListener createChainedDirectoryListener(final Module module)
     {
-        return new EtlDirectoryListener(module);
-    }
-
-    private class EtlDirectoryListener implements FileSystemDirectoryListener
-    {
-        private final Module _module;
-
-        public EtlDirectoryListener(Module module)
+        return new FileSystemDirectoryListener()
         {
-            _module = module;
-        }
+            @Override
+            public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
+            {
+            }
 
-        @Override
-        public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
-        {
-        }
+            @Override
+            public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
+            {
+                removeDescriptor(entry);
+            }
 
-        @Override
-        public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
-        {
-            removeDescriptor(entry);
-        }
+            @Override
+            public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
+            {
+                removeDescriptor(entry);
+            }
 
-        @Override
-        public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
-        {
-            removeDescriptor(entry);
-        }
+            @Override
+            public void overflow()
+            {
+                // TODO: Should clear all the registered pipelines, but no current method to retrieve list of all config names across all modules.
+            }
 
-        @Override
-        public void overflow()
-        {
-            // TODO: Should clear all the registered pipelines, but no current method to retrieve list of all config names across all modules.
-        }
+            // TODO: Ideally, we'd take a lighterweight approach, since this will be called many times for each descriptor file change
+            private void removeDescriptor(java.nio.file.Path entry)
+            {
+                String filename = entry.toString();
 
-        // TODO: Ideally, we'd take a lighterweight approach, since this will be called many times for each descriptor file change
-        private void removeDescriptor(java.nio.file.Path entry)
-        {
-            String filename = entry.toString();
-
-            final String configName = _transformManager.getConfigName(filename);
-            final TaskId pipelineId = new TaskId(_module.getName(), TaskId.Type.pipeline, _transformManager.createConfigId(_module, configName),0);
-            PipelineJobService.get().removeTaskPipeline(pipelineId);
-        }
+                final String configName = _transformManager.getConfigName(filename);
+                final TaskId pipelineId = new TaskId(module.getName(), TaskId.Type.pipeline, _transformManager.createConfigId(module, configName),0);
+                PipelineJobService.get().removeTaskPipeline(pipelineId);
+            }
+        };
     }
 }

@@ -26,6 +26,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineStatusFile;
@@ -114,9 +115,9 @@ public class PipelineJobServiceImpl extends PipelineJobService
     private HashMap<TaskId, TaskFactory> _taskFactoryStore = new HashMap<>();
     private HashMap<SchemaType, XMLBeanTaskFactoryFactory> _taskFactoryFactories = new HashMap<>();
 
-    private final ModuleResourceCache<TaskFactory> TASK_FACTORY_CACHE = new ModuleResourceCache<>(
-        new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskFactoryCacheHandler.MODULE_TASKS_DIR), "TaskFactory cache", new TaskFactoryCacheHandler());
-    private final ModuleResourceCache<TaskPipeline> TASK_PIPELINE_CACHE = new ModuleResourceCache<>(
+    private final ModuleResourceCache<TaskFactory> TASK_FACTORY_CACHE = ModuleResourceCaches.create(
+            new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskFactoryCacheHandler.MODULE_TASKS_DIR), "TaskFactory cache", new TaskFactoryCacheHandler());
+    private final ModuleResourceCache<TaskPipeline> TASK_PIPELINE_CACHE = ModuleResourceCaches.create(
         new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskPipelineCacheHandler.MODULE_PIPELINES_DIR), "TaskPipeline cache", new TaskPipelineCacheHandler());
 
     private final Set<Module> _pipelineModules = new CopyOnWriteArraySet<>();
@@ -177,8 +178,6 @@ public class PipelineJobServiceImpl extends PipelineJobService
     // Loading the list of configurations in each module and the descriptors themselves happens lazily.
     public void registerModule(Module module)
     {
-        TASK_FACTORY_CACHE.registerModule(module);
-        TASK_PIPELINE_CACHE.registerModule(module);
         _pipelineModules.add(module);
     }
 

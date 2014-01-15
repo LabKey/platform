@@ -2187,12 +2187,6 @@ public class QueryServiceImpl extends QueryService
     }
 
     @Override
-    public void registerOlapDescriptors(Module module)
-    {
-        ServerManager.SCHEMA_DESCRIPTOR_CACHE.registerModule(module);
-    }
-
-    @Override
     public void cubeDataChanged(Container c)
     {
         ServerManager.cubeDataChanged(c);

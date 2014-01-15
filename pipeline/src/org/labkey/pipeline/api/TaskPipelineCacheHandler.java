@@ -57,12 +57,12 @@ import org.labkey.pipeline.analysis.FileAnalysisTaskPipelineImpl;
         return taskId.toString();
     }
 
-    protected TaskId createId(Module module, String name)
+    private TaskId createId(Module module, String name)
     {
         return new TaskId(module.getName(), TaskId.Type.pipeline, name, 0);
     }
 
-    protected TaskId parseId(Module module, String resourceName)
+    private TaskId parseId(Module module, String resourceName)
     {
         try
         {

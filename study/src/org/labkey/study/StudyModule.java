@@ -310,8 +310,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         DataViewService.get().registerProvider(ReportViewProvider.TYPE, new ReportViewProvider());
 
         EmailTemplateService.get().registerTemplate(SpecimenRequestNotificationEmailTemplate.class);
-
-        QueryService.get().registerOlapDescriptors(this);
     }
 
     @NotNull

@@ -865,7 +865,6 @@ dataintegration/resources/schemas/dbscripts/sqlserver/obsolete/dataintegration-1
 dataintegration/schemas/etl.xsd -text
 dataintegration/src/org/labkey/di/DataIntegrationModule.java -text
 dataintegration/src/org/labkey/di/DataIntegrationQuerySchema.java -text
-dataintegration/src/org/labkey/di/EtlResourceLoader.java -text
 dataintegration/src/org/labkey/di/TransformBaseTable.java -text
 dataintegration/src/org/labkey/di/TransformDataIteratorBuilder.java -text
 dataintegration/src/org/labkey/di/TransformHistoryTable.java -text
@@ -2422,7 +2421,6 @@ query/src/org/labkey/query/olap/MemberSet.java -text
 query/src/org/labkey/query/olap/Olap4Js.java -text
 query/src/org/labkey/query/olap/OlapSchemaCacheHandler.java -text
 query/src/org/labkey/query/olap/OlapSchemaDescriptor.java -text
-query/src/org/labkey/query/olap/OlapSchemaLoader.java -text
 query/src/org/labkey/query/olap/Qube.java -text
 query/src/org/labkey/query/olap/QubeQuery.java -text
 query/src/org/labkey/query/olap/ServerManager.java -text

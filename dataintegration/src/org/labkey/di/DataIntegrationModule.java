@@ -62,13 +62,6 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
 {
     public static final String NAME = "DataIntegration";
 
-
-    public DataIntegrationModule()
-    {
-        ServiceRegistry.get().registerService(DataIntegrationService.class, TransformManager.get());
-    }
-
-
     public String getName()
     {
         return NAME;
@@ -81,6 +74,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
 
     protected void init()
     {
+        ServiceRegistry.get().registerService(DataIntegrationService.class, TransformManager.get());
         addController("dataintegration", DataIntegrationController.class);
         TransformProperty.register();
     }
@@ -161,13 +155,6 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
             setFrame(WebPartView.FrameType.PORTAL);
             setModelBean(this);
         }
-    }
-
-    @NotNull
-    @Override
-    public Set<? extends ModuleResourceLoader> getResourceLoaders()
-    {
-        return Collections.singleton(new EtlResourceLoader());
     }
 
     //
