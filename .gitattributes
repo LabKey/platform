@@ -752,6 +752,8 @@ api/src/org/labkey/api/module/ModuleLoader.java -text
 api/src/org/labkey/api/module/ModuleProperty.java -text
 api/src/org/labkey/api/module/ModuleResourceCache.java -text
 api/src/org/labkey/api/module/ModuleResourceCacheHandler.java -text
+api/src/org/labkey/api/module/ModuleResourceCaches.java -text
+api/src/org/labkey/api/module/ModuleResourceDirectory.java -text
 api/src/org/labkey/api/module/ModuleResourceLoadException.java -text
 api/src/org/labkey/api/module/ModuleResourceLoader.java -text
 api/src/org/labkey/api/module/ModuleResourceResolver.java -text
@@ -7930,7 +7932,6 @@ internal/src/org/labkey/api/view/DefaultWebPartFactory.java -text
 internal/src/org/labkey/api/view/FileServlet.java -text
 internal/src/org/labkey/api/view/JavaScriptFilter.java -text
 internal/src/org/labkey/api/view/LinkBarView.java -text
-internal/src/org/labkey/api/view/SimpleWebPartResourceLoader.java -text
 internal/src/org/labkey/api/view/SiteDownServlet.java -text
 internal/src/org/labkey/api/view/StaticContentCachingFilter.java -text
 internal/src/org/labkey/api/view/addWebPart.jsp -text

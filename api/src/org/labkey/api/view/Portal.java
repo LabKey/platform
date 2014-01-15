@@ -42,6 +42,7 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.SimpleController;
 import org.labkey.api.module.SimpleWebPartFactory;
 import org.labkey.api.portal.ProjectUrls;
@@ -87,7 +88,7 @@ public class Portal
 
     private static final WebPartBeanLoader FACTORY = new WebPartBeanLoader();
     public static final ModuleResourceCache<SimpleWebPartFactory> WEB_PART_FACTORY_CACHE =
-            new ModuleResourceCache<>(new Path(SimpleController.VIEWS_DIRECTORY), "File-based webpart definitions", new SimpleWebPartFactoryCacheHandler());
+            ModuleResourceCaches.create(new Path(SimpleController.VIEWS_DIRECTORY), "File-based webpart definitions", new SimpleWebPartFactoryCacheHandler());
 
     private static HashMap<String, WebPartFactory> _viewMap = null;
     private static MultiHashMap<String, String> _regionMap = null;

@@ -363,6 +363,5 @@ abstract public class QueryService
 
     /** OLAP **/
     // could make this a separate service
-    abstract public void registerOlapDescriptors(Module module);
     abstract public void cubeDataChanged(Container c);    // TODO could be more specific than "something in this container"
 }

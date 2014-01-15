@@ -23,19 +23,13 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileSystemDirectoryListener;
-import org.labkey.api.files.FileSystemWatcher;
-import org.labkey.api.files.FileSystemWatchers;
-import org.labkey.api.resource.MergedDirectoryResource;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.util.Path;
 
-import java.nio.file.StandardWatchEventKinds;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * User: adam
@@ -45,55 +39,19 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 // Standard cache for module resources that handles registration and listening for file system events. The goal is to
 // factor out all common cache functionality to make creating well behaved caches for new module resource types easy.
-// TODO: Common registration process?
-public class ModuleResourceCache<T>
+public final class ModuleResourceCache<T>
 {
     private static final Logger LOG = Logger.getLogger(ModuleResourceCache.class);
 
-    // List of modules that include the specified resource directory; initialized at startup time and never changed.
-    private final List<Module> _modules = new CopyOnWriteArrayList<>();
     private final BlockingStringKeyCache<Object> _cache;
-    private final FileSystemWatcher _watcher;
     private final ModuleResourceCacheHandler<T> _handler;
+    private final ModuleResourceDirectory _directory;
 
-    protected final Path _path;
-
-    public ModuleResourceCache(Path path, String description, ModuleResourceCacheHandler<T> handler)
+    ModuleResourceCache(ModuleResourceDirectory directory, String description, ModuleResourceCacheHandler<T> handler)
     {
-        _cache = CacheManager.getBlockingStringKeyCache(1000, CacheManager.DAY, description, null);  // TODO: Pass in CacheLoader here?
-        _path = path;
-        _watcher = FileSystemWatchers.get(description);
+        _directory = directory;
+        _cache = CacheManager.getBlockingStringKeyCache(1000, CacheManager.DAY, description, null);
         _handler = handler;
-    }
-
-    // At startup, we record all modules containing the specified path and register a file listener to monitor for changes.
-    // Loading the list of resources in each module and the resources themselves happens lazily.
-    public void registerModule(Module module)
-    {
-        Resource dirResource = module.getModuleResolver().lookup(_path);
-
-        if (null != dirResource && dirResource.isCollection())
-        {
-            _modules.add(module);
-
-            // TODO: Integrate this better with Resource
-            ((MergedDirectoryResource)dirResource).registerListener(_watcher, new StandardListener(module, _handler.createChainedDirectoryListener(module)),
-                    StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
-        }
-    }
-
-    // Returns empty list if directory gets deleted, no resources, etc.
-    @NotNull
-    protected List<String> getResourceNames(Module module)
-    {
-        //noinspection unchecked
-        return (List<String>) _cache.get(module.getName(), null, _resourceNameLoader);
-    }
-
-    // Clear a single module's list of resources from the cache (but leave the resources themselves cached)
-    public void removeResourceNames(Module module)
-    {
-        _cache.remove(module.getName());
     }
 
     @SuppressWarnings("unchecked")
@@ -113,7 +71,7 @@ public class ModuleResourceCache<T>
         Set<Module> activeModules = c.getActiveModules();
         Collection<T> resources = new LinkedList<>();
 
-        for (Module module : _modules)
+        for (Module module : _directory.getModules())
             if (activeModules.contains(module))
                 resources.addAll(getResources(module));
 
@@ -139,6 +97,20 @@ public class ModuleResourceCache<T>
         return Collections.unmodifiableCollection(resources);
     }
 
+    // Returns empty list if directory gets deleted, no resources, etc.
+    @NotNull
+    private List<String> getResourceNames(Module module)
+    {
+        //noinspection unchecked
+        return (List<String>) _cache.get(module.getName(), null, _resourceNameLoader);
+    }
+
+    // Clear a single module's list of resources from the cache (but leave the resources themselves cached)
+    private void removeResourceNames(Module module)
+    {
+        _cache.remove(module.getName());
+    }
+
     // Clear a single resource from the cache
     private void removeResource(Module module, String resourceName)
     {
@@ -146,7 +118,7 @@ public class ModuleResourceCache<T>
     }
 
     // Clear the whole cache
-    public void clear()
+    private void clear()
     {
         _cache.clear();
     }
@@ -157,7 +129,7 @@ public class ModuleResourceCache<T>
         public List<String> load(String moduleName, @Nullable Object argument)
         {
             Module module = ModuleLoader.getInstance().getModule(moduleName);
-            Resource resourceDir = module.getModuleResolver().lookup(_path);
+            Resource resourceDir = module.getModuleResolver().lookup(_directory.getPath());
             List<String> resourceNames = new LinkedList<>();
 
             if (resourceDir != null && resourceDir.isCollection())
@@ -180,12 +152,18 @@ public class ModuleResourceCache<T>
         }
     };
 
+    FileSystemDirectoryListener getListener(Module module)
+    {
+        return new StandardListener(module, _handler.createChainedDirectoryListener(module));
+    }
+
+
     private class StandardListener implements FileSystemDirectoryListener
     {
         private final Module _module;
         private final @Nullable FileSystemDirectoryListener _chainedListener;
 
-        public StandardListener(Module module,  @Nullable FileSystemDirectoryListener chainedListener)
+        public StandardListener(Module module, @Nullable FileSystemDirectoryListener chainedListener)
         {
             _module = module;
             _chainedListener = chainedListener;
