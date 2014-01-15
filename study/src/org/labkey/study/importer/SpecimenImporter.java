@@ -915,17 +915,17 @@ public class SpecimenImporter
     private void addOptionalColumns()
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(_container, _user, null);
-        Domain vialDomain = specimenTablesProvider.getDomain("Vial", false);
+        Domain vialDomain = specimenTablesProvider.getDomain("Vial", true);
         if (null == vialDomain)
-            throw new IllegalStateException("Expected Vial table to already be created.");
+            throw new IllegalStateException("Expected Vial domain to already be created.");
 
         List<String> vialProperties = new ArrayList<>();
         for (DomainProperty domainProperty : vialDomain.getNonBaseProperties())
             vialProperties.add(domainProperty.getName());
 
-        Domain specimenEventDomain = specimenTablesProvider.getDomain("SpecimenEvent", false);
+        Domain specimenEventDomain = specimenTablesProvider.getDomain("SpecimenEvent", true);
         if (null == specimenEventDomain)
-            throw new IllegalStateException("Expected SpecimenEvent table to already be created.");
+            throw new IllegalStateException("Expected SpecimenEvent domain to already be created.");
 
         for (DomainProperty domainProperty : specimenEventDomain.getNonBaseProperties())
         {
