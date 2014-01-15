@@ -204,7 +204,7 @@ public class VaccinePanel extends Composite
             {
                 final TextBox tb = new TextBox();
                 tb.setText(StringUtils.trimToEmpty(immunogen.getName()));
-                tb.setTitle("Enter the name for immunogen " + (row + 1) + " here. Each immunogen should have a unique name.");
+                tb.setTitle("Enter the name for immunogen " + row + " here. Each immunogen should have a unique name.");
                 tb.addChangeListener(new ChangeListener()
                 {
                     public void onChange(Widget sender)
@@ -219,7 +219,7 @@ public class VaccinePanel extends Composite
             else if (col == 3)
             {
                 final StringListBox routeList = new StringListBox(studyDef.getRoutes(), StringUtils.trimToNull(immunogen.getAdmin()), false, true);
-                routeList.setTitle("Immunogen " + (row + 1) + " route");
+                routeList.setTitle("Immunogen " + row + " route");
                 routeList.addChangeListener(new ChangeListener(){
                     public void onChange(Widget sender)
                     {
@@ -233,7 +233,7 @@ public class VaccinePanel extends Composite
             {
                 final TextBox tb = new TextBox();
                 tb.setText(StringUtils.trimToEmpty(immunogen.getDose()));
-                tb.setTitle("Enter the dose for immunogen " + (row + 1) + " here. If the same immunogen type is used with different dosages, enter it on two rows.");
+                tb.setTitle("Enter the dose for immunogen " + row + " here. If the same immunogen type is used with different dosages, enter it on two rows.");
                 tb.addChangeListener(new ChangeListener(){
                     public void onChange(Widget sender)
                     {
@@ -247,7 +247,7 @@ public class VaccinePanel extends Composite
             if (col == 1)
             {
                 final StringListBox lb = new StringListBox(studyDef.getImmunogenTypes(), StringUtils.trimToNull(immunogen.getType()), false, true);
-                lb.setTitle("Immunogen " + (row + 1) + " type");
+                lb.setTitle("Immunogen " + row + " type");
                 lb.addChangeListener(new ChangeListener() {
                     public void onChange(Widget sender)
                     {
