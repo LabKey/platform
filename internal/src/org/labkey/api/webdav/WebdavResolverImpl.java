@@ -24,6 +24,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
@@ -247,82 +248,7 @@ public class WebdavResolverImpl implements WebdavResolver
     private Cache<Path, WebdavResource> _folderCache = CacheManager.getCache(1000, 5 * CacheManager.MINUTE, "WebDAV folders");
 
 
-//    private FolderResourceImpl lookupWebFolder(String folder)
-//    {
-//        boolean isPipelineLink = false;
-//        assert(folder.equals("/") || !folder.endsWith("/"));
-//        if (!folder.equals("/") && folder.endsWith("/"))
-//            folder = folder.substring(0,folder.length()-1);
 
-//        if (folder.endsWith("/" + WIKI_LINK))
-//        {
-//            folder = folder.substring(0, folder.length()- WIKI_LINK.length()-1);
-//            Container c = ContainerManager.getForPath(folder);
-//            return new WikiFolderResource(c);
-//        }
-        
-//        if (folder.endsWith("/" + PIPELINE_LINK))
-//        {
-//            isPipelineLink = true;
-//            folder = folder.substring(0, folder.length()- PIPELINE_LINK.length()-1);
-//        }
-
-//        Container c = ContainerManager.getForPath(folder);
-//        if (null == c)
-//        {
-//
-//            return null;
-//        }
-//
-//        // normalize case of folder
-//        folder = isPipelineLink ? c(c,PIPELINE_LINK) : c.getPath();
-//
-//        FolderResourceImpl resource = _folderCache.get(folder);
-//        if (null != resource)
-//            return resource;
-//
-//        if (isPipelineLink)
-//        {
-//            PipeRoot root = null;
-//            try
-//            {
-//                root = PipelineService.get().findPipelineRoot(c);
-//                if (null == root)
-//                    return null;
-//            }
-//            catch (SQLException x)
-//            {
-//                Logger.getLogger(WebdavResolverImpl.class).error("unexpected exception", x);
-//            }
-//            resource = new PipelineFolderResource(c, root);
-//        }
-//        else
-//        {
-//            AttachmentDirectory dir = null;
-//            try
-//            {
-//                try
-//                {
-//                    if (c.isRoot())
-//                        dir = AttachmentService.get().getMappedAttachmentDirectory(c, false);
-//                    else
-//                        dir = AttachmentService.get().getMappedAttachmentDirectory(c, true);
-//                }
-//                catch (AttachmentService.MissingRootDirectoryException  ex)
-//                {
-//                    /* */
-//                }
-//            }
-//            catch (AttachmentService.UnsetRootDirectoryException x)
-//            {
-//                /* */
-//            }
-//            resource = new WebFolderResource(c, dir);
-//        }
-//
-//        _folderCache.put(folder,resource);
-//        return resource;
-//    }
 
     public class WebFolderResource extends AbstractWebdavResourceCollection implements WebdavResolver.WebFolder
     {
@@ -369,18 +295,21 @@ public class WebdavResolverImpl implements WebdavResolver
             if (null == _children)
             {
                 List<Container> list = ContainerManager.getChildren(_c);
-                _children = new ArrayList<>(list.size() + 2);
+                ArrayList<String> children = new ArrayList<>(list.size() + 2);
                 for (Container aList : list)
-                    _children.add(aList.getName());
+                    children.add(aList.getName());
 
                 for (WebdavService.Provider p : WebdavService.get().getProviders())
                 {
                     Set<String> s = p.addChildren(this);
                     if (s != null)
-                        _children.addAll(s);
+                        children.addAll(s);
                 }
+                // providers might not be registred if !isStartupComplete();
+                if (!ModuleLoader.getInstance().isStartupComplete())
+                    return children;
+                _children = children;
             }
-
             return _children;
         }
 
@@ -455,26 +384,6 @@ public class WebdavResolverImpl implements WebdavResolver
 
                 if (c != null)
                 {
-//                    AttachmentDirectory dir = null;
-//                    try
-//                    {
-//                        try
-//                        {
-//                            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-//                            if (c.isRoot())
-//                                dir = svc.getMappedAttachmentDirectory(c, false);
-//                            else
-//                                dir = svc.getMappedAttachmentDirectory(c, true);
-//                        }
-//                        catch (MissingRootDirectoryException ex)
-//                        {
-//                            /* */
-//                        }
-//                    }
-//                    catch (UnsetRootDirectoryException x)
-//                    {
-//                        /* */
-//                    }
                     resource = new WebFolderResource(_resolver, c);
                 }
                 else
@@ -494,15 +403,8 @@ public class WebdavResolverImpl implements WebdavResolver
                 }
             }
 
-//            if (null != _attachmentResource)
-//            {
-//                Resource r = _attachmentResource.find(child);
-//                if (null != r)
-//                    return r;
-//            }
             return new UnboundResource(this.getPath().append(child));
         }
-
     }
 
 
@@ -587,30 +489,6 @@ public class WebdavResolverImpl implements WebdavResolver
             return Collections.emptyList();
         }
     }
-
-//    String c(Container container, String... names)
-//    {
-//        return c(container.getPath(), names);
-//    }
-//
-//    static String c(Resource r, String... names)
-//    {
-//        return c(r.getPath(), names);
-//    }
-//
-//    static String c(String path, List<String> names)
-//    {
-//        return c(path, names.toArray(new String[names.size()]));
-//    }
-//
-//    static String c(String path, String... names)
-//    {
-//        StringBuilder s = new StringBuilder();
-//        s.append(StringUtils.stripEnd(path,"/"));
-//        for (String name : names)
-//            s.append("/").append(StringUtils.strip(name, "/"));
-//        return s.toString();
-//    }
 
 
     public static class TestCase extends Assert
