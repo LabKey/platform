@@ -16,8 +16,10 @@
 
 package org.labkey.api.study;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
 import java.io.IOException;
@@ -54,6 +56,10 @@ public interface Study extends StudyEntity
     List<? extends Product> getStudyProducts(User user, String role);
 
     List<? extends Treatment> getStudyTreatments(User user);
+
+    List<? extends TreatmentVisitMap> getStudyTreatmentVisitMap(Container container, @Nullable Integer cohortId);
+
+    List<? extends Visit> getVisitsForImmunizationSchedule();
 
     ParticipantCategory[] getParticipantCategories(User user);
 
