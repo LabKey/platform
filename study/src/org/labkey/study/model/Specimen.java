@@ -84,7 +84,7 @@ public class Specimen extends AbstractStudyCachable<Specimen>
 
     public Date getDrawTimestamp()
     {
-        return (Date)get("_derivativetypeid");
+        return (Date)get("drawtimestamp");
     }
 
     public String getGlobalUniqueId()
