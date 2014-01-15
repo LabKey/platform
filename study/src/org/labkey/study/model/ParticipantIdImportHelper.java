@@ -171,7 +171,7 @@ public class ParticipantIdImportHelper
             throw new ValidationException("There are multiple entries for the alias " + participantId + " which must be corrected before the import may continue.");
 
         if (_conflictAliasLookup.contains(participantId))
-            throw new ValidationException("There is a conlision for alias " + participantId + ".  You must correct or remove this identifier in the " + _study.getSubjectNounSingular()+ " table (possibly using the replace tool).");
+            throw new ValidationException("There is a collision, the alias " + participantId + " already exists as a " + _study.getSubjectNounSingular() + ".  You must remove either the alias or the " + _study.getSubjectNounSingular()+ ".");
 
         String value = _aliasLookup.get(participantId);
         if (value != null)
