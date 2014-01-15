@@ -111,7 +111,6 @@ public class RecompilingJspClassLoader extends JspClassLoader
 
                     // Compile the .jsp file
                     JspC jasper = new JspC();
-                    jasper.setValidateXml(false);
                     jasper.setUriroot(jspTempBuildDirectory.getParent() + "/webapp");
                     jasper.setOutputDir(jspTempBuildDirectory.getAbsolutePath());
                     jasper.setPackage("org.labkey.jsp.compiled");
