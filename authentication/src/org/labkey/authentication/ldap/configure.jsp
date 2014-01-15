@@ -34,7 +34,7 @@
         <td><input type="text" name="servers" size="50" value="<%=h(bean.getServers()) %>"></td>
     </tr>
     <tr>
-        <td class="labkey-form-label">LDAP domain<%= PageFlowUtil.helpPopup("LDAP domain", "For all users signing in with an email address from this domain, LabKey will attempt authentication against the LDAP server. Use '*' to attempt LDAP authentication on all email addresses entered, regardless of domain..")%></td>
+        <td class="labkey-form-label">LDAP domain<%= PageFlowUtil.helpPopup("LDAP domain", "For all users signing in with an email address from this domain, LabKey will attempt authentication against the LDAP server. Use '*' to attempt LDAP authentication on all email addresses entered, regardless of domain.")%></td>
         <td><input type="text" name="domain" size="50" value="<%=h(bean.getDomain()) %>"></td>
     </tr>
     <tr>

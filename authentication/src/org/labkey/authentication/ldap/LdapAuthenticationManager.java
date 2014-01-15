@@ -129,7 +129,7 @@ public class LdapAuthenticationManager
     {
         AuthenticationManager.setLdapDomain("");
         ldapSearchConfig = null;
-        _log.debug("deactivate(): LDAP search config set to: " + ldapSearchConfig);
+        _log.debug("deactivate(): LDAP search config set to null");
     }
     
     // Holds configuration info for searching LDAP for case where neither full email address (email)
