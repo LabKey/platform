@@ -5,6 +5,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -37,7 +38,14 @@ public class StudyTreatmentVisitMapTable extends BaseStudyTable
         addColumn(cohortCol);
 
         ColumnInfo treatmentCol = new AliasedColumn(this, "TreatmentId", _rootTable.getColumn("TreatmentId"));
-        // TODO: make this a lookup to the Treatment table
+        treatmentCol.setFk(new LookupForeignKey("RowId")
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
+            }
+        });
         addColumn(treatmentCol);
 
         ColumnInfo visitCol = new AliasedColumn(this, "VisitId", _rootTable.getColumn("VisitId"));

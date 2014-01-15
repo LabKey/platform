@@ -35,6 +35,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.HashMap" %>
+<%@ page import="org.labkey.study.model.ProductImpl" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
@@ -140,7 +141,7 @@
 %>
                     <tr>
                         <td class="assay-row-padded-view"><%=h(cohort.getLabel())%></td>
-                        <td class="assay-row-padded-view"><%=cohort.getSubjectCount()%></td>
+                        <td class="assay-row-padded-view"><%=cohort.getSubjectCount() != null ? cohort.getSubjectCount() : ""%></td>
 <%
                     for (VisitImpl visit : visits)
                     {
@@ -148,8 +149,35 @@
                         TreatmentImpl treatment = null;
                         if (treatmentId != null)
                             treatment = StudyManager.getInstance().getStudyTreatmentByRowId(c, user, treatmentId);
+
+                        // show the list of study products for the treatment as a hover
+                        // Example display:
+                        //     Immunogens: ABC, DEF
+                        //     Adjuvants: GHI, JKL
+                        String productHover = "";
+                        String sep = "";
+                        if (treatment != null && treatment.getProducts() != null)
+                        {
+                            String prevRole = null;
+                            for (ProductImpl product : treatment.getProducts())
+                            {
+                                if (prevRole == null || !prevRole.equals(product.getRole()))
+                                {
+                                    prevRole = product.getRole();
+                                    productHover += (productHover.length() > 0 ? "<br/>" : "");
+                                    productHover += "<b>" + h(product.getRole()) + "s:</b> ";
+                                    sep = "";
+                                }
+
+                                productHover += sep + h(product.getLabel());
+                                sep = ", ";
+                            }
+                        }
 %>
-                        <td class="assay-row-padded-view"><%=h(treatment != null ? treatment.getLabel() : "")%></td>
+                        <td class="assay-row-padded-view">
+                            <%=h(treatment != null ? treatment.getLabel() : "")%>
+                            <%=(productHover.length() > 0 ? PageFlowUtil.helpPopup("Study Products", productHover, true, 300) : "")%>
+                        </td>
 <%
                     }
 %>

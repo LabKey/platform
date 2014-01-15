@@ -7777,6 +7777,21 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @RequiresPermissionClass(DeletePermission.class)
+    public class DeleteStudyProductAction extends ApiAction<IdForm>
+    {
+        @Override
+        public ApiResponse execute(IdForm form, BindException errors) throws Exception
+        {
+            if (form.getId() != 0)
+            {
+                StudyManager.getInstance().deleteStudyProduct(getContainer(), getUser(), form.getId());
+                return new ApiSimpleResponse("success", true);
+            }
+            return new ApiSimpleResponse("success", false);
+        }
+    }
+
     @RequiresPermissionClass(UpdatePermission.class)
     public class UpdateStudyImmunizationScheduleAction extends ApiAction<StudyImmunizationSchedule>
     {
@@ -7871,13 +7886,22 @@ public class StudyController extends BaseStudyController
             if (form.getId() != 0)
             {
                 CohortImpl cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getId());
-                // don't delete any in-use cohorts from the study
-                if (cohort != null && !cohort.isInUse())
-                    StudyManager.getInstance().deleteCohort(cohort);
-
-                // TODO: return message about 'unable to delete in-use cohort'
-
-                return new ApiSimpleResponse("success", true);
+                if (cohort != null)
+                {
+                    if (!cohort.isInUse())
+                    {
+                        StudyManager.getInstance().deleteCohort(cohort);
+                        return new ApiSimpleResponse("success", true);
+                    }
+                    else
+                    {
+                        errors.reject(ERROR_MSG, "Unable to delete in-use cohort: " + cohort.getLabel());
+                    }
+                }
+                else
+                {
+                    errors.reject(ERROR_MSG, "Unable to find cohort for id " + form.getId());
+                }
             }
             return new ApiSimpleResponse("success", false);
         }

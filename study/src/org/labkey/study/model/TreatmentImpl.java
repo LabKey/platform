@@ -17,6 +17,9 @@ package org.labkey.study.model;
 
 import org.labkey.api.study.Treatment;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * User: cnathe
  * Date: 12/27/13
@@ -26,6 +29,7 @@ public class TreatmentImpl implements Treatment
     private int _rowId;
     private String _label;
     private String _description;
+    private List<ProductImpl> _products;
 
     public TreatmentImpl()
     {
@@ -69,5 +73,23 @@ public class TreatmentImpl implements Treatment
     public void setDescription(String description)
     {
         _description = description;
+    }
+
+    public List<ProductImpl> getProducts()
+    {
+        return _products;
+    }
+
+    public void setProducts(List<ProductImpl> products)
+    {
+        _products = products;
+    }
+
+    public void addProduct(ProductImpl product)
+    {
+        if (_products == null)
+            _products = new ArrayList<>();
+
+        _products.add(product);
     }
 }

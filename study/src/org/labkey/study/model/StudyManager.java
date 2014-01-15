@@ -1273,7 +1273,26 @@ public class StudyManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("RowId"), rowId);
         TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
-        return new TableSelector(ti, filter, null).getObject(TreatmentImpl.class);
+        TreatmentImpl treatment = new TableSelector(ti, filter, null).getObject(TreatmentImpl.class);
+
+        // attach the associated study products to the treatment object
+        if (treatment != null)
+        {
+            // sort the product list to match the manage study products page
+            Sort sort = new Sort();
+            sort.appendSortColumn(FieldKey.fromParts("ProductId", "Role"), Sort.SortDirection.DESC, false);
+            sort.appendSortColumn(FieldKey.fromParts("ProductId", "RowId"), Sort.SortDirection.ASC, false);
+
+            List<TreatmentProductImpl> treatmentProducts = getStudyTreatmentProducts(container, user, treatment.getRowId(), sort);
+            for (TreatmentProductImpl treatmentProduct : treatmentProducts)
+            {
+                List<ProductImpl> products = getStudyProducts(container, user, null, treatmentProduct.getProductId());
+                for (ProductImpl product : products)
+                    treatment.addProduct(product);
+            }
+        }
+
+        return treatment;
     }
 
     public List<TreatmentProductImpl> getStudyTreatmentProducts(Container container, User user, int treatmentId)
@@ -1330,23 +1349,9 @@ public class StudyManager
             Table.delete(schema.getTableInfoTreatmentVisitMap(), filter);
 
             // delete the associated treatment study product mappings (provision table)
-            TableInfo productMapTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
-            if (productMapTable != null)
-            {
-                filter = SimpleFilter.createContainerFilter(container);
-                filter.addCondition(FieldKey.fromParts("TreatmentId"), rowId);
-                TableSelector selector = new TableSelector(productMapTable, Collections.singleton("RowId"), filter, null);
-                Integer[] productMapIds = selector.getArray(Integer.class);
-
-                QueryUpdateService qus = productMapTable.getUpdateService();
-                List<Map<String, Object>> keys = new ArrayList<>();
-                ColumnInfo prodcutMapPk = productMapTable.getColumn(FieldKey.fromParts("RowId"));
-                for (Integer productMapId : productMapIds)
-                {
-                    keys.add(Collections.<String, Object>singletonMap(prodcutMapPk.getName(), productMapId));
-                }
-                qus.deleteRows(user, container, keys, null);
-            }
+            filter = SimpleFilter.createContainerFilter(container);
+            filter.addCondition(FieldKey.fromParts("TreatmentId"), rowId);
+            deleteTreatmentProductMap(container, user, filter);
 
             // finally delete the record from the Treatment  (provision table)
             TableInfo treatmentTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
@@ -1365,6 +1370,97 @@ public class StudyManager
         {
             throw new RuntimeException(e);
         }
+    }
+
+    public void deleteStudyProduct(Container container, User user, int rowId)
+    {
+        StudySchema schema = StudySchema.getInstance();
+
+        try (Transaction transaction = schema.getSchema().getScope().ensureTransaction())
+        {
+            // delete the uages of this study procut in the ProductAntigen table (provision table)
+            deleteProductAntigens(container, user, rowId);
+
+            // delete the associated treatment study product mappings (provision table)
+            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+            filter.addCondition(FieldKey.fromParts("ProductId"), rowId);
+            deleteTreatmentProductMap(container, user, filter);
+
+            // finally delete the record from the Products  (provision table)
+            TableInfo productTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
+            if (productTable != null)
+            {
+                QueryUpdateService qus = productTable.getUpdateService();
+                List<Map<String, Object>> keys = new ArrayList<>();
+                ColumnInfo productPk = productTable.getColumn(FieldKey.fromParts("RowId"));
+                keys.add(Collections.<String, Object>singletonMap(productPk.getName(), rowId));
+                qus.deleteRows(user, container, keys, null);
+            }
+            else
+                throw new IllegalStateException("Could not find table: " + StudyQuerySchema.PRODUCT_TABLE_NAME);
+
+            transaction.commit();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void deleteProductAntigens(Container container, User user, int rowId) throws Exception
+    {
+        TableInfo productAntigenTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+        if (productAntigenTable != null)
+        {
+            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+            filter.addCondition(FieldKey.fromParts("ProductId"), rowId);
+            TableSelector selector = new TableSelector(productAntigenTable, Collections.singleton("RowId"), filter, null);
+            Integer[] productAntigenIds = selector.getArray(Integer.class);
+
+            QueryUpdateService qus = productAntigenTable.getUpdateService();
+            if (qus != null)
+            {
+                List<Map<String, Object>> keys = new ArrayList<>();
+                ColumnInfo productAntigenPk = productAntigenTable.getColumn(FieldKey.fromParts("RowId"));
+                for (Integer productAntigenId : productAntigenIds)
+                {
+                    keys.add(Collections.<String, Object>singletonMap(productAntigenPk.getName(), productAntigenId));
+                }
+
+                qus.deleteRows(user, container, keys, null);
+            }
+            else
+                throw new IllegalStateException("Could not find query update service for table: " + StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+        }
+        else
+            throw new IllegalStateException("Could not find table: " + StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+    }
+
+    public void deleteTreatmentProductMap(Container container, User user, SimpleFilter filter) throws Exception
+    {
+        TableInfo productMapTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+        if (productMapTable != null)
+        {
+            TableSelector selector = new TableSelector(productMapTable, Collections.singleton("RowId"), filter, null);
+            Integer[] productMapIds = selector.getArray(Integer.class);
+
+            QueryUpdateService qus = productMapTable.getUpdateService();
+            if (qus != null)
+            {
+                List<Map<String, Object>> keys = new ArrayList<>();
+                ColumnInfo productMapPk = productMapTable.getColumn(FieldKey.fromParts("RowId"));
+                for (Integer productMapId : productMapIds)
+                {
+                    keys.add(Collections.<String, Object>singletonMap(productMapPk.getName(), productMapId));
+                }
+
+                qus.deleteRows(user, container, keys, null);
+            }
+            else
+                throw new IllegalStateException("Could not find query update service for table: " + StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+        }
+        else
+            throw new IllegalStateException("Could not find table: " + StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
     }
 
     public void createVisitDataSetMapping(User user, Container container, int visitId,

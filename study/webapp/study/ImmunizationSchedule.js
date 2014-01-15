@@ -203,6 +203,16 @@ Ext4.define('LABKEY.ext4.BaseVaccineDesignGrid', {
                 allowBlank: allowBlank != undefined ? allowBlank : true
             }
         }
+    },
+
+    onFailure : function(text) {
+        Ext4.Msg.show({
+            cls: 'data-window',
+            title: 'Error',
+            msg: text || 'Unknown error occurred.',
+            icon: Ext4.Msg.ERROR,
+            buttons: Ext4.Msg.OK
+        });
     }
 });
 
@@ -295,26 +305,34 @@ Ext4.define('LABKEY.ext4.StudyProductsGrid', {
     },
 
     removeSelectedGridRecord : function(grid) {
+        Ext4.Msg.show({
+            cls: 'data-window',
+            title: "Confirm Deletion",
+            msg: "Are you sure you want to delete the selected study product? Note: if this study product is being used "
+                + "by any treatment definitions, those associations will also be deleted.",
+            icon: Ext4.Msg.QUESTION,
+            buttons: Ext4.Msg.YESNO,
+            scope: this,
+            fn: function(button){
+                if (button === 'yes') {
+                    this.deleteStudyProductRecord(grid);
+                }
+            }
+        });
+    },
+
+    deleteStudyProductRecord : function(grid) {
         var record = grid.getSelectionModel().getLastSelected();
         if (record != null && record.get("RowId"))
         {
             // delete the study.Product record and any associated study.ProductAntigen records
-            var commands = [{schemaName: 'study', queryName: 'Product', command: 'delete', rows: [record.data]}];
-            if (record.get("Antigens").length > 0)
-            {
-                var rows = [];
-                Ext4.each(record.get("Antigens"), function(rec) {
-                    rows.push(rec);
-                });
-                commands.push({schemaName: 'study', queryName: 'ProductAntigen', command: 'delete', rows: rows});
-            }
-
-            LABKEY.Query.saveRows({
-                commands: commands,
-                success: function() {
+            Ext4.Ajax.request({
+                url     : LABKEY.ActionURL.buildURL('study', 'deleteStudyProduct.api'),
+                method  : 'POST',
+                jsonData: { id : record.get("RowId") },
+                success : function(resp){
                     grid.getStore().reload();
-                },
-                scope: this
+                }
             });
         }
     }
@@ -684,8 +702,13 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
                         };
 
                         var checkboxField = {
-                            xtype: 'checkbox', boxLabel: productRecord.get('Label'), name: 'ProductCheckbox', width: 175,
-                            inputValue: productRecord.get('RowId'), checked: selected,
+                            xtype: 'checkbox',
+                            boxLabel: Ext4.String.htmlEncode(productRecord.get('Label')),
+                            name: 'ProductCheckbox',
+                            width: 175,
+                            height: 22 * (Math.ceil(productRecord.get('Label').length / 22)), // hack at setting height based on label length
+                            inputValue: productRecord.get('RowId'),
+                            checked: selected,
                             listeners: {
                                 change: function(cb, isChecked){
                                     Ext4.getCmp(doseTextField.id).setDisabled(!isChecked);
@@ -825,7 +848,8 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
                 if (command == 'insert')
                 {
                     this.grid.getStore().on('load', function(store, records){
-                        var newRecord = store.findRecord('RowId', data.result[0].rows[0].rowid);
+                        var rowId = data.result[0].rows[0].rowid || data.result[0].rows[0].rowId;
+                        var newRecord = store.findRecord('RowId', rowId);
                         if (newRecord)
                             this.showInsertUpdate(this.grid, null, 0, newRecord);
                     }, this, {single: true});
@@ -976,7 +1000,7 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
                 }
             },
             failure : function(response, options){
-                LABKEY.Utils.displayAjaxErrorResponse(response, options, false);
+                this.onFailure(response.exception);
             },
             scope : this
         });
@@ -1259,14 +1283,7 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
             },
             failure: function(response) {
                 var resp = Ext4.decode(response.responseText);
-
-                Ext4.Msg.show({
-                    cls: 'data-window',
-                    title: 'Error',
-                    msg: resp.exception,
-                    icon: Ext4.Msg.ERROR,
-                    buttons: Ext4.Msg.OK
-                });
+                this.onFailure(resp.exception);
             },
             scope   : this
         });
@@ -1301,6 +1318,10 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
                 success : function(resp){
                     // reload the grid store data
                     this.getImmunizationScheduleData(false);
+                },
+                failure : function(response) {
+                    var resp = Ext4.decode(response.responseText);
+                    this.onFailure(resp.exception);
                 }
             });
         }
