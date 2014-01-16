@@ -86,7 +86,6 @@ import org.labkey.study.visitmanager.VisitManager;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -97,7 +96,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -200,19 +198,19 @@ public class SpecimenImporter
         {
             if (_javaType == null)
             {
-                if (_dbType.indexOf("VARCHAR") >= 0)
+                if (_dbType.contains("VARCHAR"))
                     _javaType = String.class;
-                else if (_dbType.indexOf(DATETIME_TYPE) >= 0)
+                else if (_dbType.contains(DATETIME_TYPE))
                     throw new IllegalStateException("Java types for DateTime/Timestamp columns should be previously initalized.");
-                else if (_dbType.indexOf("FLOAT") >= 0 || _dbType.indexOf(NUMERIC_TYPE) >= 0)
+                else if (_dbType.contains("FLOAT") || _dbType.contains("DOUBLE") || _dbType.contains(NUMERIC_TYPE))
                     _javaType = Double.class;
-                else if (_dbType.indexOf("BIGINT") >= 0)
+                else if (_dbType.contains("BIGINT"))
                     _javaType = Long.class;
-                else if (_dbType.indexOf("INT") >= 0)
+                else if (_dbType.contains("INT"))
                     _javaType = Integer.class;
-                else if (_dbType.indexOf(BOOLEAN_TYPE) >= 0)
+                else if (_dbType.contains(BOOLEAN_TYPE))
                     _javaType = Boolean.class;
-                else if (_dbType.indexOf(BINARY_TYPE) >= 0)
+                else if (_dbType.contains(BINARY_TYPE))
                     _javaType = byte[].class;
                 else
                     throw new UnsupportedOperationException("Unrecognized sql type: " + _dbType);
@@ -540,7 +538,7 @@ public class SpecimenImporter
      * Rollups from one table to another. Patterns specify what the To table must be to match,
      * where '%' is the full name of the From field name.
      */
-    private enum Rollup
+    public enum Rollup
     {
         EventVialLatest
         {
@@ -588,9 +586,12 @@ public class SpecimenImporter
             {
                 return Arrays.asList("Count%", "%Count");
             }
-            public Object getRollupResult(List<? extends Object> objs, String eventColName)
+            public SQLFragment getRollupSql(String fromColName, String toColName)
             {
-                return null;
+                SQLFragment sql = new SQLFragment("SUM(CASE ");
+                sql.append(fromColName).append(" WHEN ? THEN 1 ELSE 0 END) AS ").append(toColName);
+                sql.add(Boolean.TRUE);
+                return sql;
             }
         },
         VialSpecimenTotal
@@ -601,16 +602,29 @@ public class SpecimenImporter
             {
                 return Arrays.asList("Total%", "%Total", "SumOf%");
             }
-            public Object getRollupResult(List<? extends Object> objs, String eventColName)
+            public SQLFragment getRollupSql(String fromColName, String toColName)
             {
-                return null;
+                SQLFragment sql = new SQLFragment("SUM(");
+                sql.append(fromColName).append(") AS ").append(toColName);
+                return sql;
             }
         };
 
         abstract public TargetTable getFromTable();
         abstract public TargetTable getToTable();
         abstract public List<String> getPatterns();
-        abstract public Object getRollupResult(List<? extends Object> objs, String colName);
+
+        // Gets the field value from a particular object in the list (used for event -> vial rollups)
+        public Object getRollupResult(List<? extends Object> objs, String colName)
+        {
+            return null;
+        }
+
+        // Gets SQL to calulate rollup (used for vial -> specimen rollups)
+        public SQLFragment getRollupSql(String fromColName, String toColName)
+        {
+            return null;
+        }
 
         boolean match(String from, String to)
         {
@@ -623,8 +637,8 @@ public class SpecimenImporter
         }
     }
 
-    private static List<Rollup> _eventVialRollups = new ArrayList<>();
-    private static List<Rollup> _vialSpecimenRollups = new ArrayList<>();
+    private static final List<Rollup> _eventVialRollups = new ArrayList<>();
+    private static final List<Rollup> _vialSpecimenRollups = new ArrayList<>();
     static
     {
         for (Rollup rollup : Rollup.values())
@@ -634,6 +648,11 @@ public class SpecimenImporter
             else if (rollup.getFromTable() == TargetTable.VIALS && rollup.getToTable() == TargetTable.SPECIMENS)
                 _vialSpecimenRollups.add(rollup);
         }
+    }
+
+    public static final List<Rollup> getVialSpecimenRollups()
+    {
+        return _vialSpecimenRollups;
     }
 
     private static final String DATETIME_TYPE = "SpecimenImporter/DateTime";
@@ -774,7 +793,7 @@ public class SpecimenImporter
         JDBCtoIMPORTER_TYPE.put(JdbcType.BIGINT, "BIGINT");
         JDBCtoIMPORTER_TYPE.put(JdbcType.INTEGER, "INT");
         JDBCtoIMPORTER_TYPE.put(JdbcType.REAL, "FLOAT");
-        JDBCtoIMPORTER_TYPE.put(JdbcType.DOUBLE, "DOUBLE");
+        JDBCtoIMPORTER_TYPE.put(JdbcType.DOUBLE, null);
         JDBCtoIMPORTER_TYPE.put(JdbcType.VARCHAR, "VARCHAR");
     }
 
@@ -840,10 +859,12 @@ public class SpecimenImporter
         return null;
     }
 
-    private String getTypeName(PropertyDescriptor property)
+    private String getTypeName(PropertyDescriptor property, SqlDialect dialect)
     {
         StudySchema.getInstance().getScope().getSqlDialect();
         String typeName = JDBCtoIMPORTER_TYPE.get(property.getJdbcType());
+        if (null == typeName)
+            typeName = dialect.sqlTypeNameFromSqlType(property.getJdbcType().sqlType);
         if (null == typeName)
             throw new UnsupportedOperationException("Unsupported JdbcType: " + property.getJdbcType().toString());
         if ("VARCHAR".equals(typeName))
@@ -927,6 +948,7 @@ public class SpecimenImporter
         if (null == specimenEventDomain)
             throw new IllegalStateException("Expected SpecimenEvent domain to already be created.");
 
+        SqlDialect dialect = getTableInfoSpecimen().getSqlDialect();
         for (DomainProperty domainProperty : specimenEventDomain.getNonBaseProperties())
         {
             PropertyDescriptor property = domainProperty.getPropertyDescriptor();
@@ -936,7 +958,7 @@ public class SpecimenImporter
             if (null != aliases && !aliases.isEmpty())
                 alias = (String)(aliases.toArray()[0]);
 
-            SpecimenColumn specimenColumn = new SpecimenColumn(alias, name, getTypeName(property), TargetTable.SPECIMEN_EVENTS);
+            SpecimenColumn specimenColumn = new SpecimenColumn(alias, name, getTypeName(property, dialect), TargetTable.SPECIMEN_EVENTS);
             SPECIMEN_COLUMNS.add(specimenColumn);
 
             findRollups(_eventToVialRollups, name, vialProperties, _eventVialRollups);

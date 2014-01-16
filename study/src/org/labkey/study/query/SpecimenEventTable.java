@@ -17,6 +17,11 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.study.StudySchema;
 
 /**
@@ -29,6 +34,7 @@ public class SpecimenEventTable extends BaseStudyTable
     public SpecimenEventTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimenEvent(schema.getContainer()), true);
+        setName("SpecimenEvent");
 
         ColumnInfo vid = addWrapColumn(_rootTable.getColumn("VialId"));
         vid.setDisplayColumnFactory(ColumnInfo.NOWRAP_FACTORY);
@@ -43,11 +49,6 @@ public class SpecimenEventTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("LabReceiptDate"));
         addWrapColumn(_rootTable.getColumn("SpecimenCondition"));
         addWrapColumn(_rootTable.getColumn("Comments"));
-        addWrapColumn(_rootTable.getColumn("fr_container"));
-        addWrapColumn(_rootTable.getColumn("fr_level1"));
-        addWrapColumn(_rootTable.getColumn("fr_level2"));
-        addWrapColumn(_rootTable.getColumn("fr_position"));
-        addWrapColumn(_rootTable.getColumn("freezer"));
         addWrapParticipantColumn("PTID").setKeyField(true);
         addWrapColumn(_rootTable.getColumn("DrawTimestamp"));
         addWrapColumn(_rootTable.getColumn("SalReceiptDate"));
@@ -77,19 +78,34 @@ public class SpecimenEventTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("TotalCellCount"));
         addWrapColumn(_rootTable.getColumn("TubeType"));
         addWrapColumn(_rootTable.getColumn("QualityComments"));
+
+/*        addWrapColumn(_rootTable.getColumn("fr_container"));
+        addWrapColumn(_rootTable.getColumn("fr_level1"));
+        addWrapColumn(_rootTable.getColumn("fr_level2"));
+        addWrapColumn(_rootTable.getColumn("fr_position"));
+        addWrapColumn(_rootTable.getColumn("freezer"));
         addWrapColumn(_rootTable.getColumn("DeviationCode1"));
         addWrapColumn(_rootTable.getColumn("DeviationCode2"));
         addWrapColumn(_rootTable.getColumn("DeviationCode3"));
         addWrapColumn(_rootTable.getColumn("Concentration"));
         addWrapColumn(_rootTable.getColumn("Integrity"));
         addWrapColumn(_rootTable.getColumn("Ratio"));
-        addWrapColumn(_rootTable.getColumn("Yield"));
+        addWrapColumn(_rootTable.getColumn("Yield")); */
+
         addWrapColumn(_rootTable.getColumn("ExternalId")).setHidden(true);
         addWrapColumn(_rootTable.getColumn("OtherSpecimenId"));
         addWrapColumn(_rootTable.getColumn("ParentSpecimenId"));
         ColumnInfo obsoleteColumn = addWrapColumn(_rootTable.getColumn("Obsolete"));
         obsoleteColumn.setHidden(true);
         addContainerColumn(true);
+
+        // Add optional fields
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(schema.getContainer(), null, null);
+        Domain specimenEventDomain = specimenTablesProvider.getDomain("SpecimenEvent", false);
+        if (null == specimenEventDomain)
+            throw new IllegalStateException("Expected SpecimenEvent table to already be created.");
+
+        addOptionalColumns(specimenEventDomain.getNonBaseProperties());
     }
 
     @Override

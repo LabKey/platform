@@ -28,6 +28,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -59,15 +60,16 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
     public SpecimenSummaryTable(StudyQuerySchema schema)
     {
-//        super(schema, StudySchema.getInstance().getTableInfoSpecimenSummary(), true);
         super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), true);
+        setName("SpecimenSummary");
+
         _participantidColumn = addWrapParticipantColumn("PTID");
         addContainerColumn(true);
 
         _sequencenumColumn = addSpecimenVisitColumn(_userSchema.getStudy().getTimepointType(), true);
 
         _participantSequenceNumColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
-                _rootTable.getColumn("ParticipantSequenceNum"));//addWrapColumn(baseColumn);
+                _rootTable.getColumn("ParticipantSequenceNum"));
         _participantSequenceNumColumn.setFk(new LookupForeignKey("ParticipantSequenceNum")
         {
             public TableInfo getLookupTableInfo()
@@ -146,6 +148,12 @@ public class SpecimenSummaryTable extends BaseStudyTable
         // (We're using a custom display column to output the text of the comment in this col, even though
         // the SQL expression returns an integer.)
         addColumn(new ExprColumn(this, "QualityControlFlag", sqlFragConflicts, JdbcType.BOOLEAN));
+
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(schema.getContainer(), null, null);
+        Domain specimenDomain = specimenTablesProvider.getDomain("Specimen", false);
+        if (null == specimenDomain)
+            throw new IllegalStateException("Expected Specimen table to already be created.");
+        addOptionalColumns(specimenDomain.getNonBaseProperties());
     }
 
     @Override

@@ -1056,42 +1056,6 @@
         <ns:column columnName="LatestQualityComments">
             <ns:description>Additional comments on processing quality from latest event.</ns:description>
         </ns:column>
-        <ns:column columnName="LatestDeviationCode1">
-            <ns:description>Site-defined deviation code from latest event.</ns:description>
-        </ns:column>
-        <ns:column columnName="LatestDeviationCode2">
-            <ns:description>Site-defined deviation code from latest event.</ns:description>
-        </ns:column>
-        <ns:column columnName="LatestDeviationCode3">
-            <ns:description>Site-defined deviation code from latest event.</ns:description>
-        </ns:column>
-        <ns:column columnName="LatestConcentration">
-            <ns:description>Processing concentration value from latest event.</ns:description>
-        </ns:column>
-        <ns:column columnName="LatestIntegrity">
-            <ns:description>Processing integrity value from latest event.</ns:description>
-        </ns:column>
-        <ns:column columnName="LatestRatio">
-            <ns:description>Processing ratio value from latest event.</ns:description>
-        </ns:column>
-        <ns:column columnName="LatestYield">
-            <ns:description>Processing yield value from latest event.</ns:description>
-        </ns:column>
-        <ns:column columnName="Freezer">
-            <ns:description>Freezer ID from latest event.</ns:description>
-        </ns:column>
-        <ns:column columnName="Fr_Container">
-            <ns:description>Freezer Container from latest event.</ns:description>
-        </ns:column>
-        <ns:column columnName="Fr_Position">
-            <ns:description>Freezer Position from latest event.</ns:description>
-        </ns:column>
-        <ns:column columnName="Fr_Level1">
-            <ns:description>Freezer Level1 from latest event.</ns:description>
-        </ns:column>
-        <ns:column columnName="Fr_Level2">
-            <ns:description>Freezer Level2 from latest event.</ns:description>
-        </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenSummary" tableDbType="NOT_IN_DB">

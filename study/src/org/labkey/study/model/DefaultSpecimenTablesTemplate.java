@@ -35,10 +35,10 @@ public class DefaultSpecimenTablesTemplate implements SpecimenTablesTemplate
     private static final String LATESTYIELD = "LatestYield";
     private static final String LATESTCONCENTRATION = "LatestConcentration";
     private static final String FREEZER = "Freezer";
-    private static final String FR_CONTAINER = "Fr_container";
-    private static final String FR_POSITION = "Fr_position";
-    private static final String FR_LEVEL1 = "Fr_level1";
-    private static final String FR_LEVEL2 = "Fr_level2";
+    private static final String FR_CONTAINER = "Fr_Container";
+    private static final String FR_POSITION = "Fr_Position";
+    private static final String FR_LEVEL1 = "Fr_Level1";
+    private static final String FR_LEVEL2 = "Fr_Level2";
 
     private static final String DEVIATIONCODE1 = "DeviationCode1";
     private static final String DEVIATIONCODE2 = "DeviationCode2";

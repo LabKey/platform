@@ -24,6 +24,7 @@ public class SimpleSpecimenTable extends AbstractSpecimenTable
     public SimpleSpecimenTable(StudyQuerySchema schema, boolean skipPermissionChecks)
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), skipPermissionChecks, true);
+        setName("SimpleSpecimen");
 
         getColumn(StudyService.get().getSubjectColumnName(getContainer())).setFk(null);
 

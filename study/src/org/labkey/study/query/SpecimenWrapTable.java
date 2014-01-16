@@ -18,14 +18,19 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.util.Path;
 import org.labkey.study.StudySchema;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class SpecimenWrapTable extends BaseStudyTable
 {
     private Path _notificationKey;
-    private SpecimenWrapTable _unionTable;
+    protected List<DomainProperty> _optionalSpecimenProperties = new ArrayList<>();
+    protected List<DomainProperty> _optionalVialProperties = new ArrayList<>();
 
     public SpecimenWrapTable(StudyQuerySchema schema)
     {
@@ -35,47 +40,22 @@ public class SpecimenWrapTable extends BaseStudyTable
             if (!"container".equalsIgnoreCase(columnInfo.getName()))
                 addWrapColumn(columnInfo);
 
+        // Add optional fields
+        _optionalSpecimenProperties = new ArrayList<>();
+        _optionalVialProperties = new ArrayList<>();
+        SpecimenDetailTable.getOptionalSpecimenAndVialProperties(schema.getContainer(), _optionalSpecimenProperties, _optionalVialProperties);
+        addOptionalColumns(_optionalVialProperties);
+        addOptionalColumns(_optionalSpecimenProperties);
+
         addContainerColumn(true);
         _notificationKey = new Path("study", getClass().getName(), getName());
-    }
-
-    public void setUnionTable(SpecimenWrapTable unionTable)
-    {
-        _unionTable = unionTable;
     }
 
     @NotNull
     @Override
     public SQLFragment getFromSQL(String alias)
     {
-        TableInfo vialTI = StudySchema.getInstance().getTableInfoVial(getContainer());
-        TableInfo specimenTI = StudySchema.getInstance().getTableInfoSpecimen(getContainer());
-
-        SQLFragment sqlf = new SQLFragment();
-        if (null != _unionTable)
-        {
-            sqlf.append("(").append(_unionTable.getFromSQL("")).append(" UNION ");
-        }
-        sqlf.append("(SELECT vial.rowid, vial.globaluniqueid, vial.volume, vial.specimenhash, \n" +
-                " vial.requestable, vial.currentlocation, vial.atrepository, vial.lockedinrequest, vial.available, vial.processinglocation, \n" +
-                " vial.specimenid, vial.primaryvolume, vial.primaryvolumeunits, vial.firstprocessedbyinitials, vial.availabilityreason,\n" +
-                "  vial.totalcellcount, vial.tubetype, vial.latestcomments, vial.latestqualitycomments, vial.latestdeviationcode1, \n" +
-                "  vial.latestdeviationcode2, vial.latestdeviationcode3, vial.latestconcentration, vial.latestintegrity, vial.latestratio,\n" +
-                "   vial.latestyield, vial.freezer, vial.fr_container, vial.fr_position, vial.fr_level1, vial.fr_level2,\n" +
-                "    specimen.ptid, specimen.participantsequencenum, specimen.totalvolume, specimen.availablevolume, \n" +
-                "    specimen.visitdescription, specimen.visitvalue, specimen.volumeunits, specimen.primarytypeid, specimen.additivetypeid, \n" +
-                "    specimen.derivativetypeid, specimen.derivativetypeid2, specimen.subadditivederivative, specimen.drawtimestamp, \n" +
-                "    specimen.salreceiptdate, specimen.classid, specimen.protocolnumber, specimen.originatinglocationid, specimen.vialcount, \n" +
-                "    specimen.lockedinrequestcount, specimen.atrepositorycount, specimen.availablecount, specimen.expectedavailablecount,\n\t");
-        sqlf.append(SpecimenDetailTable.getContainerSql(getSchema())).append("\n   FROM ").add(getContainer());
-        sqlf.append(vialTI.getFromSQL("vial"));
-        sqlf.append("\n  JOIN ");
-        sqlf.append(specimenTI.getFromSQL("specimen"));
-        sqlf.append(" ON vial.specimenid = specimen.rowid) ");
-        if (null != _unionTable)
-            sqlf.append(") ");
-        sqlf.append(alias);
-        return sqlf;
+        return SpecimenDetailTable.getSpecimenAndVialFromSQL(alias, getSchema(), getContainer(), _optionalSpecimenProperties, _optionalVialProperties);
     }
 
     public Path getNotificationKey()

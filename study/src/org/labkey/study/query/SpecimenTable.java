@@ -37,7 +37,6 @@ import java.util.Map;
 
 public class SpecimenTable extends AbstractSpecimenTable
 {
-//    private List<InnerUnionTable> _studySpecimenTables = null;
     private List<SpecimenTable> _studySpecimenTables = null;
     private List<ColumnInfo> _unionColumns = null;
 
@@ -79,8 +78,6 @@ public class SpecimenTable extends AbstractSpecimenTable
                 if (study.getContainer().hasPermission(user, ReadPermission.class) && study.getContainer().getId() != getContainer().getId())
                 {
                     StudyQuerySchema studyQuerySchema = new StudyQuerySchema((StudyImpl)study, user, false);
-//                    InnerUnionTable table = new InnerUnionTable(studyQuerySchema,
-//                            StudySchema.getInstance().getTableInfoSpecimen(studyQuerySchema.getContainer()));
                     SpecimenTable table = new SpecimenTable(studyQuerySchema, skipPermissionChecks, false);
                     _studySpecimenTables.add(table);
                 }
@@ -93,28 +90,6 @@ public class SpecimenTable extends AbstractSpecimenTable
     @Override
     public SQLFragment getFromSQL(String alias)
     {
-        // This would generate same as VialTable
-//        return getFromSqlForUnion(_studySpecimenTables, _unionColumns, alias);
-
-        // An alternative that didn't quite work out.
-/*        Map<String, SQLFragment> joins = new HashMap<>();
-        SQLFragment sql = new SQLFragment("((");
-        String conjunction = " ";
-
-        for (InnerUnionTable table : _studySpecimenTables)
-        {
-            sql.append(conjunction).append(getSelectSQL(table, getColumns(), alias, joins));
-            conjunction = "\nUNION\n\t\t";
-        }
-
-        String tableAlias = "union$" + alias;
-        sql.append(") ").append(tableAlias);
-        for (SQLFragment joinFrag : joins.values())
-            sql.append(" ").append(joinFrag);
-        sql.append(") ").append(alias);
-        return sql;
-        */
-
         SQLFragment sql = new SQLFragment();
         if (null != _studySpecimenTables)
         {
@@ -139,26 +114,6 @@ public class SpecimenTable extends AbstractSpecimenTable
                 sql.append(") ");
         }
         sql.append(alias);
-        return sql;
-    }
-
-    private SQLFragment getSelectSQL(InnerUnionTable table, List<ColumnInfo> columns, String alias, Map<String, SQLFragment> joins)
-    {
-        String innerAlias = table.getRealTable().getSelectName();
-        SqlDialect dialect = getSqlDialect();
-        SQLFragment sql = new SQLFragment("(SELECT ");
-        String strComma = "";
-        for (ColumnInfo column : columns)
-        {
-            column.declareJoins(alias, joins);
-            sql.append(strComma);
-            sql.append(column.getValueSql(innerAlias));
-            sql.append(" AS " );
-            sql.append(dialect.makeLegalIdentifier(column.getAlias()));
-            strComma = ",\n\t\t";
-        }
-        sql.append("\n\tFROM ")
-                .append(table.getRealTable().getFromSQL("")).append(") ");
         return sql;
     }
 }

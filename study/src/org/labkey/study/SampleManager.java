@@ -31,8 +31,11 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.query.*;
@@ -47,13 +50,15 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.importer.RequestabilityManager;
+import org.labkey.study.importer.SpecimenImporter;
+import org.labkey.study.importer.SpecimenImporter.Rollup;
 import org.labkey.study.model.*;
 import org.labkey.study.query.SpecimenTablesProvider;
-import org.labkey.study.query.SpecimenWrapTable;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.requirements.RequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementProvider;
@@ -549,7 +554,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         return container;
     }
 
-    private static final String UPDATE_SPECIMEN_COUNT_SQL_PREFIX =
+    private static final String UPDATE_SPECIMEN_SETS =
             " SET\n" +
                     "    TotalVolume = VialCounts.TotalVolume,\n" +
                     "    AvailableVolume = VialCounts.AvailableVolume,\n" +
@@ -557,8 +562,10 @@ public class SampleManager implements ContainerManager.ContainerListener
                     "    LockedInRequestCount = VialCounts.LockedInRequestCount,\n" +
                     "    AtRepositoryCount = VialCounts.AtRepositoryCount,\n" +
                     "    AvailableCount = VialCounts.AvailableCount,\n" +
-                    "    ExpectedAvailableCount = VialCounts.ExpectedAvailableCount\n" +
-                    "FROM (\n" +
+                    "    ExpectedAvailableCount = VialCounts.ExpectedAvailableCount";
+
+    private static final String UPDATE_SPECIMEN_SELECTS =
+                    "\nFROM (\n" +
                     "\tSELECT SpecimenId,\n" +
                     "\t\tSUM(Volume) AS TotalVolume,\n" +
                     "\t\tSUM(CASE Available WHEN ? THEN Volume ELSE 0 END) AS AvailableVolume,\n" +
@@ -571,29 +578,41 @@ public class SampleManager implements ContainerManager.ContainerListener
                     "\t\t\t(CASE LockedInRequest WHEN ? THEN 1 ELSE 0 END) -- Null is considered false for LockedInRequest\n" +
                     "\t\t\t| (CASE Requestable WHEN ? THEN 1 ELSE 0 END)-- Null is considered true for Requestable\n" +
                     "\t\t\tWHEN 1 THEN 1 ELSE 0 END)\n" +
-                    "\t\t) AS ExpectedAvailableCount" +
-                    "\tFROM ";
+                    "\t\t) AS ExpectedAvailableCount";
+
+    //                "\tFROM ";
 
     private void updateSpecimenCounts(Container container, User user, List<Specimen> specimens)
     {
         TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(container);
         TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(container);
-        if (null == tableInfoSpecimen || null == tableInfoVial)
-            return;
 
         String tableInfoSpecimenSelectName = tableInfoSpecimen.getSelectName();
         String tableInfoVialSelectName = tableInfoVial.getSelectName();
+        Map<String, Pair<String, Rollup>> matchedRollups = getVialToSpecimenRollups(container, user);
 
         SQLFragment updateSql = new SQLFragment();
-        updateSql.append("UPDATE ").append(tableInfoSpecimenSelectName).append(UPDATE_SPECIMEN_COUNT_SQL_PREFIX);
+        updateSql.append("UPDATE ").append(tableInfoSpecimenSelectName).append(UPDATE_SPECIMEN_SETS);
+        for (Pair<String, Rollup> rollupPair : matchedRollups.values())
+            updateSql.append(",\n    ").append(rollupPair.first).append(" = VialCounts.").append(rollupPair.first);
 
+        updateSql.append(UPDATE_SPECIMEN_SELECTS);
         updateSql.add(Boolean.TRUE); // AvailableVolume
         updateSql.add(Boolean.TRUE); // LockedInRequestCount
         updateSql.add(Boolean.TRUE); // AtRepositoryCount
         updateSql.add(Boolean.TRUE); // AvailableCount
         updateSql.add(Boolean.TRUE); // LockedInRequest case of ExpectedAvailableCount
         updateSql.add(Boolean.FALSE); // Requestable case of ExpectedAvailableCount
-        updateSql.append(tableInfoVialSelectName).append("\n");
+
+        for (Map.Entry<String, Pair<String, Rollup>> entry : matchedRollups.entrySet())
+        {
+            String fromName = entry.getKey();
+            String toName = entry.getValue().first;
+            Rollup rollup = entry.getValue().second;
+            updateSql.append(",\n\t\t").append(rollup.getRollupSql(fromName, toName));
+        }
+
+        updateSql.append("\tFROM ").append(tableInfoVialSelectName).append("\n");
 
         if (specimens != null && specimens.size() > 0)
         {
@@ -623,6 +642,33 @@ public class SampleManager implements ContainerManager.ContainerListener
     public void updateSpecimenCounts(Container container, User user) throws SQLException
     {
         updateSpecimenCounts(container, user, null);
+    }
+
+    private Map<String, Pair<String, Rollup>> getVialToSpecimenRollups(Container container, User user)
+    {
+        List<Rollup> rollups = SpecimenImporter.getVialSpecimenRollups();
+        Map<String, Pair<String, Rollup>> matchedRollups = new HashMap<>();
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
+
+        Domain specimenDomain = specimenTablesProvider.getDomain("Specimen", false);
+        if (null == specimenDomain)
+            throw new IllegalStateException("Expected SpecimenEvent table to already be created.");
+
+        Domain vialDomain = specimenTablesProvider.getDomain("Vial", false);
+        if (null == vialDomain)
+            throw new IllegalStateException("Expected Vial table to already be created.");
+
+        List<String> specimenProperties = new ArrayList<>();
+        for (DomainProperty domainProperty : specimenDomain.getNonBaseProperties())
+            specimenProperties.add(domainProperty.getName());
+
+        for (DomainProperty domainProperty : vialDomain.getNonBaseProperties())
+        {
+            PropertyDescriptor property = domainProperty.getPropertyDescriptor();
+            String name = property.getName();
+            SpecimenImporter.findRollups(matchedRollups, name, specimenProperties, rollups);
+        }
+        return matchedRollups;
     }
 
     private void updateRequestabilityAndCounts(List<Specimen> specimens, User user) throws SQLException, RequestabilityManager.InvalidRuleException

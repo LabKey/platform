@@ -32,6 +32,8 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -748,115 +750,19 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                 _userSchema.getContainer().hasPermission(user, AdminPermission.class);
     }
 
-
-    protected class InnerUnionTable extends BaseStudyTable
+    protected void addOptionalColumns(List<DomainProperty> optionalProperties)
     {
-        ColumnInfo _containerColumn;
-        public InnerUnionTable(final StudyQuerySchema schema, TableInfo realTable)
+        for (DomainProperty domainProperty : optionalProperties)
         {
-            super(schema, realTable, true);
-            _containerColumn = addContainerColumn(true);
+            PropertyDescriptor property = domainProperty.getPropertyDescriptor();
+            SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS);
+            sql.append(".").append(property.getName());
+            ColumnInfo column = new ExprColumn(this, property.getName(), sql, property.getJdbcType());
+            column.setDescription(property.getDescription());
+            column.setShownInInsertView(true);
+            column.setShownInUpdateView(true);
+            column.setUserEditable(true);
+            addColumn(column);
         }
-
-        public SQLFragment getSelectSQL(List<ColumnInfo> innerTableColumns)
-        {
-            TableInfo realTable = getRealTable();
-            SQLFragment sql = new SQLFragment("(SELECT ");
-            if (null == innerTableColumns)
-            {
-                sql.append("*, ");
-            }
-            else
-            {
-                for (ColumnInfo column : innerTableColumns)
-                {
-                    sql.append(column.getSelectName()).append(", ");
-                }
-            }
-            sql.append(_containerColumn.getValueSql(ExprColumn.STR_TABLE_ALIAS)).append(" AS Container FROM ")
-                    .append(realTable.getFromSQL("")).append(") ");
-            return sql;
-        }
-
-        public ColumnInfo getContainerColumn()
-        {
-            return _containerColumn;
-        }
-    }
-
-    protected SQLFragment getFromSqlForUnion(List<InnerUnionTable> tables, List<ColumnInfo> innerTableColumns, String alias)
-    {
-        String tableAlias = "union$" + alias;
-        SqlDialect dialect = getSqlDialect();
-        SQLFragment sql = new SQLFragment("(SELECT ");
-
-        String strComma = "";
-        Map<String, SQLFragment> joins = new HashMap<>();
-        List<ColumnInfo> columns = getColumns();
-        if (columns.isEmpty())
-        {
-            sql.append("*");
-            strComma = ",\n\t\t";
-        }
-        for (ColumnInfo column : columns)
-        {
-            column.declareJoins(tableAlias, joins);
-            sql.append(strComma);
-            if (column instanceof AliasedColumn)
-                sql.append(((AliasedColumn)column).getColumn().getValueSql(tableAlias));
-            else
-                sql.append(column.getValueSql(tableAlias));
-            sql.append(" AS " );
-            sql.append(dialect.makeLegalIdentifier(column.getAlias()));
-            strComma = ",\n\t\t";
-        }
-
-        sql.append("\n\tFROM (");
-
-        if (null == tables || tables.isEmpty())
-        {
-            InnerUnionTable table = new InnerUnionTable(getUserSchema(), getRealTable());
-            sql.append(table.getSelectSQL(null));
-        }
-        else
-        {
-            String conjunction = " ";
-            for (InnerUnionTable table : tables)
-            {
-                sql.append(conjunction).append("(").append(table.getSelectSQL(innerTableColumns)).append(")");
-                conjunction = " UNION\n\t\t";
-            }
-        }
-        sql.append(") ").append(tableAlias);
-        for (SQLFragment joinFrag : joins.values())
-            sql.append(" ").append(joinFrag);
-        sql.append(")\n\t\t").append(alias);
-        return sql;
-    }
-
-    protected List<ColumnInfo> getUnionColumns(List<InnerUnionTable> tables)
-    {
-        // Since tables may have different column sets, we need the set of columns that is in every table
-        assert tables.size() > 0;
-        List<ColumnInfo> columnsInAll = new ArrayList<>();
-        InnerUnionTable firstTable = tables.get(0);
-        if (tables.size() < 2)
-            return firstTable.getRealTable().getColumns();
-
-        for (ColumnInfo column : firstTable.getRealTable().getColumns())
-        {
-            boolean allHaveColumn = true;
-            for (int i = 1; i < tables.size(); i += 1)
-            {
-                if (null == tables.get(i).getRealTable().getColumn(column.getFieldKey()))
-                {
-                    allHaveColumn = false;
-                    break;
-                }
-            }
-            if (allHaveColumn)
-                columnsInAll.add(column);
-        }
-        return columnsInAll;
     }
 }

@@ -18,13 +18,9 @@ package org.labkey.study.query;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.QueryService;
 
+import java.util.ArrayList;
 import java.util.List;
 
-/**
- * User: davebradlee
- * Date: 11/16/12
- * Time: 11:21 AM
- */
 public class LocationSpecimenListTable extends SpecimenDetailTable
 {
     public LocationSpecimenListTable(StudyQuerySchema schema)
@@ -32,11 +28,34 @@ public class LocationSpecimenListTable extends SpecimenDetailTable
         super(schema);
         setName("LocationSpecimenList");
 
-        List<ColumnInfo> defaultColumns = getColumns(
-                "GlobalUniqueId, ParticipantId, Visit, Volume, VolumeUnits, " +
-                        "DrawTimestamp, ProtocolNumber, PrimaryType, " +
-                        "TotalCellCount, Clinic, FirstProcessedByInitials, " +
-                        "Freezer, Fr_container, Fr_position, Fr_level1, Fr_level2");
+        List<ColumnInfo> defaultColumns = new ArrayList<>();
+        defaultColumns.add(getColumn("GlobalUniqueId"));
+        defaultColumns.add(getColumn("ParticipantId"));
+        defaultColumns.add(getColumn("Visit"));
+        defaultColumns.add(getColumn("Volume"));
+        defaultColumns.add(getColumn("VolumeUnits"));
+        defaultColumns.add(getColumn("DrawTimestamp"));
+        defaultColumns.add(getColumn("ProtocolNumber"));
+        defaultColumns.add(getColumn("PrimaryType"));
+        defaultColumns.add(getColumn("TotalCellCount"));
+        defaultColumns.add(getColumn("Clinic"));
+        defaultColumns.add(getColumn("FirstProcessedByInitials"));
+
+        ColumnInfo column = getColumn("Freezer");
+        if (null != column)
+            defaultColumns.add(column);
+        column = getColumn("Fr_Container");
+        if (null != column)
+            defaultColumns.add(column);
+        column = getColumn("Fr_Position");
+        if (null != column)
+            defaultColumns.add(column);
+        column = getColumn("Fr_Level1");
+        if (null != column)
+            defaultColumns.add(column);
+        column = getColumn("Fr_Level2");
+        if (null != column)
+            defaultColumns.add(column);
 
         setDefaultVisibleColumns(QueryService.get().getDefaultVisibleColumns(defaultColumns));
     }

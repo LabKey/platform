@@ -18,6 +18,9 @@
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.*;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -35,18 +38,18 @@ import java.util.*;
 public class SpecimenDetailTable extends AbstractSpecimenTable
 {
     public static final String GLOBAL_UNIQUE_ID_COLUMN_NAME = "GlobalUniqueId";
+    protected List<DomainProperty> _optionalSpecimenProperties = new ArrayList<>();
+    protected List<DomainProperty> _optionalVialProperties = new ArrayList<>();
 
     public SpecimenDetailTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimenDetail(schema.getContainer()), false, true);
-//        super(schema, StudySchema.getInstance().getTableInfoVial(schema.getContainer()), false, true);
-
 
         ColumnInfo guid = addWrapColumn(_rootTable.getColumn(GLOBAL_UNIQUE_ID_COLUMN_NAME));
         guid.setDisplayColumnFactory(ColumnInfo.NOWRAP_FACTORY);
 
         ColumnInfo pvColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
-                _rootTable.getColumn("ParticipantSequenceNum"));//addWrapColumn(baseColumn);
+                                                _rootTable.getColumn("ParticipantSequenceNum"));//addWrapColumn(baseColumn);
         pvColumn.setFk(new LookupForeignKey("ParticipantSequenceNum")
         {
             public TableInfo getLookupTableInfo()
@@ -134,7 +137,8 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
         addWrapColumn(_rootTable.getColumn("LatestComments"));
         addWrapColumn(_rootTable.getColumn("LatestQualityComments"));
-        addWrapColumn(_rootTable.getColumn("LatestDeviationCode1"));
+
+/*        addWrapColumn(_rootTable.getColumn("LatestDeviationCode1"));
         addWrapColumn(_rootTable.getColumn("LatestDeviationCode2"));
         addWrapColumn(_rootTable.getColumn("LatestDeviationCode3"));
         addWrapColumn(_rootTable.getColumn("LatestConcentration"));
@@ -146,7 +150,12 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addWrapColumn(_rootTable.getColumn("Fr_container"));
         addWrapColumn(_rootTable.getColumn("Fr_position"));
         addWrapColumn(_rootTable.getColumn("Fr_level1"));
-        addWrapColumn(_rootTable.getColumn("Fr_level2"));
+        addWrapColumn(_rootTable.getColumn("Fr_level2"));       */
+
+        // Add optional fields
+        getOptionalSpecimenAndVialProperties(schema.getContainer(), _optionalSpecimenProperties, _optionalVialProperties);
+        addOptionalColumns(_optionalVialProperties);
+        addOptionalColumns(_optionalSpecimenProperties);
     }
 
     @Override
@@ -356,21 +365,55 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
     @Override
     public SQLFragment getFromSQL(String alias)
     {
-        TableInfo vialTI = StudySchema.getInstance().getTableInfoVial(getContainer());
-        TableInfo specimenTI = StudySchema.getInstance().getTableInfoSpecimen(getContainer());
+        return getSpecimenAndVialFromSQL(alias, getSchema(), getContainer(), _optionalSpecimenProperties, _optionalVialProperties);
+    }
 
-        SQLFragment sqlf = new SQLFragment("(SELECT vial.rowid, vial.globaluniqueid, vial.volume, vial.specimenhash, \n" +
+    public static void getOptionalSpecimenAndVialProperties(Container container, List<DomainProperty> optionalSpecimenProperties,
+                                                            List<DomainProperty> optionalVialProperties)
+    {
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, null, null);
+        Domain specimenDomain = specimenTablesProvider.getDomain("Specimen", false);
+        if (null == specimenDomain)
+            throw new IllegalStateException("Expected Specimen table to already be created.");
+
+        Domain vialDomain = specimenTablesProvider.getDomain("Vial", false);
+        if (null == vialDomain)
+            throw new IllegalStateException("Expected Vial table to already be created.");
+
+        optionalVialProperties.addAll(vialDomain.getNonBaseProperties());
+        Set<String> optionalVialPropertyNames = new HashSet<>();
+        for (DomainProperty property : optionalVialProperties)
+            optionalVialPropertyNames.add(property.getName().toLowerCase());
+
+        // If there are name conflicts betwen Vial and Specimen, Vial takes precedence here
+        for (DomainProperty property : specimenDomain.getNonBaseProperties())
+            if (!optionalVialPropertyNames.contains(property.getName().toLowerCase()))
+                optionalSpecimenProperties.add(property);
+    }
+
+    public static SQLFragment getSpecimenAndVialFromSQL(String alias, DbSchema schema, Container container,
+                                   List<DomainProperty> optionalSpecimenProperties, List<DomainProperty> optionalVialProperties)
+    {
+        TableInfo vialTI = StudySchema.getInstance().getTableInfoVial(container);
+        TableInfo specimenTI = StudySchema.getInstance().getTableInfoSpecimen(container);
+
+        SQLFragment sqlf = new SQLFragment();
+        sqlf.append("(SELECT vial.rowid, vial.globaluniqueid, vial.volume, vial.specimenhash, \n" +
                 " vial.requestable, vial.currentlocation, vial.atrepository, vial.lockedinrequest, vial.available, vial.processinglocation, \n" +
                 " vial.specimenid, vial.primaryvolume, vial.primaryvolumeunits, vial.firstprocessedbyinitials, vial.availabilityreason,\n" +
-                "  vial.totalcellcount, vial.tubetype, vial.latestcomments, vial.latestqualitycomments, vial.latestdeviationcode1, \n" +
-                "  vial.latestdeviationcode2, vial.latestdeviationcode3, vial.latestconcentration, vial.latestintegrity, vial.latestratio,\n" +
-                "   vial.latestyield, vial.freezer, vial.fr_container, vial.fr_position, vial.fr_level1, vial.fr_level2,\n" +
-                "    specimen.ptid, specimen.participantsequencenum, specimen.totalvolume, specimen.availablevolume, \n" +
+                "  vial.totalcellcount, vial.tubetype, vial.latestcomments, vial.latestqualitycomments, \n");
+        for (DomainProperty property : optionalVialProperties)
+            sqlf.append("    vial.").append(property.getName()).append(",\n");
+
+        sqlf.append("    specimen.ptid, specimen.participantsequencenum, specimen.totalvolume, specimen.availablevolume, \n" +
                 "    specimen.visitdescription, specimen.visitvalue, specimen.volumeunits, specimen.primarytypeid, specimen.additivetypeid, \n" +
                 "    specimen.derivativetypeid, specimen.derivativetypeid2, specimen.subadditivederivative, specimen.drawtimestamp, \n" +
                 "    specimen.salreceiptdate, specimen.classid, specimen.protocolnumber, specimen.originatinglocationid, specimen.vialcount, \n" +
-                "    specimen.lockedinrequestcount, specimen.atrepositorycount, specimen.availablecount, specimen.expectedavailablecount,\n\t");
-        sqlf.append(getContainerSql(getSchema())).append("\n   FROM ").add(getContainer());
+                "    specimen.lockedinrequestcount, specimen.atrepositorycount, specimen.availablecount, specimen.expectedavailablecount,\n");
+        for (DomainProperty property : optionalSpecimenProperties)
+            sqlf.append("    specimen.").append(property.getName()).append(",\n");
+
+        sqlf.append(getContainerSql(schema)).append("\n   FROM ").add(container);
         sqlf.append(vialTI.getFromSQL("vial"));
         sqlf.append("\n  JOIN ");
         sqlf.append(specimenTI.getFromSQL("specimen"));
