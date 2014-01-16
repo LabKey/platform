@@ -572,7 +572,7 @@ public class DavController extends SpringActionController
                 String username = getUser().getName();
                 String auth = username + (isBasicAuthentication ? ":basic" : !getUser().isGuest() ? ":session" : "");
                 _log.debug(">>>> " + request.getMethod() + " " + getResourcePath() + " (" + auth + ") " + (modified==-1? "" : "   (If-Modified-Since:" + DateUtil.toISO(modified) + ")"));
-                if (1==1) // verbose
+                if (1==0) // verbose
                 {
                     for (Enumeration e = request.getHeaderNames() ; e.hasMoreElements() ; )
                     {
@@ -580,15 +580,6 @@ public class DavController extends SpringActionController
                         _log.debug(name + ": " + request.getHeader(name));
                     }
                 }
-//                _log.debug("SESSION: " + request.getSession(true).getId());
-//                if ("PUT".equals(method))
-//                    _log.debug("Content-Length: " + request.getHeader("Content-Length"));
-//                String if_ = request.getHeader("If");
-//                if (!StringUtils.isEmpty(if_))
-//                    _log.debug("If: " + if_);
-//                String lockToken = request.getHeader("Lock-Token");
-//                if (!StringUtils.isEmpty(lockToken))
-//                    _log.debug("Lock-Token: " + lockToken);
                 start = System.currentTimeMillis();
             }
 
@@ -960,7 +951,7 @@ public class DavController extends SpringActionController
                         "</dict>\n" +
                         "</plist>\n");
 
-                getResponse().setContentType("application/x-cyberduck-action");
+                getResponse().setContentType("application/x-cyberduck+xml");
                 getResponse().setContentDisposition("attachment; filename=\"" + resource.getName() + ".duck\"");
                 Writer w = getResponse().getWriter();
                 w.write(sb.toString());
@@ -2674,6 +2665,18 @@ public class DavController extends SpringActionController
             if (resource.isCollectionType() || exists && resource.isCollection())
                 throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED, "Cannot overwrite folder");
 
+            if (exists)
+            {
+                boolean overwrite = getOverwriteParameter(true);
+                if (!overwrite)
+                {
+                    // allow finder to overwrite zero byte files without overwrite header
+                    boolean finderException = isMacFinder() && 0 == resource.getContentLength();
+                    if (!finderException)
+                        throw new DavException(WebdavStatus.SC_FILE_MATCH, "Cannot overwrite file");
+                }
+            }
+
             Range range = parseContentRange();
             RandomAccessFile raf = null;
             OutputStream os = null;
@@ -3121,7 +3124,7 @@ public class DavController extends SpringActionController
             if (null == dest || dest.getPath().equals(src.getPath()))
                 throw new DavException(WebdavStatus.SC_FORBIDDEN);
 
-            boolean overwrite = getOverwriteParameter();
+            boolean overwrite = getOverwriteParameter(false);
             boolean exists = dest.exists();
 
             if (!src.canRead(getUser(), true))
@@ -4910,14 +4913,14 @@ public class DavController extends SpringActionController
     }
 
 
-    boolean getOverwriteParameter()
+    boolean getOverwriteParameter(boolean defaultOverwrite)
     {
-        String overwriteHeader = getRequest().getHeader("Overwrite");
-        if (overwriteHeader != null)
-            return overwriteHeader.equalsIgnoreCase("T");
-
-        String overwriteParam = getRequest().getParameter("overwrite");
-        return overwriteParam != null && overwriteParam.equalsIgnoreCase("T");
+        String overwrite = getRequest().getHeader("Overwrite");
+        if (null == overwrite)
+            overwrite = getRequest().getParameter("overwrite");
+        if (null == overwrite)
+            return defaultOverwrite;
+        return overwrite.equalsIgnoreCase("T");
     }
 
 
@@ -5220,7 +5223,7 @@ public class DavController extends SpringActionController
      */
     private WebdavStatus copyResource() throws DavException, IOException
     {
-        boolean overwrite = getOverwriteParameter();
+        boolean overwrite = getOverwriteParameter(false);
         Path destinationPath = getDestinationPath();
         if (destinationPath == null)
             throw new DavException(WebdavStatus.SC_BAD_REQUEST);

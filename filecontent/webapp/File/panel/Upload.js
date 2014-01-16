@@ -544,7 +544,7 @@ Ext4.define('File.panel.Upload', {
                 var options = {
                     method:'POST',
                     form : form,
-                    url : this.fileSystem.getURI(cwd) + '?Accept=application/json' + (overwrite ? '&overwrite=t' : ''),
+                    url : this.fileSystem.getURI(cwd) + '?Accept=application/json&overwrite=' + (overwrite ? 'T' : 'F'),
                     name : name,
                     success : function(f, action, message) {
                         this.getEl().unmask();
