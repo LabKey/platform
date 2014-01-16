@@ -32,6 +32,7 @@
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
       resources.add(ClientDependency.fromFilePath("Ext4ClientApi"));
+      resources.add(ClientDependency.fromFilePath("study/ImmunizationSchedule.js"));
       resources.add(ClientDependency.fromFilePath("dataview/DataViewsPanel.css"));
       return resources;
   }
@@ -77,7 +78,7 @@
 (function()
 {
     var X = Ext4;
-    var _gridSC, _storeSC, _panelSV,  _storeSV, _storeV, _panelAP;
+    var _gridSC, _storeSC, _panelSV,  _storeSV, _storeV, _panelAP, _addVisitWindow;
     var _configVisitMap = {};
 
     X.onReady(function(){
@@ -223,6 +224,28 @@
                 createAssayPlanPanel(data.rows[0]["AssayPlan"]);
         }
     });
+
+    // text link to open dialog to create a new visit
+    Ext4.create('LABKEY.ext4.LinkButton', {
+        renderTo: 'CreateNewVisitTextLink',
+        text: 'Create New <%=h(visitDisplayName)%>',
+        handler: function() {
+            var win = Ext4.create('LABKEY.ext4.VaccineDesignAddVisitWindow', {
+                title: 'Add <%=h(visitDisplayName)%>',
+                visitNoun: <%=q(visitDisplayName)%>,
+                allowSelectExistingVisit: false,
+                listeners: {
+                    scope : this,
+                    closeWindow : function() { win.close(); },
+                    newVisitCreated : function(newVisitData) {
+                        // reload the page to update the visit map section
+                        window.location.reload();
+                    }
+                }
+            });
+            win.show();
+        }
+    });
 });
 
 function createAssayPlanPanel(value)
@@ -331,6 +354,7 @@ function showUpdateConfigurationDialog(grid, record, item, index)
                     success: function(data) {
                         if (record) record.commit();
                         win.close();
+
                         // reload the page to update the visit map section
                         window.location.reload();
                     }
@@ -535,12 +559,10 @@ function removeSVC(el, scRowId, vRowId)
 <span style='font-style: italic; font-size: smaller;'>* Double click to edit an assay/specimen configuration</span>
 <br/><br/><br/>
 <div id="AssaySpecimenVisitPanel"></div>
+<span id="CreateNewVisitTextLink"></span>
 <%
     if (canManageStudy)
     {
-%>
-        <%=textLink("Create New " + visitDisplayName, new ActionURL(StudyController.CreateVisitAction.class, getContainer()).addReturnURL(returnURL))%>
-<%
         if (study != null && study.getTimepointType() == TimepointType.VISIT && study.getVisits(Visit.Order.DISPLAY).size() > 1)
         {
             %><%= textLink("Change Visit Order", new ActionURL(StudyController.VisitOrderAction.class, getContainer()).addReturnURL(returnURL)) %><%

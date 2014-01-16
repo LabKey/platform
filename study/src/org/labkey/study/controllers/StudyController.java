@@ -294,7 +294,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ActionURL getManageAssaySpecimenURL(Container container)
         {
-            return new ActionURL(ManageAssaySpecimenAction.class, container);
+            return new ActionURL(StudyDesignController.ManageAssaySpecimenAction.class, container);
         }
     }
 
@@ -6517,51 +6517,6 @@ public class StudyController extends BaseStudyController
             _appendManageStudy(root);
             root.addChild("Manage " + getStudyRedirectIfNull().getSubjectNounSingular() + " Groups");
             return root;
-        }
-    }
-
-    @RequiresPermissionClass(UpdatePermission.class)
-    public class ManageAssaySpecimenAction extends SimpleViewAction<Object>
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            return new JspView<>("/org/labkey/study/view/studydesign/manageAssaySpecimen.jsp", o);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            _appendManageStudy(root);
-            return root.addChild("Manage Assay/Specimen Configurations");
-        }
-    }
-
-    @RequiresPermissionClass(UpdatePermission.class)
-    public class ManageStudyProductsAction extends SimpleViewAction<Object>
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            return new JspView<>("/org/labkey/study/view/studydesign/manageStudyProducts.jsp", o);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            _appendManageStudy(root);
-            return root.addChild("Manage Study Products");
-        }
-    }
-
-    @RequiresPermissionClass(UpdatePermission.class)
-    public class ManageImmunizationsAction extends SimpleViewAction<Object>
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            return new JspView<>("/org/labkey/study/view/studydesign/manageImmunizations.jsp", o);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            _appendManageStudy(root);
-            return root.addChild("Manage Immunizations");
         }
     }
 

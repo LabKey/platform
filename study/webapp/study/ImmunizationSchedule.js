@@ -898,7 +898,7 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
 });
 
 // Ext4 widget that looks like the labkey textLink and allows for a handler function
-Ext4.define('LinkButton', {
+Ext4.define('LABKEY.ext4.LinkButton', {
     extend: 'Ext.Component',
     alias: 'widget.linkbutton',
 
@@ -1199,178 +1199,46 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
     },
 
     showAddVisitWindow : function(record, windowId) {
-        // TODO: this should be moved to its own object to be shared with the assay schedule manage page
-
-        var existingVisitRadio = Ext4.create('Ext.form.field.Radio', {
-            name: 'visitType',
-            inputValue: 'existing',
-            boxLabel: 'Select an existing study ' + this.visitNoun.toLowerCase() + ':',
-            checked: true,
-            hideFieldLabel: true,
-            width: 300
-        });
-
-        var existingVisitCombo = Ext4.create('Ext.form.field.ComboBox', {
-            name: 'existingVisit',
-            hideFieldLabel: true,
-            style: 'margin-left: 15px;',
-            width: 300,
-            store: this.visitStore,
-            editable: false,
-            queryMode: 'local',
-            displayField: 'Label',
-            valueField: 'RowId'
-        });
-
-        var newVisitRadio = Ext4.create('Ext.form.field.Radio', {
-            name: 'visitType',
-            inputValue: 'new',
-            boxLabel: 'Create a new study ' + this.visitNoun.toLowerCase() + ':',
-            hideFieldLabel: true,
-            width: 300
-        });
-
-        var newVisitLabel = Ext4.create('Ext.form.field.Text', {
-            name: 'newVisitLabel',
-            fieldLabel: 'Label',
-            labelWidth: 50,
-            width: 300,
-            style: 'margin-left: 15px;',
-            disabled: true
-        });
-
-        var newVisitRangeMin = Ext4.create('Ext.form.field.Number', {
-            name: 'newVisitRangeMin',
-            fieldLabel: 'Range',
-            labelWidth: 50,
-            width: 167,
-            emptyText: 'min',
-            hideTrigger: true,
-            disabled: true
-        });
-
-        var newVisitRangeMax = Ext4.create('Ext.form.field.Number', {
-            name: 'newVisitRangeMax',
-            width: 113,
-            emptyText: 'max',
-            hideTrigger: true,
-            disabled: true
-        });
-
-        var selectVisitBtn = Ext4.create('Ext.button.Button', {
-            text: 'Select',
-            disabled: true,
-            scope: this,
-            handler: function() {
-                var values = win.down('.form').getForm().getValues();
-
-                if (values['visitType'] == 'existing')
-                {
+        var win = Ext4.create('LABKEY.ext4.VaccineDesignAddVisitWindow', {
+            title: 'Add ' + this.visitNoun,
+            visitNoun: this.visitNoun,
+            allowSelectExistingVisit: true,
+            visitStore : this.visitStore,
+            listeners: {
+                scope : this,
+                closeWindow : function() { win.close(); },
+                existingVisitSelected : function(visitRowId) {
                     // show the fieldcontainer visit/treatment combo for the select visit
-                    var value = values['existingVisit'];
-                    var cmp = Ext4.ComponentQuery.query('.fieldcontainer[visitRowId=' + value + ']');
+                    var cmp = Ext4.ComponentQuery.query('.fieldcontainer[visitRowId=' + visitRowId + ']');
                     if (cmp && cmp.length > 0)
                         cmp[0].show();
-
+                },
+                newVisitCreated : function(newVisitData) {
                     win.close();
-                }
-                else
-                {
-                    // create a new study visit using the defined label and range
-                    Ext4.Ajax.request({
-                        url     : LABKEY.ActionURL.buildURL('study-design', 'createVisit.api'),
-                        method  : 'POST',
-                        jsonData: {
-                            label: values['newVisitLabel'],
-                            sequenceNumMin: values['newVisitRangeMin'],
-                            sequenceNumMax: values['newVisitRangeMax']
-                        },
-                        success: function(response) {
-                            var data = Ext4.decode(response.responseText);
-                            win.close();
 
-                            var prevWin = Ext4.ComponentQuery.query('#' + windowId);
-                            if (prevWin.length > 0)
-                            {
-                                // save treatment / visit mapping definition and reshow the current edit cohort window
-                                this.grid.getStore().on('datachanged', function(store){
-                                    // tag this page as needing to be reloaded after the submit is complete
-                                    // because the new visit needs to be added to the grid column config
-                                    // TODO: add column to grid without requiring page relaod
-                                    this.reloadOnSubmit = true;
+                    var prevWin = Ext4.ComponentQuery.query('#' + windowId);
+                    if (prevWin.length > 0)
+                    {
+                        // save treatment / visit mapping definition and reshow the current edit cohort window
+                        this.grid.getStore().on('datachanged', function(store){
+                            // tag this page as needing to be reloaded after the submit is complete
+                            // because the new visit needs to be added to the grid column config
+                            // TODO: add column to grid without requiring page relaod
+                            this.reloadOnSubmit = true;
 
-                                    // reselect the record because some of its data has been updated
-                                    record = store.findRecord('RowId', record.get('RowId'));
+                            // reselect the record because some of its data has been updated
+                            record = store.findRecord('RowId', record.get('RowId'));
 
-                                    // find the new visit record and set it to be included in the treatment / visit map
-                                    this.visitStore.findRecord('RowId', data.RowId).set('Included', true);
+                            // find the new visit record and set it to be included in the treatment / visit map
+                            this.visitStore.findRecord('RowId', newVisitData.RowId).set('Included', true);
 
-                                    this.showInsertUpdate(this.grid, null, 0, record);
-                                }, this, {single: true});
+                            this.showInsertUpdate(this.grid, null, 0, record);
+                        }, this, {single: true});
 
-                                this.insertUpdateGridRecord(prevWin[0], record);
-                            }
-                        },
-                        failure: function(response) {
-                            var resp = Ext4.decode(response.responseText);
-                            this.onFailure(resp.exception);
-                        },
-                        scope   : this
-                    });
+                        this.insertUpdateGridRecord(prevWin[0], record);
+                    }
                 }
             }
-        });
-
-        // field disabled state changes based on the existing vs new radio button selection
-        existingVisitRadio.on('change', function(cmp, checked){
-            existingVisitCombo.setDisabled(!checked);
-            newVisitLabel.setDisabled(checked);
-            newVisitRangeMin.setDisabled(checked);
-            newVisitRangeMax.setDisabled(checked);
-        });
-
-        // select/submit button changes name and disabled state based on the form selections / values
-        var updateBtnState = function() {
-            var enableExisting = existingVisitRadio.getValue() && existingVisitCombo.getValue();
-            var enabledNew = newVisitRadio.getValue() && (newVisitRangeMin.getValue() || newVisitRangeMax.getValue());
-            selectVisitBtn.setDisabled(!enableExisting && !enabledNew);
-
-            selectVisitBtn.setText(existingVisitRadio.getValue() ? 'Select' : 'Submit');
-        };
-        existingVisitRadio.on('change', updateBtnState);
-        existingVisitCombo.on('change', updateBtnState);
-        newVisitRangeMin.on('change', updateBtnState);
-        newVisitRangeMax.on('change', updateBtnState);
-
-        var win = Ext4.create('Ext.window.Window', {
-            itemId: 'MappingAddVisitWindow', // for component query
-            title: 'Add ' + this.visitNoun,
-            cls: 'data-window',
-            modal: true,
-            items: [{
-                xtype: 'form',
-                border: false,
-                bodyStyle: 'padding: 5px;',
-                items: [existingVisitRadio, existingVisitCombo, newVisitRadio, newVisitLabel,
-                    {
-                        xtype: 'fieldcontainer',
-                        layout: 'hbox',
-                        style: 'margin-left: 15px;',
-                        diabled: true,
-                        items: [
-                            newVisitRangeMin,
-                            {xtype: 'label', width: 20}, // spacer
-                            newVisitRangeMax
-                        ]
-                    }
-                ],
-                buttonAlign: 'center',
-                buttons: [selectVisitBtn,
-                {
-                    text: 'Cancel',
-                    handler: function() { win.close(); }
-                }]
-            }]
         });
         win.show();
     },
@@ -1465,5 +1333,211 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
                 }
             });
         }
+    }
+});
+
+Ext4.define('LABKEY.ext4.VaccineDesignAddVisitWindow', {
+
+    extend : 'Ext.window.Window',
+
+    visitNoun : 'Visit',
+    allowSelectExistingVisit : true,
+
+    title : 'Add Visit',
+    cls : 'data-window',
+    modal : true,
+
+    constructor : function(config) {
+        this.callParent([config]);
+
+        this.addEvents('closeWindow', 'existingVisitSelected', 'newVisitCreated');
+    },
+
+    initComponent : function() {
+        var formItems = [];
+
+        if (this.allowSelectExistingVisit)
+        {
+            var existingVisitRadio = Ext4.create('Ext.form.field.Radio', {
+                name: 'visitType',
+                inputValue: 'existing',
+                boxLabel: 'Select an existing study ' + this.visitNoun.toLowerCase() + ':',
+                checked: true,
+                hideFieldLabel: true,
+                width: 300
+            });
+
+            var existingVisitCombo = Ext4.create('Ext.form.field.ComboBox', {
+                name: 'existingVisit',
+                hideFieldLabel: true,
+                style: 'margin-left: 15px;',
+                width: 300,
+                store: this.visitStore,
+                editable: false,
+                queryMode: 'local',
+                displayField: 'Label',
+                valueField: 'RowId'
+            });
+
+            var newVisitRadio = Ext4.create('Ext.form.field.Radio', {
+                name: 'visitType',
+                inputValue: 'new',
+                boxLabel: 'Create a new study ' + this.visitNoun.toLowerCase() + ':',
+                hideFieldLabel: true,
+                width: 300
+            });
+
+            formItems.push(existingVisitRadio);
+            formItems.push(existingVisitCombo);
+            formItems.push(newVisitRadio);
+        }
+
+        var newVisitLabel = Ext4.create('Ext.form.field.Text', {
+            name: 'newVisitLabel',
+            fieldLabel: 'Label',
+            labelWidth: 50,
+            width: 300,
+            style: 'margin-left: 15px;',
+            disabled: this.allowSelectExistingVisit
+        });
+
+        var newVisitRangeMin = Ext4.create('Ext.form.field.Number', {
+            name: 'newVisitRangeMin',
+            fieldLabel: 'Range',
+            labelWidth: 50,
+            width: 167,
+            emptyText: 'min',
+            hideTrigger: true,
+            decimalPrecision: 4,
+            disabled: this.allowSelectExistingVisit
+        });
+
+        var newVisitRangeMax = Ext4.create('Ext.form.field.Number', {
+            name: 'newVisitRangeMax',
+            width: 113,
+            emptyText: 'max',
+            hideTrigger: true,
+            decimalPrecision: 4,
+            disabled: this.allowSelectExistingVisit
+        });
+
+        formItems.push(newVisitLabel);
+        formItems.push({
+            xtype: 'fieldcontainer',
+            layout: 'hbox',
+            style: 'margin-left: 15px;',
+            diabled: true,
+            items: [
+                newVisitRangeMin,
+                {xtype: 'label', width: 20}, // spacer
+                newVisitRangeMax
+            ]
+        });
+
+        var selectVisitBtn = this.getSelectVisitBtn();
+
+        this.items = [{
+            xtype: 'form',
+            border: false,
+            bodyStyle: 'padding: 5px;',
+            items: formItems,
+            buttonAlign: 'center',
+            buttons: [
+                selectVisitBtn,
+                {
+                    text: 'Cancel',
+                    scope: this,
+                    handler: function() {
+                        this.fireEvent('closeWindow');
+                    }
+                }
+            ]
+        }];
+
+        // select/submit button changes name and disabled state based on the form selections / values
+        var updateBtnState = Ext4.emptyFn();
+        if (this.allowSelectExistingVisit)
+        {
+            updateBtnState = function() {
+                var enableExisting = existingVisitRadio.getValue() && existingVisitCombo.getValue() != null;
+                var enabledNew = newVisitRadio.getValue() && (newVisitRangeMin.getValue() != null || newVisitRangeMax.getValue() != null);
+                selectVisitBtn.setDisabled(!enableExisting && !enabledNew);
+
+                selectVisitBtn.setText(existingVisitRadio.getValue() ? 'Select' : 'Submit');
+            };
+
+            // field disabled state changes based on the existing vs new radio button selection
+            existingVisitRadio.on('change', function(cmp, checked){
+                existingVisitCombo.setDisabled(!checked);
+                newVisitLabel.setDisabled(checked);
+                newVisitRangeMin.setDisabled(checked);
+                newVisitRangeMax.setDisabled(checked);
+            });
+
+            existingVisitRadio.on('change', updateBtnState);
+            existingVisitCombo.on('change', updateBtnState);
+        }
+        else
+        {
+            updateBtnState = function() {
+                selectVisitBtn.setDisabled(newVisitRangeMin.getValue() == null && newVisitRangeMax.getValue() == null);
+            };
+        }
+        newVisitRangeMin.on('change', updateBtnState);
+        newVisitRangeMax.on('change', updateBtnState);
+
+        this.callParent();
+
+        this.on('show', function() {
+            this.down('.textfield').focus();
+        }, this);
+    },
+
+    getSelectVisitBtn : function() {
+        return Ext4.create('Ext.button.Button', {
+            text: this.allowSelectExistingVisit ? 'Select' : 'Submit',
+            disabled: true,
+            scope: this,
+            handler: function() {
+                var values = this.down('.form').getForm().getValues();
+
+                if (values['visitType'] == 'existing')
+                {
+                    var value = values['existingVisit'];
+                    this.fireEvent('existingVisitSelected', value);
+
+                    this.fireEvent('closeWindow');
+                }
+                else
+                {
+                    // create a new study visit using the defined label and range
+                    Ext4.Ajax.request({
+                        url     : LABKEY.ActionURL.buildURL('study-design', 'createVisit.api'),
+                        method  : 'POST',
+                        jsonData: {
+                            label: values['newVisitLabel'],
+                            sequenceNumMin: values['newVisitRangeMin'],
+                            sequenceNumMax: values['newVisitRangeMax'],
+                            showByDefault: true
+                        },
+                        success: function(response) {
+                            var data = Ext4.decode(response.responseText);
+                            this.fireEvent('newVisitCreated', data);
+                        },
+                        failure: function(response) {
+                            var resp = Ext4.decode(response.responseText);
+                            Ext4.Msg.show({
+                                cls: 'data-window',
+                                title: 'Error',
+                                msg: resp.exception,
+                                icon: Ext4.Msg.ERROR,
+                                buttons: Ext4.Msg.OK
+                            });
+                        },
+                        scope   : this
+                    });
+                }
+            }
+        });
     }
 });

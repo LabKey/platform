@@ -18,7 +18,7 @@
 
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -125,5 +125,5 @@ Enter vaccine design information in the grids below.
 <div id="adjuvants-grid"></div>
 <span style='font-style: italic; font-size: smaller;'>* Double click a row to edit the label</span>
 <br/><br/>
-<%=textLink("Manage Immunizations", StudyController.ManageImmunizationsAction.class)%>
+<%=textLink("Manage Immunizations", StudyDesignController.ManageImmunizationsAction.class)%>
 

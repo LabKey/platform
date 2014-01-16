@@ -39,6 +39,7 @@ import org.labkey.study.controllers.samples.SpecimenUtils;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.view.BaseStudyPage;
 import org.springframework.validation.BindException;
 
@@ -149,7 +150,9 @@ public abstract class BaseStudyController extends SpringActionController
         try
         {
             appendRootNavTrail(root, container, user);
-            root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, container));
+
+            if (container.hasPermission(user, ManageStudyPermission.class))
+                root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, container));
         }
         catch (ServletException e)
         {

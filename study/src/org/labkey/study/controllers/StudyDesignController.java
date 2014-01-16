@@ -4,6 +4,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Sort;
 import org.labkey.api.query.FieldKey;
@@ -13,6 +14,8 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
 import org.labkey.study.StudySchema;
 import org.labkey.study.designer.StudyImmunizationSchedule;
 import org.labkey.study.model.CohortImpl;
@@ -27,6 +30,7 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -45,6 +49,51 @@ public class StudyDesignController extends BaseStudyController
     {
         super();
         setActionResolver(ACTION_RESOLVER);
+    }
+
+    @RequiresPermissionClass(UpdatePermission.class)
+    public class ManageAssaySpecimenAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/study/view/studydesign/manageAssaySpecimen.jsp", o);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            return root.addChild("Manage Assay/Specimen Configurations");
+        }
+    }
+
+    @RequiresPermissionClass(UpdatePermission.class)
+    public class ManageStudyProductsAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/study/view/studydesign/manageStudyProducts.jsp", o);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            return root.addChild("Manage Study Products");
+        }
+    }
+
+    @RequiresPermissionClass(UpdatePermission.class)
+    public class ManageImmunizationsAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/study/view/studydesign/manageImmunizations.jsp", o);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            return root.addChild("Manage Immunizations");
+        }
     }
 
     @RequiresPermissionClass(ReadPermission.class)

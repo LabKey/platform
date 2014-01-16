@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.study.controllers.CohortController" %>
@@ -132,7 +133,7 @@ Enter immunization information in the grids below.
 <div id="treatments-grid"></div>
 <div style='font-style: italic; font-size: smaller;'>* Double click to edit a treatment record and its product definition</div>
 <br/>
-<%=textLink("Manage Study Products", StudyController.ManageStudyProductsAction.class)%>
+<%=textLink("Manage Study Products", StudyDesignController.ManageStudyProductsAction.class)%>
 <br/><br/>
 <div id="immunization-schedule-grid"></div>
 <div style='font-style: italic; font-size: smaller;'>* Double click to edit a group/cohort and its treatment/visit map definition</div>

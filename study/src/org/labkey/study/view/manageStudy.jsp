@@ -40,6 +40,7 @@
 <%@ page import="org.labkey.study.controllers.StudyController.ManageTypesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyDefinitionController" %>
+<%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.importer.StudyReload" %>
@@ -243,17 +244,17 @@
     <tr>
         <th align="left">Study Products</th>
         <td>This study defines <%= getStudyProducts(user, null).size() %> study products</td>
-        <td><%= textLink("Manage Study Products", StudyController.ManageStudyProductsAction.class) %></td>
+        <td><%= textLink("Manage Study Products", StudyDesignController.ManageStudyProductsAction.class) %></td>
     </tr>
     <tr>
         <th align="left">Treatments/Immunizations</th>
         <td>This study defines <%= getStudyTreatments(user).size() %> treatments</td>
-        <td><%= textLink("Manage Immunizations", StudyController.ManageImmunizationsAction.class) %></td>
+        <td><%= textLink("Manage Immunizations", StudyDesignController.ManageImmunizationsAction.class) %></td>
     </tr>
     <tr>
         <th align="left">Assay Schedule</th>
         <td>This study defines <%= getAssaySpecimenConfigs().size() %> assay/specimen configurations</td>
-        <td><%= textLink("Manage Assay Schedule", StudyController.ManageAssaySpecimenAction.class) %></td>
+        <td><%= textLink("Manage Assay Schedule", StudyDesignController.ManageAssaySpecimenAction.class) %></td>
     </tr>
     <tr>
         <th align="left">Demo Mode</th>

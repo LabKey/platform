@@ -23,7 +23,7 @@
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.api.view.WebThemeManager" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page import="org.labkey.study.model.ProductImpl" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -167,7 +167,7 @@
 
     if (canEdit)
     {
-        %><br/><%=textLink("Edit", StudyController.ManageStudyProductsAction.class)%><%
+        %><br/><%=textLink("Edit", StudyDesignController.ManageStudyProductsAction.class)%><%
     }
 %>
 

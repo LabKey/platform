@@ -23,7 +23,7 @@
 <%@ page import="org.labkey.api.view.WebThemeManager" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.study.SampleManager" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page import="org.labkey.study.model.AssaySpecimenConfigImpl" %>
 <%@ page import="org.labkey.study.model.DerivativeType" %>
 <%@ page import="org.labkey.study.model.LocationImpl" %>
@@ -196,6 +196,6 @@
 
     if (canEdit)
     {
-        %><br/><%=textLink("Edit", StudyController.ManageAssaySpecimenAction.class)%><%
+        %><br/><%=textLink("Edit", StudyDesignController.ManageAssaySpecimenAction.class)%><%
     }
 %>
