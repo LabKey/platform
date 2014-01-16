@@ -658,15 +658,14 @@ public class SampleManager implements ContainerManager.ContainerListener
         if (null == vialDomain)
             throw new IllegalStateException("Expected Vial table to already be created.");
 
-        List<String> specimenProperties = new ArrayList<>();
+        List<PropertyDescriptor> specimenProperties = new ArrayList<>();
         for (DomainProperty domainProperty : specimenDomain.getNonBaseProperties())
-            specimenProperties.add(domainProperty.getName());
+            specimenProperties.add(domainProperty.getPropertyDescriptor());
 
         for (DomainProperty domainProperty : vialDomain.getNonBaseProperties())
         {
             PropertyDescriptor property = domainProperty.getPropertyDescriptor();
-            String name = property.getName();
-            SpecimenImporter.findRollups(matchedRollups, name, specimenProperties, rollups);
+            SpecimenImporter.findRollups(matchedRollups, property, specimenProperties, rollups);
         }
         return matchedRollups;
     }

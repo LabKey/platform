@@ -558,6 +558,10 @@ public class SpecimenImporter
                 List<SpecimenEvent> events = (List<SpecimenEvent>)objs;
                 return SampleManager.getInstance().getLastEvent(events).get(eventColName);
             }
+            protected boolean isTypeContraintMet(PropertyDescriptor from, PropertyDescriptor to)
+            {
+                return from.getJdbcType().equals(to.getJdbcType());
+            }
         },
         EventVialFirst
         {
@@ -577,6 +581,10 @@ public class SpecimenImporter
                 List<SpecimenEvent> events = (List<SpecimenEvent>)objs;
                 return SampleManager.getInstance().getFirstEvent(events).get(eventColName);
             }
+            protected boolean isTypeContraintMet(PropertyDescriptor from, PropertyDescriptor to)
+            {
+                return from.getJdbcType().equals(to.getJdbcType());
+            }
         },
         VialSpecimenCount
         {
@@ -593,6 +601,10 @@ public class SpecimenImporter
                 sql.add(Boolean.TRUE);
                 return sql;
             }
+            protected boolean isTypeContraintMet(PropertyDescriptor from, PropertyDescriptor to)
+            {
+                return JdbcType.BOOLEAN.equals(from.getJdbcType()) && to.getJdbcType().isInteger();
+            }
         },
         VialSpecimenTotal
         {
@@ -608,29 +620,28 @@ public class SpecimenImporter
                 sql.append(fromColName).append(") AS ").append(toColName);
                 return sql;
             }
+            protected boolean isTypeContraintMet(PropertyDescriptor from, PropertyDescriptor to)
+            {
+                return from.getJdbcType().isNumeric() && to.getJdbcType().isNumeric();
+            }
         };
 
         abstract public TargetTable getFromTable();
         abstract public TargetTable getToTable();
         abstract public List<String> getPatterns();
+        abstract protected boolean isTypeContraintMet(PropertyDescriptor from, PropertyDescriptor to);
 
         // Gets the field value from a particular object in the list (used for event -> vial rollups)
-        public Object getRollupResult(List<? extends Object> objs, String colName)
-        {
-            return null;
-        }
+        public Object getRollupResult(List<? extends Object> objs, String colName) { return null; }
 
         // Gets SQL to calulate rollup (used for vial -> specimen rollups)
-        public SQLFragment getRollupSql(String fromColName, String toColName)
-        {
-            return null;
-        }
+        public SQLFragment getRollupSql(String fromColName, String toColName) { return null; }
 
-        boolean match(String from, String to)
+        boolean match(PropertyDescriptor from, PropertyDescriptor to)
         {
             for (String pattern : getPatterns())
             {
-                if (pattern.replace("%", from).equalsIgnoreCase(to))
+                if (pattern.replace("%", from.getName()).equalsIgnoreCase(to.getName()) && isTypeContraintMet(from, to))
                     return true;
             }
             return false;
@@ -940,9 +951,9 @@ public class SpecimenImporter
         if (null == vialDomain)
             throw new IllegalStateException("Expected Vial domain to already be created.");
 
-        List<String> vialProperties = new ArrayList<>();
+        List<PropertyDescriptor> vialProperties = new ArrayList<>();
         for (DomainProperty domainProperty : vialDomain.getNonBaseProperties())
-            vialProperties.add(domainProperty.getName());
+            vialProperties.add(domainProperty.getPropertyDescriptor());
 
         Domain specimenEventDomain = specimenTablesProvider.getDomain("SpecimenEvent", true);
         if (null == specimenEventDomain)
@@ -961,7 +972,7 @@ public class SpecimenImporter
             SpecimenColumn specimenColumn = new SpecimenColumn(alias, name, getTypeName(property, dialect), TargetTable.SPECIMEN_EVENTS);
             SPECIMEN_COLUMNS.add(specimenColumn);
 
-            findRollups(_eventToVialRollups, name, vialProperties, _eventVialRollups);
+            findRollups(_eventToVialRollups, property, vialProperties, _eventVialRollups);
         }
 
     }
@@ -3281,13 +3292,13 @@ public class SpecimenImporter
         return new SqlExecutor(schema).execute(sql);
     }
 
-    public static void findRollups(Map<String, Pair<String, Rollup>> resultRollups, String name,
-                                   List<String> vialProperties, List<Rollup> considerRollups)
+    public static void findRollups(Map<String, Pair<String, Rollup>> resultRollups, PropertyDescriptor fromProperty,
+                                   List<PropertyDescriptor> toProperties, List<Rollup> considerRollups)
     {
         for (Rollup rollup : considerRollups)
-            for (String vialProperty : vialProperties)
-                if (rollup.match(name, vialProperty))
-                    resultRollups.put(name, new Pair<>(vialProperty, rollup));
+            for (PropertyDescriptor toProperty : toProperties)
+                if (rollup.match(fromProperty, toProperty))
+                    resultRollups.put(fromProperty.getName(), new Pair<>(toProperty.getName(), rollup));
     }
 
 }
