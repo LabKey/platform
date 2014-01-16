@@ -123,7 +123,7 @@
     <tr id="labkey-warning-messages-area" <%=me.isUserHidingWarningMessages() ? "style=display:none;" : ""%>>
         <td colspan="4" style="padding: 2px;">
             <div class="labkey-warning-messages">
-                <img src="<%=getViewContext().getContextPath()%>/_images/partdelete.gif" alt="x"
+                <img src="<%=getWebappURL("/_images/partdelete.gif")%>" alt="x"
                      style="float: right;cursor:pointer;" onclick="labkeyShowWarningMessages(false);">
                 <ul>
                     <% for(String warningMessage : me.getWarningMessages()) { %>

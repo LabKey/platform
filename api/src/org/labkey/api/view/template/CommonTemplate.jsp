@@ -171,7 +171,7 @@ if (null != me.getView("moduleNav"))
 
     %>
             <td id="bodypanel" class="labkey-body-panel" style="min-width:<%=bean.getMinimumWidth()%>px;">
-                <img height=1 width=<%=bean.getMinimumWidth()%> src="<%=getContextPath()%>/_.gif"><br>
+                <img height=1 width=<%=bean.getMinimumWidth()%> src="<%=getWebappURL("/_.gif")%>"><br>
                 <!-- BODY -->
                 <% me.include(me.getBody(),out); %>
                 <!-- /BODY -->
@@ -181,7 +181,7 @@ if (null != me.getView("moduleNav"))
 				{ %>
             <!-- RIGHT -->
             <td class="labkey-side-panel" style="min-width:240px;">
-                <img height=1 width=240 src="<%=getContextPath()%>/_.gif"><br>
+                <img height=1 width=240 src="<%=getWebappURL("_.gif")%>"><br>
                 <% me.include(me.getView(WebPartFactory.LOCATION_RIGHT),out); %>
             </td>
             <!-- /RIGHT -->

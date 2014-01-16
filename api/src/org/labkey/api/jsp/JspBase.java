@@ -106,6 +106,18 @@ abstract public class JspBase extends JspContext implements HasViewContext
     }
 
     /**
+     * Returns an encoded URL to a resource in the webapp directory by prefixing a resource path with the context path
+     * and encoding it.
+     *
+     * @param path Relative path to a resource in the webapp directory. Supports both "/"-prefixed and not prefixed paths.
+     * @return Properly encoded URL in an _HtmlString
+     */
+    public _HtmlString getWebappURL(String path)
+    {
+        return new _HtmlString(h(_viewContext.getContextPath() + (path.startsWith("/") ? "" : "/") + path));
+    }
+
+    /**
      * No-op encoding
      * Indicate that you explicitly want to include a string in the page WITHOUT encoding
      */
@@ -236,6 +248,13 @@ abstract public class JspBase extends JspContext implements HasViewContext
     public _HtmlString disabled(boolean disabled)
     {
         return new _HtmlString(disabled ? " disabled" : "");
+    }
+
+
+    // Returns "labkey-alternate-row" (true) or "labkey-row" (false)
+    public _HtmlString getShadeRowClass(boolean shade)
+    {
+        return new _HtmlString(shade ? "labkey-alternate-row" : "labkey-row");
     }
 
 
