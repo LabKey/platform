@@ -280,7 +280,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
             propertiesItems.push({
                 xtype      : 'displayfield',
                 fieldLabel : 'Created',
-                value      : Ext4.util.Format.date(this.data.created, 'Y-m-d H:i'),
+                value      : Ext4.util.Format.date(this.data.created, LABKEY.extDefaultDateTimeFormat),
                 readOnly   : true,
                 labelWidth : 120,
                 width      : 400
@@ -292,7 +292,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
             propertiesItems.push({
                 xtype      : 'displayfield',
                 fieldLabel : 'Modified',
-                value      : Ext4.util.Format.date(this.data.modified, 'Y-m-d H:i'),
+                value      : Ext4.util.Format.date(this.data.modified, LABKEY.extDefaultDateTimeFormat),
                 readOnly   : true,
                 labelWidth : 120,
                 width      : 400

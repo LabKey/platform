@@ -50,6 +50,8 @@
 <%@ page import="org.labkey.study.reports.StudyChartQueryReport" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.Date" %>
+<%@ page import="org.labkey.api.util.Formats" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext context = getViewContext();
@@ -232,7 +234,7 @@
         <%
             Object value = datasetRow.get(pd.getName());
         %>
-        <td><%= (null == value ? "&nbsp;" : h(ConvertUtils.convert(value), true))%>
+        <td><%=format(value)%>
         </td>
         <%
 
@@ -257,5 +259,16 @@
             return props;
         }
         return pds;
+    }
+
+    _HtmlString format(Object value)
+    {
+        if (value instanceof Date)
+            return formatDate((Date)value);
+
+        if (value instanceof Number)
+            return new _HtmlString(h(Formats.formatNumber(getContainer(), (Number)value)));
+
+        return new _HtmlString(null == value ? "&nbsp;" : h(ConvertUtils.convert(value), true));
     }
 %>
