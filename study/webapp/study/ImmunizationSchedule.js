@@ -15,6 +15,7 @@ Ext4.define('LABKEY.ext4.BaseVaccineDesignGrid', {
     filterRole : null,
     hiddenColumns : ["RowId"],
     visitNoun : 'Visit',
+    gridForceFit : true,
     frame  : false,
 
     constructor : function(config) {
@@ -74,7 +75,7 @@ Ext4.define('LABKEY.ext4.BaseVaccineDesignGrid', {
             autoHeight: true,
             selType: 'rowmodel',
             multiSelect: false,
-            forceFit: true,
+            forceFit: this.gridForceFit,
             editable: true,
             emptyText: this.emptyText,
             dockedItems: [{
@@ -233,7 +234,7 @@ Ext4.define('LABKEY.ext4.StudyProductsGrid', {
             model : 'StudyDesign.Product',
             proxy: {
                 type: 'ajax',
-                url : LABKEY.ActionURL.buildURL("study", "getStudyProducts", null, {role: this.filterRole}),
+                url : LABKEY.ActionURL.buildURL("study-design", "getStudyProducts", null, {role: this.filterRole}),
                 reader: {
                     type: 'json',
                     root: 'products'
@@ -327,7 +328,7 @@ Ext4.define('LABKEY.ext4.StudyProductsGrid', {
         {
             // delete the study.Product record and any associated study.ProductAntigen records
             Ext4.Ajax.request({
-                url     : LABKEY.ActionURL.buildURL('study', 'deleteStudyProduct.api'),
+                url     : LABKEY.ActionURL.buildURL('study-design', 'deleteStudyProduct.api'),
                 method  : 'POST',
                 jsonData: { id : record.get("RowId") },
                 success : function(resp){
@@ -597,7 +598,7 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
             model : 'StudyDesign.Product',
             proxy: {
                 type: 'ajax',
-                url : LABKEY.ActionURL.buildURL("study", "getStudyProducts"),
+                url : LABKEY.ActionURL.buildURL("study-design", "getStudyProducts"),
                 reader: {
                     type: 'json',
                     root: 'products'
@@ -613,7 +614,7 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
             model : 'StudyDesign.Treatment',
             proxy: {
                 type: 'ajax',
-                url : LABKEY.ActionURL.buildURL("study", "getStudyTreatments"),
+                url : LABKEY.ActionURL.buildURL("study-design", "getStudyTreatments"),
                 reader: {
                     type: 'json',
                     root: 'treatments'
@@ -884,7 +885,7 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
         {
             // delete the study.Treatment record and any associated study.TreatmentProductMap records
             Ext4.Ajax.request({
-                url     : LABKEY.ActionURL.buildURL('study', 'deleteTreatment.api'),
+                url     : LABKEY.ActionURL.buildURL('study-design', 'deleteTreatment.api'),
                 method  : 'POST',
                 jsonData: { id : record.get("RowId") },
                 success : function(resp){
@@ -935,6 +936,8 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
     mappingData : null,
     treatmentStore : null,
     visitStore : null,
+    gridForceFit : false,
+    reloadOnSubmit : false,
 
     constructor : function(config) {
         this.callParent([config]);
@@ -949,7 +952,7 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
     getImmunizationScheduleData : function(init) {
         // query for the immunization schedule data (including all cohorts, all treatments, and mapping info for each cohort/visit/treatment)
         Ext4.Ajax.request({
-            url : LABKEY.ActionURL.buildURL("study", "getStudyImmunizationSchedule"),
+            url : LABKEY.ActionURL.buildURL("study-design", "getStudyImmunizationSchedule"),
             method : 'GET',
             success : function(resp){
                 var o = Ext4.decode(resp.responseText);
@@ -1118,7 +1121,7 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
                     text: 'Add ' + this.visitNoun,
                     scope: this,
                     handler: function() {
-                        this.showAddVisitWindow(record);
+                        this.showAddVisitWindow(record, 'CohortTreatmentVisitMapWindow');
                     }
                 });
             }
@@ -1137,6 +1140,7 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
         var win = Ext4.create('Ext.window.Window', {
             title: (record ? 'Edit ' : 'Insert ') + this.filterRole,
             cls: 'data-window',
+            itemId: 'CohortTreatmentVisitMapWindow',
             modal: true,
             items: [{
                 xtype: 'form',
@@ -1194,7 +1198,150 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
         };
     },
 
-    showAddVisitWindow : function(record) {
+    showAddVisitWindow : function(record, windowId) {
+        // TODO: this should be moved to its own object to be shared with the assay schedule manage page
+
+        var existingVisitRadio = Ext4.create('Ext.form.field.Radio', {
+            name: 'visitType',
+            inputValue: 'existing',
+            boxLabel: 'Select an existing study ' + this.visitNoun.toLowerCase() + ':',
+            checked: true,
+            hideFieldLabel: true,
+            width: 300
+        });
+
+        var existingVisitCombo = Ext4.create('Ext.form.field.ComboBox', {
+            name: 'existingVisit',
+            hideFieldLabel: true,
+            style: 'margin-left: 15px;',
+            width: 300,
+            store: this.visitStore,
+            editable: false,
+            queryMode: 'local',
+            displayField: 'Label',
+            valueField: 'RowId'
+        });
+
+        var newVisitRadio = Ext4.create('Ext.form.field.Radio', {
+            name: 'visitType',
+            inputValue: 'new',
+            boxLabel: 'Create a new study ' + this.visitNoun.toLowerCase() + ':',
+            hideFieldLabel: true,
+            width: 300
+        });
+
+        var newVisitLabel = Ext4.create('Ext.form.field.Text', {
+            name: 'newVisitLabel',
+            fieldLabel: 'Label',
+            labelWidth: 50,
+            width: 300,
+            style: 'margin-left: 15px;',
+            disabled: true
+        });
+
+        var newVisitRangeMin = Ext4.create('Ext.form.field.Number', {
+            name: 'newVisitRangeMin',
+            fieldLabel: 'Range',
+            labelWidth: 50,
+            width: 167,
+            emptyText: 'min',
+            hideTrigger: true,
+            disabled: true
+        });
+
+        var newVisitRangeMax = Ext4.create('Ext.form.field.Number', {
+            name: 'newVisitRangeMax',
+            width: 113,
+            emptyText: 'max',
+            hideTrigger: true,
+            disabled: true
+        });
+
+        var selectVisitBtn = Ext4.create('Ext.button.Button', {
+            text: 'Select',
+            disabled: true,
+            scope: this,
+            handler: function() {
+                var values = win.down('.form').getForm().getValues();
+
+                if (values['visitType'] == 'existing')
+                {
+                    // show the fieldcontainer visit/treatment combo for the select visit
+                    var value = values['existingVisit'];
+                    var cmp = Ext4.ComponentQuery.query('.fieldcontainer[visitRowId=' + value + ']');
+                    if (cmp && cmp.length > 0)
+                        cmp[0].show();
+
+                    win.close();
+                }
+                else
+                {
+                    // create a new study visit using the defined label and range
+                    Ext4.Ajax.request({
+                        url     : LABKEY.ActionURL.buildURL('study-design', 'createVisit.api'),
+                        method  : 'POST',
+                        jsonData: {
+                            label: values['newVisitLabel'],
+                            sequenceNumMin: values['newVisitRangeMin'],
+                            sequenceNumMax: values['newVisitRangeMax']
+                        },
+                        success: function(response) {
+                            var data = Ext4.decode(response.responseText);
+                            win.close();
+
+                            var prevWin = Ext4.ComponentQuery.query('#' + windowId);
+                            if (prevWin.length > 0)
+                            {
+                                // save treatment / visit mapping definition and reshow the current edit cohort window
+                                this.grid.getStore().on('datachanged', function(store){
+                                    // tag this page as needing to be reloaded after the submit is complete
+                                    // because the new visit needs to be added to the grid column config
+                                    // TODO: add column to grid without requiring page relaod
+                                    this.reloadOnSubmit = true;
+
+                                    // reselect the record because some of its data has been updated
+                                    record = store.findRecord('RowId', record.get('RowId'));
+
+                                    // find the new visit record and set it to be included in the treatment / visit map
+                                    this.visitStore.findRecord('RowId', data.RowId).set('Included', true);
+
+                                    this.showInsertUpdate(this.grid, null, 0, record);
+                                }, this, {single: true});
+
+                                this.insertUpdateGridRecord(prevWin[0], record);
+                            }
+                        },
+                        failure: function(response) {
+                            var resp = Ext4.decode(response.responseText);
+                            this.onFailure(resp.exception);
+                        },
+                        scope   : this
+                    });
+                }
+            }
+        });
+
+        // field disabled state changes based on the existing vs new radio button selection
+        existingVisitRadio.on('change', function(cmp, checked){
+            existingVisitCombo.setDisabled(!checked);
+            newVisitLabel.setDisabled(checked);
+            newVisitRangeMin.setDisabled(checked);
+            newVisitRangeMax.setDisabled(checked);
+        });
+
+        // select/submit button changes name and disabled state based on the form selections / values
+        var updateBtnState = function() {
+            var enableExisting = existingVisitRadio.getValue() && existingVisitCombo.getValue();
+            var enabledNew = newVisitRadio.getValue() && (newVisitRangeMin.getValue() || newVisitRangeMax.getValue());
+            selectVisitBtn.setDisabled(!enableExisting && !enabledNew);
+
+            selectVisitBtn.setText(existingVisitRadio.getValue() ? 'Select' : 'Submit');
+        };
+        existingVisitRadio.on('change', updateBtnState);
+        existingVisitCombo.on('change', updateBtnState);
+        newVisitRangeMin.on('change', updateBtnState);
+        newVisitRangeMax.on('change', updateBtnState);
+
         var win = Ext4.create('Ext.window.Window', {
             itemId: 'MappingAddVisitWindow', // for component query
             title: 'Add ' + this.visitNoun,
@@ -1204,32 +1351,22 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
                 xtype: 'form',
                 border: false,
                 bodyStyle: 'padding: 5px;',
-                items: [{
-                    xtype: 'combo',
-                    fieldLabel: 'Label',
-                    labelWidth: 50,
-                    width: 300,
-                    store: this.visitStore,
-                    editable: false,
-                    queryMode: 'local',
-                    displayField: 'Label',
-                    valueField: 'RowId'
-                }],
-                buttonAlign: 'center',
-                buttons: [{
-                    text: 'Select',
-                    formBind: true,
-                    scope: this,
-                    handler: function() {
-                        // show the fieldcontainer visit/treatment combo for the select visit
-                        var value = win.down('.form').down('.combo').getValue();
-                        var cmp = Ext4.ComponentQuery.query('.fieldcontainer[visitRowId=' + value + ']');
-                        if (cmp && cmp.length > 0)
-                            cmp[0].show();
-
-                        win.close();
+                items: [existingVisitRadio, existingVisitCombo, newVisitRadio, newVisitLabel,
+                    {
+                        xtype: 'fieldcontainer',
+                        layout: 'hbox',
+                        style: 'margin-left: 15px;',
+                        diabled: true,
+                        items: [
+                            newVisitRangeMin,
+                            {xtype: 'label', width: 20}, // spacer
+                            newVisitRangeMax
+                        ]
                     }
-                },{
+                ],
+                buttonAlign: 'center',
+                buttons: [selectVisitBtn,
+                {
                     text: 'Cancel',
                     handler: function() { win.close(); }
                 }]
@@ -1258,7 +1395,7 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
         });
 
         Ext4.Ajax.request({
-            url     : LABKEY.ActionURL.buildURL('study', 'updateStudyImmunizationSchedule.api'),
+            url     : LABKEY.ActionURL.buildURL('study-design', 'updateStudyImmunizationSchedule.api'),
             method  : 'POST',
             jsonData: {
                 cohort: cohortValues,
@@ -1278,8 +1415,11 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
                     }, this, {single: true});
                 }
 
-                // reload the grid store data
-                this.getImmunizationScheduleData(false);
+                // reload the grid store data or reload the window
+                if (this.reloadOnSubmit)
+                    window.location.reload();
+                else
+                    this.getImmunizationScheduleData(false);
             },
             failure: function(response) {
                 var resp = Ext4.decode(response.responseText);
@@ -1311,7 +1451,7 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
         {
             // delete the study.Cohort record and any associated study.TreatmentProductMap records
             Ext4.Ajax.request({
-                url     : LABKEY.ActionURL.buildURL('study', 'deleteStudyImmunizationSchedule.api'),
+                url     : LABKEY.ActionURL.buildURL('study-design', 'deleteCohort.api'),
                 method  : 'POST',
                 jsonData: { id : record.get("RowId") },
                 scope: this,

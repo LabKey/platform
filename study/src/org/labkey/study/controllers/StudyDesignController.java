@@ -1,0 +1,407 @@
+package org.labkey.study.controllers;
+
+import org.json.JSONObject;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.Sort;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.Visit;
+import org.labkey.study.StudySchema;
+import org.labkey.study.designer.StudyImmunizationSchedule;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.CohortManager;
+import org.labkey.study.model.ProductAntigenImpl;
+import org.labkey.study.model.ProductImpl;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.TreatmentImpl;
+import org.labkey.study.model.TreatmentProductImpl;
+import org.labkey.study.model.VisitImpl;
+import org.labkey.study.visitmanager.VisitManager;
+import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * User: cnathe
+ * Date: 1/16/14
+ */
+public class StudyDesignController extends BaseStudyController
+{
+    private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(StudyDesignController.class);
+
+    public StudyDesignController()
+    {
+        super();
+        setActionResolver(ACTION_RESOLVER);
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetStudyProducts extends ApiAction<GetStudyProductsForm>
+    {
+        private StudyImpl _study;
+
+        @Override
+        public void validateForm(GetStudyProductsForm form, Errors errors)
+        {
+            _study = getStudy(getContainer());
+            if (_study == null)
+                errors.reject(ERROR_MSG, "A study does not exist in this folder");
+        }
+
+        @Override
+        public ApiResponse execute(GetStudyProductsForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            List<JSONObject> products = new ArrayList<>();
+
+            List<ProductImpl> studyProducts = StudyManager.getInstance().getStudyProducts(getContainer(), getUser(), form.getRole(), form.getRowId());
+            for (ProductImpl product : studyProducts)
+            {
+                JSONObject productJSON = new JSONObject();
+                productJSON.put("RowId", product.getRowId());
+                productJSON.put("Label", product.getLabel());
+                productJSON.put("Role", product.getRole());
+                productJSON.put("Type", product.getType());
+
+                List<JSONObject> productAntigens = new ArrayList<>();
+                List<ProductAntigenImpl> studyProductAntigens = StudyManager.getInstance().getStudyProductAntigens(getContainer(), getUser(), product.getRowId());
+                for (ProductAntigenImpl antigen : studyProductAntigens)
+                {
+                    JSONObject antigenJSON = new JSONObject();
+                    antigenJSON.put("RowId", antigen.getRowId());
+                    antigenJSON.put("ProductId", antigen.getProductId());
+                    antigenJSON.put("Gene", antigen.getGene());
+                    antigenJSON.put("SubType", antigen.getSubType());
+                    antigenJSON.put("GenBankId", antigen.getGenBankId());
+                    antigenJSON.put("Sequence", antigen.getSequence());
+                    productAntigens.add(antigenJSON);
+                }
+                productJSON.put("Antigens", productAntigens);
+
+                products.add(productJSON);
+            }
+
+            resp.put("success", true);
+            resp.put("products", products);
+
+            return resp;
+        }
+    }
+
+    public static class GetStudyProductsForm
+    {
+        private Integer _rowId;
+        private String _role;
+
+        public Integer getRowId()
+        {
+            return _rowId;
+        }
+
+        public void setRowId(Integer rowId)
+        {
+            _rowId = rowId;
+        }
+
+        public String getRole()
+        {
+            return _role;
+        }
+
+        public void setRole(String role)
+        {
+            _role = role;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetStudyTreatments extends ApiAction<Object>
+    {
+        private StudyImpl _study;
+
+        @Override
+        public void validateForm(Object form, Errors errors)
+        {
+            _study = getStudy(getContainer());
+            if (_study == null)
+                errors.reject(ERROR_MSG, "A study does not exist in this folder");
+        }
+
+        @Override
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            List<JSONObject> treatments = new ArrayList<>();
+
+            List<TreatmentImpl> studyTreatments = StudyManager.getInstance().getStudyTreatments(getContainer(), getUser());
+            for (TreatmentImpl treatment : studyTreatments)
+            {
+                JSONObject treatmentJSON = new JSONObject();
+                treatmentJSON.put("RowId", treatment.getRowId());
+                treatmentJSON.put("Label", treatment.getLabel());
+                treatmentJSON.put("Description", treatment.getDescription());
+
+                List<JSONObject> treatmentProducts = new ArrayList<>();
+                Sort sort = new Sort();
+                sort.appendSortColumn(FieldKey.fromParts("ProductId", "Role"), Sort.SortDirection.DESC, false);
+                sort.appendSortColumn(FieldKey.fromParts("ProductId", "RowId"), Sort.SortDirection.ASC, false);
+                List<TreatmentProductImpl> studyTreatmentProducts = StudyManager.getInstance().getStudyTreatmentProducts(getContainer(), getUser(), treatment.getRowId(), sort);
+                for (TreatmentProductImpl treatmentProduct : studyTreatmentProducts)
+                {
+                    JSONObject productJSON = new JSONObject();
+                    productJSON.put("RowId", treatmentProduct.getRowId());
+                    productJSON.put("TreatmentId", treatmentProduct.getTreatmentId());
+                    productJSON.put("ProductId", treatmentProduct.getProductId());
+                    productJSON.put("Dose", treatmentProduct.getDose());
+                    productJSON.put("Route", treatmentProduct.getRoute());
+
+                    List<ProductImpl> products = StudyManager.getInstance().getStudyProducts(getContainer(), getUser(), null, treatmentProduct.getProductId());
+                    if (products.size() == 1)
+                        productJSON.put("ProductId/Label", products.get(0).getLabel());
+
+                    treatmentProducts.add(productJSON);
+                }
+                treatmentJSON.put("Products", treatmentProducts);
+
+                treatments.add(treatmentJSON);
+            }
+
+            resp.put("success", true);
+            resp.put("treatments", treatments);
+
+            return resp;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetStudyImmunizationSchedule extends ApiAction<Object>
+    {
+        private StudyImpl _study;
+
+        @Override
+        public void validateForm(Object form, Errors errors)
+        {
+            _study = getStudy(getContainer());
+            if (_study == null)
+                errors.reject(ERROR_MSG, "A study does not exist in this folder");
+        }
+
+        @Override
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            StudyImmunizationSchedule immunizationSchedule = new StudyImmunizationSchedule(getContainer());
+
+            // include all cohorts for the study, regardless of it they have associated visits or not
+            immunizationSchedule.setCohorts(StudyManager.getInstance().getCohorts(getContainer(), getUser()));
+
+            // include all visits from the study, ordered by visit display order
+            immunizationSchedule.setVisits(StudyManager.getInstance().getVisits(_study, Visit.Order.DISPLAY));
+
+            // include all treatments for the study
+            immunizationSchedule.setTreatments(StudyManager.getInstance().getStudyTreatments(getContainer(), getUser()));
+
+            resp.put("mapping", immunizationSchedule.serializeCohortMapping());
+            resp.put("visits", immunizationSchedule.serializeVisits());
+            resp.put("treatments", immunizationSchedule.serializeTreatments());
+            resp.put("success", true);
+
+            return resp;
+        }
+    }
+
+    @RequiresPermissionClass(DeletePermission.class)
+    public class DeleteTreatmentAction extends ApiAction<IdForm>
+    {
+        @Override
+        public ApiResponse execute(IdForm form, BindException errors) throws Exception
+        {
+            if (form.getId() != 0)
+            {
+                StudyManager.getInstance().deleteTreatment(getContainer(), getUser(), form.getId());
+                return new ApiSimpleResponse("success", true);
+            }
+            return new ApiSimpleResponse("success", false);
+        }
+    }
+
+    @RequiresPermissionClass(DeletePermission.class)
+    public class DeleteStudyProductAction extends ApiAction<IdForm>
+    {
+        @Override
+        public ApiResponse execute(IdForm form, BindException errors) throws Exception
+        {
+            if (form.getId() != 0)
+            {
+                StudyManager.getInstance().deleteStudyProduct(getContainer(), getUser(), form.getId());
+                return new ApiSimpleResponse("success", true);
+            }
+            return new ApiSimpleResponse("success", false);
+        }
+    }
+
+    @RequiresPermissionClass(UpdatePermission.class)
+    public class UpdateStudyImmunizationScheduleAction extends ApiAction<StudyImmunizationSchedule>
+    {
+        @Override
+        public void validateForm(StudyImmunizationSchedule form, Errors errors)
+        {
+            if (form.getCohortLabel() == null)
+                errors.reject(ERROR_MSG, "Cohort label is required.");
+
+            CohortImpl cohortByLabel = StudyManager.getInstance().getCohortByLabel(getContainer(), getUser(), form.getCohortLabel());
+            if (form.getCohortRowId() != null)
+            {
+                CohortImpl cohortByRowId = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getCohortRowId());
+                if (cohortByRowId != null && cohortByLabel != null && cohortByRowId.getRowId() != cohortByLabel.getRowId())
+                    errors.reject(ERROR_MSG, "A cohort with the label '" + form.getCohortLabel() + "' already exists");
+            }
+            else if (cohortByLabel != null)
+            {
+                errors.reject(ERROR_MSG, "A cohort with the label '" + form.getCohortLabel() + "' already exists");
+            }
+        }
+
+        @Override
+        public ApiResponse execute(StudyImmunizationSchedule form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Study study = StudyManager.getInstance().getStudy(getContainer());
+
+            if (study != null)
+            {
+                CohortImpl cohort = insertOrUpdateCohort(form, study);
+                response.put("cohortId", cohort.getRowId());
+
+                updateTreatmentVisitMapping(form, cohort);
+
+                response.put("success", true);
+                return response;
+            }
+            else
+                throw new IllegalStateException("A study does not exist in this folder");
+        }
+
+        private CohortImpl insertOrUpdateCohort(StudyImmunizationSchedule form, Study study) throws Exception
+        {
+            CohortImpl cohort;
+            if (form.getCohortRowId() != null)
+            {
+                cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getCohortRowId());
+                cohort = cohort.createMutable();
+                cohort.setLabel(form.getCohortLabel());
+                cohort.setSubjectCount(form.getCohortSubjectCount());
+                StudyManager.getInstance().updateCohort(getUser(), cohort);
+            }
+            else
+            {
+                cohort = CohortManager.getInstance().createCohort(study, getUser(), form.getCohortLabel(), true, form.getCohortSubjectCount(), null);
+            }
+
+            return cohort;
+        }
+
+        private void updateTreatmentVisitMapping(StudyImmunizationSchedule form, CohortImpl cohort) throws SQLException
+        {
+            if (cohort != null)
+            {
+                StudySchema schema = StudySchema.getInstance();
+
+                try (DbScope.Transaction transaction = schema.getSchema().getScope().ensureTransaction())
+                {
+                    // the mapping that is passed in will have all of the current treatment/visit maps, so we will
+                    // delete all of the existing records and then insert the new ones
+                    StudyManager.getInstance().deleteTreatmentVisitMapForCohort(getContainer(), cohort.getRowId());
+
+                    for (Map.Entry<Integer, Integer> treatmentVisitMap : form.getTreatmentVisitMap().entrySet())
+                    {
+                        // map entry key = visitId and value = treatmentId
+                        StudyManager.getInstance().insertTreatmentVisitMap(getUser(), getContainer(), cohort.getRowId(), treatmentVisitMap.getKey(), treatmentVisitMap.getValue());
+                    }
+
+                    transaction.commit();
+                }
+            }
+        }
+    }
+
+    @RequiresPermissionClass(DeletePermission.class)
+    public class DeleteCohortAction extends ApiAction<IdForm>
+    {
+        @Override
+        public ApiResponse execute(IdForm form, BindException errors) throws Exception
+        {
+            if (form.getId() != 0)
+            {
+                CohortImpl cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getId());
+                if (cohort != null)
+                {
+                    if (!cohort.isInUse())
+                    {
+                        StudyManager.getInstance().deleteCohort(cohort);
+                        return new ApiSimpleResponse("success", true);
+                    }
+                    else
+                    {
+                        errors.reject(ERROR_MSG, "Unable to delete in-use cohort: " + cohort.getLabel());
+                    }
+                }
+                else
+                {
+                    errors.reject(ERROR_MSG, "Unable to find cohort for id " + form.getId());
+                }
+            }
+            return new ApiSimpleResponse("success", false);
+        }
+    }
+
+    @RequiresPermissionClass(UpdatePermission.class)
+    public class CreateVisitAction extends ApiAction<VisitForm>
+    {
+        @Override
+        public void validateForm(VisitForm form, Errors errors)
+        {
+            StudyImpl study = getStudyRedirectIfNull();
+
+            form.validate(errors, study);
+            if (errors.getErrorCount() > 0)
+                return;
+
+            //check for overlapping visits
+            VisitManager visitMgr = StudyManager.getInstance().getVisitManager(study);
+            if (null != visitMgr)
+            {
+                if (visitMgr.isVisitOverlapping(form.getBean()))
+                    errors.reject(null, "Visit range overlaps an existing visit in this study. Please enter a different range.");
+            }
+        }
+
+        @Override
+        public ApiResponse execute(VisitForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            VisitImpl visit = form.getBean();
+            visit = StudyManager.getInstance().createVisit(getStudyThrowIfNull(), getUser(), visit);
+
+            response.put("RowId", visit.getRowId());
+            response.put("Label", visit.getDisplayString());
+            response.put("SortOrder", visit.getDisplayOrder());
+            response.put("Included", true);
+            response.put("success", true);
+            return response;
+        }
+    }
+}

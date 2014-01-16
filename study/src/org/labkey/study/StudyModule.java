@@ -103,6 +103,7 @@ import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.ParticipantGroupController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.StudyDefinitionController;
+import org.labkey.study.controllers.StudyDesignController;
 import org.labkey.study.controllers.StudyPropertiesController;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.controllers.designer.DesignerController;
@@ -269,6 +270,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         addController("cohort", CohortController.class);
         addController("study-properties", StudyPropertiesController.class);
         addController("participant-group", ParticipantGroupController.class);
+        addController("study-design", StudyDesignController.class);
 
         PlateService.register(new PlateManager());
         AssayService.setInstance(new AssayManager());

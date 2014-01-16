@@ -140,9 +140,6 @@ Enter immunization information in the grids below.
 <%
     if (canManageStudy)
     {
-%>
-        <%=textLink("Create New " + visitDisplayName, new ActionURL(StudyController.CreateVisitAction.class, c).addReturnURL(returnURL))%>
-<%
         if (study != null && study.getTimepointType() == TimepointType.VISIT && study.getVisits(Visit.Order.DISPLAY).size() > 1)
         {
             %><%= textLink("Change Visit Order", new ActionURL(StudyController.VisitOrderAction.class, c).addReturnURL(returnURL)) %><%
