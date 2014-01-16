@@ -32,6 +32,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialectManager;
+import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.etl.CachingDataIterator;
 import org.labkey.api.etl.RemoveDuplicatesDataIterator;
 import org.labkey.api.etl.ResultSetDataIterator;
@@ -156,6 +157,7 @@ import org.labkey.core.security.SecurityController;
 import org.labkey.core.test.TestController;
 import org.labkey.core.thumbnail.ThumbnailServiceImpl;
 import org.labkey.core.user.UserController;
+import org.labkey.core.util.StatsServiceImpl;
 import org.labkey.core.webdav.DavController;
 import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.core.workbook.WorkbookQueryView;
@@ -242,6 +244,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         RhinoService.register();
         ServiceRegistry.get().registerService(ThumbnailService.class, new ThumbnailServiceImpl());
         ServiceRegistry.get().registerService(DataLoaderService.I.class, new DataLoaderServiceImpl());
+        ServiceRegistry.get().registerService(StatsService.class, new StatsServiceImpl());
 
         ModuleStaticResolverImpl.get();
 

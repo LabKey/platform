@@ -794,6 +794,7 @@ core/src/org/labkey/core/user/impersonate.jsp -text
 core/src/org/labkey/core/user/toggleInactive.jsp -text
 core/src/org/labkey/core/user/toggleShowAll.jsp -text
 core/src/org/labkey/core/user/userAccess.jsp -text
+core/src/org/labkey/core/util/StatsServiceImpl.java -text
 core/src/org/labkey/core/webdav/DavController.java -text
 core/src/org/labkey/core/webdav/WebdavServlet.java -text
 core/src/org/labkey/core/webdav/apache/XMLWriter.java -text
