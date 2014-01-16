@@ -708,7 +708,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
     {
         private final String s;
 
-        _HtmlString(String s)
+        public _HtmlString(String s)
         {
             this.s = s;
         }

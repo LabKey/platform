@@ -2009,17 +2009,7 @@ public class PageFlowUtil
                 parser.setContentHandler(new ValidateHandler(scriptWarnings));
                 parser.parse(new InputSource(new StringReader(xml)));
             }
-            catch (UnsupportedEncodingException e)
-            {
-                _log.error(e.getMessage(), e);
-                errors.add(e.getMessage());
-            }
-            catch (IOException e)
-            {
-                _log.error(e.getMessage(), e);
-                errors.add(e.getMessage());
-            }
-            catch (SAXException e)
+            catch (IOException | SAXException e)
             {
                 _log.error(e.getMessage(), e);
                 errors.add(e.getMessage());
@@ -2078,9 +2068,16 @@ public class PageFlowUtil
         if (container != null)
             json.put("moduleContext", getModuleClientContext(container, user, resources));
 
-        // Look and feel properties in this container determines date parsing mode; fall back on root setting
-        Container dateParsingModeContainer = null != container ? container : ContainerManager.getRoot();
-        json.put("useMDYDateParsing", LookAndFeelProperties.getInstance(dateParsingModeContainer).getDateParsingMode().getDayMonth() == DateUtil.MonthDayOption.MONTH_DAY);
+        // Current container determines default formats and date parsing mode; fall back on root setting, which is better than nothing.
+        Container settingsContainer = null != container ? container : ContainerManager.getRoot();
+        json.put("extDefaultDateFormat", ExtUtil.toExtDateFormat(DateUtil.getDateFormatString(settingsContainer)));
+        json.put("extDefaultDateTimeFormat", ExtUtil.toExtDateFormat(DateUtil.getDateTimeFormatString(settingsContainer)));
+        String numberFormat = Formats.getNumberFormatString(settingsContainer);
+        if (null != numberFormat)
+            json.put("extDefaultNumberFormat", ExtUtil.toExtNumberFormat(numberFormat));
+
+        LookAndFeelProperties laf = LookAndFeelProperties.getInstance(settingsContainer);
+        json.put("useMDYDateParsing", laf.getDateParsingMode().getDayMonth() == DateUtil.MonthDayOption.MONTH_DAY);
 
         JSONObject userProps = new JSONObject();
 

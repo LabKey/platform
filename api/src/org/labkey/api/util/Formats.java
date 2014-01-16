@@ -48,9 +48,20 @@ public class Formats
         return HelpTopic.getJDKJavaDocLink(DecimalFormat.class);
     }
 
-    // Get the default number format string to use in this Container
+    /** Get the default number format string to use in this Container */
     public static String getNumberFormatString(Container c)
     {
         return FolderSettingsCache.getDefaultNumberFormat(c);
+    }
+
+    /** Format number using using folder-specified default pattern */
+    public static String formatNumber(Container c, Number n)
+    {
+        String formatString = FolderSettingsCache.getDefaultNumberFormat(c);
+
+        if (null != formatString)
+            return new DecimalFormat(formatString).format(n);
+        else
+            return n.toString();
     }
 }
