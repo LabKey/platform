@@ -66,7 +66,7 @@
             else
                 downloadURLPrefix += "&export=";
     %>
-    <tr class="<%= text(rowCount++ % 2 == 0 ? "labkey-alternate-row" : "labkey-row") %>" valign="top">
+    <tr class="<%=getShadeRowClass(rowCount++ % 2 == 0) %>" valign="top">
         <td><%= h(location.getDisplayName()) %></td>
         <td>
             <table>

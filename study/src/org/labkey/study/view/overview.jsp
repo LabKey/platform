@@ -238,9 +238,8 @@
         }
 
         String dataSetLabel = (dataSet.getLabel() != null ? dataSet.getLabel() : "" + dataSet.getDataSetId());
-        String className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
     %>
-    <tr class="<%= text(className) %>">
+    <tr class="<%=getShadeRowClass(row % 2 == 0)%>">
         <td align="center" class="labkey-row-header"><%= h(dataSetLabel) %><%
             if (null != StringUtils.trimToNull(dataSet.getDescription()))
             {

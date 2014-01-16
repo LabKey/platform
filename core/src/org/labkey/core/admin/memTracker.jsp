@@ -15,8 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.settings.AppProps"%>
-<%@ page import="org.labkey.api.util.MemTracker" %>
+<%@ page import="org.labkey.api.util.MemTracker"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -27,7 +26,6 @@
 <%
     JspView<MemBean> me = (JspView<MemBean>)HttpView.currentView();
     MemBean bean = me.getModelBean();
-    String contextPath = AppProps.getInstance().getContextPath();
 
     for (String active : bean.activeThreads)
         out.print("<div class=\"labkey-error\">Warning: active thread \"" + active + "\" may have objects in use</div><br>\n");
@@ -95,9 +93,9 @@
             String[] split = htmlStack.split("<br>");
             String secondLine = split.length >= 2 ? split[2] : "";
 %>
-    <tr class="<%=(counter % 2 == 0) ? "labkey-row" : "labkey-alternate-row"%>">
-        <td valign=top><img id="toggleImg<%=counter%>" src="<%=contextPath%>/_images/plus.gif" alt="expand/collapse" onclick='toggle(<%=counter%>)'></td>
-        <td valign=top><%= reference.getClassName() %></td>
+    <tr class="<%=getShadeRowClass(counter % 2 == 1)%>">
+        <td valign=top><img id="toggleImg<%=counter%>" src="<%=getWebappURL("_images/plus.gif")%>" alt="expand/collapse" onclick='toggle(<%=counter%>)'></td>
+        <td valign=top><%=h(reference.getClassName())%></td>
         <td valign=top>
 <%
             if (reference.hasShortSummary())
@@ -160,7 +158,7 @@ function toggleImg(img)
     if (!img)
         return;
 
-    img.src = img.src.match(/.*plus.gif/) ? "<%=contextPath%>/_images/minus.gif" : "<%=contextPath%>/_images/plus.gif";
+    img.src = img.src.match(/.*plus.gif/) ? "<%=getContextPath()%>/_images/minus.gif" : "<%=getContextPath()%>/_images/plus.gif";
 }
 
 </script>

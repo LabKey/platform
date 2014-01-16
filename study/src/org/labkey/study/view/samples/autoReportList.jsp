@@ -93,10 +93,10 @@ This folder does not contain a study.
 <table cellspacing="0" cellpadding="3">
 <%
         int formRowIndex = 0;
-        String rowClass;
+        _HtmlString rowClass;
         for (SpecimenVisitReportParameters factory : bean.getFactories(category))
         {
-            rowClass = (formRowIndex++)%2==0 ? "labkey-alternate-row" : "labkey-row";
+            rowClass = getShadeRowClass(formRowIndex++ %2 == 0);
             String showHideSuffix = "_" + categoryIndex + "_" + formRowIndex;
             String formName = "form" + showHideSuffix;
 %>
@@ -106,7 +106,7 @@ This folder does not contain a study.
             if (bean.isListView())
             {
         %>
-            <div class="<%= text(rowClass) %>">
+            <div class="<%=rowClass%>">
                 <div style="text-align:right"><span class="labkey-strong"><%= h(factory.getLabel())%></span>
                     <%=textLink("show options", "#", "return showOrHide('" + showHideSuffix + "')", "showOptionsLink" + showHideSuffix)%>
                     <%= generateSubmitButton("View") %>
@@ -115,7 +115,7 @@ This folder does not contain a study.
         <%
             }
         %>
-        <div class="<%= text(rowClass) %>">
+        <div class="<%=rowClass%>">
             <div>
                 <span id="reportParameters<%= text(showHideSuffix) %>" style="display:<%= text(bean.isListView() ? "none" : "block") %>">
                     <table>

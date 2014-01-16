@@ -116,7 +116,7 @@
         WebdavResource info = parent;
         shade = !shade;
         long modified = info.getLastModified();
-        %><tr class="<%=shade?"labkey-alternate-row":"labkey-row"%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>?listing=html"><%=h(name)%></a></td><%
+        %><tr class="<%=getShadeRowClass(shade)%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>?listing=html"><%=h(name)%></a></td><%
         %><td align="right">&nbsp;</td><%
         %><td align="right" nowrap><%=modified==0?"&nbsp;":dateFormat.format(new Date(modified))%></td></tr><%
         out.println();
@@ -127,7 +127,7 @@
         WebdavResource info = entry.getValue();
         shade = !shade;
         long modified = info.getLastModified();
-        %><tr class="<%=shade?"labkey-alternate-row":"labkey-row"%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>?listing=html"><%=h(name)%></a></td><%
+        %><tr class="<%=getShadeRowClass(shade)%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>?listing=html"><%=h(name)%></a></td><%
         %><td align="right">&nbsp;</td><%
         %><td align="right" nowrap><%=modified==0?"&nbsp;":dateFormat.format(new Date(modified))%></td></tr><%
         out.println();
@@ -140,11 +140,11 @@
         long modified = info.getLastModified();
         if (info.canRead(user,false))
         {
-            %><tr class="<%=shade?"labkey-alternate-row":"labkey-row"%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>?listing=html"><%=h(name)%></a></td><%
+            %><tr class="<%=getShadeRowClass(shade)%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>?listing=html"><%=h(name)%></a></td><%
         }
         else
         {
-            %><tr class="<%=shade?"labkey-alternate-row":"labkey-row"%>"><td align="left"><%=h(name)%></td><%
+            %><tr class="<%=getShadeRowClass(shade)%>"><td align="left"><%=h(name)%></td><%
         }
         %><td align="right"><%=info.getContentLength()%></td><%
         %><td align="right" nowrap><%=modified==0?"&nbsp;":dateFormat.format(new Date(modified))%></td></tr><%

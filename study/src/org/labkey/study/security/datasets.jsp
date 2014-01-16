@@ -146,7 +146,7 @@ else
         %><col><%
     }
     %></colgroup>
-    <tr class="<%=text(row++%2==0?"labkey-alternate-row":"labkey-row")%>"><th>&nbsp;</th><%
+    <tr class="<%=getShadeRowClass(row++ % 2 == 0)%>"><th>&nbsp;</th><%
     for (Group g : restrictedGroups)
     {
         %><th style="padding: 0 5px 0 5px;"><%=h(groupName(g))%></th><%
@@ -176,7 +176,7 @@ else
     }
 
     %></tr>
-    <tr class="<%=text(row++%2==0?"labkey-alternate-row":"labkey-row")%>"><th>&nbsp;</th><%
+    <tr class="<%=getShadeRowClass(row++ % 2 == 0)%>"><th>&nbsp;</th><%
     for (Group g : restrictedGroups)
     {
         %><td style="padding: 0 5px 0 5px; text-align: left"><select name="<%= h(g.getName()) %>" onchange="setColumnSelections(this)">
@@ -205,7 +205,7 @@ else
         SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
 
         String inputName = "dataset." + ds.getDataSetId();
-        %><tr class="<%=text(row++%2==0?"labkey-alternate-row":"labkey-row")%>"><td><%=h(ds.getLabel())%></td><%
+        %><tr class="<%=getShadeRowClass(row++ % 2 == 0)%>"><td><%=h(ds.getLabel())%></td><%
 
         for (Group g : restrictedGroups)
         {

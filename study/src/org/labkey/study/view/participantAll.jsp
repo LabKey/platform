@@ -393,7 +393,7 @@
 <%
     }
     int row = 0;
-    String className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
+    _HtmlString className = getShadeRowClass(row % 2 == 0);
 
     // display details link(s) only if we have a source lsid in at least one of the rows
     boolean hasSourceLsid = false;
@@ -403,8 +403,8 @@
         row++;
 %>
 <tr style="<%=text(expanded ? "" : "display:none")%>">
-    <td class="<%= text(className) %>" align="left" nowrap>QC State</td>
-    <td class="<%= text(className) %>">&nbsp;</td>
+    <td class="<%=className%>" align="left" nowrap>QC State</td>
+    <td class="<%=className%>">&nbsp;</td>
     <%
         for (VisitImpl visit : visits)
         {
@@ -420,7 +420,7 @@
                         QCState state = getQCState(study, id);
                         boolean hasDescription = state != null && state.getDescription() != null && state.getDescription().length() > 0;
     %>
-    <td class="<%=text(className)%>">
+    <td class="<%=className%>">
         <%= h(state == null ? "Unspecified" : state.getLabel())%><%= hasDescription ? helpPopup("QC State: " + state.getLabel(), state.getDescription()) : "" %>
     </td>
     <%
@@ -432,7 +432,7 @@
         if (countTD < maxTD)
         {
     %>
-    <td class="<%=text(className)%>" colspan="<%=maxTD-countTD%>">&nbsp;</td>
+    <td class="<%=className%>" colspan="<%=maxTD-countTD%>">&nbsp;</td>
     <%
                 }
             }
@@ -450,10 +450,10 @@
     {
         if (col == null) continue;
         row++;
-        className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
+        className = getShadeRowClass(row % 2 == 0);
         String labelName = StringUtils.defaultString(col.getLabel(), col.getName());
 %>
-<tr class="<%=text(className)%>" style="<%=text(expanded ? "" : "display:none")%>">
+<tr class="<%=className%>" style="<%=text(expanded ? "" : "display:none")%>">
     <td align="left" nowrap><%=h(labelName)%>
     </td>
     <td>&nbsp;</td>
@@ -495,9 +495,9 @@
     if (hasSourceLsid) // Need to display a details link
     {
         row++;
-        className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
+        className = getShadeRowClass(row % 2 == 0);
 %>
-<tr class="<%=text(className)%>" style="<%=text(expanded ? "" : "display:none")%>">
+<tr class="<%=className%>" style="<%=text(expanded ? "" : "display:none")%>">
     <td align="left" nowrap>Details</td>
     <td>&nbsp;</td>
     <%

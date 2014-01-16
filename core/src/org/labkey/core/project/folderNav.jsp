@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.project.FolderNavigationForm" %>
@@ -41,8 +40,6 @@
 <%
     JspView<FolderNavigationForm> me = (JspView<FolderNavigationForm>) HttpView.currentView();
     FolderNavigationForm form = me.getModelBean();
-    ViewContext ctx = getViewContext();
-    String contextPath = ctx.getContextPath();
     User user = getUser();
     Container c = getContainer();
     List<Container> containers = ContainerManager.containersToRootList(c);
@@ -51,18 +48,18 @@
     ActionURL createFolderURL = new ActionURL(AdminController.CreateFolderAction.class, c);
 %>
 <%!
-    public _HtmlString getTrailSeparator(String ctxPath)
+    public _HtmlString getTrailSeparator()
     {
-        return _hs("&nbsp;<img src=\"" + ctxPath + "/_images/arrow_breadcrumb.png\" alt=\"\">&nbsp;");
+        return _hs("&nbsp;<img src=\"" + getWebappURL("/_images/arrow_breadcrumb.png") + "\" alt=\"\">&nbsp;");
     }
 
-    public _HtmlString getTrailLink(Container c, User u, String ctxPath)
+    public _HtmlString getTrailLink(Container c, User u)
     {
         if (c.hasPermission(u, ReadPermission.class))
         {
-            return _hs("<a href=\"" + h(c.getStartURL(u)) +"\">" + h(c.getName()) + "</a>" + getTrailSeparator(ctxPath));
+            return _hs("<a href=\"" + h(c.getStartURL(u)) +"\">" + h(c.getName()) + "</a>" + getTrailSeparator());
         }
-        return _hs("<span>" + h(c.getName()) + "</span>" + getTrailSeparator(ctxPath));
+        return _hs("<span>" + h(c.getName()) + "</span>" + getTrailSeparator());
     }
 %>
 <div>
@@ -77,7 +74,7 @@
             {
                 for (int p=0; p < size-1; p++)
                 {
-                    %><%=getTrailLink(containers.get(p), user, contextPath)%><%
+                    %><%=getTrailLink(containers.get(p), user)%><%
                 }
                 %><span style="color: black;"><%=h(containers.get(size - 1).getName())%></span><%
             }
@@ -85,12 +82,12 @@
             {
                 for (int p=0; p < 2; p++)
                 {
-                    %><%=getTrailLink(containers.get(p), user, contextPath)%><%
+                    %><%=getTrailLink(containers.get(p), user)%><%
                 }
-                %>...<%=getTrailSeparator(contextPath)%><%
+                %>...<%=getTrailSeparator()%><%
                 for (int p=(size-2); p < size-1 ; p++)
                 {
-                    %><%=getTrailLink(containers.get(p), user, contextPath)%><%
+                    %><%=getTrailLink(containers.get(p), user)%><%
                 }
                 %><span style="color: black;"><%=h(containers.get(size - 1).getName())%></span><%
             }
@@ -175,11 +172,11 @@
     if (c.hasPermission(user, AdminPermission.class))
     {
 %>
-    <span class="button-icon"><a href="<%=createFolderURL%>" title="New Subfolder"><img src="<%=getContextPath()%>/_images/icon_folders_add.png" alt="New Subfolder" /></a></span>
+    <span class="button-icon"><a href="<%=createFolderURL%>" title="New Subfolder"><img src="<%=getWebappURL("_images/icon_folders_add.png")%>" alt="New Subfolder" /></a></span>
 <%
     }
 %>
-    <span class="button-icon"><a id="permalink_vis" href="#" title="Permalink Page"><img src="<%=getContextPath()%>/_images/icon_permalink.png" alt="Permalink Page" /></a></span>
+    <span class="button-icon"><a id="permalink_vis" href="#" title="Permalink Page"><img src="<%=getWebappURL("_images/icon_permalink.png")%>" alt="Permalink Page" /></a></span>
     <script type="text/javascript">
         (function(){
             var p = document.getElementById('permalink');

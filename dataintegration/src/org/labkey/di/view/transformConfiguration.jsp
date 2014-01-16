@@ -196,7 +196,7 @@ for (ScheduledPipelineJobDescriptor descriptor : descriptorsMap.values())
 
     if (isAdmin)
     {
-        %><tr transformId="<%=h(descriptor.getId())%>" class="<%=text(1==row%2?"labkey-alternate-row":"labkey-row")%>">
+        %><tr transformId="<%=h(descriptor.getId())%>" class="<%=getShadeRowClass(1 == row % 2)%>">
         <td><%=h(descriptor.getName())%></td>
         <td><%=h(descriptor.getModuleName())%></td>
         <td><%=h(descriptor.getScheduleDescription())%></td>
@@ -215,7 +215,7 @@ for (ScheduledPipelineJobDescriptor descriptor : descriptorsMap.values())
     }
     else
     {
-        %><tr transformId="<%=h(descriptor.getId())%>" class="<%=text(1==row%2?"labkey-alternate-row":"labkey-row")%>">
+        %><tr transformId="<%=h(descriptor.getId())%>" class="<%=getShadeRowClass(1 == row % 2)%>">
         <td><%=h(descriptor.getName())%></td>
         <td><%=h(descriptor.getModuleName())%></td>
         <td><%=h(descriptor.getScheduleDescription())%></td>

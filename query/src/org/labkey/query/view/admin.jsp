@@ -100,7 +100,7 @@ else
         ActionURL urlDelete = urls.urlDeleteExternalSchema(c, def);
 
     %>
-        <tr class='<%=text(i % 2 == 0 ? "labkey-row" : "labkey-alternate-row")%>'>
+        <tr class='<%=getShadeRowClass(i % 2 == 1)%>'>
             <td><%=h(def.getUserSchemaName())%></td>
             <td><%=h(def.getDataSource())%></td>
             <td><%=h(def.getSourceSchemaName())%></td><%
@@ -192,7 +192,7 @@ else
         }
 
     %>
-        <tr class='<%=text(i % 2 == 0 ? "labkey-row" : "labkey-alternate-row")%>'>
+        <tr class='<%=getShadeRowClass(i % 2 == 1)%>'>
             <td><%=h(linkedSchema.getUserSchemaName())%></td>
             <td><%=h(linkedSchema.getSchemaTemplate())%></td>
             <td><%=h(sourceContainer != null ? sourceContainer.getPath() : linkedSchema.getSourceContainerId())%></td>

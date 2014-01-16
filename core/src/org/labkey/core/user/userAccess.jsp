@@ -92,7 +92,7 @@ However, If this account is re-enabled, it would have the following permissions.
         boolean isUser = null != UserManager.getUser(row.getUser().getUserId());
         String userColDisplay = h(isUser ? ((User)row.getUser()).getDisplayName(currentUser) : row.getUser().getName());
 %>
-      <tr class="<%= rowNumber++ % 2 == 0 ?  "labkey-alternate-row" : "labkey-row"%>">
+      <tr class="<%=getShadeRowClass(rowNumber++ % 2 == 0)%>">
 <%
         if (!bean.showUserCol())
         {

@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.pipeline.DatasetFileReader" %>
 <%@ page import="org.labkey.study.pipeline.DatasetImportRunnable" %>
-<%@ page import="java.util.Date" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <div>
@@ -54,7 +53,7 @@ for (DatasetImportRunnable runnable : runnables)
         message = "<font class=labkey-error>" + h(message) + "</font>";
     }
     %>
-    <tr class="<%= row++ % 2 == 1 ? "labkey-row" : "labkey-alternate-row"%>">
+    <tr class="<%=getShadeRowClass(row++ % 2 == 0)%>">
         <td align=right><%= dataset != null ? dataset.getDataSetId() : ""%></td>
         <td><%=dataset != null ? dataset.getLabel() : "Unknown"%></td>
         <td><%=message%></td>
