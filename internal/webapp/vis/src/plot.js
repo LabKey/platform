@@ -340,6 +340,7 @@ LABKEY.vis.Plot = function(config){
     this.clipRect = config.clipRect ? config.clipRect : false;
     this.legendPos = config.legendPos;
     this.throwErrors = config.throwErrors || false; // Allows the configuration to specify whether chart errors should be thrown or logged (default).
+    this.brushing = ('brushing' in config && config.brushing != null && config.brushing != undefined) ? config.brushing : null;
 
     // Stash the user's margins so when we re-configure margins during re-renders or setAes we don't forget the user's settings.
     var allAes = [], margins = {}, userMargins = config.margins ? config.margins : {};
@@ -503,8 +504,8 @@ LABKEY.vis.Plot = function(config){
 
 		this.grid.leftEdge = margins.left;
         this.grid.rightEdge = this.grid.width - margins.right + 10;
-        this.grid.topEdge = this.grid.height - margins.top + 10;
-        this.grid.bottomEdge = margins.bottom;
+        this.grid.topEdge = margins.top + 10;
+        this.grid.bottomEdge = this.grid.height - margins.bottom;
 
         for(var scaleName in this.scales){
             var domain = null;
@@ -521,7 +522,7 @@ LABKEY.vis.Plot = function(config){
                     }
                 }
             } else if(scaleName == 'yLeft' || scaleName == 'yRight'){
-                range = [margins.bottom, this.grid.height - margins.top];
+                range = [this.grid.bottomEdge, this.grid.topEdge];
                 if(scale.scaleType == 'continuous' && (scale.min != null && scale.min != undefined) && (scale.max != null && scale.max != undefined)){
                     domain = [scale.min, scale.max];
                     scale.scale = new LABKEY.vis.Scale.Continuous(scale.trans, null, null, domain, range);

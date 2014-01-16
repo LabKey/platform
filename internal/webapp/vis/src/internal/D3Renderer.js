@@ -12,11 +12,11 @@ LABKEY.vis.internal.Axis = function() {
     // This emulates a lot of the d3.svg.axis() functionality, but adds in the ability for us to have tickHovers,
     // different colored tick & gridlines, etc.
     var scale, orientation, tickFormat = function(v) {return v}, tickHover, ticks, tickSize, tickPadding, gridLineColor,
-            transform, axisSel = null, tickSel, textSel, gridLineSel, borderSel, grid;
+            axisSel = null, tickSel, textSel, gridLineSel, borderSel, grid;
 
     var axis = function(selection) {
         var data, textAnchor, textXFn, textYFn, gridLineFn, tickFn, border, gridLineData, hasOverlap, bBoxA, bBoxB, i,
-                tickEls, gridLineEls, textEls;
+                tickEls, gridLineEls, textEls, borderX;
 
         if (scale.ticks) {
             data = scale.ticks(ticks);
@@ -27,22 +27,22 @@ LABKEY.vis.internal.Axis = function() {
 
         if (orientation == 'left') {
             textAnchor = 'end';
-            textYFn = function(v) {return -(Math.floor(scale(v)) - .5);};
-            textXFn = function() {return -tickSize - 2 - tickPadding};
-            tickFn = function(v) {v = -(Math.floor(scale(v)) - .5); return 'M0,' + v + 'L' + -tickSize + ',' + v + 'Z';};
-            gridLineFn = function(v) {v = -(Math.floor(scale(v)) - .5); return 'M0,' + v + 'L' + Math.abs(grid.leftEdge - grid.rightEdge) + ',' + v + 'Z';};
-            border = 'M0.5,' + (-grid.bottomEdge + 1) + 'L0.5,' + -grid.topEdge + 'Z';
+            textYFn = function(v) {return Math.floor(scale(v)) + .5;};
+            textXFn = function() {return grid.leftEdge - tickSize - 2 - tickPadding};
+            tickFn = function(v) {v = Math.floor(scale(v)) + .5; return 'M' + grid.leftEdge + ',' + v + 'L' + (grid.leftEdge - tickSize) + ',' + v + 'Z';};
+            gridLineFn = function(v) {v = Math.floor(scale(v)) + .5; return 'M' + grid.rightEdge + ',' + v + 'L' + grid.leftEdge + ',' + v + 'Z';};
+            border = 'M' + (Math.floor(grid.leftEdge) + .5) + ',' + (grid.bottomEdge + 1) + 'L' + (Math.floor(grid.leftEdge) + .5) + ',' + grid.topEdge + 'Z';
             // Don't overlap gridlines with x axis border.
             if (Math.floor(scale(data[0])) == Math.floor(grid.bottomEdge)) {
                 gridLineData = gridLineData.slice(1);
             }
         } else if (orientation == 'right') {
             textAnchor = 'start';
-            textYFn = function(v) {return -(Math.floor(scale(v)) - .5);};
-            textXFn = function() {return tickSize + 2 + tickPadding};
-            tickFn = function(v) {v = -(Math.floor(scale(v)) - .5); return 'M0,' + v + 'L' + tickSize + ',' + v + 'Z';};
-            gridLineFn = function(v) {v = -(Math.floor(scale(v)) - .5); return 'M0,' + v + 'L' + -(Math.abs(grid.leftEdge - grid.rightEdge)-1) + ',' + v + 'Z';};
-            border = 'M-0.5,' + -(grid.bottomEdge) + 'L-0.5,' + -(grid.topEdge) + 'Z';
+            textYFn = function(v) {return Math.floor(scale(v)) + .5;};
+            textXFn = function() {return grid.rightEdge + tickSize + 2 + tickPadding};
+            tickFn = function(v) {v = Math.floor(scale(v)) + .5; return 'M' + grid.rightEdge + ',' + v + 'L' + (grid.rightEdge + tickSize) + ',' + v + 'Z';};
+            gridLineFn = function(v) {v = Math.floor(scale(v)) + .5; return 'M' + grid.rightEdge + ',' + v + 'L' + (grid.leftEdge + 1) + ',' + v + 'Z';};
+            border = 'M' + (Math.floor(grid.rightEdge) + .5) + ',' + (grid.bottomEdge + 1) + 'L' + (Math.floor(grid.rightEdge) + .5) + ',' + grid.topEdge + 'Z';
             // Don't overlap gridlines with x axis border.
             if (Math.floor(scale(data[0])) == Math.floor(grid.bottomEdge)) {
                 gridLineData = gridLineData.slice(1);
@@ -52,10 +52,10 @@ LABKEY.vis.internal.Axis = function() {
             orientation = 'bottom';
             textAnchor = 'middle';
             textXFn = function(v) {return (Math.floor(scale(v)) +.5);};
-            textYFn = function() {return tickSize + 2 + tickPadding};
-            tickFn = function(v) {v = (Math.floor(scale(v)) +.5); return 'M' + v + ',0L' + v + ',' + tickSize + 'Z';};
-            gridLineFn = function(v) {v = (Math.floor(scale(v)) +.5); return 'M' + v + ',0L' + v + ',' + -Math.abs(grid.topEdge - grid.bottomEdge) + 'Z';};
-            border = 'M' + grid.leftEdge + ',0.5' + 'L' + grid.rightEdge + ',0.5Z';
+            textYFn = function() {return grid.bottomEdge + tickSize + 2 + tickPadding};
+            tickFn = function(v) {v = (Math.floor(scale(v)) +.5); return 'M' + v + ',' + grid.bottomEdge + 'L' + v + ',' + (grid.bottomEdge + tickSize) + 'Z';};
+            gridLineFn = function(v) {v = (Math.floor(scale(v)) +.5); return 'M' + v + ',' + grid.bottomEdge + 'L' + v + ',' + grid.topEdge + 'Z';};
+            border = 'M' + grid.leftEdge + ',' + (Math.floor(grid.bottomEdge) + .5) + 'L' + grid.rightEdge + ',' + (Math.floor(grid.bottomEdge) + .5) + 'Z';
             // Don't overlap gridlines with y-left axis border.
             if (scale(data[0]) == grid.leftEdge) {
                 gridLineData = gridLineData.slice(1);
@@ -64,10 +64,6 @@ LABKEY.vis.internal.Axis = function() {
 
         if (!axisSel) {
             axisSel = selection.append('g').attr('class', 'axis');
-        }
-
-        if (transform) {
-            axisSel.attr('transform', transform);
         }
 
         if (!tickSel) {
@@ -94,6 +90,7 @@ LABKEY.vis.internal.Axis = function() {
         gridLineEls.enter().append('path');
         gridLineEls.attr('d', gridLineFn).attr('stroke', gridLineColor);
 
+        // TODO: always append a tags, conditionally set titles.
         if (tickHover) {
             textSel.selectAll('text').data([]).exit().remove(); // If we added a tick hover we'll need to remove the old elements.
             textEls = textSel.selectAll('a').data(data);
@@ -151,13 +148,12 @@ LABKEY.vis.internal.Axis = function() {
     axis.gridLineColor = function(c) {gridLineColor = c; return axis;};
     // This is a reference to the plot's grid object that stores the grid dimensions and positions of edges.
     axis.grid = function(g) {grid = g; return axis;};
-    axis.transform = function(t) {transform = t; return axis;};
-    
+
     return axis;
 };
 
 LABKEY.vis.internal.D3Renderer = function(plot) {
-    var errorMsg, labelElements = null, xAxis = null, leftAxis = null, rightAxis = null;
+    var errorMsg, labelElements = null, xAxis = null, leftAxis = null, rightAxis = null, brush = null, brushSel = null;
     var initLabelElements = function() {
         labelElements = {};
         var labels, mainLabel = {}, yLeftLabel = {}, yRightLabel = {}, xLabel = {};
@@ -197,9 +193,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         var clipPath = this.canvas.append('defs').append('clipPath').attr('id', plot.renderTo + '-clipPath');
         this.clipRect = clipPath.append('rect')
                 .attr('x', plot.grid.leftEdge - 10)
-                .attr('y', -(plot.grid.topEdge - plot.grid.bottomEdge + plot.grid.bottomEdge))
+                .attr('y', plot.grid.topEdge - 10)
                 .attr('width', plot.grid.rightEdge - plot.grid.leftEdge + 20)
-                .attr('height', (plot.grid.topEdge - plot.grid.bottomEdge) + 12);
+                .attr('height', plot.grid.bottomEdge - plot.grid.topEdge + 20);
     };
 
     var applyClipRect = function(selection) {
@@ -246,8 +242,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 .tickSize(8)
                 .tickPadding(10)
                 .ticks(7)
-                .gridLineColor(plot.gridLinecolor ? plot.gridLineColor : '#dddddd')
-                .transform('translate(0,' + (plot.grid.height - plot.grid.bottomEdge) + ')');
+                .gridLineColor(plot.gridLinecolor ? plot.gridLineColor : '#dddddd');
 
         if (plot.scales.x.tickFormat) {
             xAxis.tickFormat(plot.scales.x.tickFormat);
@@ -271,8 +266,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     .tickSize(8)
                     .tickPadding(0)
                     .ticks(10)
-                    .gridLineColor(plot.gridLinecolor ? plot.gridLineColor : '#dddddd')
-                    .transform('translate(' + plot.grid.leftEdge + ',' + plot.grid.height + ')');
+                    .gridLineColor(plot.gridLinecolor ? plot.gridLineColor : '#dddddd');
 
             if (plot.scales.yLeft.tickFormat) {
                 leftAxis.tickFormat(plot.scales.yLeft.tickFormat);
@@ -296,8 +290,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     .tickSize(8)
                     .tickPadding(0)
                     .ticks(10)
-                    .gridLineColor(plot.gridLinecolor ? plot.gridLineColor : '#dddddd')
-                    .transform('translate(' + plot.grid.rightEdge + ',' + plot.grid.height + ')');
+                    .gridLineColor(plot.gridLinecolor ? plot.gridLineColor : '#dddddd');
 
             if (plot.scales.yRight.tickFormat) {
                 rightAxis.tickFormat(plot.scales.yRight.tickFormat);
@@ -312,14 +305,36 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderGrid = function() {
-        // TODO: Determine how to hold onto the axis elements so we dont append a new one each time we render. Also so we
-        // can remove them when we clear the grid for rendering or error showing.
         if (plot.clipRect) {
             initClipRect.call(this);
         }
         renderXAxis.call(this);
         renderYLeftAxis.call(this);
         renderYRightAxis.call(this);
+
+        if (plot.brushing != null && (plot.brushing.brushstart || plot.brushing.brush || plot.brushing.brushend)) {
+            if(brush == null) {
+                brush = d3.svg.brush().clamp([false, false]);
+                brushSel = this.canvas.insert('g', '.layer').attr('class', 'brush');
+            }
+
+            brush.x(plot.scales.x.scale).y(plot.scales.yLeft.scale);
+            brushSel.call(brush);
+            brushSel.selectAll('.background').attr('y', 75);
+            brushSel.selectAll('.extent').attr('opacity', .25);
+
+            if (plot.brushing.brushstart !== null && typeof plot.brushing.brushstart === 'function') {
+                brush.on('brushstart', plot.brushing.brushstart);
+            }
+
+            if (plot.brushing.brush !== null && typeof plot.brushing.brush === 'function') {
+                brush.on('brush', plot.brushing.brush);
+            }
+
+            if (plot.brushing.brushend !== null && typeof plot.brushing.brushend === 'function') {
+                brush.on('brushend', plot.brushing.brushend);
+            }
+        }
     };
 
     var renderClickArea = function(name) {
@@ -497,7 +512,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         xPad = plot.scales.yRight && plot.scales.yRight.scale ? 40 : 0;
         glyphX = plot.grid.rightEdge + 30 + xPad;
         textX = glyphX + 15;
-        yAcc = function(d, i) {return (plot.grid.height - plot.grid.topEdge) + (i * 15);};
+        yAcc = function(d, i) {return plot.grid.topEdge + (i * 15);};
         colorAcc = function(d) {return d.color ? d.color : '#000';};
         shapeAcc = function(d) {
             if (d.shape) {
@@ -564,7 +579,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var renderPointGeom = function(data, geom) {
         var layer, anchorSel, pointsSel, xAcc, yAcc, xBinWidth = null, yBinWidth = null, defaultShape, translateAcc,
                 colorAcc, sizeAcc, shapeAcc, hoverTextAcc;
-        layer = getLayer.call(this, geom).attr('transform', 'translate(0,' + plot.grid.height + ')');
+        layer = getLayer.call(this, geom);
 
         if (geom.xScale.scaleType == 'discrete' && geom.position == 'jitter') {
             xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
@@ -582,13 +597,13 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             yAcc = function(row) {
                 var value = geom.getY(row);
                 if (value == null || isNaN(value)) {return null;}
-                return -(value - (yBinWidth / 2) + (Math.random() * yBinWidth));
+                return (value - (yBinWidth / 2) + (Math.random() * yBinWidth));
             }
         } else {
             yAcc = function(row) {
                 var value = geom.getY(row);
                 if (value == null || isNaN(value)) {return null;}
-                return -value;
+                return value;
             };
         }
 
@@ -657,7 +672,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             x = geom.getX(d);
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
-            y = -geom.yScale.scale(value + error);
+            y = geom.yScale.scale(value + error);
             return LABKEY.vis.makeLine(x - 6, y, x + 6, y);
         };
         bottomFn = function(d) {
@@ -665,7 +680,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             x = geom.getX(d);
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
-            y = -geom.yScale.scale(value - error);
+            y = geom.yScale.scale(value - error);
             return LABKEY.vis.makeLine(x - 6, y, x + 6, y);
         };
         middleFn = function(d) {
@@ -673,7 +688,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             x = geom.getX(d);
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
-            return LABKEY.vis.makeLine(x, -geom.yScale.scale(value + error), x, -geom.yScale.scale(value - error));
+            return LABKEY.vis.makeLine(x, geom.yScale.scale(value + error), x, geom.yScale.scale(value - error));
         };
 
         data.filter(function(d) {
@@ -698,7 +713,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderErrorBarGeom = function(data, geom) {
-        var layer = getLayer.call(this, geom).attr('transform', 'translate(0,' + plot.grid.height + ')');
+        var layer = getLayer.call(this, geom);
         layer.call(renderErrorBar, plot, geom, data);
 
         if (plot.clipRect) {
@@ -728,12 +743,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         var width = binWidth / 2;
 
         heightFn = function(d) {
-            return Math.floor(-geom.yScale.scale(d.summary.Q1) - -geom.yScale.scale(d.summary.Q3));
+            return Math.floor(geom.yScale.scale(d.summary.Q1) - geom.yScale.scale(d.summary.Q3));
         };
         mLineFn = function(d) {
             var x, y;
             x = geom.xScale.scale(d.name);
-            y = Math.floor(-geom.yScale.scale(d.summary.Q2)) + .5;
+            y = Math.floor(geom.yScale.scale(d.summary.Q2)) + .5;
             return LABKEY.vis.makeLine(x - (width/2), y, x + (width/2), y);
         };
         tBarFn = function(d) {
@@ -742,7 +757,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
             if (w == null) {return null;}
 
-            y = Math.floor(-geom.yScale.scale(w)) + .5;
+            y = Math.floor(geom.yScale.scale(w)) + .5;
             x = geom.xScale.scale(d.name);
             return LABKEY.vis.makeLine(x - width / 4, y, x + width / 4, y);
         };
@@ -752,8 +767,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
             if (w == null) {return null;}
 
-            yTop = Math.floor(-geom.yScale.scale(w)) + .5;
-            yBottom = Math.floor(-geom.yScale.scale(d.summary.Q3)) + .5;
+            yTop = Math.floor(geom.yScale.scale(w)) + .5;
+            yBottom = Math.floor(geom.yScale.scale(d.summary.Q3)) + .5;
             x = geom.xScale.scale(d.name);
             return LABKEY.vis.makeLine(x, yTop, x, yBottom);
         };
@@ -763,7 +778,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
             if (w == null) {return null;}
 
-            y = Math.floor(-geom.yScale.scale(w)) + .5;
+            y = Math.floor(geom.yScale.scale(w)) + .5;
             x = geom.xScale.scale(d.name);
             return LABKEY.vis.makeLine(x - width / 4, y, x + width / 4, y);
         };
@@ -773,8 +788,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
             if (w == null) {return null;}
 
-            yTop = Math.floor(-geom.yScale.scale(d.summary.Q1)) + .5;
-            yBottom = Math.floor(-geom.yScale.scale(w)) + .5;
+            yTop = Math.floor(geom.yScale.scale(d.summary.Q1)) + .5;
+            yBottom = Math.floor(geom.yScale.scale(w)) + .5;
             x = geom.xScale.scale(d.name);
             return LABKEY.vis.makeLine(x, yTop, x, yBottom);
         };
@@ -796,7 +811,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         // Set all attributes.
         boxSelection.attr('xlink:title', hoverTextFn);
         boxSelection.selectAll('.box-rect').attr('x', function(d) {return geom.xScale.scale(d.name) - (binWidth / 4)})
-                .attr('y', function(d) {return Math.floor(-geom.yScale.scale(d.summary.Q3)) + .5})
+                .attr('y', function(d) {return Math.floor(geom.yScale.scale(d.summary.Q3)) + .5})
                 .attr('width', width).attr('height', heightFn)
                 .attr('stroke', geom.color).attr('fill', geom.fill).attr('stroke-width', geom.lineWidth).attr('fill-opacity', geom.opacity);;
         boxSelection.selectAll('.box-mline').attr('d', mLineFn).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
@@ -829,9 +844,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         if (geom.yScale.scaleType == 'discrete' && geom.position == 'jitter') {
             yBinWidth = ((plot.grid.topEdge - plot.grid.bottomEdge) / (geom.yScale.scale.domain().length)) / 2;
-            yAcc = function(row) {return -(geom.getY(row) - (yBinWidth / 2) + (Math.random() * yBinWidth));}
+            yAcc = function(row) {return (geom.getY(row) - (yBinWidth / 2) + (Math.random() * yBinWidth));}
         } else {
-            yAcc = function(row) {return -geom.getY(row);};
+            yAcc = function(row) {return geom.getY(row);};
         }
 
         translateAcc = function(row) {return 'translate(' + xAcc(row) + ',' + yAcc(row) + ')';};
@@ -881,7 +896,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderBoxPlotGeom = function(data, geom) {
-        var layer = getLayer.call(this, geom).attr('transform', 'translate(0,' + plot.grid.height + ')');
+        var layer = getLayer.call(this, geom);
         var groupName, groupedData, summary, summaries = [];
 
         if (geom.xScale.scaleType == 'continuous') {
@@ -906,7 +921,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             // Render box
             layer.call(renderBox, plot, geom, summaries);
             if (geom.showOutliers) {
-                //Render the outliers.
+                // Render the outliers.
                 layer.call(renderOutliers, plot, geom, getOutliers(summaries, geom));
             }
         }
@@ -918,7 +933,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
     var renderPaths = function(layer, data, geom) {
         var xAcc = function(d) {return geom.getX(d);},
-            yAcc = function(d) {var val = geom.getY(d); return val == null ? null : -val;},
+            yAcc = function(d) {var val = geom.getY(d); return val == null ? null : val;},
             size = geom.sizeAes && geom.sizeScale ? geom.sizeScale.scale(geom.sizeAes.getValue(data)) : function() {return geom.size},
             color = geom.color,
             line = function(d) {return LABKEY.vis.makePath(d.data, xAcc, yAcc);};
@@ -937,7 +952,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderPathGeom = function(data, geom) {
-        var layer = getLayer.call(this, geom).attr('transform', 'translate(0,' + plot.grid.height + ')');
+        var layer = getLayer.call(this, geom);
         var renderableData = [];
 
         if (geom.groupAes) {

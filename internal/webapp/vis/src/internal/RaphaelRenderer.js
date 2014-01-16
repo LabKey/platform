@@ -42,7 +42,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
         }
 
         // Now that we have all the scales situated we need to render the axis lines, tick marks, and titles.
-        this.paper.path(LABKEY.vis.makeLine(plot.grid.leftEdge, -plot.grid.bottomEdge +.5, plot.grid.rightEdge, -plot.grid.bottomEdge+.5)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + plot.grid.height);
+        this.paper.path(LABKEY.vis.makeLine(plot.grid.leftEdge, plot.grid.bottomEdge +.5, plot.grid.rightEdge, plot.grid.bottomEdge+.5)).attr('stroke', '#000').attr('stroke-width', '1');
 
         var xTicks;
         var xTicksSet = this.paper.set();
@@ -55,14 +55,14 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
         for (i = 0; i < xTicks.length; i++) {
             //Plot x-axis ticks.
             x1 = x2 = Math.floor(plot.scales.x.scale(xTicks[i])) +.5;
-            y1 = -plot.grid.bottomEdge + 8;
-            y2 = -plot.grid.bottomEdge;
+            y1 = plot.grid.bottomEdge + 8;
+            y2 = plot.grid.bottomEdge;
 
-            tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + plot.grid.height);
+            tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2));
             tickText = plot.scales.x.tickFormat ? plot.scales.x.tickFormat(xTicks[i]) : xTicks[i];
             // add hover for x-axis tick mark descriptions
             tickHoverText = plot.scales.x.tickHoverText ? plot.scales.x.tickHoverText(xTicks[i]) : null;
-            text = this.paper.text(plot.scales.x.scale(xTicks[i])+.5, -plot.grid.bottomEdge + 15, tickText).transform("t0," + plot.grid.height);
+            text = this.paper.text(plot.scales.x.scale(xTicks[i])+.5, plot.grid.bottomEdge + 15, tickText);
 
             if (tickHoverText)
                 text.attr("title", tickHoverText);
@@ -71,7 +71,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
 
             if (x1 - .5 == plot.grid.leftEdge || x1 - .5 == plot.grid.rightEdge) continue;
 
-            gridLine = this.paper.path(LABKEY.vis.makeLine(x1, -plot.grid.bottomEdge, x2, -plot.grid.topEdge)).attr('stroke', '#DDD').transform("t0," + plot.grid.height);
+            gridLine = this.paper.path(LABKEY.vis.makeLine(x1, plot.grid.bottomEdge, x2, plot.grid.topEdge)).attr('stroke', '#DDD');
             if (plot.gridLineColor) {
                 gridLine.attr('stroke', plot.gridLineColor);
             }
@@ -81,7 +81,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             var curBBox = xTicksSet[i].getBBox(),
                     nextBBox = xTicksSet[i+1].getBBox();
             if (curBBox.x2 >= nextBBox.x) {
-                xTicksSet.attr('text-anchor', 'start').transform('t0,' + (plot.grid.height + 12)+'r15');
+                xTicksSet.attr('text-anchor', 'start').transform('t0,0r15');
                 break;
             }
         }
@@ -94,22 +94,23 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
                 leftTicks = plot.scales.yLeft.scale.domain();
             }
 
-            this.paper.path(LABKEY.vis.makeLine(plot.grid.leftEdge +.5, -plot.grid.bottomEdge + 1, plot.grid.leftEdge+.5, -plot.grid.topEdge)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + plot.grid.height);
+            this.paper.path(LABKEY.vis.makeLine(plot.grid.leftEdge +.5, plot.grid.bottomEdge + 1, plot.grid.leftEdge+.5, plot.grid.topEdge))
+                    .attr('stroke', '#000').attr('stroke-width', '1');
 
             for (i = 0; i < leftTicks.length; i++) {
                 x1 = plot.grid.leftEdge  - 8;
-                y1 = y2 = -Math.floor(plot.scales.yLeft.scale(leftTicks[i])) + .5; // Floor it and add .5 to keep the lines sharp.
+                y1 = y2 = Math.floor(plot.scales.yLeft.scale(leftTicks[i])) + .5; // Floor it and add .5 to keep the lines sharp.
                 x2 = plot.grid.leftEdge;
-
-                if (y1 == -plot.grid.bottomEdge + .5) continue; // Dont draw a line on top of the x-axis line.
-
-                tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + plot.grid.height);
+                tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2));
                 tickText = plot.scales.yLeft.tickFormat ? plot.scales.yLeft.tickFormat(leftTicks[i]) : leftTicks[i];
-                gridLine = this.paper.path(LABKEY.vis.makeLine(x2 + 1, y1, plot.grid.rightEdge, y2)).attr('stroke', '#DDD').transform("t0," + plot.grid.height);
+                if (y1 !== plot.grid.bottomEdge + .5) {
+                    // Dont draw a grid line on top of the x-axis border.
+                    gridLine = this.paper.path(LABKEY.vis.makeLine(x2 + 1, y1, plot.grid.rightEdge, y2)).attr('stroke', '#DDD');
+                }
                 if (plot.gridLineColor) {
                     gridLine.attr('stroke', plot.gridLineColor);
                 }
-                text = this.paper.text(x1 - 15, y1, tickText).transform("t0," + plot.grid.height);
+                text = this.paper.text(x1 - 15, y1, tickText);
             }
         }
 
@@ -122,24 +123,26 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
                 rightTicks = plot.scales.yRight.scale.domain();
             }
 
-            this.paper.path(LABKEY.vis.makeLine(plot.grid.rightEdge + .5, -plot.grid.bottomEdge + 1, plot.grid.rightEdge + .5, -plot.grid.topEdge)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + plot.grid.height);
+            this.paper.path(LABKEY.vis.makeLine(plot.grid.rightEdge + .5, plot.grid.bottomEdge + 1, plot.grid.rightEdge + .5, plot.grid.topEdge))
+                    .attr('stroke', '#000').attr('stroke-width', '1');
 
             for (i = 0; i < rightTicks.length; i++) {
                 x1 = plot.grid.rightEdge;
-                y1 = y2 = -Math.floor(plot.scales.yRight.scale(rightTicks[i])) + .5;
+                y1 = y2 = Math.floor(plot.scales.yRight.scale(rightTicks[i])) + .5;
                 x2 = plot.grid.rightEdge + 8;
 
-                if (y1 == -plot.grid.bottomEdge + .5) continue; // Dont draw a line on top of the x-axis line.
-
-                tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + plot.grid.height);
+                tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2));
                 tickText = plot.scales.yRight.tickFormat ? plot.scales.yRight.tickFormat(rightTicks[i]) : rightTicks[i];
-                gridLine = this.paper.path(LABKEY.vis.makeLine(plot.grid.leftEdge + 1, y1, x1, y2)).attr('stroke', '#DDD').transform("t0," + plot.grid.height);
+                if (y1 !== plot.grid.bottomEdge + .5) {
+                    // Dont draw a line on top of the x-axis line.
+                    gridLine = this.paper.path(LABKEY.vis.makeLine(plot.grid.leftEdge + 1, y1, x1, y2)).attr('stroke', '#DDD');
+                }
 
                 if (plot.gridLineColor) {
                     gridLine.attr('stroke', plot.gridLineColor);
                 }
 
-                text = this.paper.text(x2 + 15, y1, tickText).transform("t0," + plot.grid.height);
+                text = this.paper.text(x2 + 15, y1, tickText);
             }
         }
     };
@@ -339,24 +342,18 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
     /*
         GEOM STUFF BELOW HERE
      */
-    var applyTransform = function(geomSet, plot) {
-        // NOTE: If you change this function make sure to update the transforms applied to box plot rectangles. There
-        // is a bug in Raphael that prevents us from using the '...' transform syntax to transform rectangles so we have
-        // to special case it in the renderBoxPlotGeom function :-(
-        if (plot.clipRect) {
-            geomSet.attr('clip-rect', (plot.grid.leftEdge - 10) + ", " + (plot.grid.height - plot.grid.topEdge) + ", " + (plot.grid.rightEdge - plot.grid.leftEdge  + 20) + ", " + (plot.grid.topEdge - plot.grid.bottomEdge + 12));
-        }
-
-        // Use '...' because it appends a transform instead of overwriting one. Sometimes we need to set a transform on
-        // the elements before we do the final y axis transform.
-        geomSet.transform('...t0,' + plot.grid.height); // We need to transform the plot because we're using -y
-    };
-
     var renderPointGeom = function(data, geom) {
         var i, x, y, color, size, shape, xBinWidth = null, yBinWidth = null;
         var defaultShape = function(s) { // It's a circle.
             return "M0," + s + "A" + s + "," + s + " 0 1,1 0," + -s + "A" + s + "," + s + " 0 1,1 0," + s + "Z";
         };
+        if (plot.clipRect) {
+            var crx, cry, crw, crh;
+            crx = (plot.grid.leftEdge - 10);
+            cry = (plot.grid.topEdge - 10);
+            crw = (plot.grid.rightEdge - plot.grid.leftEdge  + 20);
+            crh = (plot.grid.bottomEdge - plot.grid.topEdge + 20);
+        }
 
         if (geom.xScale.scaleType == 'discrete') {
             xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
@@ -365,8 +362,6 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
         if (geom.yScale.scaleType == 'discrete') {
             yBinWidth = ((plot.grid.topEdge - plot.grid.bottomEdge) / (geom.yScale.scale.domain().length)) / 2;
         }
-
-        this.paper.setStart();
 
         for (i = 0; i < data.length; i++) {
             x = geom.getX(data[i]);
@@ -387,14 +382,18 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
                 y = (y - (yBinWidth / 2)) +(Math.random()*(yBinWidth));
             }
 
-            y = -y; // Make y -y because SVG's 0,0 is top left and y moves down. In math we want 0,0 and y moving up.
-
             var point = this.paper.path(shape(size))
                     .attr('fill', color)
                     .attr('fill-opacity', geom.opacity)
                     .attr('stroke', color)
-                    .attr('stroke-opacity', geom.opacity)
-                    .transform('t' + x + ',' + y);
+                    .attr('stroke-opacity', geom.opacity);
+
+            if (plot.clipRect) {
+                // Have to apply the clip rect before we apply the transform or else the points don't show up.
+                point.attr('clip-rect', crx + "," + cry + "," + crw + "," + crh);
+            }
+
+            point.transform('t' + x + ',' + y);
 
             if (geom.hoverTextAes) {
                 point.attr('title', geom.hoverTextAes.getValue(data[i]));
@@ -407,13 +406,11 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
                 });
             }
         }
-
-        applyTransform(this.paper.setFinish(), plot);
     };
 
     var renderPath = function(data, geom, groupName) {
         var xAcc = function(d) {return geom.getX(d);},
-            yAcc = function(d) {var val = geom.getY(d); return val == null ? null : -val;},
+            yAcc = function(d) {var val = geom.getY(d); return val == null ? null : val;},
             path = LABKEY.vis.makePath(data, xAcc, yAcc),
             size = geom.sizeAes && geom.sizeScale ? geom.sizeScale.scale(geom.sizeAes.getValue(data)) : geom.size,
             color;
@@ -444,7 +441,16 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             renderPath.call(this, data, geom, null);
         }
 
-        applyTransform(this.paper.setFinish(), plot);
+        if (plot.clipRect) {
+            var x, y, w, h;
+            var geomSet = this.paper.setFinish();
+            x = (plot.grid.leftEdge - 10);
+            y = (plot.grid.topEdge - 10);
+            w = (plot.grid.rightEdge - plot.grid.leftEdge  + 20);
+            h = (plot.grid.bottomEdge - plot.grid.topEdge + 20);
+
+            geomSet.attr('clip-rect', x + "," + y + "," + w + "," + h);
+        }
     };
 
     var renderErrorBarGeom = function(data, geom) {
@@ -455,8 +461,8 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             x = geom.getX(data[i]);
             y = geom.yAes.getValue(data[i]);
             error = geom.errorAes.getValue(data[i]);
-            yBottom = -geom.yScale.scale(y - error);
-            yTop = -geom.yScale.scale(y + error);
+            yBottom = geom.yScale.scale(y - error);
+            yTop = geom.yScale.scale(y + error);
             color = geom.colorAes && geom.colorScale ? geom.colorScale.scale(geom.colorAes.getValue(data[i]) + geom.layerName) : geom.color;
 
             if (LABKEY.vis.isValid(yBottom) && LABKEY.vis.isValid(yTop)) {
@@ -469,7 +475,16 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             }
         }
 
-        applyTransform(this.paper.setFinish(), plot);
+        if (plot.clipRect) {
+            var x, y, w, h;
+            var geomSet = this.paper.setFinish();
+            x = (plot.grid.leftEdge - 10);
+            y = (plot.grid.topEdge - 10);
+            w = (plot.grid.rightEdge - plot.grid.leftEdge  + 20);
+            h = (plot.grid.bottomEdge - plot.grid.topEdge + 20);
+
+            geomSet.attr('clip-rect', x + "," + y + "," + w + "," + h);
+        }
     };
 
     var getBottomWhisker = function(summary) {
@@ -497,10 +512,12 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             bottomWhisker = getBottomWhisker(summary),
             whiskerLeft = x - (width / 4),
             whiskerRight = x + (width / 4),
-            boxBottom = Math.floor(-geom.yScale.scale(summary.Q1)) + .5,
-            boxMiddle = Math.floor(-geom.yScale.scale(summary.Q2)) + .5,
-            boxTop = Math.floor(-geom.yScale.scale(summary.Q3)) + .5,
+            boxBottom = Math.floor(geom.yScale.scale(summary.Q1)) + .5,
+            boxMiddle = Math.floor(geom.yScale.scale(summary.Q2)) + .5,
+            boxTop = Math.floor(geom.yScale.scale(summary.Q3)) + .5,
             hoverText = geom.hoverTextAes ? geom.hoverTextAes.value(group, summary) : null;
+
+        this.paper.setStart();
 
         var box = this.paper.rect(leftX, boxTop, width, Math.abs(boxTop - boxBottom))
                 .attr('fill', geom.fill)
@@ -508,22 +525,15 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
                 .attr('stroke', geom.color)
                 .attr('stroke-width', geom.lineWidth);
 
-        if (plot.clipRect) {
-            box.attr('clip-rect', (plot.grid.leftEdge - 10) + ", " + (plot.grid.height - plot.grid.topEdge) + ", " + (plot.grid.rightEdge - plot.grid.leftEdge  + 20) + ", " + (plot.grid.topEdge - plot.grid.bottomEdge + 12));
-        }
-
-        box.transform('t0,' + plot.grid.height);
-
         if (hoverText) {
             box.attr('title', hoverText);
         }
 
-        this.paper.setStart();
         this.paper.path(LABKEY.vis.makeLine(leftX, boxMiddle, leftX + width, boxMiddle))
                 .attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
 
         if (bottomWhisker) {
-            bottomWhisker = Math.floor(-geom.yScale.scale(bottomWhisker)) +.5;
+            bottomWhisker = Math.floor(geom.yScale.scale(bottomWhisker)) +.5;
             this.paper.path(LABKEY.vis.makeLine(x, boxBottom, x, bottomWhisker))
                     .attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
             this.paper.path(LABKEY.vis.makeLine(whiskerLeft, bottomWhisker, whiskerRight, bottomWhisker))
@@ -531,17 +541,26 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
         }
 
         if (topWhisker) {
-            topWhisker = Math.floor(-geom.yScale.scale(topWhisker)) +.5;
+            topWhisker = Math.floor(geom.yScale.scale(topWhisker)) +.5;
             this.paper.path(LABKEY.vis.makeLine(x, boxTop, x, topWhisker))
                     .attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
             this.paper.path(LABKEY.vis.makeLine(whiskerLeft, topWhisker, whiskerRight, topWhisker))
                     .attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
         }
-        applyTransform(this.paper.setFinish(), plot);
+        if (plot.clipRect) {
+            var x, y, w, h;
+            var geomSet = this.paper.setFinish();
+            x = (plot.grid.leftEdge - 10);
+            y = (plot.grid.topEdge - 10);
+            w = (plot.grid.rightEdge - plot.grid.leftEdge  + 20);
+            h = (plot.grid.bottomEdge - plot.grid.topEdge + 20);
+
+            geomSet.attr('clip-rect', x + "," + y + "," + w + "," + h);
+        }
     };
 
     var renderOutliers = function(geom, group, summary, data) {
-        var i, y, color, shape, outlierX, outlier, hoverText,
+        var i, y, color, shape, outlier, hoverText,
             x = geom.xScale.scale(group),
             binWidth = (plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length),
             width = binWidth / 2,
@@ -551,13 +570,20 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
                 return "M0," + s + "A" + s + "," + s + " 0 1,1 0," + -s + "A" + s + "," + s + " 0 1,1 0," + s + "Z";
             };
 
+        if(plot.clipRect) {
+            var crx, cry, crw, crh;
+            crx = (plot.grid.leftEdge - 10);
+            cry = (plot.grid.topEdge - 10);
+            crw = (plot.grid.rightEdge - plot.grid.leftEdge  + 20);
+            crh = (plot.grid.bottomEdge - plot.grid.topEdge + 20);
+        }
+
         if (geom.showOutliers) {
-            this.paper.setStart();
             for (i = 0; i < data.length; i++) {
                 y = geom.yAes.getValue(data[i]);
                 if (y != null && (y > largestNotOutlier || y < smallestNotOutlier)) {
-                    outlierX = geom.position == 'jitter' ? x - (width / 2) + (Math.random() * width) : x;
-                    y = -geom.yScale.scale(y); // scale the y value before plotting.
+                    geom.position == 'jitter' ? x - (width / 2) + (Math.random() * width) : x;
+                    y = geom.yScale.scale(y); // scale the y value before plotting.
                     shape = geom.outlierShapeAes && geom.shapeScale ? geom.shapeScale.scale(geom.outlierShapeAes.getValue(data[i]) + geom.layerName) : defaultShape;
                     color = geom.outlierColorAes && geom.colorScale ? geom.colorScale.scale(geom.outlierColorAes.getValue(data[i]) + geom.layerName) : geom.outlierFill;
                     hoverText = geom.outlierHoverTextAes ? geom.outlierHoverTextAes.getValue(data[i]) : null;
@@ -565,8 +591,14 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
                             .attr('fill', color)
                             .attr('fill-opacity', geom.outlierOpacity)
                             .attr('stroke', color)
-                            .attr('stroke-opacity', geom.outlierOpacity)
-                            .transform('t' + outlierX + ',' + y);
+                            .attr('stroke-opacity', geom.outlierOpacity);
+
+                    if (plot.clipRect) {
+                        // Have to apply the clip rect before we apply the transform or else the points don't show up.
+                        outlier.attr('clip-rect', crx + "," + cry + "," + crw + "," + crh);
+                    }
+
+                    outlier.transform('t' + x + ',' + y);
 
                     if (hoverText) {
                         outlier.attr('title', hoverText);
@@ -580,7 +612,6 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
                     }
                 }
             }
-            applyTransform(this.paper.setFinish(), plot);
         }
     };
 
@@ -603,9 +634,6 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
                 }
             }
         }
-
-        // Note: We do not apply a transform here like in the other geoms because there is a bug in Raphael when using
-        // the '...t' syntax with rect objects. Instead the transform is applied within renderBox and renderOutliers.
     };
 
     /*
@@ -638,7 +666,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
         var i, path, color, convertedText,
             xPad = plot.scales.yRight && plot.scales.yRight.scale ? 35 : 0,
             x = plot.grid.rightEdge + 30 + xPad,
-            y = (plot.grid.height - plot.grid.topEdge) - 6,
+            y = plot.grid.topEdge - 6,
             legendWidth = this.paper.width - x - 25,
             defaultColor = '#333333',
             defaultPath = "M" + -5 + "," + -2.5 + "L" + 5 + "," + -2.5 + " " + 5 + "," + 2.5 + " " + -5 + "," + 2.5 + "Z",

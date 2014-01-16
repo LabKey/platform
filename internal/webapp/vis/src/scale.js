@@ -72,6 +72,10 @@ LABKEY.vis.Scale.Continuous = function(trans, data, value, domain, range){
         };
         logScale.domain = scale.domain;
         logScale.range = scale.range;
+        logScale.invert = scale.invert;
+        logScale.base = scale.base;
+        logScale.clamp = scale.clamp;
+
         logScale.ticks = function(){
             var allTicks = scale.ticks();
             var ticksToShow = [];
