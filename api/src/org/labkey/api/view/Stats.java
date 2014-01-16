@@ -16,6 +16,7 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.data.statistics.MathStat;
 
 import java.text.DecimalFormat;
 import java.util.Arrays;
@@ -278,7 +279,10 @@ public abstract class Stats
         }
     }
 
-    public static class DoubleStats extends Stats
+    /**
+     * @deprecated : Use StatsService.getStats(double[]) instead
+     */
+    public static class DoubleStats extends Stats implements MathStat
     {
         protected double mean;
         protected double min;
@@ -396,6 +400,18 @@ public abstract class Stats
         }
 
         public Double getMax()
+        {
+            return max;
+        }
+
+        @Override
+        public double getMinimum()
+        {
+            return min;
+        }
+
+        @Override
+        public double getMaximum()
         {
             return max;
         }
@@ -597,6 +613,5 @@ public abstract class Stats
 
             return diff[(count -1) / 2] * factor;
         }
-
     }
 }
