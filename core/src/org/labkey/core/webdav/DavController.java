@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+/* This code derived from tomcat WebdavServet */
+
 package org.labkey.core.webdav;
 
+import com.allen_sauer.gwt.dnd.client.util.StringUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -93,7 +96,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -117,6 +119,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
@@ -124,29 +127,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.IdentityHashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.TimeZone;
-import java.util.Vector;
+import java.net.URISyntaxException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -169,8 +156,8 @@ public class DavController extends SpringActionController
     static Logger _log = Logger.getLogger(DavController.class);
     static DefaultActionResolver _actionResolver = new DefaultActionResolver(DavController.class);
     static boolean _readOnly = false;
-    static boolean _locking = false;
-    static boolean _requiresLogin = true;
+    static boolean _locking = true;
+    static boolean _requiresLogin = false;
     static boolean _overwriteCollection = true; // must be true to pass litmus
 
     WebdavResponse _webdavresponse;
@@ -201,7 +188,9 @@ public class DavController extends SpringActionController
     // best guess is this a browser vs. a WebDAV client
     boolean isBrowser()
     {
-        String userAgent = getRequest().getHeader("user-agent");
+        if ("XMLHttpRequest".equals(getRequest().getHeader("x-requested-with")))
+            return true;
+        String userAgent = getRequest().getHeader("User-Agent");
         if (null == userAgent)
             return false;
         return userAgent.startsWith("Mozilla/") || userAgent.startsWith("Opera/");
@@ -210,12 +199,19 @@ public class DavController extends SpringActionController
     // best guess is this a browser vs. a WebDAV client
     boolean isMacFinder()
     {
-        String userAgent = getRequest().getHeader("user-agent");
+        String userAgent = getRequest().getHeader("User-Agent");
         if (null == userAgent)
             return false;
         return userAgent.startsWith("WebDAVFS/") && userAgent.contains("Darwin/");
     }
 
+    boolean isWindowsExplorer()
+    {
+        String userAgent = getRequest().getHeader("User-Agent");
+        if (null == userAgent)
+            return false;
+        return userAgent.startsWith("Microsoft-WebDAV");
+    }
 
     // clients that support following redirects when getting a resource
     boolean supportsGetRedirect()
@@ -467,6 +463,11 @@ public class DavController extends SpringActionController
             response.setHeader("Last-Modified", getHttpDateFormat(d));
         }
 
+        void addLockToken(String lockToken)
+        {
+            response.addHeader("Lock-Token", "<opaquelocktoken:" + lockToken + ">");
+        }
+
         void setMethodsAllowed(CharSequence methods)
         {
             response.addHeader("Allow", methods.toString());
@@ -529,8 +530,7 @@ public class DavController extends SpringActionController
                 @Override
                 public void write(String str) throws IOException
                 {
-                    super.write(str);
-                    sbLogResponse.append(str);
+                    write(str, 0, str.length());
                 }
 
                 public void write(char cbuf[], int off, int len) throws IOException
@@ -564,10 +564,32 @@ public class DavController extends SpringActionController
 
         public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception
         {
+            long start=0;
             if (_log.isEnabledFor(Priority.DEBUG))
             {
                 long modified = getRequest().getDateHeader("If-Modified-Since");
-                _log.debug(">>>> " + request.getMethod() + " " + getResourcePath() + (modified==-1? "" : "   (If-Modified-Since:" + DateUtil.toISO(modified) + ")"));
+                boolean isBasicAuthentication = "Basic".equals(getRequest().getAttribute(org.labkey.api.security.SecurityManager.AUTHENTICATION_METHOD));
+                String username = getUser().getName();
+                String auth = username + (isBasicAuthentication ? ":basic" : !getUser().isGuest() ? ":session" : "");
+                _log.debug(">>>> " + request.getMethod() + " " + getResourcePath() + " (" + auth + ") " + (modified==-1? "" : "   (If-Modified-Since:" + DateUtil.toISO(modified) + ")"));
+                if (1==1) // verbose
+                {
+                    for (Enumeration e = request.getHeaderNames() ; e.hasMoreElements() ; )
+                    {
+                        String name = (String)e.nextElement();
+                        _log.debug(name + ": " + request.getHeader(name));
+                    }
+                }
+//                _log.debug("SESSION: " + request.getSession(true).getId());
+//                if ("PUT".equals(method))
+//                    _log.debug("Content-Length: " + request.getHeader("Content-Length"));
+//                String if_ = request.getHeader("If");
+//                if (!StringUtils.isEmpty(if_))
+//                    _log.debug("If: " + if_);
+//                String lockToken = request.getHeader("Lock-Token");
+//                if (!StringUtils.isEmpty(lockToken))
+//                    _log.debug("Lock-Token: " + lockToken);
+                start = System.currentTimeMillis();
             }
 
             try
@@ -635,7 +657,9 @@ public class DavController extends SpringActionController
                     _log.debug(getResponse().sbLogResponse);
                 WebdavStatus status = getResponse().getStatus();
                 String message = getResponse().getMessage();
-                _log.debug("<<<< " + (status != null ? status.code : 0) + " " + StringUtils.defaultString(message, null != status ? status.message : ""));
+                _log.debug("<<<< " + (status != null ? status.code : 0) + " " +
+                        StringUtils.defaultString(message, null != status ? status.message : "") + " " +
+                        DateUtil.formatDuration(System.currentTimeMillis()-start));
             }
 
             return null;
@@ -650,9 +674,6 @@ public class DavController extends SpringActionController
                 getResponse().setMethodsAllowed(methodsAllowed);
             }
             WebdavStatus ret = WebdavStatus.SC_METHOD_NOT_ALLOWED;
-            // Finder ignores the fact that this method is not allowed
-            if (isMacFinder())
-                ret = WebdavStatus.SC_OK;
             getResponse().setStatus(ret);
             return ret;
         }
@@ -720,14 +741,13 @@ public class DavController extends SpringActionController
                 return notFound(resource.getPath());
 
             // http://www.ietf.org/rfc/rfc4709.txt
-            if ("DAVMOUNT".equals(method))
-                return mountResource(resource);
-            else if (resource.isCollection())
+            if (resource.isCollection())
                 return serveCollection(resource, !"HEAD".equals(method));
             else
                 return serveResource(resource, !"HEAD".equals(method));
         }
     }
+
 
     @RequiresPermissionClass(ReadPermission.class)
     public class ZipAction extends DavAction
@@ -847,7 +867,113 @@ public class DavController extends SpringActionController
 
 
     @RequiresNoPermission
-    public class DavmountAction extends GetAction
+    public class HeadAction extends GetAction
+    {
+        public HeadAction()
+        {
+            super("HEAD");
+        }
+
+        @Override
+        protected WebdavStatus _doMethod() throws DavException, IOException
+        {
+            // CYBERDUCK uses head to probe permissions
+            checkRequireLogin(resolvePath());
+            return super._doMethod();
+        }
+    }
+
+
+    private class MountAction extends DavAction
+    {
+        public MountAction()
+        {
+            super("--MOUNT--"); // make spring happy?  why do I need a zero-constructor arg
+        }
+
+        public MountAction(String method)
+        {
+            super(method);
+        }
+
+        @Override
+        protected WebdavStatus doMethod() throws DavException, IOException
+        {
+            WebdavResource resource = resolvePath();
+            if (null == resource || !resource.exists())
+                return notFound();
+            if (resource.isFile())
+                resource = (WebdavResource)resource.parent();
+            if (!resource.canList(getUser(), true))
+                return unauthorized(resource);
+
+            String root = resolvePath("/").getHref(getViewContext());
+            if (!root.endsWith("/")) root += "/";
+            String path = resource.getHref(getViewContext());
+            if (!path.endsWith("/")) path += "/";
+            String open = path.substring(root.length());
+            URLHelper url;
+            try
+            {
+                url = new URLHelper(path);
+            }
+            catch (URISyntaxException x)
+            {
+                throw new RuntimeException(x);
+            }
+
+            if (method.equals("DAVMOUNT"))
+            {
+
+                StringBuilder sb = new StringBuilder();
+                sb.append("<dm:mount xmlns:dm=\"http://purl.org/NET/webdav/mount\">\n");
+                sb.append("  <dm:url>").append(PageFlowUtil.filter(root)).append("</dm:url>\n");
+                if (open.length() > 0)
+                    sb.append("  <dm:open>").append(PageFlowUtil.filter(open)).append("</dm:open>\n");
+                sb.append("</dm:mount>\n");
+
+                getResponse().setContentType("application/davmount+xml");
+                getResponse().setContentDisposition("attachment; filename=\"" + resource.getName() + ".davmount\"");
+                Writer w = getResponse().getWriter();
+                w.write(sb.toString());
+                close(w, "response writer");
+            }
+            else if (method.equals("CYBERDUCK"))
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n" +
+                        "<plist version=\"1.0\">\n" +
+                        "<dict>\n" +
+                        "<key>Hostname</key>\n" +
+                        "<string>" + PageFlowUtil.filter(AppProps.getInstance().getServerName()) + "</string>\n" +
+                        "<key>Nickname</key>\n" +
+                        "<string>" + PageFlowUtil.filter(LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName()) + "</string>\n" +
+                        "<key>Path</key>\n" +
+                        "<string>" + url.getEncodedLocalURIString().replace("%40","@") + "</string>\n" +
+                        "<key>Port</key>\n" +
+                        "<string>" + AppProps.getInstance().getServerPort() + "</string>\n" +
+                        "<key>Protocol</key>\n" +
+                        "<string>" + (AppProps.getInstance().isSSLRequired() ? "davs" : "dav") + "</string>\n" +
+                        "<key>Username</key>\n" +
+                        "<string>" + PageFlowUtil.filter(getUser().isGuest() ? getUser().getName() : getUser().getEmail()) + "</string>\n" +
+                        "</dict>\n" +
+                        "</plist>\n");
+
+                getResponse().setContentType("application/x-cyberduck-action");
+                getResponse().setContentDisposition("attachment; filename=\"" + resource.getName() + ".duck\"");
+                Writer w = getResponse().getWriter();
+                w.write(sb.toString());
+                close(w, "response writer");
+            }
+
+            return WebdavStatus.SC_OK;
+        }
+    }
+
+
+    @RequiresNoPermission
+    public class DavmountAction extends MountAction
     {
         public DavmountAction()
         {
@@ -855,40 +981,16 @@ public class DavController extends SpringActionController
         }
     }
 
-    
-    @RequiresNoPermission
-    public class HeadAction extends GetAction
+    public class CyberduckAction extends MountAction
     {
-        public HeadAction()
+        public CyberduckAction()
         {
-            super("HEAD");
+            super("CYBERDUCK");
         }
     }
 
 
-    WebdavStatus mountResource(WebdavResource resource) throws DavException, IOException
-    {
-        StringBuilder sb = new StringBuilder();
-        String root = resolvePath("/").getHref(getViewContext());
-        if (!root.endsWith("/")) root += "/";
-        if (resource.isFile())
-            resource = (WebdavResource)resource.parent();
-        String path = resource.getHref(getViewContext());
-        if (!path.endsWith("/")) path += "/";
-        String open = path.substring(root.length());
 
-        sb.append("<dm:mount xmlns:dm=\"http://purl.org/NET/webdav/mount\">\n");
-        sb.append("  <dm:url>").append(PageFlowUtil.filter(root)).append("</dm:url>\n");
-        if (open.length() > 0)
-        sb.append("  <dm:open>").append(PageFlowUtil.filter(open)).append("</dm:open>\n");
-        sb.append("</dm:mount>");
-
-
-        getResponse().setContentType("application/davmount+xml");
-        getResponse().setContentDisposition("attachment; filename=\"" + resource.getName() + ".davmount\"");
-        getResponse().getWriter().write(sb.toString());
-        return WebdavStatus.SC_OK;
-    }
 
 
     @RequiresNoPermission
@@ -1097,10 +1199,8 @@ public class DavController extends SpringActionController
 
         public WebdavStatus doMethod() throws DavException, IOException
         {
-            _log.debug("PROPFIND " + String.valueOf(getResourcePath()));
-            checkRequireLogin(null);
-
             WebdavResource root = getResource();
+            checkRequireLogin(root);
             if (root == null || !root.exists())
                 return notFound();
 
@@ -1122,16 +1222,7 @@ public class DavController extends SpringActionController
                 {
                     if (is.available() > 0)
                     {
-                        DocumentBuilder documentBuilder;
-                        try
-                        {
-                            documentBuilder = getDocumentBuilder();
-                        }
-                        catch (ServletException ex)
-                        {
-                            throw new DavException(ex.getCause());
-                        }
-
+                        DocumentBuilder documentBuilder = getDocumentBuilder();
                         Document document = documentBuilder.parse(is);
 
                         // Get the root element of the document
@@ -1396,8 +1487,6 @@ public class DavController extends SpringActionController
         @Override
         public WebdavStatus doMethod() throws DavException, IOException
         {
-            checkRequireLogin(null);
-
             WebdavResource root = getResource();
             if (root == null || !root.exists())
                 return notFound();
@@ -2429,15 +2518,7 @@ public class DavController extends SpringActionController
                 is = new ReadAheadInputStream(getRequest().getInputStream());
                 if (is.available() > 0)
                 {
-                     DocumentBuilder documentBuilder;
-                    try
-                    {
-                        documentBuilder = getDocumentBuilder();
-                    }
-                    catch (ServletException ex)
-                    {
-                        throw new DavException(ex.getCause());
-                    }
+                    DocumentBuilder documentBuilder = getDocumentBuilder();
                     try
                     {
                         // TODO : Process this request body
@@ -2589,6 +2670,7 @@ public class DavController extends SpringActionController
 
             if (exists && !resource.canWrite(getUser(),true) || !exists && !resource.canCreate(getUser(),true))
                 return unauthorized(resource);
+            checkLocked();
             if (resource.isCollectionType() || exists && resource.isCollection())
                 throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED, "Cannot overwrite folder");
 
@@ -2726,16 +2808,7 @@ public class DavController extends SpringActionController
      */
     private WebdavStatus deleteResource(Path path) throws DavException, IOException
     {
-        String ifHeader = getRequest().getHeader("If");
-        if (ifHeader == null)
-            ifHeader = "";
-
-        String lockTokenHeader = getRequest().getHeader("Lock-Token");
-        if (lockTokenHeader == null)
-            lockTokenHeader = "";
-
-        if (isLocked(path, ifHeader + lockTokenHeader))
-            throw new DavException(WebdavStatus.SC_LOCKED);
+        checkLocked(path);
 
         WebdavResource resource = resolvePath(path);
         boolean exists = resource != null && resource.exists();
@@ -2782,12 +2855,15 @@ public class DavController extends SpringActionController
     // just add to the method bodies
     private void fireFileReplacedEvent(WebdavResource resource)
     {
+        long start = System.currentTimeMillis();
         resource.notify(getViewContext(), "replaced");
         updateIndexAndDataObject(resource);
+        _log.debug("fireFileReplaceEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
 
     private void fireFileCreatedEvent(WebdavResource resource)
     {
+        long start = System.currentTimeMillis();
         resource.notify(getViewContext(), "created");
         updateIndexAndDataObject(resource);
 
@@ -2795,6 +2871,7 @@ public class DavController extends SpringActionController
         File file = resource.getFile();
         if (null != file)
             ServiceRegistry.get(FileContentService.class).fireFileCreateEvent(file, getUser(), srcContainer);
+        _log.debug("fireFileCreatedEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
 
     private void updateIndexAndDataObject(WebdavResource resource)
@@ -2840,9 +2917,11 @@ public class DavController extends SpringActionController
 
     private void fireFileDeletedEvent(WebdavResource resource)
     {
+        long start = System.currentTimeMillis();
         resource.notify(getViewContext(), "deleted");
         removeFromIndex(resource);
         removeFromDataObject(resource);
+        _log.debug("fireFileDeletedEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
 
     private void removeFromDataObject(WebdavResource resource)
@@ -2887,7 +2966,7 @@ public class DavController extends SpringActionController
         {
             Path childName = child.getPath();
 
-            if (isLocked(childName, ifHeader + lockTokenHeader))
+            if ( LockResult.LOCKED == isLocked(childName, ifHeader + lockTokenHeader))
             {
                 errorList.put(childName, WebdavStatus.SC_LOCKED);
             }
@@ -3008,6 +3087,9 @@ public class DavController extends SpringActionController
         WebdavStatus doMethod() throws DavException, IOException
         {
             checkReadOnly();
+//            checkLocked();
+            checkLocked(getDestinationPath());
+
             return copyResource();
         }
     }
@@ -3148,6 +3230,7 @@ public class DavController extends SpringActionController
 
     private void fireFileMovedEvent(WebdavResource dest, WebdavResource src)
     {
+        long start = System.currentTimeMillis();
         src.notify(getViewContext(), null == dest.getFile() ? "deleted" : "deleted: moved to " + dest.getFile().getPath());
         dest.notify(getViewContext(), null == src.getFile() ? "created" : "created: moved from " + src.getFile().getPath());
 
@@ -3160,6 +3243,7 @@ public class DavController extends SpringActionController
 
         removeFromIndex(src);
         addToIndex(dest);
+        _log.debug("fireFileMovedEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
 
 
@@ -3177,12 +3261,523 @@ public class DavController extends SpringActionController
     }
 
 
+    // should probably be scoped to resolver?
+    // each collection is syncrhonized which is good for isLocked()
+    // however, modifying locks should use the lockingLock
+    private static final Object lockingLock = new Object();
+    private static final Map<Path,List<Path>> lockNullResources = Collections.synchronizedMap(new HashMap<Path,List<Path>>());
+    private static final Map<Path,LockInfo> resourceLocks = Collections.synchronizedMap(new HashMap<Path,LockInfo>());
+    private static final List<LockInfo> collectionLocks = Collections.synchronizedList(new ArrayList<LockInfo>());
+    private static final AtomicInteger lockCounter = new AtomicInteger(); // helps with debugging
+    private static final int maxDepth = 3;
+
+
     @RequiresNoPermission
     public class LockAction extends DavAction
     {
         public LockAction()
         {
             super("LOCK");
+        }
+
+        @Override
+        WebdavStatus doMethod() throws DavException, IOException, RedirectException
+        {
+            if (isStaticContent(getResourcePath()))
+            {
+                return getResponse().sendError(WebdavStatus.SC_FORBIDDEN);
+            }
+
+            if (LockResult.LOCKED == isLocked())
+            {
+                return getResponse().sendError(WebdavStatus.SC_LOCKED);
+            }
+
+            LockInfo lock = new LockInfo();
+
+            // Parsing lock request
+
+            // Parsing depth header
+
+            String depthStr = getRequest().getHeader("Depth");
+
+            if (depthStr == null)
+            {
+                lock.depth = maxDepth;
+            }
+            else
+            {
+                if (depthStr.equals("0"))
+                {
+                    lock.depth = 0;
+                }
+                else
+                {
+                    lock.depth = maxDepth;
+                }
+            }
+
+            // Parsing timeout header
+
+            int lockDuration = DEFAULT_TIMEOUT;
+            String lockDurationStr = getRequest().getHeader("Timeout");
+            if (lockDurationStr == null)
+            {
+                lockDuration = DEFAULT_TIMEOUT;
+            }
+            else
+            {
+                int commaPos = lockDurationStr.indexOf(",");
+                // If multiple timeouts, just use the first
+                if (commaPos != -1)
+                {
+                    lockDurationStr = lockDurationStr.substring(0, commaPos);
+                }
+                if (lockDurationStr.startsWith("Second-"))
+                {
+                    lockDuration = (new Integer(lockDurationStr.substring(7))).intValue();
+                }
+                else
+                {
+                    if (lockDurationStr.equalsIgnoreCase("infinity"))
+                    {
+                        lockDuration = MAX_TIMEOUT;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            lockDuration = (new Integer(lockDurationStr)).intValue();
+                        }
+                        catch (NumberFormatException e)
+                        {
+                            lockDuration = MAX_TIMEOUT;
+                        }
+                    }
+                }
+                if (lockDuration == 0)
+                {
+                    lockDuration = DEFAULT_TIMEOUT;
+                }
+                if (lockDuration > MAX_TIMEOUT)
+                {
+                    lockDuration = MAX_TIMEOUT;
+                }
+            }
+            lock.expiresAt = System.currentTimeMillis() + (lockDuration * 1000);
+
+            int lockRequestType = LOCK_CREATION;
+
+            Node lockInfoNode = null;
+
+            DocumentBuilder documentBuilder = getDocumentBuilder();
+
+            try
+            {
+                Document document = documentBuilder.parse(new InputSource(getRequest().getInputStream()));
+
+                // Get the root element of the document
+                Element rootElement = document.getDocumentElement();
+                lockInfoNode = rootElement;
+            }
+            catch (IOException e)
+            {
+                lockRequestType = LOCK_REFRESH;
+            }
+            catch (SAXException e)
+            {
+                lockRequestType = LOCK_REFRESH;
+            }
+
+            if (lockInfoNode != null)
+            {
+                // Reading lock information
+
+                NodeList childList = lockInfoNode.getChildNodes();
+
+                Node lockScopeNode = null;
+                Node lockTypeNode = null;
+                Node lockOwnerNode = null;
+
+                for (int i = 0; i < childList.getLength(); i++)
+                {
+                    Node currentNode = childList.item(i);
+                    switch (currentNode.getNodeType())
+                    {
+                        case Node.TEXT_NODE:
+                            break;
+                        case Node.ELEMENT_NODE:
+                            String nodeName = currentNode.getNodeName();
+                            if (nodeName.endsWith("lockscope"))
+                            {
+                                lockScopeNode = currentNode;
+                            }
+                            if (nodeName.endsWith("locktype"))
+                            {
+                                lockTypeNode = currentNode;
+                            }
+                            if (nodeName.endsWith("owner"))
+                            {
+                                lockOwnerNode = currentNode;
+                            }
+                            break;
+                    }
+                }
+
+                if (lockScopeNode != null)
+                {
+
+                    childList = lockScopeNode.getChildNodes();
+                    for (int i = 0; i < childList.getLength(); i++)
+                    {
+                        Node currentNode = childList.item(i);
+                        switch (currentNode.getNodeType())
+                        {
+                            case Node.TEXT_NODE:
+                                break;
+                            case Node.ELEMENT_NODE:
+                                String tempScope = currentNode.getNodeName();
+                                if (tempScope.indexOf(':') != -1)
+                                {
+                                    lock.scope = tempScope.substring
+                                            (tempScope.indexOf(':') + 1);
+                                }
+                                else
+                                {
+                                    lock.scope = tempScope;
+                                }
+                                break;
+                        }
+                    }
+
+                    if (lock.scope == null)
+                    {
+                        // Bad request
+                        getResponse().setStatus(WebdavStatus.SC_BAD_REQUEST);
+                    }
+                }
+                else
+                {
+                    // Bad request
+                    getResponse().setStatus(WebdavStatus.SC_BAD_REQUEST);
+                }
+
+                if (lockTypeNode != null)
+                {
+
+                    childList = lockTypeNode.getChildNodes();
+                    for (int i = 0; i < childList.getLength(); i++)
+                    {
+                        Node currentNode = childList.item(i);
+                        switch (currentNode.getNodeType())
+                        {
+                            case Node.TEXT_NODE:
+                                break;
+                            case Node.ELEMENT_NODE:
+                                String tempType = currentNode.getNodeName();
+                                if (tempType.indexOf(':') != -1)
+                                {
+                                    lock.type = tempType.substring(tempType.indexOf(':') + 1);
+                                }
+                                else
+                                {
+                                    lock.type = tempType;
+                                }
+                                break;
+                        }
+                    }
+
+                    if (lock.type == null)
+                    {
+                        // Bad request
+                        getResponse().setStatus(WebdavStatus.SC_BAD_REQUEST);
+                    }
+
+                }
+                else
+                {
+                    // Bad request
+                    getResponse().setStatus(WebdavStatus.SC_BAD_REQUEST);
+                }
+
+                if (lockOwnerNode != null)
+                {
+                    childList = lockOwnerNode.getChildNodes();
+                    for (int i = 0; i < childList.getLength(); i++)
+                    {
+                        Node currentNode = childList.item(i);
+                        switch (currentNode.getNodeType())
+                        {
+                            case Node.TEXT_NODE:
+                                lock.owner += currentNode.getNodeValue();
+                                break;
+                            case Node.ELEMENT_NODE:
+                            {
+                                XMLWriter domWriter = new XMLWriter();
+//                                domWriter.setQualifiedNames(false);
+                                domWriter.print(currentNode);
+                                domWriter.sendData();
+                                lock.owner += domWriter.toString();
+                                break;
+                            }
+                        }
+                    }
+
+                    if (lock.owner == null)
+                    {
+                        // Bad request
+                        getResponse().setStatus(WebdavStatus.SC_BAD_REQUEST);
+                    }
+                }
+                else
+                {
+                    lock.owner = "";
+                }
+            }
+
+            Path path = getResourcePath();
+            lock.path = path;
+
+            WebdavResource resource = resolvePath();
+
+            if (lockRequestType == LOCK_CREATION)
+            {
+                // Generating lock id, lockCounter is just for human debugging
+                // the { } are just for quick validation of lock-token header
+                String lockToken = "{" + lockCounter.incrementAndGet() + "_" + GUID.makeHash(path.toString()) + "}";
+
+                if (resource.isCollection() && (lock.depth == maxDepth))
+                {
+                    // Locking a collection (and all its member resources)
+
+                    // Checking if a child resource of this collection is
+                    // already locked
+                    ArrayList<Path> lockPaths = new ArrayList<>();
+                    for (LockInfo currentLock : collectionLocks.toArray(new LockInfo[0]))
+                    {
+                        if (currentLock.hasExpired())
+                        {
+                            removeLock(currentLock.path);
+                            continue;
+                        }
+                        if ((currentLock.path.startsWith(lock.path)) &&
+                                ((currentLock.isExclusive()) ||
+                                        (lock.isExclusive())))
+                        {
+                            // A child collection of this collection is locked
+                            lockPaths.add(currentLock.path);
+                        }
+                    }
+                    for (LockInfo currentLock : resourceLocks.entrySet().toArray(new LockInfo[0]))
+                    {
+                        if (currentLock.hasExpired())
+                        {
+                            removeLock(currentLock.path);
+                            continue;
+                        }
+                        if ((currentLock.path.startsWith(lock.path)) &&
+                                ((currentLock.isExclusive()) ||
+                                        (lock.isExclusive())))
+                        {
+                            // A child resource of this collection is locked
+                            lockPaths.add(currentLock.path);
+                        }
+                    }
+
+                    if (!lockPaths.isEmpty())
+                    {
+                        // One of the child paths was locked
+                        // We generate a multistatus error report
+
+                        getResponse().setStatus(WebdavStatus.SC_CONFLICT);
+
+                        XMLWriter generatedXML = new XMLWriter();
+                        generatedXML.writeXMLHeader();
+
+                        generatedXML.writeElement("D", DEFAULT_NAMESPACE,
+                                "multistatus", XMLWriter.OPENING);
+
+                        for (Path lockPath : lockPaths)
+                        {
+                            generatedXML.writeElement("D", "response", XMLWriter.OPENING);
+                            generatedXML.writeElement("D", "href", XMLWriter.OPENING);
+                            generatedXML.writeText(getRequest().getContextPath() + lockPath.encode());
+                            generatedXML.writeElement("D", "href", XMLWriter.CLOSING);
+                            generatedXML.writeElement("D", "status", XMLWriter.OPENING);
+                            generatedXML.writeText("HTTP/1.1 " + WebdavStatus.SC_LOCKED + " " + WebdavStatus.SC_LOCKED.message);
+                            generatedXML.writeElement("D", "status", XMLWriter.CLOSING);
+                            generatedXML.writeElement("D", "response", XMLWriter.CLOSING);
+                        }
+
+                        generatedXML.writeElement("D", "multistatus", XMLWriter.CLOSING);
+
+                        Writer writer = getResponse().getWriter();
+                        writer.write(generatedXML.toString());
+                        close(writer, "lock writer");
+
+                        return WebdavStatus.SC_CONFLICT;
+                    }
+
+                    boolean addLock = true;
+
+
+                    synchronized (lockingLock)
+                    {
+                        // Checking if there is already a shared lock on this path
+                        for (LockInfo currentLock : collectionLocks.toArray(new LockInfo[0]))
+                        {
+                            if (currentLock.path.equals(lock.path))
+                            {
+                                if (currentLock.isExclusive())
+                                {
+                                    return getResponse().sendError(WebdavStatus.SC_LOCKED);
+                                }
+                                else
+                                {
+                                    if (lock.isExclusive())
+                                    {
+                                        return getResponse().sendError(WebdavStatus.SC_LOCKED);
+                                    }
+                                }
+
+                                currentLock.tokens.add(lockToken);
+                                lock = currentLock;
+                                addLock = false;
+                            }
+                        }
+
+                        if (addLock)
+                        {
+                            lock.tokens.add(lockToken);
+                            collectionLocks.add(lock);
+                        }
+                    } // synchronized
+                }
+                else
+                {
+                    // Locking a single resource
+
+                    synchronized (lockingLock)
+                    {
+                        // Retrieving an already existing lock on that resource
+                        LockInfo presentLock = resourceLocks.get(lock.path);
+                        if (presentLock != null)
+                        {
+
+                            if ((presentLock.isExclusive()) || (lock.isExclusive()))
+                            {
+                                // If either lock is exclusive, the lock can't be
+                                // granted
+                                return getResponse().sendError(WebdavStatus.SC_PRECONDITION_FAILED);
+                            }
+                            else
+                            {
+                                presentLock.tokens.add(lockToken);
+                                lock = presentLock;
+                            }
+                        }
+                        else
+                        {
+
+                            lock.tokens.add(lockToken);
+                            resourceLocks.put(lock.path, lock);
+                            resource = resolvePath();
+
+                            if (null == resource || !resource.exists())
+                            {
+
+                                // "Creating" a lock-null resource
+                                Path parentPath = lock.path.getParent();
+
+                                List<Path> lockNulls = lockNullResources.get(parentPath);
+                                if (lockNulls == null)
+                                {
+                                    lockNulls = Collections.synchronizedList(new ArrayList<Path>());
+                                    lockNullResources.put(parentPath, lockNulls);
+                                }
+
+                                lockNulls.add(lock.path);
+
+                            }
+                            // Add the Lock-Token header as by RFC 2518 8.10.1
+                            // - only do this for newly created locks
+                            getResponse().addLockToken(lockToken);
+                        }
+                    } // synchronized
+                }
+            }
+
+            if (lockRequestType == LOCK_REFRESH)
+            {
+                String ifHeader = getRequest().getHeader("If");
+                if (ifHeader == null)
+                    ifHeader = "";
+
+                synchronized (lockingLock)
+                {
+                    // Checking resource locks
+                    LockInfo toRenew = resourceLocks.get(path);
+
+                    if (toRenew != null)
+                    {
+                        // At least one of the tokens of the locks must have been given
+                        for (String token : toRenew.tokens.toArray(new String[0]))
+                        {
+                            if (ifHeader.indexOf(token) != -1)
+                            {
+                                toRenew.expiresAt = lock.expiresAt;
+                                lock = toRenew;
+                            }
+                        }
+                    }
+
+                    // Checking inheritable collection locks
+
+                    for (LockInfo toRenewColl : collectionLocks.toArray(new LockInfo[0]))
+                    {
+                        if (path.equals(toRenewColl.path))
+                        {
+                            for (String token : toRenewColl.tokens.toArray(new String[0]))
+                            {
+                                if (ifHeader.indexOf(token) != -1)
+                                {
+                                    toRenewColl.expiresAt = lock.expiresAt;
+                                    lock = toRenewColl;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Set the status, then generate the XML response containing
+            // the lock information
+            XMLWriter generatedXML = new XMLWriter();
+            generatedXML.writeXMLHeader();
+            generatedXML.writeElement("D", DEFAULT_NAMESPACE, "prop",
+                    XMLWriter.OPENING);
+
+            generatedXML.writeElement("D", "lockdiscovery", XMLWriter.OPENING);
+
+            lock.toXML(generatedXML);
+
+            generatedXML.writeElement("D", "lockdiscovery", XMLWriter.CLOSING);
+
+            generatedXML.writeElement("D", "prop", XMLWriter.CLOSING);
+
+            getResponse().setStatus(WebdavStatus.SC_OK);
+            getResponse().setContentType("text/xml; charset=UTF-8");
+            Writer writer = getResponse().getWriter();
+            writer.write(generatedXML.toString());
+            close(writer, "lock writer");
+
+            if (_log.isDebugEnabled())
+                _log.debug("lock: " + String.valueOf(lock));
+
+            if (null != resource && resource.exists())
+                return WebdavStatus.SC_OK;
+            else
+                return WebdavStatus.SC_CREATED;
         }
     }
 
@@ -3194,6 +3789,221 @@ public class DavController extends SpringActionController
         {
             super("UNLOCK");
         }
+
+        @Override
+        WebdavStatus doMethod() throws IOException, DavException
+        {
+            if (isStaticContent(getResourcePath()))
+            {
+                return getResponse().sendError(WebdavStatus.SC_FORBIDDEN);
+            }
+
+            // litmus test hack..., consider actually parsing and checking validity
+            if (LockResult.LOCKED == isLocked())
+            {
+                return getResponse().sendError(WebdavStatus.SC_LOCKED);
+            }
+
+            Path path = getResourcePath();
+
+            String lockTokenHeader = getRequest().getHeader("Lock-Token");
+            if (lockTokenHeader == null)
+                lockTokenHeader = "";
+
+            _log.debug("lock token: " + lockTokenHeader);
+
+            // Checking resource locks
+
+            synchronized (lockingLock)
+            {
+                LockInfo lock = resourceLocks.get(path);
+                if (lock != null)
+                {
+                    // At least one of the tokens of the locks must have been given
+                    for (String token : lock.tokens.toArray(new String[0]))
+                    {
+                        if (lockTokenHeader.indexOf(token) != -1)
+                        {
+                            lock.tokens.remove(token);
+                        }
+                    }
+
+                    if (lock.tokens.isEmpty())
+                    {
+                        resourceLocks.remove(path);
+                        // Removing any lock-null resource which would be present
+                        lockNullResources.remove(path);
+                    }
+
+                }
+
+                // Checking inheritable collection locks
+
+                for (LockInfo lockColl : collectionLocks.toArray(new LockInfo[0]))
+                {
+                    if (path.equals(lockColl.path))
+                    {
+                        for (String token : lockColl.tokens.toArray(new String[0]))
+                        {
+                            if (lockTokenHeader.indexOf(token) != -1)
+                            {
+                                lockColl.tokens.remove(token);
+                                break;
+                            }
+                        }
+
+                        if (lockColl.tokens.isEmpty())
+                        {
+                            collectionLocks.remove(lock);
+                            // Removing any lock-null resource which would be present
+                            lockNullResources.remove(path);
+                        }
+
+                    }
+                }
+            }// syncronized
+
+            return getResponse().setStatus(WebdavStatus.SC_NO_CONTENT);
+        }
+    }
+
+
+    enum LockResult
+    {
+        NOT_LOCKED,
+        TOKEN_NOT_FOUND,
+        HAS_LOCK,
+        LOCKED
+    }
+
+
+    /**
+     * Check to see if a resource is currently write locked. The method
+     * will look at the "If" header to make sure the client
+     * has give the appropriate lock tokens.
+     *
+     * @return boolean true if the resource is locked (and no appropriate
+     * lock token has been found for at least one of the non-shared locks which
+     * are present on the resource).
+     */
+    private LockResult isLocked() throws DavException
+    {
+        String ifHeader = getRequest().getHeader("If");
+        if (ifHeader == null)
+            ifHeader = "";
+
+        boolean lockExpected = false;
+        String lockTokenHeader = getRequest().getHeader("Lock-Token");
+        if (lockTokenHeader == null)
+            lockTokenHeader = "";
+        else if (lockTokenHeader.contains("<opaquelocktoken:"))
+        {
+            lockExpected = true;
+            // verify format looks reasonable
+            if (!lockTokenHeader.contains("{") && !lockTokenHeader.contains("}"))
+                throw new DavException(WebdavStatus.SC_BAD_REQUEST);
+        }
+
+        LockResult result = isLocked(getResourcePath(), ifHeader + lockTokenHeader);
+        if (lockExpected && result==LockResult.NOT_LOCKED)
+            throw new DavException(WebdavStatus.SC_BAD_REQUEST);
+        return result;
+    }
+
+
+    /**
+     * Check to see if a resource is currently write locked.
+     *
+     * @param path Path of the resource
+     * @param ifHeader "If" HTTP header which was included in the request
+     * @return boolean true if the resource is locked (and no appropriate
+     * lock token has been found for at least one of the non-shared locks which
+     * are present on the resource).
+     */
+    private LockResult isLocked(Path path, String ifHeader)
+    {
+        LockResult locked = _isLocked(path,ifHeader);
+        if (_log.isDebugEnabled() && (locked!=LockResult.NOT_LOCKED || !StringUtils.isEmpty(ifHeader)))
+        {
+            _log.debug(locked.name() + " " + path.toString() + " If:" + ifHeader);
+        }
+        return locked;
+    }
+
+
+    private LockResult _isLocked(Path path, String ifHeader)
+    {
+        LockResult ret = LockResult.NOT_LOCKED;
+
+        // TODO real "If" parsing, this is mostly to pass litmus
+        if (ifHeader.contains("(Not <DAV:no-lock>)"))
+            ifHeader = ifHeader.replace("(Not <DAV:no-lock>)","");
+        if (ifHeader.contains("Not <DAV:no-lock>"))
+            return LockResult.NOT_LOCKED;   //e.g. statement is always true
+        else if (ifHeader.contains("<DAV:no-lock>"))
+            return LockResult.TOKEN_NOT_FOUND;  //e.g. statement is always false
+
+        // Checking resource locks
+        LockInfo lock = resourceLocks.get(path);
+        if ((lock != null) && (lock.hasExpired()))
+        {
+            removeLock(path);
+        }
+        else if (lock != null)
+        {
+            // At least one of the tokens of the locks must have been given
+            boolean tokenMatch = false;
+            for (String token : lock.tokens)
+            {
+                if (ifHeader.indexOf(token) != -1)
+                {
+                    tokenMatch = true;
+                    ret = LockResult.HAS_LOCK;
+                }
+            }
+            if (!tokenMatch)
+                return LockResult.LOCKED;
+        }
+
+        // Checking inheritable collection locks
+        for (LockInfo lockColl : collectionLocks.toArray(new LockInfo[0]))
+        {
+            if (lockColl.hasExpired())
+            {
+                collectionLocks.remove(lockColl);
+            }
+            else if (path.startsWith(lockColl.path))
+            {
+                boolean tokenMatch = false;
+                for (String token : lockColl.tokens)
+                {
+                    if (ifHeader.indexOf(token) != -1)
+                    {
+                        tokenMatch = true;
+                        ret = LockResult.HAS_LOCK;
+                    }
+                }
+                if (!tokenMatch)
+                    return LockResult.LOCKED;
+            }
+        }
+
+        // TODO actually parse the headers instead of using ifHeader.contains(token)
+        boolean tokenSpecified = StringUtils.contains(ifHeader,"<opaquelocktoken:") && StringUtils.contains(ifHeader,"{") && StringUtils.contains(ifHeader,"}");
+        if (tokenSpecified && ret == LockResult.NOT_LOCKED)
+            return LockResult.TOKEN_NOT_FOUND;
+        return ret;
+    }
+
+
+    private void removeLock(Path path)
+    {
+        synchronized (lockingLock)
+        {
+            LockInfo lock = resourceLocks.get(path);
+            if ((lock != null) && (lock.hasExpired()))
+                resourceLocks.remove(path);
+        }
     }
 
 
@@ -3203,13 +4013,16 @@ public class DavController extends SpringActionController
         // this helps many clients that won't prompt for credentials
         // if the initial OPTIONS request works.
         // AllowNoLogin header returns to normal behavior (simple permission check)
-        String userAgent = getRequest().getHeader("User-Agent");
-        boolean isFinder = userAgent != null && userAgent.startsWith("WebDAVFS") && -1 != userAgent.indexOf("Darwin");
         boolean isBasicAuthentication = "Basic".equals(getRequest().getAttribute(org.labkey.api.security.SecurityManager.AUTHENTICATION_METHOD));
         boolean isGuest = getUser().isGuest();
-//        boolean hasAllowNoLogin = !StringUtils.isEmpty(getRequest().getHeader("AllowNoLogin"));
 
-        if (isFinder && isGuest && !isBasicAuthentication)
+        // if user is authenticated or is trying to authenticate we're OK
+        if (!isGuest || isBasicAuthentication)
+            return;
+        // force non browsers to log-in, except windowsexplorer over http (avoid cryptic "appears to be invalid" message)
+        //if (isWindowsExplorer() && "http".equals(getRequest().getScheme()))
+        //    return;
+        if (!isBrowser())
             throw new UnauthorizedException(r);
     }
     
@@ -4399,105 +5212,6 @@ public class DavController extends SpringActionController
     }
 
 
-    /**
-     * Check to see if a resource is currently write locked. The method
-     * will look at the "If" header to make sure the client
-     * has give the appropriate lock tokens.
-     *
-     * @param req Servlet request
-     * @return boolean true if the resource is locked (and no appropriate
-     *         lock token has been found for at least one of the non-shared locks which
-     *         are present on the resource).
-     */
-    private boolean isLocked(HttpServletRequest req)
-    {
-        Path path = getResourcePath();
-
-        String ifHeader = req.getHeader("If");
-        if (ifHeader == null)
-        {
-            ifHeader = "";
-        }
-
-        String lockTokenHeader = req.getHeader("Lock-Token");
-        if (lockTokenHeader == null)
-        {
-            lockTokenHeader = "";
-        }
-
-        return isLocked(path, ifHeader + lockTokenHeader);
-    }
-
-
-    /**
-     * Check to see if a resource is currently write locked.
-     *
-     * @param path     Path of the resource
-     * @param ifHeader "If" HTTP header which was included in the request
-     * @return boolean true if the resource is locked (and no appropriate
-     *         lock token has been found for at least one of the non-shared locks which
-     *         are present on the resource).
-     */
-    private boolean isLocked(Path path, String ifHeader)
-    {
-        // Checking resource locks
-        LockInfo lock = (LockInfo) resourceLocks.get(path);
-        if ((lock != null) && (lock.hasExpired()))
-        {
-            resourceLocks.remove(path);
-        }
-        else if (lock != null)
-        {
-            // At least one of the tokens of the locks must have been given
-            Iterator iter = lock.tokens.iterator();
-            boolean tokenMatch = false;
-            while (iter.hasNext())
-            {
-                String token = (String) iter.next();
-                if (ifHeader.indexOf(token) != -1)
-                {
-                    tokenMatch = true;
-                }
-            }
-
-            if (!tokenMatch)
-            {
-                return true;
-            }
-        }
-
-        // Checking inheritable collection locks
-        Iterator iter = collectionLocks.iterator();
-        while (iter.hasNext())
-        {
-            lock = (LockInfo) iter.next();
-            if (lock.hasExpired())
-            {
-                iter.remove();
-            }
-            else if (path.startsWith(lock.path))
-            {
-                Iterator tokenIter = lock.tokens.iterator();
-                boolean tokenMatch = false;
-                while (tokenIter.hasNext())
-                {
-                    String token = (String) tokenIter.next();
-                    if (ifHeader.indexOf(token) != -1)
-                    {
-                        tokenMatch = true;
-                    }
-                }
-
-                if (!tokenMatch)
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
 
     /**
      * Copy a resource.
@@ -4513,10 +5227,10 @@ public class DavController extends SpringActionController
         _log.debug("Dest path :" + destinationPath);
 
         WebdavResource resource = resolvePath();
-        if (null == resource || !resource.exists())
-           throw new DavException(WebdavStatus.SC_NOT_FOUND);
-        if (!resource.canRead(getUser(),true))
+        if (null != resource && !resource.canRead(getUser(),true))
            unauthorized(resource);
+        if (null == resource || !resource.exists())
+            throw new DavException(WebdavStatus.SC_NOT_FOUND);
 
         WebdavResource destination = resolvePath(destinationPath);
         if (null == destination)
@@ -4638,7 +5352,7 @@ public class DavController extends SpringActionController
      * Return JAXP document builder instance.
      */
     private DocumentBuilder getDocumentBuilder()
-            throws ServletException
+            throws DavException
     {
         DocumentBuilder documentBuilder;
         DocumentBuilderFactory documentBuilderFactory;
@@ -4650,7 +5364,7 @@ public class DavController extends SpringActionController
         }
         catch (ParserConfigurationException e)
         {
-            throw new ServletException("Unexpected Error", e);
+            throw new DavException(e);
         }
         return documentBuilder;
     }
@@ -4660,47 +5374,120 @@ public class DavController extends SpringActionController
     /**
      * Holds a lock information.
      */
+    /**
+     * Holds a lock information.
+     */
     private class LockInfo
     {
-        /**
-         * Constructor.
-         */
-        LockInfo()
+        public LockInfo()
         {
-
+            // Ignore
         }
 
-        Path path = Path.emptyPath;
+
+        // ------------------------------------------------- Instance Variables
+
+
+        Path path = Path.rootPath;
         String type = "write";
         String scope = "exclusive";
         int depth = 0;
         String owner = "";
-        List tokens = new Vector();
+        final List<String> tokens = Collections.synchronizedList(new ArrayList<String>());
         long expiresAt = 0;
-        Date creationDate = new Date();
+        final Date creationDate = new Date();
+
+
+        // ----------------------------------------------------- Public Methods
+
 
         /**
          * Get a String representation of this lock token.
          */
+        @Override
         public String toString()
         {
-            String result = "Type:" + type + "\n";
-            result += "Scope:" + scope + "\n";
-            result += "Depth:" + depth + "\n";
-            result += "Owner:" + owner + "\n";
-            result += "Expiration:" + getHttpDateFormat(expiresAt) + "\n";
-            for (Object token : tokens)
-                result += "Token:" + token + "\n";
-            return result;
+            StringBuilder result =  new StringBuilder("Type:");
+            result.append(type);
+            result.append("\nScope:");
+            result.append(scope);
+            result.append("\nDepth:");
+            result.append(depth);
+            result.append("\nOwner:");
+            result.append(owner);
+            result.append("\nExpiration:");
+            result.append(new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US).format(expiresAt));
+            for (String token : tokens.toArray(new String[0]))
+            {
+                result.append("\nToken:");
+                result.append(token);
+            }
+            result.append("\n");
+            return result.toString();
         }
 
 
         /**
          * Return true if the lock has expired.
          */
-        boolean hasExpired()
+        public boolean hasExpired()
         {
-            return (HeartBeat.currentTimeMillis() > expiresAt);
+            return (System.currentTimeMillis() > expiresAt);
+        }
+
+
+        /**
+         * Return true if the lock is exclusive.
+         */
+        public boolean isExclusive()
+        {
+            return (scope.equals("exclusive"));
+        }
+
+
+        /**
+         * Get an XML representation of this lock token. This method will
+         * append an XML fragment to the given XML writer.
+         */
+        public void toXML(XMLWriter generatedXML)
+        {
+            generatedXML.writeElement("D", "activelock", XMLWriter.OPENING);
+
+            generatedXML.writeElement("D", "locktype", XMLWriter.OPENING);
+            generatedXML.writeElement("D", type, XMLWriter.NO_CONTENT);
+            generatedXML.writeElement("D", "locktype", XMLWriter.CLOSING);
+
+            generatedXML.writeElement("D", "lockscope", XMLWriter.OPENING);
+            generatedXML.writeElement("D", scope, XMLWriter.NO_CONTENT);
+            generatedXML.writeElement("D", "lockscope", XMLWriter.CLOSING);
+
+            generatedXML.writeElement("D", "depth", XMLWriter.OPENING);
+            if (depth == maxDepth) {
+                generatedXML.writeText("Infinity");
+            } else {
+                generatedXML.writeText("0");
+            }
+            generatedXML.writeElement("D", "depth", XMLWriter.CLOSING);
+
+            generatedXML.writeElement("D", "owner", XMLWriter.OPENING);
+            generatedXML.writeText(owner);
+            generatedXML.writeElement("D", "owner", XMLWriter.CLOSING);
+
+            generatedXML.writeElement("D", "timeout", XMLWriter.OPENING);
+            long timeout = (expiresAt - System.currentTimeMillis()) / 1000;
+            generatedXML.writeText("Second-" + timeout);
+            generatedXML.writeElement("D", "timeout", XMLWriter.CLOSING);
+
+            generatedXML.writeElement("D", "locktoken", XMLWriter.OPENING);
+            for (String token : tokens.toArray(new String[0]))
+            {
+                generatedXML.writeElement("D", "href", XMLWriter.OPENING);
+                generatedXML.writeText("opaquelocktoken:" + token);
+                generatedXML.writeElement("D", "href", XMLWriter.CLOSING);
+            }
+            generatedXML.writeElement("D", "locktoken", XMLWriter.CLOSING);
+
+            generatedXML.writeElement("D", "activelock", XMLWriter.CLOSING);
         }
     }
 
@@ -4734,13 +5521,6 @@ public class DavController extends SpringActionController
             return "[" + start + "-" + end + "," + length + "]";
         }
     }
-
-    
-    // UNDONE: what is the scope of these variables???
-    private Map lockNullResources = new Hashtable();
-    private Map resourceLocks = new Hashtable();
-    private List<LockInfo> collectionLocks = new Vector<>();
-             
 
 
     /**
@@ -5017,10 +5797,35 @@ public class DavController extends SpringActionController
             throw new DavException(WebdavStatus.SC_FORBIDDEN);
     }
 
+
     private void checkLocked() throws DavException
     {
-        if (isLocked(getRequest()))
-            throw new DavException(WebdavStatus.SC_LOCKED);
+        checkLocked(getResourcePath());
+    }
+
+
+    private void checkLocked(Path path) throws DavException
+    {
+        String ifHeader = getRequest().getHeader("If");
+        if (ifHeader == null)
+            ifHeader = "";
+
+        String lockTokenHeader = getRequest().getHeader("Lock-Token");
+        if (lockTokenHeader == null)
+            lockTokenHeader = "";
+
+        LockResult result = isLocked(path, ifHeader + lockTokenHeader);
+        switch (result)
+        {
+            case NOT_LOCKED:
+                return;
+            case HAS_LOCK:
+                return;
+            case TOKEN_NOT_FOUND:
+                throw new DavException(WebdavStatus.SC_PRECONDITION_FAILED, path.toString());
+            case LOCKED:
+                throw new DavException(WebdavStatus.SC_LOCKED, path.toString());
+        }
     }
 
 
@@ -5155,9 +5960,18 @@ public class DavController extends SpringActionController
     {
         _log.debug("addToIndex: " + r.getPath());
 
-        if (!r.shouldIndex())
+        try
         {
-            _log.debug("!shouldIndex(): " + r.getPath());
+            // a lot of tools up load temporary 0 length files, let's not index them
+            if (!r.shouldIndex() || r.getContentLength() == 0 || r.getName().startsWith("._"))
+            {
+                _log.debug("!shouldIndex(): " + r.getPath());
+                return;
+            }
+        }
+        catch (IOException x)
+        {
+            _log.debug("!shouldIndex(): " + r.getPath(), x);
             return;
         }
 
@@ -5292,7 +6106,7 @@ public class DavController extends SpringActionController
         public int read(byte[] bytes) throws IOException
         {
             access();
-            return super.read(bytes);
+            return super.read(bytes, 0, bytes.length);
         }
 
         @Override

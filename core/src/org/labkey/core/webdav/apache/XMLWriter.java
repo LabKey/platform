@@ -34,6 +34,11 @@
 package org.labkey.core.webdav.apache;
 
 import org.jetbrains.annotations.Nullable;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -45,6 +50,9 @@ import java.io.Writer;
  */
 public class XMLWriter {
 
+
+    boolean canonical = false;
+    boolean qualifiedNames = false;
 
     // -------------------------------------------------------------- Constants
 
@@ -246,6 +254,221 @@ public class XMLWriter {
     public void writeXMLHeader() {
         buffer.append("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n");
     }
+
+
+    /** Prints the specified node, recursively. */
+    public void print(Node node) {
+
+        // is there anything to do?
+        if ( node == null ) {
+            return;
+        }
+
+        int type = node.getNodeType();
+        switch ( type ) {
+            // print document
+            case Node.DOCUMENT_NODE: {
+                if ( !canonical ) {
+                    String  Encoding = "UTF-8";
+                    buffer.append("<?xml version=\"1.0\" encoding=\"" + Encoding + "\"?>\n");
+                }
+                print(((Document) node).getDocumentElement());
+                break;
+            }
+
+            // print element with attributes
+            case Node.ELEMENT_NODE: {
+                buffer.append('<');
+                if (this.qualifiedNames) {
+                    buffer.append(node.getNodeName());
+                } else {
+                    buffer.append(node.getLocalName());
+                }
+                Attr attrs[] = sortAttributes(node.getAttributes());
+                for ( int i = 0; i < attrs.length; i++ ) {
+                    Attr attr = attrs[i];
+                    buffer.append(' ');
+                    if (this.qualifiedNames) {
+                        buffer.append(attr.getNodeName());
+                    } else {
+                        buffer.append(attr.getLocalName());
+                    }
+
+                    buffer.append("=\"");
+                    buffer.append(normalize(attr.getNodeValue()));
+                    buffer.append('"');
+                }
+                buffer.append('>');
+                NodeList children = node.getChildNodes();
+                if ( children != null ) {
+                    int len = children.getLength();
+                    for ( int i = 0; i < len; i++ ) {
+                        print(children.item(i));
+                    }
+                }
+                break;
+            }
+
+            // handle entity reference nodes
+            case Node.ENTITY_REFERENCE_NODE: {
+                if ( canonical ) {
+                    NodeList children = node.getChildNodes();
+                    if ( children != null ) {
+                        int len = children.getLength();
+                        for ( int i = 0; i < len; i++ ) {
+                            print(children.item(i));
+                        }
+                    }
+                } else {
+                    buffer.append('&');
+                    if (this.qualifiedNames) {
+                        buffer.append(node.getNodeName());
+                    } else {
+                        buffer.append(node.getLocalName());
+                    }
+                    buffer.append(';');
+                }
+                break;
+            }
+
+            // print cdata sections
+            case Node.CDATA_SECTION_NODE: {
+                if ( canonical ) {
+                    buffer.append(normalize(node.getNodeValue()));
+                } else {
+                    buffer.append("<![CDATA[");
+                    buffer.append(node.getNodeValue());
+                    buffer.append("]]>");
+                }
+                break;
+            }
+
+            // print text
+            case Node.TEXT_NODE: {
+                buffer.append(normalize(node.getNodeValue()));
+                break;
+            }
+
+            // print processing instruction
+            case Node.PROCESSING_INSTRUCTION_NODE: {
+                buffer.append("<?");
+                if (this.qualifiedNames) {
+                    buffer.append(node.getNodeName());
+                } else {
+                    buffer.append(node.getLocalName());
+                }
+
+                String data = node.getNodeValue();
+                if ( data != null && data.length() > 0 ) {
+                    buffer.append(' ');
+                    buffer.append(data);
+                }
+                buffer.append("?>");
+                break;
+            }
+        }
+
+        if ( type == Node.ELEMENT_NODE ) {
+            buffer.append("</");
+            if (this.qualifiedNames) {
+                buffer.append(node.getNodeName());
+            } else {
+                buffer.append(node.getLocalName());
+            }
+            buffer.append('>');
+        }
+    } // print(Node)
+
+
+    protected Attr[] sortAttributes(NamedNodeMap attrs) {
+        if (attrs == null) {
+            return new Attr[0];
+        }
+
+        int len = attrs.getLength();
+        Attr array[] = new Attr[len];
+        for ( int i = 0; i < len; i++ ) {
+            array[i] = (Attr)attrs.item(i);
+        }
+        for ( int i = 0; i < len - 1; i++ ) {
+            String name = null;
+            if (this.qualifiedNames) {
+                name  = array[i].getNodeName();
+            } else {
+                name  = array[i].getLocalName();
+            }
+            int    index = i;
+            for ( int j = i + 1; j < len; j++ ) {
+                String curName = null;
+                if (this.qualifiedNames) {
+                    curName = array[j].getNodeName();
+                } else {
+                    curName = array[j].getLocalName();
+                }
+                if ( curName.compareTo(name) < 0 ) {
+                    name  = curName;
+                    index = j;
+                }
+            }
+            if ( index != i ) {
+                Attr temp    = array[i];
+                array[i]     = array[index];
+                array[index] = temp;
+            }
+        }
+
+        return (array);
+
+    } // sortAttributes(NamedNodeMap):Attr[]
+
+    protected String normalize(String s) {
+        if (s == null) {
+            return "";
+        }
+
+        StringBuilder str = new StringBuilder();
+
+        int len = s.length();
+        for ( int i = 0; i < len; i++ ) {
+            char ch = s.charAt(i);
+            switch ( ch ) {
+                case '<': {
+                    str.append("&lt;");
+                    break;
+                }
+                case '>': {
+                    str.append("&gt;");
+                    break;
+                }
+                case '&': {
+                    str.append("&amp;");
+                    break;
+                }
+                case '"': {
+                    str.append("&quot;");
+                    break;
+                }
+                case '\r':
+                case '\n': {
+                    if ( canonical ) {
+                        str.append("&#");
+                        str.append(Integer.toString(ch));
+                        str.append(';');
+                        break;
+                    }
+                    // else, default append char
+                }
+                //$FALL-THROUGH$
+                default: {
+                    str.append(ch);
+                }
+            }
+        }
+
+        return (str.toString());
+
+    } // normalize(String):String
+
 
 
     /**
