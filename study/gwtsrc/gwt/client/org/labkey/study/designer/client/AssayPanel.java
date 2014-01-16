@@ -52,6 +52,7 @@ public class AssayPanel extends Composite
             final TextArea tbDescription = new TextArea();
             tbDescription.setWidth("100%");
             tbDescription.setVisibleLines(5);
+            tbDescription.setName("assayPlan"); //For easier testing
             ActivatingLabel descriptionEditor = new ActivatingLabel(tbDescription, "Click to type assay plan here");
             if (null != assaySchedule.getDescription())
                 descriptionEditor.setText(assaySchedule.getDescription());
