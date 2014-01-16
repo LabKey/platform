@@ -127,7 +127,16 @@ public class WebdavResolverImpl implements WebdavResolver
     synchronized WebdavResource getRoot()
     {
         if (null == _root)
-            _root = new WebFolderResource(this, ContainerManager.getRoot());
+        {
+            _root = new WebFolderResource(this, ContainerManager.getRoot())
+            {
+                @Override
+                public boolean canList(User user, boolean forRead)
+                {
+                    return true;
+                }
+            };
+        }
         return _root;
     }
 

@@ -618,8 +618,12 @@ public class FileSystemResource extends AbstractWebdavResource
         {
             _log.error(e);
         }
-        return file.delete();
+        boolean deleted = file.delete();
+        if (!deleted)
+            _log.warn("Unexpected file system error, could not delete file: " + file.getPath());
+        return deleted;
     }
+
 
     @NotNull
     public Collection<WebdavResolver.History> getHistory()
@@ -636,6 +640,7 @@ public class FileSystemResource extends AbstractWebdavResource
             history.add(new HistoryImpl(e.getCreatedBy().getUserId(), e.getCreated(), e.getComment(), null));
         return history;
     }
+
 
     @Override
     public User getCreatedBy()
