@@ -742,7 +742,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
         // Show the mask after the component size has been determined, as long as the data is still loading:
         this.on('afterlayout', function() {
-            if (!this.loaded) 
+            if (!this.loaded)
                 this.getEl().mask("loading measures...");
         });
 
@@ -1030,25 +1030,27 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
 
     extend: 'Ext.data.Store',
 
-    constructor : function(config){
+    constructor : function(config) {
 
-        Ext4.define('Measure', {
-            extend : 'Ext.data.Model',
-            fields : [
-                {name   : 'id'},
-                {name   : 'name'},
-                {name   : 'label'},
-                {name   : 'description'},
-                {name   : 'isUserDefined'},
-                {name   : 'isDemographic'},
-                {name   : 'queryLabel'},
-                {name   : 'queryName'},
-                {name   : 'schemaName'},
-                {name   : 'type'},
-                {name   : 'selected'},
-                {name   : 'alias'}
-            ]
-        });
+        if (!Ext4.ModelManager.isRegistered('Measure')) {
+            Ext4.define('Measure', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    {name   : 'id'},
+                    {name   : 'name'},
+                    {name   : 'label'},
+                    {name   : 'description'},
+                    {name   : 'isUserDefined'},
+                    {name   : 'isDemographic'},
+                    {name   : 'queryLabel'},
+                    {name   : 'queryName'},
+                    {name   : 'schemaName'},
+                    {name   : 'type'},
+                    {name   : 'selected'},
+                    {name   : 'alias'}
+                ]
+            });
+        }
 
         Ext4.apply(this, config, {
             autoLoad: false,
