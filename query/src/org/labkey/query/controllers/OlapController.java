@@ -552,7 +552,7 @@ public class OlapController extends SpringActionController
         if (null == _connection)
         {
             _connection = d.getConnection(getContainer(), getUser());
-            assert MemTracker.put(_connection);
+            MemTracker.getInstance().put(_connection);
         }
         return _connection;
     }

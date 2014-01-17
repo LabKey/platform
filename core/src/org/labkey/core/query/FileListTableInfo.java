@@ -54,8 +54,7 @@ class FileListTableInfo extends FilteredTable<CoreQuerySchema>
 
         public FileUnionTable(@NotNull UserSchema schema)
         {
-            super(CoreSchema.getInstance().getSchema(), schema);
-            setName(CoreQuerySchema.FILES_TABLE_NAME);
+            super(CoreSchema.getInstance().getSchema(), CoreQuerySchema.FILES_TABLE_NAME, schema);
 
             FileContentService svc = ServiceRegistry.get(FileContentService.class);
             _query = new SQLFragment();

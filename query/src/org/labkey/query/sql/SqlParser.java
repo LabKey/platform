@@ -179,7 +179,7 @@ public class SqlParser
 
 				QNode qnodeRoot = convertParseTree(selectStmt);
 				assert dump(qnodeRoot);
-				assert MemTracker.put(qnodeRoot);
+				MemTracker.getInstance().put(qnodeRoot);
 
 				if (qnodeRoot instanceof QQuery || qnodeRoot instanceof QUnion)
 					_root = qnodeRoot;
@@ -252,13 +252,13 @@ public class SqlParser
                 return null;
 
             CommonTree parseRoot = (CommonTree)exprScope.getTree();
-            assert MemTracker.put(parseRoot);
+            MemTracker.getInstance().put(parseRoot);
             if (null == parseRoot)
                 return null;
 
             QNode qnodeRoot = convertParseTree(parseRoot);
 			assert dump(qnodeRoot);
-            assert MemTracker.put(qnodeRoot);
+            MemTracker.getInstance().put(qnodeRoot);
 
             _root = qnodeRoot != null && qnodeRoot instanceof QExpr ? (QExpr) qnodeRoot : null;
             for (Throwable e : _parseErrors)
@@ -1027,7 +1027,7 @@ public class SqlParser
 			super(new CommonTokenStream(new SqlBaseLexer(new CaseInsensitiveStringStream(str))));
             setTreeAdaptor(new LabKeyTreeAdaptor());
             _errors = errors;
-            assert MemTracker.put(this);
+            MemTracker.getInstance().put(this);
         }
 
         public boolean isSqlType(String type)

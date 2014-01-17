@@ -132,7 +132,7 @@ public class Query
     public Query(@NotNull QuerySchema schema)
     {
         _schema = schema;
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
     public Query(@NotNull QuerySchema schema, Query parent)
@@ -141,14 +141,14 @@ public class Query
         _parent = parent;
         if (null != _parent)
             _depth = _parent._depth + 1;
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
     public Query(@NotNull QuerySchema schema, String sql)
     {
         _schema = schema;
         _querySource = sql;
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
     public void setStrictColumnList(boolean b)

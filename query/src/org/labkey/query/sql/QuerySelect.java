@@ -107,7 +107,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
         // subqueryTable is only for expr.createColumnInfo()
         // should refactor so tableinfo is not necessary, maybe expr.setColumnAttributes(target)
-        _subqueryTable = new SQLTableInfo(_schema.getDbSchema()) {
+        _subqueryTable = new SQLTableInfo(_schema.getDbSchema(), alias) {
             @Override
             public UserSchema getUserSchema()
             {
@@ -122,7 +122,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
         for (QParameter p : query._parameters)
             parametersInScope.add(new FieldKey(null, p.getName()));
         
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
 
@@ -133,7 +133,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
         this._inFromClause = inFromClause;
 		initializeFromQQuery(root);
 		initializeSelect();
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
 	}
 
 
@@ -1130,7 +1130,7 @@ groupByLoop:
             ColumnInfo aliasedColumn = new RelationColumnInfo(ret, col);
             ret.addColumn(aliasedColumn);
         }
-        assert MemTracker.put(ret);
+        MemTracker.getInstance().put(ret);
         return ret;
     }
 
@@ -1510,7 +1510,7 @@ groupByLoop:
                 }
             }
         }
-        assert MemTracker.put(ret);
+        MemTracker.getInstance().put(ret);
         return ret;
     }
 

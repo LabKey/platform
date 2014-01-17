@@ -25,9 +25,9 @@ public class SQLTableInfo extends AbstractTableInfo
 {
     private SQLFragment _fromSQL;
 
-    public SQLTableInfo(DbSchema schema)
+    public SQLTableInfo(DbSchema schema, String name)
     {
-        super(schema);
+        super(schema, name);
     }
 
     protected boolean isCaseSensitive()

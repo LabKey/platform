@@ -137,7 +137,7 @@ public class ServerManager
                 _log.debug(sb.toString());
                 RepositoryContentFinder rcf = new StringRepositoryContentFinder(sb.toString());
                 s = MondrianServer.createWithRepository(rcf, new _CatalogLocator());
-                assert MemTracker.put(s);
+                MemTracker.getInstance().put(s);
                 ref = new ServerReferenceCount(s);
                 _servers.put(getServerCacheKey(c), ref);
             }
@@ -154,9 +154,9 @@ public class ServerManager
 
         MondrianServer server = ref.get();
         OlapConnection olap = server.getConnection("dsn_LABKEY", catalog, null);
-        assert MemTracker.put(olap);
+        MemTracker.getInstance().put(olap);
         OlapConnection wrap = OlapConnectionProxy.wrap(olap, ref);
-        assert MemTracker.put(wrap);
+        MemTracker.getInstance().put(wrap);
         return wrap;
     }
 
@@ -174,7 +174,7 @@ public class ServerManager
 
         MondrianServer server = ref.get();
         MondrianServer wrap = MondrianServerProxy.wrap(server, ref);
-        assert MemTracker.put(wrap);
+        MemTracker.getInstance().put(wrap);
         return wrap;
     }
 
@@ -383,7 +383,7 @@ public class ServerManager
 
     static
     {
-        MemTracker.register(new _MemTrackerListener());
+        MemTracker.getInstance().register(new _MemTrackerListener());
     }
 
     public static class _MemTrackerListener implements MemTrackerListener

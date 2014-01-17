@@ -35,7 +35,7 @@ public class ParticipantDataSetTable extends VirtualTable
 
     public ParticipantDataSetTable(StudyQuerySchema schema, ColumnInfo colParticipantId)
     {
-        super(StudySchema.getInstance().getSchema());
+        super(StudySchema.getInstance().getSchema(), null);
         _schema = schema;
         _colParticipantId = colParticipantId;
         for (DataSetDefinition dataset : _schema.getStudy().getDataSets())

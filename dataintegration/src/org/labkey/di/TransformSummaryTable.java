@@ -32,12 +32,6 @@ import java.util.HashMap;
 public class TransformSummaryTable extends TransformBaseTable
 {
     @Override
-    public String getTransformTableName()
-    {
-        return DataIntegrationQuerySchema.TRANSFORMSUMMARY_TABLE_NAME;
-    }
-
-    @Override
     protected HashMap<String, String> buildNameMap()
     {
         HashMap<String, String> colMap = super.buildNameMap();
@@ -48,7 +42,7 @@ public class TransformSummaryTable extends TransformBaseTable
 
     public TransformSummaryTable(UserSchema schema)
     {
-        super(schema);
+        super(schema, DataIntegrationQuerySchema.TRANSFORMSUMMARY_TABLE_NAME);
 
         _sql = new SQLFragment();
         _sql.append(getBaseSql());

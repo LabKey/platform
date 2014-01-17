@@ -53,13 +53,13 @@ public class WikiVersion
 
     public WikiVersion()
     {
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
     public WikiVersion(HString wikiname)
     {
         _wikiName = wikiname;
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
     /**
@@ -75,7 +75,7 @@ public class WikiVersion
         _body = copy._body;
         _rendererType = copy._rendererType;
         _wikiName = copy._wikiName;
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
     public HString getName()

@@ -35,7 +35,7 @@ public class TransformHistoryTable extends TransformBaseTable
 {
     public TransformHistoryTable(UserSchema schema)
     {
-        super(schema);
+        super(schema, DataIntegrationQuerySchema.TRANSFORMHISTORY_TABLE_NAME);
         _sql = new SQLFragment();
         _sql.append(getBaseSql());
         _sql.append(getWhereClause("t"));
@@ -44,12 +44,6 @@ public class TransformHistoryTable extends TransformBaseTable
         // history table should link to filtered run table for transform details
         ColumnInfo run = getColumn(getNameMap().get("StartTime"));
         run.setURL(DetailsURL.fromString("dataintegration/viewTransformDetails.view?transformRunId=${TransformRunId}&transformId=${" + getNameMap().get("TransformId") + "}"));
-    }
-
-    @Override
-    public String getTransformTableName()
-    {
-        return DataIntegrationQuerySchema.TRANSFORMHISTORY_TABLE_NAME;
     }
 
     @Override

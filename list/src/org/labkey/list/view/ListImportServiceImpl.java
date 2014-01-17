@@ -78,7 +78,7 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
             public Thread newThread(Runnable r)
             {
                 Thread t = new Thread(r, "List Import Background Thread");
-                assert MemTracker.put(t);
+                MemTracker.getInstance().put(t);
                 return t;
             }
         });
@@ -89,10 +89,10 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
         setContext(context.getJobId(), context);
 
         // Make sure these go away
-        assert MemTracker.put(executor);
-        assert MemTracker.put(future);
-        assert MemTracker.put(context);
-        assert MemTracker.put(progress);
+        MemTracker.getInstance().put(executor);
+        MemTracker.getInstance().put(future);
+        MemTracker.getInstance().put(context);
+        MemTracker.getInstance().put(progress);
 
         return context.getImportStatus();
     }

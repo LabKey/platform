@@ -80,7 +80,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public Issue()
     {
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
 

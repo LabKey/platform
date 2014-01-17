@@ -55,8 +55,7 @@ public class AuditLogUnionTable extends FilteredTable<AuditQuerySchema>
 
         public AuditUnionTable(@NotNull UserSchema schema)
         {
-            super(AuditSchema.getInstance().getSchema(), schema);
-            setName(AuditQuerySchema.AUDIT_TABLE_NAME);
+            super(AuditSchema.getInstance().getSchema(), AuditQuerySchema.AUDIT_TABLE_NAME, schema);
 
             _query = new SQLFragment();
             _query.appendComment("<AuditUnionTableInfo>", getSchema().getSqlDialect());

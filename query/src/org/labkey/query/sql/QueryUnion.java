@@ -52,7 +52,7 @@ public class QueryUnion extends QueryRelation
 		_qunion = qunion;
         collectUnionTerms(qunion);
 		_qorderBy = _qunion.getChildOfType(QOrder.class);
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
 

@@ -376,7 +376,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     @Override
                     public TableInfo getLookupTableInfo()
                     {
-                        VirtualTable t = new VirtualTable(ExperimentServiceImpl.get().getSchema())
+                        VirtualTable t = new VirtualTable(ExperimentServiceImpl.get().getSchema(), null)
                         {
                             @NotNull
                             @Override
@@ -769,7 +769,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
         public TableInfo getLookupTableInfo()
         {
-            VirtualTable result = new VirtualTable(ExperimentServiceImpl.get().getSchema());
+            VirtualTable result = new VirtualTable(ExperimentServiceImpl.get().getSchema(), "Experiments");
             for (ExpExperiment experiment : getExperiments())
             {
                 ColumnInfo column = new ColumnInfo(experiment.getName());

@@ -64,7 +64,7 @@ public abstract class QueryRelation
     {
         _query = query;
         _schema = query.getSchema();
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
 
@@ -73,7 +73,7 @@ public abstract class QueryRelation
         _query = query;
         _schema = schema;
         _alias = alias;
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
     protected void setAlias(String alias)

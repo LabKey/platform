@@ -56,8 +56,6 @@ abstract public class TransformBaseTable extends VirtualTable
     // map base table column name to alias name
     private HashMap<String, String> _nameMap;
 
-    abstract public String getTransformTableName();
-
     protected HashMap<String, String> buildNameMap()
     {
         HashMap<String, String> colMap = new HashMap<>();
@@ -79,10 +77,9 @@ abstract public class TransformBaseTable extends VirtualTable
         return _sql;
     }
 
-    public TransformBaseTable(UserSchema schema)
+    public TransformBaseTable(UserSchema schema, String name)
     {
-        super(DataIntegrationQuerySchema.getSchema());
-        setName(getTransformTableName());
+        super(DataIntegrationQuerySchema.getSchema(), name);
         _nameMap = buildNameMap();
         _schema = schema;
     }

@@ -432,8 +432,7 @@ public class QueryLookupWrapper extends QueryRelation
         ColumnInfo fkCol;
         if (!(parent instanceof QueryLookupColumn))
         {
-            SQLTableInfo qti =  new SQLTableInfo(parent.getTable()._schema.getDbSchema());
-            qti.setName(parent.getTable().getAlias());
+            SQLTableInfo qti =  new SQLTableInfo(parent.getTable()._schema.getDbSchema(), parent.getTable().getAlias());
             fkCol = new RelationColumnInfo(qti, parent);
         }
         else

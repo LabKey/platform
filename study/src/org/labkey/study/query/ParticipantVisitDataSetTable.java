@@ -43,7 +43,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
 
     public ParticipantVisitDataSetTable(StudyQuerySchema schema, DataSetDefinition dsd, ColumnInfo colParticipantId)
     {
-        super(StudySchema.getInstance().getSchema());
+        super(StudySchema.getInstance().getSchema(), null);
         StudyManager studyManager = StudyManager.getInstance();
         _study = studyManager.getStudy(schema.getContainer());
         assert _study.getTimepointType() != TimepointType.CONTINUOUS;

@@ -995,8 +995,7 @@ public class StudyServiceImpl implements StudyService.Service
 
         _UnionTable(StudyQuerySchema studyQuerySchema, String tableName, Collection<ColumnInfo> cols, SQLFragment sqlf)
         {
-            super(studyQuerySchema.getDbSchema());
-            setName(tableName);
+            super(studyQuerySchema.getDbSchema(), tableName);
             _studyQuerySchema = studyQuerySchema;
             for (ColumnInfo col : cols)
             {

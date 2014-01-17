@@ -41,7 +41,7 @@ public class SampleRequestActor extends DefaultActor<SampleRequestActor>
 
     public SampleRequestActor()
     {
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
     protected void verifyMutability()

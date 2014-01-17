@@ -334,7 +334,7 @@ public class ParticipantTable extends FilteredTable<StudyQuerySchema>
         public TableInfo getLookupTableInfo()
         {
             // Create a simple virtual table so that we can expose one column per alias source
-            VirtualTable result = new VirtualTable(getSchema());
+            VirtualTable result = new VirtualTable(getSchema(), null);
             for (String source : getParticipantAliasSources(_datasetTable, _sourceColumn))
             {
                 ColumnInfo column = new ColumnInfo(source);

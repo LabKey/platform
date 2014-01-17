@@ -39,6 +39,7 @@ import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasValidator;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.IgnoresAllocationTracking;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -547,6 +548,12 @@ public class AdminController extends SpringActionController
         public ActionURL getSessionLoggingURL()
         {
             return new ActionURL(SessionLoggingAction.class, ContainerManager.getRoot());
+        }
+
+        @Override
+        public ActionURL getTrackedAllocationsViewerURL()
+        {
+            return new ActionURL(TrackedAllocationsViewerAction.class, ContainerManager.getRoot());
         }
     }
 
@@ -2687,7 +2694,7 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(MemForm form, BindException errors) throws Exception
         {
-            Set<Object> objectsToIgnore = MemTracker.beforeReport();
+            Set<Object> objectsToIgnore = MemTracker.getInstance().beforeReport();
 
             if (form.isClearCaches())
             {
@@ -2764,7 +2771,7 @@ public class AdminController extends SpringActionController
 
         private MemBean(HttpServletRequest request, Set<Object> objectsToIgnore)
         {
-            List<MemTracker.HeldReference> all = MemTracker.getReferences();
+            List<MemTracker.HeldReference> all = MemTracker.getInstance().getReferences();
             long threadId = Thread.currentThread().getId();
 
             // Attempt to detect other threads running labkey code -- mem tracker page will warn if any are found
@@ -5109,6 +5116,14 @@ public class AdminController extends SpringActionController
     public class GetSessionLogEventsAction extends ApiAction
     {
         @Override
+        public void checkPermissions()
+        {
+            super.checkPermissions();
+            if (!getUser().isDeveloper())
+                throw new UnauthorizedException();
+        }
+
+        @Override
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
             int eventId = 0;
@@ -5137,16 +5152,101 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @RequiresLogin @IgnoresAllocationTracking /* ignore so that we don't get an update in the UI for each time it requests the newest data */
+    public class GetTrackedAllocationsAction extends ApiAction
+    {
+        @Override
+        public void checkPermissions()
+        {
+            super.checkPermissions();
+            if (!getUser().isDeveloper())
+                throw new UnauthorizedException();
+        }
+
+        @Override
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            int requestId = 0;
+            try
+            {
+                String s = getViewContext().getRequest().getParameter("requestId");
+                if (null != s)
+                    requestId = Integer.parseInt(s);
+            }
+            catch (NumberFormatException ignored) {}
+            List<MemTracker.RequestInfo> requests = MemTracker.getInstance().getNewRequests(requestId);
+            List<Map<String, Object>> jsonRequests = new ArrayList<>(requests.size());
+            for (MemTracker.RequestInfo requestInfo : requests)
+            {
+                Map<String, Object> m = new HashMap<>();
+                m.put("requestId", requestInfo.getId());
+                m.put("url", requestInfo.getUrl());
+                m.put("date", requestInfo.getDate());
+
+
+                List<Map.Entry<String, Integer>> sortedObjects = sortByCounts(requestInfo);
+
+                List<Map<String, Object>> jsonObjects = new ArrayList<>(sortedObjects.size());
+                for (Map.Entry<String, Integer> entry : sortedObjects)
+                {
+                    Map<String, Object> jsonObject = new HashMap<>();
+                    jsonObject.put("name", entry.getKey());
+                    jsonObject.put("count", entry.getValue());
+                    jsonObjects.add(jsonObject);
+                }
+                m.put("objects", jsonObjects);
+                jsonRequests.add(m);
+            }
+            return new ApiSimpleResponse("requests", jsonRequests);
+        }
+
+        private List<Map.Entry<String, Integer>> sortByCounts(MemTracker.RequestInfo requestInfo)
+        {
+            List<Map.Entry<String, Integer>> objects = new ArrayList<>(requestInfo.getObjects().entrySet());
+            Collections.sort(objects, new Comparator<Map.Entry<String, Integer>>()
+            {
+                @Override
+                public int compare(Map.Entry<String, Integer> o1, Map.Entry<String, Integer> o2)
+                {
+                    return o1.getValue().compareTo(o2.getValue()) * -1;
+                }
+            });
+            return objects;
+        }
+    }
+
+    @RequiresLogin
+    public class TrackedAllocationsViewerAction extends SimpleViewAction
+    {
+        @Override
+        public void checkPermissions()
+        {
+            super.checkPermissions();
+            if (!getUser().isDeveloper())
+                throw new UnauthorizedException();
+        }
+
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            getPageConfig().setTemplate(Template.Print);
+            return new JspView("/org/labkey/core/admin/memTrackerViewer.jsp");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+    }
 
     @RequiresLogin
     public class SessionLoggingAction extends FormViewAction<LoggingForm>
     {
         @Override
-        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        public void checkPermissions()
         {
             super.checkPermissions();
-            User user = getUser();
-            if (!user.isDeveloper())
+            if (!getUser().isDeveloper())
                 throw new UnauthorizedException();
         }
 

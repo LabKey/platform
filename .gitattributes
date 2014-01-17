@@ -688,6 +688,7 @@ core/src/org/labkey/core/admin/lookAndFeelResources.jsp -text
 core/src/org/labkey/core/admin/maintenance.jsp -text
 core/src/org/labkey/core/admin/manageFolders.jsp -text
 core/src/org/labkey/core/admin/memTracker.jsp -text
+core/src/org/labkey/core/admin/memTrackerViewer.jsp -text
 core/src/org/labkey/core/admin/moduleErrors.jsp -text
 core/src/org/labkey/core/admin/moduleStatus.jsp -text
 core/src/org/labkey/core/admin/moveFolder.jsp -text

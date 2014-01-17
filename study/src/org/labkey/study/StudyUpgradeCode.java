@@ -58,6 +58,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.CommandLineSplitter;
@@ -532,10 +533,10 @@ public class StudyUpgradeCode implements UpgradeCode
             Container c = ContainerManager.getForId(containerId);
             if (null == c)
                 continue;
-            Study study = StudyManager.getInstance().getStudy(c);
+            StudyImpl study = StudyManager.getInstance().getStudy(c);
             if (null == study)
                 continue;
-            for (DataSetDefinition def : (List<DataSetDefinition>)study.getDataSets())
+            for (DataSetDefinition def : study.getDataSets())
             {
                 migrateDatasetStorage(def);
                 StudyManager.getInstance().uncache(def);

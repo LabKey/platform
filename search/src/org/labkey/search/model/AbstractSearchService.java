@@ -132,7 +132,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
                 if (minorVersion < 40)
                 {
-                    MemTracker.register(new MemTrackerListener()
+                    MemTracker.getInstance().register(new MemTrackerListener()
                     {
                         @Override
                         public void beforeReport(Set<Object> set)
@@ -1145,7 +1145,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     WebdavResource r = i.getResource();
                     if (null == r || !r.exists())
                         continue;
-                    assert MemTracker.put(r);
+                    MemTracker.getInstance().put(r);
                     _log.debug("index(" + i._id + ")");
 
                     if (index(i._id, i._res, i._preprocessMap))

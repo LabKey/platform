@@ -3955,15 +3955,6 @@ public class StudyManager
         return new TableSelector(StudySchema.getInstance().getTableInfoStudy(),
                 new SimpleFilter(FieldKey.fromParts("SourceStudyContainerId"), sourceStudyContainer), null).getArray(StudyImpl.class);
     }
-/*
-    public void forceDatasetSnapshotRefresh(Study study)
-    {
-        for (DataSetDefinition ds : getDataSetDefinitions(study))
-        {
-            ds.is
-        }
-    }
-*/
 
     // Return collection of current snapshots that are configured to refresh specimens
     public Collection<StudySnapshot> getRefreshStudySnapshots()

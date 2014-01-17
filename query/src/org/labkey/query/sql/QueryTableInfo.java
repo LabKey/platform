@@ -38,9 +38,8 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
 
     public QueryTableInfo(QueryRelation relation, String name)
     {
-        super(relation._query.getSchema().getDbSchema());
+        super(relation._query.getSchema().getDbSchema(), name);
         _relation = relation;
-        setName(name);
     }
 
 

@@ -81,11 +81,11 @@ public class CustomViewSetKey implements Serializable
     {
         Map<CustomViewSetKey, Map<String, CstmView>> fullMap = getMap(request);
         if (fullMap == null)
-            return Collections.EMPTY_MAP;
+            return Collections.emptyMap();
         Map<String, CstmView> map = fullMap.get(new CustomViewSetKey(c, queryName));
         if (map == null)
         {
-            return Collections.EMPTY_MAP;
+            return Collections.emptyMap();
         }
         return Collections.unmodifiableMap(map);
     }
@@ -108,20 +108,20 @@ public class CustomViewSetKey implements Serializable
         Map<CustomViewSetKey, Map<String, CstmView>> fullMap = getMap(request);
         if (fullMap == null)
         {
-            fullMap = new HashMap();
+            fullMap = new HashMap<>();
         }
 
         Map<String, CstmView> map = fullMap.get(new CustomViewSetKey(queryDef));
         if (map == null)
         {
-            map = new HashMap();
+            map = new HashMap<>();
             fullMap.put(new CustomViewSetKey(queryDef), map);
         }
         map.put(view.getName(), view);
         setMap(request, fullMap);
         
         // Stop tracking session views
-        assert MemTracker.remove(view);
+        MemTracker.getInstance().remove(view);
         return view;
     }
 

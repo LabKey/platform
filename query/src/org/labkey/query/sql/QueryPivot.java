@@ -1030,7 +1030,7 @@ public class QueryPivot extends QueryRelation
         @Override
         public TableInfo getLookupTableInfo()
         {
-            AbstractTableInfo t = new AbstractTableInfo(_query.getSchema().getDbSchema())
+            AbstractTableInfo t = new AbstractTableInfo(_query.getSchema().getDbSchema(), null)
             {
                 @Override
                 protected SQLFragment getFromSQL()

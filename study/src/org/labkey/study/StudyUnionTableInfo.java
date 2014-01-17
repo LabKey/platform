@@ -65,8 +65,7 @@ public class StudyUnionTableInfo extends VirtualTable
 
     public StudyUnionTableInfo(StudyImpl study, Collection<DataSetDefinition> defs, User user)
     {
-        super(StudySchema.getInstance().getSchema());
-        setName("StudyData");
+        super(StudySchema.getInstance().getSchema(), "StudyData");
         _study = study;
         _user = user;
         init(defs);
