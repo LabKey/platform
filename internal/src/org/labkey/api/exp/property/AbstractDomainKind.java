@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * User: kevink
@@ -180,11 +181,16 @@ public abstract class AbstractDomainKind extends DomainKind
         return totalRows != nonBlankRows;
     }
 
+
     @Override
     public Set<String> getMandatoryPropertyNames(Domain domain)
     {
-        return Collections.emptySet();
+        TreeSet<String> ret = new TreeSet<>();
+        for (PropertyStorageSpec spec : getBaseProperties())
+            ret.add(spec.getName());
+        return ret;
     }
+
 
     @Override
     public Set<String> getNonProvisionedTableNames()

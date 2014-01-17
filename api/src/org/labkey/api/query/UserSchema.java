@@ -77,7 +77,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         _path = path;
         _description = description;
         _schemaCustomizers = schemaCustomizers;
-        MemTracker.getInstance().put(this);
+        assert MemTracker.getInstance().put(this);
     }
 
     public String getName()
