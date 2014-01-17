@@ -344,35 +344,19 @@ public class ScssServlet extends HttpServlet
 
     private String read(File file) throws IOException
     {
-        InputStream in = null;
-        String result = null;
-        try
+        try (InputStream in = new FileInputStream(file))
         {
-            in = new FileInputStream(file);
-            result = IOUtils.toString(in);
+            return IOUtils.toString(in);
         }
-        finally
-        {
-            IOUtils.closeQuietly(in);
-        }
-        return result;
     }
 
 
     private String read(Resource r) throws IOException
     {
-        InputStream in = null;
-        String result = null;
-        try
+        try (InputStream in = r.getInputStream())
         {
-            in = r.getInputStream();
-            result = IOUtils.toString(in);
+            return IOUtils.toString(in);
         }
-        finally
-        {
-            IOUtils.closeQuietly(in);
-        }
-        return result;
     }
 
 

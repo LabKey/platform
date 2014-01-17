@@ -247,11 +247,9 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
 
         public String readXML() throws IOException
         {
-            BufferedReader reader = null;
-            try
+            try (BufferedReader reader = new BufferedReader(createReader()))
             {
-                reader = new BufferedReader(createReader());
-				return PageFlowUtil.getReaderContentsAsString(reader);
+                return PageFlowUtil.getReaderContentsAsString(reader);
             }
             catch (FileNotFoundException enf)
             {
@@ -263,19 +261,6 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
                 _log.error("Error reading default parameters file.", eio);
                 throw eio;
             }
-            finally
-            {
-                if (reader != null)
-                {
-                    try
-                    {
-                        reader.close();
-                    }
-                    catch (IOException eio)
-                    {
-                    }
-                }
-            }            
         }
     }
 

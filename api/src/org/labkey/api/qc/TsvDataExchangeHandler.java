@@ -559,8 +559,9 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         // if input data was transformed,
         if (runInfo.exists())
         {
-            Reader runPropsReader = null;
-            try {
+            Reader runPropsReader = null;    // TODO: Delete... not used!
+            try
+            {
                 List<Map<String, Object>> maps = parseRunInfo(runInfo);
                 Map<String, File> transformedData = new HashMap<>();
                 File transformedRunProps = null;

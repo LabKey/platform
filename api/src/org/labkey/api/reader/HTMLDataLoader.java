@@ -146,20 +146,14 @@ public class HTMLDataLoader extends DataLoader
 
     protected void init(InputStream is) throws IOException
     {
-        BufferedReader r = null;
-        try
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(is)))
         {
-            r = new BufferedReader(new InputStreamReader(is));
             StringBuilder sb = new StringBuilder();
             String line;
             while (null != (line = r.readLine()))
                 sb.append(line).append("\n");
 
             _html = sb.toString();
-        }
-        finally
-        {
-            IOUtils.closeQuietly(r);
         }
     }
 

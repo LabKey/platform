@@ -15,7 +15,6 @@
  */
 package org.labkey.api.util;
 
-import org.apache.commons.io.IOUtils;
 import org.labkey.api.security.Crypt;
 
 import java.io.BufferedReader;
@@ -126,11 +125,9 @@ public class GUID implements Serializable
 
         if (null != p)
         {
-            InputStream str = null;
-            try
+            try (InputStream str = p.getInputStream())
             {
                 Pattern pattern = Pattern.compile(".*(\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}).*");
-                str = p.getInputStream();
                 BufferedReader in = new BufferedReader(new InputStreamReader(str));
                 String line;
                 while (null != (line = in.readLine()))
@@ -142,13 +139,11 @@ public class GUID implements Serializable
                     sbSource.append(mac).append("\n");
                 }
             }
-            catch (IOException x)
+            catch (IOException ignored)
             {
-                ;
             }
             finally
             {
-                IOUtils.closeQuietly(str);
                 p.destroy();
             }
         }

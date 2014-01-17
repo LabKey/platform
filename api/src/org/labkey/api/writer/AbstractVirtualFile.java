@@ -15,6 +15,7 @@
  */
 package org.labkey.api.writer;
 
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.webdav.WebdavResource;
 
 import java.io.IOException;
@@ -38,25 +39,10 @@ public abstract class AbstractVirtualFile implements VirtualFile
             }
             else
             {
-                OutputStream outputStream = getOutputStream(child.getName());
-                InputStream inputStream = null;
-                try
+                try (InputStream inputStream = child.getInputStream(); OutputStream outputStream = getOutputStream(child.getName()))
                 {
-                    byte[] bytes = new byte[4096];
-                    int length;
-                    inputStream = child.getInputStream();
                     if (inputStream != null)
-                    {
-                        while ((length = inputStream.read(bytes)) != -1)
-                        {
-                            outputStream.write(bytes, 0, length);
-                        }
-                    }
-                }
-                finally
-                {
-                    try { outputStream.close(); } catch (IOException ignored) {}
-                    if (inputStream != null) { try { inputStream.close(); } catch (IOException ignored) {} }
+                        FileUtil.copyData(inputStream, outputStream);
                 }
             }
         }

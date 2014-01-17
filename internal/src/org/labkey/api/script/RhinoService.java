@@ -295,11 +295,10 @@ class ScriptReferenceImpl implements ScriptReference
         if (ref == null || ref.isStale())
         {
             RhinoService.LOG.info((ref == null ? "Compiling new" : "Recompiling stale") + " script '" + r.getPath().toString() + "'");
-            InputStreamReader reader = null;
-            try
+
+            try (InputStreamReader reader = new InputStreamReader(r.getInputStream()))
             {
                 engine.put(ScriptEngine.FILENAME, r.getPath().toString());
-                reader = new InputStreamReader(r.getInputStream());
                 script = engine.compile(reader);
                 ref = new ScriptResourceRef(r, script);
                 if (opt > -1)
@@ -308,10 +307,6 @@ class ScriptReferenceImpl implements ScriptReference
             catch (IOException e)
             {
                 throw new UnexpectedException(e);
-            }
-            finally
-            {
-                if (reader != null) try { reader.close(); } catch (IOException e) { }
             }
         }
         else

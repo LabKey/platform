@@ -107,13 +107,7 @@ public class SimpleFolderType extends MultiPortalFolderType
         {
             doc = FolderTypeDocument.Factory.parse(folderTypeFile.getInputStream(), xmlOptions);
         }
-        catch (XmlException e)
-        {
-            log.error(e);
-            throw new RuntimeException("Unable to load custom folder type from file " +
-                    folderTypeFile.getPath() + ".", e);
-        }
-        catch (IOException e)
+        catch (XmlException | IOException e)
         {
             log.error(e);
             throw new RuntimeException("Unable to load custom folder type from file " +

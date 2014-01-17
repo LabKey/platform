@@ -172,14 +172,9 @@ public class ModuleQueryReportDescriptor extends QueryReportDescriptor implement
 
     protected String getFileContents(Resource file) throws IOException
     {
-        InputStream is = file.getInputStream();
-        try
+        try (InputStream is = file.getInputStream())
         {
-            return IOUtils.toString(file.getInputStream());
-        }
-        finally
-        {
-            IOUtils.closeQuietly(is);
+            return IOUtils.toString(is);
         }
     }
 

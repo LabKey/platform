@@ -195,16 +195,10 @@ public class ZipUtil
         {
             ZipEntry entry = new ZipEntry(file.getName());
             out.putNextEntry(entry);
-            InputStream in = null;
 
-            try
+            try (InputStream in = new FileInputStream(file))
             {
-                in = new FileInputStream(file);
                 FileUtil.copyData(in, out);
-            }
-            finally
-            {
-                IOUtils.closeQuietly(in);
             }
         }
     }

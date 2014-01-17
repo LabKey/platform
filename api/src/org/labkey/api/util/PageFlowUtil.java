@@ -959,11 +959,9 @@ public class PageFlowUtil
     public static String getFileContentsAsString(File aFile)
     {
         StringBuilder contents = new StringBuilder();
-        BufferedReader input = null;
 
-        try
+        try (BufferedReader input = new BufferedReader(new FileReader(aFile)))
         {
-            input = new BufferedReader(new FileReader(aFile));
             String line;
             while ((line = input.readLine()) != null)
             {
@@ -980,10 +978,6 @@ public class PageFlowUtil
         catch (IOException e)
         {
             _log.error(e);
-        }
-        finally
-        {
-            IOUtils.closeQuietly(input);
         }
         return contents.toString();
     }
@@ -1142,13 +1136,14 @@ public class PageFlowUtil
 
 
 	// UNDONE: Move to FileUtil
-    // Fetch the contents of an input stream, and return in a String.
+    /** Fetch the contents of an InputStream and return in a String. Closes the reader after consuming it */
     public static String getStreamContentsAsString(InputStream is)
     {
 		return getReaderContentsAsString(new BufferedReader(new InputStreamReader(is)));
     }
 
 
+    /** Fetch the contents of a BufferedReader and return in a String. Closes the reader after consuming it */
 	public static String getReaderContentsAsString(BufferedReader reader)
 	{
 		StringBuilder contents = new StringBuilder();
