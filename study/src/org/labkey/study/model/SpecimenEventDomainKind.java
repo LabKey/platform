@@ -209,16 +209,6 @@ public class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
         return NAMESPACE_PREFIX;
     }
 
-
-    @Override
-    public Set<String> getMandatoryPropertyNames(Domain domain)
-    {
-        TreeSet<String> ret = new TreeSet<>();
-        for (PropertyStorageSpec spec : BASE_PROPERTIES)
-            ret.add(spec.getName());
-        return ret;
-    }
-
     @Override
     public Set<PropertyStorageSpec> getPropertySpecsFromTemplate(SpecimenTablesTemplate template)
     {

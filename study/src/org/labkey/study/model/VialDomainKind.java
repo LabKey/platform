@@ -141,15 +141,6 @@ public class VialDomainKind extends AbstractSpecimenDomainKind
     }
 
     @Override
-    public Set<String> getMandatoryPropertyNames(Domain domain)
-    {
-        TreeSet<String> ret = new TreeSet<>();
-        for (PropertyStorageSpec spec : BASE_PROPERTIES)
-            ret.add(spec.getName());
-        return ret;
-    }
-
-    @Override
     public Set<PropertyStorageSpec> getPropertySpecsFromTemplate(SpecimenTablesTemplate template)
     {
         return template.getExtraVialProperties();

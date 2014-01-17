@@ -3257,6 +3257,11 @@ public class StudyManager
             }
             else
             {
+                // don't add property descriptors for columns with 'global' propertyuri
+                // TODO: move to conceptURI, and use 'local' propertyURI so each domain can have it's own
+                // propertydescriptor instance
+                if (ipd.pd.getPropertyURI().startsWith("http://cpas.labkey.com/Study#"))
+                    continue;
                 p = d.addProperty();
                 ipd.pd.copyTo(p.getPropertyDescriptor());
                 p.setName(ipd.pd.getName());

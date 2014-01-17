@@ -53,8 +53,6 @@ import org.labkey.study.query.StudyQuerySchema;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -69,7 +67,6 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
     private static String DOMAIN_LSID_TEMPLATE = "${FolderLSIDBase}:${TableName}";
 
     private static final Set<PropertyStorageSpec> _baseFields;
-    private static final Set<String> _reservedNames = new HashSet<>();
     private Set<PropertyStorageSpec> _standardFields = new LinkedHashSet<>();
     private final String _tableName;
 
@@ -123,17 +120,6 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
     public Set<PropertyStorageSpec> getBaseProperties()
     {
         return _standardFields;
-    }
-
-    @Override
-    public Set<String> getMandatoryPropertyNames(Domain domain)
-    {
-        if (_reservedNames.isEmpty())
-        {
-            for (PropertyStorageSpec spec : getBaseProperties())
-                _reservedNames.add(spec.getName());
-        }
-        return _reservedNames;
     }
 
     @Override

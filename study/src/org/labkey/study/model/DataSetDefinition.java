@@ -152,6 +152,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     private static final String[] BASE_DEFAULT_FIELD_NAMES_ARRAY = new String[]
     {
+        "Container",
         "ParticipantID",
         "ptid",
         "SequenceNum", // used in both date-based and visit-based studies
@@ -188,12 +189,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     private static final String[] DEFAULT_VISIT_FIELD_NAMES_ARRAY = new String[]
     {
+        "Date",
         "VisitSequenceNum"
     };
 
     // fields to hide on the dataset schema view
     private static final String[] HIDDEN_DEFAULT_FIELD_NAMES_ARRAY = new String[]
     {
+        "Container",
         "sourcelsid",
         "QCState",
         "visitRowId",
@@ -251,6 +254,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
+    //TODO this should probably be driven off the DomainKind to avoid code duplication
     public static boolean isDefaultFieldName(String fieldName, Study study)
     {
         String subjectCol = StudyService.get().getSubjectColumnName(study.getContainer());

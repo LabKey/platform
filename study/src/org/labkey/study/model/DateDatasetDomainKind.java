@@ -46,6 +46,13 @@ public class DateDatasetDomainKind extends DatasetDomainKind
         return null;
     }
 
+
+    @Override
+    public Set<String> getMandatoryPropertyNames(Domain domain)
+    {
+        return Collections.unmodifiableSet(DataSetDefinition.DEFAULT_ABSOLUTE_DATE_FIELDS);
+    }
+
     @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
