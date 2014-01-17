@@ -1056,6 +1056,9 @@ public class StudyManager
             // Delete samples first because we may need ParticipantVisit to figure out which samples
             SampleManager.getInstance().deleteSamplesForVisit(visit);
 
+            deleteTreatmentVisitMapForVisit(study.getContainer(), visit.getRowId());
+            deleteAssaySpecimenVisits(study.getContainer(), visit.getRowId());
+
             SQLFragment sqlFragParticipantVisit = new SQLFragment("DELETE FROM " + schema.getTableInfoParticipantVisit() + "\n" +
                     "WHERE Container = ? and VisitRowId = ?");
             sqlFragParticipantVisit.add(study.getContainer().getId());
@@ -1236,6 +1239,13 @@ public class StudyManager
                 Collections.singleton("VisitId"), filter, new Sort("VisitId")).getArrayList(Integer.class);
     }
 
+    public void deleteAssaySpecimenVisits(Container container, int rowId) throws SQLException
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("VisitId"), rowId);
+        Table.delete(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(), filter);
+    }
+
     public List<ProductImpl> getStudyProducts(Container container, User user)
     {
         return getStudyProducts(container, user, null, null);
@@ -1335,6 +1345,13 @@ public class StudyManager
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("CohortId"), rowId);
+        Table.delete(StudySchema.getInstance().getTableInfoTreatmentVisitMap(), filter);
+    }
+
+    public void deleteTreatmentVisitMapForVisit(Container container, int rowId) throws SQLException
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("VisitId"), rowId);
         Table.delete(StudySchema.getInstance().getTableInfoTreatmentVisitMap(), filter);
     }
 
