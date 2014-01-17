@@ -432,29 +432,23 @@ public class ModuleLoader implements Filter
             {
                 try
                 {
+                    // Make sure all its dependencies intialized successfully
+                    verifyDependencies(module);
                     module.initialize();
                 }
-                catch (DatabaseNotSupportedException dnse)
+                catch (DatabaseNotSupportedException | ModuleDependencyException e)
                 {
-                    // In production mode, treat module that doesn't support the current database as a module initialization error
+                    // In production mode, treat these exceptions as a module initialization error
                     if (!AppProps.getInstance().isDevMode())
-                        throw dnse;
+                        throw e;
 
-                    // In dev mode, just log a one-line warning
-                    _log.warn("Unable to initialize module " + module.getName() + " due to: " + dnse.getMessage());
-                    iterator.remove();
-                    removeMapValue(module, moduleClassMap);
-                    removeMapValue(module, moduleMap);
+                    // In dev mode, make them a warning so devs can easily switch databases
+                    removeModule(iterator, module, false, e);
                 }
             }
             catch(Throwable t)
             {
-                _log.error("Unable to initialize module " + module.getName(), t);
-                //noinspection ThrowableResultOfMethodCallIgnored
-                _moduleFailures.put(module.getName(), t);
-                iterator.remove();
-                removeMapValue(module, moduleClassMap);
-                removeMapValue(module, moduleMap);
+                removeModule(iterator, module, true, t);
             }
         }
 
@@ -462,6 +456,42 @@ public class ModuleLoader implements Filter
         _modules = Collections.unmodifiableList(_modules);
         moduleMap = Collections.unmodifiableMap(moduleMap);
         moduleClassMap = Collections.unmodifiableMap(moduleClassMap);
+    }
+
+    // Check a module's dependencies and throw on the first one that's not present (i.e., it was removed because its initialize() failed)
+    private void verifyDependencies(Module module)
+    {
+        for (String dependency : module.getModuleDependenciesAsSet())
+            if (!moduleMap.containsKey(dependency))
+                throw new ModuleDependencyException(dependency);
+    }
+
+    private static class ModuleDependencyException extends ConfigurationException
+    {
+        public ModuleDependencyException(String dependencyName)
+        {
+            super("This module depends on the \"" + dependencyName + "\" module, which failed to initialize");
+        }
+    }
+
+    private void removeModule(ListIterator<Module> iterator, Module current, boolean treatAsError, Throwable t)
+    {
+        String name = current.getName();
+
+        if (treatAsError)
+        {
+            _log.error("Unable to initialize module " + name, t);
+            //noinspection ThrowableResultOfMethodCallIgnored
+            _moduleFailures.put(name, t);
+        }
+        else
+        {
+            _log.warn("Unable to initialize module " + name + " due to: " + t.getMessage());
+        }
+
+        iterator.remove();
+        removeMapValue(current, moduleClassMap);
+        removeMapValue(current, moduleMap);
     }
 
     private void removeMapValue(Module module, Map<?, Module> map)
