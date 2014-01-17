@@ -411,7 +411,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
     public static class ScriptContext
     {
-        // Model bean for jsp's generating SQL scripts. For now this is limited to the DbSchema and a map
+        // Model bean for jsps generating SQL scripts. For now this is limited to the DbSchema and a map
         // of the datasource -> database names. Additional context can be added as needed.
         public final DbSchema schema;
         public final Map<String,String> dataSources = new HashMap<>();
@@ -423,7 +423,6 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             {
                 dataSources.put(StringUtils.substringBefore(scope.getDataSourceName(), "DataSource"), scope.getSqlDialect().makeLegalIdentifier(scope.getDatabaseName()));
             }
-
         }
     }
 }
