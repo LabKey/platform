@@ -58,19 +58,19 @@ public interface FileStream
         public ByteArrayFileStream(ByteArrayInputStream b)
         {
             in = b;
-            assert MemTracker.put(in);
+            MemTracker.getInstance().put(in);
         }
 
         public ByteArrayFileStream(byte[] buf)
         {
             in = new ByteArrayInputStream(buf);
-            assert MemTracker.put(in);
+            MemTracker.getInstance().put(in);
         }
 
         public ByteArrayFileStream(ByteArrayOutputStream out)
         {
             in = new ByteArrayInputStream(out.toByteArray());
-            assert MemTracker.put(in);
+            MemTracker.getInstance().put(in);
         }
 
         public long getSize()
@@ -86,7 +86,7 @@ public interface FileStream
         public void closeInputStream() throws IOException
         {
             IOUtils.closeQuietly(in);
-            assert MemTracker.remove(in);
+            MemTracker.getInstance().remove(in);
             in = null;
         }
 
@@ -126,13 +126,13 @@ public interface FileStream
         public FileFileStream(File f) throws IOException
         {
             in = new FileInputStream(f);
-            assert MemTracker.put(in);
+            MemTracker.getInstance().put(in);
         }
 
         public FileFileStream(FileInputStream fin) throws IOException
         {
             in = fin;
-            assert MemTracker.put(in);
+            MemTracker.getInstance().put(in);
         }
 
         public long getSize() throws IOException
@@ -148,7 +148,7 @@ public interface FileStream
         public void closeInputStream() throws IOException
         {
             IOUtils.closeQuietly(in);
-            assert MemTracker.remove(in);
+            MemTracker.getInstance().remove(in);
             in = null;
         }
 

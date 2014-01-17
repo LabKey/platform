@@ -245,7 +245,7 @@ class ScriptResourceRef extends ResourceRef
     {
         super(resource);
         this.script = script;
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
     public CompiledScript getScript()
@@ -267,7 +267,7 @@ class ScriptReferenceImpl implements ScriptReference
 
     ScriptReferenceImpl(Resource r, RhinoEngine engine) throws ScriptException
     {
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
         this.r = r;
         this.engine = engine;
 
@@ -525,7 +525,7 @@ class RhinoEngine extends RhinoScriptEngine
     protected RhinoEngine()
     {
         super();
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
     public RhinoEngine(ScriptEngineFactory factory)
@@ -564,7 +564,7 @@ class RhinoEngine extends RhinoScriptEngine
                      */
                     topLevel = new ImporterTopLevel(cx, false /*true*/);
                     //topLevel = new TopLevel(cx, this, true);
-                    assert MemTracker.put(topLevel);
+                    MemTracker.getInstance().put(topLevel);
                     new LazilyLoadedCtor(topLevel, "JSAdapter",
                         "com.sun.phobos.script.javascript.JSAdapter",
                         false);

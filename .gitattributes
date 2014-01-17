@@ -50,6 +50,7 @@ api/src/org/labkey/api/action/HasBindParameters.java -text
 api/src/org/labkey/api/action/HasPageConfig.java -text
 api/src/org/labkey/api/action/HasValidator.java -text
 api/src/org/labkey/api/action/HasViewContext.java -text
+api/src/org/labkey/api/action/IgnoresAllocationTracking.java -text
 api/src/org/labkey/api/action/InterfaceAction.java -text
 api/src/org/labkey/api/action/LabkeyError.java -text
 api/src/org/labkey/api/action/MutatingApiAction.java -text
@@ -1452,7 +1453,6 @@ api/src/org/labkey/api/util/Filter.java -text
 api/src/org/labkey/api/util/FolderDisplayMode.java -text
 api/src/org/labkey/api/util/Formats.java -text
 api/src/org/labkey/api/util/GUID.java -text
-api/src/org/labkey/api/util/GuidString.java -text
 api/src/org/labkey/api/util/HString.java -text
 api/src/org/labkey/api/util/HStringBuilder.java -text
 api/src/org/labkey/api/util/HTMLContentExtractor.java -text
@@ -1470,14 +1470,15 @@ api/src/org/labkey/api/util/JobRunner.java -text
 api/src/org/labkey/api/util/JsonUtil.java -text
 api/src/org/labkey/api/util/MXBeanAppender.java -text
 api/src/org/labkey/api/util/MatrixUtil.java -text
+api/src/org/labkey/api/util/MemTrackable.java -text
 api/src/org/labkey/api/util/MemTracker.java -text
 api/src/org/labkey/api/util/MemTrackerListener.java -text
+api/src/org/labkey/api/util/MemoryUsageLogger.java -text
 api/src/org/labkey/api/util/MinorConfigurationException.java -text
 api/src/org/labkey/api/util/MockServletResponse.java -text
 api/src/org/labkey/api/util/MothershipReport.java -text
 api/src/org/labkey/api/util/MultiPhaseCPUTimer.java -text
 api/src/org/labkey/api/util/MultisetRateAccumulator.java -text
-api/src/org/labkey/api/util/NameString.java -text
 api/src/org/labkey/api/util/Pair.java -text
 api/src/org/labkey/api/util/Path.java -text
 api/src/org/labkey/api/util/PepXMLFileType.java -text
@@ -1507,7 +1508,6 @@ api/src/org/labkey/api/util/Taintable.java -text
 api/src/org/labkey/api/util/ThumbnailUtil.java -text
 api/src/org/labkey/api/util/TidyUtil.java -text
 api/src/org/labkey/api/util/TimeOnlyDate.java -text
-api/src/org/labkey/api/util/Tuple.java -text
 api/src/org/labkey/api/util/Tuple3.java -text
 api/src/org/labkey/api/util/URIUtil.java -text
 api/src/org/labkey/api/util/UnexpectedException.java -text

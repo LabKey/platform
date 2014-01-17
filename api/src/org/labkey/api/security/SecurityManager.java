@@ -1477,7 +1477,7 @@ public class SecurityManager
     }
 
 
-    // Returns the requested direct members of this group (non-recursive)
+    /** Returns the requested direct members of this group (non-recursive) */
     public static @NotNull <P extends UserPrincipal> Set<P> getGroupMembers(Group group, MemberType<P> memberType)
     {
         Set<P> principals = new LinkedHashSet<>();
@@ -1488,7 +1488,7 @@ public class SecurityManager
     }
 
 
-    // Returns the members of this group dictated by memberType, including those in subgroups (recursive)
+    /** Returns the members of this group dictated by memberType, including those in subgroups (recursive) */
     public static @NotNull <P extends UserPrincipal> Set<P> getAllGroupMembers(Group group, MemberType<P> memberType)
     {
         Set<Group> visitedGroups = new HashSet<>();
@@ -1715,55 +1715,61 @@ public class SecurityManager
     public static Collection<Integer> getFolderUserids(Container c)
     {
         Container project = (c.isProject() || c.isRoot()) ? c : c.getProject();
+        SecurityPolicy policy = c.getPolicy();
+
+        //don't filter if all site users is playing a role
+        Group allSiteUsers = SecurityManager.getGroup(Group.groupUsers);
+        if (policy.getAssignedRoles(allSiteUsers).size() != 0)
+        {
+            // Just select all users
+            SQLFragment sql = new SQLFragment("SELECT u.UserId FROM ");
+            sql.append(core.getTableInfoPrincipals(), "u");
+            sql.append(" WHERE u.type='u'");
+
+            return new SqlSelector(core.getSchema(), sql).getCollection(Integer.class);
+        }
 
         //users "in the project" consists of:
         // - users who are members of a project group
         // - users who belong to a site group that has a role assignment in the policy for the specified folder
         // - users who have a direct role assignment in the policy for the specified folder
-        //And if the All Site Users group is playing a role, then all users are "in the project"
 
-        SQLFragment sql = new SQLFragment("SELECT u.UserId FROM ");
-        sql.append(core.getTableInfoPrincipals(), "u");
-        sql.append(" WHERE u.type='u'");
+        Set<Integer> userIds = new HashSet<>();
+        Set<Group> groupsToExpand = new HashSet<>();
 
-        //don't filter if all site users is playing a role
-        SecurityPolicy policy = c.getPolicy();
-        Group allSiteUsers = SecurityManager.getGroup(Group.groupUsers);
+        // Add all project groups
+        groupsToExpand.addAll(Arrays.asList(getGroups(project, false)));
 
-        if (policy.getAssignedRoles(allSiteUsers).size() == 0)
+        // Look for users and site groups that have direct assignment to the container
+        for (RoleAssignment roleAssignment : c.getPolicy().getAssignments())
         {
-            String resId = c.getPolicy().getResourceId();
-
-            sql.append(" AND (");
-
-            //all users who are members of a project group
-            sql.append("u.UserId IN (SELECT m.UserId FROM ");
-            sql.append(core.getTableInfoMembers(), "m");
-            sql.append(" INNER JOIN ");
-            sql.append(core.getTableInfoPrincipals(), "g");
-            sql.append(" ON m.GroupId = g.UserId WHERE g.Type='g' AND g.Container=?)");
-            sql.add(project);
-
-            //all users who belong to a site group that has a role assignment in the policy for the specified folder
-            sql.append(" OR u.UserId IN (SELECT m.UserId FROM ");
-            sql.append(core.getTableInfoMembers(), "m");
-            sql.append(" INNER JOIN ");
-            sql.append(core.getTableInfoPrincipals(), "g");
-            sql.append(" ON m.GroupId = g.UserId WHERE g.Type='g' AND g.Container IS NULL AND g.UserId IN (SELECT a.UserId FROM ");
-            sql.append(core.getTableInfoRoleAssignments(), "a");
-            sql.append(" WHERE a.ResourceId=? AND a.role != 'org.labkey.api.security.roles.NoPermissionsRole'))");
-            sql.add(resId);
-
-            //users who have a direct role assignment in the policy for the specified folder
-            sql.append(" OR u.UserId IN (SELECT a.UserId FROM ");
-            sql.append(core.getTableInfoRoleAssignments(), "a");
-            sql.append(" WHERE a.ResourceId=? AND a.role != 'org.labkey.api.security.roles.NoPermissionsRole')");
-            sql.add(resId);
-
-            sql.append(")"); //close of "AND ("
+            User user = UserManager.getUser(roleAssignment.getUserId());
+            if (user != null)
+            {
+                userIds.add(user.getUserId());
+            }
+            else
+            {
+                Group assignedGroup = getGroup(roleAssignment.getUserId());
+                if (assignedGroup != null && !assignedGroup.isProjectGroup())
+                {
+                    // Add all site groups
+                    groupsToExpand.add(assignedGroup);
+                }
+            }
         }
 
-        return new SqlSelector(core.getSchema(), sql).getCollection(Integer.class);
+        // Find the users who are members of all the relevant site groups
+        for (Group group : groupsToExpand)
+        {
+            Set<User> groupMembers = getAllGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS);
+            for (User groupMember : groupMembers)
+            {
+                userIds.add(groupMember.getUserId());
+            }
+        }
+
+        return userIds;
     }
 
 
@@ -1782,11 +1788,13 @@ public class SecurityManager
     }
 
 
+    /** Returns both users and groups, but direct members only (not recursive) */
     public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(String path)
     {
         return getGroupMemberNamesAndIds(path, false);
     }
 
+    /** Returns both users and groups, but direct members only (not recursive) */
     public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(String path, boolean includeInactive)
     {
         Integer groupId = SecurityManager.getGroupId(path);
@@ -1796,8 +1804,7 @@ public class SecurityManager
             return getGroupMemberNamesAndIds(groupId, includeInactive);
     }
     
-
-    // Returns both users and groups, but direct members only (not recursive)
+    /** Returns both users and groups, but direct members only (not recursive) */
     public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(Integer groupId, boolean includeInactive)
     {
         final List<Pair<Integer, String>> members = new ArrayList<>();
@@ -1839,7 +1846,7 @@ public class SecurityManager
     }
 
 
-    // Returns both users and groups, but direct members only (not recursive)
+    /** Returns both users and groups, but direct members only (not recursive) */
     public static String[] getGroupMemberNames(Integer groupId)
     {
         List<Pair<Integer, String>> members = getGroupMemberNamesAndIds(groupId, false);
@@ -1851,7 +1858,7 @@ public class SecurityManager
     }
 
 
-    // Takes string such as "/test/subfolder/Users" and returns groupId
+    /** Takes string such as "/test/subfolder/Users" and returns groupId */
     public static Integer getGroupId(String extraPath)
     {
         if (null == extraPath)
@@ -1877,14 +1884,14 @@ public class SecurityManager
     }
 
 
-    // Takes Container (or null for root) and group name; returns groupId
+    /** Takes Container (or null for root) and group name; returns groupId */
     public static Integer getGroupId(@Nullable Container c, String group)
     {
         return getGroupId(c, group, null, true);
     }
 
 
-    // Takes Container (or null for root) and group name; returns groupId
+    /** Takes Container (or null for root) and group name; returns groupId */
     public static Integer getGroupId(@Nullable Container c, String group, boolean throwOnFailure)
     {
         return getGroupId(c, group, null, throwOnFailure);

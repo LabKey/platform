@@ -101,7 +101,7 @@ public abstract class SqlDialect
         initializeSqlTypeIntMap();
         _reservedWordSet = getReservedWords();
 
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
 

@@ -38,7 +38,7 @@ public class ResultSetWrapper implements ResultSet
     public ResultSetWrapper(ResultSet rs)
     {
         resultset = rs;
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
 

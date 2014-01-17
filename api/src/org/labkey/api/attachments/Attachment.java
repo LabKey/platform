@@ -56,7 +56,7 @@ public class Attachment implements Serializable
 
     public Attachment()
     {
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
 

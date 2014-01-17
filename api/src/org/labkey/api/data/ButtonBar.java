@@ -58,26 +58,26 @@ public class ButtonBar extends DisplayElement
     {
         BUTTON_BAR_GRID.add(ActionButton.BUTTON_DELETE).add(ActionButton.BUTTON_SHOW_INSERT);
         BUTTON_BAR_GRID.lock();
-        assert MemTracker.remove(BUTTON_BAR_GRID);
+        MemTracker.getInstance().remove(BUTTON_BAR_GRID);
 
         BUTTON_BAR_DETAILS.getList().add(ActionButton.BUTTON_SHOW_UPDATE);
         BUTTON_BAR_DETAILS.getList().add(ActionButton.BUTTON_SHOW_GRID);
         BUTTON_BAR_DETAILS.setStyle(Style.separateButtons);
         BUTTON_BAR_DETAILS.lock();
-        assert MemTracker.remove(BUTTON_BAR_DETAILS);
+        MemTracker.getInstance().remove(BUTTON_BAR_DETAILS);
 
         BUTTON_BAR_INSERT.getList().add(ActionButton.BUTTON_DO_INSERT);
         BUTTON_BAR_INSERT.setStyle(Style.separateButtons);
         BUTTON_BAR_INSERT.lock();
-        assert MemTracker.remove(BUTTON_BAR_INSERT);
+        MemTracker.getInstance().remove(BUTTON_BAR_INSERT);
 
         BUTTON_BAR_UPDATE.getList().add(ActionButton.BUTTON_DO_UPDATE);
         BUTTON_BAR_UPDATE.setStyle(Style.separateButtons);
         BUTTON_BAR_UPDATE.lock();
-        assert MemTracker.remove(BUTTON_BAR_UPDATE);
+        MemTracker.getInstance().remove(BUTTON_BAR_UPDATE);
 
         BUTTON_BAR_EMPTY.lock();
-        assert MemTracker.remove(BUTTON_BAR_EMPTY);
+        MemTracker.getInstance().remove(BUTTON_BAR_EMPTY);
     }
 
     public ButtonBar() {}

@@ -17,13 +17,18 @@
 package org.labkey.api.query;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.*;
-import org.labkey.api.module.Module;
+import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
-import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.NavTree;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 abstract public class AbstractSchema implements QuerySchema
 {
@@ -37,7 +42,6 @@ abstract public class AbstractSchema implements QuerySchema
         _dbSchema = dbSchema;
         _user = user;
         _container = container;
-        assert MemTracker.put(this);
     }
 
     public DbSchema getDbSchema()

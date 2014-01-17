@@ -30,8 +30,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.ContainerContext;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.Formats;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.CustomizerType;
@@ -68,10 +66,9 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
 
     public FilteredTable(@NotNull TableInfo table, @NotNull SchemaType userSchema, @Nullable ContainerFilter containerFilter)
     {
-        super(table.getSchema());
+        super(table.getSchema(), table.getName());
         _filter = new SimpleFilter();
         _rootTable = table;
-        _name = _rootTable.getName();
         //getTitle() reverts to _name, so if the getTitle() matches getName(), we assume it was not explicitly set.
         _title = _rootTable.getName().equals(_rootTable.getTitle()) ? null : _rootTable.getTitle();
         _description = _rootTable.getDescription();

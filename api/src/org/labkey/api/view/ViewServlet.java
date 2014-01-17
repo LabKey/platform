@@ -30,6 +30,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.MemoryUsageLogger;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -143,48 +144,56 @@ public class ViewServlet extends HttpServlet
             _log.debug(">> " + description);
         }
 
-        MemTracker.logMemoryUsage(_requestCount.incrementAndGet());
-
-        SessionAppender.initThread(request);
-
-        ActionURL url;
-        response.setBufferSize(32768);
-
+        MemoryUsageLogger.logMemoryUsage(_requestCount.incrementAndGet());
+        MemTracker.getInstance().startNewRequest(request);
         try
         {
-            url = requestActionURL(request);
-            if (null == url)
+
+            SessionAppender.initThread(request);
+
+            ActionURL url;
+            response.setBufferSize(32768);
+
+            try
             {
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                url = requestActionURL(request);
+                if (null == url)
+                {
+                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    return;
+                }
+                request.setAttribute(REQUEST_ACTION, url.getAction());
+                request.setAttribute(REQUEST_CONTROLLER, url.getController());
+                request.setAttribute(REQUEST_CONTAINER, url.getExtraPath());
+            }
+            catch (RedirectException e)
+            {
+                ExceptionUtil.handleException(request, response, e, "Container redirect", false);
                 return;
             }
-            request.setAttribute(REQUEST_ACTION, url.getAction());
-            request.setAttribute(REQUEST_CONTROLLER, url.getController());
-            request.setAttribute(REQUEST_CONTAINER, url.getExtraPath());
-        }
-        catch (RedirectException e)
-        {
-            ExceptionUtil.handleException(request, response, e, "Container redirect", false);
-            return;
-        }
-        catch (Exception x)
-        {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Invalid URL");
-            return;
-        }
+            catch (Exception x)
+            {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Invalid URL");
+                return;
+            }
 
-        Module module = ModuleLoader.getInstance().getModuleForController(url.getController());
-        if (module == null)
-        {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "No LabKey Server module registered to handle request for controller: " + url.getController());
-            return;
+            Module module = ModuleLoader.getInstance().getModuleForController(url.getController());
+            if (module == null)
+            {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "No LabKey Server module registered to handle request for controller: " + url.getController());
+                return;
+            }
+
+            module.dispatch(request, response, url);
+
+            if (_debug)
+            {
+                _log.debug("<< " + request.getMethod());
+            }
         }
-
-        module.dispatch(request, response, url);
-
-        if (_debug)
+        finally
         {
-            _log.debug("<< " + request.getMethod());
+            MemTracker.getInstance().requestComplete(request);
         }
     }
 

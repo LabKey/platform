@@ -150,9 +150,9 @@ public class TempTableTracker extends WeakReference<Object>
         {
             // Using direct JDBC to avoid logging errors. However, SqlExecutor provides a way to suppress logging.
             conn = schema.getScope().getConnection();
-            assert MemTracker.remove(conn);         // we're a bg thread, so we can cause memTracker.view to fail
+            MemTracker.getInstance().remove(conn);         // we're a bg thread, so we can cause memTracker.view to fail
             stmt = conn.createStatement();
-            assert MemTracker.remove(stmt);
+            MemTracker.getInstance().remove(stmt);
             stmt.execute("DROP TABLE " + tableName);
             success = true;
         }

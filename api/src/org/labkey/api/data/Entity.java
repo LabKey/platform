@@ -83,7 +83,7 @@ public class Entity implements java.io.Serializable, Ownable
 
     protected Entity()
     {
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
 

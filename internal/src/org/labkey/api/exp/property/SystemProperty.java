@@ -65,7 +65,7 @@ public class SystemProperty
     private void register() throws SQLException, ChangePropertyDescriptorException
     {
         _pd = OntologyManager.getPropertyDescriptor(_propertyURI, getContainer());
-        assert MemTracker.remove(_pd);  // these are globals now, so don't track
+        MemTracker.getInstance().remove(_pd);  // these are globals now, so don't track
         PropertyDescriptor pd = constructPropertyDescriptor();
         if (_pd == null)
         {
@@ -77,7 +77,7 @@ public class SystemProperty
             pd.setPropertyId(_pd.getPropertyId());
             _pd = OntologyManager.updatePropertyDescriptor(pd);
         }
-        assert MemTracker.remove(_pd);
+        MemTracker.getInstance().remove(_pd);
     }
 
     protected PropertyDescriptor constructPropertyDescriptor()

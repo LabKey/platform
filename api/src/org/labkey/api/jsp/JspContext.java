@@ -30,7 +30,7 @@ public abstract class JspContext extends HttpJspBase
 {
     protected JspContext()
     {
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
     public void jspInit()

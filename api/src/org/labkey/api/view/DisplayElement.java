@@ -46,7 +46,7 @@ public abstract class DisplayElement implements View, Cloneable
 
     public DisplayElement()
     {
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
     public String getContentType()

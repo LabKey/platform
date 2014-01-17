@@ -46,7 +46,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
     public JspView(HttpJspPage page)
     {
         _page = page;
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
     public JspView(HttpJspPage page, ModelClass model)
@@ -72,7 +72,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
     public JspView(String page, @Nullable ModelClass model)
     {
         super(model);
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
         _path = page;
         _page = JspLoader.createPage((String)null, page);
 
@@ -89,7 +89,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
     public JspView(Class packageClass, String jspName, ModelClass model)
     {
         super(model);
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
         _path = jspName;
         _page = JspLoader.createPage(packageClass, jspName);
 

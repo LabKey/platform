@@ -63,7 +63,7 @@ public class ResultSetImpl extends ResultSetWrapper implements TableResultSet
     public ResultSetImpl(@Nullable Connection connection, @Nullable DbScope scope, ResultSet rs, int maxRows)
     {
         super(rs);
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
         //noinspection ConstantConditions
         assert null != (_debugCreated = new Throwable("created ResultSetImpl"));
         _maxRows = maxRows;

@@ -55,10 +55,14 @@ public class PopupDeveloperView extends PopupMenuView
         ArrayList<NavTree> items = new ArrayList<>();
         if (!container.isRoot())
             items.add(new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(container)));
-        String console = PageFlowUtil.urlProvider(AdminUrls.class).getSessionLoggingURL().getLocalURIString(false);
-        NavTree nt = new NavTree("Server JavaScript Console");
-        nt.setScript("window.open('" + console + "','javascriptconsole','width=400,height=400,location=0,menubar=0,resizable=1,status=0,alwaysRaised=yes')");
-        items.add(nt);
+        String consoleURL = PageFlowUtil.urlProvider(AdminUrls.class).getSessionLoggingURL().getLocalURIString(false);
+        NavTree consoleNavTree = new NavTree("Server JavaScript Console");
+        consoleNavTree.setScript("window.open('" + consoleURL + "','javascriptconsole','width=400,height=400,location=0,menubar=0,resizable=1,status=0,alwaysRaised=yes')");
+        items.add(consoleNavTree);
+        String memTrackerURL = PageFlowUtil.urlProvider(AdminUrls.class).getTrackedAllocationsViewerURL().getLocalURIString(false);
+        NavTree memTrackerNavTree = new NavTree("Memory Allocations");
+        memTrackerNavTree.setScript("window.open('" + memTrackerURL + "','javascriptconsole','width=500,height=400,location=0,menubar=0,resizable=1,status=0,alwaysRaised=yes')");
+        items.add(memTrackerNavTree);
         items.add(new NavTree("JavaScript API Reference", "https://www.labkey.org/download/clientapi_docs/javascript-api/"));
         if (AppProps.getInstance().isExperimentalFeatureEnabled("experimental-jsdoc"))
         {

@@ -140,7 +140,7 @@ public class DbScope
             try
             {
                 _dialect = SqlDialectManager.getFromMetaData(dbmd, true);
-                assert MemTracker.remove(_dialect);
+                MemTracker.getInstance().remove(_dialect);
             }
             finally
             {

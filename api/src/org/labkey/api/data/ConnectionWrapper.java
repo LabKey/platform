@@ -101,7 +101,7 @@ public class ConnectionWrapper implements java.sql.Connection
             _mostRecentSPIDUsageString = sb.toString();
         }
 
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
         _allocatingThreadName = Thread.currentThread().getName();
 
         //noinspection ConstantConditions

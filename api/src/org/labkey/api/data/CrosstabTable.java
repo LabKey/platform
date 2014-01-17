@@ -75,7 +75,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
      */
     public CrosstabTable(CrosstabSettings settings, List<CrosstabMember> colMembers)
     {
-        super(settings.getSourceTable().getSchema());
+        super(settings.getSourceTable().getSchema(), ALIAS);
 
         assert null != settings.getRowAxis() && null != settings.getColumnAxis() && null != settings.getMeasures();
         assert !settings.getRowAxis().getDimensions().isEmpty() && ! settings.getColumnAxis().getDimensions().isEmpty();
@@ -83,7 +83,6 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
 
         _settings = settings;
         _colMembers = colMembers;
-        setName(ALIAS);
 
         //add a new column info for each row dimension
         for(CrosstabDimension dim : getSettings().getRowAxis().getDimensions())

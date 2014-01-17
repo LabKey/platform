@@ -1945,7 +1945,7 @@ public class OntologyManager
     private static DomainDescriptor EMPTY = new DomainDescriptor();
     static
     {
-        assert MemTracker.remove(EMPTY);
+        MemTracker.getInstance().remove(EMPTY);
     }
     
 

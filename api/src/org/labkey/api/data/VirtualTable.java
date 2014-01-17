@@ -24,15 +24,16 @@ public class VirtualTable<SchemaType extends UserSchema> extends AbstractTableIn
 {
     protected final SchemaType _userSchema;
 
-    public VirtualTable(DbSchema schema, @Nullable SchemaType userSchema)
+    public VirtualTable(DbSchema schema, String name, @Nullable SchemaType userSchema)
     {
-        super(schema);
+        super(schema, name);
         _userSchema = userSchema;
+        setName(name);
     }
 
-    public VirtualTable(DbSchema schema)
+    public VirtualTable(DbSchema schema, String name)
     {
-        this(schema, null);
+        this(schema, name, null);
     }
 
     @NotNull

@@ -97,7 +97,7 @@ public class EhCacheProvider implements CacheProvider
 
         // Memtrack temporary caches to ensure they're destroyed
         if (temporary)
-            assert MemTracker.put(ehCache);
+            MemTracker.getInstance().put(ehCache);
 
         return new EhSimpleCache<>(ehCache);
     }

@@ -79,7 +79,7 @@ public class CaseInsensitiveMapTest extends Assert
             public Thread newThread(Runnable r)
             {
                 Thread t = new Thread(r, "CaseInsensitiveMapTest thread");
-                assert MemTracker.put(t);
+                MemTracker.getInstance().put(t);
                 return t;
             }
         });

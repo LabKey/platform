@@ -79,7 +79,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         _conn = conn;
         _log = conn.getLogger();
         _stmt = stmt;
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
     public StatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
@@ -589,7 +589,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
                 throw new SQLException("Test sql exception", _sqlStateTestException);
 
             ResultSet rs = ((PreparedStatement)_stmt).executeQuery();
-            assert MemTracker.put(rs);
+            MemTracker.getInstance().put(rs);
             return rs;
         }
         catch (SQLException sqlx)
@@ -845,7 +845,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             throws SQLException
     {
         ResultSetMetaData rs = ((PreparedStatement)_stmt).getMetaData();
-        assert MemTracker.put(rs);
+        MemTracker.getInstance().put(rs);
         return rs;
     }
 
@@ -898,7 +898,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         try
         {
             ResultSet rs = _stmt.executeQuery(sql);
-            assert MemTracker.put(rs);
+            MemTracker.getInstance().put(rs);
             return rs;
         }
         catch (SQLException sqlx)
@@ -1029,7 +1029,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             throws SQLException
     {
         ResultSet rs = _stmt.getResultSet();
-        assert MemTracker.put(rs);
+        MemTracker.getInstance().put(rs);
         return rs;
     }
 
@@ -1129,7 +1129,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             throws SQLException
     {
         ResultSet rs = _stmt.getGeneratedKeys();
-        assert MemTracker.put(rs);
+        MemTracker.getInstance().put(rs);
         return rs;
     }
 

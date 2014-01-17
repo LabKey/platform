@@ -18,21 +18,23 @@ package org.labkey.api.util;
 
 import org.apache.commons.collections15.map.AbstractReferenceMap;
 import org.apache.commons.collections15.map.ReferenceIdentityMap;
-import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.action.IgnoresAllocationTracking;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryPoolMXBean;
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.IdentityHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * User: brittp
@@ -42,10 +44,25 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class MemTracker
 {
     private static final MemTracker _instance = new MemTracker();
-    private static final Logger _log = Logger.getLogger(MemTracker.class);
-    private static final Object LOGGER_LOCK_OBJECT = new Object();
 
-    private static long _lastLog = 0;
+    private final ThreadLocal<RequestInfo> _requestTracker = new ThreadLocal<>();
+    private final List<RequestInfo> _recentRequests = new LinkedList<>();
+
+    /** Only keep a short history of allocations for the most recent requests */
+    private static final int MAX_TRACKED_REQUESTS = 500;
+
+    public synchronized List<RequestInfo> getNewRequests(int requestId)
+    {
+        List<RequestInfo> result = new ArrayList<>(_recentRequests.size());
+        for (RequestInfo recentRequest : _recentRequests)
+        {
+            if (recentRequest.getId() > requestId)
+            {
+                result.add(recentRequest);
+            }
+        }
+        return Collections.unmodifiableList(result);
+    }
 
     static class AllocationInfo
     {
@@ -141,31 +158,64 @@ public class MemTracker
         }
     }
 
-
-    public static synchronized boolean put(Object object)
+    public static MemTracker getInstance()
     {
-        assert _instance._put(object);
+        return _instance;
+    }
+
+    public synchronized void startNewRequest(HttpServletRequest request)
+    {
+        _requestTracker.set(new RequestInfo(request));
+    }
+
+    public synchronized void requestComplete(HttpServletRequest request)
+    {
+        boolean shouldTrack = !Boolean.TRUE.equals(request.getAttribute(IgnoresAllocationTracking.class.getName()));
+        if (shouldTrack)
+        {
+            RequestInfo requestInfo = _requestTracker.get();
+            if (requestInfo != null)
+            {
+                // Now that we're done, move it into the set of recent requests
+                _recentRequests.add(requestInfo);
+                trimOlderRequests();
+            }
+        }
+        _requestTracker.remove();
+    }
+
+    private void trimOlderRequests()
+    {
+        while (_recentRequests.size() > MAX_TRACKED_REQUESTS)
+        {
+            _recentRequests.remove(0);
+        }
+    }
+
+    public synchronized boolean put(Object object)
+    {
+        assert _put(object);
         return true;
     }
 
-    public static synchronized boolean remove(Object object)
+    public synchronized boolean remove(Object object)
     {
-        assert _instance._remove(object);
+        assert _remove(object);
         return true;
     }
 
     // Work around Java 7 PriorityBlockingQueue bug, http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7161229
-    public static void register(MemTrackerListener generator)
+    public void register(MemTrackerListener generator)
     {
-        assert _instance._listeners.add(generator);
+        assert _listeners.add(generator);
     }
 
-    public static void unregister(MemTrackerListener queue)
+    public void unregister(MemTrackerListener queue)
     {
-        assert _instance._listeners.remove(queue);
+        assert _listeners.remove(queue);
     }
 
-    public static Set<Object> beforeReport()
+    public Set<Object> beforeReport()
     {
         Set<Object> ignorableReferences = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
 
@@ -173,88 +223,6 @@ public class MemTracker
             generator.beforeReport(ignorableReferences);
 
         return ignorableReferences;
-    }
-
-    public static List<HeldReference> getReferences()
-    {
-        return _instance._getReferences();
-    }
-
-    private static class MemoryLogger implements Runnable
-    {
-        private boolean _showHeader;
-        private int _requestNumber;
-        
-        public MemoryLogger(boolean showHeader, int requestNumber)
-        {
-            _showHeader = showHeader;
-            _requestNumber = requestNumber;
-        }
-
-        public void run()
-        {
-            try
-            {
-                // Wait a little while so that we're less likely to cause a slowdown for the HTTP thread that initiated
-                // this memory logging/GC event
-                Thread.sleep(5000);
-            }
-            catch (InterruptedException ignored) {}
-            if (_showHeader)
-            {
-                _log.debug("\t******************************************************");
-                _log.debug("\t**************FIRST MEMORY LOGGING EVENT**************");
-                _log.debug("\t******************************************************");
-                StringBuilder sb = new StringBuilder("\tRequest Count");
-                sb.append("\tHeap (Max=");
-                sb.append(ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax());
-                sb.append(")\tNon Heap (Max=");
-                sb.append(ManagementFactory.getMemoryMXBean().getNonHeapMemoryUsage().getMax());
-                sb.append(")");
-                for (MemoryPoolMXBean bean : ManagementFactory.getMemoryPoolMXBeans())
-                {
-                    sb.append("\t");
-                    sb.append(bean.getName());
-                    sb.append(" (Max=");
-                    sb.append(bean.getUsage().getMax());
-                    sb.append(")");
-                }
-                _log.debug(sb.toString());
-            }
-
-            System.gc();
-            StringBuilder sb = new StringBuilder();
-            sb.append("\t");
-            sb.append(_requestNumber);
-            sb.append("\t");
-            sb.append(ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed());
-            sb.append("\t");
-            sb.append(ManagementFactory.getMemoryMXBean().getNonHeapMemoryUsage().getUsed());
-
-            for (MemoryPoolMXBean bean : ManagementFactory.getMemoryPoolMXBeans())
-            {
-                sb.append("\t");
-                sb.append(bean.getUsage().getUsed());
-            }
-            _log.debug(sb.toString());
-        }
-    }
-
-    public static void logMemoryUsage(int requestNumber)
-    {
-        int interval = AppProps.getInstance().getMemoryUsageDumpInterval();
-        long currentTime = System.currentTimeMillis();
-        if (interval > 0)
-        {
-            synchronized(LOGGER_LOCK_OBJECT)
-            {
-                if (currentTime > _lastLog + interval * 60 * 1000)
-                {
-                    JobRunner.getDefault().execute(new MemoryLogger(_lastLog == 0, requestNumber));
-                    _lastLog = currentTime;
-                }
-            }
-        }
     }
 
     //
@@ -268,6 +236,11 @@ public class MemTracker
     {
         if (object != null)
             _references.put(object, new AllocationInfo());
+        RequestInfo requestInfo = _requestTracker.get();
+        if (requestInfo != null)
+        {
+            requestInfo.addObject(object);
+        }
         return true;
     }
 
@@ -278,7 +251,7 @@ public class MemTracker
         return true;
     }
 
-    private synchronized List<HeldReference> _getReferences()
+    public synchronized List<HeldReference> getReferences()
     {
         List<HeldReference> refs = new ArrayList<>(_references.size());
         for (Map.Entry<Object, AllocationInfo> entry : _references.entrySet())
@@ -300,6 +273,58 @@ public class MemTracker
         return refs;
     }
 
+    public static class RequestInfo
+    {
+        private static final AtomicLong NEXT_ID = new AtomicLong(0);
+
+        private final long _id = NEXT_ID.incrementAndGet();
+        private final String _url;
+        private final Date _date = new Date();
+        private Map<String, Integer> _objects = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
+        public RequestInfo(HttpServletRequest request)
+        {
+            _url = request.getRequestURI() + (request.getQueryString() == null ? "" : "?" + request.getQueryString());
+        }
+
+        public void addObject(Object object)
+        {
+            if (object != null)
+            {
+                String s;
+                if (object instanceof MemTrackable)
+                {
+                    s = ((MemTrackable)object).toMemTrackerString();
+                }
+                else
+                {
+                    s = object.getClass().getName();
+                }
+                Integer count = _objects.get(s);
+                _objects.put(s, count == null ? 1 : count.intValue() + 1);
+            }
+        }
+
+        public long getId()
+        {
+            return _id;
+        }
+
+        public String getUrl()
+        {
+            return _url;
+        }
+
+        public Date getDate()
+        {
+            return _date;
+        }
+
+        public Map<String, Integer> getObjects()
+        {
+            return Collections.unmodifiableMap(_objects);
+        }
+    }
 
     public static class TestCase extends Assert
     {
@@ -311,20 +336,20 @@ public class MemTracker
             // test identity
             Object a = "I'm me";
             t._put(a);
-            assertTrue(t._getReferences().size() == 1);
+            assertTrue(t.getReferences().size() == 1);
             t._put(a);
-            assertTrue(t._getReferences().size() == 1);
+            assertTrue(t.getReferences().size() == 1);
 
             Object b = new Integer(1);
             Object c = new Integer(1);
             assertFalse(b == c);
             assertTrue(b.equals(c));
             t._put(b);
-            assertTrue(t._getReferences().size() == 2);
+            assertTrue(t.getReferences().size() == 2);
             t._put(c);
-            assertTrue(t._getReferences().size() == 3);
+            assertTrue(t.getReferences().size() == 3);
 
-            List<HeldReference> list = t._getReferences();
+            List<HeldReference> list = t.getReferences();
             for (HeldReference o : list)
             {
                 assertTrue(o._reference == a || o._reference == b || o._reference == c);

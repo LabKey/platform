@@ -246,7 +246,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         _viewContext = context;
         setView(this);
         _creationStackTrace = Thread.currentThread().getStackTrace();
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
 
@@ -369,7 +369,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     {
         Stack<ViewStackEntry> s = _viewContexts.get();
         ViewStackEntry vse = new ViewStackEntry(mv, request,response);
-        assert MemTracker.put(vse);
+        MemTracker.getInstance().put(vse);
         s.push(vse);
     }
 

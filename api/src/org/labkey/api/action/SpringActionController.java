@@ -340,6 +340,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
             if (action instanceof HasPageConfig)
                 ((HasPageConfig)action).setPageConfig(pageConfig);
 
+            if (action.getClass().isAnnotationPresent(IgnoresAllocationTracking.class))
+            {
+                request.setAttribute(IgnoresAllocationTracking.class.getName(), Boolean.TRUE);
+            }
+
             if (action instanceof PermissionCheckable)
             {
                 ((PermissionCheckable)action).checkPermissions();

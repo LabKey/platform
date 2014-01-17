@@ -368,7 +368,7 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
                 asyncRequest.setStatement(null);
             }
 
-            assert MemTracker.put(rs);
+            MemTracker.getInstance().put(rs);
             return rs;
         }
 

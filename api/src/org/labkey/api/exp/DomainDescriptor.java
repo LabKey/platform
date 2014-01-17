@@ -43,7 +43,7 @@ public class DomainDescriptor implements Cloneable
 
     public DomainDescriptor()
     {
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
     public DomainDescriptor(String domainURI, Container c)

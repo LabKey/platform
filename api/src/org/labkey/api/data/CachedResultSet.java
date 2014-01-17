@@ -148,7 +148,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
             _threadName = null;
         }
 
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
 

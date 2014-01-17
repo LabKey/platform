@@ -17,14 +17,13 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.ResultSetUtil;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Array;
@@ -33,7 +32,9 @@ import java.lang.reflect.Method;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Map;
 
 
 public class BeanObjectFactory<K> implements ObjectFactory<K> // implements ResultSetHandler
@@ -242,7 +243,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                     }
                     catch (ConversionException | IllegalAccessException | InvocationTargetException e)
                     {
-                        throw new UnexpectedException(e, "Failed to copy property '" + prop + "' on class " + _class.getName());
+                        throw new IllegalStateException("Failed to copy property '" + prop + "' on class " + _class.getName(), e);
                     }
                 }
 

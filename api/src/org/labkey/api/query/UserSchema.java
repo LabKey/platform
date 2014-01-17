@@ -32,6 +32,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.DataSetTable;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.MemTrackable;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -55,7 +56,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 
-abstract public class UserSchema extends AbstractSchema
+abstract public class UserSchema extends AbstractSchema implements MemTrackable
 {
     protected String _name;
     protected SchemaKey _path;
@@ -76,6 +77,7 @@ abstract public class UserSchema extends AbstractSchema
         _path = path;
         _description = description;
         _schemaCustomizers = schemaCustomizers;
+        MemTracker.getInstance().put(this);
     }
 
     public String getName()
@@ -198,7 +200,7 @@ abstract public class UserSchema extends AbstractSchema
         if (false && useCache)
            cache.put(key,torq);
 
-        assert MemTracker.put(torq);
+        MemTracker.getInstance().put(torq);
         return torq;
     }
 
@@ -587,4 +589,9 @@ abstract public class UserSchema extends AbstractSchema
                 customizer.afterConstruct(this, table);
     }
 
+    @Override
+    public String toMemTrackerString()
+    {
+        return "UserSchema: " + getSchemaPath() + " in " + getContainer().getPath();
+    }
 }

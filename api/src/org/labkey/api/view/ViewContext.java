@@ -74,7 +74,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
 
     public ViewContext()
     {
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
 

@@ -69,7 +69,7 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
      */
     public EnumTableInfo(Class<EnumType> e, DbSchema schema, EnumValueGetter<EnumType> getter, boolean ordinalPK, String description)
     {
-        super(schema);
+        super(schema, e.getSimpleName());
         setDescription(description);
         _enum = e;
         _getter = getter;
@@ -79,7 +79,6 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
         column.setKeyField(!ordinalPK);
         setTitleColumn(column.getName());
         addColumn(column);
-        setName(e.getSimpleName());
 
         ExprColumn rowIdColumn = new ExprColumn(this, "RowId", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RowId"), JdbcType.INTEGER);
         rowIdColumn.setKeyField(ordinalPK);

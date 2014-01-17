@@ -349,7 +349,7 @@ public class Table
     {
         PreparedStatement stmt = conn.prepareStatement(sql);
         setParameters(stmt, parameters);
-        assert MemTracker.put(stmt);
+        MemTracker.getInstance().put(stmt);
         return stmt;
     }
 

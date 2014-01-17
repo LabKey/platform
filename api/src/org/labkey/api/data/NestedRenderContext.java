@@ -154,7 +154,7 @@ public class NestedRenderContext extends RenderContext
         fromSQL.append(groupColumn.getAlias());
 
         // Create a TableInfo that wraps the GROUP BY query
-        VirtualTable aggTableInfo = new VirtualTable(tinfo.getSchema())
+        VirtualTable aggTableInfo = new VirtualTable(tinfo.getSchema(), "AggTable")
         {
             @NotNull
             @Override
@@ -163,8 +163,7 @@ public class NestedRenderContext extends RenderContext
                 return fromSQL;
             }
         };
-        aggTableInfo.setName("AggTable");
-        
+
         if (!aggregatesIn.isEmpty())
         {
             TableSelector selector = new TableSelector(aggTableInfo, Collections.<ColumnInfo>emptyList(), null, null);

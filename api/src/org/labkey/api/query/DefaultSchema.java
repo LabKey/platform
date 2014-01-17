@@ -26,6 +26,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.MemTracker;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -178,6 +179,7 @@ final public class DefaultSchema extends AbstractSchema
     private DefaultSchema(User user, Container container)
     {
         super(null, user, container);
+        MemTracker.getInstance().put(this);
     }
 
     public TableInfo getTable(String name)

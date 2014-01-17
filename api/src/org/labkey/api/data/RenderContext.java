@@ -17,7 +17,6 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.LabkeyError;
@@ -26,8 +25,6 @@ import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.Formats;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -42,7 +39,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -86,7 +82,7 @@ public class RenderContext implements Map<String, Object>, Serializable
     {
         _viewContext = context;
         setErrors(errors);
-        assert MemTracker.put(this);
+        MemTracker.getInstance().put(this);
     }
 
     protected RenderContext()

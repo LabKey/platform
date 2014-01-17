@@ -420,7 +420,7 @@ public class StringExpressionFactory
         AbstractStringExpression(String source)
         {
             _source = source;
-            //assert MemTracker.put(this);
+            //MemTracker.getInstance().put(this);
         }
 
 

@@ -33,7 +33,7 @@ public abstract class Job implements Future, Runnable
 
     public Job()
     {
-        //assert MemTracker.put(this);
+        //MemTracker.getInstance().put(this);
     }
 
     protected void starting(Thread t)

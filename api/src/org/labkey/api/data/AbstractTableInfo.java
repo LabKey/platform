@@ -55,6 +55,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.MemTrackable;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -86,7 +87,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-abstract public class AbstractTableInfo implements TableInfo
+abstract public class AbstractTableInfo implements TableInfo, MemTrackable
 {
     private static final Logger LOG = Logger.getLogger(AbstractTableInfo.class);
 
@@ -142,11 +143,12 @@ abstract public class AbstractTableInfo implements TableInfo
     }
 
 
-    public AbstractTableInfo(DbSchema schema)
+    public AbstractTableInfo(DbSchema schema, String name)
     {
         _schema = schema;
         _columnMap = constructColumnMap();
-        assert MemTracker.put(this);
+        setName(name);
+        MemTracker.getInstance().put(this);
     }
 
 
@@ -1488,5 +1490,11 @@ abstract public class AbstractTableInfo implements TableInfo
     public <R, P> R accept(SchemaTreeVisitor<R, P> visitor, SchemaTreeVisitor.Path path, P param)
     {
         return visitor.visitTable(this, path, param);
+    }
+
+    @Override
+    public String toMemTrackerString()
+    {
+        return getClass().getName() + ": " + getSchema().getName() + "." + getName();
     }
 }
