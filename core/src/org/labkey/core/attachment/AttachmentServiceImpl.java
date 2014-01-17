@@ -1310,10 +1310,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             {
                 // UNDONE
                 // return a.getSize();
-                InputStream is = null;
-                try
+                try (InputStream is = getInputStream(null))
                 {
-                    is = getInputStream(null);
                     if (null != is)
                     {
                         long size = 0;
@@ -1321,17 +1319,12 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                             size = ((FileInputStream) is).getChannel().size();
                         else if (is instanceof FilterInputStream)
                             size = is.available();
-                        IOUtils.closeQuietly(is);
-                        is = null;
+
                         return size;
                     }
                 }
-                catch (IOException x)
+                catch (IOException ignored)
                 {
-                }
-                finally
-                {
-                    IOUtils.closeQuietly(is);
                 }
                 return 0;
             }

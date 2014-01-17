@@ -1220,29 +1220,15 @@ public class QueryServiceImpl extends QueryService
                     String name = resource.getName();
                     if (name.endsWith(QueryService.SCHEMA_TEMPLATE_EXTENSION) && templateName.equalsIgnoreCase(name.substring(0, name.length() - SCHEMA_TEMPLATE_EXTENSION.length())))
                     {
-                        InputStream is = null;
-                        try
+                        try (InputStream is = resource.getInputStream())
                         {
-                            is = resource.getInputStream();
                             TemplateSchemaDocument doc = TemplateSchemaDocument.Factory.parse(is);
                             XmlBeansUtil.validateXmlDocument(doc, resource.getName());
                             return doc.getTemplateSchema();
                         }
-                        catch (XmlException e)
+                        catch (XmlException | XmlValidationException | IOException e)
                         {
                             _log.error("Skipping '" + name + "' schema template file: " + e.getMessage());
-                        }
-                        catch (XmlValidationException e)
-                        {
-                            _log.error("Skipping '" + name + "' schema template file: " + e.getMessage());
-                        }
-                        catch (IOException e)
-                        {
-                            _log.error("Skipping '" + name + "' schema template file: " + e.getMessage());
-                        }
-                        finally
-                        {
-                            try { if (is != null ) is.close(); } catch (IOException ignored) {}
                         }
                     }
                 }
@@ -1270,10 +1256,8 @@ public class QueryServiceImpl extends QueryService
                     if (name.endsWith(QueryService.SCHEMA_TEMPLATE_EXTENSION))
                     {
                         name = name.substring(0, name.length() - QueryService.SCHEMA_TEMPLATE_EXTENSION.length());
-                        InputStream is = null;
-                        try
+                        try (InputStream is = resource.getInputStream())
                         {
-                            is = resource.getInputStream();
                             TemplateSchemaDocument doc = TemplateSchemaDocument.Factory.parse(is);
                             XmlBeansUtil.validateXmlDocument(doc, resource.getName());
                             TemplateSchemaType template = doc.getTemplateSchema();
@@ -1286,7 +1270,7 @@ public class QueryServiceImpl extends QueryService
                         catch (XmlValidationException e)
                         {
                             StringBuilder sb = new StringBuilder();
-                            sb.append("Skipping '" + name + "' schema template file:\n");
+                            sb.append("Skipping '").append(name).append("' schema template file:\n");
                             for (XmlError err : e.getErrorList())
                                 sb.append("  ").append(XmlBeansUtil.getErrorMessage(err)).append("\n");
                             _log.error(sb.toString());
@@ -1294,10 +1278,6 @@ public class QueryServiceImpl extends QueryService
                         catch (IOException e)
                         {
                             _log.error("Skipping '" + name + "' schema template file: " + e.getMessage());
-                        }
-                        finally
-                        {
-                            try { if (is != null ) is.close(); } catch (IOException ignored) {}
                         }
                     }
                 }

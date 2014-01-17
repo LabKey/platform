@@ -102,5 +102,4 @@ public class ModuleAssayLoader implements ModuleResourceLoader
         }
         return null;
     }
-
 }

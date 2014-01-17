@@ -84,6 +84,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.util.PageFlowUtil.NoContent;
@@ -684,7 +685,6 @@ public class CoreController extends SpringActionController
                 response.setHeader("Cache-Control", "public");
                 response.setHeader("Pragma", "");
 
-                byte[] buf = new byte[4096];
                 WebdavResolver staticFiles = ServiceRegistry.get().getService(WebdavResolver.class);
                 WebdavResource file = staticFiles.lookup(Path.parse(path));
 
@@ -692,8 +692,8 @@ public class CoreController extends SpringActionController
                 {
                     try (OutputStream os = response.getOutputStream(); InputStream is = file.getInputStream())
                     {
-                        for (int len; (len = is.read(buf)) != -1; )
-                            os.write(buf, 0, len);
+                        if (null != is)
+                            FileUtil.copyData(is, os);
                     }
                 }
                 else

@@ -150,6 +150,7 @@ import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -3479,9 +3480,9 @@ public class StudyManager
         {
             if (activeModuleNames.contains(entry.getKey()) && entry.getValue().exists())
             {
-                try
+                try (InputStream is = entry.getValue().getInputStream())
                 {
-                    String body = IOUtils.toString(entry.getValue().getInputStream());
+                    String body = IOUtils.toString(is);
                     return CustomParticipantView.createModulePtidView(body);
                 }
                 catch (IOException e)

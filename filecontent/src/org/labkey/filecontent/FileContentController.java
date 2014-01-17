@@ -305,12 +305,10 @@ public class FileContentController extends SpringActionController
                             @Override
                             protected void renderView(Object model, PrintWriter out) throws Exception
                             {
-                                InputStream fis = null;
-                                try
+                                try (InputStream fis = _resource.getInputStream(getUser()))
                                 {
                                     if (null == _resource || !_resource.isFile())
                                         throw new FileNotFoundException();
-                                    fis = _resource.getInputStream(getUser());
                                     if (null == fis)
                                         throw new FileNotFoundException();
                                     IOUtils.copy(new InputStreamReader(fis), out);
@@ -318,10 +316,6 @@ public class FileContentController extends SpringActionController
                                 catch (FileNotFoundException x)
                                 {
                                     out.write("<span class='labkey-error'>file not found: " + PageFlowUtil.filter(_resource.getName()) + "</span>");
-                                }
-                                finally
-                                {
-                                    IOUtils.closeQuietly(fis);
                                 }
                             }
                         };
@@ -365,12 +359,12 @@ public class FileContentController extends SpringActionController
         private void renderResourceContents(PrintWriter out, WebdavResource resource) throws IOException
         {
             StringBuilder contents = new StringBuilder();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream(getUser())));
             String line;
             String newline = System.getProperty("line.separator");
             final int MAX_SIZE = 5000;
             int size = 0;
-            try
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream(getUser()))))
             {
                 while ((line = reader.readLine()) != null)
                 {
@@ -404,10 +398,6 @@ public class FileContentController extends SpringActionController
             catch (IOException e)
             {
                 out.write("<span class='labkey-error'>IOException: " + PageFlowUtil.filter(resource.getName()) + "</span>");
-            }
-            finally
-            {
-                IOUtils.closeQuietly(reader);
             }
         }
 

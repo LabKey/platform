@@ -55,20 +55,14 @@ public class ModuleQueryDef extends ResourceRef
         _moduleName = moduleName;
 
         //load the sql from the sqlFile
-        InputStream is = null;
-        try
+        try (InputStream is = r.getInputStream())
         {
-            is = r.getInputStream();
             if (is != null)
                 _sql = IOUtils.toString(is);
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
-        }
-        finally
-        {
-            try { if (is != null) is.close(); } catch (IOException _) { }
         }
 
         //meta-data file is optional

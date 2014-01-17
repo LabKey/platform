@@ -50,7 +50,6 @@ import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.AssayDataType;
 import org.labkey.api.study.assay.AssayPipelineProvider;
 import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayRunCreator;
 import org.labkey.api.study.assay.AssaySaveHandler;
 import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.study.assay.AssayUrls;

@@ -842,15 +842,9 @@ public class DavController extends SpringActionController
                 ZipEntry entry = new ZipEntry(entryName);
                 out.putNextEntry(entry);
 
-                InputStream in = null;
-                try
+                try (InputStream in = getResourceInputStream(resource, user))
                 {
-                    in = getResourceInputStream(resource,user);
                     FileUtil.copyData(in, out);
-                }
-                finally
-                {
-                    IOUtils.closeQuietly(in);
                 }
             }
         }
@@ -2503,10 +2497,8 @@ public class DavController extends SpringActionController
                 throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED);
             }
 
-            InputStream is = null;
-            try
+            try (InputStream is = new ReadAheadInputStream(getRequest().getInputStream()))
             {
-                is = new ReadAheadInputStream(getRequest().getInputStream());
                 if (is.available() > 0)
                 {
                     DocumentBuilder documentBuilder = getDocumentBuilder();
@@ -2514,7 +2506,6 @@ public class DavController extends SpringActionController
                     {
                         // TODO : Process this request body
                         documentBuilder.parse(new InputSource(is));
-                        is = null;  // stream is closed
                         throw new DavException(WebdavStatus.SC_NOT_IMPLEMENTED);
                     }
                     catch (SAXException saxe)
@@ -2523,10 +2514,6 @@ public class DavController extends SpringActionController
                         throw new DavException(WebdavStatus.SC_UNSUPPORTED_MEDIA_TYPE);
                     }
                 }
-            }
-            finally
-            {
-                IOUtils.closeQuietly(is);
             }
 
             // MKCOL with missing intermediate should fail (RFC2518:8.3.1)

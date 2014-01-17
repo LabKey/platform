@@ -15,7 +15,6 @@
  */
 package org.labkey.study.writer;
 
-import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
@@ -60,19 +59,9 @@ public class ProtocolDocumentWriter implements InternalStudyWriter
 
             for (Attachment doc : documents)
             {
-                InputStream is = null;
-                OutputStream os = null;
-
-                try
+                try (OutputStream os = folder.getOutputStream(doc.getName()); InputStream is = AttachmentService.get().getInputStream(parent, doc.getName()))
                 {
-                    is = AttachmentService.get().getInputStream(parent, doc.getName());
-                    os = folder.getOutputStream(doc.getName());
                     FileUtil.copyData(is, os);
-                }
-                finally
-                {
-                    IOUtils.closeQuietly(is);
-                    IOUtils.closeQuietly(os);
                 }
             }
         }

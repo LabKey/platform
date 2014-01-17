@@ -216,19 +216,13 @@ public class CustomViewXmlReader
 
     public static CustomViewXmlReader loadDefinition(Resource r)
     {
-        InputStream is = null;
-        try
+        try (InputStream is = r.getInputStream())
         {
-            is = r.getInputStream();
             return loadDefinition(is, r.getPath().toString());
         }
         catch (IOException ioe)
         {
             throw new UnexpectedException(ioe);
-        }
-        finally
-        {
-            if (is != null) try { is.close(); } catch (IOException e) { }
         }
     }
 

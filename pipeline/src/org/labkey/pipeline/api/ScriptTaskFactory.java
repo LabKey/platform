@@ -105,16 +105,17 @@ public class ScriptTaskFactory extends SimpleTaskFactory
                 throw new IllegalArgumentException("script file not found: " + file);
 
             String source;
+
             try (InputStream is = r.getInputStream())
             {
                 source = IOUtils.toString(is);
-                tokens = tokens(source);
             }
             catch (IOException e)
             {
                 throw new IllegalArgumentException("Failed to read script file.");
             }
 
+            tokens = tokens(source);
             String ext = xscript.getInterpreter();
             if (ext == null)
                 ext = FileUtil.getExtension(file);

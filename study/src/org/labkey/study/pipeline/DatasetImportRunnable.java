@@ -16,7 +16,6 @@
 
 package org.labkey.study.pipeline;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
@@ -151,15 +150,14 @@ public class DatasetImportRunnable implements Runnable
             if (_action == AbstractDatasetImportTask.Action.APPEND || _action == AbstractDatasetImportTask.Action.REPLACE)
             {
                 final Integer[] skippedRowCount = new Integer[] { 0 };
-                InputStream is = _root.getInputStream(_tsvName);
 
-                try
+                try (InputStream is = _root.getInputStream(_tsvName))
                 {
                     loader = DataLoaderService.get().createLoader(_tsvName, null, is, true, _job.getContainer(), TabLoader.TSV_FILE_TYPE);
                     if (useCutoff && loader instanceof TabLoader)
                     {
                         // UNDONE: shouldn't be tied to TabLoader
-                        ((TabLoader)loader).setMapFilter(new Filter<Map<String, Object>>()
+                        ((TabLoader) loader).setMapFilter(new Filter<Map<String, Object>>()
                         {
                             public boolean accept(Map<String, Object> row)
                             {
@@ -170,7 +168,7 @@ public class DatasetImportRunnable implements Runnable
                                     return true;
 
                                 // Allow rows after the cutoff date.
-                                if (((Date)o).compareTo(_replaceCutoff) > 0)
+                                if (((Date) o).compareTo(_replaceCutoff) > 0)
                                     return true;
 
                                 skippedRowCount[0]++;
@@ -215,10 +213,6 @@ public class DatasetImportRunnable implements Runnable
                             _job.error("Could not delete file " + _tsvName);
                     }
                     assert cpuImport.stop();
-                }
-                finally
-                {
-                    IOUtils.closeQuietly(is);
                 }
             }
         }

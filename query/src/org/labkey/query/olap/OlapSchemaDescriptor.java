@@ -131,7 +131,7 @@ public class OlapSchemaDescriptor
                     FileOutputStream out = new FileOutputStream(tmpFile);
                     InputStream in = _resource.getInputStream())
                 {
-                    IOUtils.copy(in,out);
+                    IOUtils.copy(in, out);
                 }
             }
         }

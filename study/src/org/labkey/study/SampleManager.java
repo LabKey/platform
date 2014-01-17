@@ -74,6 +74,7 @@ import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import javax.servlet.ServletException;
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -3310,9 +3311,9 @@ public class SampleManager implements ContainerManager.ContainerListener
         {
             if (activeModuleNames.contains(entry.getKey()) && entry.getValue().exists())
             {
-                try
+                try (InputStream is = entry.getValue().getInputStream())
                 {
-                    String body = IOUtils.toString(entry.getValue().getInputStream());
+                    String body = IOUtils.toString(is);
                     body = ModuleHtmlView.replaceTokens(body, context);
                     return ExtendedSpecimenRequestView.createView(body);
                 }
