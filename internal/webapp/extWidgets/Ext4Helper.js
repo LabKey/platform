@@ -598,7 +598,7 @@ LABKEY.ext.Ext4Helper = new function(){
                             else
                                 format = "Y-m-d H:i:s";
                         }
-                        displayValue = date.format(format);
+                        displayValue = Ext4.Date.format(date, format); //date.format(format);
                         break;
                     case "int":
                         displayValue = (Ext4.util.Format.numberRenderer(meta.extFormat || this.format || '0'))(displayValue);

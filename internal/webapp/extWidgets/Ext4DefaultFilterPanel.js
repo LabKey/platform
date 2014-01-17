@@ -272,7 +272,7 @@ Ext4.define('LABKEY.ext4.DefaultFilterPanel', {
                 },
                 focus: function(){
                     if (this.focusTask)
-                        Ext4.TaskMgr.stop(this.focusTask);
+                        Ext4.TaskManager.stop(this.focusTask);
                 }
             },
             validator: function(value){
@@ -288,7 +288,7 @@ Ext4.define('LABKEY.ext4.DefaultFilterPanel', {
         if(idx === 0){
             this.on('afterlayout', function(){
                 if(this.focusTask)
-                    Ext4.TaskMgr.start(this.focusTask);
+                    Ext4.TaskManager.start(this.focusTask);
             }, this);
         }
         return config;
