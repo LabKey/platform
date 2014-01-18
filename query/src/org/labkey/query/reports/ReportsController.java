@@ -111,7 +111,6 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
@@ -1032,7 +1031,7 @@ public class ReportsController extends SpringActionController
                 resultProperties.put("html", mr.getContentAsString());
                 resultProperties.put("requiredJsScripts", includes);
                 resultProperties.put("implicitJsIncludes", implicitIncludes);
-                resultProperties.put("moduleContext", PageFlowUtil.getModuleClientContext(getContainer(), getUser(), dependencies));
+                resultProperties.put("moduleContext", PageFlowUtil.getModuleClientContext(getViewContext(), dependencies));
 
                 return new ApiSimpleResponse(resultProperties);
             }

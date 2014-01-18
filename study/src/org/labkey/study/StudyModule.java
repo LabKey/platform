@@ -47,13 +47,11 @@ import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -777,13 +775,16 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
     }
 
+    @NotNull
     @Override
-    public JSONObject getPageContextJson(User u, Container c)
+    public JSONObject getPageContextJson(ViewContext context)
     {
-        Map<String, String> ret = getDefaultPageContextJson(u, c);
+        Container c = context.getContainer();
+        Map<String, String> moduleProperties = getDefaultPageContextJson(c);
         Study study = StudyManager.getInstance().getStudy(c);
         StudyService.Service studyService = StudyService.get();
-        JSONObject context = new JSONObject(ret);
+        JSONObject ret = new JSONObject(moduleProperties);
+
         if (study != null)
         {
             JSONObject subject = new JSONObject();
@@ -792,9 +793,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             subject.put("nounPlural", studyService.getSubjectNounPlural(c));
             subject.put("columnName", studyService.getSubjectColumnName(c));
 
-            context.put("subject", subject);
-            context.put("timepointType", study.getTimepointType().name());
+            ret.put("subject", subject);
+            ret.put("timepointType", study.getTimepointType().name());
         }
-        return context;
+
+        return ret;
     }
 }
