@@ -87,7 +87,7 @@
     _storeSC = X.create('LABKEY.ext4.Store', {
         schemaName: 'study',
         queryName: 'AssaySpecimen',
-        columns : ['RowId', 'AssayName', 'Description', 'Source', 'LocationId', 'TubeType', 'PrimaryTypeId', 'DerivativeTypeId'],
+        columns : ['RowId', 'AssayName', 'Description', 'Source', 'LocationId', 'TubeType'],
         sort : ['Description', 'AssayName']
     });
     zz = _storeSC;
@@ -112,7 +112,7 @@
     _gridSC = X.create('LABKEY.ext4.GridPanel', {
         store: _storeSC,
         renderTo: 'AssaySpecimenConfigGrid',
-        maxWidth: 1250,
+        maxWidth: 1000,
         autoHeight: true,
         selType: 'rowmodel',
         multiSelect: false,

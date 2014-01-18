@@ -43,7 +43,7 @@
             <tr>
                 <td>&nbsp;</td>
                 <td align="center">
-                    <%= location.getLdmsLabCode()%>
+                    <%= location.getLdmsLabCode() == null ? "N/A" : location.getLdmsLabCode() %>
                     <input type="hidden" name="ids" value="<%= location.getRowId()%>">
                 </td>
                 <td>

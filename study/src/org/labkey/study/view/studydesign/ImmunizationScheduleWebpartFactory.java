@@ -25,6 +25,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.security.permissions.ManageStudyPermission;
@@ -60,6 +61,7 @@ public class ImmunizationScheduleWebpartFactory extends BaseWebPartFactory
                 timepointMenuName = "Manage Visits";
 
             NavTree menu = new NavTree();
+            menu.addChild("Manage Cohorts", new ActionURL(CohortController.ManageCohortsAction.class, c));
             menu.addChild(timepointMenuName, new ActionURL(StudyController.ManageVisitsAction.class, c));
             view.setNavMenu(menu);
         }

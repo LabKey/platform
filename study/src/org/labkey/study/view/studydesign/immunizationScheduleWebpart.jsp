@@ -99,20 +99,34 @@
 <%
     if (study != null)
     {
-%>
-<table class='study-vaccine-design'>
-<%
         List<CohortImpl> cohorts = study.getCohorts(user);
         if (cohorts.size() == 0)
         {
-            %><tr><td>No cohort/treatment/timepoint mappings have been defined.</td></tr><%
+            %>No cohort/treatment/timepoint mappings have been defined.<br/><%
         }
         else
         {
+            %>This section shows the immunization schedule. Each treatment may consist of several immunogens and adjuvants.<br/><%
+        }
+
+        if (canEdit)
+        {
+%>
+            To change the set of groups/cohorts and edit the immunization schedule, click the edit button below.<br/>
+            <%=generateButton("Edit", StudyDesignController.ManageImmunizationsAction.class)%>
+<%
+        }
+
+        if (cohorts.size() > 0)
+        {
             List<VisitImpl> visits = study.getVisitsForImmunizationSchedule();
 %>
+        <table class='study-vaccine-design'>
             <tr><td>
                 <table class="labkey-read-only labkey-data-region labkey-show-borders" style="border: solid #ddd 1px;">
+                    <tr>
+                        <td class="labkey-col-header assay-schedule-header" colspan="<%=visits.size()+2%>"><div class="assay-schedule-header">Immunization Schedule</div></td>
+                    </tr>
                     <tr>
                         <td class="labkey-col-header">Group / Cohort</td>
                         <td class="labkey-col-header">Count</td>
@@ -186,21 +200,12 @@
 %>
                 </table>
             </td></tr>
+        </table>
 <%
         }
-%>
-</table>
-<%
     }
     else
     {
-%>
-        <p>The folder must contain a study in order to display a vaccine design.</p>
-<%
-    }
-
-    if (canEdit)
-    {
-        %><br/><%=textLink("Edit", StudyDesignController.ManageImmunizationsAction.class)%><%
+        %><p>The folder must contain a study in order to display a vaccine design.</p><%
     }
 %>

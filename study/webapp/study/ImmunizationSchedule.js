@@ -1114,7 +1114,7 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
                 formItems.push(this.createTreatmentVisitCombo(record, visit));
             }, this);
 
-            if (this.visitStore.getCount() > 0 && this.treatmentStore.getCount() > 1)
+            if (this.treatmentStore.getCount() > 1)
             {
                 formItems.push({
                     xtype: 'linkbutton',
@@ -1129,7 +1129,7 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
             {
                 formItems.push({
                     xtype: 'fieldcontainer', hideFieldLabel: true,
-                    items: [{ xtype: 'label', text: 'No ' + (this.visitStore.getCount() == 0 ? this.visitNoun.toLowerCase() : 'treatment') + 's defined for this study.' }]
+                    items: [{ xtype: 'label', text: 'No treatments defined for this study.' }]
                 });
             }
         }

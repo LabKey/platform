@@ -95,6 +95,14 @@
 <%
     if (study != null)
     {
+        %>This section describes the immunogens and adjuvants evaluated in the study.</br><%
+        if (canEdit)
+        {
+%>
+            To change the set of immunogens and adjuvants, click the edit button below.<br/>
+            <%=generateButton("Edit", StudyDesignController.ManageStudyProductsAction.class)%>
+<%
+        }
 %>
         <table class='study-vaccine-design'>
             <tr><td><h2>Immunogens</h2></td></tr>
@@ -163,11 +171,6 @@
 %>
         <p>The folder must contain a study in order to display a vaccine design.</p>
 <%
-    }
-
-    if (canEdit)
-    {
-        %><br/><%=textLink("Edit", StudyDesignController.ManageStudyProductsAction.class)%><%
     }
 %>
 

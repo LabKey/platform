@@ -25,9 +25,7 @@
 <%@ page import="org.labkey.study.SampleManager" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page import="org.labkey.study.model.AssaySpecimenConfigImpl" %>
-<%@ page import="org.labkey.study.model.DerivativeType" %>
 <%@ page import="org.labkey.study.model.LocationImpl" %>
-<%@ page import="org.labkey.study.model.PrimaryType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
@@ -105,20 +103,28 @@
         List<AssaySpecimenConfigImpl> assaySpecimenConfigs = study.getAssaySpecimenConfigs();
         List<VisitImpl> visits = study.getVisitsForAssaySchedule();
 
-%>
-        <p><%=assayPlan%></p>
-<%
-
         if (assaySpecimenConfigs.size() == 0)
         {
+            %>No assays have been scheduled.<br/><%
+        }
+
+        if (canEdit)
+        {
 %>
-            <p>No assays have been scheduled.</p>
+            To change the set of assays and edit the assay schedule, click the edit button below.<br/>
+            <%=generateButton("Edit", StudyDesignController.ManageAssaySpecimenAction.class)%>
 <%
         }
-        else
+
+        %><p><%=assayPlan%></p><%
+
+        if (assaySpecimenConfigs.size() > 0)
         {
 %>
             <table class="labkey-read-only labkey-data-region labkey-show-borders study-vaccine-design" style="border: solid #ddd 1px;">
+                <tr>
+                    <td class="labkey-col-header assay-schedule-header" colspan="<%=visits.size()+3%>"><div class="assay-schedule-header">Assay Schedule</div></td>
+                </tr>
                 <tr>
                     <td class="labkey-col-header">Assay</td>
                     <td class="labkey-col-header">Lab</td>
@@ -140,22 +146,9 @@
             {
                 // concatenate sample type (i.e. primary, derivative, tube type)
                 String sampleType = "";
-                String sep = "";
-                if (assaySpecimen.getPrimaryTypeId() != null)
-                {
-                    PrimaryType pt = SampleManager.getInstance().getPrimaryType(c, assaySpecimen.getPrimaryTypeId());
-                    sampleType += (pt != null ? pt.getPrimaryType() : assaySpecimen.getPrimaryTypeId());
-                    sep = " / ";
-                }
-                if (assaySpecimen.getDerivativeTypeId() != null)
-                {
-                    DerivativeType dt = SampleManager.getInstance().getDerivativeType(c, assaySpecimen.getDerivativeTypeId());
-                    sampleType += sep + (dt != null ? dt.getDerivative() : assaySpecimen.getDerivativeTypeId());
-                    sep = " / ";
-                }
                 if (assaySpecimen.getTubeType() != null)
                 {
-                    sampleType += sep + assaySpecimen.getTubeType();
+                    sampleType += assaySpecimen.getTubeType();
                 }
 
                 String locationLabel = "";
@@ -189,13 +182,6 @@
     }
     else
     {
-%>
-    <p>The folder must contain a study in order to display an assay schedule.</p>
-<%
-    }
-
-    if (canEdit)
-    {
-        %><br/><%=textLink("Edit", StudyDesignController.ManageAssaySpecimenAction.class)%><%
+        %><p>The folder must contain a study in order to display an assay schedule.</p><%
     }
 %>
