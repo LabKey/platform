@@ -382,17 +382,18 @@ public class MockModule implements Module
     }
 
     @Override
-    public JSONObject getPageContextJson(User u, Container c)
+    public @NotNull JSONObject getPageContextJson(ViewContext context)
     {
         return new JSONObject();
     }
 
     @Override
-    public LinkedHashSet<ClientDependency> getClientDependencies(Container c, User u)
+    public @NotNull LinkedHashSet<ClientDependency> getClientDependencies(Container c, User u)
     {
         return new LinkedHashSet<>();
     }
 
+    @NotNull
     @Override
     public Set<SupportedDatabase> getSupportedDatabasesSet()
     {

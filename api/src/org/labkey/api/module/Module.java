@@ -210,7 +210,7 @@ public interface Module extends Comparable<Module>
     @NotNull
     public Collection<String> getSchemaNames();
 
-    public Set<SupportedDatabase> getSupportedDatabasesSet();
+    public @NotNull Set<SupportedDatabase> getSupportedDatabasesSet();
 
     public Resolver getModuleResolver();
     public Resource getModuleResource(String path);
@@ -310,10 +310,11 @@ public interface Module extends Comparable<Module>
      * This will return a JSONObject that will be written to the page automatically.  By default, it will include any
      * module properties where 'writeToClient' is true.  However, individual modules can override this to return any content they choose.
      * Note: this is written as plain text.
+     * @param context Current ViewContext for the page
      */
-    public JSONObject getPageContextJson(User u, Container c);
+    public @NotNull JSONObject getPageContextJson(ViewContext context);
 
-    public LinkedHashSet<ClientDependency> getClientDependencies(Container c, User u);
+    public @NotNull LinkedHashSet<ClientDependency> getClientDependencies(Container c, User u);
 
     public @Nullable UpgradeCode getUpgradeCode();
 

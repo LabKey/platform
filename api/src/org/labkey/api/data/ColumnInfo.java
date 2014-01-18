@@ -63,8 +63,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 {
     public static final String DEFAULT_PROPERTY_URI_PREFIX = "http://terms.fhcrc.org/dbschemas/";
 
-    public enum Phi {NotPHI, Limited, PHI, Restricted}
-
     public static final DisplayColumnFactory DEFAULT_FACTORY = new DisplayColumnFactory()
     {
         public DisplayColumn createRenderer(ColumnInfo colInfo)

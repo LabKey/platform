@@ -555,6 +555,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     private Set<SupportedDatabase> _supportedDatabases = ALL_DATABASES;
 
+    @NotNull
     @Override
     public Set<SupportedDatabase> getSupportedDatabasesSet()
     {
@@ -1236,18 +1237,12 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _moduleProperties.put(property.getName(), property);
     }
 
-    /**
-     * This intent of this method is to allow modules to provide JSON that will be written to
-     * the client on all pages when this module is enabled.  By default, it will include only
-     * properties defined by _moduleProperties; however, modules can override this to include
-     * any content they choose.
-     */
-    public JSONObject getPageContextJson(User u, Container c)
+    public @NotNull JSONObject getPageContextJson(ViewContext context)
     {
-        return new JSONObject(getDefaultPageContextJson(u, c));
+        return new JSONObject(getDefaultPageContextJson(context.getContainer()));
     }
 
-    protected Map<String, String> getDefaultPageContextJson(User u, Container c)
+    protected @NotNull Map<String, String> getDefaultPageContextJson(Container c)
     {
         Map<String, String> props = new HashMap<>();
         for (ModuleProperty p : getModuleProperties().values())
@@ -1258,6 +1253,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return props;
     }
 
+    @NotNull
     public LinkedHashSet<ClientDependency> getClientDependencies(Container c, User u)
     {
         return _clientDependencies;

@@ -58,8 +58,6 @@
     {
         onLoad += "window.print(); ";
     }
-
-    String userAgent = StringUtils.defaultString(request.getHeader("User-Agent"),"Mozilla");
 %>
 <!DOCTYPE html>
 <html>
@@ -73,7 +71,7 @@
     <!-- <%=h(url.getURIString())%> -->
     <!-- <base href="<%=h(base.getURIString())%>" /> -->
 <%= bean.getMetaTags(url) %>
-<%= PageFlowUtil.getStandardIncludes(c, user, userAgent, bean.getClientDependencies()) %><%
+<%= PageFlowUtil.getStandardIncludes(getViewContext(), bean.getClientDependencies()) %><%
 if(user.isSiteAdmin())
 {
     String webPartPermissionsource = contextPath + "/WebPartPermissionsPanel.js?" + PageFlowUtil.getServerSessionHash();

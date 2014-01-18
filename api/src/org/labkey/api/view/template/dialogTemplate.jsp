@@ -29,7 +29,6 @@
     DialogTemplate me = (DialogTemplate) HttpView.currentView();
     PageConfig pageConfig = me.getModelBean();
     Container c = getContainer();
-    User u = getUser();
     ThemeFont themeFont = ThemeFont.getThemeFont(c);
 
     if (pageConfig.getFrameOption() != PageConfig.FrameOption.ALLOW)
@@ -42,7 +41,7 @@
     <%if (pageConfig.getFrameOption() == PageConfig.FrameOption.DENY) {%> <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%}%>
     <title><%=h(pageConfig.getTitle())%></title>
     <%= pageConfig.getMetaTags(getActionURL()) %>
-    <%= PageFlowUtil.getStandardIncludes(c, u, request.getHeader("User-Agent"), pageConfig.getClientDependencies()) %>
+    <%= PageFlowUtil.getStandardIncludes(getViewContext(), pageConfig.getClientDependencies()) %>
 </head>
 
 <body<%= null != pageConfig.getFocus() ? " onload=\"document." + pageConfig.getFocus() + ".focus();\"" : "" %> class="<%=themeFont.getClassName()%>">

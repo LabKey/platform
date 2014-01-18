@@ -1648,17 +1648,20 @@ public class PageFlowUtil
     }
 
 
-    public static String getStandardIncludes(Container c, User u)
+    public static String getStandardIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources)
     {
-        return getStandardIncludes(c, u, null, null);
-    }
+        Container c = context.getContainer();
+        User u = context.getUser();
 
-    // UNDONE: use a user-agent parsing library
-    public static String getStandardIncludes(Container c, User u, @Nullable String userAgent, LinkedHashSet<ClientDependency> resources)
-    {
+        // Better handling for odd cases... bootstrap, background?
+        if (null == c)
+            c = ContainerManager.getRoot();
+        if (null == u)
+            u = User.guest;  //NOTE: should this use the upgrade user?
+
         StringBuilder sb = getFaviconIncludes(c);
-        sb.append(getLabkeyJS(resources));
-        sb.append(getStylesheetIncludes(c, u, userAgent, resources));
+        sb.append(getLabkeyJS(context, resources));
+        sb.append(getStylesheetIncludes(c, u, resources));
         sb.append(getJavaScriptIncludes(c, u, resources));
         return sb.toString();
     }
@@ -1684,16 +1687,11 @@ public class PageFlowUtil
 
     public static String getStylesheetIncludes(Container c, User u)
     {
-        return getStylesheetIncludes(c, u, null, null);
+        return getStylesheetIncludes(c, u, null);
     }
 
-    public static String getStylesheetIncludes(Container c, User u, @Nullable String userAgent)
-    {
-        return getStylesheetIncludes(c, u, userAgent, null);
-    }
-
-    /** */
-    public static String getStylesheetIncludes(Container c, User u, @Nullable String userAgent, @Nullable LinkedHashSet<ClientDependency> resources)
+    /** */  // TODO: userAgent is unused... delete?
+    public static String getStylesheetIncludes(Container c, User u, @Nullable LinkedHashSet<ClientDependency> resources)
     {
         boolean useLESS = null != HttpView.currentRequest().getParameter("less");
         WebTheme theme = WebThemeManager.getTheme(c);
@@ -1887,7 +1885,7 @@ public class PageFlowUtil
         }
     }
 
-    public static String getLabkeyJS(LinkedHashSet<ClientDependency> resources)
+    public static String getLabkeyJS(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources)
     {
         String contextPath = AppProps.getInstance().getContextPath();
         String serverHash = getServerSessionHash();
@@ -1896,7 +1894,7 @@ public class PageFlowUtil
 
         sb.append("    <script src=\"").append(contextPath).append("/labkey.js?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
         sb.append("    <script type=\"text/javascript\">\n");
-        sb.append("        LABKEY.init(").append(jsInitObject(resources)).append(");\n");
+        sb.append("        LABKEY.init(").append(jsInitObject(context, resources)).append(");\n");
         sb.append("    </script>\n");
 
         // Include client-side error reporting scripts only if necessary and as early as possible.
@@ -2033,12 +2031,15 @@ public class PageFlowUtil
     static Integer serverHash = null;
 
     // This is used during server-side JavaScript initialization -- see core/resources/scripts/labkey/init.js
+    @SuppressWarnings("UnusedDeclaration")
     public static JSONObject jsInitObject()
     {
-        return jsInitObject(new LinkedHashSet<ClientDependency>());
+        // Ugly: Is there some way for the JavaScript initialization in init.js to pass through the ViewContext?
+        ViewContext context = HttpView.currentView().getViewContext();
+        return jsInitObject(context, new LinkedHashSet<ClientDependency>());
     }
 
-    public static JSONObject jsInitObject(LinkedHashSet<ClientDependency> resources)
+    public static JSONObject jsInitObject(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources)
     {
         AppProps.Interface appProps = AppProps.getInstance();
         String contextPath = appProps.getContextPath();
@@ -2054,14 +2055,12 @@ public class PageFlowUtil
             json.put("sharedContainer", shared.getName());
         json.put("hash", getServerSessionHash());
 
-        //TODO: these should be passed in by callers
-        ViewContext context = HttpView.currentView().getViewContext();
         Container container = context.getContainer();
         User user = context.getUser();
         HttpServletRequest request = context.getRequest();
 
         if (container != null)
-            json.put("moduleContext", getModuleClientContext(container, user, resources));
+            json.put("moduleContext", getModuleClientContext(context, resources));
 
         // Current container determines default formats and date parsing mode; fall back on root setting, which is better than nothing.
         Container settingsContainer = null != container ? container : ContainerManager.getRoot();
@@ -2504,12 +2503,15 @@ public class PageFlowUtil
         EncoderUtil.writeBufferedImage(buffer, ImageFormat.PNG, response.getOutputStream());
     }
 
-    public static JSONObject getModuleClientContext(Container c, User u, LinkedHashSet<ClientDependency> resources)
+    public static JSONObject getModuleClientContext(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources)
     {
         JSONObject ret = new JSONObject();
         if (resources != null)
         {
+            Container c = context.getContainer();
+            User u = context.getUser();
             Set<Module> modules = new HashSet<>();
+
             for (ClientDependency cd : resources)
             {
                 modules.addAll(cd.getRequiredModuleContexts(c, u));
@@ -2522,7 +2524,7 @@ public class PageFlowUtil
 
             for (Module m : modules)
             {
-                ret.put(m.getName().toLowerCase(), m.getPageContextJson(u, c));
+                ret.put(m.getName().toLowerCase(), m.getPageContextJson(context));
             }
         }
         return ret;

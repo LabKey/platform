@@ -21,7 +21,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.LoginUrls;
-import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.view.ActionURL;
@@ -73,7 +72,6 @@ class ErrorView extends HttpView
     public void doStartTag(PrintWriter out)
     {
         Container c = null;
-        User u = null;
 
         out.println("<html><head>");
 
@@ -81,15 +79,9 @@ class ErrorView extends HttpView
         // some reasonable styles.
         if (!_startupFailure)
         {
+            out.println(PageFlowUtil.getStandardIncludes(getViewContext(), null));
+
             c = getViewContext().getContainer();
-            u = getViewContext().getUser();
-
-            if (null == c)
-                c = ContainerManager.getRoot();
-            if (null == u)
-                u = User.guest;  //NOTE: should this use the upgrade user?
-
-            out.println(PageFlowUtil.getStandardIncludes(c, u));
         }
         else
         {

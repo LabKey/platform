@@ -182,7 +182,7 @@ public class TableInfoWriter
         if (column.isExcludeFromShifting())
             columnXml.setExcludeFromShifting(true);
 
-        if (ColumnInfo.Phi.NotPHI != column.getPhi())
+        if (Phi.NotPHI != column.getPhi())
             columnXml.setPhi(PhiType.Enum.forString(column.getPhi().toString()));
     }
 

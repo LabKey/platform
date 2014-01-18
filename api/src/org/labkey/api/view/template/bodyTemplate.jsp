@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ThemeFont" %>
@@ -27,7 +26,6 @@
     BodyTemplate me = (BodyTemplate) HttpView.currentView();
     PageConfig pageConfig = me.getModelBean();
     Container c = getContainer();
-    User u = getUser();
     ThemeFont themeFont = ThemeFont.getThemeFont(c);
 
     if (pageConfig.getFrameOption() != PageConfig.FrameOption.ALLOW)
@@ -40,7 +38,7 @@
     <%if (pageConfig.getFrameOption() == PageConfig.FrameOption.DENY) {%> <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%}%>
     <title><%=h(pageConfig.getTitle())%></title>
     <%= pageConfig.getMetaTags(getActionURL()) %>
-    <%= PageFlowUtil.getStandardIncludes(c, u, request.getHeader("User-Agent"), pageConfig.getClientDependencies()) %>
+    <%= PageFlowUtil.getStandardIncludes(getViewContext(), pageConfig.getClientDependencies()) %>
 </head>
 <body class="<%=themeFont.getClassName()%>">
     <% me.include(me.getBody(), out);%>

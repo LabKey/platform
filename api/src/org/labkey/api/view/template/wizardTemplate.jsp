@@ -15,9 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
@@ -27,13 +24,9 @@
 <%
     WizardTemplate me = (WizardTemplate) HttpView.currentView();
     PageConfig pageConfig = me.getModelBean();
-    Container c = getContainer();
-    User u = getUser();
 
     if (pageConfig.getFrameOption() != PageConfig.FrameOption.ALLOW)
         response.setHeader("X-FRAME-OPTIONS", pageConfig.getFrameOption().name());
-
-    String userAgent = StringUtils.defaultString(request.getHeader("User-Agent"), "Mozilla");
 %>
 <!DOCTYPE html>
 <html>
@@ -42,7 +35,7 @@
     <%if (pageConfig.getFrameOption() == PageConfig.FrameOption.DENY) {%> <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%}%>
     <title><%=h(pageConfig.getTitle())%></title>
     <%= pageConfig.getMetaTags(getActionURL()) %>
-    <%= PageFlowUtil.getStandardIncludes(c, u, userAgent, pageConfig.getClientDependencies()) %>
+    <%= PageFlowUtil.getStandardIncludes(getViewContext(), pageConfig.getClientDependencies()) %>
 </head>
 
 <body<%= null != pageConfig.getFocus() ? " onload=\"document." + pageConfig.getFocus() + ".focus();\"" : "" %>>

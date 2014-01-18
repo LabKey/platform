@@ -118,7 +118,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         resultProperties.put("implicitJsIncludes", implicitIncludes);
         resultProperties.put("requiredCssScripts", cssScripts);
         resultProperties.put("implicitCssIncludes", implicitCssScripts);
-        resultProperties.put("moduleContext", PageFlowUtil.getModuleClientContext(container, user, dependencies));
+        resultProperties.put("moduleContext", PageFlowUtil.getModuleClientContext(getViewContext(), dependencies));
 
         return new ApiSimpleResponse(resultProperties);
     }
