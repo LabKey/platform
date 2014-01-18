@@ -27,6 +27,7 @@ import org.labkey.api.data.QueryProfiler;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.MemTrackable;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.ViewServlet;
 
@@ -79,7 +80,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         _conn = conn;
         _log = conn.getLogger();
         _stmt = stmt;
-        MemTracker.getInstance().put(this);
+        assert MemTracker.getInstance().put(this);
     }
 
     public StatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
@@ -589,7 +590,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
                 throw new SQLException("Test sql exception", _sqlStateTestException);
 
             ResultSet rs = ((PreparedStatement)_stmt).executeQuery();
-            MemTracker.getInstance().put(rs);
+            assert MemTracker.getInstance().put(rs);
             return rs;
         }
         catch (SQLException sqlx)
@@ -845,7 +846,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             throws SQLException
     {
         ResultSetMetaData rs = ((PreparedStatement)_stmt).getMetaData();
-        MemTracker.getInstance().put(rs);
+        assert MemTracker.getInstance().put(rs);
         return rs;
     }
 
@@ -898,7 +899,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         try
         {
             ResultSet rs = _stmt.executeQuery(sql);
-            MemTracker.getInstance().put(rs);
+            assert MemTracker.getInstance().put(rs);
             return rs;
         }
         catch (SQLException sqlx)
@@ -1029,7 +1030,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             throws SQLException
     {
         ResultSet rs = _stmt.getResultSet();
-        MemTracker.getInstance().put(rs);
+        assert MemTracker.getInstance().put(rs);
         return rs;
     }
 
@@ -1129,7 +1130,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             throws SQLException
     {
         ResultSet rs = _stmt.getGeneratedKeys();
-        MemTracker.getInstance().put(rs);
+        assert MemTracker.getInstance().put(rs);
         return rs;
     }
 
@@ -1600,12 +1601,14 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     private void _logStatement(String sql, Exception x)
     {
         long elapsed = System.currentTimeMillis() - _msStart;
+        boolean isAssertEnabled = false;
+        assert isAssertEnabled = true;
 
         // Make a copy of the parameters list (it gets modified below) and switch to zero-based list (_parameters is a one-based list)
         List<Object> zeroBasedList = null != _parameters ? new ArrayList<>(_parameters.getUnderlyingList()) : null;
         QueryProfiler.track(_conn.getScope(), sql, zeroBasedList, elapsed, _stackTrace, isRequestThread());
 
-        if (!_log.isEnabledFor(Level.DEBUG))
+        if (!_log.isEnabledFor(Level.DEBUG) && !isAssertEnabled)
             return;
 
         StringBuilder logEntry = new StringBuilder(sql.length() * 2);
@@ -1658,7 +1661,17 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         if (null != x)
             logEntry.append("\n    ").append(x);
         _appendTableStackTrace(logEntry, 5);
-        _log.log(Level.DEBUG, logEntry);
+
+        final String logString = logEntry.toString();
+        _log.log(Level.DEBUG, logString);
+
+        MemTracker.getInstance().put(new MemTrackable(){
+            @Override
+            public String toMemTrackerString()
+            {
+                return logString;
+            }
+        });
 
         // check for deadlock or transaction related error
         if (x instanceof SQLException && SqlDialect.isTransactionException(x))
