@@ -129,6 +129,8 @@ LABKEY.vis.Geom.Point.prototype.render = function(renderer, grid, scales, data, 
     this.sizeScale = scales.size;
     this.hoverTextAes = layerAes.hoverText ? layerAes.hoverText : parentAes.hoverText;
     this.pointClickFnAes = layerAes.pointClickFn ? layerAes.pointClickFn : parentAes.pointClickFn;
+    this.mouseOverFnAes = layerAes.mouseOverFn ? layerAes.mouseOverFn : parentAes.mouseOverFn;
+    this.mouseOutFnAes = layerAes.mouseOutFn ? layerAes.mouseOutFn : parentAes.mouseOutFn;
 
     renderer.renderPointGeom(data, this);
     return true;

@@ -51,9 +51,9 @@ var labResultsPlotConfig = {
 	height: 300,
     clipRect: true,
     // TODO: Fix bg, grid, gridLine colors for D3Renderer (Issue 19375)
-    bgColor: '#777777',
-    gridColor: '#FF00FF',
-    gridLineColor: "#FFFFFF",
+//    bgColor: '#777777',
+//    gridColor: '#FF00FF',
+//    gridLineColor: "#FFFFFF",
 	data: labResultsRows,
 	aes: {
 		x: function(row){return row.Days.value},
@@ -178,6 +178,7 @@ var medianLineLayer = new LABKEY.vis.Layer({
 var boxPlot = new LABKEY.vis.Plot({
     renderTo: 'box',
     rendererType: 'd3',
+    clipRect: true,
     width: 900,
     height: 300,
     labels: {
@@ -318,11 +319,6 @@ var colorScatter = new LABKEY.vis.Plot({
     width: 900,
     height: 700,
     clipRect: false,
-    brushing: {
-        brushstart: function(){console.log('BRUSH START')},
-        brush: function(){console.log('BRUSH')},
-        brushend: function(){console.log('BRUSH END')}
-    },
     labels: {
         main: {
             value:'Scatter With Continuous Color Scale'
@@ -342,6 +338,111 @@ var colorScatter = new LABKEY.vis.Plot({
     scales: {
         y: {scaleType: 'continuous', trans: 'linear'},
         color: {scaleType: 'continuous', trans: 'linear', range: ['#660000', '#FF6666']}
+    }
+});
+
+var selectionMade = false;
+var brushScatter = new LABKEY.vis.Plot({
+    renderTo: 'brushing',
+    rendererType: 'd3',
+    width: 900,
+    height: 700,
+    clipRect: false,
+    legendPos: 'none',
+    brushing: {
+        brushstart: function(event, data, extent, layerSelections) {
+            selectionMade = true;
+        },
+        brush: function(event, data, extent, layerSelections) {
+            var points = layerSelections[0].selectAll('.point path');
+            var colorScale = brushScatter.scales.color.scale;
+            var colorAcc = function(d) {
+                var x = d.x, y = d.y;
+                d.isSelected = (x > extent[0][0] && x < extent[1][0] && y > extent[0][1] && y < extent[1][1])
+                return colorScale(d.isSelected);
+            };
+            var strokeAcc = function(d) {
+                if (d.isSelected){
+                    return '#000';
+                } else {
+                    return colorScale(d.isSelected);
+                }
+            };
+            var strokeWidthAcc = function(d) {
+                if (d.isSelected){
+                    return 2;
+                } else {
+                    return 1;
+                }
+            };
+            var opacityAcc = function(d) {
+                if (d.isSelected) {
+                    return 1;
+                } else {
+                    return .5;
+                }
+            }
+            points.attr('fill', colorAcc)
+                    .attr('stroke', strokeAcc)
+                    .attr('stroke-width', strokeWidthAcc)
+                    .attr('fill-opacity', opacityAcc);
+        },
+        brushend: function(event, data, extent, layerSelections) {
+        },
+        brushclear: function(event, data, layerSelections) {
+            layerSelections[0].selectAll('.point path').attr('fill-opacity', 1);
+            selectionMade = false;
+        }
+    },
+    labels: {
+        main: {
+            value:'Scatter With Brushing'
+        },
+        x: {
+            value: "X Axis"
+        },
+        y: {
+            value:"Y Axis"
+        }
+    },
+    layers: [new LABKEY.vis.Layer({
+        data: scatterData,
+        geom: new LABKEY.vis.Geom.Point({}),
+        aes: {
+            x:'x',
+            y: 'y',
+            color: 'isSelected',
+            mouseOverFn: function(event, pointData, layerSel) {
+                if (selectionMade) {return;}
+                var points = layerSel.selectAll('.point path');
+                var strokeWidthAcc = function(d) {
+                    if (d.ptid == pointData.ptid) {
+                        return 2;
+                    }
+                    return 1;
+                };
+                var strokeColorAcc = function(d) {
+                    var colorScale = brushScatter.scales.color.scale;
+                    if (d.ptid == pointData.ptid) {
+                        return '#000';
+                    }
+                    return colorScale(d.isSelected);
+                };
+
+                points.attr('stroke-width', strokeWidthAcc)
+                        .attr('stroke', strokeColorAcc);
+            },
+            mouseOutFn: function(event, pointData, layerSel) {
+                if (selectionMade) {return;}
+                var points = layerSel.selectAll('.point path');
+                var colorScale = brushScatter.scales.color.scale;
+
+                points.attr('stroke-width', 1).attr('stroke', function(d){return colorScale(d.isSelected)});
+            }
+        }
+    })],
+    scales: {
+        y: {scaleType: 'continuous', trans: 'linear'}
     }
 });
 
@@ -382,6 +483,7 @@ var errorPlotConfig = {
     rendererType: 'd3',
     width: 900,
     height: 300,
+    clipRect: true,
     labels: {
         main: {value: 'Testing error bar geom'},
         yLeft: {value: 'Temperature (C)'},
@@ -446,6 +548,7 @@ var statFnPlot = new LABKEY.vis.Plot({
 var renderStats = function(){
     var labResultsStats = LABKEY.vis.Stat.summary(labResultsRows, function(row){return row.study_LabResults_CD4.value});
     var statsDiv = document.getElementById('stats');
+    statsDiv.innerHTML = '<h3>Lab Results CD4 Statistics:</h3>';
     var p = document.createElement('p');
 
     statsDiv.appendChild(document.createElement('p').appendChild(document.createTextNode("Minimum: " + labResultsStats.min + ", Maximum: " + labResultsStats.max)));
@@ -465,6 +568,7 @@ boxPlot.render();
 discreteScatter.render();
 scatterPlot.render();
 colorScatter.render();
+brushScatter.render();
 errorPlot.render();
 statFnPlot.render();
 console.log(new Date().getTime() - start);

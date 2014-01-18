@@ -304,14 +304,30 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
-    var renderGrid = function() {
-        if (plot.clipRect) {
-            initClipRect.call(this);
+    var getAllData = function(){
+        var allData = [];
+        for (var i = 0; i < plot.layers.length; i++) {
+            if(plot.layers[i].data) {
+                allData.push(plot.layers[i].data);
+            } else {
+                allData.push(plot.data);
+            }
         }
-        renderXAxis.call(this);
-        renderYLeftAxis.call(this);
-        renderYRightAxis.call(this);
 
+        return allData;
+    };
+
+    var getAllLayerSelections = function() {
+        var allSels = [];
+
+        for (var i = 0; i < plot.layers.length; i++) {
+            allSels.push(d3.select('#' + plot.renderTo + '-' + plot.layers[i].geom.index));
+        }
+
+        return allSels;
+    };
+
+    var addBrush = function(){
         if (plot.brushing != null && (plot.brushing.brushstart || plot.brushing.brush || plot.brushing.brushend)) {
             if(brush == null) {
                 brush = d3.svg.brush().clamp([false, false]);
@@ -324,17 +340,53 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             brushSel.selectAll('.extent').attr('opacity', .25);
 
             if (plot.brushing.brushstart !== null && typeof plot.brushing.brushstart === 'function') {
-                brush.on('brushstart', plot.brushing.brushstart);
+                brush.on('brushstart', function(){
+                    plot.brushing.brushstart(d3.event, getAllData(), brush.extent(), getAllLayerSelections());
+                });
             }
 
             if (plot.brushing.brush !== null && typeof plot.brushing.brush === 'function') {
-                brush.on('brush', plot.brushing.brush);
+                brush.on('brush', function(){
+                    plot.brushing.brush(d3.event, getAllData(), brush.extent(), getAllLayerSelections());
+                });
             }
 
             if (plot.brushing.brushend !== null && typeof plot.brushing.brushend === 'function') {
-                brush.on('brushend', plot.brushing.brushend);
+                brush.on('brushend', function(){
+                    var allData = getAllData();
+                    var extent = brush.extent();
+                    var event = d3.event;
+                    if(extent[0][0] - extent[1][0] == 0 && extent[0][1] - extent[1][1] == 0) {
+                        event.type = 'brushclear';
+                        plot.brushing.brushclear(event, allData, getAllLayerSelections());
+                    } else {
+                        plot.brushing.brushend(event, allData, extent, getAllLayerSelections());
+                    }
+                });
             }
         }
+    };
+
+    var clearBrush = function(){
+        brush.clear()
+        brush(brushSel);
+        if(plot.brushing.brushclear) {
+            plot.brushing.brushclear(getAllData(), {
+                sourceEvent: null,
+                target: brush,
+                type: 'brushclear'
+            });
+        }
+    };
+
+    var renderGrid = function() {
+        if (plot.clipRect) {
+            initClipRect.call(this);
+        }
+        renderXAxis.call(this);
+        renderYLeftAxis.call(this);
+        renderYRightAxis.call(this);
+        addBrush.call(this);
     };
 
     var renderClickArea = function(name) {
@@ -653,7 +705,19 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         if (geom.pointClickFnAes) {
             pointsSel.on('click', function(data) {
-                geom.pointClickFnAes.value(d3.event, data);
+                geom.pointClickFnAes.value(d3.event, data, layer);
+            });
+        }
+
+        if (geom.mouseOverFnAes) {
+            pointsSel.on('mouseover', function(data) {
+                geom.mouseOverFnAes.value(d3.event, data, layer);
+            });
+        }
+
+        if (geom.mouseOutFnAes) {
+            pointsSel.on('mouseout', function(data) {
+                geom.mouseOutFnAes.value(d3.event, data, layer);
             });
         }
 
@@ -984,6 +1048,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         renderLabel: renderLabel,
         renderLabels: renderLabels,
         addLabelListener: addLabelListener,
+        clearBrush: clearBrush,
         renderLegend: renderLegend,
         renderPointGeom: renderPointGeom,
         renderPathGeom: renderPathGeom,

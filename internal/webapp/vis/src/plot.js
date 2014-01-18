@@ -793,5 +793,11 @@ LABKEY.vis.Plot = function(config){
         this.render();
     };
 
+    this.clearBrush = function() {
+        if(this.renderer.clearBrush) {
+            this.renderer.clearBrush();
+        }
+    };
+
 	return this;
 };
