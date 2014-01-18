@@ -74,7 +74,8 @@ Ext4.define('File.panel.Applet', {
                 ' archive="' + archive + '"' +
                 ' width=' + applet.width +
                 ' height=' + applet.height +
-                ' MAYSCRIPT="true" SCRIPTABLE="true">\n';
+                ' MAYSCRIPT="true" SCRIPTABLE="true">\n' +
+                    '<param name="permissions" value="all-permissions" /> \n';
             for (p in applet.params)
                 html += '<PARAM name="' + p + '" value="' + h(applet.params[p]) + '">\n';
             html += 'This feature requires the Java browser plug-in.</APPLET>';

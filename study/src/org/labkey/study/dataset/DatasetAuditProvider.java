@@ -117,6 +117,7 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
                             return StudySchema.getInstance().getTableInfoDataSet();
                         }
                     };
+                    fk.addJoin(FieldKey.fromParts("Container"), "container", false);
                     col.setLabel("Dataset");
                     col.setFk(fk);
                 }
