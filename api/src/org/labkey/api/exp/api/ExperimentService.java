@@ -24,7 +24,9 @@ import org.labkey.api.exp.query.*;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -280,6 +282,15 @@ public class ExperimentService
          * @return the runs loaded from the XAR
          */
         public List<ExpRun> importXar(XarSource source, PipelineJob pipelineJob, boolean reloadExistingRuns) throws ExperimentException;
+
+        /**
+         * Create an experiment run to represent the work that the task's job has done so far.
+         * The job's recorded actions will be marked as completed after creating the ExpRun so subsequent
+         * runs created by the job won't duplicate the previous actions.
+         * @param job Pipeline job.
+         * @return the run created from the job's actions.
+         */
+        public ExpRun importRun(PipelineJob job) throws SQLException, PipelineJobException, ValidationException;
 
         /**
          * Provides access to an object that should be locked before inserting experiment runs, protocols, etc.
