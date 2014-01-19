@@ -185,6 +185,7 @@ LABKEY.Pipeline = new function(){
                 protocolDescription: config.protocolDescription,
                 file: config.files,
                 fileIds: config.fileIds,
+                allowNonExistentFiles: config.allowNonExistentFiles,
                 saveProtocol: config.saveProtocol == undefined || config.saveProtocol
             };
             if (config.xmlParameters)

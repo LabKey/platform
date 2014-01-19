@@ -52,6 +52,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     private File _fileParameters;
     private List<File> _filesInput;
     private List<FileType> _inputTypes;
+    private boolean _splittable = true;
 
     private Map<String, String> _parametersDefaults;
     private Map<String, String> _parametersOverrides;
@@ -65,7 +66,8 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
                                    PipeRoot root,
                                    String protocolName,
                                    File fileParameters,
-                                   List<File> filesInput) throws IOException
+                                   List<File> filesInput,
+                                   boolean splittable) throws IOException
     {
         super(providerName, info, root);
 
@@ -97,6 +99,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
             logParameters("Overrides", fileParameters, _parametersOverrides);
         }
 
+        _splittable = splittable;
         if (_filesInput.size() > 1)
         {
             _baseName = AbstractFileAnalysisProtocol.getDataSetBaseName(_dirData);
@@ -122,6 +125,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _parameters = job._parameters;
         _parametersDefaults = job._parametersDefaults;
         _parametersOverrides = job._parametersOverrides;
+        _splittable = job._splittable;
 
         // Change parameters which are specific to the fraction job.
         _filesInput = Collections.singletonList(fileInput);
@@ -138,9 +142,14 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _experimentRunRowId = run.getRowId();
     }
 
+    public void setSplittable(boolean splittable)
+    {
+        _splittable = splittable;
+    }
+
     public boolean isSplittable()
     {
-        return getInputFiles().size() > 1;
+        return _splittable && getInputFiles().size() > 1;
     }
 
     public PipelineJob[] createSplitJobs()

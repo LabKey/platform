@@ -68,10 +68,10 @@ public interface Selector
 
     <T> void forEach(ForEachBlock<T> block, Class<T> clazz);
 
-    // Return a new map from a two-column query; the first column is the key, the second column is the value.
+    /** Return a new map from a two-column query; the first column is the key, the second column is the value. */
     @NotNull <K, V> Map<K, V> getValueMap();
 
-    // Populate an existing map from a two-column query; the first column is the key, the second column is the value.
+    /** Populate an existing map from a two-column query; the first column is the key, the second column is the value. */
     @NotNull <K, V> Map<K, V> fillValueMap(@NotNull Map<K, V> map);
 
     interface ForEachBlock<T>
