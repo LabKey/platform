@@ -150,7 +150,7 @@ public class AssayManager implements AssayService.Interface
     {
         for (AssayProvider potential : _providers)
         {
-            if (potential.getName().equals(providerName))
+            if (potential.getName().equals(providerName) || potential.getResourceName().equals(providerName))
             {
                 return potential;
             }

@@ -15,13 +15,13 @@
  */
 package org.labkey.study.pipeline;
 
-import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.AbstractTaskFactory;
@@ -56,7 +56,9 @@ import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: kevink
@@ -64,6 +66,9 @@ import java.util.List;
  */
 public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Factory>
 {
+    public static final String PROVIDER_NAME_PROPERTY = "providerName";
+    public static final String PROTOCOL_NAME_PROPERTY = "protocolName";
+
     //private static final TaskId TASK_ID = new TaskId(StudyModule.MODULE_NAME, TaskId.Type.task, "assayimport", 0);
 
     public static class FactoryFactory implements XMLBeanTaskFactoryFactory
@@ -83,8 +88,10 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             factory.setDeclaringModule(module);
 
             AssayImportRunTaskType xtask = (AssayImportRunTaskType)xobj;
-            factory._providerName = xtask.getProviderName();
-            factory._protocolName = xtask.getProtocolName();
+            if (xtask.isSetProviderName())
+                factory._providerName = xtask.getProviderName();
+            if (xtask.isSetProtocolName())
+                factory._protocolName = xtask.getProtocolName();
 
             return factory;
         }
@@ -92,8 +99,8 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
     public static class Factory extends AbstractTaskFactory<AssayImportRunTaskFactorySettings, Factory>
     {
-        private String _providerName;
-        private String _protocolName;
+        private String _providerName = "${" + PROVIDER_NAME_PROPERTY + "}";
+        private String _protocolName = "${" + PROTOCOL_NAME_PROPERTY + "}";
 
         public Factory()
         {
@@ -155,11 +162,25 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             if (_providerName == null)
                 throw new PipelineValidationException("Assay provider name required");
 
-            AssayProvider provider = AssayService.get().getProvider(_providerName);
-            if (provider == null)
-                throw new PipelineValidationException("Assay provider not found: " + _providerName);
+            // Validate assay provider.  If the value is a ${property}, the provider will be checked at runtime.
+            if (!_providerName.startsWith("${") || !_providerName.endsWith("}"))
+            {
+                AssayProvider provider = AssayService.get().getProvider(_providerName);
+                if (provider == null)
+                    throw new PipelineValidationException("Assay provider not found: " + _providerName);
+            }
 
-            // TODO: Validate _protocolName
+            if (_protocolName == null)
+                throw new PipelineValidationException("Assay protocol name required");
+
+            // Validate assay protocol.  If the value is a ${property}, the protocol will be checked at runtime.
+            if (!_protocolName.startsWith("${") || !_protocolName.endsWith("}"))
+            {
+                ExpProtocol protocol = ExperimentService.get().getExpProtocol(job.getContainer(), _protocolName);
+                if (protocol == null)
+                    throw new PipelineValidationException("Assay protocol not found: " + _protocolName);
+            }
+
         }
     }
 
@@ -173,7 +194,16 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
     {
         String providerName = _factory._providerName;
         if (providerName == null)
-            throw new PipelineJobException("Assay provider name required");
+            throw new PipelineJobException("Assay provider name or job parameter name required");
+
+        if (providerName.startsWith("${") && providerName.endsWith("}"))
+        {
+            String propertyName = providerName.substring(2, providerName.length()-3);
+            String value = getJob().getParameters().get(propertyName);
+            if (value == null)
+                throw new PipelineJobException("Assay provider name for job parameter " + providerName + " required");
+            providerName = value;
+        }
 
         AssayProvider provider = AssayService.get().getProvider(providerName);
         if (provider == null)
@@ -189,13 +219,30 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
     {
         String protocolName = _factory._protocolName;
         if (protocolName == null)
-            throw new PipelineJobException("Assay protocol name required");
+            throw new PipelineJobException("Assay protocol name or job parameter name required");
+
+        if (protocolName.startsWith("${") && protocolName.endsWith("}"))
+        {
+            String propertyName = protocolName.substring(2, protocolName.length()-1);
+            String value = getJob().getParameters().get(propertyName);
+            if (value == null)
+                throw new PipelineJobException("Assay protocol name for job parameter " + protocolName + " required");
+            protocolName = value;
+        }
 
         Container c = getJob().getContainer();
 
-        //ExperimentService.get().getExpProtocol(rowid);
-        //ExperimentService.get().getExpProtocol(lsid);
-        //ExpProtocol protocol = ExperimentService.get().getExpProtocol(c, protocolName);
+        // Find by LSID
+        ExpProtocol expProtocol = ExperimentService.get().getExpProtocol(protocolName);
+        if (expProtocol != null)
+        {
+            if (AssayService.get().getProvider(expProtocol) != provider)
+                throw new PipelineJobException("Experiment protocol LSID '" + protocolName + "' is not of assay provider type '" + provider.getName() + "'");
+
+            return expProtocol;
+        }
+
+        // Find by name
         List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, provider);
 
         for (ExpProtocol protocol : protocols)
@@ -245,6 +292,49 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         return null;
     }
 
+    private String getName()
+    {
+        return getJob().getParameters().get("assay name");
+    }
+
+    private String getComments()
+    {
+        return getJob().getParameters().get("assay comments");
+    }
+
+    private String getTargetStudy()
+    {
+        return getJob().getParameters().get("assay targetStudy");
+    }
+
+    // CONSIDER: Add <runProperties> and <batchProperties> elements to the AssayImportRunTaskType in pipelineTasks.xsd instead of the prefix naming convention.
+    private Map<String, String> getPrefixedProperties(String prefix)
+    {
+        Map<String, String> params = getJob().getParameters();
+        Map<String, String> props = new HashMap<>();
+        for (String key : params.keySet())
+        {
+            if (key.startsWith(prefix))
+            {
+                String prop = key.substring(prefix.length());
+                // CONSIDER: The property value may be a ${key} which is the actual property name.
+                String value = params.get(key);
+                props.put(prop, value);
+            }
+        }
+        return props;
+    }
+
+    private Map<String, String> getBatchProperties()
+    {
+        return getPrefixedProperties("assay batch property, ");
+    }
+
+    private Map<String, String> getRunProperties()
+    {
+        return getPrefixedProperties("assay run property, ");
+    }
+
     /**
      * 1. Examine the outputs of the previous steps.
      * 2. If match is found (?by DataHandler?), import into an assay.
@@ -271,24 +361,38 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             // Find output from the previous task
             List<File> outputFiles = getOutputs(getJob());
             if (outputFiles.isEmpty())
-                throw new PipelineJobException("Not output files found for importing run into assay '" + protocol.getName() + "'");
+                throw new PipelineJobException("No output files found for importing run into assay '" + protocol.getName() + "'");
 
+            // UNDONE: Support multiple input files
             // Find the first output that matches the assay's file type
             File matchedFile = findMatchedOutputFile(assayFileType, outputFiles);
             if (matchedFile == null)
-                throw new PipelineJobException("No output files matched assay file type");
+                throw new PipelineJobException("No output files matched assay file type: " + assayFileType);
 
             User user = getJob().getUser();
             Container container = getJob().getContainer();
 
             AssayRunUploadContextImpl.Factory factory = new AssayRunUploadContextImpl.Factory(protocol, provider, user, container);
+
+            factory.setName(getName());
+
+            factory.setComments(getComments());
+
             factory.setUploadedData(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, matchedFile));
+
+            factory.setBatchProperties(getBatchProperties());
+
+            factory.setRunProperties(getRunProperties());
+
+            factory.setTargetStudy(getTargetStudy());
 
             AssayRunUploadContext uploadContext = factory.create();
 
             Integer batchId = null;
             Pair<ExpExperiment, ExpRun> pair = provider.getRunCreator().saveExperimentRun(uploadContext, batchId);
             ExpRun run = pair.second;
+
+            // UNDONE: Attach input files to run (maybe use the XarGeneratorTask?)
 
             // save any job-level custom properties from the run
 //            PropertiesJobSupport jobSupport = getJob().getJobSupport(PropertiesJobSupport.class);
@@ -311,4 +415,5 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         }
         return new RecordedActionSet();
     }
+
 }

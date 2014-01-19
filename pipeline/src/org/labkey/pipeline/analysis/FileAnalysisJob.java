@@ -43,9 +43,10 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
                            TaskId taskPipelineId,
                            String protocolName,
                            File fileParameters,
-                           List<File> filesInput) throws IOException
+                           List<File> filesInput,
+                           boolean splittable) throws IOException
     {
-        super(protocol, providerName, info, root, protocolName, fileParameters, filesInput);
+        super(protocol, providerName, info, root, protocolName, fileParameters, filesInput, splittable);
 
         _taskPipelineId = taskPipelineId;
     }

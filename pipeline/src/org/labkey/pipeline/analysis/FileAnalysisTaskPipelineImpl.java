@@ -60,6 +60,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     private Map<FileType, FileType[]> _typeHierarchy;
     /** If set, the default location for the action in the UI */
     private PipelineActionConfig.displayState _defaultDisplayState;
+    private boolean _splittable = false;
 
     public FileAnalysisTaskPipelineImpl()
     {
@@ -193,6 +194,17 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     public Map<FileType, FileType[]> getTypeHierarchy()
     {
         return _typeHierarchy;
+    }
+
+    // CONSIDER: Add to FileAnalysisTaskPipeline API
+    public boolean isSplittable()
+    {
+        return _splittable;
+    }
+
+    public void setSplittable(boolean splittable)
+    {
+        _splittable = splittable;
     }
 
     @Override
@@ -352,6 +364,9 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 //        // UNDONE: Default display state
 //        if (xpipeline.isSetDefaultDisplay())
 //            pipeline._defaultDisplayState = PipelineActionConfig.displayState.valueOf(xpipeline.getDefaultDisplayState());
+
+        // UNDONE: Add a 'splittable' flag in the schema
+        pipeline.setSplittable(false);
 
         //PipelineJobService.get().addTaskPipeline(pipeline);
         return pipeline;
