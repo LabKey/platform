@@ -18,8 +18,11 @@ package org.labkey.study.pipeline;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.Module;
@@ -54,6 +57,7 @@ import org.labkey.pipeline.xml.TaskType;
 
 import java.io.File;
 import java.net.URI;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -392,7 +396,22 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             Pair<ExpExperiment, ExpRun> pair = provider.getRunCreator().saveExperimentRun(uploadContext, batchId);
             ExpRun run = pair.second;
 
-            // UNDONE: Attach input files to run (maybe use the XarGeneratorTask?)
+            // Keep track of all of the runs that have been created by this task
+            ExpRun expRun = ExperimentService.get().importRun(getJob());
+
+            // TODO: Is there a better way to model this?  Can a run be an input to another run?
+            // Copy the job run's inputs to the assay run's inputs
+            ExpProtocolApplication assayInputApplication = run.getInputProtocolApplication();
+            ExpProtocolApplication jobInputApplication = expRun.getInputProtocolApplication();
+            ExpDataRunInput[] dataInputs = jobInputApplication.getDataInputs();
+            for (ExpDataRunInput dataInput : dataInputs)
+            {
+                ExpData inputData = dataInput.getData();
+                String role = dataInput.getRole();
+                assayInputApplication.addDataInput(user, inputData, role);
+            }
+            assayInputApplication.save(user);
+
 
             // save any job-level custom properties from the run
 //            PropertiesJobSupport jobSupport = getJob().getJobSupport(PropertiesJobSupport.class);
@@ -407,9 +426,10 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             {
                 getJob().info("Deleting run " + run.getName() + " due to cancellation request");
                 run.delete(getJob().getUser());
+                expRun.delete(getJob().getUser());
             }
         }
-        catch (ExperimentException | ValidationException e)
+        catch (SQLException | ExperimentException | ValidationException e)
         {
             throw new PipelineJobException("Failed to save experiment run in the database", e);
         }

@@ -136,6 +136,8 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
         {
             String name = xfileOutput.getName();
             TaskPath taskPath = createTaskPath(xfileOutput);
+            if (xfileOutput.isSetForceToAnalysisDir())
+                taskPath.setForceToAnalysisDir(xfileOutput.getForceToAnalysisDir());
             ret.put(name, taskPath);
         }
 
@@ -238,6 +240,13 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
         }
 
         taskPath.setOptional(!required);
+
+        if (xfile.isSetCopyInput())
+            taskPath.setCopyInput(xfile.getCopyInput());
+
+        if (xfile.isSetSplitFiles())
+            taskPath.setSplitFiles(xfile.getSplitFiles());
+
         return taskPath;
     }
 

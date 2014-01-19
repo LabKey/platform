@@ -79,6 +79,7 @@ import org.labkey.api.exp.xar.XarConstants;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.query.FieldKey;
@@ -111,6 +112,7 @@ import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.labkey.experiment.pipeline.ExpGeneratorHelper;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
@@ -868,6 +870,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         XarReader reader = new XarReader(source, pipelineJob);
         reader.parseAndLoad(reloadExistingRuns);
         return reader.getExperimentRuns();
+    }
+
+    public ExpRun importRun(PipelineJob job) throws SQLException, PipelineJobException, ValidationException
+    {
+        return ExpGeneratorHelper.insertRun(job);
     }
 
     public Set<String> getDataInputRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType... types)

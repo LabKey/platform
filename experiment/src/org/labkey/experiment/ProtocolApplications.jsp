@@ -24,11 +24,13 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ExpRun> me = (JspView<ExpRun>) HttpView.currentView();
     ExpRun run = me.getModelBean();
     Container c = getContainer();
+    int rowCount = 0;
 %>
 
 <table class="labkey-protocol-applications">
@@ -37,15 +39,18 @@
         <td><b>Inputs</b></td>
         <td><b>Outputs</b></td>
     </tr>
-    <% for (ExpProtocolApplication protocolApplication : run.getProtocolApplications()) { %>
-        <tr>
-            <td valign="top"><a href="showApplication.view?rowId=<%= protocolApplication.getRowId() %>"><%= h(protocolApplication.getName()) %></a></td>
+    <% for (ExpProtocolApplication protocolApplication : run.getProtocolApplications())
+    {
+        rowCount++;
+    %>
+        <tr class="<%=text(rowCount%2==0 ? "labkey-row" : "labkey-alternate-row")%>">
+            <td valign="top"><a href="<%=new ActionURL(ExperimentController.ShowApplicationAction.class, c).addParameter("rowId", protocolApplication.getRowId())%>"><%= h(protocolApplication.getName()) %></a></td>
             <td valign="top">
                 <% for (ExpMaterial material : protocolApplication.getInputMaterials()) { %>
-                    <a href="showMaterial.view?rowId=<%= material.getRowId() %>"><%= h(material.getName()) %></a><br>
+                    <a href="<%=new ActionURL(ExperimentController.ShowMaterialAction.class, c).addParameter("rowId", material.getRowId())%>"><%= h(material.getName()) %></a><br>
                 <% } %>
                 <% for (ExpData data : protocolApplication.getInputDatas()) { %>
-                    <a href="showData.view?rowId=<%= data.getRowId() %>"><%= h(data.getName()) %></a>
+                    <a href="<%=new ActionURL(ExperimentController.ShowDataAction.class, c).addParameter("rowId", data.getRowId())%>"><%= h(data.getName()) %></a>
                 <%
                     ExperimentDataHandler handler = data.findDataHandler();
                     ActionURL url = handler == null ? null : handler.getContentURL(c, data);
@@ -54,10 +59,10 @@
             </td>
             <td valign="top">
                 <% for (ExpMaterial material : protocolApplication.getOutputMaterials()) { %>
-                    <a href="showMaterial.view?rowId=<%= material.getRowId() %>"><%= h(material.getName()) %></a><br>
+                    <a href="<%=new ActionURL(ExperimentController.ShowMaterialAction.class, c).addParameter("rowId", material.getRowId())%>"><%= h(material.getName()) %></a><br>
                 <% } %>
                 <% for (ExpData data : protocolApplication.getOutputDatas()) { %>
-                    <a href="showData.view?rowId=<%= data.getRowId() %>"><%= h(data.getName()) %></a>
+                    <a href="<%=new ActionURL(ExperimentController.ShowDataAction.class, c).addParameter("rowId", data.getRowId())%>"><%= h(data.getName()) %></a>
                 <%
                     ExperimentDataHandler handler = data.findDataHandler();
                     ActionURL url = handler == null ? null : handler.getContentURL(c, data);

@@ -15,13 +15,14 @@
  */
 package org.labkey.experiment.pipeline;
 
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.PipelineJobException;
-import org.labkey.experiment.api.ExpRunImpl;
+
 /*
 * User: dax
 * Date: Apr 25, 2013
 */
 public interface XarWriter
 {
-    public void writeToDisk(ExpRunImpl run) throws PipelineJobException;
+    public void writeToDisk(ExpRun run) throws PipelineJobException;
 }

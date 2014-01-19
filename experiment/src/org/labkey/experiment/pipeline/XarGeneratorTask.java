@@ -170,7 +170,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
     }
 
     // XarWriter interface
-    public void writeToDisk(ExpRunImpl run) throws PipelineJobException
+    public void writeToDisk(ExpRun run) throws PipelineJobException
     {
         File f = getLoadingXarFile();
         File tempFile = new File(f.getPath() + ".temp");

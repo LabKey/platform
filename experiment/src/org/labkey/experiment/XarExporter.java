@@ -133,7 +133,7 @@ public class XarExporter
         u.addFile(data, data.getFile(), "", rootPath, data.findDataHandler());
     }
 
-    public void addExperimentRun(ExpRunImpl run) throws ExperimentException
+    public void addExperimentRun(ExpRun run) throws ExperimentException
     {
         if (_experimentRunLSIDs.contains(run.getLSID()))
         {
@@ -170,7 +170,7 @@ public class XarExporter
         {
             xRun.setProperties(properties);
         }
-        ExpProtocolImpl protocol = run.getProtocol();
+        ExpProtocol protocol = run.getProtocol();
         xRun.setProtocolLSID(_relativizedLSIDs.relativize(protocol.getLSID()));
 
         addProtocol(protocol, true);
@@ -225,7 +225,7 @@ public class XarExporter
         return cal;
     }
 
-    private void addProtocolApplication(ExpProtocolApplication application, ExpRunImpl run, ExperimentRunType.ProtocolApplications xApplications)
+    private void addProtocolApplication(ExpProtocolApplication application, ExpRun run, ExperimentRunType.ProtocolApplications xApplications)
         throws ExperimentException
     {
         ProtocolApplicationBaseType xApplication = xApplications.addNewProtocolApplication();

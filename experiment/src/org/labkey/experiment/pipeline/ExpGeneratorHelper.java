@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.pipeline;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.Lsid;
@@ -144,7 +145,12 @@ public class ExpGeneratorHelper
     }
 
 
-    static public ExpRunImpl insertRun(PipelineJob job, XarSource source, XarWriter xarWriter) throws SQLException, PipelineJobException, ValidationException
+    static public ExpRunImpl insertRun(PipelineJob job) throws SQLException, PipelineJobException, ValidationException
+    {
+        return insertRun(job, null, null);
+    }
+
+    static public ExpRunImpl insertRun(PipelineJob job, @Nullable XarSource source, @Nullable XarWriter xarWriter) throws SQLException, PipelineJobException, ValidationException
     {
         ExpRunImpl run;
         try
