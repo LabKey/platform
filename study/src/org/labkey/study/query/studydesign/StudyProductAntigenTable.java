@@ -16,6 +16,7 @@
 package org.labkey.study.query.studydesign;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
@@ -23,6 +24,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.ArrayList;
@@ -64,6 +67,44 @@ public class StudyProductAntigenTable extends DefaultStudyDesignTable
                 public TableInfo getLookupTableInfo()
                 {
                     return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
+                }
+            });
+        }
+        else if ("Gene".equalsIgnoreCase(col.getName()))
+        {
+            col.setFk(new LookupForeignKey("Name")
+            {
+                public TableInfo getLookupTableInfo()
+                {
+                    StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+                    if (study != null)
+                    {
+                        StudyQuerySchema schema = new StudyQuerySchema(study, _userSchema.getUser(), false);
+                        StudyDesignGenesTable result = new StudyDesignGenesTable(schema);
+                        result.setContainerFilter(ContainerFilter.Type.CurrentPlusProject.create(_userSchema.getUser()));
+                        return result;
+                    }
+                    else
+                        return null;
+                }
+            });
+        }
+        else if ("SubType".equalsIgnoreCase(col.getName()))
+        {
+            col.setFk(new LookupForeignKey("Name")
+            {
+                public TableInfo getLookupTableInfo()
+                {
+                    StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+                    if (study != null)
+                    {
+                        StudyQuerySchema schema = new StudyQuerySchema(study, _userSchema.getUser(), false);
+                        StudyDesignSubTypesTable result = new StudyDesignSubTypesTable(schema);
+                        result.setContainerFilter(ContainerFilter.Type.CurrentPlusProject.create(_userSchema.getUser()));
+                        return result;
+                    }
+                    else
+                        return null;
                 }
             });
         }

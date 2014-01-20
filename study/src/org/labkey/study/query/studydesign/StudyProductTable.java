@@ -16,10 +16,15 @@
 package org.labkey.study.query.studydesign;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.ArrayList;
@@ -46,6 +51,30 @@ public class StudyProductTable extends DefaultStudyDesignTable
 
         setName(StudyQuerySchema.PRODUCT_TABLE_NAME);
         setDescription("Contains one row per study product");
+    }
+
+    @Override
+    protected void initColumn(ColumnInfo col)
+    {
+        if ("Type".equalsIgnoreCase(col.getName()))
+        {
+            col.setFk(new LookupForeignKey("Name")
+            {
+                public TableInfo getLookupTableInfo()
+                {
+                    StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+                    if (study != null)
+                    {
+                        StudyQuerySchema schema = new StudyQuerySchema(study, _userSchema.getUser(), false);
+                        StudyDesignImmunogenTypesTable result = new StudyDesignImmunogenTypesTable(schema);
+                        result.setContainerFilter(ContainerFilter.Type.CurrentPlusProject.create(_userSchema.getUser()));
+                        return result;
+                    }
+                    else
+                        return null;
+                }
+            });
+        }
     }
 
     @Override

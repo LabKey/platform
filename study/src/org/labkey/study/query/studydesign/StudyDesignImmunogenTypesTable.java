@@ -24,6 +24,7 @@ import org.labkey.study.query.StudyQuerySchema;
  */
 public class StudyDesignImmunogenTypesTable extends StudyDesignLookupBaseTable
 {
+    // TODO: this should be renamed to StudyDesignProductTypesTable
     public StudyDesignImmunogenTypesTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoStudyDesignImmunogenTypes());
