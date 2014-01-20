@@ -97,11 +97,11 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
     public ModelAndView handleRequest() throws Exception
     {
         //throw any previously-stored exception
-        if(null != _exception)
+        if (null != _exception)
             throw _exception;
 
         //override page template if view requests
-        if(null != _view.getPageTemplate())
+        if (null != _view.getPageTemplate())
             getPageConfig().setTemplate(_view.getPageTemplate());
 
         return _view;
@@ -117,7 +117,7 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
     }
 
     @Override
-    public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+    public void checkPermissions() throws UnauthorizedException
     {
         User user = getUser();
         Container container = getContainer();
@@ -135,7 +135,7 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
                 throw new UnauthorizedException("You do not have permission to view this content.");
         }
         
-        if(!getViewContext().hasAgreedToTermsOfUse())
+        if (!getViewContext().hasAgreedToTermsOfUse())
             throw new TermsOfUseException();
     }
 

@@ -16,7 +16,6 @@
 
 package org.labkey.api.action;
 
-import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 
 /**
@@ -25,5 +24,5 @@ import org.labkey.api.view.UnauthorizedException;
  */
 public interface PermissionCheckable
 {
-    public void checkPermissions() throws TermsOfUseException, UnauthorizedException;
+    public void checkPermissions() throws UnauthorizedException;
 }

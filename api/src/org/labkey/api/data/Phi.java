@@ -1,5 +1,7 @@
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
 * User: adam
 * Date: 1/17/14
@@ -10,5 +12,14 @@ public enum Phi
     NotPHI,
     Limited,
     PHI,
-    Restricted
+    Restricted;
+
+    public static Phi fromString(@Nullable String value)
+    {
+        for (Phi phi : values())
+            if (phi.name().equals(value))
+                return phi;
+
+        return null;
+    }
 }

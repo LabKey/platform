@@ -29,8 +29,9 @@ public enum FacetingBehaviorType
     ALWAYS_OFF("Off",
             "The faceted filter panel will not be shown by default.");
 
-    private String _label;
-    private String _helpText;
+    private final String _label;
+    private final String _helpText;
+
     private static String _helpPopupHtml;
 
     FacetingBehaviorType(String label, String helpText)

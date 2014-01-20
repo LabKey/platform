@@ -15,12 +15,11 @@
  */
 package org.labkey.api.action;
 
-import org.labkey.api.view.TermsOfUseException;
-import org.labkey.api.view.UnauthorizedException;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.validation.BindException;
-import org.springframework.beans.PropertyValues;
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.view.UnauthorizedException;
+import org.springframework.beans.PropertyValues;
+import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -49,7 +48,7 @@ public abstract class FormApiAction<FORM> extends ExtFormAction<FORM> implements
     }
 
     @Override
-    public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+    public void checkPermissions() throws UnauthorizedException
     {
         HttpServletRequest req = getViewContext().getRequest();
         setUseBasicAuthentication(!"GET".equals(req.getMethod()));

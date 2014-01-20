@@ -571,12 +571,12 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         }
     }
 
-    public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+    public void checkPermissions() throws UnauthorizedException
     {
         checkPermissions(_useBasicAuthentication);
     }
 
-    protected void checkPermissions(boolean useBasicAuth) throws TermsOfUseException, UnauthorizedException
+    protected void checkPermissions(boolean useBasicAuth) throws UnauthorizedException
     {
         // ideally, we should pass the bound FORM to getContextualRoles so that
         // actions can determine if the OwnerRole should apply, but this would require
@@ -722,7 +722,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
 
     public static void checkPermissionsAndTermsOfUse(Class<? extends Controller> actionClass, ViewContext context, Set<Role> contextualRoles)
-            throws TermsOfUseException, UnauthorizedException
+            throws UnauthorizedException
     {
         checkActionPermissions(actionClass, context, contextualRoles);
 
