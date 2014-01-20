@@ -16,7 +16,7 @@ Ext4.define('LABKEY.vis.GroupSelector', {
             maxInitSelection: 5
         });
 
-        Ext4.define('ParticipantCategory', {
+        Ext4.define('GroupSelector.ParticipantCategory', {
             extend: 'Ext.data.Model',
             fields : [
                 {name : 'id'},

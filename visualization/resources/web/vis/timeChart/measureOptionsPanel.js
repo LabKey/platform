@@ -37,7 +37,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             }
         }
 
-        Ext4.define('Measure', {
+        Ext4.define('MeasureOptionsPanel.Measure', {
             extend: 'Ext.data.Model',
             fields: [
                 {name: 'id', type: 'integer'},
@@ -48,7 +48,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             ]
         });
 
-        Ext4.define('DimensionValue', {
+        Ext4.define('MeasureOptionsPanel.DimensionValue', {
             extend: 'Ext.data.Model',
             fields: [
                 {name: 'id'},
@@ -64,7 +64,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             ]
         });
 
-        Ext4.define('SimpleValue', {
+        Ext4.define('MeasureOptionsPanel.SimpleValue', {
             extend: 'Ext.data.Model',
             fields: ['value']
         });
@@ -101,7 +101,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             multiSelect: false,
             singleSelect: true,
             store: Ext4.create('Ext.data.Store', {
-                model: 'Measure',
+                model: 'MeasureOptionsPanel.Measure',
                 proxy: {
                     type: 'memory',
                     reader: {
@@ -549,7 +549,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
 
     newMeasureDateStore: function(measure, measureIndex, toFireEvent) {
         return Ext4.create('Ext.data.Store', {
-            model: 'DimensionValue',
+            model: 'MeasureOptionsPanel.DimensionValue',
             proxy: {
                 type: 'ajax',
                 url : LABKEY.ActionURL.buildURL('visualization', 'getMeasures', LABKEY.ActionURL.getContainer(), {
@@ -695,7 +695,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
 
     newDimensionStore: function(measure, dimension, toFireEvent) {
         return Ext4.create('Ext.data.Store', {
-            model: 'DimensionValue',
+            model: 'MeasureOptionsPanel.DimensionValue',
             proxy: {
                 type: 'ajax',
                 url : LABKEY.ActionURL.buildURL("visualization", "getDimensions", null, measure),
@@ -845,7 +845,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                             autoHeight: true,
                             enableHdMenu: false,
                             store: Ext4.create('Ext.data.Store', {
-                                model: 'SimpleValue',
+                                model: 'MeasureOptionsPanel.SimpleValue',
                                 proxy: {
                                     type: 'memory',
                                     reader: {

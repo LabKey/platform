@@ -19,7 +19,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
             range: {type: "automatic"}
         });
 
-        Ext4.define('DimensionValue', {
+        Ext4.define('XAxisOptionsPanel.DimensionValue', {
             extend: 'Ext.data.Model',
             fields: [
                 {name: 'id'},
@@ -409,7 +409,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
 
     newZeroDateStore: function() {
         return Ext4.create('Ext.data.Store', {
-            model: 'DimensionValue',
+            model: 'XAxisOptionsPanel.DimensionValue',
             proxy: {
                 type: 'ajax',
                 url : LABKEY.ActionURL.buildURL('visualization', 'getZeroDate', LABKEY.ActionURL.getContainer(), {
