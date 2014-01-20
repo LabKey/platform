@@ -89,7 +89,6 @@ import org.labkey.api.util.HString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
@@ -101,7 +100,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
@@ -1699,7 +1697,7 @@ public class IssuesController extends SpringActionController
     public class RssAction extends SimpleViewAction
     {
         @Override
-        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        public void checkPermissions() throws UnauthorizedException
         {
             setUseBasicAuthentication(true);
             super.checkPermissions();

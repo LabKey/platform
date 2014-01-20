@@ -154,7 +154,6 @@ import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.TabStripView;
-import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -1038,7 +1037,7 @@ public class AdminController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public class ResetLogoAction extends SimpleRedirectAction
     {
-        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        public void checkPermissions() throws UnauthorizedException
         {
             super.checkPermissions();
 
@@ -1058,7 +1057,7 @@ public class AdminController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public class ResetPropertiesAction extends SimpleRedirectAction
     {
-        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        public void checkPermissions() throws UnauthorizedException
         {
             super.checkPermissions();
 
@@ -1106,7 +1105,7 @@ public class AdminController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public class ResetFaviconAction extends SimpleRedirectAction
     {
-        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        public void checkPermissions() throws UnauthorizedException
         {
             super.checkPermissions();
 
@@ -1135,7 +1134,7 @@ public class AdminController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public class DeleteCustomStylesheetAction extends SimpleRedirectAction
     {
-        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        public void checkPermissions() throws UnauthorizedException
         {
             super.checkPermissions();
 

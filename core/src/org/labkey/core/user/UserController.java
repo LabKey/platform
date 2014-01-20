@@ -103,7 +103,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
@@ -769,7 +768,7 @@ public class UserController extends SpringActionController
     public class ShowUserHistoryAction extends SimpleViewAction
     {
         @Override
-        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        public void checkPermissions() throws UnauthorizedException
         {
             super.checkPermissions();
 
@@ -1242,7 +1241,7 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        public void checkPermissions() throws UnauthorizedException
         {
             super.checkPermissions();
 
@@ -2121,7 +2120,7 @@ public class UserController extends SpringActionController
     public class ImpersonateGroupAction extends SimpleRedirectAction<ImpersonateGroupForm>
     {
         @Override
-        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        public void checkPermissions() throws UnauthorizedException
         {
             super.checkPermissions();
             requiresProjectOrSiteAdmin();
@@ -2162,7 +2161,7 @@ public class UserController extends SpringActionController
     public class ImpersonateRoleAction extends SimpleRedirectAction<ImpersonateRoleForm>
     {
         @Override
-        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        public void checkPermissions() throws UnauthorizedException
         {
             super.checkPermissions();
 

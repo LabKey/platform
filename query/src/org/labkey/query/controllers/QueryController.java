@@ -48,36 +48,7 @@ import org.labkey.api.etl.ListofMapsDataIterator;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.query.AbstractQueryImportAction;
-import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.CustomViewInfo;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.DuplicateKeyException;
-import org.labkey.api.query.ExportScriptModel;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.InvalidKeyException;
-import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryException;
-import org.labkey.api.query.QueryForm;
-import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QueryParseException;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryUpdateForm;
-import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.QueryUpdateServiceException;
-import org.labkey.api.query.QueryUrls;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.SchemaKey;
-import org.labkey.api.query.SimpleSchemaTreeVisitor;
-import org.labkey.api.query.TempQuerySettings;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.UserSchemaAction;
+import org.labkey.api.query.*;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.IgnoresTermsOfUse;
@@ -170,7 +141,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -216,14 +186,12 @@ public class QueryController extends SpringActionController
     {
         public static ActionURL urlManageRemoteConnection(Container c)
         {
-            ActionURL url = new ActionURL(QueryController.ManageRemoteConnectionsAction.class, c);
-            return url;
+            return new ActionURL(ManageRemoteConnectionsAction.class, c);
         }
 
         public static ActionURL urlCreatetRemoteConnection(Container c)
         {
-            ActionURL url = new ActionURL(QueryController.EditRemoteConnectionAction.class, c);
-            return url;
+            return new ActionURL(EditRemoteConnectionAction.class, c);
         }
 
         public static ActionURL urlEditRemoteConnection(Container c, String connectionName)
@@ -235,8 +203,7 @@ public class QueryController extends SpringActionController
 
         public static ActionURL urlSaveRemoteConnection(Container c)
         {
-            ActionURL url = new ActionURL(QueryController.EditRemoteConnectionAction.class, c);
-            return url;
+            return new ActionURL(EditRemoteConnectionAction.class, c);
         }
 
         public static ActionURL urlDeleteRemoteConnection(Container c, @Nullable String connectionName)
@@ -1603,12 +1570,7 @@ public class QueryController extends SpringActionController
                 _export(form, view);
                 return null;
             }
-            catch (QueryService.NamedParameterNotProvided x)
-            {
-                ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
-                throw x;
-            }
-            catch (QueryParseException x)
+            catch (QueryService.NamedParameterNotProvided | QueryParseException x)
             {
                 ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
                 throw x;
@@ -2646,10 +2608,10 @@ public class QueryController extends SpringActionController
             if (form.getLimit() != null)
             {
                 form.getQuerySettings().setShowRows(ShowRows.PAGINATED);
-                form.getQuerySettings().setMaxRows(form.getLimit().intValue());
+                form.getQuerySettings().setMaxRows(form.getLimit());
             }
             if (form.getStart() != null)
-                form.getQuerySettings().setOffset(form.getStart().intValue());
+                form.getQuerySettings().setOffset(form.getStart());
             if (form.getContainerFilter() != null)
             {
                 // If the user specified an incorrect filter, throw an IllegalArgumentException

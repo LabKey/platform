@@ -98,7 +98,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
@@ -243,7 +242,7 @@ public class CoreController extends SpringActionController
     abstract class BaseStylesheetAction extends ExportAction
     {
         @Override
-        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        public void checkPermissions() throws UnauthorizedException
         {
             // Stylesheets can be retrieved always by anyone.  This do-nothing override is even more permissive than
             //  using @RequiresNoPermission and @IgnoresTermsOfUse since it also allows access in the root container even
