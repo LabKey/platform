@@ -1944,6 +1944,8 @@
           <ns:fkDbSchema>study</ns:fkDbSchema>
         </ns:fk>
       </ns:column>
+      <ns:column columnName="Lab"/>
+      <ns:column columnName="SampleType"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="AssaySpecimenVisit" tableDbType="TABLE">

@@ -18,11 +18,11 @@
 
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.api.view.WebThemeManager" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="org.labkey.study.SampleManager" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page import="org.labkey.study.model.AssaySpecimenConfigImpl" %>
 <%@ page import="org.labkey.study.model.LocationImpl" %>
@@ -31,7 +31,6 @@
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -46,15 +45,15 @@
     StudyImpl study = StudyManager.getInstance().getStudy(c);
 
     User user = getUser();
-    boolean canEdit  = c.hasPermission(user, UpdatePermission.class);
+    boolean canEdit = c.hasPermission(user, UpdatePermission.class);
 
     String assayPlan = "";
     if (study != null && study.getAssayPlan() != null)
         assayPlan = h(study.getAssayPlan()).replaceAll("\n", "<br/>");
 
     WebTheme theme = WebThemeManager.getTheme(c);
-    String link        = theme.getLinkColor();
-    String grid        = theme.getGridColor();
+    String link = theme.getLinkColor();
+    String grid = theme.getGridColor();
 %>
 
 <style type="text/css">
@@ -144,15 +143,25 @@
 <%
             for (AssaySpecimenConfigImpl assaySpecimen : assaySpecimenConfigs)
             {
-                // concatenate sample type (i.e. primary, derivative, tube type)
+                // concatenate sample type (i.e. sample type | tube type)
                 String sampleType = "";
+                String sep = "";
+                if (assaySpecimen.getSampleType() != null)
+                {
+                    sampleType += assaySpecimen.getSampleType();
+                    sep = "|";
+                }
                 if (assaySpecimen.getTubeType() != null)
                 {
-                    sampleType += assaySpecimen.getTubeType();
+                    sampleType += sep + assaySpecimen.getTubeType();
                 }
 
                 String locationLabel = "";
-                if (assaySpecimen.getLocationId() != null)
+                if (assaySpecimen.getLab() != null)
+                {
+                    locationLabel += assaySpecimen.getLab();
+                }
+                else if (assaySpecimen.getLocationId() != null)
                 {
                     LocationImpl location = StudyManager.getInstance().getLocation(c, assaySpecimen.getLocationId());
                     locationLabel = location != null ? location.getLabel() : "";

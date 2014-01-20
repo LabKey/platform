@@ -111,7 +111,7 @@ Enter vaccine design information in the grids below.
     <ul>
         <li>Each immunogen and adjuvant in the study should be listed on one row of the grids below.</li>
         <li>Immunogens and adjuvants should have unique names.</li>
-        <li>If possible the immunogen description should include specific sequences of HIV Antigens included in the immunogen.</li>
+        <li>If possible, the immunogen description should include specific sequences of HIV Antigens included in the immunogen.</li>
         <li>Use the manage immunizations page to describe the schedule of immunizations and combinations of immunogens and adjuvants administered at each timepoint.</li>
         <li>
             Configure dropdown options at the project level to be shared across study designs or within this folder for

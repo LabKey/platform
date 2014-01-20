@@ -52,17 +52,32 @@ public class StudyDesignController extends BaseStudyController
     }
 
     @RequiresPermissionClass(UpdatePermission.class)
-    public class ManageAssaySpecimenAction extends SimpleViewAction<Object>
+    public class ManageAssaySpecimenAction extends SimpleViewAction<AssaySpecimenForm>
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(AssaySpecimenForm form, BindException errors) throws Exception
         {
-            return new JspView<>("/org/labkey/study/view/studydesign/manageAssaySpecimen.jsp", o);
+            return new JspView<>("/org/labkey/study/view/studydesign/manageAssaySpecimen.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             _appendManageStudy(root);
             return root.addChild("Manage Assay/Specimen Configurations");
+        }
+    }
+
+    public static class AssaySpecimenForm
+    {
+        private boolean useAlternateLookupFields;
+
+        public boolean isUseAlternateLookupFields()
+        {
+            return useAlternateLookupFields;
+        }
+
+        public void setUseAlternateLookupFields(boolean useAlternateLookupFields)
+        {
+            this.useAlternateLookupFields = useAlternateLookupFields;
         }
     }
 

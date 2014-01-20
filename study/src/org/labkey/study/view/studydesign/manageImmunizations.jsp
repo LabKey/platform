@@ -76,7 +76,12 @@
 <script type="text/javascript">
     Ext4.onReady(function(){
         var treatmentsGrid = Ext4.create('LABKEY.ext4.TreatmentsGrid', {
-            renderTo : "treatments-grid"
+            renderTo : "treatments-grid",
+            listeners: {
+                treatmentsAddedOrRemoved: function() {
+                    immunizationScheduleGrid.getImmunizationScheduleData(false);
+                }
+            }
         });
 
         var immunizationScheduleGrid = Ext4.create('LABKEY.ext4.ImmunizationScheduleGrid', {

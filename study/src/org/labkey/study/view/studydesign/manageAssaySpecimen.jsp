@@ -15,17 +15,20 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.study.security.permissions.ManageStudyPermission" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -38,6 +41,9 @@
   }
 %>
 <%
+    JspView<StudyDesignController.AssaySpecimenForm> me = (JspView<StudyDesignController.AssaySpecimenForm>) HttpView.currentView();
+    StudyDesignController.AssaySpecimenForm form = me.getModelBean();
+
     Container c = getContainer();
     User user = getUser();
     ActionURL returnURL = getActionURL();
@@ -83,11 +89,26 @@
 
     X.onReady(function(){
 
+    var scColumns = ['RowId', 'AssayName', 'Description'];
+<%
+    if (form.isUseAlternateLookupFields())
+    {
+        %>scColumns.push('Source');<%
+        %>scColumns.push('LocationId');<%
+        %>scColumns.push('TubeType');<%
+    }
+    else
+    {
+        %>scColumns.push('Lab');<%
+        %>scColumns.push('SampleType');<%
+    }
+%>
+
     //create a Store bound to the 'AssaySpecimen' table in the 'study' schema
     _storeSC = X.create('LABKEY.ext4.Store', {
         schemaName: 'study',
         queryName: 'AssaySpecimen',
-        columns : ['RowId', 'AssayName', 'Description', 'Source', 'LocationId', 'TubeType'],
+        columns : scColumns,
         sort : ['Description', 'AssayName']
     });
     zz = _storeSC;
@@ -246,6 +267,43 @@
             win.show();
         }
     });
+
+    var projectMenu = null;
+    if (LABKEY.container.type != "project")
+    {
+        var projectPath = LABKEY.container.path.substring(0, LABKEY.container.path.indexOf("/", 1));
+        projectMenu = {
+            text: 'Project',
+            menu: {
+                items: [{
+                    text: 'Labs',
+                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignLabs'})
+                },{
+                    text: 'Sample Types',
+                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignSampleTypes'})
+                }]
+            }
+        };
+    }
+
+    var folderMenu = {
+        text: 'Folder',
+        menu: {
+            items: [{
+                text: 'Labs',
+                href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignLabs'})
+            },{
+                text: 'SampleTypes',
+                href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignSampleTypes'})
+            }]
+        }
+    };
+
+    var menu = Ext4.create('Ext.button.Button', {
+        text: 'Configure',
+        renderTo: 'config-dropdown-menu',
+        menu: projectMenu ? {items: [projectMenu, folderMenu]} : folderMenu.menu
+    });
 });
 
 function createAssayPlanPanel(value)
@@ -297,11 +355,21 @@ function showUpdateConfigurationDialog(grid, record, item, index)
         var formItem;
         if (column.editor)
         {
-            formItem = column.editor;
-            formItem.fieldLabel = column.header || column.text;
-            formItem.name = column.dataIndex;
+            // lab and sample type lookups should use container filter of CurrentPlusProject
+            if (column.dataIndex == "Lab" || column.dataIndex == "SampleType")
+            {
+                var displayField = column.dataIndex == "SampleType" ? "Name" : "Label";
+                formItem = new LABKEY.ext4.VaccineDesignDisplayHelper().getStudyDesignFieldEditor(column.dataIndex, 'StudyDesign' + column.dataIndex + 's', false, column.header, true, displayField);
+            }
+            else
+            {
+                formItem = column.editor;
+                formItem.fieldLabel = column.header || column.text;
+                formItem.name = column.dataIndex;
+                formItem.helpPopup = null;
+            }
+
             formItem.value = record ? record.get(column.dataIndex) : null;
-            formItem.helpPopup = null;
             formItems.push(formItem);
         }
     });
@@ -555,9 +623,27 @@ function removeSVC(el, scRowId, vRowId)
 })();
 </script>
 
+Enter assay schedule information in the grids below.
+<div style="width: 810px;">
+    <ul>
+        <li>Use the "Insert New" button in the assay/specimen configurations grid to add a new assay.</li>
+        <li>Select the visits for each assay in the assay/specimen visit mapping grid to define the expected assay schedule for the study.</li>
+        <li <%=form.isUseAlternateLookupFields() ? "style='display:none;'" : ""%>>
+            Configure dropdown options at the project level to be shared across study designs or within this folder for
+            study specific properties: <span id='config-dropdown-menu'></span>
+        </li>
+    </ul>
+</div>
 <div id="AssaySpecimenConfigGrid"></div>
 <span style='font-style: italic; font-size: smaller;'>* Double click to edit an assay/specimen configuration</span>
-<br/><br/><br/>
+<br/><br/>
+<%
+    if (canManageStudy && form.isUseAlternateLookupFields())
+    {
+        %><%= textLink("Manage Locations", StudyController.ManageLocationsAction.class) %><br/><%
+    }
+%>
+<br/>
 <div id="AssaySpecimenVisitPanel"></div>
 <span id="CreateNewVisitTextLink"></span>
 <%

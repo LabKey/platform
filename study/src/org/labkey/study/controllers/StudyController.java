@@ -292,9 +292,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public ActionURL getManageAssaySpecimenURL(Container container)
+        public ActionURL getManageAssaySpecimenURL(Container container, boolean useAlternateLookupFields)
         {
-            return new ActionURL(StudyDesignController.ManageAssaySpecimenAction.class, container);
+            ActionURL url = new ActionURL(StudyDesignController.ManageAssaySpecimenAction.class, container);
+            url.addParameter("useAlternateLookupFields", useAlternateLookupFields);
+            return url;
         }
     }
 

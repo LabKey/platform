@@ -28,5 +28,6 @@ public class StudyDesignLabsTable extends StudyDesignLookupBaseTable
     {
         super(schema, StudySchema.getInstance().getTableInfoStudyDesignLabs());
         setName("StudyDesignLabs");
+        setTitleColumn("Label");
     }
 }

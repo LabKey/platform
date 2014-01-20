@@ -164,48 +164,6 @@ Ext4.define('LABKEY.ext4.BaseVaccineDesignGrid', {
         // No op
     },
 
-    getStudyDesignFieldEditor : function(name, queryName, hideLabel, label, allowBlank) {
-        if (queryName != null)
-        {
-            return {
-                xtype : 'labkey-combo',
-                hideFieldLabel: hideLabel,
-                fieldLabel: hideLabel ? null : (label || name),
-                name: name,
-                allowBlank: allowBlank != undefined ? allowBlank : true,
-                forceSelection : false, // allow usage of inactive types
-                editable : false,
-                queryMode : 'local',
-                displayField : 'Label',
-                valueField : 'Name',
-                store : Ext4.create('LABKEY.ext4.Store', {
-                    schemaName: 'study',
-                    queryName: queryName,
-                    columns: 'Name,Label',
-                    filterArray: [LABKEY.Filter.create('Inactive', false)],
-                    containerFilter: LABKEY.container.type == 'project' ? 'Current' : 'CurrentPlusProject',
-                    sort: 'Label',
-                    autoLoad: true,
-                    listeners: {
-                        load: function(store) {
-                            store.insert(0, {Name: null});
-                        }
-                    }
-                })
-            };
-        }
-        else
-        {
-            return {
-                xtype: 'textfield',
-                hideFieldLabel: hideLabel,
-                fieldLabel: hideLabel ? null : (label || name),
-                name: name,
-                allowBlank: allowBlank != undefined ? allowBlank : true
-            }
-        }
-    },
-
     onFailure : function(text) {
         Ext4.Msg.show({
             cls: 'data-window',
@@ -258,9 +216,9 @@ Ext4.define('LABKEY.ext4.StudyProductsGrid', {
         // set hidden columns and add editors where necessary
         Ext4.each(columns, function(col){
             if (col.dataIndex == 'Label')
-                col.editor = this.getStudyDesignFieldEditor(col.dataIndex, null, false, col.header, false);
+                col.editor = new LABKEY.ext4.VaccineDesignDisplayHelper().getStudyDesignFieldEditor(col.dataIndex, null, false, col.header, false);
             else if (col.dataIndex == 'Type')
-                col.editor = this.getStudyDesignFieldEditor(col.dataIndex, 'StudyDesignImmunogenTypes', false, col.header, true);
+                col.editor = new LABKEY.ext4.VaccineDesignDisplayHelper().getStudyDesignFieldEditor(col.dataIndex, 'StudyDesignImmunogenTypes', false, col.header, true);
 
             if (this.hiddenColumns.indexOf(col.dataIndex) > -1)
             {
@@ -389,6 +347,8 @@ Ext4.define('LABKEY.ext4.ImmunogensGrid', {
             }
         });
 
+        var vaccineDesignHelper = new LABKEY.ext4.VaccineDesignDisplayHelper();
+
         var grid = Ext4.create('Ext.grid.Panel', {
             minHeight: 110,
             maxHeight: 200,
@@ -399,10 +359,10 @@ Ext4.define('LABKEY.ext4.ImmunogensGrid', {
             columns: [
                 { text: 'Row Id', dataIndex: 'RowId', editable: false, hidden: true, menuDisabled: true },
                 { text: 'Product Id', dataIndex: 'ProductId', editable: false, hidden: true, menuDisabled: true },
-                { text: 'Gene', dataIndex: 'Gene', editable: true, editor: this.getStudyDesignFieldEditor('Gene', 'StudyDesignGenes', true), menuDisabled: true, renderer: 'htmlEncode' },
-                { text: 'SubType', dataIndex: 'SubType', editable: true, editor: this.getStudyDesignFieldEditor('SubType', 'StudyDesignSubTypes', true), menuDisabled: true, renderer: 'htmlEncode' },
-                { text: 'GenBank Id', dataIndex: 'GenBankId', editable: true, editor: this.getStudyDesignFieldEditor('GenBankId', null, true), menuDisabled: true, renderer: 'htmlEncode' },
-                { text: 'Sequence', dataIndex: 'Sequence', editable: true, editor: this.getStudyDesignFieldEditor('Sequence', null, true), menuDisabled: true, renderer: 'htmlEncode' }
+                { text: 'Gene', dataIndex: 'Gene', editable: true, editor: vaccineDesignHelper.getStudyDesignFieldEditor('Gene', 'StudyDesignGenes', true), menuDisabled: true, renderer: 'htmlEncode' },
+                { text: 'SubType', dataIndex: 'SubType', editable: true, editor: vaccineDesignHelper.getStudyDesignFieldEditor('SubType', 'StudyDesignSubTypes', true), menuDisabled: true, renderer: 'htmlEncode' },
+                { text: 'GenBank Id', dataIndex: 'GenBankId', editable: true, editor: vaccineDesignHelper.getStudyDesignFieldEditor('GenBankId', null, true), menuDisabled: true, renderer: 'htmlEncode' },
+                { text: 'Sequence', dataIndex: 'Sequence', editable: true, editor: vaccineDesignHelper.getStudyDesignFieldEditor('Sequence', null, true), menuDisabled: true, renderer: 'htmlEncode' }
             ],
             dockedItems: [{
                 xtype: 'toolbar',
@@ -564,6 +524,49 @@ Ext4.define('LABKEY.ext4.VaccineDesignDisplayHelper', {
         }
 
         return html;
+    },
+
+    // helper function to get field editor for a study design lookup combo or a text field
+    getStudyDesignFieldEditor : function(name, queryName, hideLabel, label, allowBlank, displayField) {
+        if (queryName != null)
+        {
+            return {
+                xtype : 'labkey-combo',
+                hideFieldLabel: hideLabel,
+                fieldLabel: hideLabel ? null : (label || name),
+                name: name,
+                allowBlank: allowBlank != undefined ? allowBlank : true,
+                forceSelection : false, // allow usage of inactive types
+                editable : false,
+                queryMode : 'local',
+                displayField : displayField || 'Label',
+                valueField : 'Name',
+                store : Ext4.create('LABKEY.ext4.Store', {
+                    schemaName: 'study',
+                    queryName: queryName,
+                    columns: 'Name,Label',
+                    filterArray: [LABKEY.Filter.create('Inactive', false)],
+                    containerFilter: LABKEY.container.type == 'project' ? 'Current' : 'CurrentPlusProject',
+                    sort: 'Label',
+                    autoLoad: true,
+                    listeners: {
+                        load: function(store) {
+                            store.insert(0, {Name: null});
+                        }
+                    }
+                })
+            };
+        }
+        else
+        {
+            return {
+                xtype: 'textfield',
+                hideFieldLabel: hideLabel,
+                fieldLabel: hideLabel ? null : (label || name),
+                name: name,
+                allowBlank: allowBlank != undefined ? allowBlank : true
+            }
+        }
     }
 });
 
@@ -589,6 +592,8 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
 
     constructor : function(config) {
         this.callParent([config]);
+
+        this.addEvents('treatmentsAddedOrRemoved');
     },
 
     initComponent : function() {
@@ -640,7 +645,7 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
         // set hidden columns and add editors where necessary
         Ext4.each(columns, function(col){
             if (col.dataIndex == 'Label')
-                col.editor = this.getStudyDesignFieldEditor(col.dataIndex, null, false, col.header, false);
+                col.editor = new LABKEY.ext4.VaccineDesignDisplayHelper().getStudyDesignFieldEditor(col.dataIndex, null, false, col.header, false);
             else if (col.dataIndex == 'Description')
                 col.editor = { xtype: 'textarea', fieldLabel: col.header, name: col.dataIndex };
 
@@ -690,7 +695,7 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
 
                         var selected = recordProductIds[productRecord.get('RowId')] != undefined;
 
-                        var routeLookupField = this.getStudyDesignFieldEditor('Route', 'StudyDesignRoutes', true);
+                        var routeLookupField = new LABKEY.ext4.VaccineDesignDisplayHelper().getStudyDesignFieldEditor('Route', 'StudyDesignRoutes', true);
                         Ext4.apply(routeLookupField, {
                             id: Ext4.id(), emptyText: 'route', width: 150, disabled: !selected,
                             value: (selected ? recordProductIds[productRecord.get('RowId')].Route : null)
@@ -854,6 +859,9 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
                         if (newRecord)
                             this.showInsertUpdate(this.grid, null, 0, newRecord);
                     }, this, {single: true});
+
+                    // we also need to tell the Immunization Schedule grid that it needs to reload the treatment info
+                    this.fireEvent('treatmentsAddedOrRemoved');
                 }
 
                 // reload the grid store
@@ -888,9 +896,13 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
                 url     : LABKEY.ActionURL.buildURL('study-design', 'deleteTreatment.api'),
                 method  : 'POST',
                 jsonData: { id : record.get("RowId") },
+                scope   : this,
                 success : function(resp){
-                    // reload the page so that the treatments grid and the immunizations schedule grid are updated
-                    window.location.reload();
+                    // reload the grid store
+                    this.grid.getStore().reload();
+
+                    // we also need to tell the Immunization Schedule grid that it needs to reload the treatment info
+                    this.fireEvent('treatmentsAddedOrRemoved');
                 }
             });
         }
@@ -1071,7 +1083,7 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
         // set hidden columns and add editors where necessary
         Ext4.each(columns, function(col){
             if (col.dataIndex == 'Label')
-                col.editor = this.getStudyDesignFieldEditor(col.dataIndex, null, false, 'Label', false);
+                col.editor = new LABKEY.ext4.VaccineDesignDisplayHelper().getStudyDesignFieldEditor(col.dataIndex, null, false, 'Label', false);
             else if (col.dataIndex == 'SubjectCount')
                 col.editor = { xtype: 'numberfield', fieldLabel: col.header, name: col.dataIndex, minValue: 0, allowDecimals: false };
 

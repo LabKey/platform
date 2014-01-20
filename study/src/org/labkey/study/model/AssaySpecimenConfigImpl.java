@@ -35,6 +35,8 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
     private Integer _primaryTypeId;
     private Integer _derivativeTypeId;
     private String _tubeType;
+    private String _lab;
+    private String _sampleType;
 
     public AssaySpecimenConfigImpl()
     {
@@ -128,5 +130,25 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
     public void setTubeType(String tubeType)
     {
         _tubeType = tubeType;
+    }
+
+    public String getLab()
+    {
+        return _lab;
+    }
+
+    public void setLab(String lab)
+    {
+        _lab = lab;
+    }
+
+    public String getSampleType()
+    {
+        return _sampleType;
+    }
+
+    public void setSampleType(String sampleType)
+    {
+        _sampleType = sampleType;
     }
 }
