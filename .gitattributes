@@ -3224,6 +3224,7 @@ study/resources/schemas/dbscripts/sqlserver/study-13.35-13.36.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-13.36-13.37.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-13.37-13.38.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-13.38-13.39.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-13.39-13.40.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-create.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
