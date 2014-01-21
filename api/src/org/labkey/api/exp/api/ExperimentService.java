@@ -92,6 +92,7 @@ public class ExperimentService
 
         ExpMaterial createExpMaterial(Container container, String lsid, String name);
         ExpMaterial getExpMaterial(int rowid);
+        List<? extends ExpMaterial> getExpMaterials(Collection<Integer> rowids);
         ExpMaterial getExpMaterial(String lsid);
 
         /**
@@ -290,7 +291,7 @@ public class ExperimentService
          * @param job Pipeline job.
          * @return the run created from the job's actions.
          */
-        public ExpRun importRun(PipelineJob job) throws SQLException, PipelineJobException, ValidationException;
+        public ExpRun importRun(PipelineJob job, XarSource source) throws SQLException, PipelineJobException, ValidationException;
 
         /**
          * Provides access to an object that should be locked before inserting experiment runs, protocols, etc.

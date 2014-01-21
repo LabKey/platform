@@ -47,7 +47,7 @@ public class XMLFileType extends FileType
 
     public XMLFileType(String namespaceURI, Collection<String> rootElements)
     {
-        super("xml");
+        super(".xml");
         _namespace = namespaceURI;
         _rootElements = rootElements;
     }

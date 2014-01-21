@@ -74,7 +74,7 @@ public class RowMapFactory<V>
         return new RowMap<>(_findMap, row);
     }
 
-    public RowMap<V> getRowMap(V[] row)
+    public RowMap<V> getRowMap(V... row)
     {
         return new RowMap<>(_findMap, Arrays.asList(row));      // TODO: Pass through actual array?  Different class?  Static factory?
     }

@@ -33,9 +33,9 @@ class TabFileType extends FileType
     public TabFileType(List<String> suffixes, String defaultSuffix)
     {
         super(suffixes, defaultSuffix);
-        if ("tsv".equals(defaultSuffix))
+        if (".tsv".equals(defaultSuffix))
             delim = "\t";
-        else if ("csv".equals(defaultSuffix))
+        else if (".csv".equals(defaultSuffix))
             delim = ",";
         else
             throw new IllegalArgumentException("Only tsv or csv currently supported");

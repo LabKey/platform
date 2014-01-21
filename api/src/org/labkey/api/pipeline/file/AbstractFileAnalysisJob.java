@@ -16,19 +16,20 @@
 package org.labkey.api.pipeline.file;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.collections.RowMapFactory;
+import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.pipeline.*;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -50,6 +51,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     private File _dirData;
     private File _dirAnalysis;
     private File _fileParameters;
+    private File _fileJobInfo;
     private List<File> _filesInput;
     private List<FileType> _inputTypes;
     private boolean _splittable = true;
@@ -77,7 +79,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _protocolName = protocolName;
 
         _fileParameters = fileParameters;
-        getActionSet().add(_fileParameters, ANALYSIS_PARAMETERS_ROLE_NAME);
+        getActionSet().add(_fileParameters, ANALYSIS_PARAMETERS_ROLE_NAME); // input
         _dirAnalysis = _fileParameters.getParentFile();
 
         // Load parameter files
@@ -110,6 +112,11 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         }
 
         setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName));
+
+        // Write out job information
+        _fileJobInfo = TabLoader.TSV_FILE_TYPE.newFile(_dirAnalysis, _baseName);
+        writeJobInfoTSV(_fileJobInfo);
+        getParameters().put(PIPELINE_JOB_INFO_PARAM, _fileJobInfo.getAbsolutePath());
     }
 
     public AbstractFileAnalysisJob(AbstractFileAnalysisJob job, File fileInput)
@@ -132,6 +139,18 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _inputTypes = FileType.findTypes(job._inputTypes, _filesInput);
         _baseName = (_inputTypes.isEmpty() ? fileInput.getName() : _inputTypes.get(0).getBaseName(fileInput));
         setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName));
+
+        try
+        {
+            // Write out job information specific to the fraction job.
+            File jobPropertiesFile = TabLoader.TSV_FILE_TYPE.newFile(_dirAnalysis, _baseName);
+            writeJobInfoTSV(jobPropertiesFile);
+            getParameters().put(PIPELINE_JOB_INFO_PARAM, jobPropertiesFile.getAbsolutePath());
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     public void clearActionSet(ExpRun run)
@@ -217,6 +236,11 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     public List<File> getInputFiles()
     {
         return _filesInput;
+    }
+
+    public File getJobInfoFile()
+    {
+        return _fileJobInfo;
     }
 
     public File getParametersFile()
@@ -328,4 +352,48 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         String doGZ = getParameters().get("pipeline, gzip outputs");
         return "yes".equalsIgnoreCase(doGZ)?FileType.gzSupportLevel.PREFER_GZ:FileType.gzSupportLevel.SUPPORT_GZ;
     }
+
+    /**
+     * Write out the job info as a tsv file similar to the R transformation runProperties format.
+     * This is a info file for an entire job (or split job) that command line or script tasks may use
+     * to determine the inputs files and other job related metadata.
+     *
+     * @see org.labkey.api.qc.TsvDataExchangeHandler
+     * @link https://www.labkey.org/wiki/home/Documentation/page.view?name=runProperties
+     */
+    private void writeJobInfoTSV(File file) throws IOException
+    {
+        RowMapFactory<Object> factory = new RowMapFactory<>("Name", "Value", "Type");
+        List<Map<String, Object>> rows = new ArrayList<>();
+        rows.add(factory.getRowMap("protocolName", getProtocolName(), "java.lang.String"));
+        rows.add(factory.getRowMap("provider", getProvider(), "java.lang.String"));
+        rows.add(factory.getRowMap("description", getDescription(), "java.lang.String"));
+        rows.add(factory.getRowMap("taskPipelineId", getTaskPipelineId(), "java.lang.String"));
+        rows.add(factory.getRowMap("jobGUID", getJobGUID(), "java.lang.String"));
+        rows.add(factory.getRowMap("parentGUID", getParentGUID(), "java.lang.String"));
+        rows.add(factory.getRowMap("splitJob", isSplitJob(), "java.lang.Boolean"));
+
+        rows.add(factory.getRowMap("containerPath", getContainer().getPath(), "java.lang.String"));
+        rows.add(factory.getRowMap("containerId", getContainer().getEntityId(), "java.lang.String"));
+        rows.add(factory.getRowMap("user", getUser().getEmail(), "java.lang.String"));
+
+        rows.add(factory.getRowMap("pipeRoot", getPipeRoot().getRootPath(), "java.lang.String"));
+
+        // FileAnalysisJobSupport properties
+        rows.add(factory.getRowMap("baseName", getBaseName(), "java.lang.String"));
+        rows.add(factory.getRowMap("joinedBaseName", getJoinedBaseName(), "java.lang.String"));
+        rows.add(factory.getRowMap("analysisDirectory", getAnalysisDirectory(), "java.lang.String"));
+        rows.add(factory.getRowMap("dataDirectory", getDataDirectory(), "java.lang.String"));
+
+        // TODO: Perhaps move this tsv writer to the task so we can get work directory and input types
+        for (File inputFile : getInputFiles())
+        {
+            rows.add(factory.getRowMap("inputFile", inputFile, "java.io.File")); // Type = String or File?
+        }
+
+        TSVMapWriter tsvWriter = new TSVMapWriter(rows);
+        tsvWriter.setHeaderRowVisible(false);
+        tsvWriter.write(file);
+    }
+
 }

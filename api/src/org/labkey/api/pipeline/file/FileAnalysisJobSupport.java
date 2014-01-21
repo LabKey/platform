@@ -86,6 +86,11 @@ public interface FileAnalysisJobSupport
     File getParametersFile();
 
     /**
+     * @return the job info file used to provide the external executable or script task with input file context.
+     */
+    File getJobInfoFile();
+
+    /**
      * @return a list of all input files analyzed.
      */
     List<File> getInputFiles();

@@ -79,6 +79,10 @@ abstract public class PipelineJob extends Job implements Serializable
 {
     public static final FileType FT_LOG = new FileType(Arrays.asList(".log"), ".log", "text/plain");
 
+    public static final String PIPELINE_EMAIL_ADDRESS_PARAM = "pipeline, email address";
+    public static final String PIPELINE_USERNAME_PARAM = "pipeline, username";
+    public static final String PIPELINE_JOB_INFO_PARAM = "pipeline, jobInfo";
+
     private static Logger _log = Logger.getLogger(PipelineJob.class);
     // Send start/stop messages to a separate logger because the default logger for this class is set to
     // only write ERROR level events to the system log

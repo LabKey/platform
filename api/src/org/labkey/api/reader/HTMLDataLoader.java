@@ -74,7 +74,7 @@ import java.util.Map;
  */
 public class HTMLDataLoader extends DataLoader
 {
-    public static final FileType FILE_TYPE = new FileType(Arrays.asList("html", "xhtml"), "html")
+    public static final FileType FILE_TYPE = new FileType(Arrays.asList(".html", ".xhtml"), ".html")
     {
         @Override
         public boolean isHeaderMatch(@NotNull byte[] header)

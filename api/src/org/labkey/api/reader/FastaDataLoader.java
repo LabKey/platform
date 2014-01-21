@@ -37,7 +37,7 @@ import java.util.Map;
  */
 public class FastaDataLoader extends DataLoader
 {
-    public static FileType FILE_TYPE = new FileType(Arrays.asList("fna", "fasta"), "fna");
+    public static FileType FILE_TYPE = new FileType(Arrays.asList(".fna", ".fasta"), ".fna");
     static {
         FILE_TYPE.setExtensionsMutuallyExclusive(false);
     }
