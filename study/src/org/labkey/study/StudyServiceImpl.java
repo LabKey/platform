@@ -73,6 +73,7 @@ import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.importer.StudyImportJob;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.QCStateSet;
+import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.SpecimenDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -119,7 +120,7 @@ public class StudyServiceImpl implements StudyService.Service
     }
 
     @Override
-    public Study createStudy(Container container, User user, String name, TimepointType timepointType) throws SQLException
+    public Study createStudy(Container container, User user, String name, TimepointType timepointType, boolean editableDatasets) throws SQLException
     {
         // Needed for study creation from VISC module. We might want to remove this when we don't need the old study design tool.
 
@@ -134,6 +135,9 @@ public class StudyServiceImpl implements StudyService.Service
             study.setSubjectNounSingular("Participant");
             study.setSubjectNounPlural("Participants");
             study.setStartDate(new Date());
+
+            if (editableDatasets)
+                study.setSecurityType(SecurityType.BASIC_WRITE);
 
             return StudyManager.getInstance().createStudy(user, study);
     }
