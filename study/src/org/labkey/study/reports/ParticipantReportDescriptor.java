@@ -60,8 +60,9 @@ public class ParticipantReportDescriptor extends ReportDescriptor
                     String newId = alternateIdMap.get(item.get("id"));
                     item.put("id", newId);
                     item.put("label", newId);
-                    transformedJson.put(item);
                 }
+
+                transformedJson.put(item);
             }
 
             value = transformedJson.toString();
