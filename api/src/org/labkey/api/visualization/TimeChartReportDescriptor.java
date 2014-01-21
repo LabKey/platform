@@ -74,6 +74,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
             JSONObject jsonObj = new JSONObject((String) value);
             convertSubjectPTIDs(jsonObj, alternateIdMap);
             convertPTIDSInDimensions(jsonObj, alternateIdMap);
+            convertPTIDSinGroups(jsonObj, alternateIdMap);
             value  = jsonObj.toString();
         }
 
@@ -115,6 +116,10 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
                         {
                             transformedPTIDs.put(alternateIdMap.get(values.get(j)));
                         }
+                        else
+                        {
+                            transformedPTIDs.put(values.get(j));
+                        }
                     }
 
                     dimension.put("values", transformedPTIDs);
@@ -129,6 +134,32 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
                 else
                 {
                     throw e;
+                }
+            }
+        }
+    }
+
+    private void convertPTIDSinGroups(JSONObject json, Map<String, String> alternateIdMap)
+    {
+        JSONObject subjectJSON = json.getJSONObject("subject");
+        if (subjectJSON.has("groups"))
+        {
+            JSONArray groupsJSON = subjectJSON.getJSONArray("groups");
+            for (int i = 0; i < groupsJSON.length(); i++)
+            {
+                JSONObject groupJSON = groupsJSON.getJSONObject(i);
+                if (groupJSON.has("participantIds"))
+                {
+                    JSONArray ptidsFromGroupJSON = groupJSON.getJSONArray("participantIds");
+                    JSONArray transformedPTIDs = new JSONArray();
+
+                    for (int j = 0; j < ptidsFromGroupJSON.length(); j++)
+                    {
+                        if (alternateIdMap.containsKey(ptidsFromGroupJSON.getString(j)))
+                            transformedPTIDs.put(alternateIdMap.get(ptidsFromGroupJSON.getString(j)));
+                    }
+
+                    groupJSON.put("participantIds", transformedPTIDs);
                 }
             }
         }
