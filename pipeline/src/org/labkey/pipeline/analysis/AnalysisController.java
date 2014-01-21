@@ -249,7 +249,7 @@ public class AnalysisController extends SpringActionController
                     protocol.saveInstance(fileParameters, getContainer());
                 }
 
-                boolean allowNonExistentFiles = form.isAllowNonExistentFiles();
+                Boolean allowNonExistentFiles = form.isAllowNonExistentFiles() != null ? form.isAllowNonExistentFiles() : false;
                 List<File> filesInputList = form.getValidatedFiles(getContainer(), allowNonExistentFiles);
 
                 if (form.isActiveJobs())
@@ -381,7 +381,7 @@ public class AnalysisController extends SpringActionController
         private boolean saveProtocol = false;
         private boolean runAnalysis = false;
         private boolean activeJobs = false;
-        private boolean allowNonExistentFiles = false;
+        private Boolean allowNonExistentFiles;
 
         private static final String UNKNOWN_STATUS = "UNKNOWN";
 
@@ -516,12 +516,12 @@ public class AnalysisController extends SpringActionController
             this.runAnalysis = runAnalysis;
         }
 
-        public boolean isAllowNonExistentFiles()
+        public Boolean isAllowNonExistentFiles()
         {
             return allowNonExistentFiles;
         }
 
-        public void setAllowNonExistentFiles(boolean allowNonExistentFiles)
+        public void setAllowNonExistentFiles(Boolean allowNonExistentFiles)
         {
             this.allowNonExistentFiles = allowNonExistentFiles;
         }
