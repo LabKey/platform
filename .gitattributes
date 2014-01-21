@@ -778,6 +778,10 @@ core/src/org/labkey/core/security/deleteUser.jsp -text
 core/src/org/labkey/core/security/group.jsp -text
 core/src/org/labkey/core/security/groupDiagram.jsp -text
 core/src/org/labkey/core/security/renameGroup.jsp -text
+core/src/org/labkey/core/statistics/DefaultCurveFit.java -text
+core/src/org/labkey/core/statistics/ParameterCurveFit.java -text
+core/src/org/labkey/core/statistics/PolynomialCurveFit.java -text
+core/src/org/labkey/core/statistics/StatsServiceImpl.java -text
 core/src/org/labkey/core/styling.jsp -text
 core/src/org/labkey/core/test/TestController.java -text
 core/src/org/labkey/core/test/complex.jsp -text
@@ -795,7 +799,6 @@ core/src/org/labkey/core/user/impersonate.jsp -text
 core/src/org/labkey/core/user/toggleInactive.jsp -text
 core/src/org/labkey/core/user/toggleShowAll.jsp -text
 core/src/org/labkey/core/user/userAccess.jsp -text
-core/src/org/labkey/core/util/StatsServiceImpl.java -text
 core/src/org/labkey/core/webdav/DavController.java -text
 core/src/org/labkey/core/webdav/WebdavServlet.java -text
 core/src/org/labkey/core/webdav/apache/XMLWriter.java -text
