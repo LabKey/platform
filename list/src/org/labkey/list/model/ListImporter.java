@@ -381,7 +381,7 @@ public class ListImporter
 
             ColumnType.Fk fk = columnXml.getFk();
 
-            Map<String, Object> map = mapFactory.getRowMap(new Object[]{
+            Map<String, Object> map = mapFactory.getRowMap(
                 listName,
                 columnName,
                 columnXml.getPropertyURI(),
@@ -408,7 +408,7 @@ public class ListImporter
                 facetingBehaviorType,
                 isProtected,
                 isExcludeFromShifting
-            });
+            );
 
             importMaps.add(map);
         }

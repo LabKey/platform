@@ -147,6 +147,9 @@ public class ScriptTaskFactory extends SimpleTaskFactory
         // Add any implicit inputs and outputs from the script
         for (String key : tokens)
         {
+            if (RESERVED_TOKENS.contains(key))
+                continue;
+
             if (!(inputs.containsKey(key) || outputs.containsKey(key) || params.containsKey(key)))
             {
                 TaskToCommandArgs arg = null;
@@ -189,7 +192,7 @@ public class ScriptTaskFactory extends SimpleTaskFactory
 
     private static Set<String> tokens(String script)
     {
-        // Preserving the order the tokens is found is important -- ${input1.txt} must be found before ${input2.txt}
+        // Preserving the order the tokens found is important -- ${input1.txt} must be found before ${input2.txt}
         Set<String> tokens = new LinkedHashSet<>();
         Pattern pattern = ParamReplacementSvc.defaultScriptPattern;
         Matcher m = pattern.matcher(script);

@@ -64,24 +64,62 @@ public class ScriptTaskImpl extends CommandTaskImpl
     private Map<String, String> createReplacements() throws IOException
     {
         Map<String, String> replacements = new HashMap<>();
+
+        // Input paths
         for (String key : _factory.getInputPaths().keySet())
         {
             String[] inputPaths = getProcessPaths(WorkDirectory.Function.input, key);
-            if (inputPaths.length == 1 && inputPaths[0] != null)
-                replacements.put(key, Matcher.quoteReplacement(inputPaths[0].replaceAll("\\\\", "/")));
+            if (inputPaths.length == 0)
+            {
+                // Replace empty file token with empty string
+                replacements.put(key, "");
+            }
+            else if (inputPaths.length == 1)
+            {
+                if (inputPaths[0] != null)
+                    replacements.put(key, "");
+                else
+                    replacements.put(key, Matcher.quoteReplacement(inputPaths[0].replaceAll("\\\\", "/")));
+            }
+            else
+            {
+                // CONSIDER: Add replacement for each file?  ${input[0].txt}, ${input[1].txt}, ${input[*].txt}
+                // NOTE: The script parser matches ${input1.txt} to the first input file which isn't the same as ${input1[1].txt} which may be the 2nd file in the set of files represented by "input1.txt"
+            }
         }
 
+        // Output paths
         for (String key : _factory.getOutputPaths().keySet())
         {
             String[] outputPaths = getProcessPaths(WorkDirectory.Function.output, key);
-            if (outputPaths.length == 1 && outputPaths[0] != null)
-                replacements.put(key, Matcher.quoteReplacement(outputPaths[0].replaceAll("\\\\", "/")));
+            if (outputPaths.length == 0)
+            {
+                // Replace empty file token with empty string
+                replacements.put(key, "");
+            }
+            else if (outputPaths.length == 1)
+            {
+                if (outputPaths[0] == null)
+                    replacements.put(key, "");
+                else
+                    replacements.put(key, Matcher.quoteReplacement(outputPaths[0].replaceAll("\\\\", "/")));
+            }
+            else
+            {
+                // CONSIDER: Add replacement for each file?  ${input[0].txt}, ${input[1].txt}, ${input[*].txt}
+            }
         }
 
+        // Job parameters
         for (Map.Entry<String, String> entry : getJob().getParameters().entrySet())
         {
             replacements.put(entry.getKey(), Matcher.quoteReplacement(entry.getValue()));
         }
+
+        // Job info replacement
+        File jobInfoFile = getJobSupport().getJobInfoFile();
+        replacements.put(PipelineJob.PIPELINE_JOB_INFO_PARAM, jobInfoFile.getAbsolutePath());
+
         return replacements;
     }
 

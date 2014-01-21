@@ -18,6 +18,8 @@ package org.labkey.study.pipeline;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.FileXarSource;
+import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -25,6 +27,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.pipeline.XarGeneratorId;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.AbstractTaskFactory;
@@ -38,6 +41,7 @@ import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.XMLBeanTaskFactoryFactory;
+import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayDataCollector;
@@ -103,6 +107,8 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
     public static class Factory extends AbstractTaskFactory<AssayImportRunTaskFactorySettings, Factory>
     {
+        private FileType _outputType = XarGeneratorId.FT_PIPE_XAR_XML;
+
         private String _providerName = "${" + PROVIDER_NAME_PROPERTY + "}";
         private String _protocolName = "${" + PROTOCOL_NAME_PROPERTY + "}";
 
@@ -143,6 +149,11 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             return Collections.emptyList();
         }
 
+        public FileType getOutputType()
+        {
+            return _outputType;
+        }
+
         public String getStatusName()
         {
             return "IMPORT ASSAY RUN";
@@ -151,6 +162,12 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         public List<String> getProtocolActionNames()
         {
             return Collections.emptyList();
+        }
+
+        protected File getXarFile(PipelineJob job)
+        {
+            FileAnalysisJobSupport jobSupport = job.getJobSupport(FileAnalysisJobSupport.class);
+            return getOutputType().newFile(jobSupport.getAnalysisDirectory(), jobSupport.getBaseName());
         }
 
         public boolean isJobComplete(PipelineJob job)
@@ -163,99 +180,87 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         {
             super.validateParameters(job);
 
-            if (_providerName == null)
-                throw new PipelineValidationException("Assay provider name required");
-
-            // Validate assay provider.  If the value is a ${property}, the provider will be checked at runtime.
-            if (!_providerName.startsWith("${") || !_providerName.endsWith("}"))
+            try
             {
-                AssayProvider provider = AssayService.get().getProvider(_providerName);
-                if (provider == null)
-                    throw new PipelineValidationException("Assay provider not found: " + _providerName);
+                AssayProvider provider = getProvider(job);
+                ExpProtocol protocol = getProtocol(job, provider);
             }
-
-            if (_protocolName == null)
-                throw new PipelineValidationException("Assay protocol name required");
-
-            // Validate assay protocol.  If the value is a ${property}, the protocol will be checked at runtime.
-            if (!_protocolName.startsWith("${") || !_protocolName.endsWith("}"))
+            catch (PipelineJobException e)
             {
-                ExpProtocol protocol = ExperimentService.get().getExpProtocol(job.getContainer(), _protocolName);
-                if (protocol == null)
-                    throw new PipelineValidationException("Assay protocol not found: " + _protocolName);
+                throw new PipelineValidationException(e.getMessage());
             }
-
         }
+
+        @NotNull
+        private AssayProvider getProvider(PipelineJob job) throws PipelineJobException
+        {
+            String providerName = _providerName;
+            if (providerName == null)
+                throw new PipelineJobException("Assay provider name or job parameter name required");
+
+            if (providerName.startsWith("${") && providerName.endsWith("}"))
+            {
+                String propertyName = providerName.substring(2, providerName.length()-3);
+                String value = job.getParameters().get(propertyName);
+                if (value == null)
+                    throw new PipelineJobException("Assay provider name for job parameter " + providerName + " required");
+                providerName = value;
+            }
+
+            AssayProvider provider = AssayService.get().getProvider(providerName);
+            if (provider == null)
+                throw new PipelineJobException("Assay provider not found: " + providerName);
+
+            return provider;
+        }
+
+        // CONSIDER: if there is only one instance of the assay in the container, use it by default.
+        // CONSIDER: when job is executed, somehow poke in the 'target assay'
+        @NotNull
+        private ExpProtocol getProtocol(PipelineJob job, AssayProvider provider) throws PipelineJobException
+        {
+            String protocolName = _protocolName;
+            if (protocolName == null)
+                throw new PipelineJobException("Assay protocol name or job parameter name required");
+
+            if (protocolName.startsWith("${") && protocolName.endsWith("}"))
+            {
+                String propertyName = protocolName.substring(2, protocolName.length()-1);
+                String value = job.getParameters().get(propertyName);
+                if (value == null)
+                    throw new PipelineJobException("Assay protocol name for job parameter " + protocolName + " required");
+                protocolName = value;
+            }
+
+            Container c = job.getContainer();
+
+            // Find by LSID
+            ExpProtocol expProtocol = ExperimentService.get().getExpProtocol(protocolName);
+            if (expProtocol != null)
+            {
+                if (AssayService.get().getProvider(expProtocol) != provider)
+                    throw new PipelineJobException("Experiment protocol LSID '" + protocolName + "' is not of assay provider type '" + provider.getName() + "'");
+
+                return expProtocol;
+            }
+
+            // Find by name
+            List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, provider);
+
+            for (ExpProtocol protocol : protocols)
+            {
+                if (protocol.getName().equalsIgnoreCase(protocolName))
+                    return protocol;
+            }
+
+            throw new PipelineJobException("Assay protocol not found: " + protocolName);
+        }
+
     }
 
     public AssayImportRunTask(Factory factory, PipelineJob job)
     {
         super(factory, job);
-    }
-
-    @NotNull
-    private AssayProvider getProvider() throws PipelineJobException
-    {
-        String providerName = _factory._providerName;
-        if (providerName == null)
-            throw new PipelineJobException("Assay provider name or job parameter name required");
-
-        if (providerName.startsWith("${") && providerName.endsWith("}"))
-        {
-            String propertyName = providerName.substring(2, providerName.length()-3);
-            String value = getJob().getParameters().get(propertyName);
-            if (value == null)
-                throw new PipelineJobException("Assay provider name for job parameter " + providerName + " required");
-            providerName = value;
-        }
-
-        AssayProvider provider = AssayService.get().getProvider(providerName);
-        if (provider == null)
-            throw new PipelineJobException("Assay provider not found: " + providerName);
-
-        return provider;
-    }
-
-    // CONSIDER: if there is only one instance of the assay in the container, use it by default.
-    // CONSIDER: when job is executed, somehow poke in the 'target assay'
-    @NotNull
-    private ExpProtocol getProtocol(AssayProvider provider) throws PipelineJobException
-    {
-        String protocolName = _factory._protocolName;
-        if (protocolName == null)
-            throw new PipelineJobException("Assay protocol name or job parameter name required");
-
-        if (protocolName.startsWith("${") && protocolName.endsWith("}"))
-        {
-            String propertyName = protocolName.substring(2, protocolName.length()-1);
-            String value = getJob().getParameters().get(propertyName);
-            if (value == null)
-                throw new PipelineJobException("Assay protocol name for job parameter " + protocolName + " required");
-            protocolName = value;
-        }
-
-        Container c = getJob().getContainer();
-
-        // Find by LSID
-        ExpProtocol expProtocol = ExperimentService.get().getExpProtocol(protocolName);
-        if (expProtocol != null)
-        {
-            if (AssayService.get().getProvider(expProtocol) != provider)
-                throw new PipelineJobException("Experiment protocol LSID '" + protocolName + "' is not of assay provider type '" + provider.getName() + "'");
-
-            return expProtocol;
-        }
-
-        // Find by name
-        List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, provider);
-
-        for (ExpProtocol protocol : protocols)
-        {
-            if (protocol.getName().equalsIgnoreCase(protocolName))
-                return protocol;
-        }
-
-        throw new PipelineJobException("Assay protocol not found: " + protocolName);
     }
 
     private List<File> getOutputs(PipelineJob job) throws PipelineJobException
@@ -349,11 +354,11 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
      */
     public RecordedActionSet run() throws PipelineJobException
     {
+        AssayProvider provider = _factory.getProvider(getJob());
+        ExpProtocol protocol = _factory.getProtocol(getJob(), provider);
+
         try
         {
-            AssayProvider provider = getProvider();
-            ExpProtocol protocol = getProtocol(provider);
-
             AssayDataType assayDataType = provider.getDataType();
             if (assayDataType == null)
                 throw new PipelineJobException("AssayDataType required for importing run");
@@ -393,11 +398,20 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             AssayRunUploadContext uploadContext = factory.create();
 
             Integer batchId = null;
+
+            // Import the assay run
             Pair<ExpExperiment, ExpRun> pair = provider.getRunCreator().saveExperimentRun(uploadContext, batchId);
             ExpRun run = pair.second;
 
             // Keep track of all of the runs that have been created by this task
-            ExpRun expRun = ExperimentService.get().importRun(getJob());
+            // Using the XarSource will create ExpData objects for the input files with nice names and URLs -- without, the ExpData's names will be absolute file URLs.
+            XarSource source = new FileXarSource(_factory.getXarFile(getJob()), getJob());
+            ExpRun expRun = ExperimentService.get().importRun(getJob(), source);
+            if (getComments() != null)
+            {
+                expRun.setComments(getComments());
+                expRun.save(user);
+            }
 
             // TODO: Is there a better way to model this?  Can a run be an input to another run?
             // Copy the job run's inputs to the assay run's inputs
@@ -411,7 +425,6 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                 assayInputApplication.addDataInput(user, inputData, role);
             }
             assayInputApplication.save(user);
-
 
             // save any job-level custom properties from the run
 //            PropertiesJobSupport jobSupport = getJob().getJobSupport(PropertiesJobSupport.class);

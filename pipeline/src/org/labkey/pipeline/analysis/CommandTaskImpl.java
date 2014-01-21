@@ -20,6 +20,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Test;
+import org.labkey.api.collections.RowMapFactory;
+import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.cmd.CommandTask;
@@ -398,8 +400,47 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         }
     }
 
+    protected void writeTaskInfo(File file) throws IOException
+    {
+        RowMapFactory<Object> factory = new RowMapFactory<>("Name", "Value", "Type");
+        List<Map<String, Object>> rows = new ArrayList<>();
 
-    
+        rows.add(factory.getRowMap("taskId", _factory.getId()));
+
+        for (Map.Entry<String, TaskPath> entry : _factory.getInputPaths().entrySet())
+        {
+            String key = entry.getKey();
+            TaskPath path = entry.getValue();
+
+            // CONSIDER: Include the TaskPath information (optional, etc.)
+
+            String[] inputPaths = getProcessPaths(WorkDirectory.Function.input, key);
+            for (String inputPath : inputPaths)
+            {
+                rows.add(factory.getRowMap(key, inputPath, path.getType().getDefaultSuffix()));
+            }
+        }
+
+        for (Map.Entry<String, TaskPath> entry : _factory.getOutputPaths().entrySet())
+        {
+            String key = entry.getKey();
+            TaskPath path = entry.getValue();
+
+            // CONSIDER: Include the TaskPath information (optional, etc.)
+
+            String[] inputPaths = getProcessPaths(WorkDirectory.Function.output, key);
+            for (String inputPath : inputPaths)
+            {
+                rows.add(factory.getRowMap(key, inputPath, path.getType().getDefaultSuffix()));
+            }
+        }
+
+        TSVMapWriter tsvWriter = new TSVMapWriter(rows);
+        tsvWriter.setHeaderRowVisible(false);
+        tsvWriter.write(file);
+    }
+
+
     public RecordedActionSet run() throws PipelineJobException
     {
         try
@@ -423,6 +464,10 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                     }
                 }
             }
+
+//            // Write task properties file
+//            File taskInfoFile = _wd.newFile(WorkDirectory.Function.input, TabLoader.TSV_FILE_TYPE);
+//            writeTaskInfo(taskInfoFile);
 
             // Always copy in the parameters file. It's small and in some cases is useful to the process we're launching
             _wd.inputFile(getJobSupport().getParametersFile(), true);

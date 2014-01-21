@@ -409,6 +409,24 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return material == null ? null : new ExpMaterialImpl(material);
     }
 
+    public List<ExpMaterialImpl> getExpMaterials(Collection<Integer> rowids)
+    {
+        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowids);
+        TableSelector selector = new TableSelector(getTinfoMaterial(), filter, null);
+
+        final List<ExpMaterialImpl> materials = new ArrayList<>();
+        selector.forEach(new Selector.ForEachBlock<Material>()
+        {
+            @Override
+            public void exec(Material material) throws SQLException
+            {
+                materials.add(new ExpMaterialImpl(material));
+            }
+        }, Material.class);
+
+        return materials;
+    }
+
     public ExpMaterialImpl createExpMaterial(Container container, String lsid, String name)
     {
         ExpMaterialImpl result = new ExpMaterialImpl(new Material());
@@ -872,9 +890,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return reader.getExperimentRuns();
     }
 
-    public ExpRun importRun(PipelineJob job) throws SQLException, PipelineJobException, ValidationException
+    public ExpRun importRun(PipelineJob job, XarSource source) throws SQLException, PipelineJobException, ValidationException
     {
-        return ExpGeneratorHelper.insertRun(job);
+        return ExpGeneratorHelper.insertRun(job, source, null);
     }
 
     public Set<String> getDataInputRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType... types)

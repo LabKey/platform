@@ -173,7 +173,7 @@ public class SchemaXmlReader implements SchemaReader
 
                     ColumnType.Fk fk = columnXml.getFk();
                     List<ConditionalFormat> conditionalFormats = ConditionalFormat.convertFromXML(columnXml.getConditionalFormats());
-                    Map<String, Object> map = mapFactory.getRowMap(new Object[]{
+                    Map<String, Object> map = mapFactory.getRowMap(
                         datasetName,
                         columnName,
                         columnXml.getPropertyURI(),
@@ -200,7 +200,7 @@ public class SchemaXmlReader implements SchemaReader
                         facetingBehaviorType,
                         isProtected,
                         isExcludeFromShifting
-                    });
+                    );
 
                     _importMaps.add(map);
 

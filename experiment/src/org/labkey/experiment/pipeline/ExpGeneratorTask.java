@@ -99,10 +99,13 @@ public class ExpGeneratorTask extends PipelineJob.Task<ExpGeneratorTask.Factory>
             ExpRun run = ExpGeneratorHelper.insertRun(getJob(), null, null);
 
             // save any job-level custom properties from the run
-            PropertiesJobSupport jobSupport = getJob().getJobSupport(PropertiesJobSupport.class);
-            for (Map.Entry<PropertyDescriptor, Object> prop : jobSupport.getProps().entrySet())
+            if (getJob() instanceof PropertiesJobSupport)
             {
-                run.setProperty(getJob().getUser(), prop.getKey(), prop.getValue());
+                PropertiesJobSupport jobSupport = getJob().getJobSupport(PropertiesJobSupport.class);
+                for (Map.Entry<PropertyDescriptor, Object> prop : jobSupport.getProps().entrySet())
+                {
+                    run.setProperty(getJob().getUser(), prop.getKey(), prop.getValue());
+                }
             }
 
             // Check if we've been cancelled. If so, delete any newly created runs from the database

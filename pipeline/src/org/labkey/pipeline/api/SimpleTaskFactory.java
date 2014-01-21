@@ -15,6 +15,8 @@
  */
 package org.labkey.pipeline.api;
 
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.study.assay.DefaultDataTransformer;
 import org.labkey.pipeline.analysis.CommandTaskImpl;
 
 import org.apache.xmlbeans.XmlObject;
@@ -70,6 +72,17 @@ import java.util.Set;
  */
 public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
 {
+    public static String PIPLINE_TASK_INFO_PARAM = "pipeline, taskInfo";
+
+    protected static Set<String> RESERVED_TOKENS = new CaseInsensitiveHashSet(
+            PipelineJob.PIPELINE_JOB_INFO_PARAM,
+            PIPLINE_TASK_INFO_PARAM,
+            // The following replacements aren't used yet, but are reserved for future use.
+            DefaultDataTransformer.RUN_INFO_REPLACEMENT,
+            DefaultDataTransformer.SRC_DIR_REPLACEMENT,
+            DefaultDataTransformer.R_JESSIONID_REPLACEMENT
+        );
+
     protected Map<String, JobParamToCommandArgs> _params;
 
     public SimpleTaskFactory(TaskId taskId)
@@ -119,6 +132,9 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
         {
             // TODO: Get switch/help/etc settings to the PathInLine/PathWithSwitch argument created in parseCommand()
             String name = xfileInput.getName();
+            if (RESERVED_TOKENS.contains(name))
+                throw new IllegalArgumentException("Input file '" + name + "' is a reserved name");
+
             TaskPath taskPath = createTaskPath(xfileInput);
             ret.put(name, taskPath);
         }
@@ -135,6 +151,9 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
         for (FileOutputType xfileOutput : xoutputs.getFileArray())
         {
             String name = xfileOutput.getName();
+            if (RESERVED_TOKENS.contains(name))
+                throw new IllegalArgumentException("Output file '" + name + "' is a reserved name");
+
             TaskPath taskPath = createTaskPath(xfileOutput);
             if (xfileOutput.isSetForceToAnalysisDir())
                 taskPath.setForceToAnalysisDir(xfileOutput.getForceToAnalysisDir());
@@ -156,6 +175,8 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
             {
                 SimpleInputType xinput = (SimpleInputType)xobj;
                 String name = xinput.getName();
+                if (RESERVED_TOKENS.contains(name))
+                    throw new IllegalArgumentException("Input parameter '" + name + "' is a reserved name");
 
                 // CONSIDER: parameter category (group?) to compose a parameter of "group, name"
                 String label = xinput.getLabel();
