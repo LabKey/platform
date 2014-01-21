@@ -8166,6 +8166,9 @@ internal/webapp/_images/warning-icon-alt.png -text
 internal/webapp/_images/warning-icon.png -text
 internal/webapp/_images/warning-small.png -text
 internal/webapp/_images/zero.png -text
+internal/webapp/app/Route.js -text
+internal/webapp/app/State.js -text
+internal/webapp/app/View.js -text
 internal/webapp/applet.js -text
 internal/webapp/codemirror.lib.xml -text
 internal/webapp/codemirror/LICENSE -text
