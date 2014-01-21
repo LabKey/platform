@@ -72,7 +72,7 @@ public class StudyService
         @Nullable
         public Study getStudy(Container container);
 
-        public Study createStudy(Container container, User user, String name, TimepointType timepointType) throws Exception;
+        public Study createStudy(Container container, User user, String name, TimepointType timepointType, boolean editableDatasets) throws Exception;
 
         /**
          * Finds a study by either Container id or study label.
