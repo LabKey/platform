@@ -138,7 +138,14 @@ public class ExecTaskFactory extends SimpleTaskFactory
                 //
 
                 String key = part.substring("${".length(), part.length() - "}".length());
-                if (exeName != null && (key.equals("exe") || key.equals(exeName)))
+                if (RESERVED_TOKENS.contains(key))
+                {
+                    // Reserved token found.  Add a replacement parameter to the command line.
+                    ValueInLine param = new ValueInLine();
+                    param.setParameter(key);
+                    arg = param;
+                }
+                else if (exeName != null && (key.equals("exe") || key.equals(exeName)))
                 {
                     ExeToCommandArgs exe = new ExeToCommandArgs();
                     exe.setExePath(exeName);
