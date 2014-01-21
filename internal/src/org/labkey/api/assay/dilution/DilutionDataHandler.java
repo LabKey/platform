@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.OORDisplayColumnFactory;
+import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
@@ -112,7 +113,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                     results.add(props);
 
                     // generate curve ICs and AUCs for each curve fit type
-                    for (DilutionCurve.FitType type : DilutionCurve.FitType.values())
+                    for (StatsService.CurveFitType type : StatsService.CurveFitType.values())
                     {
                         for (Integer cutoff : assayResults.getCutoffs())
                         {
@@ -127,7 +128,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                             }
                         }
                         // compute both normal and positive AUC values
-                        double auc = dilution.getAUC(type, DilutionCurve.AUCType.NORMAL);
+                        double auc = dilution.getAUC(type, StatsService.AUCType.NORMAL);
                         if (!Double.isNaN(auc))
                         {
                             props.put(getPropertyName(AUC_PREFIX, type), auc);
@@ -135,7 +136,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                                 props.put(AUC_PREFIX, auc);
                         }
 
-                        double pAuc = dilution.getAUC(type, DilutionCurve.AUCType.POSITIVE);
+                        double pAuc = dilution.getAUC(type, StatsService.AUCType.POSITIVE);
                         if (!Double.isNaN(pAuc))
                         {
                             props.put(getPropertyName(pAUC_PREFIX, type), pAuc);
@@ -164,7 +165,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         }
 
         protected void saveICValue(String name, double icValue, DilutionSummary dilution,
-                                   Map<String, Object> results, DilutionCurve.FitType type) throws DilutionCurve.FitFailedException
+                                   Map<String, Object> results, StatsService.CurveFitType type) throws DilutionCurve.FitFailedException
         {
             String outOfRange = null;
             if (Double.NEGATIVE_INFINITY == icValue)
@@ -234,7 +235,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return getAssayResults(run, user, null);
     }
 
-    public DilutionAssayRun getAssayResults(ExpRun run, User user, @Nullable DilutionCurve.FitType fit) throws ExperimentException
+    public DilutionAssayRun getAssayResults(ExpRun run, User user, @Nullable StatsService.CurveFitType fit) throws ExperimentException
     {
         File dataFile = getDataFile(run);
         if (dataFile == null)
@@ -265,7 +266,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     protected abstract List<Plate> createPlates(File dataFile, PlateTemplate template) throws ExperimentException;
 
-    protected DilutionAssayRun getAssayResults(ExpRun run, User user, File dataFile, @Nullable DilutionCurve.FitType fit) throws ExperimentException
+    protected DilutionAssayRun getAssayResults(ExpRun run, User user, File dataFile, @Nullable StatsService.CurveFitType fit) throws ExperimentException
     {
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(run.getProtocol().getLSID());
         Container container = run.getContainer();
@@ -299,12 +300,12 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         DomainProperty curveFitPd = runProperties.get(DilutionAssayProvider.CURVE_FIT_METHOD_PROPERTY_NAME);
         if (fit == null)
         {
-            fit = DilutionCurve.FitType.FIVE_PARAMETER;
+            fit = StatsService.CurveFitType.FIVE_PARAMETER;
             if (curveFitPd != null)
             {
                 Object value = run.getProperty(curveFitPd);
                 if (value != null)
-                    fit = DilutionCurve.FitType.fromLabel((String) value);
+                    fit = StatsService.CurveFitType.fromLabel((String) value);
             }
         }
         boolean lockAxes = false;
@@ -393,9 +394,9 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return mapping;
     }
 
-    protected abstract DilutionAssayRun createDilutionAssayRun(DilutionAssayProvider provider, ExpRun run, List<Plate> plates, User user, List<Integer> sortedCutoffs, DilutionCurve.FitType fit);
+    protected abstract DilutionAssayRun createDilutionAssayRun(DilutionAssayProvider provider, ExpRun run, List<Plate> plates, User user, List<Integer> sortedCutoffs, StatsService.CurveFitType fit);
 
-    public abstract Map<DilutionSummary, DilutionAssayRun> getDilutionSummaries(User user, DilutionCurve.FitType fit, int... dataObjectIds) throws ExperimentException, SQLException;
+    public abstract Map<DilutionSummary, DilutionAssayRun> getDilutionSummaries(User user, StatsService.CurveFitType fit, int... dataObjectIds) throws ExperimentException, SQLException;
 
     protected DilutionDataFileParser getDataFileParser(ExpData data, File dataFile, ViewBackgroundInfo info)
     {
@@ -562,12 +563,12 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         OntologyManager.deleteOntologyObject(data.getLSID(), container, true);
     }
 
-    public String getPropertyName(String prefix, int cutoff, DilutionCurve.FitType type)
+    public String getPropertyName(String prefix, int cutoff, StatsService.CurveFitType type)
     {
         return getPropertyName(prefix + cutoff, type);
     }
 
-    public String getPropertyName(String prefix, DilutionCurve.FitType type)
+    public String getPropertyName(String prefix, StatsService.CurveFitType type)
     {
         return prefix + "_" + type.getColSuffix();
     }

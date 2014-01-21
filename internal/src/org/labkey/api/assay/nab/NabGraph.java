@@ -33,6 +33,7 @@ import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionMaterialKey;
 import org.labkey.api.assay.dilution.DilutionSummary;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.study.WellData;
 import org.labkey.api.util.DateUtil;
@@ -320,9 +321,9 @@ public class NabGraph
 
             try
             {
-                DilutionCurve.DoublePoint[] curve = summary.getCurve();
+                DoublePoint[] curve = summary.getCurve();
                 XYSeries curvedSeries = new XYSeries(sampleId + ", curved" + count);
-                for (DilutionCurve.DoublePoint point : curve)
+                for (DoublePoint point : curve)
                     curvedSeries.add(point.getX(), point.getY());
                 curvesDataset.addSeries(curvedSeries);
                 if (currentColor != null)

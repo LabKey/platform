@@ -16,10 +16,13 @@
 
 package org.labkey.api.assay.dilution;
 
-import org.labkey.api.study.WellData;
+import org.labkey.api.data.statistics.CurveFit;
+import org.labkey.api.data.statistics.DoublePoint;
+import org.labkey.api.data.statistics.StatsService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.WellGroup;
 
-import java.util.*;
+import java.util.List;
 
 /**
  * User: klum
@@ -27,218 +30,62 @@ import java.util.*;
  */
 public abstract class ParameterCurveImpl extends WellGroupCurveImpl
 {
-    private FitParameters _fitParameters;
-    private DilutionCurve.FitType _fitType;
+    private CurveFit _curveFit;
 
-    public interface SigmoidalParameters extends DilutionCurve.Parameters
-    {
-        double getAsymmetry();
-
-        double getInflection();
-
-        double getSlope();
-
-        double getMax();
-
-        double getMin();
-    }
-
-    public static class FitParameters implements Cloneable, SigmoidalParameters
-    {
-        public Double fitError;
-        public double asymmetry;
-        public double inflection;
-        public double slope;
-        public double max;
-        public double min;
-
-        public FitParameters copy()
-        {
-            try
-            {
-                return (FitParameters) super.clone();
-            }
-            catch (CloneNotSupportedException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-
-        public Double getFitError()
-        {
-            return fitError;
-        }
-
-        public double getAsymmetry()
-        {
-            return asymmetry;
-        }
-
-        public double getInflection()
-        {
-            return inflection;
-        }
-
-        public double getSlope()
-        {
-            return slope;
-        }
-
-        public double getMax()
-        {
-            return max;
-        }
-
-        public double getMin()
-        {
-            return min;
-        }
-
-        public Map<String, Object> toMap()
-        {
-            Map<String, Object> params = new HashMap<>();
-            params.put("asymmetry", getAsymmetry());
-            params.put("inflection", getInflection());
-            params.put("slope", getSlope());
-            params.put("max", getMax());
-            params.put("min", getMin());
-
-            return Collections.unmodifiableMap(params);
-        }
-    }
-
-    public ParameterCurveImpl(List<? extends WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, DilutionCurve.FitType fitType) throws DilutionCurve.FitFailedException
+    public ParameterCurveImpl(List<? extends WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType fitType) throws DilutionCurve.FitFailedException
     {
         super(wellGroups, assumeDecreasing, percentCalculator);
-        _fitType = fitType;
+
+        ensureWellSummaries();
+        DoublePoint[] data = new DoublePoint[_wellSummaries.length];
+        int i=0;
+        for (WellSummary well : _wellSummaries)
+        {
+            // we want to express the neutralization values as percentages
+            data[i++] = new DoublePoint(well.getDilution(), well.getNeutralization() * 100);
+        }
+        StatsService service = ServiceRegistry.get().getService(StatsService.class);
+
+        if (fitType == StatsService.CurveFitType.FIVE_PARAMETER)
+            _curveFit = service.getCurveFit(StatsService.CurveFitType.FIVE_PARAMETER, data);
+        else if (fitType == StatsService.CurveFitType.FOUR_PARAMETER)
+            _curveFit = service.getCurveFit(StatsService.CurveFitType.FOUR_PARAMETER, data);
+
+        _curveFit.setAssumeCurveDecreasing(assumeDecreasing);
     }
 
-    public ParameterCurveImpl(List<? extends WellGroup> wellGroups, boolean assumeDecreasing, FitParameters params, FitType fitType) throws FitFailedException
+    protected DoublePoint[] renderCurve() throws DilutionCurve.FitFailedException
     {
-        this(wellGroups, assumeDecreasing, (DilutionCurve.PercentCalculator)null, fitType);
-        _fitParameters = params;
+        return _curveFit.renderCurve(CURVE_SEGMENT_COUNT);
     }
 
-    protected DilutionCurve.DoublePoint[] renderCurve() throws DilutionCurve.FitFailedException
+    public double fitCurve(double x, CurveFit.Parameters params)
     {
-        Map<WellData, WellGroup> wellDatas = getWellData();
-
-        if (_fitParameters == null)
-        {
-            ensureWellSummaries();
-            List<Double> percentages = new ArrayList<>(wellDatas.size());
-            for (WellSummary well : _wellSummaries)
-            {
-                double percentage = 100 * well.getNeutralization();
-                percentages.add(percentage);
-            }
-            Collections.sort(percentages);
-
-            // use relative percentage rather than fixed 50% value.  Divide by 2*100 to average
-            // and convert back to 0.0-1.0 percentage form:
-            double minPercentage = percentages.get(0);
-            double maxPercentage = percentages.get(percentages.size() - 1);
-
-            _fitParameters = calculateFitParameters(minPercentage, maxPercentage);
-            _fitError = _fitParameters.fitError;
-        }
-        
-        DilutionCurve.DoublePoint[] curveData = new DilutionCurve.DoublePoint[WellGroupCurveImpl.CURVE_SEGMENT_COUNT];
-        double logX = Math.log10(getMinDilution());
-        double logInterval = (Math.log10(getMaxDilution()) - logX) / (WellGroupCurveImpl.CURVE_SEGMENT_COUNT - 1);
-        for (int i = 0; i < WellGroupCurveImpl.CURVE_SEGMENT_COUNT; i++)
-        {
-            double x = Math.pow(10, logX);
-            double y = fitCurve(x, _fitParameters);
-            curveData[i] = new DilutionCurve.DoublePoint(x, y);
-            logX += logInterval;
-        }
-        return curveData;
+        return _curveFit.fitCurve(x);
     }
 
-    public double fitCurve(double x, DilutionCurve.Parameters params)
+    public CurveFit.Parameters getParameters() throws DilutionCurve.FitFailedException
     {
-        if (params instanceof SigmoidalParameters)
-        {
-            SigmoidalParameters parameters = (SigmoidalParameters)params;
-            return parameters.getMin() + ((parameters.getMax() - parameters.getMin()) /
-                    Math.pow(1 + Math.pow(10, (Math.log10(parameters.getInflection()) - Math.log10(x)) * parameters.getSlope()), parameters.getAsymmetry()));
-        }
-        throw new IllegalArgumentException("params is not an instance of SigmoidalParameters");
+        return _curveFit.getParameters();
     }
 
-    private FitParameters calculateFitParameters(double minPercentage, double maxPercentage) throws DilutionCurve.FitFailedException
+    @Override
+    public double getFitError()
     {
-        FitParameters bestFit = null;
-        FitParameters parameters = new FitParameters();
-        double step = 10;
-        if (_fitType == DilutionCurve.FitType.FOUR_PARAMETER)
-            parameters.asymmetry = 1;
-        // try reasonable variants of max and min, in case there's a better fit.  We'll keep going past "reasonable" if
-        // we haven't found a single bestFit option, but we need to bail out at some point.  We currently quit once max
-        // reaches 200 or min reaches -100, since these values don't seem biologically reasonable.
-        for (double min = minPercentage; (bestFit == null || min > 0 - step) && min > (minPercentage - 100); min -= step )
-        {
-            parameters.min = min;
-            for (double max = maxPercentage; (bestFit == null || max <= 100 + step) && max < (maxPercentage + 100); max += step )
-            {
-                double absoluteCutoff = min + (0.5 * (max - min));
-                double relativeEC50 = getInterpolatedCutoffDilution(absoluteCutoff/100);
-                if (relativeEC50 != Double.POSITIVE_INFINITY && relativeEC50 != Double.NEGATIVE_INFINITY)
-                {
-                    parameters.max = max;
-                    parameters.inflection = relativeEC50;
-                    for (double slopeRadians = 0; slopeRadians < Math.PI; slopeRadians += Math.PI / 30)
-                    {
-                        parameters.slope = Math.tan(slopeRadians);
-                        switch (_fitType)
-                        {
-                            case FIVE_PARAMETER:
-                                for (double asymmetryFactor = 0; asymmetryFactor < Math.PI; asymmetryFactor += Math.PI / 30)
-                                {
-                                    parameters.asymmetry = asymmetryFactor;
-                                    parameters.fitError = calculateFitError(parameters);
-                                    if (bestFit == null || parameters.fitError < bestFit.fitError)
-                                        bestFit = parameters.copy();
-                                }
-                                break;
-                            case FOUR_PARAMETER:
-                                parameters.asymmetry = 1;
-                                parameters.fitError = calculateFitError(parameters);
-                                if (bestFit == null || parameters.fitError < bestFit.fitError)
-                                    bestFit = parameters.copy();
-                                break;
-                        }
-                    }
-                }
-            }
-        }
-        if (bestFit == null)
-        {
-            throw new DilutionCurve.FitFailedException("Unable to find any parameters to fit a curve to wellgroup " + _wellGroups.get(0).getName() +
-                    ".  Your plate template may be invalid.  Please contact an administrator to report this problem.  " +
-                    "Debug info: minPercentage = " + minPercentage + ", maxPercentage = " + maxPercentage + ", fitType = " +
-                    _fitType.getLabel() + ", num data points = " + _wellSummaries.length);
-        }
-        return bestFit;
+        return _curveFit.getFitError();
     }
 
-    public DilutionCurve.Parameters getParameters() throws DilutionCurve.FitFailedException
+    @Override
+    public double calculateAUC(StatsService.AUCType type) throws FitFailedException
     {
-        ensureCurve();
-        return _fitParameters;
+        return _curveFit.calculateAUC(type);
     }
 
     public static class FourParameterCurve extends ParameterCurveImpl
     {
         public FourParameterCurve(List<? extends WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator) throws DilutionCurve.FitFailedException
         {
-            super(wellGroups, assumeDecreasing, percentCalculator, DilutionCurve.FitType.FOUR_PARAMETER);
-        }
-
-        public FourParameterCurve(List<? extends WellGroup> wellGroups, boolean assumeDecreasing, FitParameters params) throws DilutionCurve.FitFailedException
-        {
-            super(wellGroups, assumeDecreasing, params, DilutionCurve.FitType.FOUR_PARAMETER);
+            super(wellGroups, assumeDecreasing, percentCalculator, StatsService.CurveFitType.FOUR_PARAMETER);
         }
     }
 
@@ -246,12 +93,7 @@ public abstract class ParameterCurveImpl extends WellGroupCurveImpl
     {
         public FiveParameterCurve(List<? extends WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator) throws DilutionCurve.FitFailedException
         {
-            super(wellGroups, assumeDecreasing, percentCalculator, DilutionCurve.FitType.FIVE_PARAMETER);
-        }
-
-        public FiveParameterCurve(List<? extends WellGroup> wellGroups, boolean assumeDecreasing, FitParameters params) throws DilutionCurve.FitFailedException
-        {
-            super(wellGroups, assumeDecreasing, params, DilutionCurve.FitType.FIVE_PARAMETER);
+            super(wellGroups, assumeDecreasing, percentCalculator, StatsService.CurveFitType.FIVE_PARAMETER);
         }
     }
 }

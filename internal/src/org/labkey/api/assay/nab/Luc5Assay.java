@@ -18,6 +18,7 @@ package org.labkey.api.assay.nab;
 import org.labkey.api.assay.dilution.DilutionManager;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionSummary;
+import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.study.Plate;
 import org.labkey.api.study.WellData;
 import org.labkey.api.study.WellGroup;
@@ -38,17 +39,17 @@ public abstract class Luc5Assay implements Serializable, DilutionCurve.PercentCa
     private int[] _cutoffs;
     private Map<Integer, String> _cutoffFormats;
     private File _dataFile;
-    protected DilutionCurve.FitType _renderedCurveFitType;
+    protected StatsService.CurveFitType _renderedCurveFitType;
     private boolean _lockAxes;
 
-    public Luc5Assay(Integer runRowId, int[] cutoffs, DilutionCurve.FitType renderCurveFitType)
+    public Luc5Assay(Integer runRowId, int[] cutoffs, StatsService.CurveFitType renderCurveFitType)
     {
         _renderedCurveFitType = renderCurveFitType;
         _runRowId = runRowId;
         _cutoffs = cutoffs;
     }
 
-    public Luc5Assay(int runRowId, List<Integer> cutoffs, DilutionCurve.FitType renderCurveFitType)
+    public Luc5Assay(int runRowId, List<Integer> cutoffs, StatsService.CurveFitType renderCurveFitType)
     {
         this(runRowId, toIntArray(cutoffs), renderCurveFitType);
     }
@@ -180,7 +181,7 @@ public abstract class Luc5Assay implements Serializable, DilutionCurve.PercentCa
         _lockAxes = lockAxes;
     }
 
-    public DilutionCurve.FitType getRenderedCurveFitType()
+    public StatsService.CurveFitType getRenderedCurveFitType()
     {
         return _renderedCurveFitType;
     }

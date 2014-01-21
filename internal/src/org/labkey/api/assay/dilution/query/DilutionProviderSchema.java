@@ -17,12 +17,12 @@ package org.labkey.api.assay.dilution.query;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
-import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionDataHandler;
 import org.labkey.api.assay.dilution.SampleInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.EnumTableInfo;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.User;
@@ -95,9 +95,9 @@ public class DilutionProviderSchema extends AssayProviderSchema
         }
         if (CURVE_FIT_METHOD_TABLE_NAME.equalsIgnoreCase(name))
         {
-            EnumTableInfo<DilutionCurve.FitType> result = new EnumTableInfo<>(DilutionCurve.FitType.class, getDbSchema(), new EnumTableInfo.EnumValueGetter<DilutionCurve.FitType>()
+            EnumTableInfo<StatsService.CurveFitType> result = new EnumTableInfo<>(StatsService.CurveFitType.class, getDbSchema(), new EnumTableInfo.EnumValueGetter<StatsService.CurveFitType>()
             {
-                public String getValue(DilutionCurve.FitType e)
+                public String getValue(StatsService.CurveFitType e)
                 {
                     return e.getLabel();
                 }

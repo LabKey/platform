@@ -18,10 +18,10 @@ package org.labkey.api.assay.nab.view;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionAssayRun;
-import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionDataHandler;
 import org.labkey.api.assay.nab.GraphForm;
 import org.labkey.api.assay.nab.NabGraph;
+import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -77,7 +77,7 @@ public abstract class DilutionGraphAction extends SimpleViewAction<GraphForm>
         return config;
     }
 
-    protected DilutionAssayRun getAssayRun(ExpRun run, DilutionCurve.FitType fit, User user) throws ExperimentException
+    protected DilutionAssayRun getAssayRun(ExpRun run, StatsService.CurveFitType fit, User user) throws ExperimentException
     {
         try
         {

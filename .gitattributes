@@ -407,6 +407,8 @@ api/src/org/labkey/api/data/dialect/sql2003Keywords.txt -text
 api/src/org/labkey/api/data/dialect/sqlKeywords.txt -text
 api/src/org/labkey/api/data/nestedGridScript.jsp -text
 api/src/org/labkey/api/data/parameterForm.jsp -text
+api/src/org/labkey/api/data/statistics/CurveFit.java -text
+api/src/org/labkey/api/data/statistics/DoublePoint.java -text
 api/src/org/labkey/api/data/statistics/MathStat.java -text
 api/src/org/labkey/api/data/statistics/StatsService.java -text
 api/src/org/labkey/api/data/views/DataViewInfo.java -text

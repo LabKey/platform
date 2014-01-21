@@ -16,11 +16,11 @@
 
 package org.labkey.api.assay.dilution;
 
+import org.labkey.api.data.statistics.CurveFit;
+import org.labkey.api.data.statistics.DoublePoint;
+import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.study.WellData;
 import org.labkey.api.study.WellGroup;
-import org.labkey.api.util.Pair;
-
-import java.util.Map;
 
 /**
  * User: brittp
@@ -29,15 +29,6 @@ import java.util.Map;
  */
 public interface DilutionCurve
 {
-    public interface Parameters
-    {
-        /**
-         * Returns a map representation of the parameters, used for
-         * serialization of parameter information in the Client API
-         */
-        public Map<String, Object> toMap();
-    }
-
     public class FitFailedException extends Exception
     {
         public FitFailedException(String message)
@@ -46,55 +37,9 @@ public interface DilutionCurve
         }
     }
 
-    public enum FitType
-    {
-        FOUR_PARAMETER("Four Parameter", "4pl"),
-        FIVE_PARAMETER("Five Parameter", "5pl"),
-        POLYNOMIAL("Polynomial", "poly");
-
-        private String _label;
-        private String _colSuffix;
-
-        private FitType(String label, String colSuffix)
-        {
-            _label = label;
-            _colSuffix = colSuffix;
-        }
-
-        public String getColSuffix()
-        {
-            return _colSuffix;
-        }
-
-        public String getLabel()
-        {
-            return _label;
-        }
-
-        public static FitType fromLabel(String label)
-        {
-            for (FitType type : values())
-            {
-                if (type.getLabel().equals(label))
-                    return type;
-            }
-            return null;
-        }
-
-        public static FitType fromColSuffix(String suffix)
-        {
-            for (FitType type : values())
-            {
-                if (type.getColSuffix().equals(suffix))
-                    return type;
-            }
-            return null;
-        }
-    }
-
     DoublePoint[] getCurve() throws FitFailedException;
 
-    Parameters getParameters() throws FitFailedException;
+    CurveFit.Parameters getParameters() throws FitFailedException;
 
     double getFitError() throws FitFailedException;
 
@@ -106,41 +51,9 @@ public interface DilutionCurve
 
     double getMaxDilution() throws FitFailedException;
 
-    double fitCurve(double x, Parameters curveParameters);
+    double fitCurve(double x, CurveFit.Parameters curveParameters);
 
-    double calculateAUC(AUCType type) throws FitFailedException;
-
-    public static class DoublePoint extends Pair<Double, Double>
-    {
-        public DoublePoint(double x, double y)
-        {
-            super(x, y);
-        }
-
-        public double getX()
-        {
-            return getKey();
-        }
-
-        public double getY()
-        {
-            return getValue();
-        }
-    }
-
-    public enum AUCType
-    {
-        NORMAL("Normal"),
-        POSITIVE("Positive"),
-        NEGATIVE("Negative");
-
-        private String _label;
-
-        private AUCType(String label)
-        {
-            _label = label;
-        }
-    }
+    double calculateAUC(StatsService.AUCType type) throws FitFailedException;
 
     public static interface PercentCalculator
     {

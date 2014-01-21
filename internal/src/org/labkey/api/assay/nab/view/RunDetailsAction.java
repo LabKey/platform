@@ -18,9 +18,9 @@ package org.labkey.api.assay.nab.view;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionAssayRun;
-import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionDataHandler;
 import org.labkey.api.assay.nab.RenderAssayBean;
+import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -107,7 +107,7 @@ public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends
         return view;
     }
 
-    protected DilutionAssayRun getNabAssayRun(ExpRun run, DilutionCurve.FitType fit, User user) throws ExperimentException
+    protected DilutionAssayRun getNabAssayRun(ExpRun run, StatsService.CurveFitType fit, User user) throws ExperimentException
     {
         AssayProvider provider = AssayService.get().getProvider(run.getProtocol());
         if (provider instanceof DilutionAssayProvider)

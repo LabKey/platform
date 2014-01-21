@@ -24,6 +24,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -71,12 +72,12 @@ public abstract class DilutionAssayRun extends Luc5Assay
     protected ExpRun _run;
     // Be extremely careful to not leak this user out in any objects (e.g, via schemas or tables) as it may have elevated permissions.
     protected User _user;
-    protected DilutionCurve.FitType _savedCurveFitType = null;
+    protected StatsService.CurveFitType _savedCurveFitType = null;
     protected Map<ExpMaterial, List<WellGroup>> _materialWellGroupMapping;
     protected Map<WellGroup, ExpMaterial> _wellGroupMaterialMapping;
 
     public DilutionAssayRun(DilutionAssayProvider provider, ExpRun run,
-                       User user, List<Integer> cutoffs, DilutionCurve.FitType renderCurveFitType)
+                       User user, List<Integer> cutoffs, StatsService.CurveFitType renderCurveFitType)
     {
         super(run.getRowId(), cutoffs, renderCurveFitType);
         _run = run;
@@ -89,7 +90,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
             if (DilutionAssayProvider.CURVE_FIT_METHOD_PROPERTY_NAME.equals(property.getKey().getName()))
             {
                 String fitTypeLabel = (String) property.getValue();
-                _savedCurveFitType = DilutionCurve.FitType.fromLabel(fitTypeLabel);
+                _savedCurveFitType = StatsService.CurveFitType.fromLabel(fitTypeLabel);
             }
         }
     }
@@ -145,7 +146,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
         return fieldKeys;
     }
 
-    public DilutionCurve.FitType getSavedCurveFitType()
+    public StatsService.CurveFitType getSavedCurveFitType()
     {
         return _savedCurveFitType;
     }

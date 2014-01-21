@@ -15,7 +15,7 @@
  */
 package org.labkey.api.assay.nab.view;
 
-import org.labkey.api.assay.dilution.DilutionCurve;
+import org.labkey.api.data.statistics.StatsService;
 
 /**
  * User: klum
@@ -27,7 +27,7 @@ public class GraphSelectedForm
     private int[] _id;
     private String _captionColumn;
     private String _chartTitle;
-    private DilutionCurve.FitType _fitType;
+    private StatsService.CurveFitType _fitType;
     private int _height = -1;
     private int _width = -1;
 
@@ -78,10 +78,10 @@ public class GraphSelectedForm
 
     public void setFitType(String fitType)
     {
-        _fitType = fitType != null ? DilutionCurve.FitType.valueOf(fitType) : null;
+        _fitType = fitType != null ? StatsService.CurveFitType.valueOf(fitType) : null;
     }
 
-    public DilutionCurve.FitType getFitTypeEnum()
+    public StatsService.CurveFitType getFitTypeEnum()
     {
         return _fitType;
     }

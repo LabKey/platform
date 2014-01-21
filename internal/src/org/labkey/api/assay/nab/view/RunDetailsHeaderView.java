@@ -16,9 +16,9 @@
 package org.labkey.api.assay.nab.view;
 
 import org.apache.commons.lang3.math.NumberUtils;
-import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.nab.NabGraph;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.nab.NabUrls;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -96,7 +96,7 @@ public class RunDetailsHeaderView extends AssayHeaderView
     {
         String currentFit = getViewContext().getActionURL().getParameter("fitType");
         NavTree menu = new NavTree("Curve Type");
-        for (DilutionCurve.FitType type : DilutionCurve.FitType.values())
+        for (StatsService.CurveFitType type : StatsService.CurveFitType.values())
         {
             ActionURL changeCurveURL = getViewContext().cloneActionURL();
             changeCurveURL.replaceParameter("fitType", type.name());

@@ -15,7 +15,7 @@
  */
 package org.labkey.api.assay.nab;
 
-import org.labkey.api.assay.dilution.DilutionCurve;
+import org.labkey.api.data.statistics.StatsService;
 
 /**
  * User: klum
@@ -25,7 +25,7 @@ public class RenderAssayForm
 {
     private boolean _newRun;
     private int _rowId = -1;
-    protected DilutionCurve.FitType _fitType;
+    protected StatsService.CurveFitType _fitType;
 
     public boolean isNewRun()
     {
@@ -54,10 +54,10 @@ public class RenderAssayForm
 
     public void setFitType(String fitType)
     {
-        _fitType = fitType != null ? DilutionCurve.FitType.valueOf(fitType) : null;
+        _fitType = fitType != null ? StatsService.CurveFitType.valueOf(fitType) : null;
     }
 
-    public DilutionCurve.FitType getFitTypeEnum()
+    public StatsService.CurveFitType getFitTypeEnum()
     {
         return _fitType;
     }

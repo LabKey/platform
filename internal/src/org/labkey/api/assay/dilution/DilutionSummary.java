@@ -17,6 +17,9 @@
 package org.labkey.api.assay.dilution;
 
 import org.labkey.api.assay.nab.Luc5Assay;
+import org.labkey.api.data.statistics.CurveFit;
+import org.labkey.api.data.statistics.DoublePoint;
+import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.WellData;
 import org.labkey.api.study.WellGroup;
@@ -39,20 +42,20 @@ public class DilutionSummary implements Serializable
 {
     private List<WellGroup> _sampleGroups;
     private WellGroup _firstGroup;
-    private Map<DilutionCurve.FitType, DilutionCurve> _dilutionCurve = new HashMap<>() ;
+    private Map<StatsService.CurveFitType, DilutionCurve> _dilutionCurve = new HashMap<>() ;
     private Luc5Assay _assay;
     private String _lsid;
-    private DilutionCurve.FitType _curveFitType;
+    private StatsService.CurveFitType _curveFitType;
     protected DilutionMaterialKey _materialKey = null;
     public static final DilutionMaterialKey BLANK_NAB_MATERIAL = new DilutionMaterialKey("Blank", null, null, null);
 
 
-    public DilutionSummary(Luc5Assay assay, WellGroup sampleGroup, String lsid, DilutionCurve.FitType curveFitType)
+    public DilutionSummary(Luc5Assay assay, WellGroup sampleGroup, String lsid, StatsService.CurveFitType curveFitType)
     {
         this(assay, Collections.singletonList(sampleGroup), lsid, curveFitType);
     }
 
-    public DilutionSummary(Luc5Assay assay, List<WellGroup> sampleGroups, String lsid, DilutionCurve.FitType curveFitType)
+    public DilutionSummary(Luc5Assay assay, List<WellGroup> sampleGroups, String lsid, StatsService.CurveFitType curveFitType)
     {
         assert sampleGroups != null && !sampleGroups.isEmpty() : "sampleGroups cannot be null or empty";
         assert assay != null : "assay cannot be null";
@@ -156,7 +159,7 @@ public class DilutionSummary implements Serializable
         return _assay.getPercent(getDataToSampleMap().get(data), data);
     }
 
-    private DilutionCurve getDilutionCurve(DilutionCurve.FitType type) throws DilutionCurve.FitFailedException
+    private DilutionCurve getDilutionCurve(StatsService.CurveFitType type) throws DilutionCurve.FitFailedException
     {
         if (!_dilutionCurve.containsKey(type))
         {
@@ -198,17 +201,17 @@ public class DilutionSummary implements Serializable
         return SampleInfo.Method.valueOf(name);
     }
 
-    public double getCutoffDilution(double cutoff, DilutionCurve.FitType type) throws DilutionCurve.FitFailedException
+    public double getCutoffDilution(double cutoff, StatsService.CurveFitType type) throws DilutionCurve.FitFailedException
     {
         return getDilutionCurve(type).getCutoffDilution(cutoff);
     }
 
-    public double getInterpolatedCutoffDilution(double cutoff, DilutionCurve.FitType type) throws DilutionCurve.FitFailedException
+    public double getInterpolatedCutoffDilution(double cutoff, StatsService.CurveFitType type) throws DilutionCurve.FitFailedException
     {
         return getDilutionCurve(type).getInterpolatedCutoffDilution(cutoff);
     }
 
-    public DilutionCurve.DoublePoint[] getCurve() throws DilutionCurve.FitFailedException
+    public DoublePoint[] getCurve() throws DilutionCurve.FitFailedException
     {
         return getDilutionCurve(_curveFitType).getCurve();
     }
@@ -218,12 +221,12 @@ public class DilutionSummary implements Serializable
         return getDilutionCurve(_curveFitType).getFitError();
     }
 
-    public double getMinDilution(DilutionCurve.FitType type) throws DilutionCurve.FitFailedException
+    public double getMinDilution(StatsService.CurveFitType type) throws DilutionCurve.FitFailedException
     {
         return getDilutionCurve(type).getMinDilution();
     }
 
-    public double getMaxDilution(DilutionCurve.FitType type) throws DilutionCurve.FitFailedException
+    public double getMaxDilution(StatsService.CurveFitType type) throws DilutionCurve.FitFailedException
     {
         return getDilutionCurve(type).getMaxDilution();
     }
@@ -248,19 +251,19 @@ public class DilutionSummary implements Serializable
         return _firstGroup;
     }
 
-    public DilutionCurve.Parameters getCurveParameters(DilutionCurve.FitType type) throws DilutionCurve.FitFailedException
+    public CurveFit.Parameters getCurveParameters(StatsService.CurveFitType type) throws DilutionCurve.FitFailedException
     {
         return getDilutionCurve(type).getParameters();
     }
 
-    public double getAUC(DilutionCurve.FitType type, DilutionCurve.AUCType calc) throws DilutionCurve.FitFailedException
+    public double getAUC(StatsService.CurveFitType type, StatsService.AUCType calc) throws DilutionCurve.FitFailedException
     {
         return getDilutionCurve(type).calculateAUC(calc);
     }
 
     public double getAUC() throws DilutionCurve.FitFailedException
     {
-        return getDilutionCurve(_assay.getRenderedCurveFitType()).calculateAUC(DilutionCurve.AUCType.NORMAL);
+        return getDilutionCurve(_assay.getRenderedCurveFitType()).calculateAUC(StatsService.AUCType.NORMAL);
     }
 
 }

@@ -16,13 +16,13 @@
 
 package org.labkey.api.assay.dilution;
 
-import Jama.Matrix;
+import org.labkey.api.data.statistics.CurveFit;
+import org.labkey.api.data.statistics.DoublePoint;
+import org.labkey.api.data.statistics.StatsService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.WellGroup;
 
 import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Collections;
 
 /**
  * User: klum
@@ -30,117 +30,48 @@ import java.util.Collections;
  */
 public class PolynomialCurveImpl extends WellGroupCurveImpl
 {
-    private static int ORDER = 3;       // the order of the polynomial
-    private PolynomialParameters _parameters;
-
-    private static class PolynomialParameters implements Parameters
-    {
-        private double[] _coefficients = new double[ORDER];
-
-        public PolynomialParameters(double[] coefficients)
-        {
-            _coefficients = coefficients;
-        }
-
-        public double[] getCoefficients()
-        {
-            return _coefficients;
-        }
-
-        public void setCoefficients(double[] coefficients)
-        {
-            _coefficients = coefficients;
-        }
-
-        public Map<String, Object> toMap()
-        {
-            Map<String, Object> params = new HashMap<>();
-
-            int i = 0;
-            for (double beta : _coefficients)
-            {
-                params.put("beta" + i++, beta);
-            }
-            return Collections.unmodifiableMap(params);
-        }
-    }
+    private CurveFit _curveFit;
 
     public PolynomialCurveImpl(List<WellGroup> wellGroups, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
     {
         super(wellGroups, assumeDecreasing, percentCalculator);
+
+        ensureWellSummaries();
+        DoublePoint[] data = new DoublePoint[_wellSummaries.length];
+        int i=0;
+        for (WellSummary well : _wellSummaries)
+        {
+            // we want to express the neutralization values as percentages
+            data[i++] = new DoublePoint(well.getDilution(), well.getNeutralization() * 100);
+        }
+        StatsService service = ServiceRegistry.get().getService(StatsService.class);
+        _curveFit = service.getCurveFit(StatsService.CurveFitType.POLYNOMIAL, data);
     }
 
     protected DoublePoint[] renderCurve() throws FitFailedException
     {
-        if (_parameters == null)
-        {
-            ensureWellSummaries();
-            // initialize the data points and calculate the polynomial coefficients
-            double[] ya = new double[_wellSummaries.length];
-            double[] xa = new double[_wellSummaries.length];
-
-            int i=0;
-            for (WellSummary well : _wellSummaries)
-            {
-                ya[i] = well.getNeutralization() * 100;
-                xa[i++] = Math.log10(well.getDilution());
-            }
-
-            _parameters = calculateParameters(xa, ya);
-            _fitError = calculateFitError(_parameters);
-        }
-
-        DoublePoint[] curveData = new DoublePoint[CURVE_SEGMENT_COUNT];
-        double logX = Math.log10(getMinDilution());
-        double logInterval = (Math.log10(getMaxDilution()) - logX) / (CURVE_SEGMENT_COUNT - 1);
-        for (int j = 0; j < CURVE_SEGMENT_COUNT; j++)
-        {
-            double x = Math.pow(10, logX);
-            double y = fitCurve(x, _parameters);
-            curveData[j] = new DoublePoint(x, y);
-            logX += logInterval;
-        }
-        return curveData;
+        return _curveFit.renderCurve(CURVE_SEGMENT_COUNT);
     }
 
-    public double fitCurve(double x, Parameters curveParameters)
+    public double fitCurve(double x, CurveFit.Parameters curveParameters)
     {
-        if (curveParameters instanceof PolynomialParameters)
-        {
-            double[] params = ((PolynomialParameters)curveParameters).getCoefficients();
-            double y = 0;
-
-            for (int i=0; i < params.length; i++)
-                y += params[i] * Math.pow(Math.log10(x), i);
-
-            return y;
-        }
-        throw new IllegalArgumentException("curveParameters must be an instance of PolynomialParameters");
+        return _curveFit.fitCurve(x);
     }
 
-    /**
-     * Calculates the coefficients of an n-order polynomial using a least squares fit
-     */
-    private PolynomialParameters calculateParameters(double[] x, double[] y)
+    public CurveFit.Parameters getParameters() throws FitFailedException
     {
-        Matrix matrixA = new Matrix(x.length, ORDER);
-        Matrix matrixB = new Matrix(x.length, 1);
-
-        for (int i=0; i < ORDER; i++)
-        {
-            for (int j=0; j < x.length; j++)
-                matrixA.set(j, i, Math.pow(x[j], i));
-        }
-        for (int i=0; i < x.length; i++)
-            matrixB.set(i, 0, y[i]);
-
-        double[] ab = matrixA.solve(matrixB).getRowPackedCopy();
-        return new PolynomialParameters(ab);
+        return _curveFit.getParameters();
     }
 
-    public Parameters getParameters() throws FitFailedException
+    @Override
+    public double getFitError()
     {
-        ensureCurve();
-        return _parameters;
+        return _curveFit.getFitError();
+    }
+
+    @Override
+    public double calculateAUC(StatsService.AUCType type) throws FitFailedException
+    {
+        return _curveFit.calculateAUC(type);
     }
 }
