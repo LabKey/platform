@@ -263,13 +263,8 @@ public class DomainImpl implements Domain
         return _new;
     }
 
-    public void save(User user) throws ChangePropertyDescriptorException
-    {
-        save(user, false);
-    }
-
     // TODO: throws SQLException instead of RuntimeSQLException (e.g., constraint violation due to duplicate domain name) 
-    public void save(User user, boolean allowAddBaseProperty) throws ChangePropertyDescriptorException
+    public void save(User user) throws ChangePropertyDescriptorException
     {
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
@@ -383,7 +378,7 @@ public class DomainImpl implements Domain
             {
                 if (!propsAdded.isEmpty())
                 {
-                    StorageProvisioner.addProperties(this, propsAdded, allowAddBaseProperty);
+                    StorageProvisioner.addProperties(this, propsAdded);
                 }
 
                 addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()));

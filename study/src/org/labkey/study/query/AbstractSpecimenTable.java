@@ -54,10 +54,6 @@ public abstract class AbstractSpecimenTable extends BaseStudyTable
         addWrapTypeColumn("DerivativeType2", "DerivativeTypeId2");
         addWrapColumn(_rootTable.getColumn("SubAdditiveDerivative"));
         addWrapColumn(_rootTable.getColumn("DrawTimestamp"));
-        ColumnInfo columnDrawDate =  addWrapColumn(_rootTable.getColumn("DrawDate"));
-        columnDrawDate.setReadOnly(true);
-        ColumnInfo columnDrawTime = addWrapColumn(_rootTable.getColumn("DrawTime"));
-        columnDrawTime.setReadOnly(true);
 
         addWrapLocationColumn("Clinic", "OriginatingLocationId");
         addWrapLocationColumn("ProcessingLocation", "ProcessingLocation");

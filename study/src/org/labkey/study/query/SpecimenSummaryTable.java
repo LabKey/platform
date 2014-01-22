@@ -98,10 +98,6 @@ public class SpecimenSummaryTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("AvailableCount")).setHidden(!enableSpecimenRequest);
         addWrapColumn(_rootTable.getColumn("ExpectedAvailableCount")).setHidden(!enableSpecimenRequest);
         addWrapColumn(_rootTable.getColumn("DrawTimestamp"));
-        ColumnInfo columnDrawDate =  addWrapColumn(_rootTable.getColumn("DrawDate"));
-        columnDrawDate.setUserEditable(false);
-        ColumnInfo columnDrawTime = addWrapColumn(_rootTable.getColumn("DrawTime"));
-        columnDrawTime.setUserEditable(false);
         addWrapColumn(_rootTable.getColumn("SalReceiptDate"));
         addWrapColumn(_rootTable.getColumn("ClassId"));
         addWrapColumn(_rootTable.getColumn("ProtocolNumber"));

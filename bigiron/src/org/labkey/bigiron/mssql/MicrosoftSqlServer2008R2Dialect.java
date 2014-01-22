@@ -151,11 +151,6 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
                 throw new IllegalArgumentException("EntityId is not supported for SQL type " + prop.getJdbcType().sqlType + " (" + sqlTypeNameFromSqlType(prop.getJdbcType().sqlType) + ")");
             }
         }
-        else if (JdbcType.DATE.equals(prop.getJdbcType()) || JdbcType.TIME.equals(prop.getJdbcType()))
-        {
-            // This is because the jtds driver has a bug where it returns these from the db as strings
-            return "DATETIME";
-        }
         else
         {
             return sqlTypeNameFromSqlType(prop.getJdbcType().sqlType);

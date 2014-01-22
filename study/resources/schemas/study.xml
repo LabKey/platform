@@ -762,14 +762,6 @@
         <ns:description>The timestamp of specimen collection.</ns:description>
         <ns:formatString>DateTime</ns:formatString>
       </ns:column>
-      <ns:column columnName="DrawDate">
-        <ns:description>The date of specimen collection.</ns:description>
-        <ns:formatString>Date</ns:formatString>
-      </ns:column>
-      <ns:column columnName="DrawTime">
-        <ns:description>The time of specimen collection.</ns:description>
-        <ns:formatString>Time</ns:formatString>
-      </ns:column>
       <ns:column columnName="SalReceiptDate">
         <ns:description>The timestamp of specimen receipt at the site-affiliated laboratory.</ns:description>
       </ns:column>
@@ -879,16 +871,6 @@
           <ns:description>The timestamp of specimen collection.</ns:description>
           <ns:datatype>date</ns:datatype>
           <ns:formatString>DateTime</ns:formatString>
-      </ns:column>
-      <ns:column columnName="DrawDate">
-          <ns:description>The date of specimen collection.</ns:description>
-          <ns:datatype>date</ns:datatype>
-          <ns:formatString>Date</ns:formatString>
-      </ns:column>
-      <ns:column columnName="DrawTime">
-          <ns:description>The time of specimen collection.</ns:description>
-          <ns:datatype>date</ns:datatype>
-          <ns:formatString>Time</ns:formatString>
       </ns:column>
       <ns:column columnName="SalReceiptDate">
           <ns:description>The timestamp of specimen receipt at the site-affiliated laboratory.</ns:description>
@@ -1098,16 +1080,6 @@
           <ns:description>The timestamp of specimen collection.</ns:description>
           <ns:datatype>date</ns:datatype>
           <ns:formatString>DateTime</ns:formatString>
-      </ns:column>
-      <ns:column columnName="DrawDate">
-          <ns:description>The date of specimen collection.</ns:description>
-          <ns:datatype>date</ns:datatype>
-          <ns:formatString>Date</ns:formatString>
-      </ns:column>
-      <ns:column columnName="DrawTime">
-          <ns:description>The time of specimen collection.</ns:description>
-          <ns:datatype>date</ns:datatype>
-          <ns:formatString>Time</ns:formatString>
       </ns:column>
       <ns:column columnName="SalReceiptDate">
           <ns:description>The timestamp of specimen receipt at the site-affiliated laboratory.</ns:description>
