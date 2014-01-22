@@ -192,13 +192,13 @@ public class MemTracker
         }
     }
 
-    public synchronized boolean put(Object object)
+    public boolean put(Object object)
     {
         assert _put(object);
         return true;
     }
 
-    public synchronized boolean remove(Object object)
+    public boolean remove(Object object)
     {
         assert _remove(object);
         return true;

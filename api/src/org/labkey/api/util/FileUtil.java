@@ -802,6 +802,11 @@ quickScan:
     }
 
 
+    /**
+     * Creates a legal, cross-platform file name from the component parts (replacing special characters like colons, semi-colons, slashes, etc
+     * @param prefix the start of the file name to generate, to be appended with a timestamp suffix
+     * @param extension the extension (not including the dot) for the desired file name
+     */
     public static String makeFileNameWithTimestamp(String prefix, String extension)
     {
         return makeLegalName(prefix + "_" + getTimestamp() + "." + extension);
