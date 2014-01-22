@@ -169,6 +169,8 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
         if (ext != null)
         {
             Collection<DataLoaderFactory> factories = _extensionToFactory.get(ext);
+            if (factories == null && !ext.startsWith("."))
+                factories = _extensionToFactory.get("." + ext);
             if (factories != null && factories.size() > 0)
             {
                 if (factories.size() == 1)
