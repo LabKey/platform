@@ -61,7 +61,6 @@ public class DateUtil
     private static final String ISO_DATE_FORMAT_STRING = "yyyy-MM-dd";
     private static final String ISO_TIME_FORMAT_STRING = "HH:mm";
     private static final String ISO_DATE_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_TIME_FORMAT_STRING;
-    private static final String LONG_TIME_FORMAT_STRING = "HH:mm:ss";
 
     @Deprecated
     private static final String _standardDateTimeFormatString = ISO_DATE_TIME_FORMAT_STRING;
@@ -1034,12 +1033,6 @@ validNum:       {
     }
 
 
-    public static String getTimeFormatString(Container c)
-    {
-        return LONG_TIME_FORMAT_STRING;
-    }
-
-
     /** Format date & time using using folder-specified default date pattern plus standard time format */
     public static String formatDateTime(Container c, Date date)
     {
@@ -1313,39 +1306,6 @@ Parse:
         return HelpTopic.getJDKJavaDocLink(SimpleDateFormat.class);
     }
 
-
-    public static Pair<Date, Date> splitDate(Date fullDate)
-    {
-        Long fullDateMillis = fullDate.getTime();
-        int year = fullDate.getYear();
-        int month = fullDate.getMonth();
-        int date = fullDate.getDate();
-        int hour = fullDate.getHours();
-        int mins = fullDate.getMinutes();
-        int secs = fullDate.getSeconds();
-        Date onlyTime = new Date(70, 0, 1, hour, mins, secs);
-        Date onlyDate = new Date(year, month, date);
-        return new Pair<>(onlyDate, onlyTime);
-    }
-
-    public static Date combineDateTime(Date date, Date time)
-    {
-        Date newDate = (Date)date.clone();
-        newDate.setHours(time.getHours());
-        newDate.setMinutes(time.getMinutes());
-        newDate.setSeconds(time.getSeconds());
-        return newDate;
-    }
-
-    public static Date getDateOnly(Date fullDate)
-    {
-        return splitDate(fullDate).first;
-    }
-
-    public static Date getTimeOnly(Date fullDate)
-    {
-        return splitDate(fullDate).second;
-    }
 
     public static class TestCase extends Assert
     {
@@ -1823,21 +1783,6 @@ Parse:
                     fail(" locale test failed: " + l.getDisplayName());
                 }
             }
-        }
-
-        @Test
-        public void testSplitDate()
-        {
-            Date fullDate = java.sql.Timestamp.valueOf("2001-02-03 04:05:06");
-            Date expectedDate = java.sql.Timestamp.valueOf("2001-02-03 00:00:00");
-            Date expectedTime = java.sql.Timestamp.valueOf("1970-01-01 04:05:06");
-
-            Pair<Date, Date> dateTimePair = splitDate(fullDate);
-            Date onlyDate = dateTimePair.first;
-            Date onlyTime = dateTimePair.second;
-            assertEquals(onlyDate.getTime(), expectedDate.getTime());
-            assertEquals(fullDate.getTime(), combineDateTime(onlyDate, onlyTime).getTime());
-            assertEquals(onlyTime.getTime(), expectedTime.getTime());
         }
     }
 }

@@ -19,10 +19,10 @@ package org.labkey.api.exp;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.reader.ExcelFactory;
-import org.labkey.api.util.DateUtil;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -270,42 +270,6 @@ public enum PropertyType
                         return value;
                     else
                         return ConvertUtils.convert(value.toString(), Date.class);
-                }
-
-                public SimpleTypeNames.Enum getXmlBeanType()
-                {
-                    return SimpleTypeNames.DATE_TIME;
-                }
-            },
-    DATE("http://www.w3.org/2001/XMLSchema#date", "DateTime", 'd', JdbcType.DATE, 100, null, Cell.CELL_TYPE_NUMERIC, Date.class)
-            {
-                protected Object convertExcelValue(Cell cell) throws ConversionException
-                {
-                    return DateUtil.getDateOnly((Date)DATE_TIME.convertExcelValue(cell));
-                }
-
-                @Override
-                public Object convert(Object value) throws ConversionException
-                {
-                    return DateUtil.getDateOnly((Date)DATE_TIME.convert(value));
-                }
-
-                public SimpleTypeNames.Enum getXmlBeanType()
-                {
-                    return SimpleTypeNames.DATE_TIME;
-                }
-            },
-    TIME("http://www.w3.org/2001/XMLSchema#time", "DateTime", 'd', JdbcType.TIME, 100, null, Cell.CELL_TYPE_NUMERIC, Date.class)
-            {
-                protected Object convertExcelValue(Cell cell) throws ConversionException
-                {
-                    return DateUtil.getTimeOnly((Date)DATE_TIME.convertExcelValue(cell));
-                }
-
-                @Override
-                public Object convert(Object value) throws ConversionException
-                {
-                    return DateUtil.getTimeOnly((Date)DATE_TIME.convert(value));
                 }
 
                 public SimpleTypeNames.Enum getXmlBeanType()
@@ -589,7 +553,7 @@ public enum PropertyType
         if (Cell.CELL_TYPE_NUMERIC == cell.getCellType())
         {
             // Ugly, the POI implementation doesn't expose an explicit date type
-            if (org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell))
+            if (DateUtil.isCellDateFormatted(cell))
                 return DATE_TIME.convertExcelValue(cell);
             else
                 // special handling for the "number type": prefer double.

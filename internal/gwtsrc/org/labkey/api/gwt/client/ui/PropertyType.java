@@ -33,8 +33,6 @@ public enum PropertyType
     xsdInt("http://www.w3.org/2001/XMLSchema#int", true, "Integer", null, "int"),
     xsdDouble("http://www.w3.org/2001/XMLSchema#double", true, "Number (Double)", "Double", "float"),
     xsdDateTime("http://www.w3.org/2001/XMLSchema#dateTime", true, "DateTime", null, "date"),
-    xsdDate("http://www.w3.org/2001/XMLSchema#date", true, "DateTime", null, "date"),
-    xsdTime("http://www.w3.org/2001/XMLSchema#time", true, "DateTime", null, "date"),
     expFileLink("http://cpas.fhcrc.org/exp/xml#fileLink", false, "File"),
     expAttachment("http://www.labkey.org/exp/xml#attachment", false, "Attachment"),
     expFlag("http://www.labkey.org/exp/xml#flag", false, "Flag (String)"),
