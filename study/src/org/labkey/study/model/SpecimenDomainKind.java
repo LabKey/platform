@@ -44,6 +44,8 @@ public class SpecimenDomainKind extends AbstractSpecimenDomainKind
     private final static String DERIVATIVETYPEID2 = "DerivativeTypeId2";
     private final static String SUBADDITIVEDERIVATIVE = "SubadditiveDerivative";
     private final static String DRAWTIMESTAMP = "DrawTimestamp";
+    private static final String DRAWDATE = "DrawDate";
+    private static final String DRAWTIME = "DrawTime";
     private final static String SALRECEIPTDATE = "SalReceiptDate";
     private final static String CLASSID = "ClassId";
     private final static String PROTOCOLNUMBER = "ProtocolNumber";
@@ -77,6 +79,8 @@ public class SpecimenDomainKind extends AbstractSpecimenDomainKind
             new PropertyStorageSpec(DERIVATIVETYPEID2, JdbcType.INTEGER, 0),
             new PropertyStorageSpec(SUBADDITIVEDERIVATIVE, JdbcType.VARCHAR, 50),
             new PropertyStorageSpec(DRAWTIMESTAMP, JdbcType.TIMESTAMP, 0),
+            new PropertyStorageSpec(DRAWDATE,  JdbcType.DATE, 0),
+            new PropertyStorageSpec(DRAWTIME,  JdbcType.TIME, 0),
             new PropertyStorageSpec(SALRECEIPTDATE, JdbcType.TIMESTAMP, 0),
             new PropertyStorageSpec(CLASSID, JdbcType.VARCHAR, 20),
             new PropertyStorageSpec(PROTOCOLNUMBER, JdbcType.VARCHAR, 20),
@@ -125,7 +129,6 @@ public class SpecimenDomainKind extends AbstractSpecimenDomainKind
     public Set<PropertyStorageSpec> getBaseProperties()
     {
         Set<PropertyStorageSpec> specs = new LinkedHashSet<>(BASE_PROPERTIES);
-//        specs.addAll(super.getBaseProperties());
         return specs;
     }
 
@@ -138,5 +141,15 @@ public class SpecimenDomainKind extends AbstractSpecimenDomainKind
     public Set<PropertyStorageSpec> getPropertySpecsFromTemplate(SpecimenTablesTemplate template)
     {
         return template.getExtraSpecimenProperties();
+    }
+
+    // For use by Upgrade code
+    public static PropertyStorageSpec getDrawDateStorageSpec()
+    {
+        return new PropertyStorageSpec(DRAWDATE, JdbcType.DATE, 0);
+    }
+    public static PropertyStorageSpec getDrawTimeStorageSpec()
+    {
+        return new PropertyStorageSpec(DRAWTIME, JdbcType.TIME, 0);
     }
 }

@@ -129,6 +129,12 @@ public class SpecimenQueryView extends BaseStudyQueryView
         {
             return ctx.getRow().get(getRequiredColumnAlias(columnName));
         }
+
+        public void prepareDisplayColumns(Container container)
+        {
+            super.prepareDisplayColumns(container);
+        }
+
     }
 
     private static class VialRestrictedDataRegion extends SpecimenDataRegion
@@ -706,7 +712,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
     protected DataRegion createDataRegion()
     {
-        DataRegion rgn;
+        SpecimenDataRegion rgn;
         if (_viewType.isVialView())
         {
             if (_showRecordSelectors && _restrictRecordSelectors)
@@ -731,6 +737,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
             }
         }
         configureDataRegion(rgn);
+        rgn.prepareDisplayColumns(getViewContext().getContainer());
         return rgn;
     }
 
@@ -949,8 +956,8 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 builder.append("    <td style=\"border: 1px solid #BBBBBB\">").append(row).append("</td>\n");
                 for (DisplayColumn col : columns)
                 {
-                    Object value = col.getDisplayValue(renderContext);
-                    builder.append("    <td style=\"border: 1px solid #BBBBBB\">").append(PageFlowUtil.filter(value)).append("</td>\n");
+                    String value = col.getFormattedValue(renderContext);
+                    builder.append("    <td style=\"border: 1px solid #BBBBBB\">").append(value).append("</td>\n");
                 }
                 builder.append("  </tr>\n");
             }

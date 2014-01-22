@@ -41,6 +41,7 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleUpgrader;
 import org.labkey.api.query.QueryChangeListener;
@@ -58,8 +59,10 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.SpecimenDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.SpecimenTablesProvider;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.CommandLineSplitter;
 import org.labkey.study.reports.DefaultCommandLineSplitter;
@@ -572,4 +575,51 @@ public class StudyUpgradeCode implements UpgradeCode
                 new SqlExecutor(t.getSchema()).execute("ALTER TABLE " + t.getSelectName() + " ALTER COLUMN Container SET NOT NULL");
         }
     }
+
+    // Splits DrawTimeStamp into DrawDate and DrawTime in SpecimenEvent and Specimen tables
+    @SuppressWarnings({"UnusedDeclaration"})
+    @DeferredUpgrade
+    public void migrateSpecimenDrawTimeStamp(final ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        User user = context.getUpgradeUser();
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+
+        List<String> containerIds = new SqlSelector(scope, "SELECT EntityId FROM core.containers").getArrayList(String.class);
+        for (String containerId : containerIds)
+        {
+            Container c = ContainerManager.getForId(containerId);
+            if (null == c)
+                continue;
+            Study study = StudyManager.getInstance().getStudy(c);
+            if (null == study)
+                continue;
+            try
+            {
+                SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(c, user, null);
+                Domain specimenDomain = specimenTablesProvider.getDomain("Specimen", false);
+                if (null == specimenDomain)
+                    continue;
+
+                DomainProperty specimenDrawDateProperty = specimenDomain.addProperty(SpecimenDomainKind.getDrawDateStorageSpec());
+                DomainProperty specimenDrawTimeProperty = specimenDomain.addProperty(SpecimenDomainKind.getDrawTimeStorageSpec());
+                specimenDomain.save(user, true);
+
+                TableInfo specimenTable = StudySchema.getInstance().getTableInfoSpecimen(c, user);
+                SQLFragment specimenSql = new SQLFragment("UPDATE ");
+                specimenSql.append(specimenTable.getSelectName())
+                           .append(" SET ").append(specimenDrawDateProperty.getName())
+                           .append(" = CAST(DrawTimeStamp As Date), ")
+                           .append(specimenDrawTimeProperty.getName()).append(" = CAST(DrawTimeStamp As Time)");
+                new SqlExecutor(scope).execute(specimenSql);
+            }
+            catch (Throwable e)
+            {
+                _log.error("Error migrating provisioned specimen tables in " + c.toString(), e);
+            }
+        }
+    }
+
 }

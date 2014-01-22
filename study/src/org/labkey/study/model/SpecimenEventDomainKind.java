@@ -183,7 +183,6 @@ public class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
     public Set<PropertyStorageSpec> getBaseProperties()
     {
         Set<PropertyStorageSpec> specs = new LinkedHashSet<>(BASE_PROPERTIES);
-//        specs.addAll(super.getBaseProperties());
         return specs;
     }
 
