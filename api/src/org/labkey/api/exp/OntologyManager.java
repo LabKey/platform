@@ -2322,14 +2322,14 @@ public class OntologyManager
      * @return whether the import was successful or not. Check the errors collection for details
      * @deprecated  use PropertyService
      */
-    public static boolean importOneType(final String domainURI, List<Map<String, Object>> maps, Collection<String> errors, Container container, User user)
+    public static boolean importOneType(final String domainURI, List<Map<String, Object>> maps, Collection<String> errors, final Container container, User user)
             throws SQLException, ChangePropertyDescriptorException
     {
         return importTypes(new DomainURIFactory()
             {
-                public String getDomainURI(String name)
+                public Pair<String,Container> getDomainURI(String name)
                 {
-                    return domainURI;
+                    return new Pair<>(domainURI, container);
                 }
             }, null, maps, errors, container, false, user, null);
     }
@@ -2341,7 +2341,7 @@ public class OntologyManager
      * TODO rewrite to use createPropertyDescriptors()
      */
     @Deprecated
-    public static boolean importTypes(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container container, boolean ignoreDuplicates, User user, @Nullable Domain domain)
+    public static boolean importTypes(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container defaultContainer, boolean ignoreDuplicates, User user, @Nullable Domain domain)
             throws SQLException, ChangePropertyDescriptorException
     {
         //_log.debug("importTypes(" + vocabulary + "," + typeColumn + "," + maps.length + ")");
@@ -2359,7 +2359,9 @@ public class OntologyManager
         for (Map<String, Object> m : maps)
         {
             String domainName = typeColumn != null ? (String) m.get(typeColumn) : null;
-            String domainURI = uriFactory.getDomainURI(domainName);
+            Pair<String,Container> p = uriFactory.getDomainURI(domainName);
+            String domainURI = p.first;
+            Container propertyContainer = null!=p.second ? p.second : defaultContainer;
 
             String name = StringUtils.trimToEmpty(((String)m.get("property")));
             String propertyURI = StringUtils.trimToEmpty((String) m.get("propertyuri"));
@@ -2378,7 +2380,7 @@ public class OntologyManager
                 continue;
             }
 
-            PropertyDescriptor pd = _propertyDescriptorFromRowMap(container, domainURI, propertyURI, name, m, errors);
+            PropertyDescriptor pd = _propertyDescriptorFromRowMap(propertyContainer, domainURI, propertyURI, name, m, errors);
             if (pd != null)
             {
                 List<ConditionalFormat> conditionalFormats = (List<ConditionalFormat>) m.get("ConditionalFormats");
@@ -2398,7 +2400,7 @@ public class OntologyManager
                     dd = domainMap.get(domainURI);
                     if (null == dd)
                     {
-                        dd = ensureDomainDescriptor(domainURI, domainName, container);
+                        dd = ensureDomainDescriptor(domainURI, domainName, propertyContainer);
                         domainMap.put(domainURI, dd);
                     }
                 }
@@ -2438,14 +2440,15 @@ public class OntologyManager
 
         for (String dURI : newPropsByDomain.keySet())
         {
+            DomainDescriptor dd = domainMap.get(dURI);
+            assert (null!= dd);
+
             pdNewMap = newPropsByDomain.get(dURI);
-            PropertyDescriptor[] domainProps = getPropertiesForType(dURI, container);
+            PropertyDescriptor[] domainProps = getPropertiesForType(dURI, dd.getContainer());
             int sortOrder = domainProps.length;
 
             for (PropertyDescriptor pdToInsert : pdNewMap.values())
             {
-                DomainDescriptor dd = domainMap.get(dURI);
-                assert (null!= dd);
                 PropertyDescriptor pdInserted = null;
                 if (null != domain)
                 {
@@ -2481,7 +2484,8 @@ public class OntologyManager
 
         for (Map.Entry<String, List<ConditionalFormat>> entry : allConditionalFormats.entrySet())
         {
-            PropertyService.get().saveConditionalFormats(user, getPropertyDescriptor(entry.getKey(), container), entry.getValue());
+            PropertyDescriptor pd = allProps.get(entry.getKey());
+            PropertyService.get().saveConditionalFormats(user, getPropertyDescriptor(pd.getPropertyURI(), pd.getContainer()), entry.getValue());
         }
 
         for (DomainDescriptor dd : domainMap.values())
@@ -2511,7 +2515,10 @@ public class OntologyManager
     public static class ListImportPropertyDescriptors
     {
         public ArrayList<ImportPropertyDescriptor> properties = new ArrayList<>();
+
+        // TODO: need to track container for formats (maybe key'd to ImportPropertyDescriptor object instead of propertyuri?
         public Map<String, List<ConditionalFormat>> formats = new HashMap<>();
+
         void add(String domainName, String domainURI, PropertyDescriptor pd)
         {
             properties.add(new ImportPropertyDescriptor(domainName, domainURI, pd));
@@ -2533,7 +2540,8 @@ public class OntologyManager
         for (Map<String, Object> m : maps)
         {
             String domainName = typeColumn != null ? (String) m.get(typeColumn) : null;
-            String domainURI = uriFactory.getDomainURI(domainName);
+            Pair<String,Container> p = uriFactory.getDomainURI(domainName);
+            String domainURI = p.first;
 
             String name = StringUtils.trimToEmpty(((String)m.get("property")));
             String propertyURI = StringUtils.trimToEmpty((String) m.get("propertyuri"));

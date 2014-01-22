@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.ResultSetUtil;
+import org.springframework.beans.factory.InitializingBean;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Array;
@@ -276,5 +277,18 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
 
     protected void fixupBean(K o)
     {
+        if (o instanceof InitializingBean)
+        {
+            try
+            {
+                ((InitializingBean)o).afterPropertiesSet();
+            }
+            catch (Exception x)
+            {
+                if (x instanceof RuntimeException)
+                    throw (RuntimeException)x;
+                 throw new RuntimeException(x);
+            }
+        }
     }
 }

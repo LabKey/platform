@@ -415,16 +415,12 @@ public class ReportUtil
         ViewCategory vc;
         if ("study".equalsIgnoreCase(schema) && !StringUtils.isEmpty(query))
         {
-            int datasetId = StudyService.get().getDatasetIdByQueryName(c, query);
-            if (datasetId >= 0)
+            DataSet ds = StudyService.get().resolveDataset(c, query);
+            if (ds != null) // should this check && !StringUtils.isEmpty(ds.getCategory()))
             {
-                DataSet ds = StudyService.get().getDataSet(c, datasetId);
-                if (ds != null) // should this check && !StringUtils.isEmpty(ds.getCategory()))
-                {
-                    vc = ds.getViewCategory();
-                    if (vc != null)
-                        return vc;
-                }
+                vc = ds.getViewCategory();
+                if (vc != null)
+                    return vc;
             }
         }
 

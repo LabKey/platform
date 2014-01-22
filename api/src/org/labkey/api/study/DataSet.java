@@ -49,6 +49,7 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
      */
     @Nullable
     Domain getDomain();
+    boolean isShared();
 
     String getName();
 

@@ -16,6 +16,9 @@
 
 package org.labkey.api.exp;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.util.Pair;
+
 /*
  * User: adam
  * Date: May 29, 2009
@@ -23,5 +26,6 @@ package org.labkey.api.exp;
  */
 public interface DomainURIFactory
 {
-    String getDomainURI(String name);
+    // Pair<domainURI @NotNull, Container @Nullable>
+    Pair<String,Container> getDomainURI(String name);
 }

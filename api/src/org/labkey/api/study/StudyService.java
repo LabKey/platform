@@ -112,7 +112,7 @@ public class StudyService
          * Returns the dataset id of the requested dataset definition label or name,
          * or -1 if no such dataset by that label or name exists (i.e. also check name in the case of a dataset label change)
          */
-        public int getDatasetIdByQueryName(Container c, String queryName);
+        public DataSet resolveDataset(Container c, String queryName);
 
         /**
          * Applies the administrator-configured default QC filter for a dataset data view.
