@@ -2386,11 +2386,12 @@ public class DataRegion extends AbstractDataRegion
     // This is the chance for one-time DisplayColumn setup that requires the current context. At the moment, all
     // we do is override the date & number formats to reflect the folder defaults. TODO: A more general approach would be
     // to push this into DisplayColumn itself, e.g., prepare(Container c).
-    private void prepareDisplayColumns(Container c)
+    protected void prepareDisplayColumns(Container c)
     {
         final String defaultDate = DateUtil.getDateFormatString(c);
         final String defaultDateTime = DateUtil.getDateTimeFormatString(c);
         final String defaultNumber = Formats.getNumberFormatString(c);
+        final String defaultTime = DateUtil.getTimeFormatString(c);
 
         for (DisplayColumn dc : getDisplayColumns())
         {
@@ -2406,6 +2407,8 @@ public class DataRegion extends AbstractDataRegion
                     dc.setFormatString(defaultDate);
                 else if ("DateTime".equalsIgnoreCase(formatString))
                     dc.setFormatString(defaultDateTime);
+                else if ("Time".equalsIgnoreCase(formatString))
+                    dc.setFormatString(defaultTime);
             }
             else if (null == formatString && col.isNumericType())
             {

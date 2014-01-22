@@ -63,6 +63,7 @@ public interface Domain extends IPropertyType
 
     void delete(@Nullable User user) throws DomainNotFoundException;
     void save(User user) throws ChangePropertyDescriptorException;
+    void save(User user, boolean allowAddBaseProperty) throws ChangePropertyDescriptorException;
 
     /**
      * This returns a map of names -> PropertyDescriptor that is useful for import that includes all of the
