@@ -51,6 +51,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -637,9 +638,10 @@ public class SecurityApiActions
             {
                 if (resource.equals(container))
                 {
-                    // Troubleshooter & SeeEmailAddressesRole are the only roles assignable in the root container
+                    // Troubleshooter, SeeEmailAddresses, & CanSeeAuditLog are the only roles assignable in the root container
                     relevantRoles.add(RoleManager.getRole(TroubleshooterRole.class).getUniqueName());
                     relevantRoles.add(RoleManager.getRole(SeeEmailAddressesRole.class).getUniqueName());
+                    relevantRoles.add(RoleManager.getRole(CanSeeAuditLogRole.class).getUniqueName());
                 }
                 else
                     // ExternalIndex case    
