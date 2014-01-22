@@ -27,11 +27,15 @@
     JspView<MemBean> me = (JspView<MemBean>)HttpView.currentView();
     MemBean bean = me.getModelBean();
 
-    for (String active : bean.activeThreads)
-        out.print("<div class=\"labkey-error\">Warning: active thread \"" + active + "\" may have objects in use</div><br>\n");
-
-    if (!bean.activeThreads.isEmpty())
-        out.print("<br>\n");
+    if (!bean.activeThreads.isEmpty()) { %>
+        <div class="labkey-error">Active thread(s) may have objects in use:
+            <ul> <%
+                for (String activeThread : bean.activeThreads) { %>
+                    <li><%= h(activeThread) %></li> <%
+                } %>
+            </ul>
+        </div> <%
+    }
 %>
 <%=textLink("Clear Caches, GC and Refresh", AdminController.getMemTrackerURL(true, true))%>
 <%=textLink("GC and Refresh", AdminController.getMemTrackerURL(false, true))%>

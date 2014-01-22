@@ -51,7 +51,7 @@ public class DatasetBatch extends StudyBatch implements Serializable, DatasetJob
     protected File createLogFile()
     {
         Path logFilePath = Path.parse(_datasetsDirectory.getLocation()).append(_datasetsFileName);
-        return new File(FileUtil.makeFileNameWithTimestamp(logFilePath.toString(), "log"));
+        return new File(logFilePath.getParent().toString(), FileUtil.makeFileNameWithTimestamp(logFilePath.getName(), "log"));
     }
 
     @Override
