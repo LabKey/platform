@@ -53,11 +53,20 @@
     String schemaName = dataset.getTableInfo(user).getSchema().getQuerySchemaName();
 
     Set<Class<? extends Permission>> permissions = c.getPolicy().getPermissions(user);
+    boolean isSharedDataset = dataset.isShared() && !c.equals(dataset.getDefinitionStudy().getContainer());
+
     StudyImpl study = StudyManager.getInstance().getStudy(c);
     VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
     boolean pipelineSet = null != PipelineService.get().findPipelineRoot(c);
 %>
-<% if (permissions.contains(AdminPermission.class))
+<%
+if (isSharedDataset)
+{
+    ActionURL manageShared = new ActionURL(StudyController.DatasetDetailsAction.class,dataset.getContainer()).addParameter("id",dataset.getDataSetId());
+    %>This dataset is defined in another folder: <a href="<%=h(manageShared)%>"><%=h(dataset.getContainer().getName())%></a><br><%
+}
+
+if (permissions.contains(AdminPermission.class))
 {
     ActionURL viewDatasetURL = new ActionURL(StudyController.DatasetAction.class, c);
     viewDatasetURL.addParameter("datasetId", dataset.getDataSetId());
@@ -78,14 +87,17 @@
     if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
         &nbsp;<%=generateButton("Edit Associated " + visitManager.getPluralLabel(), updateDatasetURL)%>
 <%  } %>
-    &nbsp;<%=generateButton("Manage Datasets", manageTypesURL)%>
-    &nbsp;<%=generateButton("Delete Dataset", deleteDatasetURL,
+    &nbsp;<%=generateButton("Manage Datasets", manageTypesURL)%><%
+    if (!isSharedDataset)
+    {
+        %>&nbsp;<%=generateButton("Delete Dataset", deleteDatasetURL,
         "return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')")%><%
+    }
 %>
 &nbsp;<a class="labkey-button" onClick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; truncateTable();"> <span>Delete All Rows</span></a>
 <%
 }
-if (permissions.contains(UpdatePermission.class))
+if (permissions.contains(UpdatePermission.class) && !isSharedDataset)
 {
     ActionURL showHistoryURL = new ActionURL(StudyController.ShowUploadHistoryAction.class, c);
     showHistoryURL.addParameter("id", dataset.getDataSetId());
@@ -177,7 +189,7 @@ if (!pipelineSet)
             VisitDataSetType type = vm.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.OPTIONAL;
             %><tr>
                 <td><%= h(visit.getDisplayString()) %></td>
-                <td><%= type == VisitDataSetType.NOT_ASSOCIATED ? "&nbsp;" : h(type.getLabel()) %></td>
+                <td><%=text(type == VisitDataSetType.NOT_ASSOCIATED ? "&nbsp;" : h(type.getLabel()))%></td>
             </tr><%
         }
     }

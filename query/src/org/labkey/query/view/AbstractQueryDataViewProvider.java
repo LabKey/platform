@@ -114,7 +114,7 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
 
         if (StudyService.get().getStudy(c) != null)
         {
-            if (StudyService.get().getDatasetIdByQueryName(c, view.getQueryName()) != -1)
+            if (null != StudyService.get().resolveDataset(c, view.getQueryName()))
                 dataregionName = "Dataset";
         }
         return QueryService.get().urlFor(user, c,

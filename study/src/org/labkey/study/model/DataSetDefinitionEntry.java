@@ -29,10 +29,20 @@ public class DataSetDefinitionEntry
     {
         this.dataSetDefinition = dataSetDefinition;
         this.isNew = isNew;
+        this.isModified = isNew;
+        this.tags = tags;
+    }
+
+    public DataSetDefinitionEntry(DataSetDefinition dataSetDefinition, boolean isNew, boolean isModified, PropertyList tags)
+    {
+        this.dataSetDefinition = dataSetDefinition;
+        this.isNew = isNew;
+        this.isModified = isModified;
         this.tags = tags;
     }
 
     public DataSetDefinition dataSetDefinition;
     public boolean isNew;
+    public boolean isModified;
     public PropertyList tags;
 }

@@ -93,6 +93,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
+import org.springframework.beans.factory.InitializingBean;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -124,7 +125,7 @@ import java.util.regex.Pattern;
  * Date: Jan 6, 2006
  * Time: 10:29:31 AM
  */
-public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> implements Cloneable, DataSet<DataSetDefinition>
+public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> implements Cloneable, DataSet<DataSetDefinition>, InitializingBean
 {
     // standard string to use in URLs etc.
     public static final String DATASETKEY = "datasetId";
@@ -133,6 +134,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     private final ReentrantLock _lock = new ReentrantLock();
 
+    private Container _definitionContainer;
+    private Boolean _isShared = null;
     private StudyImpl _study;
     private int _dataSetId;
     private String _name;
@@ -237,6 +240,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _label =  String.valueOf(dataSetId);
         _typeURI = null;
         _showByDefault = true;
+        _isShared = study.isShareDatasetDefinitions();
     }
 
 
@@ -251,6 +255,31 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _entityId = null != entityId ? entityId : GUID.makeGUID();
         _typeURI = null != typeURI ? typeURI : DatasetDomainKind.generateDomainURI(name, _entityId, getContainer());
         _showByDefault = true;
+        _isShared = study.isShareDatasetDefinitions();
+    }
+
+
+    /*
+     * given a potentially shared dataset definition, return a dataset definition that is scoped to the current study
+     */
+    public DataSetDefinition createLocalDatasetDefintion(StudyImpl substudy)
+    {
+        if (substudy.getContainer().equals(getContainer()))
+            return this;
+        assert isShared();
+        DataSetDefinition sub = this.createMutable();
+        sub._definitionContainer = sub.getContainer();
+        sub.setContainer(substudy.getContainer());
+        sub.lock();
+        assert sub.isShared();
+        return sub;
+    }
+
+
+    public boolean isShared()
+    {
+        assert null != _isShared;
+        return _isShared;
     }
 
 
@@ -601,6 +630,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             time.start();
 
             SQLFragment studyDataFrag = new SQLFragment("DELETE FROM " + table + "\n");
+            studyDataFrag.append("WHERE container=?");
+            studyDataFrag.add(getContainer());
             if (cutoff != null)
                 studyDataFrag.append(" AND _VisitDate > ?").add(cutoff);
             count = new LegacySqlExecutor(StudySchema.getInstance().getSchema()).execute(studyDataFrag);
@@ -659,6 +690,21 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             _study = StudyManager.getInstance().getStudy(getContainer());
         return _study;
     }
+
+
+    public StudyImpl getDefinitionStudy()
+    {
+        if (null == _definitionContainer || _definitionContainer.equals(getContainer()))
+            return getStudy();
+        return StudyManager.getInstance().getStudy(_definitionContainer);
+    }
+
+
+    public Container getDefinitionContainer()
+    {
+        return null!=_definitionContainer ? _definitionContainer : getContainer();
+    }
+
 
     public Set<Class<? extends Permission>> getPermissions(UserPrincipal user)
     {
@@ -832,7 +878,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         DbScope scope =  StudySchema.getInstance().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            Table.delete(data, new SimpleFilter().addWhereClause("1=1", null));
+            Table.delete(data, new SimpleFilter().addWhereClause("Container=?", new Object[] {getContainer()}));
             StudyManager.dataSetModified(this, user, true);
             transaction.commit();
         }
@@ -1266,6 +1312,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 from.appendComment("</DataSetDefinition>", d);
                 return from;
             }
+
+            if (isShared())
+            {
+                SQLFragment ret = new SQLFragment("(SELECT * FROM ");
+                ret.append(_storage.getFromSQL("_"));
+                ret.append(" WHERE container=?) ");
+                ret.add(getContainer());
+                ret.append(alias);
+                return ret;
+            }
             else
             {
                 return _storage.getFromSQL(alias);
@@ -1531,6 +1587,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return "DataSetDefinition: " + getLabel() + " " + getDataSetId();
     }
 
+
     /** Do the actual delete from the underlying table, without auditing */
     public void deleteRows(User user, Collection<String> allLSIDs)
     {
@@ -1542,12 +1599,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             for (Collection<String> rowLSIDs : rowLSIDSlices)
             {
-                SimpleFilter filter = new SimpleFilter();
-                filter.addInClause(FieldKey.fromParts("LSID"), rowLSIDs);
-
                 SQLFragment sql = new SQLFragment(StringUtils.repeat("?", ", ", rowLSIDs.size()));
                 sql.addAll(rowLSIDs);
                 OntologyManager.deleteOntologyObjects(StudySchema.getInstance().getSchema(), sql, getContainer(), false);
+
+                SimpleFilter filter = new SimpleFilter();
+                filter.addWhereClause("Container=?", new Object[]{getContainer()});
+                filter.addInClause(FieldKey.fromParts("LSID"), rowLSIDs);
                 Table.delete(data, filter);
                 StudyManager.dataSetModified(this, user, true);
             }
@@ -2740,6 +2798,18 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
 
 
+    @Override
+    public void afterPropertiesSet() throws Exception
+    {
+        if (null == _isShared)
+        {
+            Study s = getStudy();
+            if (null != s)
+                _isShared = s.isShareDatasetDefinitions();
+        }
+    }
+
+
     private static class DatasetDefObjectFactory extends BeanObjectFactory<DataSetDefinition>
     {
         DatasetDefObjectFactory()
@@ -2750,10 +2820,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
     }
 
+
     static
     {
         ObjectFactory.Registry.register(DataSetDefinition.class, new DatasetDefObjectFactory());
     }
+
 
     @Override
     public Map<String, Object> getDatasetRow(User u, String lsid)
@@ -2764,6 +2836,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         assert rows.size() <= 1 : "Expected zero or one matching row, but found " + rows.size();
         return rows.isEmpty() ? null : rows.get(0);
     }
+
 
     @NotNull
     @Override
@@ -2817,6 +2890,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         return canonicalDatas;
     }
+
 
     public String updateDatasetRow(User u, String lsid, Map<String, Object> data, List<String> errors)
     {

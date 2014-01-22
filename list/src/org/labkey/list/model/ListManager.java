@@ -67,6 +67,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior;
 import org.labkey.api.util.StringExpressionFactory.FieldKeyStringExpression;
@@ -957,9 +958,9 @@ public class ListManager implements SearchService.DocumentProvider
         final String typeURI = unsavedList.getDomain().getTypeURI();
 
         DomainURIFactory factory = new DomainURIFactory() {
-            public String getDomainURI(String name)
+            public Pair<String,Container> getDomainURI(String name)
             {
-                return typeURI;
+                return new Pair<>(typeURI,container);
             }
         };
 

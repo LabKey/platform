@@ -143,6 +143,11 @@ public class StudyUnionTableInfo extends VirtualTable
             }
 
             sqlf.append(" FROM " + ti.getSelectName() + " D");
+            if ( def.isShared())
+            {
+                sqlf.append(" WHERE container=?");
+                sqlf.add(def.getContainer());
+            }
             unionAll = ") UNION ALL\n(";
         }
 

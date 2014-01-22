@@ -178,20 +178,16 @@ public class StudyServiceImpl implements StudyService.Service
         return def == null ? -1 : def.getDataSetId();
     }
 
+
     @Override
-    public int getDatasetIdByQueryName(Container c, String queryName)
+    public DataSet resolveDataset(Container c, String queryName)
     {
         Study study = StudyManager.getInstance().getStudy(c);
         if (study == null)
-            return -1;
-
-        // first try resolving the dataset def by name and then by label
-        DataSet def = StudyManager.getInstance().getDataSetDefinitionByName(study, queryName);
-        if (def == null)
-            def = StudyManager.getInstance().getDataSetDefinitionByLabel(study, queryName);
-
-        return def == null ? -1 : def.getDataSetId();
+            return null;
+        return StudyManager.getInstance().getDatasetDefinitionByQueryName(study, queryName);
     }
+
 
     /**
      * Requests arrive as maps of name->value. The StudyManager expects arrays of maps

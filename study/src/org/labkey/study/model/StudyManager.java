@@ -98,6 +98,7 @@ import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
@@ -124,6 +125,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.study.QueryHelper;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudyCache;
+import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.controllers.BaseStudyController;
@@ -521,6 +523,15 @@ public class StudyManager
 
     public boolean updateDataSetDefinition(User user, DataSetDefinition dataSetDefinition, List<String> errors)
     {
+        if (dataSetDefinition.isShared())
+        {
+            // verify that we're updating from the correct container
+            if (!dataSetDefinition.getContainer().equals(dataSetDefinition.getDefinitionStudy().getContainer()))
+            {
+                throw new IllegalStateException("Dataset can only be edited from the shared study: " + dataSetDefinition.getName());
+            }
+        }
+
         DbScope scope = StudySchema.getInstance().getScope();
 
         try (Transaction transaction = scope.ensureTransaction())
@@ -1959,7 +1970,71 @@ public class StudyManager
         return getDataSetDefinitions(study, null);
     }
 
+
+
     public List<DataSetDefinition> getDataSetDefinitions(Study study, @Nullable CohortImpl cohort, String... types)
+    {
+        List<DataSetDefinition> local = getDataSetDefinitionsLocal(study, cohort, types);
+        List<DataSetDefinition> shared = Collections.emptyList();
+        List<DataSetDefinition> combined;
+
+        Study sharedStudy = getSharedStudy(study);
+        if (null != sharedStudy)
+            shared = getDataSetDefinitionsLocal(sharedStudy, cohort, types);
+
+        if (shared.isEmpty())
+            combined = local;
+        else
+        {
+            // NOTE: it's confusing that both ID and name are unique, manage page should warn about funny inconsistencies
+            // NOTE: here we'll have LOCAL datasets hide SHARED datasets by both id and name until I have a better idea
+            CaseInsensitiveHashSet names = new CaseInsensitiveHashSet();
+            HashSet<Integer> ids = new HashSet<>();
+
+            combined = new ArrayList<>(local.size() + shared.size());
+            for (DataSetDefinition dsd : local)
+            {
+                combined.add(dsd);
+                names.add(dsd.getName());
+                ids.add(dsd.getDataSetId());
+            }
+            for (DataSetDefinition dsd : shared)
+            {
+                if (!names.contains(dsd.getName()) && !ids.contains(dsd.getDataSetId()))
+                {
+                    DataSetDefinition wrapped = dsd.createLocalDatasetDefintion((StudyImpl) study);
+                    combined.add(wrapped);
+                }
+            }
+        }
+
+        // sort by display order, category, and dataset ID
+        Collections.sort(combined, new Comparator<DataSetDefinition>(){
+            @Override
+            public int compare(DataSetDefinition o1, DataSetDefinition o2)
+            {
+                if (o1.getDisplayOrder() != 0 || o2.getDisplayOrder() != 0)
+                    return o1.getDisplayOrder() - o2.getDisplayOrder();
+
+                if (StringUtils.equals(o1.getCategory(), o2.getCategory()))
+                    return o1.getDataSetId() - o2.getDataSetId();
+
+                if (o1.getCategory() != null && o2.getCategory() == null)
+                    return -1;
+                if (o1.getCategory() == null && o2.getCategory() != null)
+                    return 1;
+                if (o1.getCategory() != null && o2.getCategory() != null)
+                    return o1.getCategory().compareTo(o2.getCategory());
+
+                return o1.getDataSetId() - o2.getDataSetId();
+            }
+        });
+
+        return Collections.unmodifiableList(combined);
+    }
+
+
+    private List<DataSetDefinition> getDataSetDefinitionsLocal(Study study, @Nullable CohortImpl cohort, String... types)
     {
         SimpleFilter filter = null;
         if (cohort != null)
@@ -1982,30 +2057,7 @@ public class StudyManager
 
         // Make a copy (it's immutable) so that we can sort it. See issue 17875
         List<DataSetDefinition> datasets = new ArrayList<>(_datasetHelper.get(study.getContainer(), filter, null));
-
-        // sort by display order, category, and dataset ID
-        Collections.sort(datasets, new Comparator<DataSetDefinition>(){
-            @Override
-            public int compare(DataSetDefinition o1, DataSetDefinition o2)
-            {
-                if (o1.getDisplayOrder() != 0 || o2.getDisplayOrder() != 0)
-                    return o1.getDisplayOrder() - o2.getDisplayOrder();
-
-                if (StringUtils.equals(o1.getCategory(), o2.getCategory()))
-                    return o1.getDataSetId() - o2.getDataSetId();
-
-                if (o1.getCategory() != null && o2.getCategory() == null)
-                    return -1;
-                if (o1.getCategory() == null && o2.getCategory() != null)
-                    return 1;
-                if (o1.getCategory() != null && o2.getCategory() != null)
-                    return o1.getCategory().compareTo(o2.getCategory());
-
-                return o1.getDataSetId() - o2.getDataSetId();
-            }
-        });
-
-        return Collections.unmodifiableList(datasets);
+        return datasets;
     }
 
 
@@ -2013,6 +2065,7 @@ public class StudyManager
     {
         return _sharedProperties.get(study.getContainer());
     }
+
 
     @Nullable
     public DataSetDefinition getDataSetDefinition(Study s, int id)
@@ -2028,8 +2081,19 @@ public class StudyManager
             // calling updateDataSetDefinition() during load (getDatasetDefinition()) may cause recursion problems
             //updateDataSetDefinition(null, ds);
         }
-        return ds;
+        if (null != ds)
+            return ds;
+
+        Study sharedStudy = getSharedStudy(s);
+        if (null == sharedStudy)
+            return null;
+
+        ds = getDataSetDefinition(sharedStudy, id);
+        if (null == ds)
+            return null;
+        return ds.createLocalDatasetDefintion((StudyImpl) s);
     }
+
 
     @Nullable
     public DataSetDefinition getDataSetDefinitionByLabel(Study s, String label)
@@ -2074,19 +2138,44 @@ public class StudyManager
         if (defs != null && defs.size() == 1)
             return defs.get(0);
 
-        return null;
+        Study sharedStudy = getSharedStudy(s);
+        if (null == sharedStudy)
+            return null;
+
+        DataSetDefinition def = getDataSetDefinitionByName(sharedStudy, name);
+        if (null == def)
+            return null;
+        return def.createLocalDatasetDefintion((StudyImpl) s);
     }
 
 
     @Nullable
-    public DataSetDefinition getDatasetDefinitionByQueryName(Study s, String queryName)
+    public DataSetDefinition getDatasetDefinitionByQueryName(Study study, String queryName)
     {
-        // Try getting by name first, then by label
-        DataSetDefinition def = getDataSetDefinitionByName(s, queryName);
-        if (null == def)
-            def = getDataSetDefinitionByLabel(s, queryName);
+        // first try resolving the dataset def by name and then by label
+        DataSetDefinition def = getDataSetDefinitionByName(study, queryName);
+        if (null != def)
+            return def;
+        def = StudyManager.getInstance().getDataSetDefinitionByLabel(study, queryName);
+        if (null != def)
+            return def;
 
-        return def;
+        // try shared study
+        if (study.getContainer().isProject())
+            return null;
+        Study shared = StudyManager.getInstance().getSharedStudy(study);
+        if (null == shared)
+            return null;
+
+        // first try resolving the dataset def by name and then by label
+        def = StudyManager.getInstance().getDataSetDefinitionByName(shared, queryName);
+        if (null != def)
+            return def.createLocalDatasetDefintion((StudyImpl) study);
+        def = StudyManager.getInstance().getDataSetDefinitionByLabel(shared, queryName);
+        if (null != def)
+            return def.createLocalDatasetDefintion((StudyImpl) study);
+
+        return null;
     }
 
 
@@ -2332,31 +2421,34 @@ public class StudyManager
     /** delete a dataset type and data
      *  does not clear typeURI as we're about to delete the dataset
      */
-    private void deleteDatasetType(Study study, User user,  DataSetDefinition ds)
+    private void deleteDatasetType(Study study, User user, DataSetDefinition ds)
     {
         assert StudySchema.getInstance().getSchema().getScope().isTransactionActive();
 
         if (null == ds)
             return;
 
-        StorageProvisioner.drop(ds.getDomain());
-
-        if (ds.getTypeURI() != null)
+        if (ds.isShared())
         {
-            try
-            {
-                OntologyManager.deleteType(ds.getTypeURI(), study.getContainer());
-            }
-            catch (DomainNotFoundException x)
-            {
-                // continue
-            }
+            // only delete rows, other containers might be using this definition
+            // TODO: how to clean-up the root study???
+            ds.deleteAllRows(user);
+        }
+        else
+        {
+            StorageProvisioner.drop(ds.getDomain());
 
-            /*
-                ds = ds.createMutable();
-                ds.setTypeURI(null);
-                updateDataSetDefinition(user, ds);
-            */
+            if (ds.getTypeURI() != null)
+            {
+                try
+                {
+                    OntologyManager.deleteType(ds.getTypeURI(), study.getContainer());
+                }
+                catch (DomainNotFoundException x)
+                {
+                    // continue
+                }
+            }
         }
     }
 
@@ -3161,6 +3253,7 @@ public class StudyManager
         return lsids;
     }
 
+
     public boolean importDatasetSchemas(StudyImpl study, final User user, SchemaReader reader, BindException errors) throws IOException, SQLException
     {
         if (errors.hasErrors())
@@ -3169,16 +3262,17 @@ public class StudyManager
         List<Map<String, Object>> mapsImport = reader.getImportMaps();
 
         List<String> importErrors = new LinkedList<>();
-        final Container c = study.getContainer();
         final Map<String, DataSetDefinitionEntry> dataSetDefEntryMap = new HashMap<>();
 
         // Use a factory to ensure domain URI consistency between imported properties and the dataset.  See #7944.
         DomainURIFactory factory = new DomainURIFactory() {
-            public String getDomainURI(String name)
+            public Pair<String,Container> getDomainURI(String name)
             {
                 assert dataSetDefEntryMap.containsKey(name);
                 DataSetDefinitionEntry defEntry = dataSetDefEntryMap.get(name);
-                return StudyManager.getDomainURI(c, user, name, defEntry.dataSetDefinition.getEntityId());
+                Container defContainer = defEntry.dataSetDefinition.getDefinitionContainer();
+                String domainURI = StudyManager.getDomainURI(defEntry.dataSetDefinition.getDefinitionContainer(), user, name, defEntry.dataSetDefinition.getEntityId());
+                return new Pair<>(domainURI, defContainer);
             }
         };
 
@@ -3188,7 +3282,7 @@ public class StudyManager
         if (errors.hasErrors())
             return false;
 
-        OntologyManager.ListImportPropertyDescriptors list = OntologyManager.createPropertyDescriptors(factory, reader.getTypeNameColumn(), mapsImport, importErrors, c, true);
+        OntologyManager.ListImportPropertyDescriptors list = OntologyManager.createPropertyDescriptors(factory, reader.getTypeNameColumn(), mapsImport, importErrors, study.getContainer(), true);
 
         if (!importErrors.isEmpty())
         {
@@ -3215,11 +3309,11 @@ public class StudyManager
 
             if (d.isNew)
                 manager.createDataSetDefinition(user, def);
-            else
+            else if (d.isModified)
                 manager.updateDataSetDefinition(user, def);
 
             if (d.tags != null)
-                ReportPropsManager.get().importProperties(def.getEntityId(), study.getContainer(), user, d.tags);
+                ReportPropsManager.get().importProperties(def.getEntityId(), def.getDefinitionContainer(), user, d.tags);
         }
 
         // now that we actually have datasets, create/update the domains
@@ -3230,9 +3324,10 @@ public class StudyManager
             Domain d = domainsMap.get(ipd.domainURI);
             if (null == d)
             {
-                d = PropertyService.get().getDomain(study.getContainer(), ipd.domainURI);
+                DataSetDefinitionEntry entry = dataSetDefEntryMap.get(ipd.domainName);
+                d = PropertyService.get().getDomain(entry.dataSetDefinition.getDefinitionContainer(), ipd.domainURI);
                 if (null == d)
-                    d = PropertyService.get().createDomain(study.getContainer(), ipd.domainURI, ipd.domainName);
+                    d = PropertyService.get().createDomain(entry.dataSetDefinition.getDefinitionContainer(), ipd.domainURI, ipd.domainName);
                 domainsMap.put(d.getTypeURI(), d);
                 // add all the properties that exist for the domain
                 DomainProperty[] existingProperties = d.getProperties();
@@ -3307,6 +3402,7 @@ public class StudyManager
             return getDomainURI(c, u, def.getName(), def.getEntityId());
     }
 
+
     private boolean populateDataSetDefEntryMap(StudyImpl study, SchemaReader reader, User user, BindException errors, Map<String, DataSetDefinitionEntry> defEntryMap)
     {
         StudyManager manager = StudyManager.getInstance();
@@ -3359,26 +3455,44 @@ public class StudyManager
             }
             else
             {
-                def = def.createMutable();
-                def.setLabel(label);
-                def.setName(name);
-                def.setDescription(info.description);
-                if (null == def.getTypeURI())
+                // TODO: modify shared definition?
+                boolean canEditDefinition = !def.isShared() || def.getContainer().equals(def.getDefinitionContainer());
+
+                if (canEditDefinition)
                 {
-                    def.setTypeURI(getDomainURI(c, user, def));
+                    def = def.createMutable();
+                    def.setLabel(label);
+                    def.setName(name);
+                    def.setDescription(info.description);
+                    if (null == def.getTypeURI())
+                    {
+                        def.setTypeURI(getDomainURI(c, user, def));
+                    }
+                    else
+                    {
+                        upgradeDomainURI(c, user, def);
+                    }
+
+                    def.setVisitDatePropertyName(info.visitDatePropertyName);
+                    def.setShowByDefault(!info.isHidden);
+                    def.setKeyPropertyName(info.keyPropertyName);
+                    def.setCategory(info.category);
+                    def.setKeyManagementType(info.keyManagementType);
+                    def.setDemographicData(info.demographicData);
                 }
                 else
                 {
-                    upgradeDomainURI(c, user, def);
+                    // TODO: warn
+                    // name, label, description, visitdatepropertyname, category
+                    if (def.getKeyManagementType() != info.keyManagementType)
+                        errors.reject("ERROR_MSG", "Key type is not compatible with shared dataset: " + def.getName());
+                    if (!StringUtils.equalsIgnoreCase(def.getKeyPropertyName(), info.keyPropertyName))
+                        errors.reject("ERROR_MSG", "Key property name is not compatible with shared dataset: " + def.getName());
+                    if (def.isDemographicData() != info.demographicData)
+                        errors.reject("ERROR_MSG", "Demographic type is not compatible with shared dataset: " + def.getName());
                 }
 
-                def.setVisitDatePropertyName(info.visitDatePropertyName);
-                def.setShowByDefault(!info.isHidden);
-                def.setKeyPropertyName(info.keyPropertyName);
-                def.setCategory(info.category);
-                def.setKeyManagementType(info.keyManagementType);
-                def.setDemographicData(info.demographicData);
-                defEntryMap.put(name, new DataSetDefinitionEntry(def, false, info.tags));
+                defEntryMap.put(name, new DataSetDefinitionEntry(def, false, canEditDefinition, info.tags));
             }
         }
 
@@ -3611,6 +3725,9 @@ public class StudyManager
         public void run()
         {
             DataSetDefinition def = _def.createMutable();
+            // TODO
+            if (def.isShared())
+                return;
             def.setModified(new Date());
             def.save(_user);
             if (_fireNotification)
@@ -4091,6 +4208,38 @@ public class StudyManager
             return Collections.emptyList();
         }
     }
+
+
+    public Study getSharedStudy(Study study)
+    {
+        if (!AppProps.getInstance().isExperimentalFeatureEnabled(StudyModule.EXPERIMENTALFEATURE_SHARED_DATASET))
+            return null;
+        if (study.getContainer().isProject())
+            return null;
+        // TODO: only enabled for date-based studies at the moment
+        if (study.getTimepointType() != TimepointType.DATE)
+            return null;
+        Container p = study.getContainer().getProject();
+        if (null == p)
+            return null;
+        Study sharedStudy = getStudy(p);
+        if (null == sharedStudy)
+            return null;
+        if (!sharedStudy.isShareDatasetDefinitions())
+            return null;
+        return sharedStudy;
+    }
+
+
+    /****
+     *
+     *
+     *
+     * TESTING
+     *
+     *
+     */
+
 
 
 

@@ -43,6 +43,7 @@
 <%
     Container c = getContainer();
     Study study = StudyManager.getInstance().getStudy(c);
+    boolean sharedDatasets = null != StudyManager.getInstance().getSharedStudy(study);
 
     List<? extends DataSet> datasets = study.getDataSetsByType(new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER});
     int countUndefined = 0;
@@ -152,10 +153,10 @@
         details.replaceParameter("id",String.valueOf(def.getDataSetId()));
         ViewCategory viewCategory = def.getViewCategory();
         Cohort cohort = def.getCohort();
-
+        boolean isShared = def.isShared();
     %><tr>
         <td align=right><a href="<%=h(details)%>"><%=def.getDataSetId()%></a></td>
-        <td><a href="<%=h(details)%>"><%= h(def.getName()) %></a></td>
+        <td><a href="<%=h(details)%>"><%= h(def.getName()) %><%=text(isShared?" (shared)":"")%></a></td>
         <td><% if (!def.getName().equals(def.getLabel())) {%><a href="<%=h(details)%>"><%= h(def.getLabel()) %></a><%}%>&nbsp;</td>
         <td><%=h(viewCategory != null ? viewCategory.getLabel() : null) %>&nbsp;</td>
         <td><%=h(def.getType())%>&nbsp;</td>

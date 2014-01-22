@@ -118,10 +118,8 @@ public class StudyVisualizationProvider extends VisualizationProvider
         joinCols.add(new Pair<>(firstSubjectCol, secondSubjectCol));
 
         // attempt to lookup the dataset using the queryName by label and then by name
-        int firstDatasetId  = StudyService.get().getDatasetIdByQueryName(first.getContainer(), first.getQueryName());
-        DataSet firstDataSet = firstDatasetId > -1 ? StudyService.get().getDataSet(first.getContainer(), firstDatasetId) : null;
-        int secondDatasetId  = StudyService.get().getDatasetIdByQueryName(second.getContainer(), second.getQueryName());
-        DataSet secondDataSet = secondDatasetId > -1 ? StudyService.get().getDataSet(second.getContainer(), secondDatasetId) : null;
+        DataSet firstDataSet = StudyService.get().resolveDataset(first.getContainer(), first.getQueryName());
+        DataSet secondDataSet = StudyService.get().resolveDataset(second.getContainer(), second.getQueryName());
 
         // if either query is a demographic dataset, it's sufficient to join on subject only:
         if (!isGroupByQuery && (firstDataSet == null || firstDataSet.getKeyType() != DataSet.KeyType.SUBJECT) &&
