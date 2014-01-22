@@ -27,6 +27,9 @@
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginBean" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginForm" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.AuthenticationProvider" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<LoginBean> me = (HttpView<LoginBean>) HttpView.currentView();
@@ -96,6 +99,21 @@
     <input type="hidden" id="urlhash" name="urlhash">
     <input type="submit" style="position: absolute; left: -9999px; width: 1px; height: 1px;">
 </form>
+<%-- this should be controlled by the authentication provider --%>
+<%
+if (AppProps.getInstance().isExperimentalFeatureEnabled("experimental-openid-google"))
+{
+    boolean hasGoogle = false;
+    for (AuthenticationProvider ap : AuthenticationManager.getActiveProviders())
+        if (ap.getName().equals("Google"))
+            hasGoogle = true;
+    if (hasGoogle)
+    {
+        ActionURL toGoogle = new ActionURL("openid","redirect",ContainerManager.getRoot()).addParameter("provider","Google").addParameter("returnUrl",returnURL.getURIString());
+        %><a href="<%=h(toGoogle)%>"><img src="<%=getContextPath()%>/authentication/openid_google.png"></a><%
+    }
+}
+%>
 <script type="text/javascript">
     <% // Provide support for persisting the url hash through a login redirect %>
     (function() { if (window && window.location && window.location.hash) { var h = document.getElementById('urlhash'); if (h) { h.value = window.location.hash; } } })();

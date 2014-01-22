@@ -22,9 +22,13 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.Priority;
+import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.authentication.ldap.LdapAuthenticationProvider;
 import org.labkey.authentication.ldap.LdapController;
+import org.labkey.authentication.openid.GoogleOpenIdProvider;
+import org.labkey.authentication.openid.OpenIdController;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -32,6 +36,7 @@ import java.util.Collections;
 public class AuthenticationModule extends DefaultModule
 {
     private static Logger _log = Logger.getLogger(AuthenticationModule.class);
+    public static final String EXPERIMENTAL_OPENID_GOOGLE = "experimental-openid-google";
 
     public String getName()
     {
@@ -58,12 +63,17 @@ public class AuthenticationModule extends DefaultModule
     {
 //        addController("opensso", OpenSSOController.class);
         addController("ldap", LdapController.class);
-//        AuthenticationManager.registerProvider(new OpenSSOProvider(), Priority.High);
-        AuthenticationManager.registerProvider(new LdapAuthenticationProvider(), Priority.High);
+        addController("openid", OpenIdController.class);
+        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_OPENID_GOOGLE, "Login using your Google account", "Authenticate using Google and OpenId. (requires server restart)", false);
     }
 
     public void doStartup(ModuleContext moduleContext)
     {
+        AuthenticationManager.registerProvider(new LdapAuthenticationProvider(), Priority.High);
+        // requires server restart after turning on experimental feature
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_OPENID_GOOGLE))
+            AuthenticationManager.registerProvider(new GoogleOpenIdProvider(), Priority.Low);
+
     }
 
     public TabDisplayMode getTabDisplayMode()
