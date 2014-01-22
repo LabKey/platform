@@ -211,7 +211,6 @@ audit/src/org/labkey/audit/query/AuditQueryView.java -text
 audit/src/org/labkey/audit/query/AuditQueryViewImpl.java -text
 audit/src/org/labkey/audit/siteSettingsAuditDetails.jsp -text
 authentication/Authentication.iml -text
-authentication/jopenid-1.08.jar -text
 authentication/lib/jopenid-1.08.jar -text
 authentication/module.properties -text
 authentication/resources/credits/jars.txt -text
