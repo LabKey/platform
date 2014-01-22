@@ -68,6 +68,7 @@ public class RoleManager
         registerRole(new DeveloperRole());
         registerRole(new TroubleshooterRole());
         registerRole(new SeeEmailAddressesRole());
+        registerRole(new CanSeeAuditLogRole());
     }
 
     public static Role getRole(String name)

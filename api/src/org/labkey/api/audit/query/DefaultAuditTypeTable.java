@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -32,6 +33,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 
@@ -102,6 +104,10 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
         ColumnInfo impersonatedBy = getColumn(FieldKey.fromParts("ImpersonatedBy"));
         impersonatedBy.setLabel("Impersonated By");
         UserIdForeignKey.initColumn(impersonatedBy);
+
+        // issue 16758:  if the user doesn't have permission to see the audit log, then don't return any rows
+        if (!SecurityManager.canSeeAuditLog(schema.getContainer(), schema.getUser()))
+            addCondition(new SQLFragment("0=1"));
 
         initColumns();
     }

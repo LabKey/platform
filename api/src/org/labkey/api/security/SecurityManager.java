@@ -28,6 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -2825,5 +2826,11 @@ public class SecurityManager
     {
         return c.hasPermission(user, SeeUserEmailAddressesPermission.class) ||
             ContainerManager.getRoot().hasPermission(user, SeeUserEmailAddressesPermission.class);
+    }
+
+    public static boolean canSeeAuditLog(Container c, User user)
+    {
+        return c.hasPermission(user, CanSeeAuditLogPermission.class) ||
+                ContainerManager.getRoot().hasPermission(user, CanSeeAuditLogPermission.class);
     }
 }

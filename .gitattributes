@@ -139,6 +139,7 @@ api/src/org/labkey/api/audit/data/ExperimentAuditColumn.java -text
 api/src/org/labkey/api/audit/data/ProtocolColumn.java -text
 api/src/org/labkey/api/audit/data/RunColumn.java -text
 api/src/org/labkey/api/audit/data/RunGroupColumn.java -text
+api/src/org/labkey/api/audit/permissions/CanSeeAuditLogPermission.java -text
 api/src/org/labkey/api/audit/query/AbstractAuditDomainKind.java -text
 api/src/org/labkey/api/audit/query/AuditDisplayColumnFactory.java -text
 api/src/org/labkey/api/audit/query/AuditLogQueryView.java -text
@@ -1205,6 +1206,7 @@ api/src/org/labkey/api/security/permissions/UpdatePermission.java -text
 api/src/org/labkey/api/security/roles/AbstractContextualRole.java -text
 api/src/org/labkey/api/security/roles/AbstractRole.java -text
 api/src/org/labkey/api/security/roles/AuthorRole.java -text
+api/src/org/labkey/api/security/roles/CanSeeAuditLogRole.java -text
 api/src/org/labkey/api/security/roles/ContextualRole.java -text
 api/src/org/labkey/api/security/roles/DeveloperRole.java -text
 api/src/org/labkey/api/security/roles/EditorRole.java -text
