@@ -30,12 +30,14 @@ import java.util.List;
  */
 public abstract class ParameterCurveImpl extends WellGroupCurveImpl
 {
-    private CurveFit _curveFit;
-
     public ParameterCurveImpl(List<? extends WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType fitType) throws DilutionCurve.FitFailedException
     {
-        super(wellGroups, assumeDecreasing, percentCalculator);
+        super(wellGroups, assumeDecreasing, percentCalculator, fitType);
+    }
 
+    @Override
+    protected CurveFit createCurveFit(StatsService.CurveFitType fitType) throws FitFailedException
+    {
         ensureWellSummaries();
         DoublePoint[] data = new DoublePoint[_wellSummaries.length];
         int i=0;
@@ -46,39 +48,10 @@ public abstract class ParameterCurveImpl extends WellGroupCurveImpl
         }
         StatsService service = ServiceRegistry.get().getService(StatsService.class);
 
-        if (fitType == StatsService.CurveFitType.FIVE_PARAMETER)
-            _curveFit = service.getCurveFit(StatsService.CurveFitType.FIVE_PARAMETER, data);
-        else if (fitType == StatsService.CurveFitType.FOUR_PARAMETER)
-            _curveFit = service.getCurveFit(StatsService.CurveFitType.FOUR_PARAMETER, data);
+        CurveFit curveFit = service.getCurveFit(fitType, data);
+        curveFit.setAssumeCurveDecreasing(assumeDecreasing);
 
-        _curveFit.setAssumeCurveDecreasing(assumeDecreasing);
-    }
-
-    protected DoublePoint[] renderCurve() throws DilutionCurve.FitFailedException
-    {
-        return _curveFit.renderCurve(CURVE_SEGMENT_COUNT);
-    }
-
-    public double fitCurve(double x, CurveFit.Parameters params)
-    {
-        return _curveFit.fitCurve(x);
-    }
-
-    public CurveFit.Parameters getParameters() throws DilutionCurve.FitFailedException
-    {
-        return _curveFit.getParameters();
-    }
-
-    @Override
-    public double getFitError()
-    {
-        return _curveFit.getFitError();
-    }
-
-    @Override
-    public double calculateAUC(StatsService.AUCType type) throws FitFailedException
-    {
-        return _curveFit.calculateAUC(type);
+        return curveFit;
     }
 
     public static class FourParameterCurve extends ParameterCurveImpl

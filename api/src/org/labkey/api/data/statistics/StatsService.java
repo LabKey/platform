@@ -35,6 +35,8 @@ public interface StatsService
             _colSuffix = colSuffix;
         }
 
+        // Consider : moving the col suffix portion of this back into assays...
+
         public String getColSuffix()
         {
             return _colSuffix;
@@ -92,5 +94,11 @@ public interface StatsService
      */
     MathStat getStats(double[] data);
 
+    /**
+     * Returns an instance of a curve fit for the specified curve fit type and initialized with
+     * the data array.
+     * @param type the type of curve fit to generate
+     * @param data an array of {@code DoublePoint} instances to initialize the curve fit with.
+     */
     CurveFit getCurveFit(CurveFitType type, DoublePoint[] data);
 }

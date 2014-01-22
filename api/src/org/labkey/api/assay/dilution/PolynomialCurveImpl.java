@@ -30,12 +30,14 @@ import java.util.List;
  */
 public class PolynomialCurveImpl extends WellGroupCurveImpl
 {
-    private CurveFit _curveFit;
-
     public PolynomialCurveImpl(List<WellGroup> wellGroups, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
     {
-        super(wellGroups, assumeDecreasing, percentCalculator);
+        super(wellGroups, assumeDecreasing, percentCalculator, StatsService.CurveFitType.POLYNOMIAL);
+    }
 
+    @Override
+    protected CurveFit createCurveFit(StatsService.CurveFitType type) throws FitFailedException
+    {
         ensureWellSummaries();
         DoublePoint[] data = new DoublePoint[_wellSummaries.length];
         int i=0;
@@ -45,33 +47,6 @@ public class PolynomialCurveImpl extends WellGroupCurveImpl
             data[i++] = new DoublePoint(well.getDilution(), well.getNeutralization() * 100);
         }
         StatsService service = ServiceRegistry.get().getService(StatsService.class);
-        _curveFit = service.getCurveFit(StatsService.CurveFitType.POLYNOMIAL, data);
-    }
-
-    protected DoublePoint[] renderCurve() throws FitFailedException
-    {
-        return _curveFit.renderCurve(CURVE_SEGMENT_COUNT);
-    }
-
-    public double fitCurve(double x, CurveFit.Parameters curveParameters)
-    {
-        return _curveFit.fitCurve(x);
-    }
-
-    public CurveFit.Parameters getParameters() throws FitFailedException
-    {
-        return _curveFit.getParameters();
-    }
-
-    @Override
-    public double getFitError()
-    {
-        return _curveFit.getFitError();
-    }
-
-    @Override
-    public double calculateAUC(StatsService.AUCType type) throws FitFailedException
-    {
-        return _curveFit.calculateAUC(type);
+        return service.getCurveFit(type, data);
     }
 }

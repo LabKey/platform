@@ -18,6 +18,7 @@ package org.labkey.api.assay.dilution;
 
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
+import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.study.WellData;
 import org.labkey.api.study.WellGroup;
 
@@ -37,12 +38,43 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
     protected boolean assumeDecreasing;
     private final PercentCalculator _percentCalculator;
     protected WellSummary[] _wellSummaries = null;
+    private CurveFit _curveFit;
 
-    public WellGroupCurveImpl(List<? extends WellGroup> wellGroups, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
+    public WellGroupCurveImpl(List<? extends WellGroup> wellGroups, boolean assumeDecreasing, PercentCalculator percentCalculator, StatsService.CurveFitType fitType) throws FitFailedException
     {
         _wellGroups = wellGroups;
         this.assumeDecreasing = assumeDecreasing;
         _percentCalculator = percentCalculator;
+        _curveFit = createCurveFit(fitType);
+    }
+
+    protected abstract CurveFit createCurveFit(StatsService.CurveFitType fitType) throws FitFailedException;
+
+    protected DoublePoint[] renderCurve() throws FitFailedException
+    {
+        return _curveFit.renderCurve(CURVE_SEGMENT_COUNT);
+    }
+
+    public double fitCurve(double x, CurveFit.Parameters curveParameters)
+    {
+        return _curveFit.fitCurve(x);
+    }
+
+    public CurveFit.Parameters getParameters() throws FitFailedException
+    {
+        return _curveFit.getParameters();
+    }
+
+    @Override
+    public double getFitError()
+    {
+        return _curveFit.getFitError();
+    }
+
+    @Override
+    public double calculateAUC(StatsService.AUCType type) throws FitFailedException
+    {
+        return _curveFit.calculateAUC(type);
     }
 
     protected WellSummary[] ensureWellSummaries() throws FitFailedException
@@ -241,8 +273,4 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
             return _curve;
         }
     }
-
-    protected abstract DoublePoint[] renderCurve() throws FitFailedException;
-
-    public abstract CurveFit.Parameters getParameters() throws FitFailedException;
 }
