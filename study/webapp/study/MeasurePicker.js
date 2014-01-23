@@ -766,7 +766,6 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             cls : 'sourcegrid iScroll',
             flex: 1,
             ui: this.ui,
-            hideHeaders: true,
             enableColumnHide: false,
             enableColumnResize: false,
             viewConfig : {
@@ -774,7 +773,14 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             },
             border: false,
             forceFit: true,
-            columns: [{header: 'Source', dataIndex: 'queryLabel', cls: '', renderer: this.formatSourcesWithSelections}]
+            columns: [{
+                header: 'Source',
+                dataIndex: 'queryLabel',
+                sortable: false,
+                menuDisabled: true,
+                cls: '',
+                renderer: this.formatSourcesWithSelections
+            }]
         });
 
         this.sourcePanel = Ext4.create('Ext.panel.Panel', {
@@ -784,17 +790,10 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 type: 'vbox',
                 align: 'stretch'
             },
-            cls : 'sourcepanel',
+            cls: 'sourcepanel',
             padding: 5,
             border: false,
-            items: [
-                {
-                    xtype: 'displayfield',
-                    html: '<span>Source</span>',
-                    padding: 10
-                },
-                this.sourcesGrid
-            ]
+            items: [ this.sourcesGrid ]
         });
 
         return this.sourcePanel;
@@ -842,13 +841,18 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             flex: 1,
             ui: this.ui,
             hidden: true, // starts hidden until a source query is chosen
-            hideHeaders: true,
             enableColumnHide: false,
             enableColumnResize: false,
             multiSelect: this.multiSelect,
             singleSelect : !this.multiSelect,
             bubbleEvents : ['viewready'],
-            columns: [{header: 'Measure', dataIndex: 'label', flex: 1}],
+            columns: [{
+                header: 'Measure',
+                dataIndex: 'label',
+                flex: 1,
+                sortable: false,
+                menuDisabled: true
+            }],
             listeners : {
                 select : this.onMeasureSelect,
                 deselect : this.onMeasureDeselect,
@@ -880,11 +884,6 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             border: false,
             disabled: true, // starts disabled until a source query is chosen
             items: [
-                {
-                    xtype: 'displayfield',
-                    html: '<span>Measure</span>',
-                    padding: 10
-                },
                 // TODO: add a Select All checkbox
                 this.measuresGrid
             ]
