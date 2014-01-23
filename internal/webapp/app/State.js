@@ -210,10 +210,28 @@ Ext.define('LABKEY.app.controller.State', {
 
             if (!this.POP_STATE && this.preventRedundantHistory && (this.lastAppState != appState)) {
                 this.lastAppState = appState;
-                history.pushState({activeView : viewname}, 'Connector: ' + viewname, 'extApp.view?' + this.getURLParams() + '#' + appState);
+                history.pushState({activeView : viewname}, this.getTitle(viewname), this.getAction(appState));
             }
             this.POP_STATE = false;
         }
+    },
+
+    /**
+     * Provided to be overridden to provide a custom title for view states.
+     * @param viewname
+     * @returns {*}
+     */
+    getTitle : function(viewname) {
+        return viewname;
+    },
+
+    /**
+     * Provided to be overridden to provide a unique URL for the current state of the application.
+     * @param appState
+     * @returns {string}
+     */
+    getAction : function(appState) {
+        return "";
     },
 
     getURLParams : function() {
