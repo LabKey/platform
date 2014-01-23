@@ -6533,6 +6533,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("alternateIDs");
             _appendManageStudy(root);
             String subjectNoun = getStudyRedirectIfNull().getSubjectNounSingular();
             root.addChild("Manage Alternate " + subjectNoun + " IDs and " + subjectNoun + " Aliases");
