@@ -1694,8 +1694,16 @@ public class DavController extends SpringActionController
                     xml.writeProperty(null, "path", h(pathStr));
 
                     long created = resource.getCreated();
-                    if (created != Long.MIN_VALUE)
-                        xml.writeProperty(null, "creationdate", getISOCreationDate(created));
+                    xml.writeProperty(null, "creationdate", created == Long.MIN_VALUE ? timestampZERO_iso : getISOCreationDate(created));
+
+                    long modified = resource.getLastModified();
+                    if (modified == Long.MIN_VALUE)
+                        modified = created;
+
+                    // Why does this use getHttpDateFormat() instead of getISOCreationDate()?
+                    // http://www.webdav.org/specs/rfc4918.html#PROPERTY_creationdate
+                    // http://www.webdav.org/specs/rfc4918.html#PROPERTY_getlastmodified
+                    xml.writeProperty(null, "getlastmodified", modified == Long.MIN_VALUE ? timestampZERO_http : getHttpDateFormat(modified));
                     if (null == displayName)
                     {
                         xml.writeElement(null, "displayname", XMLWriter.NO_CONTENT);
@@ -1712,9 +1720,6 @@ public class DavController extends SpringActionController
 
                         if (isFile)
                         {
-                            long modified = resource.getLastModified();
-                            if (modified != Long.MIN_VALUE)
-                                xml.writeProperty(null, "getlastmodified", getHttpDateFormat(modified));
                             User modifiedby = resource.getModifiedBy();
                             if (null != modifiedby)
                                 xml.writeProperty(null, "modifiedby", UserManager.getDisplayName(modifiedby.getUserId(), getUser()));
@@ -5191,6 +5196,9 @@ public class DavController extends SpringActionController
     {
         return httpDateFormat.format(new Date(date));
     }
+
+    String timestampZERO_iso = getISOCreationDate(DateUtil.parseStringJDBC("1900-01-01 00:00:00"));
+    String timestampZERO_http = getHttpDateFormat(DateUtil.parseStringJDBC("1900-01-01 00:00:00"));
 
 
     /**
