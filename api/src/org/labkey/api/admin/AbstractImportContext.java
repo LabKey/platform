@@ -42,6 +42,7 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     private final @Nullable VirtualFile _root;
     private final Map<Class<? extends ImportContext>, ImportContext> _contextMap = new HashMap<>();
     private boolean _skipQueryValidation;
+    private boolean _createSharedDatasets;
 
     private transient XmlDocument _xmlDocument;
 
@@ -199,5 +200,15 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     public void setSkipQueryValidation(boolean skipQueryValidation)
     {
         _skipQueryValidation = skipQueryValidation;
+    }
+
+    public boolean isCreateSharedDatasets()
+    {
+        return _createSharedDatasets;
+    }
+
+    public void setCreateSharedDatasets(boolean createSharedDatasets)
+    {
+        _createSharedDatasets = createSharedDatasets;
     }
 }

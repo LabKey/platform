@@ -41,6 +41,7 @@ public interface ImportContext<XmlType extends XmlObject> extends ContainerUser
     public boolean isMaskClinic();
     public Double getArchiveVersion();
     public boolean isSkipQueryValidation();
+    public boolean isCreateSharedDatasets();
 
     // These methods let writers add and get module-specific context information
     public <K extends ImportContext> void addContext(Class<K> contextClass, K context);

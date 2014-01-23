@@ -2531,7 +2531,7 @@ public class OntologyManager
      *
      * Look for duplicates with in imported list, but does not verify against any existing PropertyDescriptors/Domains
      */
-    public static ListImportPropertyDescriptors createPropertyDescriptors(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container container, boolean ignoreDuplicates)
+    public static ListImportPropertyDescriptors createPropertyDescriptors(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container defaultContainer, boolean ignoreDuplicates)
     {
         ListImportPropertyDescriptors ret = new ListImportPropertyDescriptors();
         CaseInsensitiveHashSet all = new CaseInsensitiveHashSet();
@@ -2542,6 +2542,7 @@ public class OntologyManager
             String domainName = typeColumn != null ? (String) m.get(typeColumn) : null;
             Pair<String,Container> p = uriFactory.getDomainURI(domainName);
             String domainURI = p.first;
+            Container container = null!=p.second ? p.second : defaultContainer;
 
             String name = StringUtils.trimToEmpty(((String)m.get("property")));
             String propertyURI = StringUtils.trimToEmpty((String) m.get("propertyuri"));

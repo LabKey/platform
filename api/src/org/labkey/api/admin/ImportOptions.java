@@ -24,6 +24,7 @@ import org.labkey.api.data.Container;
 public class ImportOptions
 {
     private boolean _skipQueryValidation;
+    private boolean _createSharedDatasets;
     private String _containerId;
 
     public ImportOptions(String containerId)
@@ -49,5 +50,15 @@ public class ImportOptions
     public void setContainerId(String containerId)
     {
         _containerId = containerId;
+    }
+
+    public boolean isCreateSharedDatasets()
+    {
+        return _createSharedDatasets;
+    }
+
+    public void setCreateSharedDatasets(boolean createSharedDatasets)
+    {
+        _createSharedDatasets = createSharedDatasets;
     }
 }
