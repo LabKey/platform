@@ -27,6 +27,8 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 
+import java.util.regex.Pattern;
+
 
 public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<OlapSchemaDescriptor>
 {
@@ -55,8 +57,10 @@ public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<OlapSc
     @Override
     public String createCacheKey(Module module, String name)
     {
-        return ModuleResourceCache.createCacheKey(module, name);
+        return module.getName() + ":/" + name;
     }
+
+    private static final Pattern CONFIG_ID_PATTERN = Pattern.compile("(\\w+):/(.+)");
 
     @Override
     public CacheLoader<String, OlapSchemaDescriptor> getResourceLoader()
@@ -69,7 +73,7 @@ public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<OlapSc
         @Override
         public OlapSchemaDescriptor load(String configId, @Nullable Object argument)
         {
-            Pair<Module, String> pair = ModuleResourceCache.parseCacheKey(configId);
+            Pair<Module, String> pair = ModuleResourceCache.parseCacheKey(configId, CONFIG_ID_PATTERN);
             Module module = pair.first;
             String configName = pair.second;
 
