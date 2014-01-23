@@ -91,9 +91,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         BASE_PROPERTIES = new HashSet<>(Arrays.asList(props));
 
         PropertyStorageSpec.Index[] indices = {
-          new PropertyStorageSpec.Index(false, QCSTATE),
-          new PropertyStorageSpec.Index(false, PARTICIPANTSEQUENCENUM),
-          new PropertyStorageSpec.Index(true, PARTICIPANTID, SEQUENCENUM, _KEY)
+          new PropertyStorageSpec.Index(false, CONTAINER, QCSTATE),
+          new PropertyStorageSpec.Index(false, CONTAINER, PARTICIPANTSEQUENCENUM),
+          new PropertyStorageSpec.Index(true, CONTAINER, PARTICIPANTID, SEQUENCENUM, _KEY)
         };
 
         PROPERTY_INDICES = new HashSet<>(Arrays.asList(indices));

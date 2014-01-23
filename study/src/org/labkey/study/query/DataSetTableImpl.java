@@ -745,7 +745,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
         }
     }
 
-    private static final Set<String> defaultHiddenCols = new CaseInsensitiveHashSet("VisitRowId", "Created", "CreatedBy", "ModifiedBy", "Modified", "lsid", "SourceLsid");
+    private static final Set<String> defaultHiddenCols = new CaseInsensitiveHashSet("Container", "VisitRowId", "Created", "CreatedBy", "ModifiedBy", "Modified", "lsid", "SourceLsid");
     private boolean isVisibleByDefault(ColumnInfo col)
     {
         // If this is a server-managed key, or an assay-backed dataset, don't include the key column in the default

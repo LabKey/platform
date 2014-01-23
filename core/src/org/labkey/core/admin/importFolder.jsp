@@ -17,11 +17,31 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = getViewContext().getContainerNoTab();
     String requestOrigin;
     requestOrigin = (request.getParameter("origin") != null) ? request.getParameter("origin") : "here";
+
+    boolean canCreateSharedDatasets = false;
+    if (AppProps.getInstance().isExperimentalFeatureEnabled("SharedDatasets") && !c.isProject())
+    {
+        Container project = c.getProject();
+        if (null != project && project != c)
+        {
+            if (project.hasPermission(getViewContext().getUser(), AdminPermission.class))
+            {
+                Study study = StudyService.get().getStudy(c);
+                Study studyProject = StudyService.get().getStudy(c.getProject());
+                if (null != study && null != studyProject && studyProject.isShareDatasetDefinitions())
+                    canCreateSharedDatasets = true;
+            }
+        }
+    }
 %>
 <form action="" name="import" enctype="multipart/form-data" method="post">
 <table cellpadding=0>
@@ -73,7 +93,12 @@
     <tr><td class="labkey-title-area-line"></td></tr>
     <tr><td>To reload a study from a zip archive on your local machine (for example, a folder that you have exported and saved
         to your local hard drive), browse to a zip archive file, open it, and click the "Reload Study From Local Zip Archive" button below.</td></tr>
-    <tr><td><input type="file" name="folderZip" size="50"></td></tr>
+    <tr><td><input type="file" name="folderZip" size="50"></td></tr><%
+    if (canCreateSharedDatasets)
+    {
+        %><tr><td style="padding-left: 15px; padding-top: 8px;"><input type="checkbox" name="createSharedDatasets" checked value="true">&nbsp;Create shared datasets</td></tr><%
+    }
+    %><tr><td style="padding-left: 15px; padding-top: 8px;"><input type="checkbox" name="validateQueries" checked value="true">&nbsp;Validate Imported Queries</td></tr>
     <tr>
         <td><%=generateSubmitButton("Reload Study From Local Zip Archive")%></td>
 
@@ -83,11 +108,11 @@
     <tr><td>To import a folder from a zip archive on your local machine (for example, a folder that you have exported and saved
         to your local hard drive), browse to a zip archive file, open it, and click the "Import Folder From Local Zip Archive" button below.</td></tr>
     <tr><td><input type="file" name="folderZip" size="50"></td></tr>
+    <tr><td style="padding-left: 15px; padding-top: 8px;"><input type="checkbox" name="validateQueries" checked value="true">&nbsp;Validate Imported Queries</td></tr>
     <tr>
         <td><%=generateSubmitButton("Import Folder From Local Zip Archive")%></td>
 <% } %>
 </tr>
-<tr><td style="padding-left: 15px; padding-top: 8px;"><input type="checkbox" name="validateQueries" checked value="true">&nbsp;Validate Imported Queries</td></tr>
 <tr><td>&nbsp;</td></tr>
 
 <% if(requestOrigin.equals("Study")){%>

@@ -64,6 +64,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
         _errors = errors;
         _ctx = new StudyImportContext(user, c, studyXml, new PipelineJobLoggerGetter(this), _root);
         _ctx.setSkipQueryValidation(options.isSkipQueryValidation());
+        _ctx.setCreateSharedDatasets(options.isCreateSharedDatasets());
 
         StudyImpl study = getStudy(true);
         _reload = (null != study);

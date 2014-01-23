@@ -2184,7 +2184,7 @@ public class StudyController extends BaseStudyController
                 return false;
 
             SchemaReader reader = new SchemaTsvReader(getStudyThrowIfNull(), form.tsv, form.getLabelColumn(), form.getTypeNameColumn(), form.getTypeIdColumn(), errors);
-            return StudyManager.getInstance().importDatasetSchemas(getStudyThrowIfNull(), getUser(), reader, errors);
+            return StudyManager.getInstance().importDatasetSchemas(getStudyThrowIfNull(), getUser(), reader, errors, false);
         }
 
         public ActionURL getSuccessURL(BulkImportTypesForm bulkImportTypesForm)

@@ -135,7 +135,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
 
             if (null != reader)
             {
-                if (!StudyManager.getInstance().importDatasetSchemas(study, ctx.getUser(), reader, errors))
+                if (!StudyManager.getInstance().importDatasetSchemas(study, ctx.getUser(), reader, errors, ctx.isCreateSharedDatasets()))
                     return;
             }
 

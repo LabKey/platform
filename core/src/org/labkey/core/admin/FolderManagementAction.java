@@ -476,7 +476,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
     private boolean handleImportPost(FolderManagementForm form, BindException errors) throws Exception
     {
-        if(form.origin == null){
+        if (form.origin == null)
+        {
             form.setOrigin("Folder");
         }
         Container container = getContainer();
@@ -569,7 +570,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                             errors.reject("folderImport", "This file doesn't contain an appropriate xml.");
                         }
                     }
-                    else {
+                    else
+                    {
                         folderXml = zipFile;
                         errors.reject("folderImport", "Please submit an appropriate zip archive file.");
                     }
@@ -579,11 +581,14 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                     ActionURL url = context.getActionURL();
                     ImportOptions options = new ImportOptions(getContainer().getId());
                     options.setSkipQueryValidation(!form.isValidateQueries());
+                    options.setCreateSharedDatasets(form.createSharedDatasets);
 
-                    if(isStudy){
+                    if (isStudy)
+                    {
                        StudyService.get().runStudyImportJob(c, user, url, folderXml, file.getOriginalFilename(), errors, pipelineRoot, options);
                     }
-                    else {
+                    else
+                    {
                        PipelineService.get().runFolderImportJob(c, user, url, folderXml, file.getOriginalFilename(), errors, pipelineRoot, options);
                     }
                 }
@@ -648,6 +653,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         private boolean maskClinic;
 
         // folder import settings
+        private boolean createSharedDatasets;
         private boolean validateQueries;
 
         // file management settings
@@ -963,6 +969,16 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         public void setValidateQueries(boolean validateQueries)
         {
             this.validateQueries = validateQueries;
+        }
+
+        public boolean isCreateSharedDatasets()
+        {
+            return createSharedDatasets;
+        }
+
+        public void setCreateSharedDatasets(boolean createSharedDatasets)
+        {
+            this.createSharedDatasets = createSharedDatasets;
         }
 
         public String getDefaultDateFormat()

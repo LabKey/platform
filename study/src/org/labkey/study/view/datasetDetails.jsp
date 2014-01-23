@@ -62,8 +62,8 @@
 <%
 if (isSharedDataset)
 {
-    ActionURL manageShared = new ActionURL(StudyController.DatasetDetailsAction.class,dataset.getContainer()).addParameter("id",dataset.getDataSetId());
-    %>This dataset is defined in another folder: <a href="<%=h(manageShared)%>"><%=h(dataset.getContainer().getName())%></a><br><%
+    ActionURL manageShared = new ActionURL(StudyController.DatasetDetailsAction.class,dataset.getDefinitionContainer()).addParameter("id",dataset.getDataSetId());
+    %>This dataset is defined in another folder: <a href="<%=h(manageShared)%>"><%=h(dataset.getDefinitionContainer().getName())%></a><br><%
 }
 
 if (permissions.contains(AdminPermission.class))

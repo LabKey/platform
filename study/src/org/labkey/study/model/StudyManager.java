@@ -526,7 +526,7 @@ public class StudyManager
         if (dataSetDefinition.isShared())
         {
             // verify that we're updating from the correct container
-            if (!dataSetDefinition.getContainer().equals(dataSetDefinition.getDefinitionStudy().getContainer()))
+            if (!dataSetDefinition.getContainer().equals(dataSetDefinition.getDefinitionContainer()))
             {
                 throw new IllegalStateException("Dataset can only be edited from the shared study: " + dataSetDefinition.getName());
             }
@@ -3254,10 +3254,16 @@ public class StudyManager
     }
 
 
-    public boolean importDatasetSchemas(StudyImpl study, final User user, SchemaReader reader, BindException errors) throws IOException, SQLException
+    public boolean importDatasetSchemas(StudyImpl study, final User user, SchemaReader reader, BindException errors, boolean createShared) throws IOException, SQLException
     {
         if (errors.hasErrors())
             return false;
+
+        StudyImpl createDatasetStudy = null;
+        if (createShared)
+            createDatasetStudy = (StudyImpl)getSharedStudy(study);
+        if (null == createDatasetStudy)
+            createDatasetStudy = study;
 
         List<Map<String, Object>> mapsImport = reader.getImportMaps();
 
@@ -3278,7 +3284,7 @@ public class StudyManager
 
         // We need to build the datasets (but not save) before we create the property descriptors so that
         // we can use the unique DomainURI for each dataset as part of the PropertyURI
-        populateDataSetDefEntryMap(study, reader, user, errors, dataSetDefEntryMap);
+        populateDataSetDefEntryMap(study, createDatasetStudy, reader, user, errors, dataSetDefEntryMap);
         if (errors.hasErrors())
             return false;
 
@@ -3403,7 +3409,7 @@ public class StudyManager
     }
 
 
-    private boolean populateDataSetDefEntryMap(StudyImpl study, SchemaReader reader, User user, BindException errors, Map<String, DataSetDefinitionEntry> defEntryMap)
+    private boolean populateDataSetDefEntryMap(StudyImpl study, StudyImpl createDatasetStudy, SchemaReader reader, User user, BindException errors, Map<String, DataSetDefinitionEntry> defEntryMap)
     {
         StudyManager manager = StudyManager.getInstance();
         Container c = study.getContainer();
@@ -3442,7 +3448,7 @@ public class StudyManager
 
             if (def == null)
             {
-                def = new DataSetDefinition(study, id, name, label, null, null, null);
+                def = new DataSetDefinition(createDatasetStudy, id, name, label, null, null, null);
                 def.setDescription(info.description);
                 def.setVisitDatePropertyName(info.visitDatePropertyName);
                 def.setShowByDefault(!info.isHidden);

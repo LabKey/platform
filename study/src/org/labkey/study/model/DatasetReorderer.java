@@ -49,7 +49,12 @@ public class DatasetReorderer
         Map<Integer, DataSetDefinition> map = new LinkedHashMap<>(defs.size());
 
         for (DataSetDefinition def : defs)
+        {
+            // TODO: ordering with shared datasets?
+            if (def.isShared())
+                continue;
             map.put(def.getDataSetId(), def);
+        }
 
         resetCounter();
 

@@ -1009,7 +1009,7 @@ public class QubeQuery
         "[Measures].DefaultMember ON COLUMNS\n" +
         ",  NON EMPTY [Participant.Sex].[Sex].members ON ROWS\n" +
         "FROM [ParticipantCube]");
-// TODO: looks wrong [Vaccine.Type] is a hierarchy not a level!
+//  TODO: looks wrong [Vaccine.Type] is a hierarchy not a level!
 //    new QueryTest("{'onRows':[{'level':'[Vaccine.Type]'}],'filter':[]}",
 //        "SELECT\n" +
 //        "[Measures].DefaultMember ON COLUMNS\n" +
@@ -1270,6 +1270,27 @@ public class QubeQuery
                 {
                     throw new AssertionError(t.jsonString, x);
                 }
+            }
+        }
+
+        public void parseAdHoc(Container c, User u) throws Exception
+        {
+            OlapSchemaDescriptor d = ServerManager.getDescriptor(c, "CDS:/CDS");
+            Schema s = d.getSchema(d.getConnection(c, u), c, u, "CDS");
+            Cube cube = s.getCubes().get("ParticipantCube");
+
+            QueryTest t = new QueryTest(
+                    "{\"query\":{\"showEmpty\":false,\"onRows\":[{\"hierarchy\":\"Antigen.Tier\",\"members\":\"members\"}],\"filter\":[{\"operator\":\"INTERSECT\",\"arguments\":[{\"hierarchy\":\"Participant\",\"membersQuery\":{\"hierarchy\":\"Antigen.Tier\",\"members\":[{\"uname\":[\"Antigen.Tier\",\"1B\",\"DJ263.8\"]}]}},{\"hierarchy\":\"Participant\",\"membersQuery\":{\"hierarchy\":\"Antigen.Tier\",\"members\":[{\"uname\":[\"Antigen.Tier\",\"1A\",\"SF162.LS\"]}]}}]},{\"operator\":\"INTERSECT\",\"arguments\":[{\"hierarchy\":\"Participant\",\"membersQuery\":{\"hierarchy\":\"Antigen.Tier\",\"members\":[{\"uname\":[\"Antigen.Tier\",\"1B\"]}]}}]}]},\"configId\":\"CDS:/CDS\",\"schemaName\":\"CDS\",\"cubeName\":\"ParticipantCube\"}",
+                    "");
+
+            init();
+            try
+            {
+                t.run(cube);
+            }
+            catch (Exception x)
+            {
+                throw new AssertionError(t.jsonString, x);
             }
         }
     }
