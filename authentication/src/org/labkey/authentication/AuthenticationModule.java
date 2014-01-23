@@ -65,15 +65,14 @@ public class AuthenticationModule extends DefaultModule
         addController("ldap", LdapController.class);
         addController("openid", OpenIdController.class);
         AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_OPENID_GOOGLE, "Login using your Google account", "Authenticate using Google and OpenId. (requires server restart)", false);
+
+        AuthenticationManager.registerProvider(new LdapAuthenticationProvider(), Priority.High);
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_OPENID_GOOGLE))
+            AuthenticationManager.registerProvider(new GoogleOpenIdProvider(), Priority.Low);
     }
 
     public void doStartup(ModuleContext moduleContext)
     {
-        AuthenticationManager.registerProvider(new LdapAuthenticationProvider(), Priority.High);
-        // requires server restart after turning on experimental feature
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_OPENID_GOOGLE))
-            AuthenticationManager.registerProvider(new GoogleOpenIdProvider(), Priority.Low);
-
     }
 
     public TabDisplayMode getTabDisplayMode()

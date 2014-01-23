@@ -96,6 +96,12 @@ import java.util.Set;
 
 public class QueryModule extends DefaultModule
 {
+    public QueryModule()
+    {
+        QueryServiceImpl i = new QueryServiceImpl();
+        QueryService.set(i);
+    }
+
     public String getName()
     {
         return "Query";
@@ -112,9 +118,7 @@ public class QueryModule extends DefaultModule
         addController("reports", ReportsController.class);
         addController("olap", OlapController.class);
 
-        QueryServiceImpl i = new QueryServiceImpl();
-        QueryService.set(i);
-        ServiceRegistry.get().registerService(QueryService.class, i);
+        ServiceRegistry.get().registerService(QueryService.class, QueryService.get());
 
         ExternalSchema.register();
         LinkedSchema.register();
