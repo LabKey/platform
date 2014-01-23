@@ -60,7 +60,8 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     private Map<FileType, FileType[]> _typeHierarchy;
     /** If set, the default location for the action in the UI */
     private PipelineActionConfig.displayState _defaultDisplayState;
-    private boolean _splittable = false;
+    private boolean _splittable = true;
+    private boolean _writeJobInfoFile = false;
 
     public FileAnalysisTaskPipelineImpl()
     {
@@ -108,7 +109,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
         // Misconfiguration: the user will never be able to start this pipeline
         if (_initialFileTypes == null || _initialFileTypes.isEmpty())
-                throw new IllegalArgumentException("File analysis pipelines require at least one initial file type.");
+            throw new IllegalArgumentException("File analysis pipelines require at least one initial file type.");
 
         // Convert any input extension hierarchy into file types.
         Map<FileType, List<FileType>> extHierarchy = settings.getFileExtHierarchy();
@@ -196,15 +197,16 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         return _typeHierarchy;
     }
 
-    // CONSIDER: Add to FileAnalysisTaskPipeline API
+    @Override
+    public boolean isWriteJobInfoFile()
+    {
+        return _writeJobInfoFile;
+    }
+
+    @Override
     public boolean isSplittable()
     {
         return _splittable;
-    }
-
-    public void setSplittable(boolean splittable)
-    {
-        _splittable = splittable;
     }
 
     @Override
@@ -365,8 +367,11 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 //        if (xpipeline.isSetDefaultDisplay())
 //            pipeline._defaultDisplayState = PipelineActionConfig.displayState.valueOf(xpipeline.getDefaultDisplayState());
 
-        // UNDONE: Add a 'splittable' flag in the schema
-        pipeline.setSplittable(false);
+        // UNDONE: Infer 'splittable' from the TaskPath 'splitFiles' flag or add a 'splittable' flag in the pipeline xsd
+        pipeline._splittable = false;
+
+        // For now, only write out the job info file for file-based pipeline jobs.
+        pipeline._writeJobInfoFile = true;
 
         //PipelineJobService.get().addTaskPipeline(pipeline);
         return pipeline;

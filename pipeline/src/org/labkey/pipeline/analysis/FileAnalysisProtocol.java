@@ -61,14 +61,10 @@ public class FileAnalysisProtocol extends AbstractFileAnalysisProtocol<AbstractF
     {
         TaskId id = _factory.getPipeline().getId();
 
-        // HACK: Not sure if we should expose splittable in the API yet
-        boolean splittable = true;
-        if (_factory.getPipeline() instanceof FileAnalysisTaskPipelineImpl)
-        {
-            splittable = ((FileAnalysisTaskPipelineImpl)_factory.getPipeline()).isSplittable();
-        }
+        boolean splittable = _factory.getPipeline().isSplittable();
+        boolean writeJobInfoFile = _factory.getPipeline().isWriteJobInfoFile();
 
         return new FileAnalysisJob(this, FileAnalysisPipelineProvider.name, info, root,
-                id, getName(), fileParameters, filesInput, splittable);
+                id, getName(), fileParameters, filesInput, splittable, writeJobInfoFile);
     }
 }
