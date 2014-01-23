@@ -261,7 +261,6 @@ public class QueryUnion extends QueryRelation
             dialect.limitRows(unionSql, _limit.getLimit());
         }
 
-        final SQLFragment sql = unionSql;
         UnionTableInfoImpl ret = new UnionTableInfoImpl(this, "_union")
         {
             @NotNull
@@ -269,7 +268,7 @@ public class QueryUnion extends QueryRelation
             public SQLFragment getFromSQL(String alias)
             {
                 SQLFragment f = new SQLFragment();
-                f.append("(").append(sql).append(") ").append(alias);
+                f.append("(").append(getSql()).append(") ").append(alias);
                 return f;
             }
 
@@ -400,6 +399,8 @@ public class QueryUnion extends QueryRelation
         {
             queryRelation.setContainerFilter(containerFilter);
         }
+        // Uncache the SQL that was generated since it's likely changed
+        _unionSql = null;
     }
 
 
