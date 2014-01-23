@@ -15,6 +15,9 @@
  */
 package org.labkey.api.collections;
 
+import org.junit.Assert;
+import org.junit.Test;
+
 import java.io.Serializable;
 import java.util.*;
 
@@ -57,5 +60,17 @@ public class CaseInsensitiveHashMap<V> extends CaseInsensitiveMapWrapper<V> impl
     public CaseInsensitiveHashMap(int size, CaseInsensitiveMapWrapper<V> caseMapping)
     {
         super(new HashMap<String, V>(size), caseMapping);
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testDupes()
+        {
+            Map<String, Integer> map = new CaseInsensitiveHashMap<>();
+            map.put("a", new Integer(2));
+            assertEquals(new Integer(2), map.put("A", 3));
+            assertEquals(1, map.size());
+        }
     }
 }
