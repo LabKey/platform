@@ -206,6 +206,6 @@
     }
     else
     {
-        %><p>The folder must contain a study in order to display a vaccine design.</p><%
+        %><p>The folder must contain a study in order to display an immunization schedule.</p><%
     }
 %>
