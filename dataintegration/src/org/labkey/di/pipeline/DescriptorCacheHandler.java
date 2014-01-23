@@ -20,6 +20,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
@@ -27,6 +28,8 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+
+import java.util.regex.Pattern;
 
 /**
  * User: adam
@@ -64,12 +67,14 @@ public class DescriptorCacheHandler implements ModuleResourceCacheHandler<Schedu
         return DESCRIPTOR_LOADER;
     }
 
+    private static final Pattern CONFIG_ID_PATTERN = Pattern.compile("\\{(\\w+)\\}/(.+)");
+
     private static final CacheLoader<String, ScheduledPipelineJobDescriptor> DESCRIPTOR_LOADER = new CacheLoader<String, ScheduledPipelineJobDescriptor>()
     {
         @Override
         public ScheduledPipelineJobDescriptor load(String configId, @Nullable Object argument)
         {
-            Pair<Module, String> pair = _transformManager.parseConfigId(configId);
+            Pair<Module, String> pair = ModuleResourceCache.parseCacheKey(configId, CONFIG_ID_PATTERN);
             Module module = pair.first;
             String configName = pair.second;
 
@@ -119,7 +124,7 @@ public class DescriptorCacheHandler implements ModuleResourceCacheHandler<Schedu
                 String filename = entry.toString();
 
                 final String configName = _transformManager.getConfigName(filename);
-                final TaskId pipelineId = new TaskId(module.getName(), TaskId.Type.pipeline, _transformManager.createConfigId(module, configName),0);
+                final TaskId pipelineId = new TaskId(module.getName(), TaskId.Type.pipeline, _transformManager.createConfigId(module, configName), 0);
                 PipelineJobService.get().removeTaskPipeline(pipelineId);
             }
         };

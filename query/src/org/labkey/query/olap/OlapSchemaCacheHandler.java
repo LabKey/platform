@@ -20,15 +20,12 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<OlapSchemaDescriptor>
@@ -58,27 +55,7 @@ public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<OlapSc
     @Override
     public String createCacheKey(Module module, String name)
     {
-        return module.getName() + ":/" + name;
-    }
-
-    private static final Pattern CONFIG_ID_PATTERN = Pattern.compile("(\\w+):/(.+)");
-
-    private Pair<Module, String> parseConfigId(String configId)
-    {
-        // Parse out the module name and the config name
-        Matcher matcher = CONFIG_ID_PATTERN.matcher(configId);
-
-        if (!matcher.matches() || matcher.groupCount() != 2)
-            throw new IllegalStateException("Unrecognized configuration ID format: " + configId);
-
-        String moduleName = matcher.group(1);
-        String filename = matcher.group(2);
-        Module module = ModuleLoader.getInstance().getModule(moduleName);
-
-        if (null == module)
-            throw new IllegalStateException("Module does not exist: " + moduleName);
-
-        return new Pair<>(module, filename);
+        return ModuleResourceCache.createCacheKey(module, name);
     }
 
     @Override
@@ -92,7 +69,7 @@ public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<OlapSc
         @Override
         public OlapSchemaDescriptor load(String configId, @Nullable Object argument)
         {
-            Pair<Module, String> pair = parseConfigId(configId);
+            Pair<Module, String> pair = ModuleResourceCache.parseCacheKey(configId);
             Module module = pair.first;
             String configName = pair.second;
 

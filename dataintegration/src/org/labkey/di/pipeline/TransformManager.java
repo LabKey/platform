@@ -243,27 +243,6 @@ public class TransformManager implements DataIntegrationService
     }
 
 
-    private static final Pattern CONFIG_ID_PATTERN = Pattern.compile("\\{(\\w+)\\}/(.+)");
-
-    Pair<Module, String> parseConfigId(String configId)
-    {
-        // Parse out the module name and the config name
-        Matcher matcher = CONFIG_ID_PATTERN.matcher(configId);
-
-        if (!matcher.matches() || matcher.groupCount() != 2)
-            throw new IllegalStateException("Unrecognized configuration ID format: " + configId);
-
-        String moduleName = matcher.group(1);
-        String filename = matcher.group(2);
-        Module module = ModuleLoader.getInstance().getModule(moduleName);
-
-        if (null == module)
-            throw new IllegalStateException("Module does not exist: " + moduleName);
-
-        return new Pair<>(module, filename);
-    }
-
-
     private FilterStrategy.Factory createFilterFactory(FilterType filterTypeXML)
     {
         String className = StringUtils.defaultString(filterTypeXML.getClassName().toString(), ModifiedSinceFilterStrategy.class.getName());
