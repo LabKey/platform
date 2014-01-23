@@ -277,7 +277,7 @@ public enum PropertyType
                     return SimpleTypeNames.DATE_TIME;
                 }
             },
-    DATE("http://www.w3.org/2001/XMLSchema#date", "DateTime", 'd', JdbcType.DATE, 100, null, Cell.CELL_TYPE_NUMERIC, Date.class)
+    DATE("http://www.w3.org/2001/XMLSchema#date", "Date", 'd', JdbcType.DATE, 100, null, Cell.CELL_TYPE_NUMERIC, Date.class)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -295,7 +295,7 @@ public enum PropertyType
                     return SimpleTypeNames.DATE_TIME;
                 }
             },
-    TIME("http://www.w3.org/2001/XMLSchema#time", "DateTime", 'd', JdbcType.TIME, 100, null, Cell.CELL_TYPE_NUMERIC, Date.class)
+    TIME("http://www.w3.org/2001/XMLSchema#time", "Time", 'd', JdbcType.TIME, 100, null, Cell.CELL_TYPE_NUMERIC, Date.class)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
