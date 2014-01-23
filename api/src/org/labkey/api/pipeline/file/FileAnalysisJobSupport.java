@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline.file;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.util.FileType;
 
@@ -88,6 +89,7 @@ public interface FileAnalysisJobSupport
     /**
      * @return the job info file used to provide the external executable or script task with input file context.
      */
+    @Nullable
     File getJobInfoFile();
 
     /**

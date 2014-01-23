@@ -16,6 +16,7 @@
 package org.labkey.api.pipeline.file;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.exp.api.ExpRun;
@@ -69,7 +70,8 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
                                    String protocolName,
                                    File fileParameters,
                                    List<File> filesInput,
-                                   boolean splittable) throws IOException
+                                   boolean splittable,
+                                   boolean writeJobInfoFile) throws IOException
     {
         super(providerName, info, root);
 
@@ -114,9 +116,13 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName));
 
         // Write out job information
-        _fileJobInfo = TabLoader.TSV_FILE_TYPE.newFile(_dirAnalysis, _baseName);
-        writeJobInfoTSV(_fileJobInfo);
-        getParameters().put(PIPELINE_JOB_INFO_PARAM, _fileJobInfo.getAbsolutePath());
+        if (writeJobInfoFile)
+        {
+            String infoFileName = _baseName + "-jobInfo";
+            _fileJobInfo = TabLoader.TSV_FILE_TYPE.newFile(_dirAnalysis, infoFileName);
+            writeJobInfoTSV(_fileJobInfo);
+            getParameters().put(PIPELINE_JOB_INFO_PARAM, _fileJobInfo.getAbsolutePath());
+        }
     }
 
     public AbstractFileAnalysisJob(AbstractFileAnalysisJob job, File fileInput)
@@ -140,16 +146,20 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _baseName = (_inputTypes.isEmpty() ? fileInput.getName() : _inputTypes.get(0).getBaseName(fileInput));
         setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName));
 
-        try
+        // If parent job wrote a job info file, assume the child should too
+        if (job._fileJobInfo != null)
         {
-            // Write out job information specific to the fraction job.
-            File jobPropertiesFile = TabLoader.TSV_FILE_TYPE.newFile(_dirAnalysis, _baseName);
-            writeJobInfoTSV(jobPropertiesFile);
-            getParameters().put(PIPELINE_JOB_INFO_PARAM, jobPropertiesFile.getAbsolutePath());
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
+            try
+            {
+                String infoFileName = _baseName + "-jobInfo";
+                _fileJobInfo = TabLoader.TSV_FILE_TYPE.newFile(_dirAnalysis, infoFileName);
+                writeJobInfoTSV(_fileJobInfo);
+                getParameters().put(PIPELINE_JOB_INFO_PARAM, _fileJobInfo.getAbsolutePath());
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -238,6 +248,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         return _filesInput;
     }
 
+    @Nullable
     public File getJobInfoFile()
     {
         return _fileJobInfo;
@@ -358,6 +369,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
      * This is a info file for an entire job (or split job) that command line or script tasks may use
      * to determine the inputs files and other job related metadata.
      *
+     * @see FileAnalysisTaskPipeline#isWriteJobInfoFile()
      * @see org.labkey.api.qc.TsvDataExchangeHandler
      * @link https://www.labkey.org/wiki/home/Documentation/page.view?name=runProperties
      */
@@ -388,7 +400,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         // TODO: Perhaps move this tsv writer to the task so we can get work directory and input types
         for (File inputFile : getInputFiles())
         {
-            rows.add(factory.getRowMap("inputFile", inputFile, "java.io.File")); // Type = String or File?
+            rows.add(factory.getRowMap("inputFile", inputFile));
         }
 
         TSVMapWriter tsvWriter = new TSVMapWriter(rows);

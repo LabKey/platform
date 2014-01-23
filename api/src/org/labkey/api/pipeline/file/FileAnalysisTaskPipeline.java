@@ -66,4 +66,22 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
 
     @Nullable
     PipelineActionConfig.displayState getDefaultDisplayState();
+
+    /**
+     * Write out the job info as a tsv file similar to the R transformation runProperties format.
+     * This is a info file for an entire job (or split job) that command line or script tasks may use
+     * to determine the inputs files and other job related metadata.
+     *
+     * @see org.labkey.api.pipeline.file.AbstractFileAnalysisJob#writeJobInfoTSV(java.io.File)
+     * @see org.labkey.api.qc.TsvDataExchangeHandler
+     * @link https://www.labkey.org/wiki/home/Documentation/page.view?name=runProperties
+     * @return
+     */
+    boolean isWriteJobInfoFile();
+
+    /**
+     * Allow the job to be split if there are multiple file inputs.
+     * @return
+     */
+    boolean isSplittable();
 }
