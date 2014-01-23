@@ -61,6 +61,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.JunitUtil;
@@ -212,6 +213,10 @@ public class SpecimenImporter
                     _javaType = Boolean.class;
                 else if (_dbType.contains(BINARY_TYPE))
                     _javaType = byte[].class;
+                else if (_dbType.contains("DATE"))
+                    _javaType = Date.class;
+                else if (_dbType.contains("TIME"))
+                    _javaType = Date.class;
                 else
                     throw new UnsupportedOperationException("Unrecognized sql type: " + _dbType);
             }
@@ -481,7 +486,7 @@ public class SpecimenImporter
         {
             return getDbType() != null && (getDbType().equals("DATETIME") || getDbType().equals("TIMESTAMP")) && !getJavaType().equals(TimeOnlyDate.class);
         }
-        }
+    }
 
     private static class SpecimenLoadInfo
     {
@@ -735,21 +740,6 @@ public class SpecimenImporter
             new SpecimenColumn("quality_comments", "QualityComments", "VARCHAR(500)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("total_cell_count", "TotalCellCount", "FLOAT", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("tube_type", "TubeType", "VARCHAR(64)", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
-
-            // Will become optional
-/*            new SpecimenColumn("freezer", "freezer", "VARCHAR(200)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("fr_level1", "fr_level1", "VARCHAR(200)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("fr_level2", "fr_level2", "VARCHAR(200)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("fr_container", "fr_container", "VARCHAR(200)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("fr_position", "fr_position", "VARCHAR(200)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("deviation_code1", "DeviationCode1", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("deviation_code2", "DeviationCode2", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("deviation_code3", "DeviationCode3", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("yield", "Yield", "FLOAT", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("concentration", "Concentration", "FLOAT", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("ratio", "Ratio", "FLOAT", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("integrity", "Integrity", "FLOAT", TargetTable.SPECIMEN_EVENTS),       */
-            // End of optionals
             new SpecimenColumn("input_hash", "InputHash", BINARY_TYPE, TargetTable.SPECIMEN_EVENTS)   // Not pulled from file... maybe this should be a ComputedColumn
     );
 
@@ -791,6 +781,9 @@ public class SpecimenImporter
             new ImportableColumn("primary_type_labware_code", "PrimaryTypeLabwareCode", "VARCHAR(5)"),
             new ImportableColumn("primary_type", "PrimaryType", "VARCHAR(100)")
     );
+
+    private static final SpecimenColumn DRAW_DATE = new SpecimenColumn("", "DrawDate", "DATE", TargetTable.SPECIMENS);
+    private static final SpecimenColumn DRAW_TIME = new SpecimenColumn("", "DrawTime", "TIME", TargetTable.SPECIMENS);
 
     private static final Map<JdbcType, String> JDBCtoIMPORTER_TYPE = new HashMap<>();
     static
@@ -1168,7 +1161,21 @@ public class SpecimenImporter
                     Object nextValue = nextEvent.get(propName);
                     if (!Objects.equals(currentValue, nextValue))
                     {
-                        conflicts.add(col.getDbColumnName());
+                        if (propName.equalsIgnoreCase("drawtimestamp"))
+                        {
+                            Object currentDateOnlyValue = DateUtil.getDateOnly((Date) currentValue);
+                            Object nextDateOnlyValue = DateUtil.getDateOnly((Date) nextValue);
+                            if (!Objects.equals(currentDateOnlyValue, nextDateOnlyValue))
+                                conflicts.add(DRAW_DATE.getDbColumnName());
+                            Object currentTimeOnlyValue = DateUtil.getTimeOnly((Date) currentValue);
+                            Object nextTimeOnlyValue = DateUtil.getTimeOnly((Date) nextValue);
+                            if (!Objects.equals(currentTimeOnlyValue, nextTimeOnlyValue))
+                                conflicts.add(DRAW_TIME.getDbColumnName());
+                        }
+                        else
+                        {
+                            conflicts.add(col.getDbColumnName());
+                        }
                     }
                 }
             }
@@ -1891,10 +1898,14 @@ public class SpecimenImporter
         insertSelectSql.append("SELECT ");
         insertSelectSql.append(participantSequenceNumExpr).append(" AS ParticipantSequenceNum");
         insertSelectSql.append(", SpecimenHash, ");
+        insertSelectSql.append(DRAW_DATE.getDbColumnName()).append(", ");
+        insertSelectSql.append(DRAW_TIME.getDbColumnName()).append(", ");
         insertSelectSql.append(getSpecimenColsSql(info.getAvailableColumns())).append(" FROM (\n");
         insertSelectSql.append(getVialListFromTempTableSql(info)).append(") VialList\n");
         insertSelectSql.append("GROUP BY ").append("SpecimenHash, ");
         insertSelectSql.append(getSpecimenColsSql(info.getAvailableColumns()));
+        insertSelectSql.append(", ").append(DRAW_DATE.getDbColumnName());
+        insertSelectSql.append(", ").append(DRAW_TIME.getDbColumnName());
 
         TableInfo specimenTable = getTableInfoSpecimen();
         String specimenTableSelectName = specimenTable.getSelectName();
@@ -1904,6 +1915,8 @@ public class SpecimenImporter
             Set<SpecimenColumn> cols = new LinkedHashSet<>();
             cols.add(new SpecimenColumn("SpecimenHash", "SpecimenHash", "VARCHAR(256)", TargetTable.SPECIMENS, true));
             cols.add(new SpecimenColumn("ParticipantSequenceNum", "ParticipantSequenceNum", "VARCHAR(200)", TargetTable.SPECIMENS, false));
+            cols.add(DRAW_DATE);
+            cols.add(DRAW_TIME);
             cols.addAll(getSpecimenCols(info.getAvailableColumns()));
 
             // Insert or update the specimens from in the temp table
@@ -1919,6 +1932,8 @@ public class SpecimenImporter
             // Insert all specimens from in the temp table.
             SQLFragment insertSql = new SQLFragment();
             insertSql.append("INSERT INTO ").append(specimenTableSelectName).append("\n(").append("ParticipantSequenceNum, SpecimenHash, ");
+            insertSql.append(DRAW_DATE.getDbColumnName()).append(", ");
+            insertSql.append(DRAW_TIME.getDbColumnName()).append(", ");
             insertSql.append(getSpecimenColsSql(info.getAvailableColumns())).append(")\n");
             insertSql.append(insertSelectSql);
 
@@ -1939,8 +1954,6 @@ public class SpecimenImporter
         SQLFragment vialListSql = new SQLFragment();
         vialListSql.append("SELECT ").append(info.getTempTableName()).append(".LSID AS LSID");
         vialListSql.append(prefix).append("SpecimenHash");
-//        vialListSql.append(prefix).append("? AS Container");
-//        vialListSql.add(info.getContainer().getId());
         for (SpecimenColumn col : info.getAvailableColumns())
         {
             if (col.getTargetTable().isVials() || col.getTargetTable().isSpecimens())
@@ -1949,10 +1962,14 @@ public class SpecimenImporter
                 appendConflictResolvingSQL(info.getSchema().getSqlDialect(), vialListSql, col, info.getTempTableName());
             }
         }
+        vialListSql.append(prefix);
+        appendConflictResolvingSQL(info.getSchema().getSqlDialect(), vialListSql, DRAW_DATE, info.getTempTableName());
+        vialListSql.append(prefix);
+        appendConflictResolvingSQL(info.getSchema().getSqlDialect(), vialListSql, DRAW_TIME, info.getTempTableName());
+
         vialListSql.append("\nFROM ").append(info.getTempTableName());
         vialListSql.append("\nGROUP BY\n");
         vialListSql.append(info.getTempTableName()).append(".LSID,\n    ");
-//        vialListSql.append(info.getTempTableName()).append(".Container,\n    ");
         vialListSql.append(info.getTempTableName()).append(".SpecimenHash,\n    ");
         vialListSql.append(info.getTempTableName()).append(".GlobalUniqueId");
         return vialListSql;
@@ -2399,7 +2416,7 @@ public class SpecimenImporter
             entityIdCol = new EntityIdComputedColumn();
         }
 
-        replaceTable(schema, file, file.getTableType().getTableName(), false, hasContainerColumn, entityIdCol);
+        replaceTable(schema, file, file.getTableType().getTableName(), false, hasContainerColumn, null, null, entityIdCol);
     }
 
     /**
@@ -2410,13 +2427,17 @@ public class SpecimenImporter
      * @param tableName Fully qualified table name, e.g., "study.Vials"
      * @param generateGlobaluniqueIds Generate globalUniqueIds if any needed
      * @param computedColumns The computed column.
+     * @param hasContainerColumn
+     * @param drawDate DrawDate column or null
+     * @param drawTime DrawTime column or null
      * @return A pair of the columns actually found in the data values and a total row count.
      * @throws SQLException
      * @throws IOException
      */
     public <T extends ImportableColumn> Pair<List<T>, Integer> replaceTable(
             DbSchema schema, SpecimenImportFile file, String tableName, boolean generateGlobaluniqueIds,
-            boolean hasContainerColumn, ComputedColumn... computedColumns)
+            boolean hasContainerColumn, ComputedColumn drawDate, ComputedColumn drawTime,
+            ComputedColumn... computedColumns)
         throws IOException, SQLException, ValidationException
     {
         if (file == null)
@@ -2453,6 +2474,7 @@ public class SpecimenImporter
 
         try (CloseableIterator<Map<String, Object>> iter = loadTsv(file).iterator())
         {
+            boolean hasDrawTimestamp = false;
             int idCount = 0;
             while (iter.hasNext())
             {
@@ -2474,6 +2496,8 @@ public class SpecimenImporter
                             availableColumns.add(column);
                             if (!computedColumnsMap.containsKey(column.getDbColumnName()))
                                 boundColumns.add(column);
+                            if ("drawtimestamp".equalsIgnoreCase(column.getDbColumnName()))
+                                hasDrawTimestamp = true;
                         }
                     }
 
@@ -2494,7 +2518,15 @@ public class SpecimenImporter
                         insertSql.append(conjunction).append(col.getDbColumnName());
                         conjunction = ", ";
                     }
+
                     paramCount = computedColumnsMap.size() + boundColumns.size() + (hasContainerColumn ? 1 : 0);
+                    if (hasDrawTimestamp)
+                    {
+                        insertSql.append(conjunction).append(drawDate.getName());
+                        insertSql.append(conjunction).append(drawTime.getName());
+                        paramCount += 2;
+                    }
+
                     insertSql.append(") VALUES (?");
                     insertSql.append(StringUtils.repeat(", ?", paramCount - 1));
                     insertSql.append(")");
@@ -2508,12 +2540,24 @@ public class SpecimenImporter
                     params.add(_container.getId());
 
                 for (ComputedColumn cc : computedColumns)
-                    if (null != cc) params.add(cc.getValue(row));
+                    if (null != cc)
+                        params.add(cc.getValue(row));
 
                 for (ImportableColumn col : boundColumns)
                 {
                     Object value = getValueParameter(col, row);
                     params.add(value);
+                }
+                if (hasDrawTimestamp)
+                {
+                    Object paramDate = drawDate.getValue(row);
+                    if (null == paramDate)
+                        paramDate = new Parameter.TypedValue(null, JdbcType.DATE);
+                    params.add(paramDate);
+                    Object paramTime = drawTime.getValue(row);
+                    if (null == paramTime)
+                        paramTime = new Parameter.TypedValue(null, JdbcType.TIME);
+                    params.add(paramTime);
                 }
 
                 rows.add(params);
@@ -2669,6 +2713,38 @@ public class SpecimenImporter
             }
         };
 
+        ComputedColumn drawDateCol = new ComputedColumn()
+        {
+            @Override
+            public String getName()
+            {
+                return "DrawDate";
+            }
+
+            @Override
+            public Object getValue(Map<String, Object> row)
+            {
+                Object d = SpecimenImporter.this.getValue(dateCol, row);
+                return null != d ? DateUtil.getDateOnly((Date) d) : null;
+            }
+        };
+
+        ComputedColumn drawTimeCol = new ComputedColumn()
+        {
+            @Override
+            public String getName()
+            {
+                return "DrawTime";
+            }
+
+            @Override
+            public Object getValue(Map<String, Object> row)
+            {
+                Object d = SpecimenImporter.this.getValue(dateCol, row);
+                return null != d ? DateUtil.getTimeOnly((Date)d) : null;
+            }
+        };
+
         Pair<List<SpecimenColumn>, Integer> pair = new Pair<>(null, 0);
         boolean success = true;
         final int MAX_TRYS = 3;
@@ -2676,7 +2752,8 @@ public class SpecimenImporter
         {
             try
             {
-                pair = replaceTable(schema, file, tempTable, true, false, lsidCol, sequencenumCol, computedParticipantIdCol);
+                pair = replaceTable(schema, file, tempTable, true, false, drawDateCol, drawTimeCol,
+                        lsidCol, sequencenumCol, computedParticipantIdCol);
 
                 loadedColumns = pair.first;
                 rowCount = pair.second;
@@ -3016,7 +3093,9 @@ public class SpecimenImporter
             sql.append("\n(\n    RowId ").append(dialect.getUniqueIdentType()).append(", ");
 //            sql.append("Container ").append(strType).append("(300) NOT NULL, ");
             sql.append("LSID ").append(strType).append("(300) NOT NULL, ");
-            sql.append("SpecimenHash ").append(strType).append("(300)");
+            sql.append("SpecimenHash ").append(strType).append("(300), ");
+            sql.append(DRAW_DATE.getDbColumnName()).append(" ").append(DRAW_DATE.getDbType()).append(", ");
+            sql.append(DRAW_TIME.getDbColumnName()).append(" ").append(DRAW_TIME.getDbType());
             for (SpecimenColumn col : SPECIMEN_COLUMNS)
                 sql.append(",\n    ").append(col.getDbColumnName()).append(" ").append(col.getDbType());
             sql.append("\n);");

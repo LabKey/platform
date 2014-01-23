@@ -138,20 +138,6 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addWrapColumn(_rootTable.getColumn("LatestComments"));
         addWrapColumn(_rootTable.getColumn("LatestQualityComments"));
 
-/*        addWrapColumn(_rootTable.getColumn("LatestDeviationCode1"));
-        addWrapColumn(_rootTable.getColumn("LatestDeviationCode2"));
-        addWrapColumn(_rootTable.getColumn("LatestDeviationCode3"));
-        addWrapColumn(_rootTable.getColumn("LatestConcentration"));
-        addWrapColumn(_rootTable.getColumn("LatestIntegrity"));
-        addWrapColumn(_rootTable.getColumn("LatestRatio"));
-        addWrapColumn(_rootTable.getColumn("LatestYield"));
-
-        addWrapColumn(_rootTable.getColumn("Freezer"));
-        addWrapColumn(_rootTable.getColumn("Fr_container"));
-        addWrapColumn(_rootTable.getColumn("Fr_position"));
-        addWrapColumn(_rootTable.getColumn("Fr_level1"));
-        addWrapColumn(_rootTable.getColumn("Fr_level2"));       */
-
         // Add optional fields
         getOptionalSpecimenAndVialProperties(schema.getContainer(), _optionalSpecimenProperties, _optionalVialProperties);
         addOptionalColumns(_optionalVialProperties);
@@ -372,11 +358,11 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                                                             List<DomainProperty> optionalVialProperties)
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, null, null);
-        Domain specimenDomain = specimenTablesProvider.getDomain("Specimen", false);
+        Domain specimenDomain = specimenTablesProvider.getDomain("Specimen", true);
         if (null == specimenDomain)
             throw new IllegalStateException("Expected Specimen table to already be created.");
 
-        Domain vialDomain = specimenTablesProvider.getDomain("Vial", false);
+        Domain vialDomain = specimenTablesProvider.getDomain("Vial", true);
         if (null == vialDomain)
             throw new IllegalStateException("Expected Vial table to already be created.");
 
@@ -407,7 +393,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
         sqlf.append("    specimen.ptid, specimen.participantsequencenum, specimen.totalvolume, specimen.availablevolume, \n" +
                 "    specimen.visitdescription, specimen.visitvalue, specimen.volumeunits, specimen.primarytypeid, specimen.additivetypeid, \n" +
-                "    specimen.derivativetypeid, specimen.derivativetypeid2, specimen.subadditivederivative, specimen.drawtimestamp, \n" +
+                "    specimen.derivativetypeid, specimen.derivativetypeid2, specimen.subadditivederivative, specimen.drawtimestamp, specimen.drawdate, specimen.drawtime,\n" +
                 "    specimen.salreceiptdate, specimen.classid, specimen.protocolnumber, specimen.originatinglocationid, specimen.vialcount, \n" +
                 "    specimen.lockedinrequestcount, specimen.atrepositorycount, specimen.availablecount, specimen.expectedavailablecount,\n");
         for (DomainProperty property : optionalSpecimenProperties)

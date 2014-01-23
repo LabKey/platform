@@ -31,6 +31,7 @@ import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -41,6 +42,7 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleUpgrader;
 import org.labkey.api.query.QueryChangeListener;
@@ -58,8 +60,10 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.SpecimenDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.SpecimenTablesProvider;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.CommandLineSplitter;
 import org.labkey.study.reports.DefaultCommandLineSplitter;
@@ -73,8 +77,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: adam
@@ -463,11 +469,6 @@ public class StudyUpgradeCode implements UpgradeCode
 
     public void migrateSpecimenTables(Study study, boolean createTablesOnly)
     {
-        DbSchema db = DbSchema.get("study");
-        TableInfo specimenOld = db.getTable("specimen");
-        TableInfo vialOld = db.getTable("vial");
-        TableInfo specimeneventOld = db.getTable("specimenevent");
-
         TableInfo specimenNew = StudySchema.getInstance().getTableInfoSpecimen(study.getContainer(), null);
         TableInfo vialNew = StudySchema.getInstance().getTableInfoVial(study.getContainer(), null);
         TableInfo specimeneventNew = StudySchema.getInstance().getTableInfoSpecimenEvent(study.getContainer(), null);
@@ -475,6 +476,19 @@ public class StudyUpgradeCode implements UpgradeCode
         if (createTablesOnly)
             return;
 
+        DbSchema db = DbSchema.get("study");
+        try
+        {
+            DbSchema bareStudySchema = DbSchema.createFromMetaData(db.getScope(), "study", DbSchemaType.Bare);
+            db = bareStudySchema;
+        }
+        catch (SQLException e)
+        {
+
+        }
+        TableInfo specimenOld = db.getTable("specimen");
+        TableInfo vialOld = db.getTable("vial");
+        TableInfo specimeneventOld = db.getTable("specimenevent");
         _copy(study, specimenOld, specimenNew, true);
         _copy(study, vialOld, vialNew, false);
         _copy(study, specimeneventOld, specimeneventNew, true);
@@ -485,12 +499,24 @@ public class StudyUpgradeCode implements UpgradeCode
     {
         SQLFragment sqlfCols = new SQLFragment();
         String comma = "";
+
+        // Only include columns in BOTH tables in the sql
+        Set<String> toColumnNames = new HashSet<>();
         for (ColumnInfo col : to.getColumns())
         {
-            sqlfCols.append(comma);
-            sqlfCols.append(col.getSelectName());
-            comma = ",";
+            toColumnNames.add(col.getName().toLowerCase());
         }
+
+        for (ColumnInfo col : from.getColumns())
+        {
+            if (toColumnNames.contains(col.getName().toLowerCase()))
+            {
+                sqlfCols.append(comma);
+                sqlfCols.append(col.getSelectName());
+                comma = ",";
+            }
+        }
+
         SQLFragment f = new SQLFragment();
         if (to.getSqlDialect().isSqlServer() && hasIdentity)
         {
@@ -572,4 +598,68 @@ public class StudyUpgradeCode implements UpgradeCode
                 new SqlExecutor(t.getSchema()).execute("ALTER TABLE " + t.getSelectName() + " ALTER COLUMN Container SET NOT NULL");
         }
     }
+
+    // Splits DrawTimeStamp into DrawDate and DrawTime in SpecimenEvent and Specimen tables
+    @SuppressWarnings({"UnusedDeclaration"})
+    @DeferredUpgrade
+    public void migrateSpecimenDrawTimeStamp(final ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        User user = context.getUpgradeUser();
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+
+        List<String> containerIds = new SqlSelector(scope, "SELECT EntityId FROM core.containers").getArrayList(String.class);
+        for (String containerId : containerIds)
+        {
+            Container c = ContainerManager.getForId(containerId);
+            if (null == c)
+                continue;
+            Study study = StudyManager.getInstance().getStudy(c);
+            if (null == study)
+                continue;
+            try
+            {
+                SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(c, user, null);
+                Domain specimenDomain = specimenTablesProvider.getDomain("Specimen", false);
+                if (null == specimenDomain)
+                    continue;
+
+                // Add DrawDate and DrawTime if not already there
+                PropertyStorageSpec drawDateStorageSpec = SpecimenDomainKind.getDrawDateStorageSpec();
+                PropertyStorageSpec drawTimeStorageSpec = SpecimenDomainKind.getDrawTimeStorageSpec();
+                boolean foundDrawDate = false;
+                DomainProperty[] properties = specimenDomain.getProperties();
+                for (DomainProperty property : properties)
+                {
+                    if (drawDateStorageSpec.getName().equalsIgnoreCase(property.getName()))
+                    {
+                        foundDrawDate = true;
+                        break;
+                    }
+                }
+
+                if (!foundDrawDate)
+                {
+                    specimenDomain.addProperty(drawDateStorageSpec);
+                    specimenDomain.addProperty(drawTimeStorageSpec);
+                    specimenDomain.save(user, true);
+                }
+
+                TableInfo specimenTable = StudySchema.getInstance().getTableInfoSpecimen(c, user);
+                SQLFragment specimenSql = new SQLFragment("UPDATE ");
+                specimenSql.append(specimenTable.getSelectName())
+                           .append(" SET ").append(drawDateStorageSpec.getName())
+                           .append(" = CAST(DrawTimeStamp As Date), ")
+                           .append(drawTimeStorageSpec.getName()).append(" = CAST(DrawTimeStamp As Time)");
+                new SqlExecutor(scope).execute(specimenSql);
+            }
+            catch (Throwable e)
+            {
+                _log.error("Error migrating provisioned specimen tables in " + c.toString(), e);
+            }
+        }
+    }
+
 }
