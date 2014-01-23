@@ -80,7 +80,6 @@ import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -115,6 +114,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.springframework.beans.PropertyValues;
+import org.springframework.util.CollectionUtils;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -521,7 +521,7 @@ public class AnnouncementsController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, settings.getConversationName() + " not found.");
             }
-            else if (!thread.getMemberList().contains(getUser()))
+            else if (!thread.getMemberListIds().contains(getUser().getUserId()))
             {
                 errors.reject(ERROR_MSG, "You are not on the member list for this " + settings.getConversationName().toLowerCase() + ".");
             }
@@ -787,10 +787,12 @@ public class AnnouncementsController extends SpringActionController
             if (null == insert.getParent() || 0 == insert.getParent().length())
                 insert.setParent(form.getParentId());
 
-            if (getSettings().hasMemberList() && null == form.getMemberList())
-                insert.setMemberList(Collections.<User>emptyList());  // Force member list to get deleted, bug #2484
+            if (getSettings().hasMemberList() && CollectionUtils.isEmpty(form.getMemberListIds()))
+                insert.setMemberListIds(Collections.<Integer>emptyList());  // Force member list to get deleted, bug #2484
             else
-                insert.setMemberList(form.getMemberList());  // TODO: Do this in validate()?
+            {
+                insert.setMemberListIds(form.getMemberListIds());
+            }
 
             try
             {
@@ -1027,7 +1029,7 @@ public class AnnouncementsController extends SpringActionController
             Set<Class<? extends Permission>> perms = Collections.<Class<? extends Permission>>singleton(ReadPermission.class);
             List<User> completionUsers = SecurityManager.getUsersWithPermissions(getContainer(), perms);
 
-            for (AjaxCompletion completion : UserManager.getAjaxCompletions(completionUsers, getUser()))
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(completionUsers, getUser(), getContainer()))
                 completions.add(completion.toJSON());
 
             response.put("completions", completions);
@@ -1054,17 +1056,17 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private static String getMemberList(User user, Container c, AnnouncementModel ann, String emailList)
+    private static String getMemberList(User user, Container c, AnnouncementModel ann, String memberList)
     {
         StringBuilder sb = new StringBuilder();
-        if (emailList != null)
+        if (memberList != null)
         {
-            sb.append(emailList);
+            sb.append(memberList);
         }
         else if (null != ann)
         {
-            List<User> users = ann.getMemberList();
-            sb.append(StringUtils.join(users.iterator(), "\n"));
+            List<String> users = ann.getMemberListDisplay(c, user);
+            sb.append(StringUtils.join(users, "\n"));
         }
         else if (!user.isGuest())
         {
@@ -1136,7 +1138,7 @@ public class AnnouncementsController extends SpringActionController
             bean.assignedToSelect = getAssignedToSelect(c, assignedTo, "assignedTo", getViewContext().getUser());
             bean.settings = settings;
             bean.statusSelect = getStatusSelect(settings, (String)form.get("status"));
-            bean.memberList = getMemberList(form.getUser(), c, latestPost, (String) (reshow ? form.get("emailList") : null));
+            bean.memberList = getMemberList(form.getUser(), c, latestPost, (String) (reshow ? form.get("memberList") : null));
             bean.currentRendererType = currentRendererType;
             bean.renderers = WikiRendererType.values();
             bean.form = form;
@@ -1272,6 +1274,13 @@ public class AnnouncementsController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
+            if (getSettings().hasMemberList() && CollectionUtils.isEmpty(form.getMemberListIds()))
+                update.setMemberListIds(Collections.<Integer>emptyList());  // Force member list to get deleted, bug #2484
+            else
+            {
+                update.setMemberListIds(form.getMemberListIds());
+            }
+
             try
             {
                 AnnouncementManager.updateAnnouncement(getUser(), update, files);
@@ -1293,6 +1302,7 @@ public class AnnouncementsController extends SpringActionController
 
         public void validateCommand(AnnouncementForm form, Errors errors)
         {
+            form.validate(errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1769,7 +1779,8 @@ public class AnnouncementsController extends SpringActionController
     public static class AnnouncementForm extends BeanViewForm<AnnouncementModel>
     {
         AnnouncementModel _selectedAnnouncementModel = null;
-        List<User> _memberList = null;
+        String _memberListInput = null;
+        List<Integer> _memberListIds = null;
 
         public AnnouncementForm()
         {
@@ -1782,14 +1793,19 @@ public class AnnouncementsController extends SpringActionController
             return _stringValues.get("parentid");
         }
 
-        public List<User> getMemberList()
+        public void setMemberListInput(String memberListInput)
         {
-            return _memberList;
+            _memberListInput = memberListInput;
         }
 
-        public void setMemberList(List<User> memberList)
+        public List<Integer> getMemberListIds()
         {
-            _memberList = memberList;
+            return _memberListIds;
+        }
+
+        public void setMemberListIds(List<Integer> memberListIds)
+        {
+            _memberListIds = memberListIds;
         }
 
         AnnouncementModel selectAnnouncement() throws SQLException
@@ -1825,47 +1841,40 @@ public class AnnouncementsController extends SpringActionController
                 errors.reject(ERROR_MSG, "Expires must be blank or a valid date.");
             }
 
-            String emailList = bean.getEmailList();
-            List<User> memberList = Collections.emptyList();
+            String memberListInput = bean.getMemberListInput();
+            List<Integer> memberListIds = new ArrayList<>();
 
-            if (null != emailList)
+            boolean currentUserCanSeeEmails = SecurityManager.canSeeEmailAddresses(getContainer(), getUser());
+            if (null != memberListInput)
             {
-                String[] rawEmails = emailList.split("\n");
-                List<String> invalidEmails = new ArrayList<>();
-                List<ValidEmail> emails = SecurityManager.normalizeEmails(rawEmails, invalidEmails);
+                List<String> parsedMemberList = UserManager.parseUserListInput(StringUtils.split(StringUtils.trimToEmpty(memberListInput), "\n"));
 
-                for (String rawEmail : invalidEmails)
+                for (String userEntry : parsedMemberList)
                 {
-                    // Ignore lines of all whitespace, otherwise show an error.
-                    if (!"".equals(rawEmail.trim()))
-                        errors.reject(ERROR_MSG, rawEmail.trim() + ": Invalid email address");
-                }
-
-                memberList = new ArrayList<>(emails.size());
-
-                for (ValidEmail email : emails)
-                {
-                    User user = UserManager.getUser(email);
-
-                    if (null == user)
-                        errors.reject(ERROR_MSG, email.getEmailAddress() + ": Doesn't exist");
-                    else if (!memberList.contains(user))
-                        memberList.add(user);
+                    try
+                    {
+                        memberListIds.add(Integer.parseInt(userEntry));
+                    }
+                    catch (NumberFormatException nfe)
+                    {
+                        errors.reject(ERROR_MSG, userEntry + ": Invalid email address or user");
+                    }
                 }
 
                 // New up an announcementModel to check permissions for the member list
                 AnnouncementModel ann = new AnnouncementModel();
-                ann.setMemberList(memberList);
+                ann.setMemberListIds(memberListIds);
 
-                for (User user : memberList)
+                for (Integer userId : memberListIds)
                 {
-                    Permissions perm = getPermissions(getContainer(), user, settings);
+                    User user = UserManager.getUser(userId);
+                    Permissions perm = getPermissions(getContainer(),user, settings);
 
                     if (!perm.allowRead(ann))
-                        errors.reject(ERROR_MSG, "Can't add " + user.getEmail() + " to the member list: This user doesn't have permission to read the thread.");
+                        errors.reject(ERROR_MSG, "Can't add " + (currentUserCanSeeEmails ? user.getEmail() : user.getDisplayName(getUser())) + " to the member list: This user doesn't have permission to read the thread.");
                 }
 
-                setMemberList(memberList);
+                setMemberListIds(memberListIds);
             }
 
             Integer assignedTo = bean.getAssignedTo();
@@ -1884,10 +1893,10 @@ public class AnnouncementsController extends SpringActionController
 
                     // New up an announcementModel to check permissions for the assigned to user
                     AnnouncementModel ann = new AnnouncementModel();
-                    ann.setMemberList(memberList);
+                    ann.setMemberListIds(memberListIds);
 
                     if (!perm.allowRead(ann))
-                        errors.reject(ERROR_MSG, "Can't assign to " + assignedToUser.getEmail() + ": This user doesn't have permission to read the thread.");
+                        errors.reject(ERROR_MSG, "Can't assign to " + (currentUserCanSeeEmails ? assignedToUser.getEmail() : assignedToUser.getDisplayName(getUser())) + ": This user doesn't have permission to read the thread.");
                 }
             }
 
@@ -2504,7 +2513,7 @@ public class AnnouncementsController extends SpringActionController
                 if (!getViewContext().getUser().isGuest())
                 {
                     // First check if the user is subscribed to this specific thread
-                    if (ann.getMemberList().contains(getViewContext().getUser()))
+                    if (ann.getMemberListIds().contains(getViewContext().getUser().getUserId()))
                     {
                         // Build up a link to unsubscribe from the thread
                         ActionURL url = new ActionURL(SubscribeThreadAction.class, c);
@@ -2640,7 +2649,7 @@ public class AnnouncementsController extends SpringActionController
             {
                 new SqlExecutor(CommSchema.getInstance().getSchema()).execute("DELETE FROM comm.userlist WHERE UserId = ? AND MessageId = ?", getUser(), ann.getRowId());
             }
-            else if (!ann.getMemberList().contains(getUser()))
+            else if (!ann.getMemberListIds().contains(getUser().getUserId()))
             {
                 new SqlExecutor(CommSchema.getInstance().getSchema()).execute("INSERT INTO comm.userlist (UserId, MessageId) VALUES (?, ?)", getUser(), ann.getRowId());
             }
@@ -2686,13 +2695,13 @@ public class AnnouncementsController extends SpringActionController
             private UpdateBean(AnnouncementForm form, AnnouncementModel ann)
             {
                 Container c = form.getContainer();
-                String reshowEmailList = (String)form.get("emailList");
+                String reshowMemberList = (String)form.get("memberList");
 
                 this.annModel = ann;
                 settings = getSettings(c);
                 currentRendererType = WikiRendererType.valueOf(ann.getRendererType());
                 renderers = WikiRendererType.values();
-                memberList = getMemberList(form.getUser(), c, ann, null != reshowEmailList ? reshowEmailList : null);
+                memberList = getMemberList(form.getUser(), c, ann, null != reshowMemberList ? reshowMemberList : null);
                 statusSelect = getStatusSelect(settings, ann.getStatus());
                 assignedToSelect = getAssignedToSelect(c, ann.getAssignedTo(), "assignedTo", getViewContext().getUser());
                 returnURL = form.getReturnURLHelper();

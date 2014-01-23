@@ -127,8 +127,8 @@ public abstract class EmailPrefsSelector
 
             if (!authors.contains(user))   // TODO: notify message creator?
             {
-                List<User> memberList = ann.getMemberList();
-                if (!memberList.contains(user))
+                List<Integer> memberList = ann.getMemberListIds();
+                if (!memberList.contains(user.getUserId()))
                     return false;
             }
         }

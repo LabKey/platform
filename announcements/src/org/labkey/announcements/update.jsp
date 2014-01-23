@@ -128,7 +128,7 @@ if (settings.hasMemberList())
 {
     %><tr>
         <td class="labkey-form-label">Members</td>
-        <td><labkey:autoCompleteTextArea name="emailList" id="emailList" rows="5" cols="30" url="<%=h(completeUserUrl)%>" value="<%=h(bean.memberList)%>"/></td>
+        <td><labkey:autoCompleteTextArea name="memberListInput" id="memberListInput" rows="5" cols="30" url="<%=h(completeUserUrl)%>" value="<%=h(bean.memberList)%>"/></td>
         <td width="100%"><i><%
     if (settings.isSecure())
     {

@@ -1237,7 +1237,8 @@ public class IssueManager
             boolean showEmailAddresses = SecurityManager.canSeeEmailAddresses(fakeRoot, user);
             assertFalse("readers should not see emails", showEmailAddresses);
             List<User> possibleUsers = SecurityManager.getUsersWithPermissions(fakeRoot, Collections.<Class<? extends Permission>>singleton(ReadPermission.class));
-            for (AjaxCompletion completion : UserManager.getAjaxCompletions(possibleUsers, user, showEmailAddresses, true))
+
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(possibleUsers, user, fakeRoot))
             {
                 User u = UserManager.getUserByDisplayName(completion.getInsertionText());
                 if (u != null)
@@ -1248,7 +1249,8 @@ public class IssueManager
             user = TestContext.get().getUser();
             showEmailAddresses = SecurityManager.canSeeEmailAddresses(fakeRoot, user);
             assertTrue("admins should see emails", showEmailAddresses);
-            for (AjaxCompletion completion : UserManager.getAjaxCompletions(possibleUsers, user, showEmailAddresses, true))
+
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(possibleUsers, user, fakeRoot))
             {
                 User u = UserManager.getUserByDisplayName(completion.getInsertionText());
                 if (u != null)

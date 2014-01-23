@@ -1033,7 +1033,7 @@ public class PipelineController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<JSONObject> completions = new ArrayList<>();
 
-            for (AjaxCompletion completion : UserManager.getAjaxCompletions(getUser()))
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(getUser(), getContainer()))
                 completions.add(completion.toJSON());
 
             response.put("completions", completions);

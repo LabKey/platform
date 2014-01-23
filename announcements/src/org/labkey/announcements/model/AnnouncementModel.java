@@ -15,6 +15,7 @@
  */
 package org.labkey.announcements.model;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.AnnouncementsController.DownloadAction;
@@ -50,13 +51,13 @@ import java.util.Set;
 public class AnnouncementModel extends AttachmentParentEntity implements Serializable
 {
     private int _rowId = 0;
-//    private AnnouncementModel _parentAnnouncement = null;
     private String _parentId = null;
     private WikiRendererType _rendererType;
-    private List<User> _memberList = null;
+    private List<Integer> _memberListIds = null; // The list of userIds persisted/retrieved from the comm.userList table
+    private List<String> _memberListDisplay = null; // The sanitized list displayed to the user, emails or display names dependent on permissions
+    private String _memberListInput = null; // The value coming back on form submission
     private String _body = null;
 
-    private String _emailList = null;
     private Date _expires = null;
     private Integer _assignedTo = null;
     private String _status = null;
@@ -306,30 +307,51 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
         _assignedTo = assignedTo;
     }
 
-    public String getEmailList()
-    {
-        return _emailList;
-    }
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void setEmailList(String emailList)
-    {
-        _emailList = emailList;
-    }
-
     @NotNull
-    public List<User> getMemberList()
+    public List<Integer> getMemberListIds()
     {
-        if (_memberList == null)
+        if (_memberListIds == null)
         {
             AnnouncementManager.attachMemberLists(this);
         }
-        return _memberList;
+        return _memberListIds;
     }
 
-    public void setMemberList(List<User> memberList)
+    public void setMemberListIds(List<Integer> memberListIds)
     {
-        _memberList = memberList;
+        _memberListIds = memberListIds;
+    }
+
+    public String getMemberListInput()
+    {
+        return _memberListInput;
+    }
+
+    public void setMemberListInput(String memberListInput)
+    {
+        _memberListInput = memberListInput;
+    }
+
+    public List<String> getMemberListDisplay(Container c, User currentUser)
+    {
+        if (_memberListDisplay == null)
+        {
+            _memberListDisplay = new ArrayList<>();
+            boolean seeEmailAddresses = SecurityManager.canSeeEmailAddresses(c, currentUser);
+            for (Integer userId : getMemberListIds())
+            {
+                if (seeEmailAddresses)
+                    _memberListDisplay.add(UserManager.getUser(userId).getEmail());
+                else
+                    _memberListDisplay.add(UserManager.getUser(userId).getDisplayName(currentUser));
+            }
+        }
+        return _memberListDisplay;
+    }
+
+    public String getMemberListDisplayString(Container c, User currentUser)
+    {
+        return StringUtils.join(getMemberListDisplay(c, currentUser), " ");
     }
 
     public String getDiscussionSrcIdentifier()

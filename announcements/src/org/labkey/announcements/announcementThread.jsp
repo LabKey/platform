@@ -90,10 +90,10 @@ if (bean.perm.allowUpdate(announcementModel) && !bean.print)
     <td colspan=3 class="labkey-title-area-line"></td>
 </tr><%
 
-if (settings.hasMemberList() && null != announcementModel.getEmailList())
+if (settings.hasMemberList() && null != announcementModel.getMemberListIds())
 { %>
 <tr>
-    <td colspan="3">Members: <%=h(announcementModel.getEmailList())%></td>
+    <td colspan="3">Members: <%=h(announcementModel.getMemberListDisplayString(c, user))%></td>
 </tr><%
 }
 
@@ -137,7 +137,7 @@ if (0 < announcementModel.getAttachments().size())
 
         for (Attachment d : announcementModel.getAttachments())
         { %>
-        <a href="<%=h(d.getDownloadUrl(DownloadAction.class))%>"><img alt="" src="<%=request.getContextPath() + d.getFileIcon()%>">&nbsp;<%=h(d.getName())%></a>&nbsp;<%
+        <a href="<%=h(d.getDownloadUrl(DownloadAction.class))%>"><img alt="" src="<%=h(request.getContextPath() + d.getFileIcon())%>">&nbsp;<%=h(d.getName())%></a>&nbsp;<%
         } %>
     </div></td>
 </tr><%
@@ -176,10 +176,10 @@ if (0 < announcementModel.getResponses().size())
                 %>&nbsp;<%=formatDateTime(r.getCreated())%></td>
             </tr><%
 
-            if (settings.hasMemberList() && !Objects.equals(r.getEmailList(), prev.getEmailList()))
+            if (settings.hasMemberList() && !Objects.equals(r.getMemberListIds(), prev.getMemberListIds()))
             { %>
             <tr>
-                <td colspan="2">Members: <%=h(r.getEmailList())%></td>
+                <td colspan="2">Members: <%=h(r.getMemberListDisplayString(c, user))%></td>
             </tr><%
             }
 
@@ -219,7 +219,7 @@ if (0 < announcementModel.getResponses().size())
                 <td colspan="2"><div><%
                 for (Attachment rd : r.getAttachments())
                 { %>
-                    <a href="<%=h(rd.getDownloadUrl(DownloadAction.class))%>"><img alt="" src="<%=request.getContextPath()+ rd.getFileIcon()%>">&nbsp;<%=rd.getName()%></a>&nbsp;<%
+                    <a href="<%=h(rd.getDownloadUrl(DownloadAction.class))%>"><img alt="" src="<%=h(request.getContextPath()+ rd.getFileIcon())%>">&nbsp;<%=rd.getName()%></a>&nbsp;<%
                 }
                 %>
                 </div></td>

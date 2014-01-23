@@ -928,7 +928,7 @@ public class SecurityController extends SpringActionController
 
             List<JSONObject> completions = new ArrayList<>();
 
-            for (AjaxCompletion completion : UserManager.getAjaxCompletions(validGroups, validUsers, getUser(), true, false))
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(validGroups, validUsers, getUser(), getContainer()))
                 completions.add(completion.toJSON());
 
             response.put("completions", completions);
@@ -961,7 +961,7 @@ public class SecurityController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<JSONObject> completions = new ArrayList<>();
 
-            for (AjaxCompletion completion : UserManager.getAjaxCompletions(getUser()))
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(getUser(), getContainer()))
                 completions.add(completion.toJSON());
 
             response.put("completions", completions);

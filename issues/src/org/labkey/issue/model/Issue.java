@@ -545,21 +545,8 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public void parseNotifyList(String notifyList)
     {
-        String[] names = StringUtils.split(StringUtils.trimToEmpty(notifyList), ";\n");
-        ArrayList<String> parsed = new ArrayList<>();
-        for (String name : names)
-        {
-            if (null == (name = StringUtils.trimToNull(name)))
-                continue;
-            User u = null;
-            try { u = UserManager.getUser(new ValidEmail(name)); } catch (ValidEmail.InvalidEmailException x) {}
-            if (null == u)
-                u = UserManager.getUserByDisplayName(name);
-            parsed.add(null == u ? name : String.valueOf(u.getUserId()));
-        }
-        _notifyList = StringUtils.join(parsed,";");
+        _notifyList = UserManager.parseUserListInput(notifyList);
     }
-
 
     public String getNotifyList()
     {

@@ -43,7 +43,7 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
             return true;
 
         // If not an editor, message board must have a member list, user must be on it, and user must have read permissions
-        return null != ann && _settings.hasMemberList() && hasPermission(ReadPermission.class) && ann.getMemberList().contains(_user);
+        return null != ann && _settings.hasMemberList() && hasPermission(ReadPermission.class) && ann.getMemberListIds().contains(_user.getUserId());
     }
 
     public boolean allowDeleteMessage(AnnouncementModel ann)
@@ -63,7 +63,7 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
             return true;
 
         // If not an editor, message board must have a member list, user must be on it, and user must have insert permissions
-        return _settings.hasMemberList() && hasPermission(InsertPermission.class) && ann.getMemberList().contains(_user);
+        return _settings.hasMemberList() && hasPermission(InsertPermission.class) && ann.getMemberListIds().contains(_user.getUserId());
     }
 
     public boolean allowUpdate(AnnouncementModel ann)

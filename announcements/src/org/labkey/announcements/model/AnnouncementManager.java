@@ -50,7 +50,6 @@ import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
@@ -134,7 +133,7 @@ public class AnnouncementManager
     protected static void attachMemberLists(AnnouncementModel... announcementModels)
     {
         for (AnnouncementModel announcementModel : announcementModels)
-            announcementModel.setMemberList(getMemberList(announcementModel));
+            announcementModel.setMemberListIds(getMemberList(announcementModel));
     }
 
 
@@ -306,11 +305,11 @@ public class AnnouncementManager
         insert.beforeInsert(user, c.getId());
         AnnouncementModel ann = Table.insert(user, _comm.getTableInfoAnnouncements(), insert);
 
-        List<User> users = ann.getMemberList();
+        List<Integer> userIds = ann.getMemberListIds();
 
         // Always attach member list to initial message
         int first = (null == ann.getParent() ? ann.getRowId() : getParentRowId(ann));
-        insertMemberList(user, users, first);
+        insertMemberList(user, userIds, first);
 
         AttachmentService.get().addAttachments(insert, files, user);
         indexThread(insert);
@@ -362,7 +361,7 @@ public class AnnouncementManager
                     String messageId = "<" + a.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
                     String references = messageId + " <" + parent.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
 
-                    List<User> memberList = getMemberList(a);
+                    List<Integer> memberList = getMemberList(a);
 
                     for (User recipient : recipients)
                     {
@@ -374,7 +373,7 @@ public class AnnouncementManager
                             ActionURL changePreferenceURL;
                             EmailNotificationPage.Reason reason;
 
-                            if (memberList.contains(recipient))
+                            if (memberList.contains(recipient.getUserId()))
                             {
                                 reason = EmailNotificationPage.Reason.memberList;
                                 changePreferenceURL = new ActionURL(AnnouncementsController.RemoveFromMemberListAction.class, c);
@@ -483,15 +482,15 @@ public class AnnouncementManager
     }
 
 
-    private static synchronized void insertMemberList(User user, List<User> users, int messageId) throws SQLException
+    private static synchronized void insertMemberList(User user, List<Integer> userIds, int messageId) throws SQLException
     {
         // TODO: Should delete/insert only on diff
-        if (null != users)
+        if (null != userIds)
         {
             Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter(FieldKey.fromParts("MessageId"), messageId));
 
-            for (User u : users)
-                Table.insert(user, _comm.getTableInfoMemberList(), PageFlowUtil.map("MessageId", messageId, "UserId", u.getUserId()));
+            for (Integer userId : userIds)
+                Table.insert(user, _comm.getTableInfoMemberList(), PageFlowUtil.map("MessageId", messageId, "UserId", userId));
         }
     }
 
@@ -502,7 +501,7 @@ public class AnnouncementManager
     }
 
 
-    private static List<User> getMemberList(AnnouncementModel ann)
+    private static List<Integer> getMemberList(AnnouncementModel ann)
     {
         SQLFragment sql;
 
@@ -512,12 +511,11 @@ public class AnnouncementManager
             sql = new SQLFragment("SELECT UserId FROM " + _comm.getTableInfoMemberList() + " WHERE MessageId = (SELECT RowId FROM " + _comm.getTableInfoAnnouncements() + " WHERE EntityId = ?)", ann.getParent());
 
         Collection<Integer> userIds = new SqlSelector(_comm.getSchema(), sql).getCollection(Integer.class);
-        List<User> users = new ArrayList<>(userIds.size());
+        List<Integer> ids = new ArrayList<>(userIds.size());
 
-        for (int userId : userIds)
-            users.add(UserManager.getUser(userId));
+        ids.addAll(userIds);
 
-        return users;
+        return ids;
     }
 
 
@@ -525,6 +523,11 @@ public class AnnouncementManager
     {
         update.beforeUpdate(user);
         AnnouncementModel result = Table.update(user, _comm.getTableInfoAnnouncements(), update, update.getRowId());
+
+        // Always attach member list to initial message
+        int first = (null == result.getParent() ? result.getRowId() : getParentRowId(result));
+        insertMemberList(user, result.getMemberListIds(), first);
+
         AttachmentService.get().addAttachments(update, files, user);
         indexThread(update);
         return result;

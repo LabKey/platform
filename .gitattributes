@@ -4,6 +4,7 @@ announcements/resources/schemas/comm.xml -text
 announcements/resources/schemas/dbscripts/postgresql/comm-0.00-11.20.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-11.30-12.10.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-12.10-12.20.sql -text
+announcements/resources/schemas/dbscripts/postgresql/comm-13.30-13.31.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-create.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-drop.sql -text
 announcements/resources/schemas/dbscripts/postgresql/obsolete/comm-0.00-1.00.sql -text
@@ -49,6 +50,7 @@ announcements/resources/schemas/dbscripts/postgresql/obsolete/cpas-0.00-0.59.sql
 announcements/resources/schemas/dbscripts/sqlserver/comm-0.00-11.10.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-11.30-12.10.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-12.10-12.20.sql -text
+announcements/resources/schemas/dbscripts/sqlserver/comm-13.30-13.31.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-create.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-drop.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/obsolete/comm-0.00-1.00.sql -text
@@ -94,6 +96,7 @@ announcements/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.70.sql 
 announcements/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.58-0.59.sql -text
 announcements/src/org/labkey/announcements/AnnouncementListener.java -text
 announcements/src/org/labkey/announcements/AnnouncementModule.java -text
+announcements/src/org/labkey/announcements/AnnouncementUpgradeCode.java -text
 announcements/src/org/labkey/announcements/DailyDigestPage.java -text
 announcements/src/org/labkey/announcements/EmailNotificationPage.java -text
 announcements/src/org/labkey/announcements/EmailPreferencesPage.java -text

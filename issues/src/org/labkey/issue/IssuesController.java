@@ -1164,9 +1164,8 @@ public class IssuesController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<JSONObject> completions = new ArrayList<>();
 
-            boolean showEmailAddresses = SecurityManager.canSeeEmailAddresses(getContainer(), getUser());
             List<User> possibleUsers = SecurityManager.getUsersWithPermissions(getContainer(), Collections.<Class<? extends Permission>>singleton(ReadPermission.class));
-            for (AjaxCompletion completion : UserManager.getAjaxCompletions(possibleUsers, getUser(), showEmailAddresses, true))
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(possibleUsers, getUser(), getContainer()))
                     completions.add(completion.toJSON());
 
             response.put("completions", completions);

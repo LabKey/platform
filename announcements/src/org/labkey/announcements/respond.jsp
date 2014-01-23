@@ -1,3 +1,4 @@
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
 /*
  * Copyright (c) 2007-2013 LabKey Corporation
@@ -21,9 +22,10 @@
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -44,6 +46,8 @@
     Container c = getContainer();
 
     String respondUrl = AnnouncementsController.getRespondURL(c).getEncodedLocalURIString();
+    ActionURL completeUserUrl = new ActionURL(AnnouncementsController.CompleteUserAction.class, getContainer());
+
 %><%=formatMissedErrors("form")%>
 <script type="text/javascript">
 function validateForm(form)
@@ -92,7 +96,7 @@ if (settings.hasAssignedTo())
 
 if (settings.hasMemberList())
 {
-    %><tr><td class="labkey-form-label">Members</td><td><%=bean.memberList%></td><td width="100%"><i><%
+    %><tr><td class="labkey-form-label">Members</td><td><labkey:autoCompleteTextArea name="memberListInput" id="memberListInput" rows="5" cols="30" url="<%=h(completeUserUrl)%>" value="<%=h(bean.memberList)%>"/></td><td width="100%"><i><%
     if (settings.isSecure())
     {
         %> This <%=h(settings.getConversationName().toLowerCase())%> is private; only editors and the users on this list can view it.  These users will also<%
@@ -141,7 +145,7 @@ if (settings.hasFormatPicker())
             <table id="filePickerTable"></table>
             <table>
                 <tbody>
-                <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=request.getContextPath()%>/_images/paperclip.gif">&nbsp;Attach a file</a></td></tr>
+                <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=h(request.getContextPath())%>/_images/paperclip.gif">&nbsp;Attach a file</a></td></tr>
                 </tbody>
             </table>
         </td>

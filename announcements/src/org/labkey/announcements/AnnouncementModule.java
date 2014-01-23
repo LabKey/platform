@@ -16,6 +16,7 @@
 package org.labkey.announcements;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.api.AnnouncementServiceImpl;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.announcements.config.MessageConfigServiceImpl;
@@ -34,6 +35,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
@@ -91,7 +93,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @Override
     public double getVersion()
     {
-        return 13.30;
+        return 13.31;
     }
 
     protected void init()
@@ -139,6 +141,13 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     public boolean hasScripts()
     {
         return true;
+    }
+
+    @Nullable
+    @Override
+    public UpgradeCode getUpgradeCode()
+    {
+        return new AnnouncementUpgradeCode();
     }
 
     public String getTabName(ViewContext context)
