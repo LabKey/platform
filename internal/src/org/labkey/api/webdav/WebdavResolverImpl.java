@@ -275,6 +275,30 @@ public class WebdavResolverImpl implements WebdavResolver
         }
 
         @Override
+        public long getCreated()
+        {
+            return null != _c && null != _c.getCreated() ? _c.getCreated().getTime() : Long.MIN_VALUE;
+        }
+
+        @Override
+        public User getCreatedBy()
+        {
+            return UserManager.getUser(_c.getCreatedBy());
+        }
+
+        @Override
+        public long getLastModified()
+        {
+            return getCreated();
+        }
+
+        @Override
+        public User getModifiedBy()
+        {
+            return getCreatedBy();
+        }
+
+        @Override
         public String getExecuteHref(ViewContext context)
         {
             // context

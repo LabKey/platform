@@ -466,7 +466,11 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     {
         // TODO would be nice to call DavController.isTempFile()
         String name = getName();
-        if (name.startsWith(".part"))
+        if (name.startsWith(".part")) // applet uploader temp files
+            return false;
+        if (name.startsWith("._")) // mac finder temporary files
+            return false;
+        if (name.equals(".DS_Store")) // mac
             return false;
         return true;
     }
