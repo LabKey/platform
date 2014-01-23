@@ -53,6 +53,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class UserManager
@@ -583,25 +584,18 @@ public class UserManager
             return PropertyManager.getProperties(USER_PREF_MAP);
     }
 
-    // Get completions from list of all site users
-    public static List<AjaxCompletion> getAjaxCompletions(User currentUser) throws SQLException
+    /**
+     *  Get completions from list of all site users
+      */
+    public static List<AjaxCompletion> getAjaxCompletions(User currentUser, Container c) throws SQLException
     {
-        return getAjaxCompletions(getActiveUsers(), currentUser, true, false);
-    }
-
-    public static List<AjaxCompletion> getAjaxCompletions(Collection<User> users, User currentUser)
-    {
-        return getAjaxCompletions(users, currentUser, true, false);
+        return getAjaxCompletions(getActiveUsers(), currentUser, c);
     }
 
     /**
      * Returns the ajax completion objects for the specified groups and users.
-     * @param showEmailAddresses true to display email addresses in the display values (for users)
-     * @param useDisplayNames true to use display names as the values (for users), else uses email addresses, this should only
-     *                        be used in the case where the controller action can parse users from display names.
      */
-    public static List<AjaxCompletion> getAjaxCompletions(Collection<Group> groups, Collection<User> users, User currentUser,
-                                                          boolean showEmailAddresses, boolean useDisplayNames)
+    public static List<AjaxCompletion> getAjaxCompletions(Collection<Group> groups, Collection<User> users, User currentUser, Container c)
     {
         List<AjaxCompletion> completions = new ArrayList<>();
 
@@ -615,25 +609,22 @@ public class UserManager
         }
 
         if (!users.isEmpty())
-            completions.addAll(getAjaxCompletions(users, currentUser, showEmailAddresses, useDisplayNames));
+            completions.addAll(getAjaxCompletions(users, currentUser, c));
         return completions;
     }
 
     /**
      * Returns the ajax completion objects for the specified users.
-     * @param showEmailAddresses true to display email addresses in the display values
-     * @param useDisplayNames true to use display names as the values, else uses email addresses, this should only
-     *                        be used in the case where the controller action can parse users from display names.
      */
-    public static List<AjaxCompletion> getAjaxCompletions(Collection<User> users, User currentUser,
-                                                          boolean showEmailAddresses, boolean useDisplayNames)
+    public static List<AjaxCompletion> getAjaxCompletions(Collection<User> users, User currentUser, Container c)
     {
         List<AjaxCompletion> completions = new ArrayList<>();
 
+        boolean showEmailAddresses =  SecurityManager.canSeeEmailAddresses(c, currentUser);
         for (User user : users)
         {
             final String fullName = StringUtils.defaultString(user.getFirstName()) + " " + StringUtils.defaultString(user.getLastName());
-            String email = useDisplayNames ? user.getDisplayName(currentUser) : user.getEmail();
+            String email = showEmailAddresses ? user.getEmail() : user.getDisplayName(currentUser);
 
             if (fullName.trim().length() > 0)
             {
@@ -706,5 +697,51 @@ public class UserManager
         UserAuditEvent event = new UserAuditEvent(ContainerManager.getRoot().getId(), msg, modifiedUser);
         AuditLogService.get().addEvent(user, event);
 */
+    }
+
+    /**
+     * Parse an array of email addresses and/or display names into a list of corresponding userIds.
+     * Inputs which did not resolve to a current active user are preserved in the output.
+     * @param theList Any combination of email addresses and display names
+     * @return List of corresponding userIds. Unresolvable inputs are preserved.
+     */
+    public static List<String> parseUserListInput(String[] theList)
+    {
+        ArrayList<String> parsed = new ArrayList<>();
+        for (String name : theList)
+        {
+            if (null == (name = StringUtils.trimToNull(name)))
+                continue;
+            User u = null;
+            try { u = getUser(new ValidEmail(name)); } catch (ValidEmail.InvalidEmailException x) {}
+            if (null == u)
+                u = getUserByDisplayName(name);
+            parsed.add(null == u ? name : String.valueOf(u.getUserId()));
+        }
+        return parsed;
+    }
+
+    /**
+     * Parse a string of delimited email addresses and/or display names into a delimited string of
+     * corresponding userIds. Inputs which did not resolve to a current active user are preserved in the output.
+     * @param theList Any combination of email addresses and display names, delimited with semi-colons or new line characters
+     * @return Semi-colon delimited string of corresponding userIds. Unresolvable inputs are preserved.
+     */
+    public static String parseUserListInput(String theList)
+    {
+        String[] names = StringUtils.split(StringUtils.trimToEmpty(theList), ";\n");
+        return  StringUtils.join(names,";");
+    }
+
+    /**
+     * Parse a set of email addresses and/or display names into a list of corresponding userIds.
+     * Inputs which did not resolve to a current active user are preserved in the output.
+     * @param theList Any combination of email addresses and display names
+     * @return List of corresponding userIds. Unresolvable inputs are preserved.
+     */
+    public static List<String> parseUserListInput(Set<String> theList)
+    {
+        String[] names = theList.toArray(new String[theList.size()]);
+        return parseUserListInput(names);
     }
 }
