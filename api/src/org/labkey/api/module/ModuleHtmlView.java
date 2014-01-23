@@ -15,11 +15,11 @@
  */
 package org.labkey.api.module;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.resource.FileResource;
+import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
@@ -43,36 +43,34 @@ import java.util.regex.Matcher;
  */
 public class ModuleHtmlView extends HtmlView
 {
-    private static final Cache<String, ModuleHtmlViewDefinition> VIEW_DEF_CACHE = CacheManager.getCache(1024, CacheManager.HOUR, "Module HTML view definition cache");
+    private final ModuleHtmlViewDefinition _viewdef;
 
-    private ModuleHtmlViewDefinition _viewdef = null;
-
-    public ModuleHtmlView(Resource r)
+    public ModuleHtmlView(@NotNull Resource r)
     {
         this(r, null);
     }
 
 
-    public ModuleHtmlView(Resource r, @Nullable Portal.WebPart webpart)
+    public ModuleHtmlView(@NotNull Resource r, @Nullable Portal.WebPart webpart)
     {
         super(null);
-        _debugViewDescription = this.getClass().toString();
-        if (r != null)
-            _debugViewDescription += ": " + PageFlowUtil.filter((r instanceof FileResource && null != ((FileResource) r).getFile()) ?
-                    ((FileResource) r).getFile().toString() :
-                    r.getPath().toString());
-        _viewdef = getViewDef(r);
+        _debugViewDescription = this.getClass().toString() + ": " + PageFlowUtil.filter((r instanceof FileResource && null != ((FileResource) r).getFile()) ?
+                    ((FileResource) r).getFile().toString() : r.getPath().toString());
+
+        // This is hackery, but at least we're now explicit about it
+        Resolver resolver = r.getResolver();
+        assert resolver instanceof ModuleResourceResolver;
+        Module module = ((ModuleResourceResolver) resolver).getModule();
+        _viewdef = Portal.MODULE_HTML_VIEW_DEFINITION_CACHE.getResource(module.getName() + "/" + r.getName());
+        assert null != _viewdef;
+
         setTitle(_viewdef.getTitle());
         setClientDependencies(_viewdef.getClientDependencies());
         setHtml(replaceTokensForView(_viewdef.getHtml(), getViewContext(), webpart));
         if (null != _viewdef.getFrameType())
             setFrame(_viewdef.getFrameType());
 
-        if(_viewdef.getResource().getResolver() instanceof ModuleResourceResolver)
-        {
-            Module _module = ((ModuleResourceResolver)_viewdef.getResource().getResolver()).getModule();
-            _clientDependencies.add(ClientDependency.fromModule(_module));
-        }
+        _clientDependencies.add(ClientDependency.fromModule(module));
 
         //if this HTML view uses a portal frame, we automatically hide the redundant page title
         if (FrameType.PORTAL.equals(getFrame()))
@@ -117,18 +115,6 @@ public class ModuleHtmlView extends HtmlView
         ret = ret.replaceAll("<%=\\s*containerPath\\s*%>", Matcher.quoteReplacement(containerPath));
 
         return ret;
-    }
-
-    public static ModuleHtmlViewDefinition getViewDef(Resource r)
-    {
-        String cacheKey = r.toString();
-        ModuleHtmlViewDefinition viewdef = VIEW_DEF_CACHE.get(cacheKey);
-        if (null == viewdef || viewdef.isStale())
-        {
-            viewdef = new ModuleHtmlViewDefinition(r);
-            VIEW_DEF_CACHE.put(cacheKey, viewdef);
-        }
-        return viewdef;
     }
 
     public PageConfig.Template getPageTemplate()

@@ -24,12 +24,16 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.util.Pair;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * User: adam
@@ -130,7 +134,10 @@ public final class ModuleResourceCache<T>
         {
             Module module = ModuleLoader.getInstance().getModule(moduleName);
             Resource resourceDir = module.getModuleResolver().lookup(_directory.getPath());
-            List<String> resourceNames = new LinkedList<>();
+
+            // Multiple files in the directory can map to a single cached resource (e.g., HTML views are comprised
+            // of .html and .view.xml files); use a set to collapse the duplicates.
+            Set<String> resourceNames = new LinkedHashSet<>();
 
             if (resourceDir != null && resourceDir.isCollection())
             {
@@ -148,7 +155,7 @@ public final class ModuleResourceCache<T>
                 }
             }
 
-            return Collections.unmodifiableList(resourceNames);
+            return Collections.unmodifiableList(new LinkedList<>(resourceNames));
         }
     };
 
@@ -220,5 +227,46 @@ public final class ModuleResourceCache<T>
             if (null != _chainedListener)
                 _chainedListener.overflow();
         }
+    }
+
+    public static String createCacheKey(Module module, String resourceName)
+    {
+        String name = module.getName();
+
+        if (name.contains("/"))
+            throw new IllegalStateException("Module name contains \"/\" character");
+
+        return module.getName() + "/" + resourceName;
+    }
+
+    private static final Pattern STANDARD_CACHE_KEY_PATTERN = Pattern.compile("(\\w+)/(.+)");
+
+    /**
+     * Parse a cacheKey that uses standard format (see parseCacheKey()) into its components.
+     *
+     * @param cacheKey Cache key String in standard format
+     * @return Pair&lt;Module, String&gt;
+     */
+    public static Pair<Module, String> parseCacheKey(String cacheKey)
+    {
+        return parseCacheKey(cacheKey, STANDARD_CACHE_KEY_PATTERN);
+    }
+
+    public static Pair<Module, String> parseCacheKey(String cacheKey, Pattern pattern)
+    {
+        // Parse out the module name and the config name
+        Matcher matcher = pattern.matcher(cacheKey);
+
+        if (!matcher.matches() || matcher.groupCount() != 2)
+            throw new IllegalStateException("Unrecognized cache key format: " + cacheKey);
+
+        String moduleName = matcher.group(1);
+        String filename = matcher.group(2);
+        Module module = ModuleLoader.getInstance().getModule(moduleName);
+
+        if (null == module)
+            throw new IllegalStateException("Module does not exist: " + moduleName);
+
+        return new Pair<>(module, filename);
     }
 }

@@ -19,21 +19,18 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.SimpleWebPartFactory;
+import org.labkey.api.util.Pair;
 
 import java.nio.file.Path;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * User: adam
  * Date: 12/29/13
  * Time: 12:38 PM
  */
-
-// TODO: Add a handler from file-based views as well??
 
 /**
  * Creates and caches the file-based webparts defined by modules. In dev mode, file changes result in dynamic reloading
@@ -56,10 +53,8 @@ public class SimpleWebPartFactoryCacheHandler implements ModuleResourceCacheHand
     @Override
     public String createCacheKey(Module module, String resourceName)
     {
-        return module.getName() + "/" + resourceName;
+        return ModuleResourceCache.createCacheKey(module, resourceName);
     }
-
-    private static final Pattern CACHE_KEY_PATTERN = Pattern.compile("(\\w+)/(.+)");
 
     @Override
     public CacheLoader<String, SimpleWebPartFactory> getResourceLoader()
@@ -69,19 +64,9 @@ public class SimpleWebPartFactoryCacheHandler implements ModuleResourceCacheHand
             @Override
             public SimpleWebPartFactory load(String key, @Nullable Object argument)
             {
-                Matcher matcher = CACHE_KEY_PATTERN.matcher(key);
+                Pair<Module, String> pair = ModuleResourceCache.parseCacheKey(key);
 
-                if (!matcher.matches() || matcher.groupCount() != 2)
-                    throw new IllegalStateException("Unrecognized webpart cache key format: " + key);
-
-                String moduleName = matcher.group(1);
-                String filename = matcher.group(2);
-                Module module = ModuleLoader.getInstance().getModule(moduleName);
-
-                if (null == module)
-                    throw new IllegalStateException("Module does not exist: " + moduleName);
-
-                return new SimpleWebPartFactory(module, filename);
+                return new SimpleWebPartFactory(pair.first, pair.second);
             }
         };
     }

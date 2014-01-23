@@ -17,10 +17,11 @@ package org.labkey.api.module;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.resource.ResourceRef;
+import org.labkey.api.security.ACL;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
@@ -29,7 +30,6 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.security.ACL;
 import org.labkey.data.xml.view.DependenciesType;
 import org.labkey.data.xml.view.DependencyType;
 import org.labkey.data.xml.view.ModuleContextType;
@@ -42,10 +42,10 @@ import org.labkey.data.xml.view.ViewType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.Set;
 
 /*
@@ -58,12 +58,15 @@ import java.util.Set;
  * Definition of a file-based html view in a module.
  * This is separate from ModuleHtmlView so that it can be cached
  */
-public class ModuleHtmlViewDefinition extends ResourceRef
+public class ModuleHtmlViewDefinition
 {
+    private static final Logger _log = Logger.getLogger(ModuleHtmlViewDefinition.class);
+
     public static final String HTML_VIEW_EXTENSION = ".html";
     public static final String VIEW_METADATA_EXTENSION = ".view.xml";
 
     private final String _name;
+
     private String _html;
     private int _requiredPerms = ACL.PERM_READ;  //8550: Default perms for simple module views should be read
     private boolean _requiresLogin = false;
@@ -72,7 +75,6 @@ public class ModuleHtmlViewDefinition extends ResourceRef
 
     public ModuleHtmlViewDefinition(Resource r)
     {
-        super(r);
         _name = r.getName().substring(0, r.getName().length() - HTML_VIEW_EXTENSION.length());
 
         try (InputStream is = r.getInputStream())
@@ -95,11 +97,7 @@ public class ModuleHtmlViewDefinition extends ResourceRef
         {
             Resource metadataResource = parent.find(_name + VIEW_METADATA_EXTENSION);
             if (metadataResource != null)
-            {
-                ResourceRef metadataRef = new ResourceRef(metadataResource);
-                addDependency(metadataRef);
                 parseMetadata(metadataResource);
-            }
         }
     }
 
