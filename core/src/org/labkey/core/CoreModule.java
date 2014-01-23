@@ -28,6 +28,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientAPIAuditViewFactory;
 import org.labkey.api.audit.ClientApiAuditProvider;
 import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.data.*;
@@ -788,7 +789,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 JSONDataLoader.MetadataTest.class,
                 JSONDataLoader.RowTest.class,
                 EmailTemplate.TestCase.class,
-                HelpTopic.TestCase.class
+                HelpTopic.TestCase.class,
+                CaseInsensitiveHashMap.TestCase.class
         ));
     }
 
