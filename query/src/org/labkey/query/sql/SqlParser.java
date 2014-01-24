@@ -179,7 +179,7 @@ public class SqlParser
 
 				QNode qnodeRoot = convertParseTree(selectStmt);
 				assert dump(qnodeRoot);
-				MemTracker.getInstance().put(qnodeRoot);
+				assert MemTracker.getInstance().put(qnodeRoot);
 
 				if (qnodeRoot instanceof QQuery || qnodeRoot instanceof QUnion)
 					_root = qnodeRoot;
@@ -252,13 +252,13 @@ public class SqlParser
                 return null;
 
             CommonTree parseRoot = (CommonTree)exprScope.getTree();
-            MemTracker.getInstance().put(parseRoot);
+            assert MemTracker.getInstance().put(parseRoot);
             if (null == parseRoot)
                 return null;
 
             QNode qnodeRoot = convertParseTree(parseRoot);
 			assert dump(qnodeRoot);
-            MemTracker.getInstance().put(qnodeRoot);
+            assert MemTracker.getInstance().put(qnodeRoot);
 
             _root = qnodeRoot != null && qnodeRoot instanceof QExpr ? (QExpr) qnodeRoot : null;
             for (Throwable e : _parseErrors)
@@ -597,6 +597,7 @@ public class SqlParser
             case BIT_AND: return "&";
             case STAR: return "*";
             case DIV: return "/";
+            case MODULO: return "%";
             case PARAM: return "?";
             case QUOTED_STRING: return "QUOTED STRING";
             case NUM_LONG: return "NUMBER";
@@ -903,16 +904,10 @@ public class SqlParser
             _parseErrors.add(new QueryParseException("Path substition is empty", null, -1, -1));
             return null;
         }
-        QFieldKey prev = null;
-        for (String part : p)
-        {
-            QIdentifier id = new QIdentifier(part);
-            if (null == prev)
-                prev = id;
-            else
-                prev = new QDot(prev, id);
-        }
-        return prev;
+        // NOTE the "/" forces this to be interpreted as directory (not a schema name)
+        if (!pathString.endsWith(("/")))
+            pathString += "/";
+        return new QIdentifier(pathString);
     }
 
 
@@ -1027,7 +1022,7 @@ public class SqlParser
 			super(new CommonTokenStream(new SqlBaseLexer(new CaseInsensitiveStringStream(str))));
             setTreeAdaptor(new LabKeyTreeAdaptor());
             _errors = errors;
-            MemTracker.getInstance().put(this);
+            assert MemTracker.getInstance().put(this);
         }
 
         public boolean isSqlType(String type)
@@ -1190,7 +1185,7 @@ public class SqlParser
 
             case EQ: case NE: case GT: case LT: case GE: case LE: case IS: case IS_NOT:
             case BETWEEN: case NOT_BETWEEN:
-            case PLUS: case MINUS: case UNARY_MINUS: case STAR: case DIV: case CONCAT:
+            case PLUS: case MINUS: case UNARY_MINUS: case STAR: case DIV: case MODULO: case CONCAT:
             case NOT: case AND: case OR: case LIKE: case NOT_LIKE: case IN: case NOT_IN:
             case BIT_AND: case BIT_OR: case BIT_XOR: case UNARY_PLUS:
                 Operator op = Operator.ofTokenType(type);

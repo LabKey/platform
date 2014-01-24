@@ -99,6 +99,7 @@ public enum Operator
     },
     multiply("*", Precedence.multiplication, STAR, ResultType.arg),
     divide("/", Precedence.multiplication, DIV, ResultType.arg),
+    modulo("%", Precedence.multiplication, MODULO, ResultType.arg),
     concat("||", Precedence.addition, CONCAT, ResultType.string)
     {
         public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)

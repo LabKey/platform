@@ -566,7 +566,7 @@ additiveExpression
 
 // level 2 - binary multiply and divide
 multiplyExpression
-	: unaryExpression ( ( STAR^ | DIV^ ) unaryExpression )*
+	: unaryExpression ( ( STAR^ | DIV^ | MODULO^) unaryExpression )*
 	;
 	
 // level 1 - unary minus, unary plus, not
@@ -750,6 +750,7 @@ PLUS: '+';
 MINUS: '-';
 STAR: '*';
 DIV: '/';
+MODULO: '%';
 COLON: ':';
 PARAM: '?';
 BIT_OR: '|';
