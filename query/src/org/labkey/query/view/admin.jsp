@@ -32,14 +32,15 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <h2>External Schemas</h2>
 <p>
-    Administrators can define external schemas to make data stored in PostgreSQL, Microsoft SQL Server, and SAS available
-    for viewing, querying, and editing via LabKey Server.  This feature should be used with great care since, depending
-    on your configuration, any user with access to this folder could view and modify arbitrary data in your databases.
+    Administrators can define external schemas to make data stored in any PostgreSQL, Microsoft SQL Server, SAS, MySQL,
+    or Oracle relational database available for viewing, querying, and editing via LabKey Server. This feature should be
+    used with great caution since, depending on your configuration, any user with access to this folder could view and
+    modify arbitrary data in your databases.
 </p>
 <p>
     Defining any of the standard LabKey schemas as an external schema is strongly discouraged since it bypasses LabKey's
-    security and data integrity checks.  Also, the database schema may change in future releases, so queries written
-    against LabKey schemas may stop working after an upgrade.
+    security and data integrity checks. Also, the database schema may change in future releases, so queries written
+    directly against LabKey schemas may stop working after an upgrade.
 </p>
 <%
     Container c = getContainer();
@@ -48,7 +49,7 @@
 
     List<ExternalSchemaDef> defs = Arrays.asList(QueryManager.get().getExternalSchemaDefs(c));
     if (defs.isEmpty()) { %>
-<p>There are no database user schemas defined in this folder.</p>
+<p>There are no external schemas defined in this folder.</p>
 <% }
 else
 {
