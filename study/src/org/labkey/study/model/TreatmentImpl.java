@@ -15,10 +15,14 @@
  */
 package org.labkey.study.model;
 
+import org.labkey.api.data.Sort;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.Treatment;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: cnathe
@@ -91,5 +95,23 @@ public class TreatmentImpl implements Treatment
             _products = new ArrayList<>();
 
         _products.add(product);
+    }
+
+    public Map<String, Object> serialize()
+    {
+        Map<String, Object> props = new HashMap<>();
+        props.put("RowId", getRowId());
+        props.put("Label", getLabel());
+        props.put("Description", getDescription());
+        return props;
+    }
+
+    public Sort getProductSort()
+    {
+        // sort the product list to match the manage study products page (i.e. Immunogens before Adjuvants)
+        Sort sort = new Sort();
+        sort.appendSortColumn(FieldKey.fromParts("ProductId", "Role"), Sort.SortDirection.DESC, false);
+        sort.appendSortColumn(FieldKey.fromParts("ProductId", "RowId"), Sort.SortDirection.ASC, false);
+        return sort;
     }
 }

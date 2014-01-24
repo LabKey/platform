@@ -3343,7 +3343,6 @@ study/src/org/labkey/study/designer/StudyDefinitionServiceImpl.java -text
 study/src/org/labkey/study/designer/StudyDesignInfo.java -text
 study/src/org/labkey/study/designer/StudyDesignManager.java -text
 study/src/org/labkey/study/designer/StudyDesignVersion.java -text
-study/src/org/labkey/study/designer/StudyImmunizationSchedule.java -text
 study/src/org/labkey/study/designer/StudySchedule.java -text
 study/src/org/labkey/study/designer/XMLSerializer.java -text
 study/src/org/labkey/study/designer/view/CreateRepositoryWizard.jsp -text
@@ -3450,12 +3449,14 @@ study/src/org/labkey/study/model/SpecimenEventDomainKind.java -text
 study/src/org/labkey/study/model/SpecimenTypeSummary.java -text
 study/src/org/labkey/study/model/SpecimenTypeSummaryRow.java -text
 study/src/org/labkey/study/model/StudyDomainKind.java -text
+study/src/org/labkey/study/model/StudyImmunizationSchedule.java -text
 study/src/org/labkey/study/model/StudyImpl.java -text
 study/src/org/labkey/study/model/StudyLsidHandler.java -text
 study/src/org/labkey/study/model/StudyManager.java -text
 study/src/org/labkey/study/model/StudySnapshot.java -text
 study/src/org/labkey/study/model/TestDatasetDomainKind.java -text
 study/src/org/labkey/study/model/TreatmentImpl.java -text
+study/src/org/labkey/study/model/TreatmentManager.java -text
 study/src/org/labkey/study/model/TreatmentProductImpl.java -text
 study/src/org/labkey/study/model/TreatmentVisitMapImpl.java -text
 study/src/org/labkey/study/model/UploadLog.java -text
@@ -3802,7 +3803,7 @@ study/src/org/labkey/study/view/studydesign/ImmunizationScheduleWebpartFactory.j
 study/src/org/labkey/study/view/studydesign/VaccineDesignWebpartFactory.java -text
 study/src/org/labkey/study/view/studydesign/assayScheduleWebpart.jsp -text
 study/src/org/labkey/study/view/studydesign/immunizationScheduleWebpart.jsp -text
-study/src/org/labkey/study/view/studydesign/manageAssaySpecimen.jsp -text
+study/src/org/labkey/study/view/studydesign/manageAssaySchedule.jsp -text
 study/src/org/labkey/study/view/studydesign/manageImmunizations.jsp -text
 study/src/org/labkey/study/view/studydesign/manageStudyProducts.jsp -text
 study/src/org/labkey/study/view/studydesign/vaccineDesignWebpart.jsp -text

@@ -292,25 +292,25 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     @Override
     public List<ProductImpl> getStudyProducts(User user, String role)
     {
-        return StudyManager.getInstance().getStudyProducts(getContainer(), user, role, null);
+        return TreatmentManager.getInstance().getStudyProducts(getContainer(), user, role, null);
     }
 
     @Override
     public List<TreatmentImpl> getStudyTreatments(User user)
     {
-        return StudyManager.getInstance().getStudyTreatments(getContainer(), user);
+        return TreatmentManager.getInstance().getStudyTreatments(getContainer(), user);
     }
 
     @Override
     public List<TreatmentVisitMapImpl> getStudyTreatmentVisitMap(Container container, @Nullable Integer cohortId)
     {
-        return StudyManager.getInstance().getStudyTreatmentVisitMap(container, cohortId);
+        return TreatmentManager.getInstance().getStudyTreatmentVisitMap(container, cohortId);
     }
 
     @Override
     public List<VisitImpl> getVisitsForImmunizationSchedule()
     {
-        return StudyManager.getInstance().getVisitsForImmunizationSchedule(getContainer());
+        return TreatmentManager.getInstance().getVisitsForImmunizationSchedule(getContainer());
     }
 
     @Override

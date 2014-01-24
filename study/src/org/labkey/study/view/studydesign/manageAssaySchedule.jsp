@@ -41,8 +41,8 @@
   }
 %>
 <%
-    JspView<StudyDesignController.AssaySpecimenForm> me = (JspView<StudyDesignController.AssaySpecimenForm>) HttpView.currentView();
-    StudyDesignController.AssaySpecimenForm form = me.getModelBean();
+    JspView<StudyDesignController.AssayScheduleForm> me = (JspView<StudyDesignController.AssayScheduleForm>) HttpView.currentView();
+    StudyDesignController.AssayScheduleForm form = me.getModelBean();
 
     Container c = getContainer();
     User user = getUser();
@@ -138,9 +138,9 @@
         selType: 'rowmodel',
         multiSelect: false,
         forceFit: true,
-        title: 'Assay/Specimen Configurations',
+        title: 'Assay Configurations',
         editable: true,
-        emptyText: 'No assay/specimen configurations',
+        emptyText: 'No assay configurations',
         dockedItems: [{
             xtype: 'toolbar',
             dock: 'top',
@@ -158,7 +158,7 @@
                     X.Msg.show({
                         cls: 'data-window',
                         title: "Confirm Deletion",
-                        msg: "Are you sure you want to delete the selected assay/specimen configuration and all of its related <%=h(visitDisplayName.toLowerCase())%> mapping information?",
+                        msg: "Are you sure you want to delete the selected assay configuration and all of its related <%=h(visitDisplayName.toLowerCase())%> mapping information?",
                         icon: X.Msg.QUESTION,
                         buttons: X.Msg.YESNO,
                         fn: function(button){
@@ -230,7 +230,7 @@
 
     _panelSV = X.create('Ext.panel.Panel', {
         renderTo : 'AssaySpecimenVisitPanel',
-        title : 'Assay/Specimen <%=h(visitDisplayName)%> Mapping',
+        title : 'Assay Schedule',
         bodyCls: "x-panel",
         bodyStyle: "background-color: transparent;"
     });
@@ -379,7 +379,7 @@ function showUpdateConfigurationDialog(grid, record, item, index)
         border: false,
         modal: true,
         bodyStyle: 'padding: 5px;',
-        title: record ? 'Edit Assay/Specimen Configuration' : ' Add Assay/Specimen Configuration',
+        title: record ? 'Edit Assay Configuration' : ' Add Assay Configuration',
         items: [{
             itemId: 'recordWindowFormPanel',
             xtype: 'form',
@@ -626,8 +626,8 @@ function removeSVC(el, scRowId, vRowId)
 Enter assay schedule information in the grids below.
 <div style="width: 810px;">
     <ul>
-        <li>Use the "Insert New" button in the assay/specimen configurations grid to add a new assay.</li>
-        <li>Select the visits for each assay in the assay/specimen visit mapping grid to define the expected assay schedule for the study.</li>
+        <li>Use the "Insert New" button in the assay configurations grid to add a new assay.</li>
+        <li>Select the visits for each assay in the assay schedule grid to define the expected assay schedule for the study.</li>
         <li <%=form.isUseAlternateLookupFields() ? "style='display:none;'" : ""%>>
             Configure dropdown options at the project level to be shared across study designs or within this folder for
             study specific properties: <span id='config-dropdown-menu'></span>
@@ -635,7 +635,7 @@ Enter assay schedule information in the grids below.
     </ul>
 </div>
 <div id="AssaySpecimenConfigGrid"></div>
-<span style='font-style: italic; font-size: smaller;'>* Double click to edit an assay/specimen configuration</span>
+<span style='font-style: italic; font-size: smaller;'>* Double click to edit an assay configuration</span>
 <br/><br/>
 <%
     if (canManageStudy && form.isUseAlternateLookupFields())

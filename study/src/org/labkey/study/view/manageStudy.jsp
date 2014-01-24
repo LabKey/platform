@@ -253,8 +253,8 @@
     </tr>
     <tr>
         <th align="left">Assay Schedule</th>
-        <td>This study defines <%= getAssaySpecimenConfigs().size() %> assay/specimen configurations</td>
-        <td><%= textLink("Manage Assay Schedule", StudyDesignController.ManageAssaySpecimenAction.class) %></td>
+        <td>This study defines <%= getAssaySpecimenConfigs().size() %> assay configurations</td>
+        <td><%= textLink("Manage Assay Schedule", StudyDesignController.ManageAssayScheduleAction.class) %></td>
     </tr>
     <tr>
         <th align="left">Demo Mode</th>

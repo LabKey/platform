@@ -13,18 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.designer;
+package org.labkey.study.model;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.HttpView;
-import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.TreatmentImpl;
-import org.labkey.study.model.TreatmentVisitMapImpl;
-import org.labkey.study.model.VisitImpl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,17 +60,14 @@ public class StudyImmunizationSchedule implements CustomApiForm
         _treatments = treatments;
     }
 
-    public List<JSONObject> serializeTreatments()
+    public List<Map<String, Object>> serializeTreatments()
     {
-        List<JSONObject> json = new ArrayList<>();
+        List<Map<String, Object>> treatmentList = new ArrayList<>();
         for (TreatmentImpl treatment : _treatments)
         {
-            JSONObject treatmentJSON = new JSONObject();
-            treatmentJSON.put("RowId", treatment.getRowId());
-            treatmentJSON.put("Label", treatment.getLabel());
-            json.add(treatmentJSON);
+            treatmentList.add(treatment.serialize());
         }
-        return json;
+        return treatmentList;
     }
 
     public void setVisits(List<VisitImpl> visits)
@@ -83,23 +75,23 @@ public class StudyImmunizationSchedule implements CustomApiForm
         _visits = visits;
     }
 
-    public List<JSONObject> serializeVisits()
+    public List<Map<String, Object>> serializeVisits()
     {
-        List<JSONObject> json = new ArrayList<>();
+        List<Map<String, Object>> visitList = new ArrayList<>();
         List<Integer> includedIds = getIncludedVisitIds();
         for (VisitImpl v : _visits)
         {
-            JSONObject visitJSON = new JSONObject();
-            visitJSON.put("RowId", v.getRowId());
-            visitJSON.put("Label", v.getDisplayString());
-            visitJSON.put("SortOrder", v.getDisplayOrder());
+            Map<String, Object> visitProperties = new HashMap<>();
+            visitProperties.put("RowId", v.getRowId());
+            visitProperties.put("Label", v.getDisplayString());
+            visitProperties.put("SortOrder", v.getDisplayOrder());
 
             // tag those visits that are used in the immunization schedule
-            visitJSON.put("Included", includedIds.contains(v.getRowId()));
+            visitProperties.put("Included", includedIds.contains(v.getRowId()));
 
-            json.add(visitJSON);
+            visitList.add(visitProperties);
         }
-        return json;
+        return visitList;
     }
 
     public void setCohorts(List<CohortImpl> cohorts)
@@ -107,23 +99,23 @@ public class StudyImmunizationSchedule implements CustomApiForm
         _cohorts = cohorts;
     }
 
-    public List<JSONObject> serializeCohortMapping()
+    public List<Map<String, Object>> serializeCohortMapping()
     {
-        List<JSONObject> json = new ArrayList<>();
+        List<Map<String, Object>> cohortMappingList = new ArrayList<>();
         for (CohortImpl cohort : _cohorts)
         {
-            JSONObject mapJSON = new JSONObject();
-            mapJSON.put("RowId", cohort.getRowId());
-            mapJSON.put("Label", cohort.getLabel());
-            mapJSON.put("SubjectCount", cohort.getSubjectCount());
+            Map<String, Object> mapProperties = new HashMap<>();
+            mapProperties.put("RowId", cohort.getRowId());
+            mapProperties.put("Label", cohort.getLabel());
+            mapProperties.put("SubjectCount", cohort.getSubjectCount());
 
-            List<TreatmentVisitMapImpl> treatmentVisitMap = StudyManager.getInstance().getStudyTreatmentVisitMap(_container, cohort.getRowId());
+            List<TreatmentVisitMapImpl> treatmentVisitMap = TreatmentManager.getInstance().getStudyTreatmentVisitMap(_container, cohort.getRowId());
             for (TreatmentVisitMapImpl tvm : treatmentVisitMap)
-                mapJSON.put("Visit"+tvm.getVisitId(), tvm.getTreatmentId());
+                mapProperties.put("Visit"+tvm.getVisitId(), tvm.getTreatmentId());
 
-            json.add(mapJSON);
+            cohortMappingList.add(mapProperties);
         }
-        return json;
+        return cohortMappingList;
     }
 
     private List<Integer> getIncludedVisitIds()
@@ -131,7 +123,7 @@ public class StudyImmunizationSchedule implements CustomApiForm
         List<Integer> ids = new ArrayList<>();
         for (CohortImpl cohort : _cohorts)
         {
-            List<TreatmentVisitMapImpl> treatmentVisitMap = StudyManager.getInstance().getStudyTreatmentVisitMap(_container, cohort.getRowId());
+            List<TreatmentVisitMapImpl> treatmentVisitMap = TreatmentManager.getInstance().getStudyTreatmentVisitMap(_container, cohort.getRowId());
             for (TreatmentVisitMapImpl tvm : treatmentVisitMap)
             {
                 if (!ids.contains(tvm.getVisitId()))

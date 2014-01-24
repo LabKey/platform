@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.TreatmentImpl" %>
+<%@ page import="org.labkey.study.model.TreatmentManager" %>
 <%@ page import="org.labkey.study.model.TreatmentVisitMapImpl" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.HashMap" %>
@@ -161,7 +162,7 @@
                         Integer treatmentId = visitTreatments.get(visit.getRowId());
                         TreatmentImpl treatment = null;
                         if (treatmentId != null)
-                            treatment = StudyManager.getInstance().getStudyTreatmentByRowId(c, user, treatmentId);
+                            treatment = TreatmentManager.getInstance().getStudyTreatmentByRowId(c, user, treatmentId);
 
                         // show the list of study products for the treatment as a hover
                         // Example display:

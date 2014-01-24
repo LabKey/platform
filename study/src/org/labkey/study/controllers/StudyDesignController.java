@@ -15,14 +15,12 @@
  */
 package org.labkey.study.controllers;
 
-import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.Sort;
-import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -32,7 +30,7 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.study.StudySchema;
-import org.labkey.study.designer.StudyImmunizationSchedule;
+import org.labkey.study.model.StudyImmunizationSchedule;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.ProductAntigenImpl;
@@ -40,6 +38,7 @@ import org.labkey.study.model.ProductImpl;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.TreatmentImpl;
+import org.labkey.study.model.TreatmentManager;
 import org.labkey.study.model.TreatmentProductImpl;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.visitmanager.VisitManager;
@@ -66,22 +65,23 @@ public class StudyDesignController extends BaseStudyController
         setActionResolver(ACTION_RESOLVER);
     }
 
+    @ActionNames("manageAssaySchedule, manageAssaySpecimen")
     @RequiresPermissionClass(UpdatePermission.class)
-    public class ManageAssaySpecimenAction extends SimpleViewAction<AssaySpecimenForm>
+    public class ManageAssayScheduleAction extends SimpleViewAction<AssayScheduleForm>
     {
-        public ModelAndView getView(AssaySpecimenForm form, BindException errors) throws Exception
+        public ModelAndView getView(AssayScheduleForm form, BindException errors) throws Exception
         {
-            return new JspView<>("/org/labkey/study/view/studydesign/manageAssaySpecimen.jsp", form);
+            return new JspView<>("/org/labkey/study/view/studydesign/manageAssaySchedule.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             _appendManageStudy(root);
-            return root.addChild("Manage Assay/Specimen Configurations");
+            return root.addChild("Manage Assay Schedule");
         }
     }
 
-    public static class AssaySpecimenForm
+    public static class AssayScheduleForm
     {
         private boolean useAlternateLookupFields;
 
@@ -143,37 +143,28 @@ public class StudyDesignController extends BaseStudyController
         public ApiResponse execute(GetStudyProductsForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            List<JSONObject> products = new ArrayList<>();
 
-            List<ProductImpl> studyProducts = StudyManager.getInstance().getStudyProducts(getContainer(), getUser(), form.getRole(), form.getRowId());
+            List<Map<String, Object>> productList = new ArrayList<>();
+            List<ProductImpl> studyProducts = TreatmentManager.getInstance().getStudyProducts(getContainer(), getUser(), form.getRole(), form.getRowId());
             for (ProductImpl product : studyProducts)
             {
-                JSONObject productJSON = new JSONObject();
-                productJSON.put("RowId", product.getRowId());
-                productJSON.put("Label", product.getLabel());
-                productJSON.put("Role", product.getRole());
-                productJSON.put("Type", product.getType());
+                // note: we are currently only inclusing the base fields for this extensible table
+                Map<String, Object> productProperties = product.serialize();
 
-                List<JSONObject> productAntigens = new ArrayList<>();
-                List<ProductAntigenImpl> studyProductAntigens = StudyManager.getInstance().getStudyProductAntigens(getContainer(), getUser(), product.getRowId());
+                List<Map<String, Object>> productAntigenList = new ArrayList<>();
+                List<ProductAntigenImpl> studyProductAntigens = TreatmentManager.getInstance().getStudyProductAntigens(getContainer(), getUser(), product.getRowId());
                 for (ProductAntigenImpl antigen : studyProductAntigens)
                 {
-                    JSONObject antigenJSON = new JSONObject();
-                    antigenJSON.put("RowId", antigen.getRowId());
-                    antigenJSON.put("ProductId", antigen.getProductId());
-                    antigenJSON.put("Gene", antigen.getGene());
-                    antigenJSON.put("SubType", antigen.getSubType());
-                    antigenJSON.put("GenBankId", antigen.getGenBankId());
-                    antigenJSON.put("Sequence", antigen.getSequence());
-                    productAntigens.add(antigenJSON);
+                    // note: we are currently only inclusing the base fields for this extensible table
+                    productAntigenList.add(antigen.serialize());
                 }
-                productJSON.put("Antigens", productAntigens);
+                productProperties.put("Antigens", productAntigenList);
 
-                products.add(productJSON);
+                productList.add(productProperties);
             }
 
             resp.put("success", true);
-            resp.put("products", products);
+            resp.put("products", productList);
 
             return resp;
         }
@@ -222,43 +213,35 @@ public class StudyDesignController extends BaseStudyController
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            List<JSONObject> treatments = new ArrayList<>();
 
-            List<TreatmentImpl> studyTreatments = StudyManager.getInstance().getStudyTreatments(getContainer(), getUser());
+            List<Map<String, Object>> treatmentList = new ArrayList<>();
+            List<TreatmentImpl> studyTreatments = TreatmentManager.getInstance().getStudyTreatments(getContainer(), getUser());
             for (TreatmentImpl treatment : studyTreatments)
             {
-                JSONObject treatmentJSON = new JSONObject();
-                treatmentJSON.put("RowId", treatment.getRowId());
-                treatmentJSON.put("Label", treatment.getLabel());
-                treatmentJSON.put("Description", treatment.getDescription());
+                // note: we are currently only inclusing the base fields for this extensible table
+                Map<String, Object> treatmentProperties = treatment.serialize();
 
-                List<JSONObject> treatmentProducts = new ArrayList<>();
-                Sort sort = new Sort();
-                sort.appendSortColumn(FieldKey.fromParts("ProductId", "Role"), Sort.SortDirection.DESC, false);
-                sort.appendSortColumn(FieldKey.fromParts("ProductId", "RowId"), Sort.SortDirection.ASC, false);
-                List<TreatmentProductImpl> studyTreatmentProducts = StudyManager.getInstance().getStudyTreatmentProducts(getContainer(), getUser(), treatment.getRowId(), sort);
+                List<Map<String, Object>> treatmentProductList = new ArrayList<>();
+                List<TreatmentProductImpl> studyTreatmentProducts = TreatmentManager.getInstance().getStudyTreatmentProducts(getContainer(), getUser(), treatment.getRowId(), treatment.getProductSort());
                 for (TreatmentProductImpl treatmentProduct : studyTreatmentProducts)
                 {
-                    JSONObject productJSON = new JSONObject();
-                    productJSON.put("RowId", treatmentProduct.getRowId());
-                    productJSON.put("TreatmentId", treatmentProduct.getTreatmentId());
-                    productJSON.put("ProductId", treatmentProduct.getProductId());
-                    productJSON.put("Dose", treatmentProduct.getDose());
-                    productJSON.put("Route", treatmentProduct.getRoute());
+                    // note: we are currently only inclusing the base fields for this extensible table
+                    Map<String, Object> treatmentProductProperties = treatmentProduct.serialize();
 
-                    List<ProductImpl> products = StudyManager.getInstance().getStudyProducts(getContainer(), getUser(), null, treatmentProduct.getProductId());
+                    // add the product label for convenience, to prevent the need for another round trip to the server
+                    List<ProductImpl> products = TreatmentManager.getInstance().getStudyProducts(getContainer(), getUser(), null, treatmentProduct.getProductId());
                     if (products.size() == 1)
-                        productJSON.put("ProductId/Label", products.get(0).getLabel());
+                        treatmentProductProperties.put("ProductId/Label", products.get(0).getLabel());
 
-                    treatmentProducts.add(productJSON);
+                    treatmentProductList.add(treatmentProductProperties);
                 }
-                treatmentJSON.put("Products", treatmentProducts);
+                treatmentProperties.put("Products", treatmentProductList);
 
-                treatments.add(treatmentJSON);
+                treatmentList.add(treatmentProperties);
             }
 
             resp.put("success", true);
-            resp.put("treatments", treatments);
+            resp.put("treatments", treatmentList);
 
             return resp;
         }
@@ -290,7 +273,7 @@ public class StudyDesignController extends BaseStudyController
             immunizationSchedule.setVisits(StudyManager.getInstance().getVisits(_study, Visit.Order.DISPLAY));
 
             // include all treatments for the study
-            immunizationSchedule.setTreatments(StudyManager.getInstance().getStudyTreatments(getContainer(), getUser()));
+            immunizationSchedule.setTreatments(TreatmentManager.getInstance().getStudyTreatments(getContainer(), getUser()));
 
             resp.put("mapping", immunizationSchedule.serializeCohortMapping());
             resp.put("visits", immunizationSchedule.serializeVisits());
@@ -309,7 +292,7 @@ public class StudyDesignController extends BaseStudyController
         {
             if (form.getId() != 0)
             {
-                StudyManager.getInstance().deleteTreatment(getContainer(), getUser(), form.getId());
+                TreatmentManager.getInstance().deleteTreatment(getContainer(), getUser(), form.getId());
                 return new ApiSimpleResponse("success", true);
             }
             return new ApiSimpleResponse("success", false);
@@ -324,7 +307,7 @@ public class StudyDesignController extends BaseStudyController
         {
             if (form.getId() != 0)
             {
-                StudyManager.getInstance().deleteStudyProduct(getContainer(), getUser(), form.getId());
+                TreatmentManager.getInstance().deleteStudyProduct(getContainer(), getUser(), form.getId());
                 return new ApiSimpleResponse("success", true);
             }
             return new ApiSimpleResponse("success", false);
@@ -402,12 +385,12 @@ public class StudyDesignController extends BaseStudyController
                 {
                     // the mapping that is passed in will have all of the current treatment/visit maps, so we will
                     // delete all of the existing records and then insert the new ones
-                    StudyManager.getInstance().deleteTreatmentVisitMapForCohort(getContainer(), cohort.getRowId());
+                    TreatmentManager.getInstance().deleteTreatmentVisitMapForCohort(getContainer(), cohort.getRowId());
 
                     for (Map.Entry<Integer, Integer> treatmentVisitMap : form.getTreatmentVisitMap().entrySet())
                     {
                         // map entry key = visitId and value = treatmentId
-                        StudyManager.getInstance().insertTreatmentVisitMap(getUser(), getContainer(), cohort.getRowId(), treatmentVisitMap.getKey(), treatmentVisitMap.getValue());
+                        TreatmentManager.getInstance().insertTreatmentVisitMap(getUser(), getContainer(), cohort.getRowId(), treatmentVisitMap.getKey(), treatmentVisitMap.getValue());
                     }
 
                     transaction.commit();

@@ -17,6 +17,9 @@ package org.labkey.study.model;
 
 import org.labkey.api.study.ProductAntigen;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * User: cnathe
  * Date: 12/26/13
@@ -102,5 +105,17 @@ public class ProductAntigenImpl implements ProductAntigen
     public void setSequence(String sequence)
     {
         _sequence = sequence;
+    }
+
+    public Map<String, Object> serialize()
+    {
+        Map<String, Object> props = new HashMap<>();
+        props.put("RowId", getRowId());
+        props.put("ProductId", getProductId());
+        props.put("Gene", getGene());
+        props.put("SubType", getSubType());
+        props.put("GenBankId", getGenBankId());
+        props.put("Sequence", getSequence());
+        return props;
     }
 }

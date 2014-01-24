@@ -17,6 +17,9 @@ package org.labkey.study.model;
 
 import org.labkey.api.study.TreatmentProduct;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * User: cnathe
  * Date: 12/27/13
@@ -91,5 +94,16 @@ public class TreatmentProductImpl implements TreatmentProduct
     public void setRoute(String route)
     {
         _route = route;
+    }
+
+    public Map<String, Object> serialize()
+    {
+        Map<String, Object> props = new HashMap<>();
+        props.put("RowId", getRowId());
+        props.put("TreatmentId", getTreatmentId());
+        props.put("ProductId", getProductId());
+        props.put("Dose", getDose());
+        props.put("Route", getRoute());
+        return props;
     }
 }

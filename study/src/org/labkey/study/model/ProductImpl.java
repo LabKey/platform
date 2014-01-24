@@ -17,6 +17,9 @@ package org.labkey.study.model;
 
 import org.labkey.api.study.Product;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * User: cnathe
  * Date: 12/26/13
@@ -80,5 +83,15 @@ public class ProductImpl implements Product
     public void setType(String type)
     {
         _type = type;
+    }
+
+    public Map<String, Object> serialize()
+    {
+        Map<String, Object> props = new HashMap<>();
+        props.put("RowId", getRowId());
+        props.put("Label", getLabel());
+        props.put("Role", getRole());
+        props.put("Type", getType());
+        return props;
     }
 }

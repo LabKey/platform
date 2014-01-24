@@ -111,7 +111,7 @@
         {
 %>
             To change the set of assays and edit the assay schedule, click the edit button below.<br/>
-            <%=generateButton("Edit", StudyDesignController.ManageAssaySpecimenAction.class)%>
+            <%=generateButton("Edit", StudyDesignController.ManageAssayScheduleAction.class)%>
 <%
         }
 
