@@ -50,48 +50,12 @@
     String assayPlan = "";
     if (study != null && study.getAssayPlan() != null)
         assayPlan = h(study.getAssayPlan()).replaceAll("\n", "<br/>");
-
-    WebTheme theme = WebThemeManager.getTheme(c);
-    String link = theme.getLinkColor();
-    String grid = theme.getGridColor();
 %>
 
 <style type="text/css">
 
     table.study-vaccine-design .labkey-col-header {
-        background-color: #<%= grid %>;
-    }
-
-    table.study-vaccine-design .labkey-col-header-active {
-        background-color: #<%= grid %>;
-    }
-
-    table.study-vaccine-design .labkey-col-header-active .gwt-Label {
-        color: #<%= link %>;
-    }
-
-    table.study-vaccine-design .labkey-col-header-active .gwt-Label:hover {
-        color: #<%= link %>;
-    }
-
-    table.study-vaccine-design .labkey-row-header {
-        background-color: #<%= grid %>;
-    }
-
-    table.study-vaccine-design .labkey-row-active .gwt-Label, table.study-vaccine-design .labkey-row-header .gwt-Label {
-        color: #<%= link %>;
-    }
-
-    table.study-vaccine-design .labkey-row-active .gwt-Label:hover, table.study-vaccine-design .labkey-row-header .gwt-Label:hover {
-        color: #<%= link %>;
-    }
-
-    table.study-vaccine-design .assay-corner {
-        background-color: #<%= grid %>;
-    }
-
-    a.labkey-button, a.labkey-button:visited, a.gwt-Anchor {
-        color: #<%= link %>;
+        background-color: #<%= WebThemeManager.getTheme(c).getGridColor() %>;
     }
 
 </style>

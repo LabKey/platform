@@ -46,48 +46,12 @@
     StudyImpl study = StudyManager.getInstance().getStudy(c);
     User user = getUser();
     boolean canEdit  = c.hasPermission(user, UpdatePermission.class);
-
-    WebTheme theme = WebThemeManager.getTheme(c);
-    String link        = theme.getLinkColor();
-    String grid        = theme.getGridColor();
 %>
 
 <style type="text/css">
 
     table.study-vaccine-design .labkey-col-header {
-        background-color: #<%= grid %>;
-    }
-
-    table.study-vaccine-design .labkey-col-header-active {
-        background-color: #<%= grid %>;
-    }
-
-    table.study-vaccine-design .labkey-col-header-active .gwt-Label {
-        color: #<%= link %>;
-    }
-
-    table.study-vaccine-design .labkey-col-header-active .gwt-Label:hover {
-        color: #<%= link %>;
-    }
-
-    table.study-vaccine-design .labkey-row-header {
-        background-color: #<%= grid %>;
-    }
-
-    table.study-vaccine-design .labkey-row-active .gwt-Label, table.study-vaccine-design .labkey-row-header .gwt-Label {
-        color: #<%= link %>;
-    }
-
-    table.study-vaccine-design .labkey-row-active .gwt-Label:hover, table.study-vaccine-design .labkey-row-header .gwt-Label:hover {
-        color: #<%= link %>;
-    }
-
-    table.study-vaccine-design .assay-corner {
-        background-color: #<%= grid %>;
-    }
-
-    a.labkey-button, a.labkey-button:visited, a.gwt-Anchor {
-        color: #<%= link %>;
+        background-color: #<%= WebThemeManager.getTheme(c).getGridColor() %>;
     }
 
 </style>
@@ -105,17 +69,22 @@
         }
 %>
         <table class='study-vaccine-design'>
-            <tr><td><h2>Immunogens</h2></td></tr>
+            <tr>
+                <td><h2>Immunogens</h2></td>
+                <td style="width: 20px;">&nbsp;</td>
+                <td><h2>Adjuvants</h2></td>
+            </tr>
+            <tr>
 <%
         List<ProductImpl> immunogens = study.getStudyProducts(user, "Immunogen");
         if (immunogens.size() == 0)
         {
-            %><tr><td>No immunogens have been defined.</td></tr><%
+            %><td valign="top">No immunogens have been defined.</td><%
         }
         else
         {
 %>
-            <tr><td>
+            <td valign="top" style="max-width: 800px;">
                 <table class="labkey-read-only labkey-data-region labkey-show-borders" style="border: solid #ddd 1px;">
                     <tr>
                         <td class="labkey-col-header">Label</td>
@@ -135,21 +104,21 @@
                 }
 %>
                 </table>
-            </td></tr>
+            </td>
 <%
         }
 %>
-            <tr><td><h2>Adjuvants</h2></td></tr>
+            <td style="width: 20px;">&nbsp;</td>
 <%
         List<ProductImpl> adjuvants = study.getStudyProducts(user, "Adjuvant");
         if (adjuvants.size() == 0)
         {
-            %><tr><td>No adjuvants have been defined.</td></tr><%
+            %><td valign="top">No adjuvants have been defined.</td><%
         }
         else
         {
 %>
-            <tr><td>
+            <td valign="top">
                 <table class="labkey-read-only labkey-data-region labkey-show-borders" style="border: solid #ddd 1px;">
                     <tr><td class="labkey-col-header">Label</td></tr>
 <%
@@ -159,11 +128,11 @@
                 }
 %>
                 </table>
-            </td></tr>
+            </td>
 <%
         }
 %>
-        </table>
+        </tr></table>
 <%
     }
     else
