@@ -18,6 +18,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiUsageException;
@@ -2598,6 +2599,7 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
+    @NotNull
     @Override
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
