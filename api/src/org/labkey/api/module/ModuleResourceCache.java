@@ -183,6 +183,7 @@ public final class ModuleResourceCache<T>
             if (_handler.isResourceFile(filename))
             {
                 removeResourceNames(_module);
+                // TODO: Probably should removeResource() as well... we may have previously cached a miss
 
                 if (null != _chainedListener)
                     _chainedListener.entryCreated(directory, entry);

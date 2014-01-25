@@ -23,6 +23,7 @@ import org.labkey.api.cache.CacheType;
 import org.labkey.api.cache.SimpleCache;
 import org.labkey.api.util.Filter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -127,5 +128,19 @@ class EhSimpleCache<K, V> implements SimpleCache<K, V>
     public void close()
     {
         EhCacheProvider.getInstance().closeCache(_cache);
+    }
+
+    @Override
+    public void log()
+    {
+        List<K> keys = new ArrayList<K>(_cache.getKeys());
+        StringBuilder sb = new StringBuilder();
+
+        for (K key : keys)
+        {
+            sb.append(key).append(" -> ").append(get(key)).append("\n");
+        }
+
+        LOG.info(sb);
     }
 }

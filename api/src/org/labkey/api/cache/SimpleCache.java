@@ -64,4 +64,6 @@ public interface SimpleCache<K, V>
     void close();
 
     CacheType getCacheType();
+
+    void log();
 }

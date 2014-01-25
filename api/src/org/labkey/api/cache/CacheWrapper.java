@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.mbean.CacheMXBean;
 import org.labkey.api.util.Filter;
-import org.labkey.api.util.ShuttingDownException;
 import org.labkey.api.view.ViewServlet;
 
 import javax.management.DynamicMBean;
@@ -33,7 +32,7 @@ import javax.management.StandardMBean;
  */
 
 // TODO: Track expirations?
-// Wraps a SimpleCache to provide a full Cache implementation.  Adds null markers, loaders, statistics gathering and debug name.
+// Wraps a SimpleCache to provide a full Cache implementation. Adds null markers, loaders, statistics gathering and debug name.
 class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
 {
     private static final Object NULL_MARKER = new Object() {public String toString(){return "MISSING VALUE MARKER";}};
@@ -273,6 +272,11 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         _stats.clears.incrementAndGet();
     }
 
+
+    public SimpleCache getWrappedCache()
+    {
+        return _cache;
+    }
 
     /* CacheMBean */
 

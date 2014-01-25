@@ -7,7 +7,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlViewDefinition;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
-import org.labkey.api.module.SimpleController;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -55,7 +54,7 @@ public class ModuleHtmlViewCacheHandler implements ModuleResourceCacheHandler<Mo
             public ModuleHtmlViewDefinition load(String key, @Nullable Object argument)
             {
                 Pair<Module, String> pair = ModuleResourceCache.parseCacheKey(key);
-                Path path = new Path(SimpleController.VIEWS_DIRECTORY, pair.second);
+                Path path = Path.parse(pair.second);
                 Resource r = pair.first.getModuleResource(path);
 
                 return new ModuleHtmlViewDefinition(r);

@@ -69,7 +69,7 @@ public class ModuleResourceResolver implements Resolver
             if (null == r)
                 LOG.debug("missed resource: " + key);
             else if (r.exists())
-                LOG.debug("resolved resource: " + r + " -> " + key);
+                LOG.debug("resolved resource: " + key + " -> " + r);
 
             return r;
         }

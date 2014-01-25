@@ -61,7 +61,10 @@ public class ModuleHtmlView extends HtmlView
         Resolver resolver = r.getResolver();
         assert resolver instanceof ModuleResourceResolver;
         Module module = ((ModuleResourceResolver) resolver).getModule();
-        _viewdef = Portal.MODULE_HTML_VIEW_DEFINITION_CACHE.getResource(module.getName() + "/" + r.getName());
+
+        String previousName = module.getName() + "/" + r.getName();
+        String newName = module.getName() + "/" + r.getPath();
+        _viewdef = Portal.MODULE_HTML_VIEW_DEFINITION_CACHE.getResource(newName);
         assert null != _viewdef;
 
         setTitle(_viewdef.getTitle());
