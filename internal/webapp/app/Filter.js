@@ -2,30 +2,27 @@
 // this must be Ext agnostic code in terms of object
 // creation
 //
-LABKEY.app.controller.Filter = new function()
-{
-    function filtersFromJSON(jsonFilter)
-    {
+LABKEY.app.controller.Filter = new function() {
+
+    var filtersFromJSON = function(jsonFilter) {
         var filterWrapper = Ext4.decode(jsonFilter);
         return filterWrapper.filters;
-    }
+    };
 
-    function filtersToJSON(filters, isLive) {
+    var filtersToJSON = function(filters, isLive) {
         return Ext4.encode({
             isLive : isLive,
             filters : Ext4.Array.pluck(filters, 'data')
         });
-    }
+    };
 
-    function lookupOperator(data)
-    {
+    var lookupOperator = function(data) {
         if (data.operator)
             return data.operator;
 
         var ops = LABKEY.app.controller.Filter.Operators;
 
-        switch (data.hierarchy)
-        {
+        switch (data.hierarchy) {
             case 'Study':
                 return ops.UNION;
             case 'Participant.Race':
@@ -37,18 +34,15 @@ LABKEY.app.controller.Filter = new function()
             default:
                 return ops.INTERSECT;
         }
-    }
+    };
 
-    function getOlapFilter(data)
-    {
-        var filter =
-        {
+    var getOlapFilter = function(data) {
+        var filter = {
             operator : lookupOperator(data),
             arguments: []
         };
 
-        if (data.hierarchy == 'Participant')
-        {
+        if (data.hierarchy == 'Participant') {
 
             filter.arguments.push({
                 hierarchy : 'Participant',
@@ -57,8 +51,7 @@ LABKEY.app.controller.Filter = new function()
             return filter;
         }
 
-        for (var m=0; m < data.members.length; m++)
-        {
+        for (var m=0; m < data.members.length; m++) {
             filter.arguments.push({
                 hierarchy : 'Participant',
                 membersQuery : {
@@ -69,22 +62,19 @@ LABKEY.app.controller.Filter = new function()
         }
 
         return filter;
-    }
+    };
 
 
-    function getOlapFilters(datas)
-    {
+    var getOlapFilters = function(datas) {
         var olapFilters = [];
-        for (var i = 0; i < datas.length; i++)
-        {
+        for (var i = 0; i < datas.length; i++) {
             olapFilters.push(getOlapFilter(datas[i]));
         }
         return olapFilters;
-    }
+    };
 
 
-    function doGroupUpdate(mdx, grpData, onGroupUpdated)
-    {
+    var doGroupUpdate = function(mdx, grpData, onGroupUpdated) {
         mdx.queryParticipantList({
             filter : getOlapFilters(filtersFromJSON(grpData.filters)),
             group : grpData,
@@ -102,11 +92,11 @@ LABKEY.app.controller.Filter = new function()
                 });
             }
         });
-    }
+    };
+
     // pass in a config object for the group data.  Note that this group data should contain
     // cds filters and
-    function doGroupSave(mdx, onSuccess, onFailure, grpData)
-    {
+    var doGroupSave = function(mdx, onSuccess, onFailure, grpData) {
         mdx.queryParticipantList({
             useNamedFilters : ['statefilter'],
             success : function(cs) {
@@ -117,7 +107,7 @@ LABKEY.app.controller.Filter = new function()
                     shared : false,
                     type : 'list',
                     filters : filtersToJSON(grpData.filters, grpData.isLive)
-                }
+                };
 
                 Ext.Ajax.request({
                     url : LABKEY.ActionURL.buildURL('participant-group', 'createParticipantCategory'),
@@ -129,16 +119,16 @@ LABKEY.app.controller.Filter = new function()
                 });
             }
         });
-    }
+    };
 
     return    {
-        doGroupUpdate : doGroupUpdate,
-        doGroupSave : doGroupSave,
-        lookupOperator : lookupOperator,
-        getOlapFilter : getOlapFilter,
-        Operators : {
-            UNION : 'UNION',
-            INTERSECT : 'INTERSECT'
+        doGroupUpdate: doGroupUpdate,
+        doGroupSave: doGroupSave,
+        lookupOperator: lookupOperator,
+        getOlapFilter: getOlapFilter,
+        Operators: {
+            UNION: 'UNION',
+            INTERSECT: 'INTERSECT'
         }
     };
 };
