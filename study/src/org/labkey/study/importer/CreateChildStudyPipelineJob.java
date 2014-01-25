@@ -420,6 +420,10 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
             StudyViewsImporter viewsImporter = new StudyViewsImporter();
             viewsImporter.process(importContext, studyDir, errors);
 
+            // assay schedule and treatment data (study design)
+            new TreatmentDataImporter().process(importContext, studyDir, errors);
+            new AssayScheduleImporter().process(importContext, studyDir, errors);
+
             if (errors.hasErrors())
                 throw new RuntimeException("Error importing study objects : " + errors.getMessage());
         }

@@ -105,6 +105,16 @@ public class StudyQuerySchema extends UserSchema
     public static final String TREATMENT_PRODUCT_MAP_TABLE_NAME = "TreatmentProductMap";
     public static final String TREATMENT_VISIT_MAP_TABLE_NAME = "TreatmentVisitMap";
 
+    // study design tables
+    public static final String STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME = "StudyDesignImmunogenTypes";
+    public static final String STUDY_DESIGN_GENES_TABLE_NAME = "StudyDesignGenes";
+    public static final String STUDY_DESIGN_ROUTES_TABLE_NAME = "StudyDesignRoutes";
+    public static final String STUDY_DESIGN_SUB_TYPES_TABLE_NAME = "StudyDesignSubTypes";
+    public static final String STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME = "StudyDesignSampleTypes";
+    public static final String STUDY_DESIGN_UNITS_TABLE_NAME = "StudyDesignUnits";
+    public static final String STUDY_DESIGN_ASSAYS_TABLE_NAME = "StudyDesignAssays";
+    public static final String STUDY_DESIGN_LABS_TABLE_NAME = "StudyDesignLabs";
+
     @Nullable // if no study defined in this container
     final StudyImpl _study;
 
@@ -207,14 +217,14 @@ public class StudyQuerySchema extends UserSchema
 
         // Always add StudyProperties and study designer lookup tables, even if we have no study
         ret.add("StudyProperties");
-        ret.add("StudyDesignImmunogenTypes");
-        ret.add("StudyDesignGenes");
-        ret.add("StudyDesignRoutes");
-        ret.add("StudyDesignSubTypes");
-        ret.add("StudyDesignSampleTypes");
-        ret.add("StudyDesignUnits");
-        ret.add("StudyDesignAssays");
-        ret.add("StudyDesignLabs");
+        ret.add(STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
+        ret.add(STUDY_DESIGN_GENES_TABLE_NAME);
+        ret.add(STUDY_DESIGN_ROUTES_TABLE_NAME);
+        ret.add(STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
+        ret.add(STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
+        ret.add(STUDY_DESIGN_UNITS_TABLE_NAME);
+        ret.add(STUDY_DESIGN_ASSAYS_TABLE_NAME);
+        ret.add(STUDY_DESIGN_LABS_TABLE_NAME);
 
         if (_study != null)
         {
@@ -386,35 +396,35 @@ public class StudyQuerySchema extends UserSchema
         }
 
         // always expose the study designer lookup tables
-        if ("StudyDesignImmunogenTypes".equalsIgnoreCase(name))
+        if (STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new StudyDesignImmunogenTypesTable(this);
         }
-        if ("StudyDesignGenes".equalsIgnoreCase(name))
+        if (STUDY_DESIGN_GENES_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new StudyDesignGenesTable(this);
         }
-        if ("StudyDesignRoutes".equalsIgnoreCase(name))
+        if (STUDY_DESIGN_ROUTES_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new StudyDesignRoutesTable(this);
         }
-        if ("StudyDesignSubTypes".equalsIgnoreCase(name))
+        if (STUDY_DESIGN_SUB_TYPES_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new StudyDesignSubTypesTable(this);
         }
-        if ("StudyDesignSampleTypes".equalsIgnoreCase(name))
+        if (STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new StudyDesignSampleTypesTable(this);
         }
-        if ("StudyDesignUnits".equalsIgnoreCase(name))
+        if (STUDY_DESIGN_UNITS_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new StudyDesignUnitsTable(this);
         }
-        if ("StudyDesignAssays".equalsIgnoreCase(name))
+        if (STUDY_DESIGN_ASSAYS_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new StudyDesignAssaysTable(this);
         }
-        if ("StudyDesignLabs".equalsIgnoreCase(name))
+        if (STUDY_DESIGN_LABS_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new StudyDesignLabsTable(this);
         }

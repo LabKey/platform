@@ -82,6 +82,10 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
             internalImporters.add(new ViewCategoryImporter());
             internalImporters.add(new StudyViewsImporter());
 
+            // study design importers
+            internalImporters.add(new TreatmentDataImporter());
+            internalImporters.add(new AssayScheduleImporter());
+
             VirtualFile vf = ctx.getRoot();
             for (InternalStudyImporter importer : internalImporters)
             {

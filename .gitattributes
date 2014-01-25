@@ -3349,6 +3349,7 @@ study/src/org/labkey/study/designer/view/CreateRepositoryWizard.jsp -text
 study/src/org/labkey/study/designer/view/StudyDesignsWebPart.java -text
 study/src/org/labkey/study/designer/view/studyDesignSummary.jsp -text
 study/src/org/labkey/study/importer/AbstractStudyPiplineJob.java -text
+study/src/org/labkey/study/importer/AssayScheduleImporter.java -text
 study/src/org/labkey/study/importer/CohortImporter.java -text
 study/src/org/labkey/study/importer/CreateChildStudyPipelineJob.java -text
 study/src/org/labkey/study/importer/DataFaxVisitMapReader.java -text
@@ -3356,6 +3357,7 @@ study/src/org/labkey/study/importer/DatasetCohortAssigner.java -text
 study/src/org/labkey/study/importer/DatasetDefinitionImporter.java -text
 study/src/org/labkey/study/importer/DatasetImportUtils.java -text
 study/src/org/labkey/study/importer/DefaultSpecimenImportStrategyFactory.java -text
+study/src/org/labkey/study/importer/DefaultStudyDesignImporter.java -text
 study/src/org/labkey/study/importer/EditableSpecimenImporter.java -text
 study/src/org/labkey/study/importer/FileSystemSpecimenImportFile.java -text
 study/src/org/labkey/study/importer/InternalStudyImporter.java -text
@@ -3386,6 +3388,7 @@ study/src/org/labkey/study/importer/StudyImporterFactory.java -text
 study/src/org/labkey/study/importer/StudyJobSupport.java -text
 study/src/org/labkey/study/importer/StudyReload.java -text
 study/src/org/labkey/study/importer/StudyViewsImporter.java -text
+study/src/org/labkey/study/importer/TreatmentDataImporter.java -text
 study/src/org/labkey/study/importer/ViewCategoryImporter.java -text
 study/src/org/labkey/study/importer/VisitCohortAssigner.java -text
 study/src/org/labkey/study/importer/VisitImporter.java -text
@@ -3826,9 +3829,11 @@ study/src/org/labkey/study/visitmanager/VisitManager.java -text
 study/src/org/labkey/study/writer/AbstractContext.java -text
 study/src/org/labkey/study/writer/AbstractSpecimenWriter.java -text
 study/src/org/labkey/study/writer/AssayDatasetWriter.java -text
+study/src/org/labkey/study/writer/AssayScheduleWriter.java -text
 study/src/org/labkey/study/writer/CohortWriter.java -text
 study/src/org/labkey/study/writer/DataFaxVisitMapWriter.java -text
 study/src/org/labkey/study/writer/DatasetWriter.java -text
+study/src/org/labkey/study/writer/DefaultStudyDesignWriter.java -text
 study/src/org/labkey/study/writer/InternalStudyWriter.java -text
 study/src/org/labkey/study/writer/LocationSpecimenWriter.java -text
 study/src/org/labkey/study/writer/MissingValueWriterFactory.java -text
@@ -3849,6 +3854,7 @@ study/src/org/labkey/study/writer/StudyViewsWriter.java -text
 study/src/org/labkey/study/writer/StudyWriter.java -text
 study/src/org/labkey/study/writer/StudyWriterFactory.java -text
 study/src/org/labkey/study/writer/StudyXmlWriter.java -text
+study/src/org/labkey/study/writer/TreatmentDataWriter.java -text
 study/src/org/labkey/study/writer/ViewCategoryWriter.java -text
 study/src/org/labkey/study/writer/VisitMapWriter.java -text
 study/src/org/labkey/study/writer/XmlVisitMapWriter.java -text
