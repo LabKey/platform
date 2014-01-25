@@ -235,569 +235,571 @@ boxPlot.render();
  &lt;/script&gt;
 
  */
-LABKEY.vis.Plot = function(config){
+(function(){
+    LABKEY.vis.Plot = function(config){
 
-    if(config.hasOwnProperty('rendererType') && config.rendererType == 'd3') {
-        this.renderer = new LABKEY.vis.internal.D3Renderer(this);
-    } else {
-        this.renderer = new LABKEY.vis.internal.RaphaelRenderer(this);
-    }
-
-    var error = function(msg){
-        if (this.throwErrors){
-            throw new Error(msg);
+        if(config.hasOwnProperty('rendererType') && config.rendererType == 'd3') {
+            this.renderer = new LABKEY.vis.internal.D3Renderer(this);
         } else {
-            console.error(msg);
-            if(console.trace){
-                console.trace();
-            }
-
-            this.renderer.renderError(msg);
+            this.renderer = new LABKEY.vis.internal.RaphaelRenderer(this);
         }
-    };
 
-    var copyUserScales = function(origScales){
-        // This copies the user's scales, but not the max/min because we don't want to over-write that, so we store the original
-        // scales separately (this.originalScales).
-        var scales = {}, newScaleName;
-        for(var scale in origScales){
-            if(scale == 'y'){
-                origScales.yLeft = origScales.y;
-                newScaleName = (scale == 'y') ? 'yLeft' : scale;
+        var error = function(msg){
+            if (this.throwErrors){
+                throw new Error(msg);
             } else {
-                newScaleName = scale;
-            }
-            scales[newScaleName] = {};
-            scales[newScaleName].scaleType = origScales[scale].scaleType ? origScales[scale].scaleType : 'continuous';
-            scales[newScaleName].trans = origScales[scale].trans ? origScales[scale].trans : 'linear';
-            scales[newScaleName].tickFormat = origScales[scale].tickFormat ? origScales[scale].tickFormat : null;
-            scales[newScaleName].tickHoverText = origScales[scale].tickHoverText ? origScales[scale].tickHoverText : null;
-            scales[newScaleName].range = origScales[scale].range ? origScales[scale].range : null;
-        }
-        return scales;
-    };
-
-    var configureMargins = function(userMargins, legendPos, allAes, scales){
-        var margins = {}, top = 75, right = 75, bottom = 50, left = 75; // Defaults.
-        var foundLegendScale = false, foundYRight = false;
-
-        for(var i = 0; i < allAes.length; i++){
-            var aes = allAes[i];
-            if(!foundLegendScale && (aes.shape || (aes.color && (!scales.color || (scales.color && scales.color.scaleType == 'discrete'))) || aes.outlierColor || aes.outlierShape || aes.pathColor) && legendPos != 'none'){
-                foundLegendScale = true;
-                right = right + 150;
-            }
-
-            if(!foundYRight && aes.yRight){
-                foundYRight = true;
-                right = right + 25;
-            }
-        }
-
-        if(!userMargins){
-            userMargins = {};
-        }
-
-        if(!userMargins.top || userMargins.top < 0){
-            margins.top = top;
-        } else {
-            margins.top = userMargins.top;
-        }
-        if(!userMargins.right || userMargins.right < 0){
-            margins.right = right;
-        } else {
-            margins.right = userMargins.right;
-        }
-        if(!userMargins.bottom || userMargins.bottom < 0){
-            margins.bottom = bottom;
-        } else {
-            margins.bottom = userMargins.bottom;
-        }
-        if(!userMargins.left || userMargins.left < 0){
-            margins.left = left;
-        } else {
-            margins.left = userMargins.left;
-        }
-
-        return margins;
-    };
-
-	this.renderTo = config.renderTo ? config.renderTo : null; // The id of the DOM element to render the plot to, required.
-	this.grid = {
-		width: config.width ? config.width : null, // height of the grid where shapes/lines/etc gets plotted.
-		height: config.height ? config.height: null // widht of the grid.
-	};
-	this.originalScales = config.scales ? config.scales : {}; // The scales specified by the user.
-    this.scales = copyUserScales(this.originalScales); // The scales used internally.
-	this.originalAes = config.aes ? config.aes : null; // The original aesthetic specified by the user.
-    this.aes = LABKEY.vis.convertAes(this.originalAes); // The aesthetic object used internally.
-    this.labels = config.labels ? config.labels : {};
-	this.data = config.data ? config.data : null; // An array of rows, required. Each row could have several pieces of data. (e.g. {subjectId: '249534596', hemoglobin: '350', CD4:'1400', day:'120'})
-	this.layers = config.layers ? config.layers : []; // An array of layers, required. (e.g. a layer for a CD4 line chart over time, and a layer for a Hemoglobin line chart over time).
-    this.bgColor = config.bgColor ? config.bgColor : null;
-    this.gridColor = config.gridColor ? config.gridColor : null;
-    this.gridLineColor = config.gridLineColor ? config.gridLineColor : null;
-    this.clipRect = config.clipRect ? config.clipRect : false;
-    this.legendPos = config.legendPos;
-    this.throwErrors = config.throwErrors || false; // Allows the configuration to specify whether chart errors should be thrown or logged (default).
-    this.brushing = ('brushing' in config && config.brushing != null && config.brushing != undefined) ? config.brushing : null;
-
-    // Stash the user's margins so when we re-configure margins during re-renders or setAes we don't forget the user's settings.
-    var allAes = [], margins = {}, userMargins = config.margins ? config.margins : {};
-
-    if(this.aes){
-        allAes.push(this.aes);
-    }
-    for(var i = 0; i < this.layers.length; i++){
-        if(this.layers[i].aes){
-            allAes.push(this.layers[i].aes);
-        }
-    }
-
-    if(this.labels.y){
-        this.labels.yLeft = this.labels.y;
-        this.labels.y = null;
-    }
-
-    if(this.grid.width == null){
-		error("Unable to create plot, width not specified");
-		return;
-	}
-
-	if(this.grid.height == null){
-		error("Unable to create plot, height not specified");
-		return;
-	}
-
-	if(this.renderTo == null){
-		error("Unable to create plot, renderTo not specified");
-		return;
-	}
-
-    for(var aesthetic in this.aes){
-        if (this.aes.hasOwnProperty(aesthetic)) {
-            LABKEY.vis.createGetter(this.aes[aesthetic]);
-        }
-    }
-
-	var initScales = function(){
-        // initScales sets up default scales if needed, gets the domain of each required scale,
-        // and news up all required scales. Returns true if there were no problems, returns false if there were problems.
-        for(var scale in this.scales){
-            if(this.scales[scale].scale){
-                delete this.scales[scale].scale;
-            }
-
-            if(this.scales[scale].min && (this.originalScales[scale] && !this.originalScales[scale].min)){
-                delete this.scales[scale].min;
-            }
-
-            if(this.scales[scale].max && (this.originalScales[scale] && !this.originalScales[scale].max)){
-                delete this.scales[scale].max;
-            }
-
-            if(this.scales[scale].domain && (this.originalScales[scale] && !this.originalScales[scale].domain)){
-                delete this.scales[scale].domain;
-            }
-
-            if(this.scales[scale].range && (this.originalScales[scale] && !this.originalScales[scale].range)){
-                delete this.scales[scale].range;
-            }
-        }
-
-        var setupDefaultScales = function(scales, aes){
-            for(aesthetic in aes){
-                if(!scales[aesthetic]){
-                    // Not all aesthetics get a scale (like hoverText), so we have to be pretty specific.
-                    if(aesthetic === 'x' || aesthetic === 'yLeft' || aesthetic === 'yRight' || aesthetic === 'size'){
-                        scales[aesthetic] = {scaleType: 'continuous', trans: 'linear'};
-                    } else if(aesthetic == 'color' || aesthetic == 'shape' || aesthetic == 'outlierColor' || aesthetic == 'outlierShape' || aesthetic == 'pathColor'){
-                        if(aesthetic == 'outlierColor' || aesthetic == 'pathColor'){
-                            scales['color'] = {scaleType: 'discrete'};
-                        } else if(aesthetic == 'outlierShape'){
-                            scales['shape'] = {scaleType: 'discrete'};
-                        } else {
-                            scales[aesthetic] = {scaleType: 'discrete'};
-                        }
-                    }
+                console.error(msg);
+                if(console.trace){
+                    console.trace();
                 }
+
+                this.renderer.renderError(msg);
             }
         };
 
-        var getDomain = function(origScales, scales, data, aes){
-            // Gets the domains for a given set of aesthetics and data.
+        var copyUserScales = function(origScales){
+            // This copies the user's scales, but not the max/min because we don't want to over-write that, so we store the original
+            // scales separately (this.originalScales).
+            var scales = {}, newScaleName;
+            for(var scale in origScales){
+                if(scale == 'y'){
+                    origScales.yLeft = origScales.y;
+                    newScaleName = (scale == 'y') ? 'yLeft' : scale;
+                } else {
+                    newScaleName = scale;
+                }
+                scales[newScaleName] = {};
+                scales[newScaleName].scaleType = origScales[scale].scaleType ? origScales[scale].scaleType : 'continuous';
+                scales[newScaleName].trans = origScales[scale].trans ? origScales[scale].trans : 'linear';
+                scales[newScaleName].tickFormat = origScales[scale].tickFormat ? origScales[scale].tickFormat : null;
+                scales[newScaleName].tickHoverText = origScales[scale].tickHoverText ? origScales[scale].tickHoverText : null;
+                scales[newScaleName].range = origScales[scale].range ? origScales[scale].range : null;
+            }
+            return scales;
+        };
 
-            if(!data){
-                return;
+        var configureMargins = function(userMargins, legendPos, allAes, scales){
+            var margins = {}, top = 75, right = 75, bottom = 50, left = 75; // Defaults.
+            var foundLegendScale = false, foundYRight = false;
+
+            for(var i = 0; i < allAes.length; i++){
+                var aes = allAes[i];
+                if(!foundLegendScale && (aes.shape || (aes.color && (!scales.color || (scales.color && scales.color.scaleType == 'discrete'))) || aes.outlierColor || aes.outlierShape || aes.pathColor) && legendPos != 'none'){
+                    foundLegendScale = true;
+                    right = right + 150;
+                }
+
+                if(!foundYRight && aes.yRight){
+                    foundYRight = true;
+                    right = right + 25;
+                }
             }
 
-            for(var scale in scales){
-                if(aes[scale]){
-                    var acc;
-                    if(scales[scale].scaleType == 'continuous'){
-                        if(origScales[scale] && origScales[scale].min != null && origScales[scale].min != undefined){
-                            scales[scale].min = origScales[scale].min;
-                        } else {
-                            // Note: error bar geom only goes on the y axis so we don't subtract if the scale is x.
-                            if(scale != 'x' && aes.error){
-                                acc = function(row){return aes[scale].getValue(row) - aes.error.getValue(row);}
+            if(!userMargins){
+                userMargins = {};
+            }
+
+            if(!userMargins.top || userMargins.top < 0){
+                margins.top = top;
+            } else {
+                margins.top = userMargins.top;
+            }
+            if(!userMargins.right || userMargins.right < 0){
+                margins.right = right;
+            } else {
+                margins.right = userMargins.right;
+            }
+            if(!userMargins.bottom || userMargins.bottom < 0){
+                margins.bottom = bottom;
+            } else {
+                margins.bottom = userMargins.bottom;
+            }
+            if(!userMargins.left || userMargins.left < 0){
+                margins.left = left;
+            } else {
+                margins.left = userMargins.left;
+            }
+
+            return margins;
+        };
+
+        this.renderTo = config.renderTo ? config.renderTo : null; // The id of the DOM element to render the plot to, required.
+        this.grid = {
+            width: config.width ? config.width : null, // height of the grid where shapes/lines/etc gets plotted.
+            height: config.height ? config.height: null // widht of the grid.
+        };
+        this.originalScales = config.scales ? config.scales : {}; // The scales specified by the user.
+        this.scales = copyUserScales(this.originalScales); // The scales used internally.
+        this.originalAes = config.aes ? config.aes : null; // The original aesthetic specified by the user.
+        this.aes = LABKEY.vis.convertAes(this.originalAes); // The aesthetic object used internally.
+        this.labels = config.labels ? config.labels : {};
+        this.data = config.data ? config.data : null; // An array of rows, required. Each row could have several pieces of data. (e.g. {subjectId: '249534596', hemoglobin: '350', CD4:'1400', day:'120'})
+        this.layers = config.layers ? config.layers : []; // An array of layers, required. (e.g. a layer for a CD4 line chart over time, and a layer for a Hemoglobin line chart over time).
+        this.bgColor = config.bgColor ? config.bgColor : null;
+        this.gridColor = config.gridColor ? config.gridColor : null;
+        this.gridLineColor = config.gridLineColor ? config.gridLineColor : null;
+        this.clipRect = config.clipRect ? config.clipRect : false;
+        this.legendPos = config.legendPos;
+        this.throwErrors = config.throwErrors || false; // Allows the configuration to specify whether chart errors should be thrown or logged (default).
+        this.brushing = ('brushing' in config && config.brushing != null && config.brushing != undefined) ? config.brushing : null;
+
+        // Stash the user's margins so when we re-configure margins during re-renders or setAes we don't forget the user's settings.
+        var allAes = [], margins = {}, userMargins = config.margins ? config.margins : {};
+
+        if(this.aes){
+            allAes.push(this.aes);
+        }
+        for(var i = 0; i < this.layers.length; i++){
+            if(this.layers[i].aes){
+                allAes.push(this.layers[i].aes);
+            }
+        }
+
+        if(this.labels.y){
+            this.labels.yLeft = this.labels.y;
+            this.labels.y = null;
+        }
+
+        if(this.grid.width == null){
+            error("Unable to create plot, width not specified");
+            return;
+        }
+
+        if(this.grid.height == null){
+            error("Unable to create plot, height not specified");
+            return;
+        }
+
+        if(this.renderTo == null){
+            error("Unable to create plot, renderTo not specified");
+            return;
+        }
+
+        for(var aesthetic in this.aes){
+            if (this.aes.hasOwnProperty(aesthetic)) {
+                LABKEY.vis.createGetter(this.aes[aesthetic]);
+            }
+        }
+
+        var initScales = function(){
+            // initScales sets up default scales if needed, gets the domain of each required scale,
+            // and news up all required scales. Returns true if there were no problems, returns false if there were problems.
+            for(var scale in this.scales){
+                if(this.scales[scale].scale){
+                    delete this.scales[scale].scale;
+                }
+
+                if(this.scales[scale].min && (this.originalScales[scale] && !this.originalScales[scale].min)){
+                    delete this.scales[scale].min;
+                }
+
+                if(this.scales[scale].max && (this.originalScales[scale] && !this.originalScales[scale].max)){
+                    delete this.scales[scale].max;
+                }
+
+                if(this.scales[scale].domain && (this.originalScales[scale] && !this.originalScales[scale].domain)){
+                    delete this.scales[scale].domain;
+                }
+
+                if(this.scales[scale].range && (this.originalScales[scale] && !this.originalScales[scale].range)){
+                    delete this.scales[scale].range;
+                }
+            }
+
+            var setupDefaultScales = function(scales, aes){
+                for(aesthetic in aes){
+                    if(!scales[aesthetic]){
+                        // Not all aesthetics get a scale (like hoverText), so we have to be pretty specific.
+                        if(aesthetic === 'x' || aesthetic === 'yLeft' || aesthetic === 'yRight' || aesthetic === 'size'){
+                            scales[aesthetic] = {scaleType: 'continuous', trans: 'linear'};
+                        } else if(aesthetic == 'color' || aesthetic == 'shape' || aesthetic == 'outlierColor' || aesthetic == 'outlierShape' || aesthetic == 'pathColor'){
+                            if(aesthetic == 'outlierColor' || aesthetic == 'pathColor'){
+                                scales['color'] = {scaleType: 'discrete'};
+                            } else if(aesthetic == 'outlierShape'){
+                                scales['shape'] = {scaleType: 'discrete'};
                             } else {
-                                acc = aes[scale].getValue;
-                            }
-
-                            var tempMin = d3.min(data, acc);
-
-                            if(scales[scale].min == null || scales[scale].min == undefined || tempMin < scales[scale].min){
-                                scales[scale].min = tempMin;
+                                scales[aesthetic] = {scaleType: 'discrete'};
                             }
                         }
+                    }
+                }
+            };
 
-                        if(origScales[scale] && origScales[scale].max != null && origScales[scale].max != undefined){
-                            scales[scale].max = origScales[scale].max;
-                        } else {
-                            // Note: error bar geom only goes on the y axis so we don't subtract if the scale is x.
-                            if(scale != 'x' && aes.error){
-                                acc = function(row){return aes[scale].getValue(row) + aes.error.getValue(row);}
+            var getDomain = function(origScales, scales, data, aes){
+                // Gets the domains for a given set of aesthetics and data.
+
+                if(!data){
+                    return;
+                }
+
+                for(var scale in scales){
+                    if(aes[scale]){
+                        var acc;
+                        if(scales[scale].scaleType == 'continuous'){
+                            if(origScales[scale] && origScales[scale].min != null && origScales[scale].min != undefined){
+                                scales[scale].min = origScales[scale].min;
                             } else {
-                                acc = aes[scale].getValue;
+                                // Note: error bar geom only goes on the y axis so we don't subtract if the scale is x.
+                                if(scale != 'x' && aes.error){
+                                    acc = function(row){return aes[scale].getValue(row) - aes.error.getValue(row);}
+                                } else {
+                                    acc = aes[scale].getValue;
+                                }
+
+                                var tempMin = d3.min(data, acc);
+
+                                if(scales[scale].min == null || scales[scale].min == undefined || tempMin < scales[scale].min){
+                                    scales[scale].min = tempMin;
+                                }
                             }
 
-                            var tempMax = d3.max(data, acc);
+                            if(origScales[scale] && origScales[scale].max != null && origScales[scale].max != undefined){
+                                scales[scale].max = origScales[scale].max;
+                            } else {
+                                // Note: error bar geom only goes on the y axis so we don't subtract if the scale is x.
+                                if(scale != 'x' && aes.error){
+                                    acc = function(row){return aes[scale].getValue(row) + aes.error.getValue(row);}
+                                } else {
+                                    acc = aes[scale].getValue;
+                                }
 
-                            if(scales[scale].max == null || scales[scale].max == undefined || tempMax > scales[scale].max){
-                                scales[scale].max = tempMax;
-                            }
-                        }
-                    } else if((scale != 'shape' && scale != 'color' ) && (scales[scale].scaleType == 'ordinal' || scales[scale].scaleType == 'discrete' || scales[scale].scaleType == 'categorical')){
-                        if(origScales[scale] && origScales[scale].domain){
-                            if(!scales[scale].domain){
-                                // If we already have a domain then we need to set it from the user input.
-                                scales[scale].domain = origScales[scale].domain;
-                            }
-                        } else {
-                            if(!scales[scale].domain){
-                                scales[scale].domain = [];
-                            }
+                                var tempMax = d3.max(data, acc);
 
-                            for(var i = 0; i < data.length; i++){
-                                // Cycle through the data and add the unique values.
-                                var val = aes[scale].getValue(data[i]);
-                                if(scales[scale].domain.indexOf(val) == -1){
-                                    scales[scale].domain.push(val);
+                                if(scales[scale].max == null || scales[scale].max == undefined || tempMax > scales[scale].max){
+                                    scales[scale].max = tempMax;
+                                }
+                            }
+                        } else if((scale != 'shape' && scale != 'color' ) && (scales[scale].scaleType == 'ordinal' || scales[scale].scaleType == 'discrete' || scales[scale].scaleType == 'categorical')){
+                            if(origScales[scale] && origScales[scale].domain){
+                                if(!scales[scale].domain){
+                                    // If we already have a domain then we need to set it from the user input.
+                                    scales[scale].domain = origScales[scale].domain;
+                                }
+                            } else {
+                                if(!scales[scale].domain){
+                                    scales[scale].domain = [];
+                                }
+
+                                for(var i = 0; i < data.length; i++){
+                                    // Cycle through the data and add the unique values.
+                                    var val = aes[scale].getValue(data[i]);
+                                    if(scales[scale].domain.indexOf(val) == -1){
+                                        scales[scale].domain.push(val);
+                                    }
                                 }
                             }
                         }
                     }
                 }
+            };
+
+            setupDefaultScales(this.scales, this.aes);
+            for(var i = 0; i < this.layers.length; i++){
+                setupDefaultScales(this.scales, this.layers[i].aes);
+            }
+
+            getDomain(this.originalScales, this.scales, this.data, this.aes);
+            for(var i = 0; i < this.layers.length; i++){
+                getDomain(this.originalScales, this.scales, this.layers[i].data ? this.layers[i].data : this.data, this.layers[i].aes);
+            }
+
+            this.grid.leftEdge = margins.left;
+            this.grid.rightEdge = this.grid.width - margins.right + 10;
+            this.grid.topEdge = margins.top + 10;
+            this.grid.bottomEdge = this.grid.height - margins.bottom;
+
+            for(var scaleName in this.scales){
+                var domain = null;
+                var range = null;
+                var scale = this.scales[scaleName];
+                if(scaleName == 'x'){
+                    if(scale.scaleType == 'continuous'){
+                        domain = [scale.min, scale.max];
+                        range = [margins.left, this.grid.width - margins.right];
+                        scale.scale = new LABKEY.vis.Scale.Continuous(scale.trans, null, null, domain, range);
+                    } else if(scale.scaleType == 'ordinal' || scale.scaleType == 'discrete' || scale.scaleType == 'categorical'){
+                        if(scale.domain){
+                            scale.scale = new LABKEY.vis.Scale.Discrete(scale.domain, [this.grid.leftEdge, this.grid.rightEdge]);
+                        }
+                    }
+                } else if(scaleName == 'yLeft' || scaleName == 'yRight'){
+                    range = [this.grid.bottomEdge, this.grid.topEdge];
+                    if(scale.scaleType == 'continuous' && (scale.min != null && scale.min != undefined) && (scale.max != null && scale.max != undefined)){
+                        domain = [scale.min, scale.max];
+                        scale.scale = new LABKEY.vis.Scale.Continuous(scale.trans, null, null, domain, range);
+                    } else {
+                        if(scale.domain){
+                            scale.scale = new LABKEY.vis.Scale.Discrete(scale.domain, range);
+                        }
+                    }
+                } else if(scaleName == 'color'){
+                    if(!scale.scaleType || scale.scaleType == 'discrete') {
+                        scale.scale = LABKEY.vis.Scale.ColorDiscrete();
+                    } else {
+                        if(!scale.range){
+                            scale.range = ['#222222', '#EEEEEE'];
+                        }
+                        scale.scale = LABKEY.vis.Scale.Continuous(scale.trans, null, null, [scale.min, scale.max], scale.range);
+                    }
+                } else if(scaleName == 'shape'){
+                    if(!scale.scaleType || scale.scaleType == 'discrete') {
+                        scale.scale = LABKEY.vis.Scale.Shape();
+                    }
+                } else if(scaleName == 'size'){
+                    if(!scale.range){
+                        scale.range = [1, 5];
+                    }
+                    domain = [scale.min, scale.max];
+                    scale.scale = LABKEY.vis.Scale.Continuous(scale.trans, null, null, domain, scale.range)
+                }
+            }
+
+            if(!this.scales.x || !this.scales.x.scale){
+                error.call(this, 'Unable to create an x scale, rendering aborted.');
+                return false;
+            }
+
+            if((!this.scales.yLeft || !this.scales.yLeft.scale) && (!this.scales.yRight ||!this.scales.yRight.scale)){
+                error.call(this, "Unable to create a y scale, rendering aborted.");
+                return false;
+            }
+
+            return true;
+        };
+
+        var compareDomains  = function(domain1, domain2){
+            if(domain1.length != domain2.length){
+                return false;
+            }
+
+            domain1.sort();
+            domain2.sort();
+
+            for(var i = 0; i < domain1.length; i++){
+                if(domain1[i] != domain2[i]) {
+                    return false;
+                }
+            }
+
+            return true;
+        };
+
+        var generateLegendData = function(legendData, domain, colorFn, shapeFn){
+            for(var i = 0; i < domain.length; i++) {
+                legendData.push({
+                    text: domain[i],
+                    color: colorFn != null ? colorFn(domain[i]) : null,
+                    shape: shapeFn != null ? shapeFn(domain[i]) : null
+                });
             }
         };
 
-        setupDefaultScales(this.scales, this.aes);
-        for(var i = 0; i < this.layers.length; i++){
-            setupDefaultScales(this.scales, this.layers[i].aes);
-        }
+        this.getLegendData = function(){
+            var legendData = [];
 
-        getDomain(this.originalScales, this.scales, this.data, this.aes);
-        for(var i = 0; i < this.layers.length; i++){
-            getDomain(this.originalScales, this.scales, this.layers[i].data ? this.layers[i].data : this.data, this.layers[i].aes);
-        }
-
-		this.grid.leftEdge = margins.left;
-        this.grid.rightEdge = this.grid.width - margins.right + 10;
-        this.grid.topEdge = margins.top + 10;
-        this.grid.bottomEdge = this.grid.height - margins.bottom;
-
-        for(var scaleName in this.scales){
-            var domain = null;
-            var range = null;
-            var scale = this.scales[scaleName];
-            if(scaleName == 'x'){
-                if(scale.scaleType == 'continuous'){
-                    domain = [scale.min, scale.max];
-                    range = [margins.left, this.grid.width - margins.right];
-                    scale.scale = new LABKEY.vis.Scale.Continuous(scale.trans, null, null, domain, range);
-                } else if(scale.scaleType == 'ordinal' || scale.scaleType == 'discrete' || scale.scaleType == 'categorical'){
-                    if(scale.domain){
-                        scale.scale = new LABKEY.vis.Scale.Discrete(scale.domain, [this.grid.leftEdge, this.grid.rightEdge]);
-                    }
-                }
-            } else if(scaleName == 'yLeft' || scaleName == 'yRight'){
-                range = [this.grid.bottomEdge, this.grid.topEdge];
-                if(scale.scaleType == 'continuous' && (scale.min != null && scale.min != undefined) && (scale.max != null && scale.max != undefined)){
-                    domain = [scale.min, scale.max];
-                    scale.scale = new LABKEY.vis.Scale.Continuous(scale.trans, null, null, domain, range);
+            if ((this.scales.color && this.scales.color.scaleType === 'discrete') && this.scales.shape) {
+                if(compareDomains(this.scales.color.scale.domain(), this.scales.shape.scale.domain())){
+                    // The color and shape domains are the same. Merge them in the legend.
+                    generateLegendData(legendData, this.scales.color.scale.domain(), this.scales.color.scale, this.scales.shape.scale);
                 } else {
-                    if(scale.domain){
-                        scale.scale = new LABKEY.vis.Scale.Discrete(scale.domain, range);
-                    }
+                    // The color and shape domains are different.
+                    generateLegendData(legendData, this.scales.color.scale.domain(), this.scales.color.scale, null);
+                    generateLegendData(legendData, this.scales.shape.scale.domain(), null, this.scales.shape.scale);
                 }
-            } else if(scaleName == 'color'){
-                if(!scale.scaleType || scale.scaleType == 'discrete') {
-                    scale.scale = LABKEY.vis.Scale.ColorDiscrete();
-                } else {
-                    if(!scale.range){
-                        scale.range = ['#222222', '#EEEEEE'];
-                    }
-                    scale.scale = LABKEY.vis.Scale.Continuous(scale.trans, null, null, [scale.min, scale.max], scale.range);
-                }
-            } else if(scaleName == 'shape'){
-                if(!scale.scaleType || scale.scaleType == 'discrete') {
-                    scale.scale = LABKEY.vis.Scale.Shape();
-                }
-            } else if(scaleName == 'size'){
-                if(!scale.range){
-                    scale.range = [1, 5];
-                }
-                domain = [scale.min, scale.max];
-                scale.scale = LABKEY.vis.Scale.Continuous(scale.trans, null, null, domain, scale.range)
-            }
-        }
-
-        if(!this.scales.x || !this.scales.x.scale){
-            error.call(this, 'Unable to create an x scale, rendering aborted.');
-            return false;
-        }
-
-        if((!this.scales.yLeft || !this.scales.yLeft.scale) && (!this.scales.yRight ||!this.scales.yRight.scale)){
-            error.call(this, "Unable to create a y scale, rendering aborted.");
-            return false;
-        }
-
-		return true;
-	};
-
-    var compareDomains  = function(domain1, domain2){
-        if(domain1.length != domain2.length){
-            return false;
-        }
-
-        domain1.sort();
-        domain2.sort();
-
-        for(var i = 0; i < domain1.length; i++){
-            if(domain1[i] != domain2[i]) {
-                return false;
-            }
-        }
-
-        return true;
-    };
-
-    var generateLegendData = function(legendData, domain, colorFn, shapeFn){
-        for(var i = 0; i < domain.length; i++) {
-            legendData.push({
-                text: domain[i],
-                color: colorFn != null ? colorFn(domain[i]) : null,
-                shape: shapeFn != null ? shapeFn(domain[i]) : null
-            });
-        }
-    };
-
-    this.getLegendData = function(){
-        var legendData = [];
-
-        if ((this.scales.color && this.scales.color.scaleType === 'discrete') && this.scales.shape) {
-            if(compareDomains(this.scales.color.scale.domain(), this.scales.shape.scale.domain())){
-                // The color and shape domains are the same. Merge them in the legend.
-                generateLegendData(legendData, this.scales.color.scale.domain(), this.scales.color.scale, this.scales.shape.scale);
-            } else {
-                // The color and shape domains are different.
+            } else if(this.scales.color && this.scales.color.scaleType === 'discrete') {
                 generateLegendData(legendData, this.scales.color.scale.domain(), this.scales.color.scale, null);
+            } else if(this.scales.shape) {
                 generateLegendData(legendData, this.scales.shape.scale.domain(), null, this.scales.shape.scale);
             }
-        } else if(this.scales.color && this.scales.color.scaleType === 'discrete') {
-            generateLegendData(legendData, this.scales.color.scale.domain(), this.scales.color.scale, null);
-        } else if(this.scales.shape) {
-            generateLegendData(legendData, this.scales.shape.scale.domain(), null, this.scales.shape.scale);
-        }
 
-        return legendData;
-    };
+            return legendData;
+        };
 
-    /**
-     * Renders the plot.
-     */
-	this.render = function(){
-        margins = configureMargins(userMargins, this.legendPos, allAes, this.scales);
-        this.renderer.initCanvas(); // Get the canvas prepped for render time.
+        /**
+         * Renders the plot.
+         */
+        this.render = function(){
+            margins = configureMargins(userMargins, this.legendPos, allAes, this.scales);
+            this.renderer.initCanvas(); // Get the canvas prepped for render time.
 
-        if(!initScales.call(this)){  // Sets up the scales.
-            return false; // if we have a critical error when trying to initialize the scales we don't continue with rendering.
-        }
+            if(!initScales.call(this)){  // Sets up the scales.
+                return false; // if we have a critical error when trying to initialize the scales we don't continue with rendering.
+            }
 
-        if(!this.layers || this.layers.length < 1){
-            error.call(this,'No layers added to the plot, nothing to render.');
-            return false;
-        }
+            if(!this.layers || this.layers.length < 1){
+                error.call(this,'No layers added to the plot, nothing to render.');
+                return false;
+            }
 
-		this.renderer.renderGrid(); // renders the grid (axes, grid lines).
-        this.renderer.renderLabels();
+            this.renderer.renderGrid(); // renders the grid (axes, grid lines).
+            this.renderer.renderLabels();
 
-        for(var i = 0; i < this.layers.length; i++){
-            this.layers[i].plot = this; // Add reference to the layer so it can trigger a re-render during setAes.
-            this.layers[i].render(this.renderer, this.grid, this.scales, this.data, this.aes, i);
-        }
+            for(var i = 0; i < this.layers.length; i++){
+                this.layers[i].plot = this; // Add reference to the layer so it can trigger a re-render during setAes.
+                this.layers[i].render(this.renderer, this.grid, this.scales, this.data, this.aes, i);
+            }
 
-        if(!this.legendPos || (this.legendPos && !(this.legendPos == "none"))){
-            this.renderer.renderLegend();
-        }
+            if(!this.legendPos || (this.legendPos && !(this.legendPos == "none"))){
+                this.renderer.renderLegend();
+            }
 
-        return true;
-    };
+            return true;
+        };
 
-    var setLabel = function(name, value, lookClickable){
-        if(!this.labels[name]){
-            this.labels[name] = {};
-        }
+        var setLabel = function(name, value, lookClickable){
+            if(!this.labels[name]){
+                this.labels[name] = {};
+            }
 
-        this.labels[name].value = value;
-        this.labels[name].lookClickable = lookClickable;
-        this.renderer.renderLabel(name);
-    };
+            this.labels[name].value = value;
+            this.labels[name].lookClickable = lookClickable;
+            this.renderer.renderLabel(name);
+        };
 
-    /**
-     * Sets the value of the main label and optionally makes it look clickable.
-     * @param {String} value The string value to set the label to.
-     * @param {Boolean} lookClickable If true it styles the label to look clickable.
-     */
-    this.setMainLabel = function(value, lookClickable){
-        setLabel.call(this, 'main', value, lookClickable);
-    };
+        /**
+         * Sets the value of the main label and optionally makes it look clickable.
+         * @param {String} value The string value to set the label to.
+         * @param {Boolean} lookClickable If true it styles the label to look clickable.
+         */
+        this.setMainLabel = function(value, lookClickable){
+            setLabel.call(this, 'main', value, lookClickable);
+        };
 
-    /**
-     * Sets the value of the x-axis label and optionally makes it look clickable.
-     * @param {String} value The string value to set the label to.
-     * @param {Boolean} lookClickable If true it styles the label to look clickable.
-     */
-    this.setXLabel = function(value, lookClickable){
-        setLabel.call(this, 'x', value, lookClickable);
-    };
+        /**
+         * Sets the value of the x-axis label and optionally makes it look clickable.
+         * @param {String} value The string value to set the label to.
+         * @param {Boolean} lookClickable If true it styles the label to look clickable.
+         */
+        this.setXLabel = function(value, lookClickable){
+            setLabel.call(this, 'x', value, lookClickable);
+        };
 
-    /**
-     * Sets the value of the right y-axis label and optionally makes it look clickable.
-     * @param {String} value The string value to set the label to.
-     * @param {Boolean} lookClickable If true it styles the label to look clickable.
-     */
-    this.setYRightLabel = function(value, lookClickable){
-        setLabel.call(this, 'yRight', value, lookClickable);
-    };
+        /**
+         * Sets the value of the right y-axis label and optionally makes it look clickable.
+         * @param {String} value The string value to set the label to.
+         * @param {Boolean} lookClickable If true it styles the label to look clickable.
+         */
+        this.setYRightLabel = function(value, lookClickable){
+            setLabel.call(this, 'yRight', value, lookClickable);
+        };
 
-    /**
-     * Sets the value of the left y-axis label and optionally makes it look clickable.
-     * @param {String} value The string value to set the label to.
-     * @param {Boolean} lookClickable If true it styles the label to look clickable.
-     */
-    this.setYLeftLabel = this.setYLabel = function(value, lookClickable){
-        setLabel.call(this, 'yLeft', value, lookClickable);
-    };
+        /**
+         * Sets the value of the left y-axis label and optionally makes it look clickable.
+         * @param {String} value The string value to set the label to.
+         * @param {Boolean} lookClickable If true it styles the label to look clickable.
+         */
+        this.setYLeftLabel = this.setYLabel = function(value, lookClickable){
+            setLabel.call(this, 'yLeft', value, lookClickable);
+        };
 
-    /**
-     * Adds a listener to a label.
-     * @param {String} label string value of label to add a listener to. Valid values are y, yLeft, yRight, x, and main.
-     * @param {String} listener the name of the listener to listen on.
-     * @param {Function} fn The callback to b called when the event is fired.
-     */
-    this.addLabelListener = function(label, listener, fn){
-        if(label == 'y') {
-            label = 'yLeft';
-        }
-        return this.renderer.addLabelListener(label, listener, fn);
-    };
+        /**
+         * Adds a listener to a label.
+         * @param {String} label string value of label to add a listener to. Valid values are y, yLeft, yRight, x, and main.
+         * @param {String} listener the name of the listener to listen on.
+         * @param {Function} fn The callback to b called when the event is fired.
+         */
+        this.addLabelListener = function(label, listener, fn){
+            if(label == 'y') {
+                label = 'yLeft';
+            }
+            return this.renderer.addLabelListener(label, listener, fn);
+        };
 
-    /**
-     * Sets the width of the plot and re-renders if requested.
-     * @param {Number} h The height in pixels.
-     * @param {Boolean} render Toggles if plot will be re-rendered or not.
-     */
-    this.setHeight = function(h, render){
-        if(render == null || render == undefined){
-            render = true;
-        }
+        /**
+         * Sets the width of the plot and re-renders if requested.
+         * @param {Number} h The height in pixels.
+         * @param {Boolean} render Toggles if plot will be re-rendered or not.
+         */
+        this.setHeight = function(h, render){
+            if(render == null || render == undefined){
+                render = true;
+            }
 
-        this.grid.height = h;
+            this.grid.height = h;
 
-        if(render === true){
+            if(render === true){
+                this.render();
+            }
+        };
+
+        /**
+         * Sets the width of the plot and re-renders if requested.
+         * @param {Number} w The width in pixels.
+         * @param {Boolean} render Toggles if plot will be re-rendered or not.
+         */
+        this.setWidth = function(w, render){
+            if(render == null || render == undefined){
+                render = true;
+            }
+
+            this.grid.width = w;
+
+            if(render === true){
+                this.render();
+            }
+        };
+
+        /**
+         * Changes the size of the plot and renders if requested.
+         * @param {Number} w width in pixels.
+         * @param {Number} h height in pixels.
+         * @param {Boolean} render Toggles if the chart will be re-rendered or not. Defaults to false.
+         */
+        this.setSize = function(w, h, render){
+            this.setWidth(w, false);
+            this.setHeight(h, render);
+        };
+
+        /**
+         * Adds a new layer to the plot.
+         * @param {@link LABKEY.vis.Layer} layer
+         */
+        this.addLayer = function(layer){
+            layer.parent = this; // Set the parent of each layer to the plot so we can grab things like data from it later.
+            this.layers.push(layer);
+        };
+
+        /**
+         * Clears the grid.
+         */
+        this.clearGrid = function(){
+            this.renderer.clearGrid();
+        };
+
+        /**
+         * Sets new margins for the plot and re-renders with the margins.
+         * @param {Object} newMargins An object with the following properties:
+         *      <ul>
+         *          <li><strong>top:</strong> Size of top margin in pixels.</li>
+         *          <li><strong>bottom:</strong> Size of bottom margin in pixels.</li>
+         *          <li><strong>left:</strong> Size of left margin in pixels.</li>
+         *          <li><strong>right:</strong> Size of right margin in pixels.</li>
+         *      </ul>
+         */
+        this.setMargins = function(newMargins, render){
+            userMargins = newMargins;
+            margins = configureMargins(userMargins, this.legendPos, allAes, this.scales);
+
+            if(render !== undefined && render !== null && render === true) {
+                this.render();
+            }
+        };
+
+        this.setAes = function(newAes){
+            // Note: this is only valid for plots using the D3Renderer.
+            // Used to add or remove aesthetics to a plot. Also availalbe on LABKEY.vis.Layer objects to set aesthetics on
+            // specific layers only.
+            // To delete an aesthetic set it to null i.e. plot.setAes({color: null});
+            LABKEY.vis.mergeAes(this.aes, newAes);
             this.render();
-        }
+        };
+
+        this.clearBrush = function() {
+            if(this.renderer.clearBrush) {
+                this.renderer.clearBrush();
+            }
+        };
+
+        return this;
     };
-
-    /**
-     * Sets the width of the plot and re-renders if requested.
-     * @param {Number} w The width in pixels.
-     * @param {Boolean} render Toggles if plot will be re-rendered or not.
-     */
-    this.setWidth = function(w, render){
-        if(render == null || render == undefined){
-            render = true;
-        }
-
-        this.grid.width = w;
-        
-        if(render === true){
-            this.render();
-        }
-    };
-
-    /**
-     * Changes the size of the plot and renders if requested.
-     * @param {Number} w width in pixels.
-     * @param {Number} h height in pixels.
-     * @param {Boolean} render Toggles if the chart will be re-rendered or not. Defaults to false.
-     */
-    this.setSize = function(w, h, render){
-        this.setWidth(w, false);
-        this.setHeight(h, render);
-    };
-
-    /**
-     * Adds a new layer to the plot.
-     * @param {@link LABKEY.vis.Layer} layer
-     */
-    this.addLayer = function(layer){
-		layer.parent = this; // Set the parent of each layer to the plot so we can grab things like data from it later.
-		this.layers.push(layer);
-	};
-
-    /**
-     * Clears the grid.
-     */
-    this.clearGrid = function(){
-        this.renderer.clearGrid();
-    };
-
-    /**
-     * Sets new margins for the plot and re-renders with the margins.
-     * @param {Object} newMargins An object with the following properties:
-     *      <ul>
-     *          <li><strong>top:</strong> Size of top margin in pixels.</li>
-     *          <li><strong>bottom:</strong> Size of bottom margin in pixels.</li>
-     *          <li><strong>left:</strong> Size of left margin in pixels.</li>
-     *          <li><strong>right:</strong> Size of right margin in pixels.</li>
-     *      </ul>
-     */
-    this.setMargins = function(newMargins, render){
-        userMargins = newMargins;
-        margins = configureMargins(userMargins, this.legendPos, allAes, this.scales);
-
-        if(render !== undefined && render !== null && render === true) {
-            this.render();
-        }
-    };
-
-    this.setAes = function(newAes){
-        // Note: this is only valid for plots using the D3Renderer.
-        // Used to add or remove aesthetics to a plot. Also availalbe on LABKEY.vis.Layer objects to set aesthetics on
-        // specific layers only.
-        // To delete an aesthetic set it to null i.e. plot.setAes({color: null});
-        LABKEY.vis.mergeAes(this.aes, newAes);
-        this.render();
-    };
-
-    this.clearBrush = function() {
-        if(this.renderer.clearBrush) {
-            this.renderer.clearBrush();
-        }
-    };
-
-	return this;
-};
+})();
