@@ -79,6 +79,8 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
 
     TableInfo getTableInfo(User user, boolean checkPermission) throws UnauthorizedException;
 
+    TableInfo getTableInfo(User user, boolean checkPermission, boolean multiContainer) throws UnauthorizedException;
+
     boolean isDemographicData();
 
     Date getModified();

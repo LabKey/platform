@@ -129,5 +129,6 @@ public interface Study extends StudyEntity
     boolean isAllowReqLocSal();
     boolean isAllowReqLocEndpoint();
 
-    Boolean isShareDatasetDefinitions();
+    // "is" prefix doesn't work with "Boolean", use get
+    Boolean getShareDatasetDefinitions();
 }
