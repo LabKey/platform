@@ -37,6 +37,8 @@ import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -144,6 +146,30 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
         menu.addChild(userMenu);
     }
 
+    // Somewhat redundant with verifyPermissions() below, but much more expensive in the single-user case. Keep these two methods in sync.
+    // project == null means return all site users (if authorized)
+    public static Collection<User> getValidImpersonationUsers(@Nullable Container project, User adminUser)
+    {
+        Collection<User> validUsers;
+
+        // Site admin can impersonate any active user...
+        if (null == project)
+        {
+            validUsers = adminUser.isSiteAdmin() ? UserManager.getActiveUsers() : Collections.<User>emptyList();
+        }
+        else if (!project.hasPermission(adminUser, AdminPermission.class))
+        {
+            validUsers = Collections.emptyList();
+        }
+        else
+        {
+            validUsers = SecurityManager.getProjectUsers(project);
+        }
+
+        validUsers.remove(adminUser);
+
+        return validUsers;
+    }
 
     private class ImpersonateUserContext implements ImpersonationContext
     {
@@ -159,6 +185,7 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
             _returnURL = returnURL;
         }
 
+        // Keep in sync with getValidImpersonationUsers() above
         private void verifyPermissions(@Nullable Container project, User impersonatedUser, User adminUser)
         {
             if (impersonatedUser.equals(adminUser))

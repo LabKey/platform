@@ -26,7 +26,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -43,8 +42,6 @@ public class FolderAdminMenu extends NavTreeMenu
 
     public static NavTree[] getNavTree(ViewContext context)
     {
-        Container c = context.getContainer();
-
         List<NavTree> admin = new ArrayList<>();
         admin.addAll(getFolderElements(context.getContainer()));
         NavTree[] adminArr = new NavTree[admin.size()];

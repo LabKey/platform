@@ -35,6 +35,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Set;
 
@@ -111,17 +112,13 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
     {
         NavTree groupMenu = new NavTree("Group");
         UserUrls userURLs = PageFlowUtil.urlProvider(UserUrls.class);
-        Group[] groups = SecurityManager.getGroups(c.getProject(), true);
-        Container project = c.getProject();
+        Collection<Group> groups = getValidImpersonationGroups(c, user);
 
         boolean addSeparator = false;
 
         // Site groups are always first, followed by project groups
         for (Group group : groups)
         {
-            if (!canImpersonateGroup(project, user, group))
-                continue;
-
             String display = group.getName();
 
             if (!group.isProjectGroup())
@@ -141,6 +138,20 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         }
 
         menu.addChild(groupMenu);
+    }
+
+    static Collection<Group> getValidImpersonationGroups(Container c, User user)
+    {
+        LinkedList<Group> validGroups = new LinkedList<>();
+        Group[] groups = SecurityManager.getGroups(c.getProject(), true);
+        Container project = c.getProject();
+
+        // Site groups are always first, followed by project groups
+        for (Group group : groups)
+            if (canImpersonateGroup(project, user, group))
+                validGroups.add(group);
+
+        return validGroups;
     }
 
     public class ImpersonateGroupContext implements ImpersonationContext

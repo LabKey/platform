@@ -35,7 +35,9 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Set;
 
 /**
@@ -76,7 +78,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
             }
 
             if (null != _projectId)
-                cacheKey.append("/impersonationProject=" + _projectId);
+                cacheKey.append("/impersonationProject=").append(_projectId);
 
             _cacheKey = cacheKey.toString();
         }
@@ -113,41 +115,53 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
         // TODO: Audit log?
     }
 
-    static void addMenu(NavTree menu, Container c, ActionURL currentURL, Set<Role> roles)
+    static void addMenu(NavTree menu, Container c, ActionURL currentURL, Set<Role> currentImpersonationRoles)
     {
         UserUrls userURLs = PageFlowUtil.urlProvider(UserUrls.class);
-        SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
         NavTree roleMenu = new NavTree("Role");
 
         boolean hasRead = false;
 
-        for (Role role : roles)
+        for (Role impersonatingRole : currentImpersonationRoles)
         {
-            if (role.getPermissions().contains(ReadPermission.class))
+            if (impersonatingRole.getPermissions().contains(ReadPermission.class))
             {
                 hasRead = true;
                 break;
             }
         }
 
-        // Add the relevant roles
-        for (Role role : RoleManager.getAllRoles())
+        // All roles that are applicable in this Container
+        Collection<Role> validRoles = getValidImpersonationRoles(c);
+
+        // Now add them to the menu, disabling the ones that can't be selected
+        for (Role role : validRoles)
         {
-            if (role.isAssignable() && role.isApplicable(policy, c))
-            {
-                NavTree roleItem = new NavTree(role.getName(), userURLs.getImpersonateRoleURL(c, role.getUniqueName(), currentURL));
+            NavTree roleItem = new NavTree(role.getName(), userURLs.getImpersonateRoleURL(c, role.getUniqueName(), currentURL));
 
-                // Disable roles that are already being impersonated. Also, disable all roles that don't include read
-                // permissions, until a role that does has been selected. #14835
-                if (roles.contains(role) || (!hasRead && !role.getPermissions().contains(ReadPermission.class)))
-                    roleItem.setDisabled(true);
+            // Disable roles that are already being impersonated. Also, disable all roles that don't include read
+            // permissions, until a role that does has been selected. #14835
+            if (currentImpersonationRoles.contains(role) || (!hasRead && !role.getPermissions().contains(ReadPermission.class)))
+                roleItem.setDisabled(true);
 
-                roleMenu.addChild(roleItem);
-            }
+            roleMenu.addChild(roleItem);
         }
 
         if (roleMenu.hasChildren())
             menu.addChild(roleMenu);
+    }
+
+    static Collection<Role> getValidImpersonationRoles(Container c)
+    {
+        Collection<Role> validRoles = new LinkedList<>();
+        SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
+
+        // Add the valid roles
+        for (Role role : RoleManager.getAllRoles())
+            if (role.isAssignable() && role.isApplicable(policy, c))
+                validRoles.add(role);
+
+        return validRoles;
     }
 
     public class ImpersonateRoleContext implements ImpersonationContext
