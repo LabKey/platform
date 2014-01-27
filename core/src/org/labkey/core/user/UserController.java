@@ -79,6 +79,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.impersonation.ImpersonateRoleContextFactory;
+import org.labkey.api.security.impersonation.ImpersonateUserContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -2002,6 +2003,10 @@ public class UserController extends SpringActionController
                 emails.remove(user.getEmail());
                 message = null;
                 title = isAdminConsole ? "<b>Impersonate User</b>" : null;
+
+                // TODO: Temporary test to validate new method
+                Collection<User> validUsers = ImpersonateUserContextFactory.getValidImpersonationUsers(null, user);
+                assert emails.size() == validUsers.size();
             }
             else
             {
@@ -2028,6 +2033,10 @@ public class UserController extends SpringActionController
 
                 message = instructions + "<br><br>";
                 title = "Impersonate User Within Project " + c.getProject().getName();
+
+                // TODO: Temporary test to validate new method
+                Collection<User> validUsers = ImpersonateUserContextFactory.getValidImpersonationUsers(c.getProject(), user);
+                assert emails.size() == validUsers.size();
             }
         }
     }
