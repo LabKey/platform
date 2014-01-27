@@ -136,4 +136,9 @@ public class CoreSchema
     {
         return getSchema().getTable("DbSequences");
     }
+
+    public TableInfo getTableInfoShortURL()
+    {
+        return getSchema().getTable("ShortURL");
+    }
 }

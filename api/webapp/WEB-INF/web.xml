@@ -213,7 +213,7 @@
     </servlet-mapping>
 
     <!-- To display a nice error message in the case of a database error, remove the
-         comments around this servlet-mapping and edit the message in in the init-param
+         comments around this servlet-mapping and edit the message in the init-param
          above.
     <servlet-mapping>
         <servlet-name>SiteDownServlet</servlet-name>

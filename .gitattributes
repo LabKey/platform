@@ -1559,6 +1559,8 @@ api/src/org/labkey/api/view/ProteomicsWebPartFactory.java -text
 api/src/org/labkey/api/view/ReaderView.java -text
 api/src/org/labkey/api/view/RequestBasicAuthException.java -text
 api/src/org/labkey/api/view/ServletView.java -text
+api/src/org/labkey/api/view/ShortURLRecord.java -text
+api/src/org/labkey/api/view/ShortURLService.java -text
 api/src/org/labkey/api/view/SimpleFolderTab.java -text
 api/src/org/labkey/api/view/SimpleTextDisplayElement.java -text
 api/src/org/labkey/api/view/SimpleWebPartFactory.java -text
