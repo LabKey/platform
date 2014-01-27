@@ -51,7 +51,7 @@
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-      resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
+      resources.add(ClientDependency.fromFilePath("clientapi/ext4"));
       resources.add(ClientDependency.fromFilePath("scriptreporteditor"));
       return resources;
   }
@@ -206,7 +206,7 @@
         });
 
         var _resize = function(w,h) {
-            LABKEY.Utils.resizeToViewport(panel, w, -1); // don't fit to height
+            LABKEY.Utils.ext4.resizeToViewport(panel, w, -1); // don't fit to height
         };
 
         Ext4.EventManager.onWindowResize(_resize);
