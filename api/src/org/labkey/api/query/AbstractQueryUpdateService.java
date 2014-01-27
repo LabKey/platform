@@ -123,7 +123,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      * DataIterator should/must use same error collection as passed in
      */
     @Deprecated
-    protected int _importRowsUsingInsertRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
+    protected int _importRowsUsingInsertRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
     {
         MapDataIterator mapIterator = DataIteratorUtil.wrapMap(rows, true);
         List<Map<String, Object>> list = new ArrayList<>();
@@ -224,9 +224,14 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
             throws SQLException
     {
-        return _importRowsUsingInsertRows(user,container,rows.getDataIterator(new DataIteratorContext(errors)),errors,extraScriptContext);
+        return importRows(user, container, rows, errors, null, extraScriptContext);
     }
 
+    @Override
+    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws SQLException
+    {
+        return _importRowsUsingInsertRows(user,container,rows.getDataIterator(new DataIteratorContext(errors)),errors,configParameters,extraScriptContext);
+    }
 
     @Override
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException

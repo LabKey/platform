@@ -76,7 +76,7 @@ public class StatementUtils
      */
     public static Parameter.ParameterMap insertStatement(Connection conn, TableInfo table, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
-        return new StatementUtils(table).createStatement(conn, table, null, c, user, selectIds, autoFillDefaultColumns, operation.insert, false);
+        return new StatementUtils(table).createStatement(conn, table, null, null, null, c, user, selectIds, autoFillDefaultColumns, operation.insert, false);
     }
 
 
@@ -85,7 +85,7 @@ public class StatementUtils
             @Nullable Container c, @Nullable User user, Map<String,Object> constants,
             boolean selectIds, boolean autoFillDefaultColumns, boolean supportsAutoIncrementKey) throws SQLException
     {
-        return new StatementUtils(table, constants).createStatement(conn, table, skipColumnNames, c, user, selectIds, autoFillDefaultColumns, operation.insert, supportsAutoIncrementKey);
+        return new StatementUtils(table, constants).createStatement(conn, table, null, skipColumnNames, null, c, user, selectIds, autoFillDefaultColumns, operation.insert, supportsAutoIncrementKey);
     }
 
 
@@ -102,13 +102,19 @@ public class StatementUtils
      */
     public static Parameter.ParameterMap updateStatement(Connection conn, TableInfo table, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
-        return new StatementUtils(table).createStatement(conn, table, null, c, user, selectIds, autoFillDefaultColumns, operation.update, false);
+        return new StatementUtils(table).createStatement(conn, table, null, null, null, c, user, selectIds, autoFillDefaultColumns, operation.update, false);
     }
 
 
     public static Parameter.ParameterMap mergeStatement(Connection conn, TableInfo table, @Nullable Set<String> skipColumnNames, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
-        return new StatementUtils(table).createStatement(conn, table, skipColumnNames, c, user, selectIds, autoFillDefaultColumns, operation.merge, false);
+        return new StatementUtils(table).createStatement(conn, table, null, skipColumnNames, null, c, user, selectIds, autoFillDefaultColumns, operation.merge, false);
+    }
+
+
+    public static Parameter.ParameterMap mergeStatement(Connection conn, TableInfo table, @Nullable Set<String> keyNames, @Nullable Set<String> skipColumnNames, @Nullable Set<String> dontUpdate, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
+    {
+        return new StatementUtils(table).createStatement(conn, table, keyNames, skipColumnNames, dontUpdate, c, user, selectIds, autoFillDefaultColumns, operation.merge, false);
     }
 
 
@@ -274,7 +280,9 @@ public class StatementUtils
     }
 
 
-    private Parameter.ParameterMap createStatement(Connection conn, TableInfo t, @Nullable Set<String> skipColumnNames, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns, operation op, boolean supportsAutoIncrementKey) throws SQLException
+    private Parameter.ParameterMap createStatement(Connection conn, TableInfo t,
+       @Nullable Set<String> keyNames, @Nullable Set<String> skipColumnNames, @Nullable Set<String> dontUpdate,
+       @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns, operation op, boolean supportsAutoIncrementKey) throws SQLException
     {
         if (!(t instanceof UpdateableTableInfo))
             throw new IllegalArgumentException("Table must be an UpdatedableTableInfo");
@@ -331,13 +339,26 @@ public class StatementUtils
         ColumnInfo col = table.getColumn("Container");
         if (null != col)
             keys.put(col.getFieldKey(), col);
-        col = table.getColumn(objectURIColumnName);
-        if (null != col)
-            keys.put(col.getFieldKey(), col);
+        if (null != keyNames)
+        {
+            for (String name : keyNames)
+            {
+                col = table.getColumn(name);
+                if (null == col)
+                    throw new IllegalArgumentException("Column not found: " + name);
+                keys.put(col.getFieldKey(), col);
+            }
+        }
         else
         {
-            for (ColumnInfo pk : table.getPkColumns())
-                keys.put(pk.getFieldKey(), pk);
+            col = table.getColumn(objectURIColumnName);
+            if (null != col)
+                keys.put(col.getFieldKey(), col);
+            else
+            {
+                for (ColumnInfo pk : table.getPkColumns())
+                    keys.put(pk.getFieldKey(), pk);
+            }
         }
 
         //
@@ -600,6 +621,9 @@ public class StatementUtils
             comma = "";
             for (int i = 0; i < cols.size(); i++)
             {
+                FieldKey fk = new FieldKey(null,cols.get(i).toString());
+                if (keys.containsKey(fk) || null != dontUpdate && dontUpdate.contains(fk.getName()))
+                    continue;
                 sqlfUpdate.append(comma);
                 comma = ", ";
                 sqlfUpdate.append(cols.get(i));
@@ -612,9 +636,15 @@ public class StatementUtils
             {
                 ColumnInfo keyCol = e.getValue();
                 sqlfUpdate.append(and);
+                sqlfUpdate.append("(");
                 sqlfUpdate.append(keyCol.getSelectName());
                 sqlfUpdate.append(" = ");
                 appendParameterOrVariable(sqlfUpdate, keyCol);
+                sqlfUpdate.append(" OR ");
+                sqlfUpdate.append(keyCol.getSelectName());
+                sqlfUpdate.append(" IS NULL AND ");
+                appendParameterOrVariable(sqlfUpdate, keyCol);
+                sqlfUpdate.append(" IS NULL)");
                 and = " AND ";
             }
             sqlfUpdate.append(";\n");

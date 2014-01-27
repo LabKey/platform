@@ -51,7 +51,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
 
 
     @Override
-    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext)
             throws SQLException
     {
         return _importRowsUsingETL(user, container, rows, null,  getDataIteratorContext(errors, InsertOption.IMPORT), extraScriptContext);

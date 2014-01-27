@@ -70,6 +70,11 @@ public interface QueryUpdateService
         }
     }
 
+    enum ConfigParameters
+    {
+        Logger
+    }
+
 
     /**
      * Returns the rows identified by the keys, existing in the container, as maps.
@@ -117,8 +122,9 @@ public interface QueryUpdateService
      * @throws SQLException Thrown if there was an error communicating with the database.
      */
     public int importRows(User user, Container container, DataIteratorBuilder rows,
-                          BatchValidationException errors, @Nullable Map<String, Object> extraScriptContext)
-            throws SQLException;
+          BatchValidationException errors, @Nullable Map<String, Object> extraScriptContext) throws SQLException;
+    public int importRows(User user, Container container, DataIteratorBuilder rows,
+          BatchValidationException errors, Map<Enum,Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws SQLException;
 
     /**
      * Inserts the given values as new rows into the source table of this query.  Same as insertRows() except for the use
