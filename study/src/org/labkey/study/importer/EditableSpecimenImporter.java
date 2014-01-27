@@ -55,7 +55,14 @@ public class EditableSpecimenImporter extends SpecimenImporter
 
     public void process(List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException
     {
-        _process(rows, merge, Logger.getLogger(getClass()));
+        process(rows, merge, null);
+    }
+
+    public void process(List<Map<String, Object>> rows, boolean merge, Logger logger) throws SQLException, IOException, ValidationException
+    {
+        if (null == logger)
+            logger = Logger.getLogger(getClass());
+        _process(rows, merge, logger);
     }
 
     private void _process(List<Map<String, Object>> rows, boolean merge, Logger logger) throws SQLException, IOException, ValidationException
@@ -190,39 +197,51 @@ public class EditableSpecimenImporter extends SpecimenImporter
     private int markEventsObsolete(List<Map<String, Object>> rows)
     {
         Container container = getContainer();
-        boolean seenAtLeastOneGuid = false;
         TableInfo tableInfoSpecimenEvent = StudySchema.getInstance().getTableInfoSpecimenEvent(container);
         TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(container);
         if (null == tableInfoSpecimenEvent || null == tableInfoVial)
             throw new IllegalStateException("Expected Vial and SpecimenEvent table to already exist.");
 
-        SQLFragment sql = new SQLFragment("UPDATE ");
-        sql.append(tableInfoSpecimenEvent.getSelectName()).append(" SET Obsolete = ")
-            .append(tableInfoSpecimenEvent.getSqlDialect().getBooleanTRUE()).append(" WHERE VialId IN ")
-            .append("(SELECT RowId FROM ").append(tableInfoVial.getSelectName())
-            .append(" WHERE Obsolete = ").append(tableInfoSpecimenEvent.getSqlDialect().getBooleanFALSE())
-            .append(" AND " + GUID_COLNAME + " IN (");
+        SQLFragment sqlPrefix = new SQLFragment();
+        sqlPrefix.append("UPDATE ").append(tableInfoSpecimenEvent.getSelectName())
+                .append(" SET Obsolete = ").append(tableInfoSpecimenEvent.getSqlDialect().getBooleanTRUE())
+                .append(" WHERE VialId IN ")
+                .append("(SELECT RowId FROM ").append(tableInfoVial.getSelectName())
+                .append(" WHERE Obsolete = ").append(tableInfoSpecimenEvent.getSqlDialect().getBooleanFALSE())
+                .append(" AND " + GUID_COLNAME).append(" ");
 
         int noGuidRowCount = 0;
+        int guidRowCount = 0;
+        ArrayList<String> guids = new ArrayList<>();
         for (Map<String, Object> row : rows)
         {
             String guid = (String)row.get(GLOBAL_UNIQUE_ID_TSV_COL);
-            if (null != guid)
+            if (null == guid)
             {
-                if (seenAtLeastOneGuid)
-                    sql.append(", ");
-                sql.append("?").add(guid);
-                seenAtLeastOneGuid = true;
+                noGuidRowCount++;
+                continue;
             }
-            else
+            guidRowCount++;
+            guids.add(guid);
+            if (guids.size() == 1000)
             {
-                noGuidRowCount += 1;
+                SQLFragment sql = new SQLFragment(sqlPrefix);
+                tableInfoSpecimenEvent.getSqlDialect().appendInClauseSql(sql, guids.toArray());
+                sql.append(")");
+                new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+                guids.clear();
             }
         }
-        sql.append("))");
-        if (seenAtLeastOneGuid)
+        if (!guids.isEmpty())
         {
+            SQLFragment sql = new SQLFragment(sqlPrefix);
+            tableInfoSpecimenEvent.getSqlDialect().appendInClauseSql(sql, guids.toArray());
+            sql.append(")");
             new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+        }
+
+        if (guidRowCount > 0)
+        {
             SampleManager.getInstance().clearCaches(container);
         }
         return noGuidRowCount;

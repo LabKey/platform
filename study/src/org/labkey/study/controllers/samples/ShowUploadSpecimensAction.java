@@ -45,6 +45,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
+import java.sql.BatchUpdateException;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -244,6 +245,8 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         }
         catch (SQLException e)
         {
+            if (e instanceof BatchUpdateException && null != ((BatchUpdateException)e).getNextException())
+                e = ((BatchUpdateException)e).getNextException();
             errors.reject(SpringActionController.ERROR_MSG, "A database error was reported during import: " + e.getMessage());
         }
         return !errors.hasErrors();

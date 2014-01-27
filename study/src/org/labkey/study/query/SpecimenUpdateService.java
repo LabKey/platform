@@ -16,12 +16,16 @@
 package org.labkey.study.query;
 
 import org.apache.commons.beanutils.converters.IntegerConverter;
+import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DuplicateKeyException;
@@ -56,10 +60,26 @@ import java.util.Map;
  */
 public class SpecimenUpdateService extends AbstractQueryUpdateService
 {
+    Logger _logger = null;
+
     public SpecimenUpdateService(TableInfo queryTable)
     {
         super(queryTable);
     }
+
+
+    @Override
+    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws SQLException
+    {
+        if (null != configParameters)
+        {
+            Object o = configParameters.get(ConfigParameters.Logger);
+            if (o instanceof org.apache.log4j.Logger)
+                _logger = (Logger)o;
+        }
+        return _importRowsUsingInsertRows(user,container,rows.getDataIterator(new DataIteratorContext(errors)),errors,configParameters,extraScriptContext);
+    }
+
 
     @Override
     public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, Map<String, Object> extraScriptContext)
@@ -92,7 +112,8 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
                 checkDeletability(container, specimen);
 
             for (Specimen specimen : specimens)
-                SampleManager.getInstance().deleteSpecimen(specimen);
+                SampleManager.getInstance().deleteSpecimen(specimen, false);
+            SampleManager.getInstance().clearCaches(container);
 
             // Force recalculation of requestability and specimen table
             importSpecimens(user, container, rows, true, false);
@@ -126,7 +147,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             throw new IllegalArgumentException("No specimen found for rowId: " + rowId);
 
         checkDeletability(container, specimen);
-        SampleManager.getInstance().deleteSpecimen(specimen);
+        SampleManager.getInstance().deleteSpecimen(specimen, true);
         List<Map<String, Object>> rows = new ArrayList<>(1);
 
         try
@@ -439,7 +460,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
     {
         EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, insert);
         rows = importer.mapColumnNamesToTsvColumnNames(rows);
-        importer.process(rows, merge);
+        importer.process(rows, merge, _logger);
     }
 
     private void checkEditability(Container container, Specimen specimen) throws ValidationException

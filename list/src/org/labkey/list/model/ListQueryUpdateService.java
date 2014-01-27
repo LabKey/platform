@@ -260,7 +260,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
 
     @Override
-    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
+    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
     {
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT);
         int count = super._importRowsUsingETL(user, container, rows, null, context, extraScriptContext);

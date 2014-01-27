@@ -85,6 +85,7 @@
     <tr><td>To import a study from a zip archive on your local machine (for example, a folder that you have exported and saved
         to your local hard drive), browse to a zip archive file, open it, and click the "Import Study From Local Zip Archive" button below.</td></tr>
     <tr><td><input type="file" name="folderZip" size="50"></td></tr>
+    <tr><td style="padding-left: 15px; padding-top: 8px;"><input type="checkbox" name="validateQueries" checked value="true">&nbsp;Validate Imported Queries</td></tr>
     <tr>
         <td><%=generateSubmitButton("Import Study From Local Zip Archive")%></td>
 
@@ -103,6 +104,7 @@
         <td><%=generateSubmitButton("Reload Study From Local Zip Archive")%></td>
 
 <% } else { %>
+
     <tr><td class="labkey-announcement-title" align=left><span>Import Folder From Local Zip Archive</span></td></tr>
     <tr><td class="labkey-title-area-line"></td></tr>
     <tr><td>To import a folder from a zip archive on your local machine (for example, a folder that you have exported and saved

@@ -169,20 +169,22 @@ public class SampleManager implements ContainerManager.ContainerListener
         return _instance;
     }
 
+
     public boolean isSpecimensEmpty(Container container, User user)
     {
-//        return _specimenDetailHelper.get(container).isEmpty();
-        return getSpecimens(container, user, (SimpleFilter)null).isEmpty();
+        TableSelector selector = getSpecimensSelector(container, user, (SimpleFilter) null);
+        return selector.exists();
     }
+ 
 
     public List<Specimen> getSpecimens(Container container, User user, String participantId, Double visit)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addClause(new SimpleFilter.SQLClause("LOWER(ptid) = LOWER(?)", new Object[] {participantId}, FieldKey.fromParts("ptid")));
         filter.addCondition(FieldKey.fromParts("VisitValue"), visit);
-//        return _specimenDetailHelper.get(container, filter);
         return getSpecimens(container, user, filter);
     }
+
 
     public RequirementProvider<SampleRequestRequirement, SampleRequestActor> getRequirementsProvider()
     {
@@ -1956,7 +1958,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         return sql;
     }
 
-    public void deleteSpecimen(@NotNull Specimen specimen) throws SQLException
+    public void deleteSpecimen(@NotNull Specimen specimen, boolean clearCaches) throws SQLException
     {
         Container container = specimen.getContainer();
         TableInfo tableInfoSpecimenEvent = StudySchema.getInstance().getTableInfoSpecimenEvent(container);
@@ -1977,7 +1979,8 @@ public class SampleManager implements ContainerManager.ContainerListener
         sqlFragment.add(specimen.getRowId());
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sqlFragment);
 
-        clearCaches(specimen.getContainer());
+        if (clearCaches)
+            clearCaches(specimen.getContainer());
     }
 
     public void deleteAllSampleData(Container c, Set<TableInfo> set) throws SQLException
@@ -3327,7 +3330,19 @@ public class SampleManager implements ContainerManager.ContainerListener
         return null;
     }
 
+
     public List<Specimen> getSpecimens(final Container container, final User user, SimpleFilter filter)
+    {
+        TableSelector selector = getSpecimensSelector(container, user, filter);
+        List<Map> specimenMaps = selector.getArrayList(Map.class);
+        List<Specimen> specimens = new ArrayList<>();
+        for (Map map : specimenMaps)
+            specimens.add(new Specimen(map));
+        return specimens;
+    }
+
+
+    public TableSelector getSpecimensSelector(final Container container, final User user, SimpleFilter filter)
     {
 /*        QueryHelper<Specimen> queryHelper = _specimenDetailHelper.get(container.getId());
         if (null == queryHelper)
@@ -3350,11 +3365,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         StudyQuerySchema schema = new StudyQuerySchema(study, user, true);
         TableInfo specimenTable = schema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
-        List<Map> specimenMaps = new TableSelector(specimenTable, filter, null).getArrayList(Map.class);
-        List<Specimen> specimens = new ArrayList<>();
-        for (Map map : specimenMaps)
-            specimens.add(new Specimen(map));
-        return specimens;
+        return new TableSelector(specimenTable, filter, null);
     }
 
     public static <T extends AbstractStudyCachable> List<T> fillInContainer(List<T> list, Container container)

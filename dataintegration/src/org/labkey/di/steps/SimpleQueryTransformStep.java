@@ -51,6 +51,8 @@ import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: matthewb
@@ -150,26 +152,24 @@ public class SimpleQueryTransformStep extends TransformTask
         context.setFailFast(true);
         try
         {
-            targetScope.ensureTransaction(Connection.TRANSACTION_SERIALIZABLE);
-            if (null != sourceScope)
-                sourceScope.ensureTransaction(Connection.TRANSACTION_REPEATABLE_READ);
-
             long start = System.currentTimeMillis();
-            log.info("Copying data from " + meta.getSourceSchema() + "." + meta.getSourceQuery() + " to " +
-                    meta.getTargetSchema() + "." + meta.getTargetQuery());
 
-            DataIteratorBuilder source = selectFromSource(meta, c, u, context, log);
-            if (null == source)
-                return false;
-            int transformRunId = getTransformJob().getTransformRunId();
-            DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, source, log);
+            try (
+                    DbScope.Transaction txTarget = targetScope.ensureTransaction(Connection.TRANSACTION_SERIALIZABLE);
+                    DbScope.Transaction txSource = (null==sourceScope)?null:sourceScope.ensureTransaction(Connection.TRANSACTION_REPEATABLE_READ)
+            )
+            {
+                log.info("Copying data from " + meta.getSourceSchema() + "." + meta.getSourceQuery() + " to " +
+                        meta.getTargetSchema() + "." + meta.getTargetQuery());
 
-            _recordsInserted = appendToTarget(meta, c, u, context, transformSource, log);
+                DataIteratorBuilder source = selectFromSource(meta, c, u, context, log);
+                if (null == source)
+                    return false;
+                int transformRunId = getTransformJob().getTransformRunId();
+                DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, source, log);
 
-            targetScope.commitTransaction();
-            if (null != sourceScope)
-                sourceScope.commitTransaction();
-
+                _recordsInserted = appendToTarget(meta, c, u, context, transformSource, log);
+            }
             long finish = System.currentTimeMillis();
             log.info("Copied " + getNumRowsString(_recordsInserted) + " in " + DateUtil.formatDuration(finish - start));
         }
@@ -265,7 +265,9 @@ public class SimpleQueryTransformStep extends TransformTask
             }
             else
             {
-                return qus.importRows(u, c, source, context.getErrors(), null);
+                Map<Enum,Object> options = new HashMap<>();
+                options.put(QueryUpdateService.ConfigParameters.Logger,log);
+                return qus.importRows(u, c, source, context.getErrors(), options, null);
             }
         }
         catch (BatchValidationException|QueryUpdateServiceException ex)

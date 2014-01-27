@@ -24,11 +24,11 @@ import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
+import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -36,6 +36,7 @@ import org.labkey.study.query.DataSetTableImpl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.TreeSet;
 
 /**
@@ -194,23 +195,39 @@ public class SequenceVisitManager extends VisitManager
         //
 
         // update ParticipantVisit.VisitDate based on declared Visit.visitDateDatasetId
-        SQLFragment sqlUpdateVisitDates = new SQLFragment();
-        sqlUpdateVisitDates.append("UPDATE " + tableParticipantVisit + "\n" +
-                "SET VisitDate = \n" +
-                " (\n" +
-                " SELECT DISTINCT(SD._VisitDate)\n" +
-                " FROM ").append(tableStudyData.getFromSQL("SD")).append(",  " + tableVisit + " V\n" +
-                " WHERE  ParticipantVisit.VisitRowId = V.RowId AND" +    // 'join' V
-                "   SD.ParticipantId = ParticipantVisit.ParticipantId AND SD.SequenceNum = ParticipantVisit.SequenceNum AND\n" +    // 'join' SD
-                "   SD.DatasetId = V.VisitDateDatasetId AND V.Container=?\n" +
-                " )\n");
-        if (schema.getSqlDialect().isSqlServer()) // for SQL Server 2000
-            sqlUpdateVisitDates.append("FROM " + tableParticipantVisit + " ParticipantVisit\n");
-        sqlUpdateVisitDates.append("WHERE Container=?");
-        sqlUpdateVisitDates.add(container);
-        sqlUpdateVisitDates.add(container);
-
-        executor.execute(sqlUpdateVisitDates);
+        ArrayList<DataSetDefinition> defsWithVisitDates = new ArrayList<>();
+        for (DataSetDefinition def : _study.getDataSets())
+            if (null != def.getVisitDateColumnName())
+                defsWithVisitDates.add(def);
+        if (defsWithVisitDates.isEmpty())
+        {
+            SQLFragment sqlUpdateVisitDates = new SQLFragment();
+            sqlUpdateVisitDates.append("UPDATE " + tableParticipantVisit + "\n")
+                .append("SET VisitDate = NULL")
+                .append(" WHERE Container=?");
+            sqlUpdateVisitDates.add(container);
+            executor.execute(sqlUpdateVisitDates);
+        }
+        else
+        {
+            TableInfo tableStudyDataFiltered = StudySchema.getInstance().getTableInfoStudyDataFiltered(getStudy(), defsWithVisitDates, user);
+            SQLFragment sqlUpdateVisitDates = new SQLFragment();
+            sqlUpdateVisitDates.append("UPDATE " + tableParticipantVisit + "\n" +
+                    "SET VisitDate = \n" +
+                    " (\n" +
+                    " SELECT DISTINCT(SD._VisitDate)\n" +
+                    " FROM ").append(tableStudyDataFiltered.getFromSQL("SD")).append(",  " + tableVisit + " V\n" +
+                    " WHERE  ParticipantVisit.VisitRowId = V.RowId AND" +    // 'join' V
+                    "   SD.ParticipantId = ParticipantVisit.ParticipantId AND SD.SequenceNum = ParticipantVisit.SequenceNum AND\n" +    // 'join' SD
+                    "   SD.DatasetId = V.VisitDateDatasetId AND V.Container=?\n" +
+                    " )\n");
+            if (schema.getSqlDialect().isSqlServer()) // for SQL Server 2000
+                sqlUpdateVisitDates.append("FROM " + tableParticipantVisit + " ParticipantVisit\n");
+            sqlUpdateVisitDates.append("WHERE Container=?");
+            sqlUpdateVisitDates.add(container);
+            sqlUpdateVisitDates.add(container);
+            executor.execute(sqlUpdateVisitDates);
+        }
 
         /* infer ParticipantVisit.VisitDate if it seems unambiguous
         String sqlCopyVisitDates = "UPDATE " + tableParticipantVisit + "\n" +

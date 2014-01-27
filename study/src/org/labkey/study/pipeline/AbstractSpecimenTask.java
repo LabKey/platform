@@ -36,6 +36,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.io.File;
+import java.sql.BatchUpdateException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -145,6 +146,8 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         }
         catch (Exception e)
         {
+            if (e instanceof BatchUpdateException && null != ((BatchUpdateException)e).getNextException())
+                e = ((BatchUpdateException)e).getNextException();
             throw new PipelineJobException(e);
         }
         finally
