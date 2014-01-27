@@ -3987,7 +3987,7 @@ public class StudyManager
         Study sharedStudy = getStudy(p);
         if (null == sharedStudy)
             return null;
-        if (!sharedStudy.isShareDatasetDefinitions())
+        if (!sharedStudy.getShareDatasetDefinitions())
             return null;
         return sharedStudy;
     }

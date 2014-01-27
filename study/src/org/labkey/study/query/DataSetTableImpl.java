@@ -104,7 +104,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
 
     public DataSetTableImpl(final StudyQuerySchema schema, DataSetDefinition dsd)
     {
-        super(dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions()), schema);
+        super(dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions(), true), schema);
         String nameLabel = dsd.getName();
         if (!dsd.getLabel().equalsIgnoreCase(dsd.getName()))
             nameLabel += " (" + dsd.getLabel() + ")";
@@ -593,7 +593,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
         if (_userSchema.getStudy().getTimepointType() == TimepointType.DATE)
             from.append(", PV.Day");
         from.append("\nFROM ").append(super.getFromSQL("DS")).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("PV")).append("\n" +
-                " ON DS.ParticipantId=PV.ParticipantId AND DS.SequenceNum=PV.SequenceNum AND PV.Container = '" + _userSchema.getContainer().getId() + "') AS ").append(alias);
+                " ON DS.ParticipantId=PV.ParticipantId AND DS.SequenceNum=PV.SequenceNum AND PV.Container = DS.Container) AS ").append(alias);
 
         if (_dsd.isAssayData())
         {
@@ -761,7 +761,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
     {
         if (_fromTable == null)
         {
-            _fromTable = _dsd.getTableInfo(_userSchema.getUser(), _userSchema.getMustCheckPermissions());
+            _fromTable = _dsd.getTableInfo(_userSchema.getUser(), _userSchema.getMustCheckPermissions(), true);
         }
         return _fromTable;
     }
@@ -824,7 +824,13 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
     @Override
     public boolean supportsContainerFilter()
     {
-        return false;
+        return _dsd.getStudy().getShareDatasetDefinitions();
+    }
+
+    @Override
+    public void setContainerFilter(@NotNull ContainerFilter filter)
+    {
+        super.setContainerFilter(filter);
     }
 
     @Override

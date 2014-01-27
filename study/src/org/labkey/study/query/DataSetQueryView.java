@@ -144,7 +144,8 @@ public class DataSetQueryView extends StudyQueryView
             _provider = AssayService.get().getProvider(_protocol);
 
         setViewItemFilter(StudyReportUIProvider.getItemFilter());
-        disableContainerFilterSelection();
+        if (!_dataset.isShared())
+            disableContainerFilterSelection();
     }
 
     @Override

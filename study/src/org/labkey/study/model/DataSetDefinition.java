@@ -240,7 +240,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _label =  String.valueOf(dataSetId);
         _typeURI = null;
         _showByDefault = true;
-        _isShared = study.isShareDatasetDefinitions();
+        _isShared = study.getShareDatasetDefinitions();
     }
 
 
@@ -255,7 +255,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _entityId = null != entityId ? entityId : GUID.makeGUID();
         _typeURI = null != typeURI ? typeURI : DatasetDomainKind.generateDomainURI(name, _entityId, getContainer());
         _showByDefault = true;
-        _isShared = study.isShareDatasetDefinitions();
+        _isShared = study.getShareDatasetDefinitions();
     }
 
 
@@ -500,11 +500,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
      */
     public DatasetSchemaTableInfo getTableInfo(User user) throws UnauthorizedException
     {
-        return getTableInfo(user, true);
+        return getTableInfo(user, true, false);
     }
 
 
     public DatasetSchemaTableInfo getTableInfo(User user, boolean checkPermission) throws UnauthorizedException
+    {
+        return getTableInfo(user, checkPermission, false);
+    }
+
+    public DatasetSchemaTableInfo getTableInfo(User user, boolean checkPermission, boolean multiContainer) throws UnauthorizedException
     {
         //noinspection ConstantConditions
         if (user == null && checkPermission)
@@ -515,7 +520,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             throw new UnauthorizedException();
         }
 
-        return new DatasetSchemaTableInfo(this, user);
+        return new DatasetSchemaTableInfo(this, user, multiContainer);
     }
 
 
@@ -1030,6 +1035,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     public class DatasetSchemaTableInfo extends SchemaTableInfo
     {
         private Container _container;
+        boolean _multiContainer = false;
         ColumnInfo _ptid;
 
         TableInfo _storage;
@@ -1051,12 +1057,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
 
 
-        DatasetSchemaTableInfo(DataSetDefinition def, final User user)
+        DatasetSchemaTableInfo(DataSetDefinition def, final User user, boolean multiContainer)
         {
             super(StudySchema.getInstance().getSchema(), DatabaseTableType.TABLE, def.getName());
             setTitle(def.getLabel());
             _autoLoadMetaData = false;
             _container = def.getContainer();
+            _multiContainer = multiContainer;
             Study study = StudyManager.getInstance().getStudy(_container);
 
             _storage = def.getStorageTableInfo();
@@ -1313,7 +1320,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 return from;
             }
 
-            if (isShared())
+            if (isShared() && !_multiContainer)
             {
                 SQLFragment ret = new SQLFragment("(SELECT * FROM ");
                 ret.append(_storage.getFromSQL("_"));
@@ -2805,7 +2812,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             Study s = getStudy();
             if (null != s)
-                _isShared = s.isShareDatasetDefinitions();
+                _isShared = s.getShareDatasetDefinitions();
         }
     }
 

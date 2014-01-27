@@ -98,7 +98,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
 
     @Override
-    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
+    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
     {
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT);
         int count = super._importRowsUsingETL(user, container, rows, null, context, extraScriptContext);
@@ -150,8 +150,6 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         DataIteratorBuilder insert = _dataset.getInsertDataIterator(user, data, null,
                 context.getInsertOption() != InsertOption.MERGE, context,
                 defaultQCState, false);
-//        TableInfo table = _dataset.getTableInfo(user, false);
-//        DataIteratorBuilder insert = ((UpdateableTableInfo)table).persistRows(dsIterator, errors);
         return insert;
     }
 

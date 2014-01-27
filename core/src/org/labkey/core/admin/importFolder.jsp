@@ -37,7 +37,7 @@
             {
                 Study study = StudyService.get().getStudy(c);
                 Study studyProject = StudyService.get().getStudy(c.getProject());
-                if (null != study && null != studyProject && studyProject.isShareDatasetDefinitions())
+                if (null != study && null != studyProject && studyProject.getShareDatasetDefinitions())
                     canCreateSharedDatasets = true;
             }
         }
@@ -84,8 +84,12 @@
     <tr><td class="labkey-title-area-line"></td></tr>
     <tr><td>To import a study from a zip archive on your local machine (for example, a folder that you have exported and saved
         to your local hard drive), browse to a zip archive file, open it, and click the "Import Study From Local Zip Archive" button below.</td></tr>
-    <tr><td><input type="file" name="folderZip" size="50"></td></tr>
-    <tr><td style="padding-left: 15px; padding-top: 8px;"><input type="checkbox" name="validateQueries" checked value="true">&nbsp;Validate Imported Queries</td></tr>
+    <tr><td><input type="file" name="folderZip" size="50"></td></tr><%
+    if (canCreateSharedDatasets)
+    {
+        %><tr><td style="padding-left: 15px; padding-top: 8px;"><input type="checkbox" name="createSharedDatasets" checked value="true">&nbsp;Create shared datasets</td></tr><%
+    }
+    %><tr><td style="padding-left: 15px; padding-top: 8px;"><input type="checkbox" name="validateQueries" checked value="true">&nbsp;Validate Imported Queries</td></tr>
     <tr>
         <td><%=generateSubmitButton("Import Study From Local Zip Archive")%></td>
 

@@ -1104,7 +1104,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @NotNull
-    public Boolean isShareDatasetDefinitions()
+    public Boolean getShareDatasetDefinitions()
     {
         return _shareDatasetDefinitions &&
             AppProps.getInstance().isExperimentalFeatureEnabled(StudyModule.EXPERIMENTALFEATURE_SHARED_DATASET) &&
