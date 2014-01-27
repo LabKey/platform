@@ -270,8 +270,11 @@ public class QubeQuery
         {
             Level level = ((_MDX)sets.get(0)).level;
             for (int s=0 ; s<sets.size() ; s++)
-                if (level != ((_MDX)sets.get(s)).level)
+            {
+                Level next = ((_MDX)sets.get(s)).level;
+                if (null == level || null == next || !level.getUniqueName().equals(next.getUniqueName()))
                     level = null;
+            }
             return new _MDX(FN.Intersect, level, sets);
         }
     }
@@ -1279,11 +1282,12 @@ public class QubeQuery
             Schema s = d.getSchema(d.getConnection(c, u), c, u, "CDS");
             Cube cube = s.getCubes().get("ParticipantCube");
 
+            init();
+
             QueryTest t = new QueryTest(
-                    "{\"query\":{\"showEmpty\":false,\"onRows\":[{\"hierarchy\":\"Antigen.Tier\",\"members\":\"members\"}],\"filter\":[{\"operator\":\"INTERSECT\",\"arguments\":[{\"hierarchy\":\"Participant\",\"membersQuery\":{\"hierarchy\":\"Antigen.Tier\",\"members\":[{\"uname\":[\"Antigen.Tier\",\"1B\",\"DJ263.8\"]}]}},{\"hierarchy\":\"Participant\",\"membersQuery\":{\"hierarchy\":\"Antigen.Tier\",\"members\":[{\"uname\":[\"Antigen.Tier\",\"1A\",\"SF162.LS\"]}]}}]},{\"operator\":\"INTERSECT\",\"arguments\":[{\"hierarchy\":\"Participant\",\"membersQuery\":{\"hierarchy\":\"Antigen.Tier\",\"members\":[{\"uname\":[\"Antigen.Tier\",\"1B\"]}]}}]}]},\"configId\":\"CDS:/CDS\",\"schemaName\":\"CDS\",\"cubeName\":\"ParticipantCube\"}",
+                    "{\"showEmpty\":false,\"onRows\":[{\"hierarchy\":\"Antigen.Tier\",\"members\":\"members\"}],\"filter\":[{\"operator\":\"INTERSECT\",\"arguments\":[{\"hierarchy\":\"Participant\",\"membersQuery\":{\"hierarchy\":\"Antigen.Tier\",\"members\":[{\"uname\":[\"Antigen.Tier\",\"1B\",\"DJ263.8\"]}]}},{\"hierarchy\":\"Participant\",\"membersQuery\":{\"hierarchy\":\"Antigen.Tier\",\"members\":[{\"uname\":[\"Antigen.Tier\",\"1A\",\"SF162.LS\"]}]}}]},{\"operator\":\"INTERSECT\",\"arguments\":[{\"hierarchy\":\"Participant\",\"membersQuery\":{\"hierarchy\":\"Antigen.Tier\",\"members\":[{\"uname\":[\"Antigen.Tier\",\"1B\"]}]}}]}]}",
                     "");
 
-            init();
             try
             {
                 t.run(cube);
