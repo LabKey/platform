@@ -251,7 +251,9 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                 List<FileType> result = new ArrayList<>(_inputPaths.size());
                 for (TaskPath taskPath : _inputPaths.values())
                 {
-                    result.add(taskPath.getType());
+                    FileType ft = taskPath.getType();
+                    if (ft != null)
+                        result.add(ft);
                 }
                 return result;
             }

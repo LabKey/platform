@@ -231,7 +231,7 @@ public class AnalysisController extends SpringActionController
                 }
                 else
                 {
-                    if(form.getConfigureXml() != null || form.getConfigureJson() != null)
+                    if (form.getConfigureXml() != null || form.getConfigureJson() != null)
                     {
                         throw new IllegalArgumentException("Cannot redefine an existing protocol");
                     }

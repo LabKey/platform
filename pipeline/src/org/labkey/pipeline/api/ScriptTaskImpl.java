@@ -76,7 +76,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
             }
             else if (inputPaths.length == 1)
             {
-                if (inputPaths[0] != null)
+                if (inputPaths[0] == null)
                     replacements.put(key, "");
                 else
                     replacements.put(key, Matcher.quoteReplacement(inputPaths[0].replaceAll("\\\\", "/")));

@@ -214,11 +214,17 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             return provider;
         }
 
-        // CONSIDER: if there is only one instance of the assay in the container, use it by default.
-        // CONSIDER: when job is executed, somehow poke in the 'target assay'
         @NotNull
         private ExpProtocol getProtocol(PipelineJob job, AssayProvider provider) throws PipelineJobException
         {
+            Container c = job.getContainer();
+            List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, provider);
+
+            // If only one protocol exists in the container, use it
+            if (protocols.size() == 1)
+                return protocols.get(0);
+
+            // Otherwise, we require a name
             String protocolName = _protocolName;
             if (protocolName == null)
                 throw new PipelineJobException("Assay protocol name or job parameter name required");
@@ -232,8 +238,6 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                 protocolName = value;
             }
 
-            Container c = job.getContainer();
-
             // Find by LSID
             ExpProtocol expProtocol = ExperimentService.get().getExpProtocol(protocolName);
             if (expProtocol != null)
@@ -245,8 +249,6 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             }
 
             // Find by name
-            List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, provider);
-
             for (ExpProtocol protocol : protocols)
             {
                 if (protocol.getName().equalsIgnoreCase(protocolName))
@@ -346,10 +348,10 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
     /**
      * 1. Examine the outputs of the previous steps.
-     * 2. If match is found (?by DataHandler?), import into an assay.
+     * 2. If match is found (using the assay's FileType), import into an assay.
      * 3. Result domain type's columns may be of exp.data type.... .. CONSIDER: Propagate the ptid, specimen ids, etc.
      *
-     * * @return
+     * @return
      * @throws PipelineJobException
      */
     public RecordedActionSet run() throws PipelineJobException
