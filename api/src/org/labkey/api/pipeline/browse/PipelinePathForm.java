@@ -128,16 +128,17 @@ public class PipelinePathForm extends ViewForm
                     throw new NotFoundException("Could not find file associated with Data Id: '" + fileId);
                 }
 
-                if(!data.getContainer().hasPermission(getUser(), ReadPermission.class))
+                if (!data.getContainer().hasPermission(getUser(), ReadPermission.class))
                 {
                     throw new NotFoundException("Insufficient permissions for file '" + data.getFile());
                 }
 
-                if (!allowNonExistentFiles && !NetworkDrive.exists(data.getFile()))
+                File file = data.getFile();
+                if (!allowNonExistentFiles && !NetworkDrive.exists(file))
                 {
-                    throw new NotFoundException("Could not find file '" + data.getFile() + "'");
+                    throw new NotFoundException("Could not find file '" + file + "'");
                 }
-                result.add(data.getFile());
+                result.add(file);
             }
         }
 

@@ -24,6 +24,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -377,6 +378,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     {
         RowMapFactory<Object> factory = new RowMapFactory<>("Name", "Value", "Type");
         List<Map<String, Object>> rows = new ArrayList<>();
+
         rows.add(factory.getRowMap("protocolName", getProtocolName(), "java.lang.String"));
         rows.add(factory.getRowMap("provider", getProvider(), "java.lang.String"));
         rows.add(factory.getRowMap("description", getDescription(), "java.lang.String"));
@@ -385,6 +387,8 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         rows.add(factory.getRowMap("parentGUID", getParentGUID(), "java.lang.String"));
         rows.add(factory.getRowMap("splitJob", isSplitJob(), "java.lang.Boolean"));
 
+        rows.add(factory.getRowMap("baseUrl", AppProps.getInstance().getBaseServerUrl(), "java.lang.String"));
+        rows.add(factory.getRowMap("contextPath", AppProps.getInstance().getContextPath(), "java.lang.String"));
         rows.add(factory.getRowMap("containerPath", getContainer().getPath(), "java.lang.String"));
         rows.add(factory.getRowMap("containerId", getContainer().getEntityId(), "java.lang.String"));
         rows.add(factory.getRowMap("user", getUser().getEmail(), "java.lang.String"));
