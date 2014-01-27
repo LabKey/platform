@@ -131,6 +131,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -248,6 +249,7 @@ public class UserController extends SpringActionController
     }
 
     // Note: the column list is dynamic, changing based on the current user's permissions.
+    @Deprecated // TODO: Stop using a hard-coded list, #19475
     public static String getUserColumnNames(User user, Container c)
     {
         String columnNames = "Email, DisplayName, FirstName, LastName, Phone, Mobile, Pager, IM, Description";
@@ -256,11 +258,6 @@ public class UserController extends SpringActionController
             columnNames = columnNames + ", UserId, Created, LastLogin, Active";
 
         return columnNames;
-    }
-
-    public static String getDefaultUserColumnNames()
-    {
-        return getUserColumnNames(null, null);
     }
 
     private void setDataRegionButtons(DataRegion rgn, boolean isOwnRecord)
@@ -1980,6 +1977,36 @@ public class UserController extends SpringActionController
             }
 
             response.put("users", userResponseList);
+            return response;
+        }
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class GetImpersonationUsersAction extends ApiAction<GetUsersForm>
+    {
+        @Override
+        public ApiResponse execute(GetUsersForm getUsersForm, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            User currentUser = getUser();
+            Container project = currentUser.isSiteAdmin() ? null : getContainer().getProject();  // TODO: Param for project vs. site
+            Collection<User> users = ImpersonateUserContextFactory.getValidImpersonationUsers(project, getUser());
+
+            Collection<Map<String, Object>> responseUsers = new LinkedList<>();
+
+            for (User user : users)
+            {
+                Map<String, Object> map = new HashMap<>();
+                map.put("email", user.getEmail());
+                map.put("userId", user.getUserId());
+                map.put("displayName", user.getDisplayName(currentUser));
+                responseUsers.add(map);
+            }
+
+            response.put("users", responseUsers);
+
             return response;
         }
     }
