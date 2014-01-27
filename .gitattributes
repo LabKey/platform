@@ -286,6 +286,7 @@ core/resources/schemas/dbscripts/postgresql/core-13.10-13.20.sql -text
 core/resources/schemas/dbscripts/postgresql/core-13.20-13.30.sql -text
 core/resources/schemas/dbscripts/postgresql/core-13.31-13.32.sql -text
 core/resources/schemas/dbscripts/postgresql/core-13.32-13.33.sql -text
+core/resources/schemas/dbscripts/postgresql/core-13.33-13.34.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/labkey-0.00-13.30.sql -text
@@ -450,6 +451,7 @@ core/resources/schemas/dbscripts/sqlserver/core-13.20-13.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-13.22-13.23.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-13.31-13.32.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-13.32-13.33.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-13.33-13.34.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/group_concat_install.sql -text
@@ -807,6 +809,7 @@ core/src/org/labkey/core/user/impersonate.jsp -text
 core/src/org/labkey/core/user/toggleInactive.jsp -text
 core/src/org/labkey/core/user/toggleShowAll.jsp -text
 core/src/org/labkey/core/user/userAccess.jsp -text
+core/src/org/labkey/core/view/ShortURLServiceImpl.java -text
 core/src/org/labkey/core/webdav/DavController.java -text
 core/src/org/labkey/core/webdav/WebdavServlet.java -text
 core/src/org/labkey/core/webdav/apache/XMLWriter.java -text

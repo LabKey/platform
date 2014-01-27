@@ -22,20 +22,23 @@ package org.labkey.core.webdav;
  * Time: 2:03:32 PM
  */
 
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.webdav.WebdavResolver;
+import org.labkey.api.view.ShortURLRecord;
+import org.labkey.api.view.ShortURLService;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.ModuleStaticResolverImpl;
+import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
 
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletException;
-import javax.servlet.ServletConfig;
 import java.io.IOException;
 
 
@@ -68,6 +71,20 @@ public class WebdavServlet extends HttpServlet
                 m = helper.getParameter("method");
             if (null != m)
                 method = m;
+        }
+
+        // Check if a shortURL has been registered for this path before attempting to serve up a file for it
+        // Strip off the leading slash
+        String potentialShortURL = fullPath.substring(1);
+        if (!potentialShortURL.contains("/"))
+        {
+            ShortURLRecord fullURL = ServiceRegistry.get(ShortURLService.class).resolveShortURL(potentialShortURL);
+            if (fullURL != null)
+            {
+                // We found a match, do a redirect and bail out
+                response.sendRedirect(fullURL.getFullURL());
+                return;
+            }
         }
 
         ActionURL dispatchUrl = new ActionURL("/" + DavController.name + "/" + method.toLowerCase() + ".view");
