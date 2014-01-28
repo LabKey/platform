@@ -69,10 +69,12 @@ import org.labkey.api.module.Module;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
@@ -137,6 +139,7 @@ import org.labkey.study.importer.StudyReload;
 import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.query.studydesign.DefaultStudyDesignTable;
 import org.labkey.study.query.studydesign.StudyProductAntigenDomainKind;
 import org.labkey.study.query.studydesign.StudyProductDomainKind;
 import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
@@ -2245,6 +2248,15 @@ public class StudyManager
         else
             dsds = study.getDataSets();
 
+        // get the list of study design tables
+        List<TableInfo> studyDesignTables = new ArrayList<>();
+        UserSchema schema = QueryService.get().getUserSchema(user, c, StudyQuerySchema.SCHEMA_NAME);
+        studyDesignTables.add(schema.getTable(StudyQuerySchema.PRODUCT_TABLE_NAME));
+        studyDesignTables.add(schema.getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME));
+        studyDesignTables.add(schema.getTable(StudyQuerySchema.TREATMENT_TABLE_NAME));
+        studyDesignTables.add(schema.getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME));
+        studyDesignTables.add(schema.getTable(StudyQuerySchema.TREATMENT_VISIT_MAP_TABLE_NAME));
+
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
         Set<TableInfo> deletedTables = new HashSet<>();
@@ -2339,6 +2351,8 @@ public class StudyManager
 
             // study data provisioned tables
             //deleteStudyDataProvisionedTables(c, user); // NOTE: this looks to be handled by the OntologyManager
+            deleteStudyDesignData(c, user, studyDesignTables);
+
             Table.delete(StudySchema.getInstance().getTableInfoTreatmentVisitMap(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoTreatmentVisitMap());
             Table.delete(StudySchema.getInstance().getTableInfoObjective(), containerFilter);
@@ -2404,6 +2418,17 @@ public class StudyManager
         StudyPersonnelDomainKind studyPersonnelDomainKind = new StudyPersonnelDomainKind();
         String personnelDomainURI = studyPersonnelDomainKind.generateDomainURI(StudyQuerySchema.SCHEMA_NAME, StudyQuerySchema.PERSONNEL_TABLE_NAME, c, null);
         StorageProvisioner.drop(PropertyService.get().getDomain(c, personnelDomainURI));
+    }
+
+    private void deleteStudyDesignData(Container c, User user, List<TableInfo> studyDesignTables) throws SQLException
+    {
+        for (TableInfo tinfo : studyDesignTables)
+        {
+            if (tinfo instanceof FilteredTable)
+            {
+                Table.delete(((FilteredTable)tinfo).getRealTable(), new SimpleFilter(FieldKey.fromParts("Container"), c));
+            }
+        }
     }
 
     private SQLFragment getStudySnapshotUpdateSql(Container c, String columnName)

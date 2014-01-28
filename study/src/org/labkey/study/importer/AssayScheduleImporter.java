@@ -49,11 +49,26 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
 
                 // assay specimen table
                 TableInfo assaySpecimenTable = schema.getTable(StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
+                deleteData(ctx, assaySpecimenTable);
                 importTableData(ctx, vf, assaySpecimenTable, _assaySpecimenTransform, null);
 
                 // assay specimen visit table
                 TableInfo assaySpecimenVisitTable = schema.getTable(StudyQuerySchema.ASSAY_SPECIMEN_VISIT_TABLE_NAME);
+                deleteData(ctx, assaySpecimenVisitTable);
                 importTableData(ctx, vf, assaySpecimenVisitTable, null, _assaySpecimenVisitMapTransform);
+
+                // study design tables
+                ctx.getLogger().info("Importing study design data tables");
+                List<TableInfo> studyDesignTables = new ArrayList<>();
+
+                studyDesignTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME));
+                studyDesignTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME));
+
+                for (TableInfo table : studyDesignTables)
+                {
+                    deleteData(ctx, table);
+                    importTableData(ctx, vf, table, null, null);
+                }
             }
             else
                 throw new ImportException("Unable to open the folder at : " + dirType.getDir());
@@ -116,7 +131,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                     if (visit != null)
                         newRow.put("visitId", visit.getId());
                     else
-                        LOG.warn("No visit found matching the sequence num : " + newRow.get("visitId.sequenceNumMin"));
+                        ctx.getLogger().warn("No visit found matching the sequence num : " + newRow.get("visitId.sequenceNumMin"));
 
                     newRow.remove("visitId.sequenceNumMin");
                 }

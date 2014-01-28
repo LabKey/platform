@@ -80,10 +80,8 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
         // ContainerFilter containerFilter = new ContainerFilter.CurrentPlusProject(ctx.getUser());
 
         designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME));
-        designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME));
         designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_ROUTES_TABLE_NAME));
         designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME));
-        designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME));
         designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_SUB_TYPES_TABLE_NAME));
 
         writeTableData(ctx, vf, designTables, null);

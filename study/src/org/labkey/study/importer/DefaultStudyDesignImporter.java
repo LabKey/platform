@@ -3,14 +3,22 @@ package org.labkey.study.importer;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.query.studydesign.DefaultStudyDesignTable;
 
 import java.io.InputStream;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -19,9 +27,26 @@ import java.util.Map;
  */
 public class DefaultStudyDesignImporter
 {
-    protected static final Logger LOG = Logger.getLogger(DefaultStudyDesignImporter.class);
+    /**
+     * Removes previous data for the specified table and container
+     * @param ctx
+     * @param tableInfo
+     */
+    protected void deleteData(StudyImportContext ctx, TableInfo tableInfo) throws ImportException
+    {
+        try {
+            if (tableInfo instanceof FilteredTable)
+            {
+                Table.delete(((FilteredTable)tableInfo).getRealTable(), new SimpleFilter(FieldKey.fromParts("Container"), ctx.getContainer()));
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new ImportException(e.getMessage());
+        }
+    }
 
-    protected BatchValidationException importTableData(StudyImportContext ctx, VirtualFile vf, TableInfo tableInfo,
+    protected void importTableData(StudyImportContext ctx, VirtualFile vf, TableInfo tableInfo,
                                                      @Nullable TransformBuilder transformBuilder,
                                                      @Nullable TransformHelper transformHelper) throws Exception
     {
@@ -67,12 +92,14 @@ public class DefaultStudyDesignImporter
                     }
                 }
                 else
-                    LOG.warn("Unable to open the file at: " + fileName);
+                    ctx.getLogger().warn("Unable to open the file at: " + fileName);
             }
         }
         else
-            LOG.warn("NULL tableInfo passed into importTableData.");
-        return errors;
+            ctx.getLogger().warn("NULL tableInfo passed into importTableData.");
+
+        if (errors.hasErrors())
+            throw new ImportException(errors.getMessage());
     }
 
     protected String getFileName(TableInfo tableInfo)
@@ -96,6 +123,4 @@ public class DefaultStudyDesignImporter
     {
         List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows);
     }
-
-
 }

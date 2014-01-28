@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by klum on 1/22/14.
@@ -57,30 +58,41 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                 StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
 
                 // add the treatment specific tables
-                LOG.info("Importing treatment data tables");
+                ctx.getLogger().info("Importing treatment data tables");
                 TableInfo productTable = schema.getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
+                deleteData(ctx, productTable);
                 importTableData(ctx, vf, productTable, _productTableTransform, null);
 
                 TableInfo productAntigenTable = schema.getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+                deleteData(ctx, productAntigenTable);
                 importTableData(ctx, vf, productAntigenTable, null, _productTableTransform);
 
                 TableInfo treatmentTable = schema.getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
+                deleteData(ctx, treatmentTable);
                 importTableData(ctx, vf, treatmentTable, _treatmentTableTransform, null);
 
                 TableInfo treatmentProductTable = schema.getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+                deleteData(ctx, treatmentProductTable);
                 importTableData(ctx, vf, treatmentProductTable, null, _treatmentProductTransform);
 
                 TableInfo treatmentVisitMapTable = schema.getTable(StudyQuerySchema.TREATMENT_VISIT_MAP_TABLE_NAME);
+                deleteData(ctx, treatmentVisitMapTable);
                 importTableData(ctx, vf, treatmentVisitMapTable, null, _treatmentVisitMapTransform);
 
                 // study design tables
-                LOG.info("Importing study design data tables");
-                importTableData(ctx, vf, schema.getTable(StudyQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME), null, null);
-                importTableData(ctx, vf, schema.getTable(StudyQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME), null, null);
-                importTableData(ctx, vf, schema.getTable(StudyQuerySchema.STUDY_DESIGN_ROUTES_TABLE_NAME), null, null);
-                importTableData(ctx, vf, schema.getTable(StudyQuerySchema.STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME), null, null);
-                importTableData(ctx, vf, schema.getTable(StudyQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME), null, null);
-                importTableData(ctx, vf, schema.getTable(StudyQuerySchema.STUDY_DESIGN_SUB_TYPES_TABLE_NAME), null, null);
+                ctx.getLogger().info("Importing study design data tables");
+                List<TableInfo> studyDesignTables = new ArrayList<>();
+
+                studyDesignTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME));
+                studyDesignTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_ROUTES_TABLE_NAME));
+                studyDesignTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME));
+                studyDesignTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_SUB_TYPES_TABLE_NAME));
+
+                for (TableInfo table : studyDesignTables)
+                {
+                    deleteData(ctx, table);
+                    importTableData(ctx, vf, table, null, null);
+                }
             }
             else
                 throw new ImportException("Unable to open the folder at : " + dirType.getDir());
@@ -222,7 +234,7 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     if (cohort != null)
                         newRow.put("cohortId", cohort.getRowId());
                     else
-                        LOG.warn("No cohort found matching the label : " + newRow.get("cohortId.label"));
+                        ctx.getLogger().warn("No cohort found matching the label : " + newRow.get("cohortId.label"));
 
                     newRow.remove("cohortId.label");
                 }
@@ -233,7 +245,7 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     if (visit != null)
                         newRow.put("visitId", visit.getId());
                     else
-                        LOG.warn("No visit found matching the sequence num : " + newRow.get("visitId.sequenceNumMin"));
+                        ctx.getLogger().warn("No visit found matching the sequence num : " + newRow.get("visitId.sequenceNumMin"));
 
                     newRow.remove("visitId.sequenceNumMin");
                 }

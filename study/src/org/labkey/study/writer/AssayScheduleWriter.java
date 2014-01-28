@@ -53,8 +53,16 @@ public class AssayScheduleWriter extends DefaultStudyDesignWriter implements Int
         TableInfo assaySpecimenTable = schema.getTable(StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
 
         //writeTableInfos(ctx, vf, treatmentTables);
-        writeTableData(ctx, vf, assaySpecimenTable, assaySpecimenTable.getColumns(), null);
+        writeTableData(ctx, vf, assaySpecimenTable, getDefaultColumns(assaySpecimenTable), null);
         writeAssaySpecimenVisitMap(ctx, vf);
+
+        // export the study design tables (no need to export tableinfo's as these are non-extensible)
+        Set<TableInfo> designTables = new HashSet<>();
+
+        designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME));
+        designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME));
+
+        writeTableData(ctx, vf, designTables, null);
     }
 
     private void writeAssaySpecimenVisitMap(StudyExportContext ctx, VirtualFile vf) throws Exception

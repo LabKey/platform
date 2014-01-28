@@ -7,12 +7,14 @@ import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.writer.VirtualFile;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -25,7 +27,7 @@ public abstract class DefaultStudyDesignWriter
     {
         for (TableInfo tinfo : tables)
         {
-            writeTableData(ctx, vf, tinfo, tinfo.getColumns(), containerFilter);
+            writeTableData(ctx, vf, tinfo, getDefaultColumns(tinfo), containerFilter);
         }
     }
 
@@ -59,5 +61,30 @@ public abstract class DefaultStudyDesignWriter
         tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
         PrintWriter out = vf.getPrintWriter(fileName);
         tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
+    }
+
+    /**
+     * Returns the default visible columns for a table but ignores the standard columns
+     */
+    protected List<ColumnInfo> getDefaultColumns(TableInfo tableInfo)
+    {
+        List<ColumnInfo> columns = new ArrayList<>();
+
+        for (ColumnInfo col : tableInfo.getColumns())
+        {
+            if (FieldKey.fromParts("Container").equals(col.getFieldKey()))
+                continue;
+            if (FieldKey.fromParts("Created").equals(col.getFieldKey()))
+                continue;
+            if (FieldKey.fromParts("CreatedBy").equals(col.getFieldKey()))
+                continue;
+            if (FieldKey.fromParts("Modified").equals(col.getFieldKey()))
+                continue;
+            if (FieldKey.fromParts("ModifiedBy").equals(col.getFieldKey()))
+                continue;
+
+            columns.add(col);
+        }
+        return columns;
     }
 }
