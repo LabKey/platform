@@ -37,7 +37,9 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -112,11 +114,19 @@ public class FileContentDigestProvider implements MessageDigest.Provider
         return Arrays.asList(containers.toArray(new Container[containers.size()]));
     }
 
+    private User getLimitedUser()
+    {
+        HashSet<Role> roles = new HashSet<>();
+        roles.add(RoleManager.getRole(ReaderRole.class));
+        roles.add(RoleManager.getRole(CanSeeAuditLogRole.class));
+        return new LimitedUser(UserManager.getGuestUser(), new int[0], roles, true);
+    }
+
     private List<AuditLogEvent> getAuditEvents(Container container, Date start, Date end)
     {
         if (AuditLogService.get().isMigrateComplete())
         {
-            User user = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), true);
+            User user = getLimitedUser();
             SimpleFilter filter = new SimpleFilter();
             filter.addCondition(FieldKey.fromParts("Created"), start, CompareType.GTE);
             filter.addCondition(FieldKey.fromParts("Created"), end, CompareType.LT);
