@@ -19,6 +19,7 @@ package org.labkey.bigiron.mssql;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.DbSchema;
@@ -44,7 +45,9 @@ import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -52,6 +55,8 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1123,4 +1128,109 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
             new SqlExecutor(scope).execute("SET SHOWPLAN_ALL OFF");
         }
     }
+
+    @Override
+    public boolean isProcedureSupportsInlineResults()
+    {
+        return true;
+    }
+
+    public Map<String, ParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException
+    {
+
+        CaseInsensitiveMapWrapper<ParameterInfo> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String, ParameterInfo>());
+
+        try (Connection conn = scope.getConnection();
+             ResultSet rs = conn.getMetaData().getProcedureColumns(scope.getDatabaseName(),procSchema, procName, null);)
+        {
+            while (rs.next())
+            {
+                Map<ParamTraits, Integer> traitMap = new HashMap<>();
+                if (rs.getInt("COLUMN_TYPE") == DatabaseMetaData.procedureColumnReturn)
+                {
+                    // jtds reports a column name of "return_code" from the getProcedureColumns call,
+                    // but in the return from the execution, it's called "return_status".
+                    // It can only be an integer and output parameter.
+                    traitMap.put(ParamTraits.direction, DatabaseMetaData.procedureColumnOut);
+                    traitMap.put(ParamTraits.datatype, Types.INTEGER);
+                    parameters.put("return_status", new ParameterInfo(traitMap));
+                }
+                else
+                {
+                    traitMap.put(ParamTraits.direction, rs.getInt("COLUMN_TYPE"));
+                    traitMap.put(ParamTraits.datatype, rs.getInt("DATA_TYPE"));
+                    //traitMap.put(ParamTraits.required, )
+                    parameters.put(StringUtils.substringAfter(rs.getString("COLUMN_NAME"), "@"), new ParameterInfo(traitMap));
+                }
+            }
+        }
+
+        return parameters;
+    }
+
+    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn)
+    {
+        StringBuilder sb = new StringBuilder();
+        if (hasReturn)
+        {
+            sb.append("? = ");
+            paramCount--;
+        }
+        sb.append("CALL " + procSchema + "." + procName);
+        if (paramCount > 0)
+            sb.append("(");
+        for (int i = 0; i < paramCount; i++)
+        {
+            sb.append("?,");
+        }
+        if (paramCount > 0)
+            sb.append(")");
+
+        return sb.toString();
+    }
+
+    @Override
+    public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters) throws SQLException
+    {
+        for (Map.Entry<String, ParameterInfo> parameter : parameters.entrySet())
+        {
+            String paramName = parameter.getKey();
+            ParameterInfo paramInfo = parameter.getValue();
+            int datatype = paramInfo.getParamTraits().get(ParamTraits.datatype);
+            int direction = paramInfo.getParamTraits().get(ParamTraits.direction);
+
+            if (direction != DatabaseMetaData.procedureColumnOut)
+                stmt.setObject(paramName, paramInfo.getParamValue(), datatype); // TODO: Can likely drop the "@"
+            if (direction == DatabaseMetaData.procedureColumnInOut || direction == DatabaseMetaData.procedureColumnOut)
+                stmt.registerOutParameter(paramName, datatype);
+        }
+    }
+
+    @Override
+    public int readOutputParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters) throws SQLException
+    {
+        int returnVal = -1;
+        for (Map.Entry<String, ParameterInfo> parameter : parameters.entrySet())
+        {
+            String paramName = parameter.getKey();
+            ParameterInfo paramInfo = parameter.getValue();
+            int direction = paramInfo.getParamTraits().get(ParamTraits.direction);
+            if (direction == DatabaseMetaData.procedureColumnInOut)
+                paramInfo.setParamValue(stmt.getObject(paramName));
+            else if (direction == DatabaseMetaData.procedureColumnOut)
+                returnVal = stmt.getInt(paramName);
+        }
+        return returnVal;
+    }
+
+    @Override
+    public String translateParameterName(String name, boolean dialectSpecific)
+    {
+        if (dialectSpecific && !StringUtils.startsWith(name, "@"))
+            name = "@" + name;
+        else if (!dialectSpecific && StringUtils.startsWith(name, "@"))
+            name = StringUtils.substringAfter(name, "@");
+        return name;
+    }
+
 }

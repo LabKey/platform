@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ConnectionWrapper;
@@ -57,7 +58,9 @@ import org.labkey.api.util.StringUtilsLabKey;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -66,6 +69,8 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -80,7 +85,7 @@ import java.util.regex.Pattern;
  */
 
 // Dialect specifics for PostgreSQL
-class PostgreSql84Dialect extends SqlDialect
+public class PostgreSql84Dialect extends SqlDialect
 {
     private static final Logger _log = Logger.getLogger(PostgreSql84Dialect.class);
 
@@ -1277,6 +1282,124 @@ class PostgreSql84Dialect extends SqlDialect
         return new PostgreSQLColumnMetaDataReader(rsCols, table);
     }
 
+    @Override
+    public Map<String, ParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException
+    {
+        CaseInsensitiveMapWrapper<ParameterInfo> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String, ParameterInfo>());
+
+
+        SQLFragment sqlf = new SQLFragment(
+                "SELECT parameter_name, data_type, parameter_mode FROM information_schema.parameters" +
+                        " WHERE specific_schema ILIKE ? AND specific_name ILIKE ? || '%' ORDER BY ordinal_position");
+        sqlf.add(procSchema);
+        sqlf.add(procName);
+
+        /* DOES NOT HANDLE OVERLOADED FUNCTIONS! */
+        try (ResultSet rs = (new SqlSelector(scope,sqlf)).getResultSet())
+        {
+            while (rs.next())
+            {
+                Map<ParamTraits, Integer> traitMap = new HashMap<>();
+                int type;
+                switch (rs.getString("data_type"))
+                {
+                    case "integer":
+                        type = Types.INTEGER;
+                        break;
+                    case "timestamp without time zone":
+                        type = Types.TIMESTAMP;
+                        break;
+                    case "boolean":
+                        type = Types.BOOLEAN;
+                        break;
+                    case "numeric":
+                        type = Types.NUMERIC;
+                        break;
+                    case "USER-DEFINED":   // for containerId. Not trying to further distinguish the underlying type for other user defined types
+                    case "character varying":
+                    default:
+                        type = Types.VARCHAR;
+                        break;
+                }
+                int direction;
+                switch (rs.getString("parameter_mode"))
+                {
+                    case "IN":
+                        direction = DatabaseMetaData.procedureColumnIn;
+                        break;
+                    case "INOUT":
+                        direction = DatabaseMetaData.procedureColumnInOut;
+                        break;
+                    case "OUT":
+                        direction = DatabaseMetaData.procedureColumnOut;
+                        break;
+                    default:
+                        // Other arg modes are not supported, ignore the parameter
+                        continue;
+                }
+                traitMap.put(ParamTraits.direction, direction);
+                traitMap.put(ParamTraits.datatype, type);
+                parameters.put(rs.getString("parameter_name"), new ParameterInfo(traitMap));
+            }
+        }
+
+        return parameters;
+    }
+
+    @Override
+    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn)
+    {
+        if (hasReturn)
+            paramCount--; // this param isn't included in the argument list of the CALL statement
+        StringBuilder sb = new StringBuilder();
+        sb.append("{CALL " + procSchema + "." + procName +"(");
+        for (int i = 0; i < paramCount; i++)
+        {
+            sb.append("?,");
+        }
+        sb.setLength(sb.length() - 1); // Postgres chokes on the trailing comma
+        sb.append(")}");
+        return sb.toString();
+    }
+
+    @Override
+    public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters) throws SQLException
+    {
+        int position = 0;
+        for (ParameterInfo paramInfo : parameters.values()) // TODO: Make sure that maintains proper ordering
+        {
+            if (paramInfo.getParamTraits().get(ParamTraits.direction) != DatabaseMetaData.procedureColumnOut)
+            {
+                position++;
+                stmt.setObject(position, paramInfo.getParamValue() ,paramInfo.getParamTraits().get(ParamTraits.datatype));
+            }
+        }
+    }
+
+    @Override
+    public int readOutputParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters) throws SQLException
+    {
+        ResultSet rs = stmt.getResultSet();
+        rs.next();
+        int returnVal = -1;
+        for (Map.Entry<String, ParameterInfo> parameter : parameters.entrySet())
+        {
+            String paramName = parameter.getKey();
+            ParameterInfo paramInfo = parameter.getValue();
+            int direction = paramInfo.getParamTraits().get(ParamTraits.direction);
+            if (direction == DatabaseMetaData.procedureColumnInOut)
+                paramInfo.setParamValue(rs.getObject(paramName));
+            else if (direction == DatabaseMetaData.procedureColumnOut)
+                returnVal = rs.getInt(paramName);
+        }
+        return returnVal;
+    }
+
+    @Override
+    public String translateParameterName(String name, boolean dialectSpecific)
+    {
+        return name;
+    }
 
     private class PostgreSQLColumnMetaDataReader extends ColumnMetaDataReader
     {

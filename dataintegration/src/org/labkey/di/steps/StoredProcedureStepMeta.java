@@ -15,15 +15,16 @@
  */
 package org.labkey.di.steps;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlException;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.di.pipeline.TransformManager;
 import org.labkey.etl.xml.ProcedureParameterType;
 import org.labkey.etl.xml.SchemaProcedureType;
 import org.labkey.etl.xml.TransformType;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,8 +34,8 @@ import java.util.Set;
  */
 public class StoredProcedureStepMeta extends StepMetaImpl
 {
-    private Map<String, String> xmlParamValues = new HashMap<>();
-    private Set<String> overrideParams = new HashSet<>();
+    private Map<String, String> xmlParamValues = new CaseInsensitiveHashMap<>();
+    private Set<String> overrideParams = new CaseInsensitiveHashSet();
     private boolean useTransaction;
 
 
@@ -69,15 +70,17 @@ public class StoredProcedureStepMeta extends StepMetaImpl
 
             for (ProcedureParameterType xmlParam: procedure.getParameterArray())
             {
-                xmlParamValues.put(xmlParam.getName(), xmlParam.getValue()); // TODO: Handle dupes?
+                String name = xmlParam.getName();
+                if (StringUtils.startsWith(name, "@"))
+                    name = StringUtils.substringAfter(name, "@");
+                xmlParamValues.put(name, xmlParam.getValue()); // TODO: Handle dupes?
                 if (xmlParam.getOverride())
                 {
-                    overrideParams.add(xmlParam.getName());
+                    overrideParams.add(name);
                 }
             }
         }
         else throw new XmlException(TransformManager.INVALID_PROCEDURE);
-
     }
 
     public Map<String, String> getXmlParamValues()
