@@ -347,8 +347,11 @@ public class QubeQuery
         {
             Level level = ((_MDX)sets.get(0)).level;
             for (int s=1 ; s<sets.size() ; s++)
-                if (level != ((_MDX)sets.get(s)).level)
+            {
+                Level next = ((_MDX)sets.get(s)).level;
+                if (null == level || null == next || !level.getUniqueName().equals(next.getUniqueName()))
                     level = null;
+            }
             return new _MDX(FN.Union, level, sets);
         }
     }
