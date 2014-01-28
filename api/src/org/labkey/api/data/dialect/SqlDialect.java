@@ -55,6 +55,7 @@ import javax.servlet.ServletException;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -1207,4 +1208,51 @@ public abstract class SqlDialect
     public abstract boolean isOracle();
     public abstract ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, TableInfo table);
     public abstract PkMetaDataReader getPkMetaDataReader(ResultSet rs);
+
+    /* Procedure / function related methods & */
+
+    public boolean isProcedureSupportsInlineResults()
+    {
+        return false;
+    }
+
+    public enum ParamTraits
+    {
+        direction,
+        datatype,
+        required;
+    }
+
+    public final class ParameterInfo
+    {
+        private Map<ParamTraits, Integer> paramTraits = new HashMap<>();
+        private Object value = new Object();
+
+        public ParameterInfo(Map<ParamTraits, Integer> paramTraits)
+        {
+            this.paramTraits = paramTraits;
+        }
+
+        public Map<ParamTraits, Integer> getParamTraits()
+        {
+            return paramTraits;
+        }
+
+        public Object getParamValue()
+        {
+            return value;
+        }
+
+        public void setParamValue(Object value)
+        {
+            this.value = value;
+        }
+    }
+
+    public abstract Map<String, ParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException;
+    public abstract String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn);
+    public abstract void registerParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters) throws SQLException;
+    public abstract int readOutputParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters) throws SQLException;
+    public abstract String translateParameterName(String name, boolean dialectSpecific);
+
 }

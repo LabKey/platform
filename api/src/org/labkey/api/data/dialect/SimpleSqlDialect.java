@@ -27,6 +27,7 @@ import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -467,5 +468,35 @@ public abstract class SimpleSqlDialect extends SqlDialect
     public List<String> getChangeStatements(TableChange change)
     {
         throw new RuntimeException("schema changes not currently supported via SimpleSqlDialect");
+    }
+
+    @Override
+    public Map<String, ParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String buildProcedureCall(String procSchema, String procName,  int paramCount, boolean hasReturn)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters) throws SQLException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int readOutputParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters) throws SQLException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String translateParameterName(String name, boolean dialectSpecific)
+    {
+        throw new UnsupportedOperationException();
     }
 }
