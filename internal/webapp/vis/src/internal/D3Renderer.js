@@ -713,12 +713,16 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             pointsSel.on('mouseover', function(data) {
                 geom.mouseOverFnAes.value(d3.event, data, layer);
             });
+        } else {
+            pointsSel.on('mouseover', null);
         }
 
         if (geom.mouseOutFnAes) {
             pointsSel.on('mouseout', function(data) {
                 geom.mouseOutFnAes.value(d3.event, data, layer);
             });
+        } else {
+            pointsSel.on('mouseout', null);
         }
 
         if (plot.clipRect) {
