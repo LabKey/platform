@@ -703,7 +703,19 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
     extend: 'Ext.panel.Panel',
 
-    constructor : function(config){
+    layout: {
+        type: 'hbox',
+        pack: 'start',
+        align: 'stretch'
+    },
+
+    border: false,
+
+    measurePanelCls: 'measurepanel',
+
+    sourcePanelCls: 'sourcepanel',
+
+    constructor : function(config) {
 
         Ext4.apply(this, config, {
             allColumns : false,
@@ -720,13 +732,6 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     },
 
     initComponent : function() {
-
-        this.layout = {
-            type: 'hbox',
-            pack: 'start',
-            align: 'stretch'
-        };
-        this.border = false;
 
         this.items = [
             this.createSourcePanel(),
@@ -795,8 +800,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 type: 'vbox',
                 align: 'stretch'
             },
-            cls: 'sourcepanel',
-            padding: 5,
+            cls: this.sourcePanelCls,
             border: false,
             items: [ this.sourcesGrid ]
         });
@@ -806,10 +810,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
     formatSourcesWithSelections : function(value, metaData, record, rowIndex, colIndex, store, view) {
         // TODO: could change this to add/remove tdCls so that different styles could be applied
-        if (record.get("numSelected") && record.get("numSelected") > 0)
-            metaData.style = "font-style:italic;";
-        else
-            metaData.style = "";
+        var num = record.get('numSelected');
+        metaData.style = (num && num > 0 ? 'font-style: italic;': '');
 
         return value;
     },
@@ -884,20 +886,16 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 type: 'vbox',
                 align: 'stretch'
             },
-            cls : 'measurepanel',
-            padding: 5,
+            cls : this.measurePanelCls,
             border: false,
             disabled: true, // starts disabled until a source query is chosen
-            items: [
-                // TODO: add a Select All checkbox
-                this.measuresGrid
-            ]
+            items: [ this.measuresGrid ]
         });
 
         return this.measurePanel;        
     },
 
-    getMeasures : function(cmp) {
+    getMeasures : function() {
 
         var filter = this.filter || LABKEY.Query.Visualization.Filter.create({schemaName: 'study'});
 
@@ -928,7 +926,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 this.measuresStore.loadRawData(this.measuresStoreData);
 
                 // Load only the list of queries (i.e. sources) for the souresStore
-                this.sourcesStore.loadRawData({measures: this.sourcesStoreData});
+                this.getSourceStore().loadRawData({measures: this.sourcesStoreData});
             },
             failure      : function(info, response, options) {
                 this.isLoading = false;
@@ -992,10 +990,11 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     updateSourcesSelectionEntry : function(record, sourceCountUpdate) {
 
         // update the numSelected value for the source entry
-        var sourceEntryIndex = this.sourcesStore.findExact('queryName', record.get('queryName'));
+        var sourceStore = this.getSourceStore();
+        var sourceEntryIndex = sourceStore.findExact('queryName', record.get('queryName'));
         if (sourceEntryIndex > -1)
         {
-            var sourceEntry = this.sourcesStore.getAt(sourceEntryIndex);
+            var sourceEntry = sourceStore.getAt(sourceEntryIndex);
             if (!sourceEntry.get('numSelected'))
             {
                 sourceEntry.set('numSelected', 0);
