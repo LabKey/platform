@@ -1138,7 +1138,9 @@ public class AnnouncementsController extends SpringActionController
             bean.assignedToSelect = getAssignedToSelect(c, assignedTo, "assignedTo", getViewContext().getUser());
             bean.settings = settings;
             bean.statusSelect = getStatusSelect(settings, (String)form.get("status"));
-            bean.memberList = getMemberList(form.getUser(), c, latestPost, (String) (reshow ? form.get("memberList") : null));
+
+            User u = form.getUser() == null ? getViewContext().getUser() : form.getUser();
+            bean.memberList = getMemberList(u, c, latestPost, (String) (reshow ? form.get("memberList") : null));
             bean.currentRendererType = currentRendererType;
             bean.renderers = WikiRendererType.values();
             bean.form = form;
