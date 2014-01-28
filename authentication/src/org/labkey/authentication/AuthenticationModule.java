@@ -30,6 +30,7 @@ import org.labkey.authentication.ldap.LdapController;
 import org.labkey.authentication.openid.GoogleOpenIdProvider;
 import org.labkey.authentication.openid.OpenIdController;
 
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -67,8 +68,16 @@ public class AuthenticationModule extends DefaultModule
         AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_OPENID_GOOGLE, "Login using your Google account", "Authenticate using Google and OpenId. (requires server restart)", false);
 
         AuthenticationManager.registerProvider(new LdapAuthenticationProvider(), Priority.High);
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_OPENID_GOOGLE))
-            AuthenticationManager.registerProvider(new GoogleOpenIdProvider(), Priority.Low);
+
+        try
+        {
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_OPENID_GOOGLE))
+                AuthenticationManager.registerProvider(new GoogleOpenIdProvider(), Priority.Low);
+        }
+        catch (Exception x)
+        {
+            /* guess not */
+        }
     }
 
     public void doStartup(ModuleContext moduleContext)
