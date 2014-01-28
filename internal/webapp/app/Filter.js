@@ -2,6 +2,16 @@
 // this must be Ext agnostic code in terms of object
 // creation
 //
+if (typeof LABKEY.app == 'undefined')
+{
+    LABKEY.app = {};
+}
+
+if (typeof LABKEY.app.controller == 'undefined')
+{
+    LABKEY.app.controller = {};
+}
+
 LABKEY.app.controller.Filter = new function() {
 
     var filtersFromJSON = function(jsonFilter) {
