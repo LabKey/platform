@@ -1251,6 +1251,22 @@ public class StudyManager
         Table.delete(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(), filter);
     }
 
+    public String getStudyDesignLabLabelByName(Container container, String name)
+    {
+        // first look in the current container for the StudyDesign record, then look for it at the project level
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("Name"), name);
+        String label = new TableSelector(StudySchema.getInstance().getTableInfoStudyDesignLabs(), Collections.singleton("Label"), filter, null).getObject(String.class);
+        if (label == null && !container.isProject())
+        {
+            filter = SimpleFilter.createContainerFilter(container.getProject());
+            filter.addCondition(FieldKey.fromParts("Name"), name);
+            label = new TableSelector(StudySchema.getInstance().getTableInfoStudyDesignLabs(), Collections.singleton("Label"), filter, null).getObject(String.class);
+        }
+
+        return label;
+    }
+
     public void createVisitDataSetMapping(User user, Container container, int visitId,
                                           int dataSetId, boolean isRequired) throws SQLException
     {

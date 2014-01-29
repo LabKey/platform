@@ -31,6 +31,10 @@ public class ProductImpl implements Product
     private String _role;
     private String _type;
 
+    // from TreatmentProductMap (not serialized with product)
+    private String _dose;
+    private String _route;
+
     public ProductImpl()
     {
     }
@@ -83,6 +87,26 @@ public class ProductImpl implements Product
     public void setType(String type)
     {
         _type = type;
+    }
+
+    public String getDose()
+    {
+        return _dose;
+    }
+
+    public void setDose(String dose)
+    {
+        _dose = dose;
+    }
+
+    public String getRoute()
+    {
+        return _route;
+    }
+
+    public void setRoute(String route)
+    {
+        _route = route;
     }
 
     public Map<String, Object> serialize()

@@ -70,13 +70,16 @@
                 menu: {
                     items: [{
                         text: 'Immunogen Types',
-                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignImmunogenTypes'})
+                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignImmunogenTypes'}),
+                        hrefTarget: '_blank'  // issue 19493
                     },{
                         text: 'Genes',
-                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignGenes'})
+                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignGenes'}),
+                        hrefTarget: '_blank'  // issue 19493
                     },{
                         text: 'SubTypes',
-                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignSubTypes'})
+                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignSubTypes'}),
+                        hrefTarget: '_blank'  // issue 19493
                     }]
                 }
             };
@@ -87,13 +90,16 @@
             menu: {
                 items: [{
                     text: 'Immunogen Types',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignImmunogenTypes'})
+                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignImmunogenTypes'}),
+                    hrefTarget: '_blank'  // issue 19493
                 },{
                     text: 'Genes',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignGenes'})
+                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignGenes'}),
+                    hrefTarget: '_blank'  // issue 19493
                 },{
                     text: 'SubTypes',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignSubTypes'})
+                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignSubTypes'}),
+                    hrefTarget: '_blank'  // issue 19493
                 }]
             }
         };
@@ -109,14 +115,14 @@
 Enter vaccine design information in the grids below.
 <div style="width: 810px;">
     <ul>
+        <li>
+            Configure dropdown options for immunogen types, genes, and subtypes at the project level to be shared across study designs or within this folder for
+            study specific properties: <span id='config-dropdown-menu'></span>
+        </li>
         <li>Each immunogen and adjuvant in the study should be listed on one row of the grids below.</li>
         <li>Immunogens and adjuvants should have unique names.</li>
         <li>If possible, the immunogen description should include specific sequences of HIV Antigens included in the immunogen.</li>
         <li>Use the manage immunizations page to describe the schedule of immunizations and combinations of immunogens and adjuvants administered at each timepoint.</li>
-        <li>
-            Configure dropdown options at the project level to be shared across study designs or within this folder for
-            study specific properties: <span id='config-dropdown-menu'></span>
-        </li>
     </ul>
 </div>
 <div id="immunogens-grid"></div>

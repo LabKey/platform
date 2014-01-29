@@ -277,10 +277,12 @@
             menu: {
                 items: [{
                     text: 'Labs',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignLabs'})
+                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignLabs'}),
+                    hrefTarget: '_blank'  // issue 19493
                 },{
                     text: 'Sample Types',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignSampleTypes'})
+                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignSampleTypes'}),
+                    hrefTarget: '_blank'  // issue 19493
                 }]
             }
         };
@@ -291,10 +293,12 @@
         menu: {
             items: [{
                 text: 'Labs',
-                href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignLabs'})
+                href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignLabs'}),
+                hrefTarget: '_blank'  // issue 19493
             },{
                 text: 'SampleTypes',
-                href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignSampleTypes'})
+                href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignSampleTypes'}),
+                hrefTarget: '_blank'  // issue 19493
             }]
         }
     };
@@ -367,6 +371,7 @@ function showUpdateConfigurationDialog(grid, record, item, index)
                 formItem.fieldLabel = column.header || column.text;
                 formItem.name = column.dataIndex;
                 formItem.helpPopup = null;
+                formItem.tabIndex = undefined; // issue 19477
             }
 
             formItem.value = record ? record.get(column.dataIndex) : null;
@@ -434,6 +439,12 @@ function showUpdateConfigurationDialog(grid, record, item, index)
             handler: function() { win.close(); }
         }]
     });
+
+    // issue 19477: give focus to first field in form
+    win.on('show', function(cmp) {
+        cmp.down('.textfield').focus();
+    });
+
     win.show();
 }
 
@@ -626,12 +637,12 @@ function removeSVC(el, scRowId, vRowId)
 Enter assay schedule information in the grids below.
 <div style="width: 810px;">
     <ul>
-        <li>Use the "Insert New" button in the assay configurations grid to add a new assay.</li>
-        <li>Select the visits for each assay in the assay schedule grid to define the expected assay schedule for the study.</li>
         <li <%=form.isUseAlternateLookupFields() ? "style='display:none;'" : ""%>>
-            Configure dropdown options at the project level to be shared across study designs or within this folder for
+            Configure dropdown options for labs and sample types at the project level to be shared across study designs or within this folder for
             study specific properties: <span id='config-dropdown-menu'></span>
         </li>
+        <li>Use the "Insert New" button in the assay configurations grid to add a new assay.</li>
+        <li>Select the visits for each assay in the assay schedule grid to define the expected assay schedule for the study.</li>
     </ul>
 </div>
 <div id="AssaySpecimenConfigGrid"></div>

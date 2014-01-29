@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.api.view.WebThemeManager" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController" %>
@@ -129,32 +128,29 @@
                             treatment = TreatmentManager.getInstance().getStudyTreatmentByRowId(c, user, treatmentId);
 
                         // show the list of study products for the treatment as a hover
-                        // Example display:
-                        //     Immunogens: ABC, DEF
-                        //     Adjuvants: GHI, JKL
                         String productHover = "";
-                        String sep = "";
                         if (treatment != null && treatment.getProducts() != null)
                         {
-                            String prevRole = null;
+                            productHover += "<table class='study-vaccine-design'><tr>"
+                                    + "<td class='labkey-col-header'>Label</td>"
+                                    + "<td class='labkey-col-header'>Dose and units</td>"
+                                    + "<td class='labkey-col-header'>Route</td></tr>";
+
                             for (ProductImpl product : treatment.getProducts())
                             {
-                                if (prevRole == null || !prevRole.equals(product.getRole()))
-                                {
-                                    prevRole = product.getRole();
-                                    productHover += (productHover.length() > 0 ? "<br/>" : "");
-                                    productHover += "<b>" + h(product.getRole()) + "s:</b> ";
-                                    sep = "";
-                                }
+                                String routeLabel = TreatmentManager.getInstance().getStudyDesignRouteLabelByName(c, product.getRoute());
 
-                                productHover += sep + h(product.getLabel());
-                                sep = ", ";
+                                productHover += "<tr><td class='assay-row-padded-view'>" + h(product.getLabel()) + "</td>"
+                                        + "<td class='assay-row-padded-view'>" + h(product.getDose()) + "</td>"
+                                        + "<td class='assay-row-padded-view'>" + h(routeLabel != null ? routeLabel : product.getRoute()) + "</td></tr>";
                             }
+
+                            productHover += "</table>";
                         }
 %>
                         <td class="assay-row-padded-view">
                             <%=h(treatment != null ? treatment.getLabel() : "")%>
-                            <%=(productHover.length() > 0 ? PageFlowUtil.helpPopup("Study Products", productHover, true, 300) : "")%>
+                            <%=(productHover.length() > 0 ? PageFlowUtil.helpPopup("Treatment Products", productHover, true, 500) : "")%>
                         </td>
 <%
                     }

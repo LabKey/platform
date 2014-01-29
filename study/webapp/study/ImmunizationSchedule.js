@@ -58,6 +58,8 @@ Ext4.define('LABKEY.ext4.BaseVaccineDesignGrid', {
 
     initComponent : function() {
 
+        this.vaccineDesignHelper = new LABKEY.ext4.VaccineDesignDisplayHelper();
+
         this.items = [this.configureGrid()];
 
         this.callParent();
@@ -153,6 +155,12 @@ Ext4.define('LABKEY.ext4.BaseVaccineDesignGrid', {
                 }]
             }]
         });
+
+        // issue 19477: give focus to first field in form
+        win.on('show', function(cmp) {
+            cmp.down('.textfield').focus();
+        });
+
         win.show();
     },
 
@@ -209,16 +217,13 @@ Ext4.define('LABKEY.ext4.StudyProductsGrid', {
         var columns = [
             { header: 'Row ID', dataIndex: 'RowId', editable: false, menuDisabled: true },
             { header: 'Label', dataIndex: 'Label', editable: true, menuDisabled: true, minWidth: 150, renderer: 'htmlEncode' },
-            { header: 'Role', dataIndex: 'Role', editable: false, menuDisabled: true, renderer: 'htmlEncode' },
-            { header: 'Type', dataIndex: 'Type', editable: true, menuDisabled: true, minWidth: 150, renderer: 'htmlEncode' }
+            { header: 'Role', dataIndex: 'Role', editable: false, menuDisabled: true, renderer: 'htmlEncode' }
         ];
 
         // set hidden columns and add editors where necessary
         Ext4.each(columns, function(col){
             if (col.dataIndex == 'Label')
-                col.editor = new LABKEY.ext4.VaccineDesignDisplayHelper().getStudyDesignFieldEditor(col.dataIndex, null, false, col.header, false);
-            else if (col.dataIndex == 'Type')
-                col.editor = new LABKEY.ext4.VaccineDesignDisplayHelper().getStudyDesignFieldEditor(col.dataIndex, 'StudyDesignImmunogenTypes', false, col.header, true);
+                col.editor = this.vaccineDesignHelper.getStudyDesignFieldEditor(col.dataIndex, null, false, col.header, false);
 
             if (this.hiddenColumns.indexOf(col.dataIndex) > -1)
             {
@@ -305,8 +310,24 @@ Ext4.define('LABKEY.ext4.ImmunogensGrid', {
     filterRole : 'Immunogen',
     width: 1100,
 
+    initComponent : function() {
+        this.callParent();
+
+        this.immunogenTypeStore = this.vaccineDesignHelper.getStudyDesignStore("StudyDesignImmunogenTypes");
+        this.geneStore = this.vaccineDesignHelper.getStudyDesignStore("StudyDesignGenes");
+        this.subtypeStore = this.vaccineDesignHelper.getStudyDesignStore("StudyDesignSubTypes");
+    },
+
     getColumnConfig : function() {
         var columns = this.callParent();
+
+        columns.push({
+            header: 'Type', dataIndex: 'Type',
+            editable: true, menuDisabled: true, minWidth: 150,
+            editor: this.vaccineDesignHelper.getStudyDesignFieldEditor('Type', 'StudyDesignImmunogenTypes', false, 'Type', true),
+            renderer: function(value) { return this.vaccineDesignHelper.renderLabelFromStore(value, this.immunogenTypeStore); },
+            scope: this
+        });
 
         columns.push({ header: 'HIV Antigens', dataIndex: 'Antigens', editable: false, menuDisabled: true, minWidth: 500, renderer: function(value, metadata) {
             if (value && value.length > 0)
@@ -318,7 +339,7 @@ Ext4.define('LABKEY.ext4.ImmunogensGrid', {
                 metadata.tdAttr = 'data-qtip="Double click this cell to add HIV Antigens for this Immunogen."';
             }
 
-            return new LABKEY.ext4.VaccineDesignDisplayHelper().getHIVAntigenDisplay(value);
+            return this.vaccineDesignHelper.getHIVAntigenDisplay(value, this.geneStore, this.subtypeStore);
         }, scope: this});
 
         return columns;
@@ -347,8 +368,6 @@ Ext4.define('LABKEY.ext4.ImmunogensGrid', {
             }
         });
 
-        var vaccineDesignHelper = new LABKEY.ext4.VaccineDesignDisplayHelper();
-
         var grid = Ext4.create('Ext.grid.Panel', {
             minHeight: 110,
             maxHeight: 200,
@@ -359,10 +378,29 @@ Ext4.define('LABKEY.ext4.ImmunogensGrid', {
             columns: [
                 { text: 'Row Id', dataIndex: 'RowId', editable: false, hidden: true, menuDisabled: true },
                 { text: 'Product Id', dataIndex: 'ProductId', editable: false, hidden: true, menuDisabled: true },
-                { text: 'Gene', dataIndex: 'Gene', editable: true, editor: vaccineDesignHelper.getStudyDesignFieldEditor('Gene', 'StudyDesignGenes', true), menuDisabled: true, renderer: 'htmlEncode' },
-                { text: 'SubType', dataIndex: 'SubType', editable: true, editor: vaccineDesignHelper.getStudyDesignFieldEditor('SubType', 'StudyDesignSubTypes', true), menuDisabled: true, renderer: 'htmlEncode' },
-                { text: 'GenBank Id', dataIndex: 'GenBankId', editable: true, editor: vaccineDesignHelper.getStudyDesignFieldEditor('GenBankId', null, true), menuDisabled: true, renderer: 'htmlEncode' },
-                { text: 'Sequence', dataIndex: 'Sequence', editable: true, editor: vaccineDesignHelper.getStudyDesignFieldEditor('Sequence', null, true), menuDisabled: true, renderer: 'htmlEncode' }
+                {
+                    text: 'Gene', dataIndex: 'Gene',
+                    editable: true, menuDisabled: true,
+                    editor: this.vaccineDesignHelper.getStudyDesignFieldEditor('Gene', 'StudyDesignGenes', true),
+                    renderer: function(value) { return this.vaccineDesignHelper.renderLabelFromStore(value, this.geneStore); },
+                    scope: this
+                },{
+                    text: 'SubType', dataIndex: 'SubType',
+                    editable: true, menuDisabled: true,
+                    editor: this.vaccineDesignHelper.getStudyDesignFieldEditor('SubType', 'StudyDesignSubTypes', true),
+                    renderer: function(value) { return this.vaccineDesignHelper.renderLabelFromStore(value, this.subtypeStore); },
+                    scope: this
+                },{
+                    text: 'GenBank Id', dataIndex: 'GenBankId',
+                    editable: true, menuDisabled: true,
+                    editor: this.vaccineDesignHelper.getStudyDesignFieldEditor('GenBankId', null, true),
+                    renderer: 'htmlEncode'
+                },{
+                    text: 'Sequence', dataIndex: 'Sequence',
+                    editable: true, menuDisabled: true,
+                    editor: this.vaccineDesignHelper.getStudyDesignFieldEditor('Sequence', null, true),
+                    renderer: 'htmlEncode'
+                }
             ],
             dockedItems: [{
                 xtype: 'toolbar',
@@ -470,13 +508,21 @@ Ext4.define('LABKEY.ext4.ImmunogensGrid', {
 Ext4.define('LABKEY.ext4.VaccineDesignDisplayHelper', {
 
     // helper function to be used by vaccine design webpart and manage study product page
-    getHIVAntigenDisplay : function(antigenArr) {
+    getHIVAntigenDisplay : function(antigenArr, geneStore, subtypeStore) {
         var html = "";
+        var helper = new LABKEY.ext4.VaccineDesignDisplayHelper();
 
         if (antigenArr && antigenArr.length > 0)
         {
             function getValue(antigen, name) {
-                return Ext4.String.htmlEncode(antigen[name]) || "&nbsp;";
+                var value = Ext4.String.htmlEncode(antigen[name]);
+
+                if (name == 'Gene' && geneStore)
+                    value = helper.renderLabelFromStore(antigen[name], geneStore);
+                else if (name == 'SubType' && subtypeStore)
+                    value = helper.renderLabelFromStore(antigen[name], subtypeStore);
+
+                return value || "&nbsp;";
             }
 
             html += "<table class='labkey-data-region labkey-show-borders study-vaccine-design' style='width: 100%;border: solid #ddd 1px;'><tr>"
@@ -500,12 +546,18 @@ Ext4.define('LABKEY.ext4.VaccineDesignDisplayHelper', {
     },
 
     // helper function to be used by immunization schedule webpart and manage immunizations page
-    getTreatmentProductDisplay : function(productArr) {
-        function getValue(product, name) {
-            return Ext4.String.htmlEncode(product[name]) || "&nbsp;";
-        }
-
+    getTreatmentProductDisplay : function(productArr, routeStore) {
         var html = "";
+        var helper = new LABKEY.ext4.VaccineDesignDisplayHelper();
+
+        function getValue(product, name) {
+            var value = Ext4.String.htmlEncode(product[name]);
+
+            if (name == 'Route' && routeStore)
+                value = helper.renderLabelFromStore(product[name], routeStore);
+
+            return value || "&nbsp;";
+        }
 
         if (productArr && productArr.length > 0)
         {
@@ -541,20 +593,7 @@ Ext4.define('LABKEY.ext4.VaccineDesignDisplayHelper', {
                 queryMode : 'local',
                 displayField : displayField || 'Label',
                 valueField : 'Name',
-                store : Ext4.create('LABKEY.ext4.Store', {
-                    schemaName: 'study',
-                    queryName: queryName,
-                    columns: 'Name,Label',
-                    filterArray: [LABKEY.Filter.create('Inactive', false)],
-                    containerFilter: LABKEY.container.type == 'project' ? 'Current' : 'CurrentPlusProject',
-                    sort: 'Label',
-                    autoLoad: true,
-                    listeners: {
-                        load: function(store) {
-                            store.insert(0, {Name: null});
-                        }
-                    }
-                })
+                store : this.getStudyDesignStore(queryName)
             };
         }
         else
@@ -567,6 +606,34 @@ Ext4.define('LABKEY.ext4.VaccineDesignDisplayHelper', {
                 allowBlank: allowBlank != undefined ? allowBlank : true
             }
         }
+    },
+
+    getStudyDesignStore : function(queryName) {
+        return Ext4.create('LABKEY.ext4.Store', {
+            schemaName: 'study',
+            queryName: queryName,
+            columns: 'Name,Label',
+            filterArray: [LABKEY.Filter.create('Inactive', false)],
+            containerFilter: LABKEY.container.type == 'project' ? 'Current' : 'CurrentPlusProject',
+            sort: 'Label',
+            autoLoad: true,
+            listeners: {
+                load: function(store) {
+                    store.insert(0, {Name: null});
+                }
+            }
+        })
+    },
+
+    renderLabelFromStore : function(value, store) {
+        if (store)
+        {
+            var record = store.findRecord('Name', value, 0, false, true, true);
+            if (record)
+                value = record.get("Label");
+        }
+
+        return Ext4.String.htmlEncode(value);
     }
 });
 
@@ -598,6 +665,8 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
 
     initComponent : function() {
         this.callParent();
+
+        this.routeStore = this.vaccineDesignHelper.getStudyDesignStore("StudyDesignRoutes");
 
         this.productStore = Ext4.create('Ext.data.Store', {
             model : 'StudyDesign.Product',
@@ -637,15 +706,15 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
             { header: 'Row ID', dataIndex: 'RowId', editable: false, menuDisabled: true },
             { header: 'Label', dataIndex: 'Label', editable: true, menuDisabled: true, minWidth: 150, renderer: 'htmlEncode' },
             { header: 'Description', dataIndex: 'Description', editable: true, menuDisabled: true, minWidth: 250, renderer: 'htmlEncode' },
-            { header: 'Study Products', dataIndex: 'Products', editable: false, menuDisabled: true, minWidth: 500, renderer: function(value) {
-                return new LABKEY.ext4.VaccineDesignDisplayHelper().getTreatmentProductDisplay(value);
+            { header: 'Study Products', dataIndex: 'Products', editable: false, menuDisabled: true, minWidth: 500, scope: this, renderer: function(value) {
+                return this.vaccineDesignHelper.getTreatmentProductDisplay(value, this.routeStore);
             }}
         ];
 
         // set hidden columns and add editors where necessary
         Ext4.each(columns, function(col){
             if (col.dataIndex == 'Label')
-                col.editor = new LABKEY.ext4.VaccineDesignDisplayHelper().getStudyDesignFieldEditor(col.dataIndex, null, false, col.header, false);
+                col.editor = this.vaccineDesignHelper.getStudyDesignFieldEditor(col.dataIndex, null, false, col.header, false);
             else if (col.dataIndex == 'Description')
                 col.editor = { xtype: 'textarea', fieldLabel: col.header, name: col.dataIndex };
 
@@ -695,7 +764,7 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
 
                         var selected = recordProductIds[productRecord.get('RowId')] != undefined;
 
-                        var routeLookupField = new LABKEY.ext4.VaccineDesignDisplayHelper().getStudyDesignFieldEditor('Route', 'StudyDesignRoutes', true);
+                        var routeLookupField = this.vaccineDesignHelper.getStudyDesignFieldEditor('Route', 'StudyDesignRoutes', true);
                         Ext4.apply(routeLookupField, {
                             id: Ext4.id(), emptyText: 'route', width: 150, disabled: !selected,
                             value: (selected ? recordProductIds[productRecord.get('RowId')].Route : null)
@@ -773,6 +842,12 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
                 }]
             }]
         });
+
+        // issue 19477: give focus to first field in form
+        win.on('show', function(cmp) {
+            cmp.down('.textfield').focus();
+        });
+
         win.show();
     },
 
@@ -859,10 +934,10 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
                         if (newRecord)
                             this.showInsertUpdate(this.grid, null, 0, newRecord);
                     }, this, {single: true});
-
-                    // we also need to tell the Immunization Schedule grid that it needs to reload the treatment info
-                    this.fireEvent('treatmentsAddedOrRemoved');
                 }
+
+                // we also need to tell the Immunization Schedule grid that it needs to reload the treatment info
+                this.fireEvent('treatmentsAddedOrRemoved');
 
                 // reload the grid store
                 this.grid.getStore().reload();
@@ -1083,7 +1158,7 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
         // set hidden columns and add editors where necessary
         Ext4.each(columns, function(col){
             if (col.dataIndex == 'Label')
-                col.editor = new LABKEY.ext4.VaccineDesignDisplayHelper().getStudyDesignFieldEditor(col.dataIndex, null, false, 'Label', false);
+                col.editor = this.vaccineDesignHelper.getStudyDesignFieldEditor(col.dataIndex, null, false, 'Label', false);
             else if (col.dataIndex == 'SubjectCount')
                 col.editor = { xtype: 'numberfield', fieldLabel: col.header, name: col.dataIndex, minValue: 0, allowDecimals: false };
 
@@ -1103,7 +1178,7 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
         if (value != null && value != '')
             treatmentRecord = this.treatmentStore.findRecord('RowId', value);
 
-        return treatmentRecord ? treatmentRecord.get('Label') : value;
+        return Ext4.String.htmlEncode(treatmentRecord ? treatmentRecord.get('Label') : value);
     },
 
     showInsertUpdate : function(g, td, cellIndex, record)
@@ -1173,6 +1248,12 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
                 }]
             }]
         });
+
+        // issue 19477: give focus to first field in form
+        win.on('show', function(cmp) {
+            cmp.down('.textfield').focus();
+        });
+
         win.show();
     },
 
@@ -1500,6 +1581,7 @@ Ext4.define('LABKEY.ext4.VaccineDesignAddVisitWindow', {
 
         this.callParent();
 
+        // issue 19477: give focus to first field in form
         this.on('show', function() {
             this.down('.textfield').focus();
         }, this);

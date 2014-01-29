@@ -86,7 +86,11 @@ public class TreatmentManager
             {
                 List<ProductImpl> products = getStudyProducts(container, user, null, treatmentProduct.getProductId());
                 for (ProductImpl product : products)
+                {
+                    product.setDose(treatmentProduct.getDose());
+                    product.setRoute(treatmentProduct.getRoute());
                     treatment.addProduct(product);
+                }
             }
         }
 
@@ -275,5 +279,31 @@ public class TreatmentManager
         }
         else
             throw new IllegalStateException("Could not find table: " + StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+    }
+
+    public String getStudyDesignRouteLabelByName(Container container, String name)
+    {
+        return getStudyDesignLabelByName(container, StudySchema.getInstance().getTableInfoStudyDesignRoutes(), name);
+    }
+
+    public String getStudyDesignImmunogenTypeLabelByName(Container container, String name)
+    {
+        return getStudyDesignLabelByName(container, StudySchema.getInstance().getTableInfoStudyDesignImmunogenTypes(), name);
+    }
+
+    private String getStudyDesignLabelByName(Container container, TableInfo tableInfo, String name)
+    {
+        // first look in the current container for the StudyDesign record, then look for it at the project level
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("Name"), name);
+        String label = new TableSelector(tableInfo, Collections.singleton("Label"), filter, null).getObject(String.class);
+        if (label == null && !container.isProject())
+        {
+            filter = SimpleFilter.createContainerFilter(container.getProject());
+            filter.addCondition(FieldKey.fromParts("Name"), name);
+            label = new TableSelector(tableInfo, Collections.singleton("Label"), filter, null).getObject(String.class);
+        }
+
+        return label;
     }
 }

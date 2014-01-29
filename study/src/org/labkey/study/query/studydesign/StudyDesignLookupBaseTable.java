@@ -50,6 +50,7 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
     public StudyDesignLookupBaseTable(StudyQuerySchema schema, TableInfo tableInfo)
     {
         super(schema, tableInfo);
+        setDescription("Contains lookup values for dropdown options in the study designer.");
 
         wrapAllColumns(true);
         List<FieldKey> defaultColumns = new ArrayList<>(Arrays.asList(

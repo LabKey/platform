@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.api.view.WebThemeManager" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController" %>
@@ -123,7 +122,8 @@
                 String locationLabel = "";
                 if (assaySpecimen.getLab() != null)
                 {
-                    locationLabel += assaySpecimen.getLab();
+                    String labLabel = StudyManager.getInstance().getStudyDesignLabLabelByName(c, assaySpecimen.getLab());
+                    locationLabel += (labLabel != null ? labLabel : assaySpecimen.getLab());
                 }
                 else if (assaySpecimen.getLocationId() != null)
                 {

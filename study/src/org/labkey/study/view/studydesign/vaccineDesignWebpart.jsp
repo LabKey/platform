@@ -20,13 +20,13 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
-<%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.api.view.WebThemeManager" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page import="org.labkey.study.model.ProductImpl" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.model.TreatmentManager" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
@@ -35,6 +35,7 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4ClientApi"));
         resources.add(ClientDependency.fromFilePath("study/ImmunizationSchedule.js"));
         resources.add(ClientDependency.fromFilePath("study/StudyVaccineDesign.css"));
         return resources;
@@ -94,10 +95,11 @@
 <%
                 for (ProductImpl immunogen : immunogens)
                 {
+                    String typeLabel = TreatmentManager.getInstance().getStudyDesignImmunogenTypeLabelByName(c, immunogen.getType());
 %>
                     <tr>
                         <td class="assay-row-padded-view"><%=h(immunogen.getLabel())%></td>
-                        <td class="assay-row-padded-view"><%=h(immunogen.getType())%></td>
+                        <td class="assay-row-padded-view"><%=h(typeLabel != null ? typeLabel : immunogen.getType())%></td>
                         <td class="assay-row-padded-view"><div class="immunogen-hiv-antigen" id="<%=immunogen.getRowId()%>">...</div></td>
                     </tr>
 <%
@@ -146,6 +148,10 @@
 <script type="text/javascript">
     Ext4.onReady(function(){
 
+        var vaccineDesignHelper = new LABKEY.ext4.VaccineDesignDisplayHelper();
+        var geneStore = vaccineDesignHelper.getStudyDesignStore("StudyDesignGenes");
+        var subtypeStore = vaccineDesignHelper.getStudyDesignStore("StudyDesignSubtypes");
+
         // query and display the html table for each immunogen's HIV antigens
         Ext4.each(Ext4.dom.Query.select('.immunogen-hiv-antigen'), function(div){
             LABKEY.Query.selectRows({
@@ -155,9 +161,9 @@
                 filterArray: [LABKEY.Filter.create('ProductId', div.id)],
                 sort: 'RowId',
                 success: function(data) {
-                    div.innerHTML = new LABKEY.ext4.VaccineDesignDisplayHelper().getHIVAntigenDisplay(data.rows);
+                    div.innerHTML = vaccineDesignHelper.getHIVAntigenDisplay(data.rows, geneStore, subtypeStore);
                 }
-            })
+            });
         });
 
     });

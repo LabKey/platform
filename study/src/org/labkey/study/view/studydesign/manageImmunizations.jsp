@@ -98,7 +98,8 @@
                 menu: {
                     items: [{
                         text: 'Routes',
-                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignRoutes'})
+                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignRoutes'}),
+                        hrefTarget: '_blank'  // issue 19493
                     }]
                 }
             };
@@ -109,7 +110,8 @@
             menu: {
                 items: [{
                     text: 'Routes',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignRoutes'})
+                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignRoutes'}),
+                    hrefTarget: '_blank'  // issue 19493
                 }]
             }
         };
@@ -123,16 +125,16 @@
 </script>
 
 Enter immunization information in the grids below.
-<div style="width: 875px;">
+<div style="width: 700px;">
     <ul>
+        <li>
+            Configure dropdown options for routes at the project level to be shared across study designs or within this folder for
+            study specific properties: <span id='config-dropdown-menu'></span>
+        </li>
         <li>Use the "Insert New" button in the treatments grid to add a new study treatment.</li>
         <li>Each treatment may consist of several study products, i.e. immunogens and/or adjuvants.</li>
         <li>Use the "Insert New" button in the immunization schedule grid to add a new study cohort.</li>
         <li>Enter the number of subjects for the cohort in the count column.</li>
-        <li>
-            Configure dropdown options at the project level to be shared across study designs or within this folder for
-            study specific properties: <span id='config-dropdown-menu'></span>
-        </li>
     </ul>
 </div>
 <div id="treatments-grid"></div>
