@@ -27,6 +27,7 @@ import mondrian.spi.DataSourceChangeListener;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.security.User;
@@ -37,6 +38,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
 import org.olap4j.OlapConnection;
 
+import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
@@ -72,6 +74,37 @@ public class ServerManager
     private static final Object _serverLock = new Object();
 
     public static final ModuleResourceCache<OlapSchemaDescriptor> SCHEMA_DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(OlapSchemaCacheHandler.DIR_NAME), "Olap cube defintions", new OlapSchemaCacheHandler());
+
+    static
+    {
+        ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
+        {
+            @Override
+            public void containerCreated(Container c, User user)
+            {
+
+            }
+
+            @Override
+            public void containerDeleted(Container c, User user)
+            {
+                cubeDataChanged(c);
+            }
+
+            @Override
+            public void containerMoved(Container c, Container oldParent, User user)
+            {
+
+            }
+
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+
+            }
+        });
+    }
+
 
     static String getServerCacheKey(Container c)
     {        return MondrianServer.class.getName() + "/" + c.getId();
@@ -137,6 +170,7 @@ public class ServerManager
                 _log.debug(sb.toString());
                 RepositoryContentFinder rcf = new StringRepositoryContentFinder(sb.toString());
                 s = MondrianServer.createWithRepository(rcf, new _CatalogLocator());
+                _log.debug("Create new Mondrian server: " + c.getPath() + " " + s.toString());
                 MemTracker.getInstance().put(s);
                 ref = new ServerReferenceCount(s);
                 _servers.put(getServerCacheKey(c), ref);
@@ -203,6 +237,7 @@ public class ServerManager
 
     static void closeServer(MondrianServer s)
     {
+        _log.debug("Shutdown Mondrian server: " + s.toString());
         s.shutdown();
     }
 
@@ -299,6 +334,20 @@ public class ServerManager
         MondrianServer get()
         {
             return (counter.get() > 0) ? _server : null;
+        }
+
+        @Override
+        void increment()
+        {
+            super.increment();
+            _log.debug("increment reference: " + counter.get() + " " + _server.toString());
+        }
+
+        @Override
+        void decrement()
+        {
+            _log.debug("decrement reference: " + (counter.get()-1) + " " + _server.toString());
+            super.decrement();
         }
 
         @Override
