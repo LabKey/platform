@@ -256,6 +256,9 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
                 // import the cohort settings, needs to happen after the dataset data and specimen data is imported so the full ptid list is available
                 importCohortSettings(_errors, destStudy, vf);
 
+                // assay schedule and treatment data (study design)
+                importStudyDesignData(_errors, destStudy, vf);
+
                 // import folder items (reports, lists, etc)
                 importFolderItems(destStudy, vf);
 
@@ -420,14 +423,31 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
             StudyViewsImporter viewsImporter = new StudyViewsImporter();
             viewsImporter.process(importContext, studyDir, errors);
 
+            if (errors.hasErrors())
+                throw new RuntimeException("Error importing study objects : " + errors.getMessage());
+        }
+    }
+
+    /**
+     * Study design data includes treatment data, assay schedule and study design tables.
+     */
+    private void importStudyDesignData(BindException errors, StudyImpl newStudy, VirtualFile vf) throws Exception
+    {
+        User user = getUser();
+        VirtualFile studyDir = vf.getDir("study");
+        StudyDocument studyDoc = getStudyDocument(studyDir);
+
+        if (studyDoc != null)
+        {
+            StudyImportContext importContext = new StudyImportContext(user, newStudy.getContainer(), studyDoc, new PipelineJobLoggerGetter(this), studyDir);
+
             // assay schedule and treatment data (study design)
             new TreatmentDataImporter().process(importContext, studyDir, errors);
             new AssayScheduleImporter().process(importContext, studyDir, errors);
 
             if (errors.hasErrors())
-                throw new RuntimeException("Error importing study objects : " + errors.getMessage());
+                throw new RuntimeException("Error importing study design tables : " + errors.getMessage());
         }
-
     }
 
     private void importFolderItems(StudyImpl newStudy, VirtualFile vf) throws Exception
