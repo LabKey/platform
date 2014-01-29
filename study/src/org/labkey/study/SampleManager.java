@@ -173,7 +173,7 @@ public class SampleManager implements ContainerManager.ContainerListener
     public boolean isSpecimensEmpty(Container container, User user)
     {
         TableSelector selector = getSpecimensSelector(container, user, (SimpleFilter) null);
-        return selector.exists();
+        return !selector.exists();
     }
  
 

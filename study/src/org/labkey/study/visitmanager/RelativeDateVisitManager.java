@@ -253,7 +253,8 @@ public class RelativeDateVisitManager extends VisitManager
             @Override
             public void exec(Integer day) throws SQLException
             {
-                StudyManager.getInstance().ensureVisit(getStudy(), user, day, null, true);
+                double seqNum = null != day ? day : 0;
+                StudyManager.getInstance().ensureVisit(getStudy(), user, seqNum, null, true);
                 days.increment();
             }
         }, Integer.class);
