@@ -15,6 +15,7 @@
  */
 package org.labkey.di.pipeline;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.RuntimeSQLException;
@@ -26,7 +27,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PropertiesJobSupport;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.TaskPipeline;
-import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.di.VariableMap;
@@ -64,7 +65,10 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
                 PipelineService.get().findPipelineRoot(info.getContainer()));
         _etlDescriptor = etlDescriptor;
         File etlLogDir = getPipeRoot().resolvePath("etlLogs");
-        File etlLogFile = new File(etlLogDir, DateUtil.formatDateTime(new Date(), "yyyy-MM-dd HH-mm-ss") + ".etl.log");
+        //TODO: The string replace is a temp workaround until we remove the braces from the module name and switch
+        // to passing around a TaskId instead.
+        String filePath = StringUtils.replace(StringUtils.replace(etlDescriptor.getId(), "{", ""), "}", "");
+        File etlLogFile = new File(etlLogDir, FileUtil.makeFileNameWithTimestamp(filePath, "etl.log"));
         _transformJobContext = new TransformJobContext(etlDescriptor, info.getContainer(), info.getUser());
         setLogFile(etlLogFile);
         initVariableMap(info);
