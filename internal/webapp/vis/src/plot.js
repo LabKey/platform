@@ -50,8 +50,12 @@
  *          <li><strong>scaleType:</strong> possible values "continuous" or "discrete".</li>
  *          <li><strong>trans:</strong> with values "linear" or "log". Controls the transformation of the data on
  *          the grid.</li>
- *          <li><strong>min:</strong> the minimum expected input value. Used to control what is visible on the grid.</li>
- *          <li><strong>max:</strong>the maximum expected input value. Used to control what is visible on the grid.</li>
+ *          <li><strong>min:</strong> (<em>deprecated, use domain</em>) the minimum expected input value. Used to control what is visible on the grid.</li>
+ *          <li><strong>max:</strong> (<em>deprecated, use domain</em>) the maximum expected input value. Used to control what is visible on the grid.</li>
+ *          <li><strong>domain:</strong> For continuous scales it is an array of [min, max]. For discrete scales
+ *              it is an an array of all possible input values to the scale.</li>
+ *          <li><strong>range:</strong> An array of values that all input values (the domain) will be mapped to. Not
+ *          used for any axis scales. For continuous color scales it is an array[min, max] hex values.</li>
  *      </ul>
  * @param {Object} [config.labels] Optional. An object with the following properties: main, x, y (or yLeft), yRight.
  *      Each property can have a {String} value, {Boolean} lookClickable, and {Object} listeners. The value is the text
@@ -236,8 +240,444 @@ boxPlot.render();
 
  */
 (function(){
-    LABKEY.vis.Plot = function(config){
+    var initMargins = function(userMargins, legendPos, allAes, scales){
+        var margins = {}, top = 75, right = 75, bottom = 50, left = 75; // Defaults.
+        var foundLegendScale = false, foundYRight = false;
 
+        for(var i = 0; i < allAes.length; i++){
+            var aes = allAes[i];
+            if(!foundLegendScale && (aes.shape || (aes.color && (!scales.color || (scales.color && scales.color.scaleType == 'discrete'))) || aes.outlierColor || aes.outlierShape || aes.pathColor) && legendPos != 'none'){
+                foundLegendScale = true;
+                right = right + 150;
+            }
+
+            if(!foundYRight && aes.yRight){
+                foundYRight = true;
+                right = right + 25;
+            }
+        }
+
+        if(!userMargins){
+            userMargins = {};
+        }
+
+        if(!userMargins.top || userMargins.top < 0){
+            margins.top = top;
+        } else {
+            margins.top = userMargins.top;
+        }
+        if(!userMargins.right || userMargins.right < 0){
+            margins.right = right;
+        } else {
+            margins.right = userMargins.right;
+        }
+        if(!userMargins.bottom || userMargins.bottom < 0){
+            margins.bottom = bottom;
+        } else {
+            margins.bottom = userMargins.bottom;
+        }
+        if(!userMargins.left || userMargins.left < 0){
+            margins.left = left;
+        } else {
+            margins.left = userMargins.left;
+        }
+
+        return margins;
+    };
+
+    var initGridDimensions = function(grid, margins) {
+        grid.leftEdge = margins.left;
+        grid.rightEdge = grid.width - margins.right + 10;
+        grid.topEdge = margins.top;
+        grid.bottomEdge = grid.height - margins.bottom;
+        return grid;
+    };
+
+    var copyUserScales = function(origScales) {
+        // This copies the user's scales, but not the max/min because we don't want to over-write that, so we store the original
+        // scales separately (this.originalScales).
+        var scales = {}, newScaleName, origScale, newScale;
+        for (var scaleName in origScales) {
+            if (origScales.hasOwnProperty(scaleName)) {
+                if(scaleName == 'y'){
+                    origScales.yLeft = origScales.y;
+                    newScaleName = (scaleName == 'y') ? 'yLeft' : scaleName;
+                } else {
+                    newScaleName = scaleName;
+                }
+                newScale = {};
+                origScale = origScales[scaleName];
+
+                newScale.scaleType = origScale.scaleType ? origScale.scaleType : 'continuous';
+                newScale.trans = origScale.trans ? origScale.trans : 'linear';
+                newScale.tickFormat = origScale.tickFormat ? origScale.tickFormat : null;
+                newScale.tickHoverText = origScale.tickHoverText ? origScale.tickHoverText : null;
+                newScale.domain = origScale.domain ? origScale.domain : null;
+                newScale.range = origScale.range ? origScale.range : null;
+
+                if (!origScale.domain &&((origScale.hasOwnProperty('min') && LABKEY.vis.isValid(origScale.min)) ||
+                        (origScale.hasOwnProperty('max') && LABKEY.vis.isValid(origScale.max)))) {
+                    console.log('scale.min and scale.max are deprecated. Please use scale.domain.');
+                    newScale.domain = [origScale.min, origScale.max];
+                    origScale.domain = [origScale.min, origScale.max];
+                }
+
+                if (newScale.scaleType == 'ordinal' || newScale.scaleType == 'categorical') {
+                    newScale.scaleType = 'discrete';
+                }
+
+                scales[newScaleName] = newScale;
+            }
+        }
+        return scales;
+    };
+
+    var setupDefaultScales = function(scales, aes) {
+        for (var aesthetic in aes) {
+            if (aes.hasOwnProperty(aesthetic)) {
+                if(!scales[aesthetic]){
+                    // Not all aesthetics get a scale (like hoverText), so we have to be pretty specific.
+                    if(aesthetic === 'x' || aesthetic === 'yLeft' || aesthetic === 'yRight' || aesthetic === 'size'){
+                        scales[aesthetic] = {scaleType: 'continuous', trans: 'linear'};
+                    } else if (aesthetic == 'color' || aesthetic == 'outlierColor' || aesthetic == 'pathColor') {
+                        scales['color'] = {scaleType: 'discrete'};
+                    } else if(aesthetic == 'shape' || aesthetic == 'outlierShape'){
+                        scales['shape'] = {scaleType: 'discrete'};
+                    }
+                }
+            }
+        }
+    };
+
+    var getDiscreteAxisDomain = function(data, acc) {
+        // If any axis is discerete we need to know the domain before rendering so we render the grid correctly.
+        var domain = [], uniques = {}, i, value;
+
+        for (i = 0; i < data.length; i++) {
+            value = acc(data[i]);
+            uniques[value] = true;
+        }
+
+        for (value in uniques) {
+            if(uniques.hasOwnProperty(value)) {
+                domain.push(value);
+            }
+        }
+
+        return domain;
+    };
+
+    var getContinuousDomain = function(aesName, userScale, data, acc, errorAes) {
+        var userMin, userMax, min, max, minAcc, maxAcc;
+
+        if (userScale && userScale.domain) {
+            userMin = userScale.domain[0];
+            userMax = userScale.domain[1];
+        }
+
+        if (LABKEY.vis.isValid(userMin)) {
+            min = userMin;
+        } else {
+            if ((aesName == 'yLeft' || aesName == 'yRight') && errorAes) {
+                minAcc = function(d) {
+                    return acc(d) - errorAes.getValue(d);
+                };
+            } else {
+                minAcc = acc;
+            }
+
+            min = d3.min(data, minAcc);
+        }
+
+        if (LABKEY.vis.isValid(userMax)) {
+            max = userMax;
+        } else {
+            if ((aesName == 'yLeft' || aesName == 'yRight') && errorAes) {
+                maxAcc = function(d) {
+                    return acc(d) + errorAes.getValue(d);
+                }
+            } else {
+                maxAcc = acc;
+            }
+            max = d3.max(data, maxAcc);
+        }
+
+        if (min == max ) {
+            max = max * 2;
+            min = min - min;
+        }
+
+        /*
+            TODO: Hack to keep time charts from getting in a bad state. They currently rely on us rendering an empty
+            grid when there is an invalid x-axis. We should fix the time chart validation methods and remove this.
+         */
+        if (isNaN(min) && isNaN(max)) {
+            return [0,0];
+        }
+
+        return [min, max];
+    };
+
+    var getDomain = function(aesName, userScale, scale, data, acc, errorAes) {
+        var tempDomain, curDomain = scale.domain, domain = [];
+
+        if (scale.scaleType == 'discrete') {
+            tempDomain = getDiscreteAxisDomain(data, acc);
+            if (!curDomain) {
+                return tempDomain;
+            }
+
+            for (var i = 0; i < tempDomain.length; i++) {
+                if (curDomain.indexOf(tempDomain[i]) == -1) {
+                    curDomain.push(tempDomain[i]);
+                }
+            }
+            return curDomain;
+        } else {
+            tempDomain = getContinuousDomain(aesName, userScale, data, acc, errorAes);
+            if (!curDomain) {
+                return tempDomain;
+            }
+
+            if (!LABKEY.vis.isValid(curDomain[0]) || tempDomain[0] < curDomain[0]) {
+                domain[0] = tempDomain[0];
+            } else {
+                domain[0] = curDomain[0];
+            }
+
+            if (!LABKEY.vis.isValid(curDomain[1]) || tempDomain[1] > curDomain[1]) {
+                domain[1] = tempDomain[1];
+            } else {
+                domain[1] = curDomain[1];
+            }
+        }
+
+        return domain;
+    };
+
+    var requiresDomain = function(name, colorScale) {
+        if (name == 'yLeft' || name == 'yRight' || name == 'x' || name == 'size') {
+            return true;
+        }
+        // We only need the domain of the a color scale if it's a continuous one.
+        return (name == 'color' || name == 'outlierColor') && colorScale && colorScale.scaleType == 'continuous';
+    };
+
+    var calculateDomains = function(userScales, scales, allAes, allData) {
+        var i, aesName, scale, userScale;
+        for (i = 0; i < allAes.length; i++) {
+            for (aesName in allAes[i]) {
+                if (allAes[i].hasOwnProperty(aesName) && requiresDomain(aesName, scales.color)) {
+                    if (aesName == 'outlierColor') {
+                        scale = scales.color;
+                        userScale = userScales.color;
+                    } else {
+                        scale = scales[aesName];
+                        userScale = userScales[aesName];
+                    }
+
+                    scale.domain = getDomain(aesName, userScale, scale, allData[i], allAes[i][aesName].getValue, allAes[i].error);
+                }
+            }
+        }
+    };
+
+    var getDefaultRange = function(scaleName, scale) {
+        if (scaleName == 'color' && scale.scaleType == 'continuous') {
+            return ['#222222', '#EEEEEE'];
+        }
+
+        if (scaleName == 'color' && scale.scaleType == 'discrete') {
+            return LABKEY.vis.Scale.ColorDiscrete();
+        }
+
+        if (scaleName == 'shape') {
+            return LABKEY.vis.Scale.Shape();
+        }
+
+        if (scaleName == 'size') {
+            return [1, 5];
+        }
+
+        return null;
+    };
+
+    var calculateAxisScaleRanges = function(scales, grid, margins) {
+        var yRange = [grid.bottomEdge, grid.topEdge];
+
+        if (scales.yRight) {
+            scales.yRight.range = yRange;
+        }
+
+        if (scales.yLeft) {
+            scales.yLeft.range = yRange;
+        }
+
+        if (scales.x.scaleType == 'continuous') {
+            scales.x.range = [margins.left, grid.width - margins.right];
+        } else {
+            // We don't need extra padding in the discrete case because we use rangeBands which take care of that.
+            scales.x.range = [grid.leftEdge, grid.rightEdge];
+        }
+    };
+
+    var getLogScale = function (domain, range) {
+        var scale, scaleWrapper, increment = false;
+
+        if (domain[0] == 0) {
+            increment = true;
+            domain[0] = domain[0] + 1;
+            domain[1] = domain[1] + 1;
+        }
+
+        scale = d3.scale.log().domain(domain).range(range);
+
+        // We need to wrap the scale so we can increment by 1 if the minimum value is 0.
+        scaleWrapper = function(val) {
+            if(val != null && val >= 0) {
+                if (increment == true) {
+                    return scale(val + 1);
+                }
+
+                return scale(val);
+            }
+
+            return null;
+        };
+        scaleWrapper.domain = scale.domain;
+        scaleWrapper.range = scale.range;
+        scaleWrapper.invert = scale.invert;
+        scaleWrapper.base = scale.base;
+        scaleWrapper.clamp = scale.clamp;
+        scaleWrapper.ticks = function(){
+            var allTicks = scale.ticks();
+            var ticksToShow = [];
+
+            if(allTicks.length < 10){
+                return allTicks;
+            } else {
+                for(var i = 0; i < allTicks.length; i++){
+                    if(i % 9 == 0){
+                        ticksToShow.push(allTicks[i]);
+                    }
+                }
+                return ticksToShow;
+            }
+        };
+
+        return scaleWrapper;
+    };
+
+    var instantiateScales = function(userScales, scales, grid, margins) {
+        var scaleName, scale, userScale;
+
+        calculateAxisScaleRanges(scales, grid, margins);
+
+        for (scaleName in scales) {
+            if (scales.hasOwnProperty(scaleName)) {
+                scale = scales[scaleName];
+                userScale = userScales[scaleName];
+
+                if (scale.scaleType == 'discrete') {
+                    if (scaleName == 'x' || scaleName == 'yLeft' || scaleName == 'yRight'){
+                        // Setup scale with domain (user provided or calculated) and compute range based off grid dimensions.
+                        scale.scale = d3.scale.ordinal().domain(scale.domain).rangeBands(scale.range, 1);
+                    } else {
+                        // Setup scales with user provided range or default range.
+                        scale.scale = d3.scale.ordinal();
+
+                        if (scale.domain) {
+                            scale.scale.domain(scale.domain);
+                        }
+
+                        if (!scale.range) {
+                            scale.range = getDefaultRange(scaleName, scale);
+                        }
+
+                        scale.scale.range(scale.range);
+                    }
+                } else {
+                    if ((scaleName == 'color' || scaleName == 'size') && !scale.range) {
+                        scale.range = getDefaultRange(scaleName, scale);
+                    }
+
+                    if (scale.range && scale.domain && LABKEY.vis.isValid(scale.domain[0]) && LABKEY.vis.isValid(scale.domain[1])) {
+                        if (scale.trans == 'linear') {
+                            scale.scale = d3.scale.linear().domain(scale.domain).range(scale.range);
+                        } else {
+                            scale.scale = getLogScale(scale.domain, scale.range);
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    var initializeScales = function(userScales, scales, allAes, allData, grid, margins, errorFn) {
+        for (var i = 0; i < allAes.length; i++) {
+            setupDefaultScales(scales, allAes[i]);
+        }
+
+        for (var scaleName in scales) {
+            if(scales.hasOwnProperty(scaleName)) {
+                if (scales[scaleName].scale) {
+                    delete scales[scaleName].scale;
+                }
+
+                if (scales[scaleName].domain && (userScales[scaleName] && !userScales[scaleName].domain)) {
+                    delete scales[scaleName].domain;
+                }
+
+                if (scales[scaleName].range && (userScales[scaleName] && !userScales[scaleName].range)) {
+                    delete scales[scaleName].range;
+                }
+            }
+        }
+
+        calculateDomains(userScales, scales, allAes, allData);
+        instantiateScales(userScales, scales, grid, margins);
+
+        if (!scales.x.scale) {
+            errorFn('Unable to create an x scale, rendering aborted.');
+            return false;
+        }
+
+        if((!scales.yLeft || !scales.yLeft.scale) && (!scales.yRight ||!scales.yRight.scale)){
+            errorFn('Unable to create a y scale, rendering aborted.');
+            return false;
+        }
+
+        return true;
+    };
+
+    var compareDomains  = function(domain1, domain2){
+        if(domain1.length != domain2.length){
+            return false;
+        }
+
+        domain1.sort();
+        domain2.sort();
+
+        for(var i = 0; i < domain1.length; i++){
+            if(domain1[i] != domain2[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    };
+
+    var generateLegendData = function(legendData, domain, colorFn, shapeFn){
+        for(var i = 0; i < domain.length; i++) {
+            legendData.push({
+                text: domain[i],
+                color: colorFn != null ? colorFn(domain[i]) : null,
+                shape: shapeFn != null ? shapeFn(domain[i]) : null
+            });
+        }
+    };
+
+    LABKEY.vis.Plot = function(config){
         if(config.hasOwnProperty('rendererType') && config.rendererType == 'd3') {
             this.renderer = new LABKEY.vis.internal.D3Renderer(this);
         } else {
@@ -255,72 +695,6 @@ boxPlot.render();
 
                 this.renderer.renderError(msg);
             }
-        };
-
-        var copyUserScales = function(origScales){
-            // This copies the user's scales, but not the max/min because we don't want to over-write that, so we store the original
-            // scales separately (this.originalScales).
-            var scales = {}, newScaleName;
-            for(var scale in origScales){
-                if(scale == 'y'){
-                    origScales.yLeft = origScales.y;
-                    newScaleName = (scale == 'y') ? 'yLeft' : scale;
-                } else {
-                    newScaleName = scale;
-                }
-                scales[newScaleName] = {};
-                scales[newScaleName].scaleType = origScales[scale].scaleType ? origScales[scale].scaleType : 'continuous';
-                scales[newScaleName].trans = origScales[scale].trans ? origScales[scale].trans : 'linear';
-                scales[newScaleName].tickFormat = origScales[scale].tickFormat ? origScales[scale].tickFormat : null;
-                scales[newScaleName].tickHoverText = origScales[scale].tickHoverText ? origScales[scale].tickHoverText : null;
-                scales[newScaleName].range = origScales[scale].range ? origScales[scale].range : null;
-            }
-            return scales;
-        };
-
-        var configureMargins = function(userMargins, legendPos, allAes, scales){
-            var margins = {}, top = 75, right = 75, bottom = 50, left = 75; // Defaults.
-            var foundLegendScale = false, foundYRight = false;
-
-            for(var i = 0; i < allAes.length; i++){
-                var aes = allAes[i];
-                if(!foundLegendScale && (aes.shape || (aes.color && (!scales.color || (scales.color && scales.color.scaleType == 'discrete'))) || aes.outlierColor || aes.outlierShape || aes.pathColor) && legendPos != 'none'){
-                    foundLegendScale = true;
-                    right = right + 150;
-                }
-
-                if(!foundYRight && aes.yRight){
-                    foundYRight = true;
-                    right = right + 25;
-                }
-            }
-
-            if(!userMargins){
-                userMargins = {};
-            }
-
-            if(!userMargins.top || userMargins.top < 0){
-                margins.top = top;
-            } else {
-                margins.top = userMargins.top;
-            }
-            if(!userMargins.right || userMargins.right < 0){
-                margins.right = right;
-            } else {
-                margins.right = userMargins.right;
-            }
-            if(!userMargins.bottom || userMargins.bottom < 0){
-                margins.bottom = bottom;
-            } else {
-                margins.bottom = userMargins.bottom;
-            }
-            if(!userMargins.left || userMargins.left < 0){
-                margins.left = left;
-            } else {
-                margins.left = userMargins.left;
-            }
-
-            return margins;
         };
 
         this.renderTo = config.renderTo ? config.renderTo : null; // The id of the DOM element to render the plot to, required.
@@ -346,9 +720,8 @@ boxPlot.render();
         // Stash the user's margins so when we re-configure margins during re-renders or setAes we don't forget the user's settings.
         var allAes = [], margins = {}, userMargins = config.margins ? config.margins : {};
 
-        if(this.aes){
-            allAes.push(this.aes);
-        }
+        allAes.push(this.aes);
+
         for(var i = 0; i < this.layers.length; i++){
             if(this.layers[i].aes){
                 allAes.push(this.layers[i].aes);
@@ -381,219 +754,6 @@ boxPlot.render();
             }
         }
 
-        var initScales = function(){
-            // initScales sets up default scales if needed, gets the domain of each required scale,
-            // and news up all required scales. Returns true if there were no problems, returns false if there were problems.
-            for(var scale in this.scales){
-                if(this.scales[scale].scale){
-                    delete this.scales[scale].scale;
-                }
-
-                if(this.scales[scale].min && (this.originalScales[scale] && !this.originalScales[scale].min)){
-                    delete this.scales[scale].min;
-                }
-
-                if(this.scales[scale].max && (this.originalScales[scale] && !this.originalScales[scale].max)){
-                    delete this.scales[scale].max;
-                }
-
-                if(this.scales[scale].domain && (this.originalScales[scale] && !this.originalScales[scale].domain)){
-                    delete this.scales[scale].domain;
-                }
-
-                if(this.scales[scale].range && (this.originalScales[scale] && !this.originalScales[scale].range)){
-                    delete this.scales[scale].range;
-                }
-            }
-
-            var setupDefaultScales = function(scales, aes){
-                for(aesthetic in aes){
-                    if(!scales[aesthetic]){
-                        // Not all aesthetics get a scale (like hoverText), so we have to be pretty specific.
-                        if(aesthetic === 'x' || aesthetic === 'yLeft' || aesthetic === 'yRight' || aesthetic === 'size'){
-                            scales[aesthetic] = {scaleType: 'continuous', trans: 'linear'};
-                        } else if(aesthetic == 'color' || aesthetic == 'shape' || aesthetic == 'outlierColor' || aesthetic == 'outlierShape' || aesthetic == 'pathColor'){
-                            if(aesthetic == 'outlierColor' || aesthetic == 'pathColor'){
-                                scales['color'] = {scaleType: 'discrete'};
-                            } else if(aesthetic == 'outlierShape'){
-                                scales['shape'] = {scaleType: 'discrete'};
-                            } else {
-                                scales[aesthetic] = {scaleType: 'discrete'};
-                            }
-                        }
-                    }
-                }
-            };
-
-            var getDomain = function(origScales, scales, data, aes){
-                // Gets the domains for a given set of aesthetics and data.
-
-                if(!data){
-                    return;
-                }
-
-                for(var scale in scales){
-                    if(aes[scale]){
-                        var acc;
-                        if(scales[scale].scaleType == 'continuous'){
-                            if(origScales[scale] && origScales[scale].min != null && origScales[scale].min != undefined){
-                                scales[scale].min = origScales[scale].min;
-                            } else {
-                                // Note: error bar geom only goes on the y axis so we don't subtract if the scale is x.
-                                if(scale != 'x' && aes.error){
-                                    acc = function(row){return aes[scale].getValue(row) - aes.error.getValue(row);}
-                                } else {
-                                    acc = aes[scale].getValue;
-                                }
-
-                                var tempMin = d3.min(data, acc);
-
-                                if(scales[scale].min == null || scales[scale].min == undefined || tempMin < scales[scale].min){
-                                    scales[scale].min = tempMin;
-                                }
-                            }
-
-                            if(origScales[scale] && origScales[scale].max != null && origScales[scale].max != undefined){
-                                scales[scale].max = origScales[scale].max;
-                            } else {
-                                // Note: error bar geom only goes on the y axis so we don't subtract if the scale is x.
-                                if(scale != 'x' && aes.error){
-                                    acc = function(row){return aes[scale].getValue(row) + aes.error.getValue(row);}
-                                } else {
-                                    acc = aes[scale].getValue;
-                                }
-
-                                var tempMax = d3.max(data, acc);
-
-                                if(scales[scale].max == null || scales[scale].max == undefined || tempMax > scales[scale].max){
-                                    scales[scale].max = tempMax;
-                                }
-                            }
-                        } else if((scale != 'shape' && scale != 'color' ) && (scales[scale].scaleType == 'ordinal' || scales[scale].scaleType == 'discrete' || scales[scale].scaleType == 'categorical')){
-                            if(origScales[scale] && origScales[scale].domain){
-                                if(!scales[scale].domain){
-                                    // If we already have a domain then we need to set it from the user input.
-                                    scales[scale].domain = origScales[scale].domain;
-                                }
-                            } else {
-                                if(!scales[scale].domain){
-                                    scales[scale].domain = [];
-                                }
-
-                                for(var i = 0; i < data.length; i++){
-                                    // Cycle through the data and add the unique values.
-                                    var val = aes[scale].getValue(data[i]);
-                                    if(scales[scale].domain.indexOf(val) == -1){
-                                        scales[scale].domain.push(val);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            };
-
-            setupDefaultScales(this.scales, this.aes);
-            for(var i = 0; i < this.layers.length; i++){
-                setupDefaultScales(this.scales, this.layers[i].aes);
-            }
-
-            getDomain(this.originalScales, this.scales, this.data, this.aes);
-            for(var i = 0; i < this.layers.length; i++){
-                getDomain(this.originalScales, this.scales, this.layers[i].data ? this.layers[i].data : this.data, this.layers[i].aes);
-            }
-
-            this.grid.leftEdge = margins.left;
-            this.grid.rightEdge = this.grid.width - margins.right + 10;
-            this.grid.topEdge = margins.top + 10;
-            this.grid.bottomEdge = this.grid.height - margins.bottom;
-
-            for(var scaleName in this.scales){
-                var domain = null;
-                var range = null;
-                var scale = this.scales[scaleName];
-                if(scaleName == 'x'){
-                    if(scale.scaleType == 'continuous'){
-                        domain = [scale.min, scale.max];
-                        range = [margins.left, this.grid.width - margins.right];
-                        scale.scale = new LABKEY.vis.Scale.Continuous(scale.trans, null, null, domain, range);
-                    } else if(scale.scaleType == 'ordinal' || scale.scaleType == 'discrete' || scale.scaleType == 'categorical'){
-                        if(scale.domain){
-                            scale.scale = new LABKEY.vis.Scale.Discrete(scale.domain, [this.grid.leftEdge, this.grid.rightEdge]);
-                        }
-                    }
-                } else if(scaleName == 'yLeft' || scaleName == 'yRight'){
-                    range = [this.grid.bottomEdge, this.grid.topEdge];
-                    if(scale.scaleType == 'continuous' && (scale.min != null && scale.min != undefined) && (scale.max != null && scale.max != undefined)){
-                        domain = [scale.min, scale.max];
-                        scale.scale = new LABKEY.vis.Scale.Continuous(scale.trans, null, null, domain, range);
-                    } else {
-                        if(scale.domain){
-                            scale.scale = new LABKEY.vis.Scale.Discrete(scale.domain, range);
-                        }
-                    }
-                } else if(scaleName == 'color'){
-                    if(!scale.scaleType || scale.scaleType == 'discrete') {
-                        scale.scale = LABKEY.vis.Scale.ColorDiscrete();
-                    } else {
-                        if(!scale.range){
-                            scale.range = ['#222222', '#EEEEEE'];
-                        }
-                        scale.scale = LABKEY.vis.Scale.Continuous(scale.trans, null, null, [scale.min, scale.max], scale.range);
-                    }
-                } else if(scaleName == 'shape'){
-                    if(!scale.scaleType || scale.scaleType == 'discrete') {
-                        scale.scale = LABKEY.vis.Scale.Shape();
-                    }
-                } else if(scaleName == 'size'){
-                    if(!scale.range){
-                        scale.range = [1, 5];
-                    }
-                    domain = [scale.min, scale.max];
-                    scale.scale = LABKEY.vis.Scale.Continuous(scale.trans, null, null, domain, scale.range)
-                }
-            }
-
-            if(!this.scales.x || !this.scales.x.scale){
-                error.call(this, 'Unable to create an x scale, rendering aborted.');
-                return false;
-            }
-
-            if((!this.scales.yLeft || !this.scales.yLeft.scale) && (!this.scales.yRight ||!this.scales.yRight.scale)){
-                error.call(this, "Unable to create a y scale, rendering aborted.");
-                return false;
-            }
-
-            return true;
-        };
-
-        var compareDomains  = function(domain1, domain2){
-            if(domain1.length != domain2.length){
-                return false;
-            }
-
-            domain1.sort();
-            domain2.sort();
-
-            for(var i = 0; i < domain1.length; i++){
-                if(domain1[i] != domain2[i]) {
-                    return false;
-                }
-            }
-
-            return true;
-        };
-
-        var generateLegendData = function(legendData, domain, colorFn, shapeFn){
-            for(var i = 0; i < domain.length; i++) {
-                legendData.push({
-                    text: domain[i],
-                    color: colorFn != null ? colorFn(domain[i]) : null,
-                    shape: shapeFn != null ? shapeFn(domain[i]) : null
-                });
-            }
-        };
-
         this.getLegendData = function(){
             var legendData = [];
 
@@ -619,10 +779,23 @@ boxPlot.render();
          * Renders the plot.
          */
         this.render = function(){
-            margins = configureMargins(userMargins, this.legendPos, allAes, this.scales);
+            margins = initMargins(userMargins, this.legendPos, allAes, this.scales);
+            this.grid = initGridDimensions(this.grid, margins);
             this.renderer.initCanvas(); // Get the canvas prepped for render time.
+            var allData = [this.data];
+            var plot = this;
+            var errorFn = function(msg) {
+                error.call(plot, msg);
+            };
+            allAes = [this.aes];
+            for (var i = 0; i < this.layers.length; i++) {
+                // If the layer doesn't have data or aes, then it doesn't need to be considered for any scale calculations.
+                if (!this.layers[i].data && !this.layers[i].aes) {continue;}
+                allData.push(this.layers[i].data ? this.layers[i].data : this.data);
+                allAes.push(this.layers[i].aes ? this.layers[i].aes : this.aes);
+            }
 
-            if(!initScales.call(this)){  // Sets up the scales.
+            if(!initializeScales(this.originalScales, this.scales, allAes, allData, this.grid, margins, errorFn)){  // Sets up the scales.
                 return false; // if we have a critical error when trying to initialize the scales we don't continue with rendering.
             }
 
@@ -778,7 +951,7 @@ boxPlot.render();
          */
         this.setMargins = function(newMargins, render){
             userMargins = newMargins;
-            margins = configureMargins(userMargins, this.legendPos, allAes, this.scales);
+            margins = initMargins(userMargins, this.legendPos, allAes, this.scales);
 
             if(render !== undefined && render !== null && render === true) {
                 this.render();

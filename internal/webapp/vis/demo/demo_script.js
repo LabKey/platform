@@ -359,18 +359,21 @@ var brushScatter = new LABKEY.vis.Plot({
             var colorAcc = function(d) {
                 var x = d.x, y = d.y;
                 d.isSelected = (x > extent[0][0] && x < extent[1][0] && y > extent[0][1] && y < extent[1][1])
-                return colorScale(d.isSelected);
+                if (d.isSelected) {
+                    return '#14C9CC';
+                }
+                return colorScale(d.ptid);
             };
             var strokeAcc = function(d) {
                 if (d.isSelected){
-                    return '#000';
+                    return '#00393A';
                 } else {
-                    return colorScale(d.isSelected);
+                    return colorScale(d.ptid);
                 }
             };
             var strokeWidthAcc = function(d) {
                 if (d.isSelected){
-                    return 2;
+                    return .5;
                 } else {
                     return 1;
                 }
@@ -379,9 +382,9 @@ var brushScatter = new LABKEY.vis.Plot({
                 if (d.isSelected) {
                     return 1;
                 } else {
-                    return .5;
+                    return .8;
                 }
-            }
+            };
             points.attr('fill', colorAcc)
                     .attr('stroke', strokeAcc)
                     .attr('stroke-width', strokeWidthAcc)
@@ -411,10 +414,12 @@ var brushScatter = new LABKEY.vis.Plot({
         aes: {
             x:'x',
             y: 'y',
-            color: 'isSelected',
+            color: 'ptid',
+            shape: 'ptid',
             mouseOverFn: function(event, pointData, layerSel) {
                 if (selectionMade) {return;}
                 var points = layerSel.selectAll('.point path');
+                var colorScale = brushScatter.scales.color.scale;
                 var strokeWidthAcc = function(d) {
                     if (d.ptid == pointData.ptid) {
                         return 2;
@@ -422,14 +427,20 @@ var brushScatter = new LABKEY.vis.Plot({
                     return 1;
                 };
                 var strokeColorAcc = function(d) {
-                    var colorScale = brushScatter.scales.color.scale;
                     if (d.ptid == pointData.ptid) {
-                        return '#000';
+                        return '#00EAFF';
                     }
-                    return colorScale(d.isSelected);
+                    return colorScale(d.ptid);
+                };
+                var fillAcc = function(d) {
+                    if (d.ptid == pointData.ptid) {
+                        return '#01BFC2'
+                    }
+                    return colorScale(d.ptid);
                 };
 
-                points.attr('stroke-width', strokeWidthAcc)
+                points.attr('fill', fillAcc)
+                        .attr('stroke-width', strokeWidthAcc)
                         .attr('stroke', strokeColorAcc);
             },
             mouseOutFn: function(event, pointData, layerSel) {
@@ -437,12 +448,22 @@ var brushScatter = new LABKEY.vis.Plot({
                 var points = layerSel.selectAll('.point path');
                 var colorScale = brushScatter.scales.color.scale;
 
-                points.attr('stroke-width', 1).attr('stroke', function(d){return colorScale(d.isSelected)});
+                points.attr('stroke-width', 1)
+                        .attr('fill', function(d){return colorScale(d.ptid);})
+                        .attr('stroke', function(d){return colorScale(d.ptid);});
             }
         }
     })],
     scales: {
-        y: {scaleType: 'continuous', trans: 'linear'}
+        y: {scaleType: 'continuous', trans: 'linear'/*, domain: [0, 1000]*/},
+        color: {
+            scaleType: 'discrete',
+            range: LABKEY.vis.Scale.DataspaceColor()
+        },
+        shape: {
+            scaleType: 'discrete',
+            range: LABKEY.vis.Scale.DataspaceShape()
+        }
     }
 });
 

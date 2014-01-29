@@ -356,7 +356,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     var allData = getAllData();
                     var extent = brush.extent();
                     var event = d3.event;
-                    if(extent[0][0] - extent[1][0] == 0 && extent[0][1] - extent[1][1] == 0) {
+                    if(brush.empty()) {
                         event.type = 'brushclear';
                         plot.brushing.brushclear(event, allData, getAllLayerSelections());
                     } else {
@@ -1004,10 +1004,17 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             yAcc = function(d) {var val = geom.getY(d); return val == null ? null : val;},
             size = geom.sizeAes && geom.sizeScale ? geom.sizeScale.scale(geom.sizeAes.getValue(data)) : function() {return geom.size},
             color = geom.color,
-            line = function(d) {return LABKEY.vis.makePath(d.data, xAcc, yAcc);};
+            line = function(d) {
+                var path = LABKEY.vis.makePath(d.data, xAcc, yAcc);
+                return path.length == 0 ? null : path;
+            };
         if (geom.pathColorAes && geom.colorScale) {
             color = function(d) {return geom.colorScale.scale(geom.pathColorAes.getValue(d.data) + geom.layerName);};
         }
+
+        data = data.filter(function(d) {
+            return line(d) !== null;
+        });
 
         var pathSel = layer.selectAll('path').data(data);
         pathSel.exit().remove();

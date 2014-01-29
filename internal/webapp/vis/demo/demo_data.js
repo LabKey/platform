@@ -71,7 +71,7 @@ for(var i = 0; i < 1000; i++){
         x: i % 9 == 0 ? null : parseInt((Math.random()*(150))),
         y: Math.random() * 1500,
         z: parseInt(Math.random()*125),
-        ptid: i % 9,
+        ptid: i % 20,
         isSelected: false
     };
     scatterData.push(point);
