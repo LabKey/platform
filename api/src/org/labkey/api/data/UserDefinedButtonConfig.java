@@ -44,6 +44,8 @@ public class UserDefinedButtonConfig implements ButtonConfig
     private String _onClick;
     private ActionButton.Action _action;
     private boolean _requiresSelection = false;
+    private Integer _requiresSelectionMinCount;
+    private Integer _requiresSelectionMaxCount;
     /** Permission that a user must have in order to see the button */
     private Class<? extends Permission> _permission;
     private List<NavTree> _menuItems;
@@ -108,6 +110,26 @@ public class UserDefinedButtonConfig implements ButtonConfig
     public void setRequiresSelection(boolean requiresSelection)
     {
         _requiresSelection = requiresSelection;
+    }
+
+    public Integer getRequiresSelectionMinCount()
+    {
+        return _requiresSelectionMinCount;
+    }
+
+    public void setRequiresSelectionMinCount(Integer requiresSelectionMinCount)
+    {
+        _requiresSelectionMinCount = requiresSelectionMinCount;
+    }
+
+    public Integer getRequiresSelectionMaxCount()
+    {
+        return _requiresSelectionMaxCount;
+    }
+
+    public void setRequiresSelectionMaxCount(Integer requiresSelectionMaxCount)
+    {
+        _requiresSelectionMaxCount = requiresSelectionMaxCount;
     }
 
     public Class<? extends Permission> getPermission()
@@ -198,7 +220,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
                 processURLs(ctx, toAdd);
                 btn.addMenuItem(toAdd);
             }
-            btn.setRequiresSelection(_requiresSelection);
+            btn.setRequiresSelection(_requiresSelection, _requiresSelectionMinCount, _requiresSelectionMaxCount);
             btn.setDisplayPermission(_permission);
             return btn;
         }
@@ -214,7 +236,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
                 btn.setScript(getWrappedOnClick(ctx, _onClick), false);
             if (_action != null)
                 btn.setActionType(_action);
-            btn.setRequiresSelection(_requiresSelection);
+            btn.setRequiresSelection(_requiresSelection, _requiresSelectionMinCount, _requiresSelectionMaxCount);
             return btn;
         }
     }

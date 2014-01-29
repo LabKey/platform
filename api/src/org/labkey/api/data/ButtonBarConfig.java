@@ -238,6 +238,11 @@ public class ButtonBarConfig
             buttonConfig.setOnClick(StringUtils.trimToNull(item.getOnClick()));
             buttonConfig.setRequiresSelection(item.getRequiresSelection());
 
+            if (item.getRequiresSelectionMinCount() > 0)
+                buttonConfig.setRequiresSelectionMinCount(item.getRequiresSelectionMinCount());
+            if (item.getRequiresSelectionMaxCount() > 0)
+                buttonConfig.setRequiresSelectionMaxCount(item.getRequiresSelectionMaxCount());
+
             if (item.getPermission() == PermissionType.READ)
             {
                 buttonConfig.setPermission(ReadPermission.class);
