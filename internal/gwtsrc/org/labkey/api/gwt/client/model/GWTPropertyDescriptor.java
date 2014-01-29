@@ -68,6 +68,8 @@ public class GWTPropertyDescriptor implements IsSerializable
     private StringProperty facetingBehaviorType = new StringProperty();
     private BooleanProperty isProtected = new BooleanProperty();
     private BooleanProperty isExcludeFromShifting = new BooleanProperty();
+    private BooleanProperty isPreventReordering = new BooleanProperty();
+    private BooleanProperty isDisableEditing = new BooleanProperty();
 
     // for controlling the property editor (not persisted or user settable)
 //    private boolean isEditable = true;
@@ -121,6 +123,8 @@ public class GWTPropertyDescriptor implements IsSerializable
         setFacetingBehaviorType(s.getFacetingBehaviorType());
         setProtected(s.isProtected());
         setExcludeFromShifting(s.isExcludeFromShifting());
+        setPreventReordering(s.getPreventReordering());
+        setDisableEditing(s.getDisableEditing());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
@@ -457,6 +461,26 @@ public class GWTPropertyDescriptor implements IsSerializable
     public void setExcludeFromShifting(boolean isExcludeFromShifting)
     {
         this.isExcludeFromShifting.setBool(isExcludeFromShifting);
+    }
+
+    public boolean getPreventReordering()
+    {
+        return isPreventReordering.booleanValue();
+    }
+
+    public void setPreventReordering(boolean preventReordering)
+    {
+        isPreventReordering.setBool(preventReordering);
+    }
+
+    public boolean getDisableEditing()
+    {
+        return isDisableEditing.booleanValue();
+    }
+
+    public void setDisableEditing(boolean disableEditing)
+    {
+        isDisableEditing.setBool(disableEditing);
     }
 
     public String debugString()

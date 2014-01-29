@@ -554,9 +554,16 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
             Element e = _table.getRowFormatter().getElement(tableRow);
             DOM.setStyleAttribute(e, "backgroundColor", "#eeeeee");
-            _extraPropertiesTabPanel.setVisible(true);
 
-            repositionExtraProperties();
+            if (isPropertiesEditable(getRow(index)))
+            {
+                _extraPropertiesTabPanel.setVisible(true);
+                repositionExtraProperties();
+            }
+            else
+            {
+                _extraPropertiesTabPanel.setVisible(false);
+            }
         }
         else
         {
@@ -731,7 +738,15 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                     refreshRow(index-1, moveUp);
                 }
             });
-            upButton.setEnabled(index > 0);
+            if (index > 0)
+            {
+                Row prev = _rows.get(index - 1);
+                upButton.setEnabled(isShiftable(rowObject) && isShiftable(prev));
+            }
+            else
+            {
+                upButton.setEnabled(false);
+            }
             addTooltip(upButton, "Click to move up");
             _table.setWidget(tableRow, col++, upButton);
 
@@ -751,7 +766,15 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                     refreshRow(index + 1, moveDown);
                 }
             });
-            downButton.setEnabled(index < _rows.size() - 1);
+            if (index < _rows.size() - 1)
+            {
+                Row next = _rows.get(index + 1);
+                downButton.setEnabled(isShiftable(rowObject) && isShiftable(next));
+            }
+            else
+            {
+                downButton.setEnabled(false);
+            }
             addTooltip(downButton, "Click to move down");
             _table.setWidget(tableRow, col++, downButton);
         }
@@ -859,7 +882,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         col++;
 
         Widget label;
-        if (readOnly)
+        if (readOnly || !isLabelEditable(rowObject))
         {
             label = new Label(pd.getLabel());
         }
@@ -1045,6 +1068,20 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         return null == row.orig || !_domain.isMandatoryField(row.orig);            
     }
 
+    protected boolean isLabelEditable(Row row)
+    {
+        return !row.edit.getDisableEditing();
+    }
+
+    protected boolean isShiftable(Row row)
+    {
+        return !row.edit.getPreventReordering();
+    }
+
+    protected boolean isPropertiesEditable(Row row)
+    {
+        return !row.edit.getDisableEditing();
+    }
 
     /** @return ReadOnly status of the field. */
     public boolean isReadOnly(Row row)

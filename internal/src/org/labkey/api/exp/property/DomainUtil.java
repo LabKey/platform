@@ -238,7 +238,7 @@ public class DomainUtil
             gwtProp.setLookupContainer(prop.getLookup().getContainer() == null ? null : prop.getLookup().getContainer().getPath());
             gwtProp.setLookupQuery(prop.getLookup().getQueryName());
             gwtProp.setLookupSchema(prop.getLookup().getSchemaName());
-        }                                                   
+        }
         return gwtProp;
     }
 
