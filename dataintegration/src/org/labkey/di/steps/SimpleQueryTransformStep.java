@@ -169,6 +169,10 @@ public class SimpleQueryTransformStep extends TransformTask
                 DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, source, log);
 
                 _recordsInserted = appendToTarget(meta, c, u, context, transformSource, log);
+
+                txTarget.commit();
+                if (null != txSource)
+                    txSource.commit();
             }
             long finish = System.currentTimeMillis();
             log.info("Copied " + getNumRowsString(_recordsInserted) + " in " + DateUtil.formatDuration(finish - start));
