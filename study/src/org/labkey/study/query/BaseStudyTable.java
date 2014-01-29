@@ -31,6 +31,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.AliasedColumn;
@@ -756,10 +757,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS);
             sql.append(".").append(property.getName());
             ColumnInfo column = new ExprColumn(this, property.getName(), sql, property.getJdbcType());
-            column.setDescription(property.getDescription());
-            column.setShownInInsertView(true);
-            column.setShownInUpdateView(true);
-            column.setUserEditable(true);
+            PropertyColumn.copyAttributes(null, column, property, getContainer(), null);
             addColumn(column);
         }
     }

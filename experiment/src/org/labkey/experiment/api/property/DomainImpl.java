@@ -338,7 +338,6 @@ public class DomainImpl implements Domain
                     {
                         if (impl._pd.isRequired())
                             checkRequiredStatus.add(impl);
-                        impl.save(user, _dd, sortOrder++);
                         propsAdded.add(impl);
                         propChanged = true;
                     }
@@ -356,13 +355,18 @@ public class DomainImpl implements Domain
                             }
                         }
 
-                        finalNames.put(impl, new Pair<>(impl.getName(), sortOrder));
-                        // Same any changes with a temp, guaranteed unique name. This is important in case a single save
-                        // is renaming "Field1"->"Field2" and "Field2"->"Field1". See issue 17020
                         if (impl.isDirty())
-                            impl.setName(new GUID().toStringNoDashes());
-                        impl.save(user, _dd, sortOrder++);
+                        {
+                            if (null != impl._pdOld && !impl._pdOld.getName().equalsIgnoreCase(impl._pd.getName()))
+                            {
+                                finalNames.put(impl, new Pair<>(impl.getName(), sortOrder));
+                                // Save any fields whose name changed with a temp, guaranteed unique name. This is important in case a single save
+                                // is renaming "Field1"->"Field2" and "Field2"->"Field1". See issue 17020
+                                impl.setName(new GUID().toStringNoDashes());
+                            }
+                        }
                     }
+                    impl.save(user, _dd, sortOrder++);      // Always save to preserve order
                 }
             }
 
