@@ -185,7 +185,7 @@ public class DatasetImportRunnable implements Runnable
                             loader,
                             _columnMap,
                             errors,
-                            false, //Set to TRUE if/when MERGE is implemented
+                            DataSetDefinition.CheckForDuplicates.sourceOnly,
                             //Set to TRUE if MERGEing
                             defaultQCState,
                             _job.getLogger()

@@ -84,7 +84,7 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
                 loader,
                 columnMap,
                 errors,
-                true,
+                DataSetDefinition.CheckForDuplicates.sourceAndDestination,
                 StudyManager.getInstance().getDefaultQCState(study),
                 null
             );

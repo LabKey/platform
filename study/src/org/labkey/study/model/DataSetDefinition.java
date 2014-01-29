@@ -1652,7 +1652,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     /**
      * dataMaps have keys which are property URIs, and values which have already been converted.
      */
-    public List<String> importDatasetData(User user, DataIteratorBuilder in, DataIteratorContext context, boolean checkDuplicates, QCState defaultQCState, Logger logger
+    public List<String> importDatasetData(User user, DataIteratorBuilder in, DataIteratorContext context, CheckForDuplicates checkDuplicates, QCState defaultQCState, Logger logger
             , boolean forUpdate)
     {
         if (getKeyManagementType() == KeyManagementType.RowId)
@@ -1673,14 +1673,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
 
     private void checkForDuplicates(DataIterator data,
-            int indexLSID, int indexPTID, int indexVisit, int indexKey, int indexReplace,
-            DataIteratorContext context, Logger logger)
+                                    int indexLSID, int indexPTID, int indexVisit, int indexKey, int indexReplace,
+                                    DataIteratorContext context, Logger logger, boolean sourceOnly)
     {
         BatchValidationException errors = context.getErrors();
         HashMap<String, Object[]> failedReplaceMap = checkAndDeleteDupes(
                 data,
                 indexLSID, indexPTID, indexVisit, indexKey, indexReplace,
-                errors);
+                errors, sourceOnly);
 
         if (null != failedReplaceMap && failedReplaceMap.size() > 0)
         {
@@ -1689,7 +1689,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             error.append(getKeyTypeDescription());
             error.append(".  ");
 
-            error.append("Duplicates were found in the database or imported data.");
+            error.append("Duplicates were found in the " + (sourceOnly ? "" : "database or ") + "imported data.");
             errors.addRowError(new ValidationException(error.toString()));
 
             int errorCount = 0;
@@ -1715,7 +1715,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (logger != null) logger.debug("checked for duplicates");
     }
 
-
+    public enum CheckForDuplicates
+    {
+        never,
+        sourceOnly,
+        sourceAndDestination
+    }
 
     private class DatasetDataIteratorBuilder implements DataIteratorBuilder
     {
@@ -1723,7 +1728,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         boolean needsQC;
         QCState defaultQC;
         List<String> lsids = null;
-        boolean checkDuplicates = false;
+        CheckForDuplicates checkDuplicates = CheckForDuplicates.never;
         boolean isForUpdate = false;
         boolean useImportAliases = false;
         Logger logger = null;
@@ -1757,7 +1762,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             this.useImportAliases = aliases;
         }
 
-        void setCheckDuplicates(boolean check)
+        void setCheckDuplicates(CheckForDuplicates check)
         {
             checkDuplicates = check;
         }
@@ -2014,7 +2019,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             //
 
             boolean hasError = null != setupError && setupError.hasErrors();
-            if (checkDuplicates && !hasError)
+            if (checkDuplicates != CheckForDuplicates.never && !hasError)
             {
                 Integer indexVisit = timetype.isVisitBased() ? it.indexSequenceNumOutput : indexVisitDate;
                 // no point if required columns are missing
@@ -2023,7 +2028,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     ScrollableDataIterator scrollable = DataIteratorUtil.wrapScrollable(ret);
                     checkForDuplicates(scrollable, indexLSID,
                             translatedIndexPTID, null == indexVisit ? -1 : indexVisit, null == indexKeyProperty ? -1 : indexKeyProperty, null == indexReplace ? -1 : indexReplace,
-                            context, logger);
+                            context, logger,
+                            checkDuplicates == CheckForDuplicates.sourceOnly ? true : false);
                     scrollable.beforeFirst();
                     ret = scrollable;
                 }
@@ -2032,8 +2038,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             return ret;
         }
     }
-
-
 
     private class _DatasetColumnsIterator extends SimpleTranslator
     {
@@ -2357,7 +2361,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
 
     private List<String> insertData(User user, DataIteratorBuilder in,
-            boolean checkDuplicates, DataIteratorContext context, QCState defaultQCState,
+            CheckForDuplicates checkDuplicates, DataIteratorContext context, QCState defaultQCState,
             Logger logger, boolean forUpdate)
     {
         ArrayList<String> lsids = new ArrayList<>();
@@ -2468,7 +2472,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
      */
     public DataIteratorBuilder getInsertDataIterator(User user, DataIteratorBuilder in,
         @Nullable List<String> lsids,
-        boolean checkDuplicates, DataIteratorContext context, QCState defaultQCState,
+        CheckForDuplicates checkDuplicates, DataIteratorContext context, QCState defaultQCState,
         boolean forUpdate)
     {
         TableInfo table = getTableInfo(user, false);
@@ -2546,21 +2550,17 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
      * and do not delete anything
      */
     private HashMap<String, Object[]> checkAndDeleteDupes(DataIterator rows,
-            int indexLSID, int indexPTID, int indexDate, int indexKey, int indexReplace,
-            BatchValidationException errors)
+                                                          int indexLSID, int indexPTID, int indexDate, int indexKey, int indexReplace,
+                                                          BatchValidationException errors, boolean sourceOnly)
     {
         final boolean isDemographic = isDemographicData();
 
         try
         {
-            // duplicate keys found that should be deleted
-            final Set<String> deleteSet = new HashSet<>();
-
             // duplicate keys found in error
             final LinkedHashMap<String,Object[]> noDeleteMap = new LinkedHashMap<>();
 
             StringBuilder sbIn = new StringBuilder();
-            String sep = "";
             final Map<String, Object[]> uriMap = new HashMap<>();
             int count = 0;
             while (rows.next())
@@ -2590,6 +2590,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     noDeleteMap.put(uniq,key);
 
                 // partial fix for 16647, we should handle the replace case differently (do we ever replace?)
+                String sep = "";
                 if (uriMap.size() < 10000 || Boolean.TRUE==replace)
                 {
                     if (uniq.contains(("'")))
@@ -2602,53 +2603,17 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (0 == count)
                 return null;
 
-            TableInfo tinfo = getStorageTableInfo();
-            SimpleFilter filter = new SimpleFilter();
-            filter.addWhereClause((isDemographic?"ParticipantId":"LSID") + " IN (" + sbIn + ")", new Object[]{});
-
-            new TableSelector(tinfo, filter, null).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
-            {
-                @Override
-                public void exec(Map<String, Object> orig) throws SQLException
-                {
-                    String lsid = (String) orig.get("LSID");
-                    String uniq = isDemographic ? (String)orig.get("ParticipantID"): lsid;
-                    Object[] keys = uriMap.get(uniq);
-                    boolean replace = Boolean.TRUE.equals(keys[3]);
-                    if (replace)
-                    {
-                        deleteSet.add(lsid);
-                    }
-                    else
-                    {
-                        noDeleteMap.put(uniq, keys);
-                    }
-
-                }
-            });
-
-            // If we have duplicates, and we don't have an auto-keyed dataset,
+            // For source check only, if we have duplicates, and we don't have an auto-keyed dataset,
             // then we cannot proceed.
-            if (noDeleteMap.size() > 0 && getKeyManagementType() == KeyManagementType.None)
-                return noDeleteMap;
-
-            if (deleteSet.size() == 0)
-                return null;
-
-            SimpleFilter deleteFilter = new SimpleFilter();
-            StringBuilder sbDelete = new StringBuilder();
-            sep = "";
-            for (String s : deleteSet)
+            if (sourceOnly)
             {
-                if (s.contains(("'")))
-                    s = s.replaceAll("'","''");
-                sbDelete.append(sep).append("'").append(s).append("'");
-                sep = ", ";
+                if (noDeleteMap.size() > 0 && getKeyManagementType() == KeyManagementType.None)
+                    return noDeleteMap;
+                else
+                    return null;
             }
-            deleteFilter.addWhereClause("LSID IN (" + sbDelete + ")", new Object[]{});
-            Table.delete(tinfo, deleteFilter);
-
-            return null;
+            else // also check target dataset
+                return checkTargetDupesAndDelete(isDemographic, noDeleteMap, sbIn, uriMap);
         }
         catch (BatchValidationException vex)
         {
@@ -2667,6 +2632,59 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
     }
 
+    private HashMap<String, Object[]> checkTargetDupesAndDelete(final boolean demographic, final LinkedHashMap<String, Object[]> noDeleteMap, StringBuilder sbIn, final Map<String, Object[]> uriMap) throws SQLException
+    {
+        // duplicate keys found that should be deleted
+        final Set<String> deleteSet = new HashSet<>();
+
+        TableInfo tinfo = getStorageTableInfo();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addWhereClause((demographic ?"ParticipantId":"LSID") + " IN (" + sbIn + ")", new Object[]{});
+
+        new TableSelector(tinfo, filter, null).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
+        {
+            @Override
+            public void exec(Map<String, Object> orig) throws SQLException
+            {
+                String lsid = (String) orig.get("LSID");
+                String uniq = demographic ? (String)orig.get("ParticipantID"): lsid;
+                Object[] keys = uriMap.get(uniq);
+                boolean replace = Boolean.TRUE.equals(keys[3]);
+                if (replace)
+                {
+                    deleteSet.add(lsid);
+                }
+                else
+                {
+                    noDeleteMap.put(uniq, keys);
+                }
+
+            }
+        });
+
+        // If we have duplicates, and we don't have an auto-keyed dataset,
+        // then we cannot proceed.
+        if (noDeleteMap.size() > 0 && getKeyManagementType() == KeyManagementType.None)
+            return noDeleteMap;
+
+        if (deleteSet.size() == 0)
+            return null;
+
+        SimpleFilter deleteFilter = new SimpleFilter();
+        StringBuilder sbDelete = new StringBuilder();
+        String sep = "";
+        for (String s : deleteSet)
+        {
+            if (s.contains(("'")))
+                s = s.replaceAll("'","''");
+            sbDelete.append(sep).append("'").append(s).append("'");
+            sep = ", ";
+        }
+        deleteFilter.addWhereClause("LSID IN (" + sbDelete + ")", new Object[]{});
+        Table.delete(tinfo, deleteFilter);
+
+        return null;
+    }
 
     /**
      * Gets the current highest key value for a server-managed key field.
@@ -2949,7 +2967,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             List<Map<String,Object>> dataMap = Collections.singletonList(mergeData);
 
             List<String> result = StudyManager.getInstance().importDatasetData(
-                    u, this, dataMap, errors, true, defaultQCState, null, true);
+                    u, this, dataMap, errors, CheckForDuplicates.sourceAndDestination, defaultQCState, null, true);
 
             if (errors.size() > 0)
             {

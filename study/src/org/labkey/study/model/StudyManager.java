@@ -2997,7 +2997,7 @@ public class StudyManager
 
     /** @deprecated pass in a BatchValidationException, not List<String>  */
     @Deprecated
-    public List<String> importDatasetData(User user, DataSetDefinition def, DataLoader loader, Map<String, String> columnMap, List<String> errors, boolean checkDuplicates, QCState defaultQCState, Logger logger)
+    public List<String> importDatasetData(User user, DataSetDefinition def, DataLoader loader, Map<String, String> columnMap, List<String> errors, DataSetDefinition.CheckForDuplicates checkDuplicates, QCState defaultQCState, Logger logger)
             throws IOException, ServletException, SQLException
     {
         parseData(user, def, loader, columnMap);
@@ -3008,7 +3008,7 @@ public class StudyManager
         return lsids;
     }
 
-    public List<String> importDatasetData(User user, DataSetDefinition def, DataLoader loader, Map<String, String> columnMap, BatchValidationException errors, boolean checkDuplicates, QCState defaultQCState, Logger logger)
+    public List<String> importDatasetData(User user, DataSetDefinition def, DataLoader loader, Map<String, String> columnMap, BatchValidationException errors, DataSetDefinition.CheckForDuplicates checkDuplicates, QCState defaultQCState, Logger logger)
             throws IOException, ServletException, SQLException
     {
         parseData(user, def, loader, columnMap);
@@ -3020,7 +3020,7 @@ public class StudyManager
 
     /** @deprecated pass in a BatchValidationException, not List<String>  */
     @Deprecated
-    public List<String> importDatasetData(User user, DataSetDefinition def, List<Map<String, Object>> data, List<String> errors, boolean checkDuplicates, QCState defaultQCState, Logger logger,
+    public List<String> importDatasetData(User user, DataSetDefinition def, List<Map<String, Object>> data, List<String> errors, DataSetDefinition.CheckForDuplicates checkDuplicates, QCState defaultQCState, Logger logger,
                                           boolean forUpdate)
     {
         if (data.isEmpty())
@@ -4398,7 +4398,7 @@ public class StudyManager
             StudyManager.getInstance().importDatasetData(
                     _context.getUser(),
                     (DataSetDefinition)def, dl, columnMap,
-                    errors, true, null, null);
+                    errors, DataSetDefinition.CheckForDuplicates.sourceAndDestination, null, null);
         }
 
 

@@ -148,8 +148,8 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         QCState defaultQCState = StudyManager.getInstance().getDefaultQCState(_dataset.getStudy());
         // for MERGE checking for duplicates within the source rows makes sense, but not against the existing rows
         DataIteratorBuilder insert = _dataset.getInsertDataIterator(user, data, null,
-                context.getInsertOption() != InsertOption.MERGE, context,
-                defaultQCState, false);
+                context.getInsertOption() == InsertOption.MERGE ? DataSetDefinition.CheckForDuplicates.sourceOnly : DataSetDefinition.CheckForDuplicates.sourceAndDestination
+                , context, defaultQCState, false);
         return insert;
     }
 
