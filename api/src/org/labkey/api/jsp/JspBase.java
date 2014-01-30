@@ -385,14 +385,14 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return new _HtmlString(PageFlowUtil.generateSubmitButton(text));
     }
 
-    public String generateReturnUrlFormField(URLHelper returnURL)
+    public _HtmlString generateReturnUrlFormField(URLHelper returnURL)
     {
-        return ReturnUrlForm.generateHiddenFormField(returnURL);
+        return new _HtmlString(ReturnUrlForm.generateHiddenFormField(returnURL));
     }
 
     public _HtmlString generateReturnUrlFormField(ReturnUrlForm form)
     {
-        return new _HtmlString(ReturnUrlForm.generateHiddenFormField(form.getReturnURLHelper()));
+        return generateReturnUrlFormField(form.getReturnActionURL());
     }
 
     public void include(ModelAndView view, Writer writer) throws Exception
