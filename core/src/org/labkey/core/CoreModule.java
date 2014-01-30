@@ -794,7 +794,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 JSONDataLoader.RowTest.class,
                 EmailTemplate.TestCase.class,
                 HelpTopic.TestCase.class,
-                CaseInsensitiveHashMap.TestCase.class
+                CaseInsensitiveHashMap.TestCase.class,
+                StatsServiceImpl.TestCase.class
         ));
     }
 
