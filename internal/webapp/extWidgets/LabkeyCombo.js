@@ -56,16 +56,33 @@ Ext4.define('LABKEY.ext4.ComboBox', {
         //this is necessary to clear invalid fields, assuming the initial value is set asynchronously on store load
         this.mon(this.store, 'load', this.isValid, this, {single: true, delay: 20});
 
-        // NOTE; if you have 2 combos on the same page sharing a store (like a FormPanel w/
-        // 2 fields pointing to the same lookup), for some reason Ext doesnt clear the store filter that gets
-        // created by typeahead some of the time when you toggle between the fields.  as a result, the second
-        // field will be filtered based on the first field's value.  this listeners is a check to ensure
-        // the store filter is cleared, assuming the lastQuery string is empty.
-        this.on('beforequery', function(qe){
-            if (Ext4.isEmpty(qe.combo.lastQuery) && qe.combo.store.isFiltered()){
-                qe.combo.store.clearFilter();
+        this.on('beforequery', this.syncStoreFilter, this);
+        this.on('blur', this.syncStoreFilter, this);
+    },
+
+    //the purpose of this method is to handle the situation where 2 combos share a store,
+    //such as a form with 2 fields using the same lookup.  because typeahead will locally
+    //filter the store, we need to ensure the the combo's filter is the one being actively applied to the store
+    syncStoreFilter: function(){
+        //only bother syncing if the combo's filter state doesnt match the store's
+        if (!!(this.queryFilter) != this.store.isFiltered()){
+            if (this.queryFilter){
+                this.store.addFilter(this.queryFilter);
+                this.store.filter();
             }
-        }, this);
+            else {
+                this.store.clearFilter();
+            }
+        }
+        else if (this.queryFilter){
+            //if both are filtered, make sure the store is using this combo's filter
+            if (this.store.filters.getCount() != 1 || this.store.filters.getAt(0) !== this.queryFilter){
+                this.store.clearFilter();
+                this.store.addFilter(this.queryFilter);
+            }
+
+            this.store.filter();
+        }
     }
 });
 

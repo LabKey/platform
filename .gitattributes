@@ -448,6 +448,7 @@ api/src/org/labkey/api/ehr/dataentry/EncounterFormSection.java -text
 api/src/org/labkey/api/ehr/dataentry/ExtendedAnimalDetailsFormSection.java -text
 api/src/org/labkey/api/ehr/dataentry/FormElement.java -text
 api/src/org/labkey/api/ehr/dataentry/FormSection.java -text
+api/src/org/labkey/api/ehr/dataentry/NonStoreFormSection.java -text
 api/src/org/labkey/api/ehr/dataentry/RequestForm.java -text
 api/src/org/labkey/api/ehr/dataentry/RequestFormSection.java -text
 api/src/org/labkey/api/ehr/dataentry/SimpleFormPanelSection.java -text
@@ -514,6 +515,7 @@ api/src/org/labkey/api/ehr/security/EHRScheduledAdminPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRScheduledDeletePermission.java -text
 api/src/org/labkey/api/ehr/security/EHRScheduledInsertPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRScheduledUpdatePermission.java -text
+api/src/org/labkey/api/ehr/security/EHRVeternarianPermission.java -text
 api/src/org/labkey/api/etl/AbstractDataIterator.java -text
 api/src/org/labkey/api/etl/AsyncDataIterator.java -text
 api/src/org/labkey/api/etl/BeanDataIterator.java -text
@@ -729,9 +731,11 @@ api/src/org/labkey/api/ldk/AbstractNavItem.java -text
 api/src/org/labkey/api/ldk/ExtendedSimpleModule.java -text
 api/src/org/labkey/api/ldk/LDKService.java -text
 api/src/org/labkey/api/ldk/NavItem.java -text
+api/src/org/labkey/api/ldk/notification/AbstractNotification.java -text
 api/src/org/labkey/api/ldk/notification/Notification.java -text
 api/src/org/labkey/api/ldk/notification/NotificationSection.java -text
 api/src/org/labkey/api/ldk/notification/NotificationService.java -text
+api/src/org/labkey/api/ldk/table/AbstractTableCustomizer.java -text
 api/src/org/labkey/api/ldk/table/ButtonConfigFactory.java -text
 api/src/org/labkey/api/ldk/table/SimpleButtonConfigFactory.java -text
 api/src/org/labkey/api/lists/permissions/DesignListPermission.java -text

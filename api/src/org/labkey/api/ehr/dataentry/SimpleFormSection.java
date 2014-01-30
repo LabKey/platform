@@ -58,6 +58,21 @@ public class SimpleFormSection extends AbstractFormSection
         _queryName = queryName;
     }
 
+    protected void setQueryName(String queryName)
+    {
+        _queryName = queryName;
+    }
+
+    public String getSchemaName()
+    {
+        return _schemaName;
+    }
+
+    public String getQueryName()
+    {
+        return _queryName;
+    }
+
     @Override
     public Set<Pair<String, String>> getTableNames()
     {

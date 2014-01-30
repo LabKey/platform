@@ -128,7 +128,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             }
         });
 
-        if (LABKEY.ext.Ext4Helper.hasStoreLoaded(this.store))
+        if (LABKEY.ext4.Util.hasStoreLoaded(this.store))
             this.onLoad(this.store, true);
         else
             this.mon(this.store, 'load', this.onLoad, this, {single: true});
@@ -139,7 +139,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
     onLoad: function(store, success){
         this.removeAll();
 
-        if (!success || !store || !LABKEY.ext.Ext4Helper.hasStoreLoaded(store)){
+        if (!success || !store || !LABKEY.ext4.Util.hasStoreLoaded(store)){
             this.add({tag: 'div', html: 'Error loading data'});
             return;
         }
@@ -251,7 +251,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         meta.editable = true; //force read only fields to give an input
 
         //create the field
-        var theField = LABKEY.ext.Ext4Helper.getFormEditorConfig(meta);
+        var theField = LABKEY.ext4.Util.getFormEditorConfig(meta);
         theField.fieldLabel = null;
         theField.defaultValue = null;
         theField.value = null;

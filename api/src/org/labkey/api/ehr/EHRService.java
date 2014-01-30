@@ -17,6 +17,7 @@ package org.labkey.api.ehr;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableCustomizer;
 import org.labkey.api.data.TableInfo;
@@ -198,4 +199,8 @@ abstract public class EHRService
     abstract public boolean hasPermission (String schemaName, String queryName, Container c, User u, Class<? extends Permission> perm);
 
     abstract public boolean hasPermission (String schemaName, String queryName, Container c, User u, Class<? extends Permission> perm, EHRQCState qcState);
+
+    abstract public void customizeDateColumn(AbstractTableInfo ti, String colName);
+
+    abstract public TableCustomizer getEHRCustomizer();
 }

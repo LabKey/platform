@@ -55,6 +55,7 @@ public class AbstractDataEntryForm implements DataEntryForm
     private String _storeCollectionClass = "EHR.data.StoreCollection";
     private List<FormSection> _sections;
     private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
+    private AbstractFormSection.TEMPLATE_MODE _templateMode = AbstractFormSection.TEMPLATE_MODE.MULTI;
     private Module _owner;
 
     public AbstractDataEntryForm(DataEntryFormContext ctx, Module owner, String name, String label, String category, List<FormSection> sections)
@@ -185,11 +186,19 @@ public class AbstractDataEntryForm implements DataEntryForm
         return defaultButtons;
     }
 
+    protected void setTemplateMode(AbstractFormSection.TEMPLATE_MODE templateMode)
+    {
+        _templateMode = templateMode;
+    }
+
     protected List<String> getMoreActionButtonConfigs()
     {
         List<String> defaultButtons = new ArrayList<String>();
         defaultButtons.add("VALIDATEALL");
-        defaultButtons.add("APPLYFORMTEMPLATE");
+
+        if (_templateMode.getFormBtn() != null)
+            defaultButtons.add(_templateMode.getFormBtn());
+
         defaultButtons.add("REVIEW");
         defaultButtons.add("SUBMITANDNEXT");
         defaultButtons.add("FORCESUBMIT");

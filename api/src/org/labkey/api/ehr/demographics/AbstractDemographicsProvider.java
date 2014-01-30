@@ -146,6 +146,12 @@ abstract public class AbstractDemographicsProvider implements DemographicsProvid
         keys.add(FieldKey.fromString("Id"));
         keys.addAll(getFieldKeys());
 
+        //always add objectid, if exists
+        if (ti.getColumn("objectid") != null)
+        {
+            keys.add(FieldKey.fromString("objectid")) ;
+        }
+
         return QueryService.get().getColumns(ti, keys);
     }
 

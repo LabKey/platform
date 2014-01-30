@@ -38,6 +38,8 @@ public class HistoryRowImpl implements HistoryRow
     private String _caseId;
     private String _runId;
     private String _encounterId;
+    private String _qcStateLabel;
+    private Boolean _isPublicData;
     private Boolean _showTime = false;
     private String _html;
 
@@ -46,13 +48,15 @@ public class HistoryRowImpl implements HistoryRow
     protected final static SimpleDateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     protected final static SimpleDateFormat _timeFormat = new SimpleDateFormat("kk:mm");
 
-    public HistoryRowImpl(String categoryText, String primaryGroup, String subjectId, Date date, String html)
+    public HistoryRowImpl(String categoryText, String primaryGroup, String subjectId, Date date, String html, String qcStateLabel, Boolean publicData)
     {
         _categoryText = categoryText;
         _primaryGroup = primaryGroup;
         _subjectId = subjectId;
         _date = date;
         _html = html;
+        _qcStateLabel = qcStateLabel;
+        _isPublicData = publicData;
     }
 
     public JSONObject toJSON()
@@ -74,6 +78,8 @@ public class HistoryRowImpl implements HistoryRow
         json.put("encounterId", _encounterId);
         json.put("runId", _runId);
         json.put("performedby", _performedBy);
+        json.put("qcStateLabel", _qcStateLabel);
+        json.put("publicData", _isPublicData);
 
         json.put("html", _html);
 
@@ -130,6 +136,26 @@ public class HistoryRowImpl implements HistoryRow
     public String getPrimaryGroup()
     {
         return _primaryGroup;
+    }
+
+    public Boolean getPublicData()
+    {
+        return _isPublicData;
+    }
+
+    public void setPublicData(Boolean publicData)
+    {
+        _isPublicData = publicData;
+    }
+
+    public String getQcStateLabel()
+    {
+        return _qcStateLabel;
+    }
+
+    public void setQcStateLabel(String qcStateLabel)
+    {
+        _qcStateLabel = qcStateLabel;
     }
 
     public String getTimeString()

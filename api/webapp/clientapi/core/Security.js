@@ -1013,7 +1013,7 @@ LABKEY.Security = new function()
             if (config) {
                 for (var c in config) {
                     if (config.hasOwnProperty(c)) {
-                        myConfig[c] = c;
+                        myConfig[c] = config[c];
                     }
                 }
             }

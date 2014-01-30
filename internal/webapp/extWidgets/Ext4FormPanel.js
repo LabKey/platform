@@ -134,7 +134,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
 
         this.callParent();
 
-        if(!LABKEY.ext.Ext4Helper.hasStoreLoaded(this.store))
+        if(!LABKEY.ext4.Util.hasStoreLoaded(this.store))
             this.mon(this.store, 'load', this.loadQuery, this, {single: true});
         else {
             //TODO: calling after callParent() may be forcing an unnecessary second layout
@@ -197,7 +197,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
             return;
         }
 
-        var fields = LABKEY.ext.Ext4Helper.getStoreFields(this.store);
+        var fields = LABKEY.ext4.Util.getStoreFields(this.store);
         if(!fields){
             console.log('There are no fields in the store');
             return;
@@ -223,7 +223,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
     configureForm: function(store){
         var toAdd = [];
         var compositeFields = {};
-        LABKEY.ext.Ext4Helper.getStoreFields(store).each(function(c){
+        LABKEY.ext4.Util.getStoreFields(store).each(function(c){
             var config = {
                 queryName: store.queryName,
                 schemaName: store.schemaName
@@ -236,9 +236,9 @@ Ext4.define('LABKEY.ext4.FormPanel', {
                 Ext4.Object.merge(config, this.metadata[c.name]);
             }
 
-            if (LABKEY.ext.Ext4Helper.shouldShowInUpdateView(c)){
-                var fields = LABKEY.ext.Ext4Helper.getStoreFields(this.store);
-                var theField = LABKEY.ext.Ext4Helper.getFormEditorConfig(fields.get(c.name), config);
+            if (LABKEY.ext4.Util.shouldShowInUpdateView(c)){
+                var fields = LABKEY.ext4.Util.getStoreFields(this.store);
+                var theField = LABKEY.ext4.Util.getFormEditorConfig(fields.get(c.name), config);
 
                 if(!c.width)
                     theField.width = this.defaultFieldWidth;
@@ -554,7 +554,7 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
                     record.set(values); //otherwise record will not be dirty
                     record.phantom = true;
                     this.store.add(record);
-                    this.bindRecord(record);
+                    this.bindRecord(record, true);
                 }
             }
             else {
@@ -593,17 +593,27 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
         }
     },
 
-    bindRecord: function(record){
+    bindRecord: function(record, skipFormUpdate){
         var form = this.panel.getForm();
         this.ignoreNextUpdateEvent = null;
 
         if(form.getRecord())
             this.unbindRecord();
 
-        form.suspendEvents();
-        form.loadRecord(record);
-        form.resumeEvents();
-        form.isValid();
+        // note: in some circumstances we dont want to update the form on binding
+        // an example is when user input has triggered the creation of a record
+        // the user might be midway through typing into a combo.  we just created a new model and
+        // set its values based on the form.  immediately calling form.setValues(rec) can cause the
+        // form to lose a value the user might currently be typing
+        if (skipFormUpdate === true){
+            form._record = record;
+        }
+        else {
+            form.suspendEvents();
+            form.loadRecord(record);
+            form.resumeEvents();
+            form.isValid();
+        }
     },
 
     unbindRecord: function(){
@@ -633,7 +643,7 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
             record.set(values); //otherwise record will not be dirty
             record.phantom = true;
             this.panel.store.add(record);
-            this.bindRecord(record);
+            this.bindRecord(record, true);
         }
     },
 
@@ -725,7 +735,14 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
         var record = form.getRecord();
         if (record){
             this.ignoreNextUpdateEvent = true;
+
+            // NOTE: this is a temp solution to an Ext4.2 bug.  When the keyfield of the record is set in the client, and then
+            // changed, the record is inappropriately marked as phantom=false.  this results in the store counting this as an update,
+            // rather than an insert.   see Ext.data.Model.changeId(), which is called by set()
+            // until a better solution is found, this prevents the update from changing the original value of phantom
+            var phantom = record.phantom;
             form.updateRecord(record);
+            record.phantom = phantom;
         }
     }
 });

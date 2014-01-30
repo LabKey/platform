@@ -17,6 +17,7 @@ package org.labkey.api.ehr.dataentry;
 
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.ehr.EHRService;
 import org.labkey.api.security.User;
 
 import java.util.HashMap;
@@ -38,8 +39,14 @@ public class SimpleFormPanelSection extends SimpleFormSection
 
     public SimpleFormPanelSection(String schemaName, String queryName, String label, boolean createRecordOnLoad)
     {
+        this(schemaName, queryName, label, createRecordOnLoad, EHRService.FORM_SECTION_LOCATION.Body);
+    }
+
+    public SimpleFormPanelSection(String schemaName, String queryName, String label, boolean createRecordOnLoad, EHRService.FORM_SECTION_LOCATION location)
+    {
         super(schemaName, queryName, label, "ehr-formpanel");
         _createRecordOnLoad = createRecordOnLoad;
+        setLocation(location);
     }
 
     @Override

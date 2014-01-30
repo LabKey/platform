@@ -25,6 +25,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: bbimber
@@ -91,6 +92,15 @@ public class CreateURLScriptModel extends ExportScriptModel
             url.addParameter("query.viewName", getViewName());
 
         url.addParameter("query.columns", getColumns());
+
+        Map<String, Object> params = getQueryView().getSettings().getQueryParameters();
+        if (params != null)
+        {
+            for (String param : params.keySet())
+            {
+                url.addParameter("query.param." + param, params.get(param) == null ? null : params.get(param).toString());
+            }
+        }
 
         String sort = getSort();
         if (!StringUtils.isEmpty(sort))

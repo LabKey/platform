@@ -103,7 +103,7 @@ Ext4.define('LABKEY.ext4.data.Store', {
         //NOTE: if the config object contains a load lister it will be executed prior to this one...not sure if that's a problem or not
         this.on('beforeload', this.onBeforeLoad, this);
         this.on('load', this.onLoad, this);
-        this.on('update', this.onUpdate, this);
+        this.on('update', this.onStoreUpdate, this);
         this.on('add', this.onAdd, this);
 
         this.proxy.reader.on('datachange', this.onReaderLoad, this);
@@ -170,7 +170,7 @@ Ext4.define('LABKEY.ext4.data.Store', {
         baseParams.apiVersion = 9.1;
 
         if (config.parameters){
-            for (var n in config.parameters)
+            for (var n in oconfig.parameters)
                 baseParams["query.param." + n] = config.parameters[n];
         }
 

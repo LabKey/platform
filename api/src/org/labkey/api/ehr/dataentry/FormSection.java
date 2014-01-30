@@ -57,4 +57,6 @@ public interface FormSection
     abstract public void addConfigSource(String source);
 
     abstract public void addClientDependency(ClientDependency cd);
+
+    abstract public void setTemplateMode(AbstractFormSection.TEMPLATE_MODE mode);
 }

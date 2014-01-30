@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2014 LabKey Corporation
+ * Copyright (c) 2013 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.ehr.dataentry;
-
-import java.util.Collections;
-import java.util.List;
+package org.labkey.api.ehr.security;
 
 /**
  * User: bimber
- * Date: 6/9/13
- * Time: 4:15 PM
+ * Date: 1/17/13
+ * Time: 7:49 PM
  */
-public class ExtendedAnimalDetailsFormSection extends AnimalDetailsFormSection
+public class EHRVeternarianPermission extends AbstractEHRPermission
 {
-    public ExtendedAnimalDetailsFormSection()
+    public EHRVeternarianPermission()
     {
-        super();
-
-        setXtype("ehr-animaldetailsextendedpanel");
+        super("EHRVeternarianPermission", "This is the base permission used to grant vets additional privileges, such as case review");
     }
 }

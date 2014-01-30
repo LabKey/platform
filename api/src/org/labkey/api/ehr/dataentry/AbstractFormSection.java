@@ -48,11 +48,13 @@ abstract public class AbstractFormSection implements FormSection
     private String _name;
     private String _label;
     private String _xtype;
+    private boolean _hidden = false;
     private String _clientModelClass = "EHR.model.DefaultClientModel";
     private String _clientStoreClass = "EHR.data.DataEntryClientStore";
     private EHRService.FORM_SECTION_LOCATION _location = EHRService.FORM_SECTION_LOCATION.Body;
     private String _tabName = null;
     private TEMPLATE_MODE _templateMode = TEMPLATE_MODE.MULTI;
+    private boolean _allowBulkAdd = true;
 
     private List<String> _configSources = new ArrayList<String>();
 
@@ -80,6 +82,16 @@ abstract public class AbstractFormSection implements FormSection
         return _name;
     }
 
+    protected void setName(String name)
+    {
+        _name = name;
+    }
+
+    protected void setLabel(String label)
+    {
+        _label = label;
+    }
+
     public String getLabel()
     {
         return _label;
@@ -93,6 +105,11 @@ abstract public class AbstractFormSection implements FormSection
     public void setXtype(String xtype)
     {
         _xtype = xtype;
+    }
+
+    public void setHidden(boolean hidden)
+    {
+        _hidden = hidden;
     }
 
     protected void setTabName(String tabName)
@@ -152,21 +169,28 @@ abstract public class AbstractFormSection implements FormSection
 
     public static enum TEMPLATE_MODE
     {
-        MULTI("TEMPLATE"),
-        NO_ID("TEMPLATE_NO_ID"),
-        ENCOUNTER("TEMPLATE_ENCOUNTER"),
-        NONE(null);
+        MULTI("TEMPLATE", "APPLYFORMTEMPLATE"),
+        NO_ID("TEMPLATE_NO_ID", "APPLYFORMTEMPLATE_NO_ID"),
+        ENCOUNTER("TEMPLATE_ENCOUNTER", "APPLYFORMTEMPLATE_ENCOUNTER"),
+        NONE(null, null);
 
-        private String _button;
+        private String _formBtn;
+        private String _sectionBtn;
 
-        TEMPLATE_MODE(String button)
+        TEMPLATE_MODE(String sectionBtn, String formBtn)
         {
-            _button = button;
+            _sectionBtn = sectionBtn;
+            _formBtn = formBtn;
         }
 
-        public String getButton()
+        public String getFormBtn()
         {
-            return _button;
+            return _formBtn;
+        }
+
+        public String getSectionBtn()
+        {
+            return _sectionBtn;
         }
     }
 
@@ -220,6 +244,7 @@ abstract public class AbstractFormSection implements FormSection
         json.put("name", getName());
         json.put("label", getLabel());
         json.put("xtype", getXtype());
+        json.put("hidden", _hidden);
         json.put("clientModelClass", getClientModelClass());
         json.put("clientStoreClass", getClientStoreClass());
         json.put("location", getLocation().name());
@@ -235,11 +260,19 @@ abstract public class AbstractFormSection implements FormSection
         return json;
     }
 
+    public void setAllowBulkAdd(boolean allowBulkAdd)
+    {
+        _allowBulkAdd = allowBulkAdd;
+    }
+
     public List<String> getTbarButtons()
     {
         List<String> defaultButtons = new ArrayList<String>();
         defaultButtons.add("ADDRECORD");
-        defaultButtons.add("ADDANIMALS");
+
+        if (_allowBulkAdd)
+            defaultButtons.add("ADDANIMALS");
+
         defaultButtons.add("DELETERECORD");
         defaultButtons.add("SELECTALL");
 
@@ -250,8 +283,8 @@ abstract public class AbstractFormSection implements FormSection
             defaultButtons.add("COPYFROMSECTION");
         }
 
-        if (_templateMode.getButton() != null)
-            defaultButtons.add(_templateMode.getButton());
+        if (_templateMode.getSectionBtn() != null)
+            defaultButtons.add(_templateMode.getSectionBtn());
 
         return defaultButtons;
     }

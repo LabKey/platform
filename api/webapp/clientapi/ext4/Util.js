@@ -300,7 +300,6 @@
                 width            : meta.width,
                 height           : meta.height,
                 msgTarget        : 'qtip',
-                tabIndex         : 1,   //NOTE: if tabIndex is set, tabbing through forms will work correctly
                 validateOnChange : true
             };
 
@@ -570,7 +569,7 @@
                         break;
                     case "string":
                     default:
-                        displayValue = displayValue ? displayValue.toString() : "";
+                        displayValue = !Ext4.isEmpty(displayValue) ? displayValue.toString() : "";
                 }
             }
 
@@ -804,7 +803,7 @@
             }
 
             if (c.lookup) {
-                return [
+                return c.lookup.storeId || [
                     c.lookup.schemaName || c.lookup.schema,
                     c.lookup.queryName || c.lookup.table,
                     c.lookup.keyColumn,

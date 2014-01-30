@@ -31,7 +31,7 @@ Ext4.override(Ext4.form.field.Base, {
         '{beforeLabelTextTpl}',
         '<tpl if="fieldLabel">{fieldLabel}{labelSeparator}</tpl>',
         //NOTE: this line added.  this is sub-optimal, but afterLabelTpl uses a different path to populate tpl values
-        '<tpl if="helpPopup"><a href="#" data-qtip="{helpPopup}"><span class="labkey-help-pop-up">?</span></a></tpl>',
+        '<tpl if="helpPopup"><a tabindex="-1" href="javascript:void(0);" data-qtip="{helpPopup}"><span class="labkey-help-pop-up">?</span></a></tpl>',
         '{afterLabelTextTpl}',
         '</label>',
         '{afterLabelTpl}',

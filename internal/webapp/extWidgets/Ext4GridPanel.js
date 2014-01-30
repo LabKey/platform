@@ -100,7 +100,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
         this.configurePlugins();
 
-        if(LABKEY.ext.Ext4Helper.hasStoreLoaded(this.store)){
+        if(LABKEY.ext4.Util.hasStoreLoaded(this.store)){
             this.columns = this.getColumnsConfig();
         }
 
@@ -217,7 +217,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
             Ext4.Object.merge(config, this.metadata[c.name]);
         }
 
-        var columns = LABKEY.ext.Ext4Helper.getColumnsConfig(this.store, this, config);
+        var columns = LABKEY.ext4.Util.getColumnsConfig(this.store, this, config);
 
         for (var idx=0;idx<columns.length;idx++){
             var col = columns[idx];
@@ -230,7 +230,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
                 col.hidden = true;
             }
 
-            var meta = LABKEY.ext.Ext4Helper.findFieldMetadata(this.store, col.dataIndex);
+            var meta = LABKEY.ext4.Util.findFieldMetadata(this.store, col.dataIndex);
             if(!meta)
                 continue;
 
@@ -240,7 +240,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
             //listen for changes in underlying data in lookup store
             if(meta.lookup && meta.lookups !== false && meta.lookup.isPublic){
-                var lookupStore = LABKEY.ext.Ext4Helper.getLookupStore(meta);
+                var lookupStore = LABKEY.ext4.Util.getLookupStore(meta);
 
                 //this causes the whole grid to rerender, which is very expensive.  better solution?
                 if(lookupStore){
@@ -277,14 +277,14 @@ Ext4.define('LABKEY.ext4.GridPanel', {
         for (var i=0;i<columns.length;i++){
 
             col = columns[i];
-            meta = LABKEY.ext.Ext4Helper.findFieldMetadata(this.store, col.dataIndex);
+            meta = LABKEY.ext4.Util.findFieldMetadata(this.store, col.dataIndex);
 
             if(meta && !meta.fixedWidthCol){
                 values = [];
                 var records = this.store.getRange();
                 for (var j=0;j<records.length;j++){
                     var rec = records[j];
-                    value = LABKEY.ext.Ext4Helper.getDisplayString(rec.get(meta.name), meta, rec, rec.store);
+                    value = LABKEY.ext4.Util.getDisplayString(rec.get(meta.name), meta, rec, rec.store);
                     if(!Ext4.isEmpty(value)) {
                         values.push(value.length);
                     }
@@ -343,7 +343,7 @@ LABKEY.ext4.GRIDBUTTONS = {
             tooltip: 'Click to add a row',
             handler: function(btn){
                 var grid = btn.up('gridpanel');
-                if(!grid.store || !LABKEY.ext.Ext4Helper.hasStoreLoaded(grid.store))
+                if(!grid.store || !LABKEY.ext4.Util.hasStoreLoaded(grid.store))
                     return;
 
                 var cellEditing = grid.getPlugin('cellediting');

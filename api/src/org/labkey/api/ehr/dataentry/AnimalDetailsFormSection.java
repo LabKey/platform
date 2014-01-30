@@ -31,16 +31,10 @@ import java.util.Map;
  * Date: 6/9/13
  * Time: 4:15 PM
  */
-public class AnimalDetailsFormSection extends AbstractFormSection
+public class AnimalDetailsFormSection extends NonStoreFormSection
 {
     public AnimalDetailsFormSection()
     {
         super("AnimalDetails", "Animal Details", "ehr-animaldetailspanel");
-    }
-
-    @Override
-    protected List<FormElement> getFormElements(DataEntryFormContext ctx)
-    {
-        return Collections.emptyList();
     }
 }

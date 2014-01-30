@@ -58,7 +58,7 @@ abstract public class AbstractDataSource implements HistoryDataSource
     private String _categoryText;
     private String _primaryGroup;
     private String _name;
-    private String _subjectIdField = "Id";
+    protected String _subjectIdField = "Id";
     protected static final Logger _log = Logger.getLogger(HistoryDataSource.class);
 
     protected final static SimpleDateFormat _dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm");
@@ -132,12 +132,24 @@ abstract public class AbstractDataSource implements HistoryDataSource
 
         final Collection<ColumnInfo> cols = getColumns(ti);
 
-        if (ti.getColumn("qcstate") != null)
+        //always show only public when redacted
+        if (redacted && ti.getColumn("qcstate") != null)
             filter.addCondition(FieldKey.fromString("QCState/publicdata"), true, CompareType.EQUAL);
 
         TableSelector ts = new TableSelector(ti, cols, filter, null);
         ts.setForDisplay(true);
 
+        List<HistoryRow> rows = processRows(ts, redacted, cols);
+
+        long duration = ((new Date()).getTime() - start.getTime()) / 1000;
+        if (duration > 3)
+            _log.error("Loaded history on table " + _query + " in " + duration + " seconds");
+
+        return rows;
+    }
+
+    protected List<HistoryRow> processRows(TableSelector ts, final boolean redacted, final Collection<ColumnInfo> cols)
+    {
         final List<HistoryRow> rows = new ArrayList<HistoryRow>();
         ts.forEach(new Selector.ForEachBlock<ResultSet>()
         {
@@ -160,16 +172,18 @@ abstract public class AbstractDataSource implements HistoryDataSource
             }
         });
 
-        long duration = ((new Date()).getTime() - start.getTime()) / 1000;
-        if (duration > 3)
-            _log.error("Loaded history on table " + _query + " in " + duration + " seconds");
-
         return rows;
     }
-
     protected HistoryRow createHistoryRow(Results results, String categoryText, String categoryGroup, String subjectId, Date date, String html) throws SQLException
     {
-        return new HistoryRowImpl(categoryText, categoryGroup, subjectId, date, html);
+        String qcStateLabel = results.hasColumn(FieldKey.fromString("qcstate/Label")) ? results.getString(FieldKey.fromString("qcstate/Label")) : null;
+        Boolean publicData = results.hasColumn(FieldKey.fromString("qcstate/PublicData")) ? results.getBoolean(FieldKey.fromString("qcstate/PublicData")) : true;
+        if (!results.hasColumn(FieldKey.fromString("qcstate/PublicData")))
+        {
+            _log.info("DataSource does not contain QCState: " + getName());
+        }
+
+        return new HistoryRowImpl(categoryText, categoryGroup, subjectId, date, html, qcStateLabel, publicData);
     }
 
     protected String getCategoryText(Results rs) throws SQLException
@@ -187,27 +201,39 @@ abstract public class AbstractDataSource implements HistoryDataSource
         return _primaryGroup;
     }
 
+    private Collection<FieldKey> getAlwaysPresentFieldKeys(TableInfo ti)
+    {
+        Set<FieldKey> cols = new HashSet<>();
+
+        cols.add(FieldKey.fromString("qcstate"));
+        cols.add(FieldKey.fromString("qcstate/Label"));
+        cols.add(FieldKey.fromString("qcstate/PublicData"));
+        cols.add(FieldKey.fromString("taskid"));
+        cols.add(FieldKey.fromString("requestid"));
+
+        return cols;
+    }
+
     private Collection<ColumnInfo> getColumns(TableInfo ti)
     {
-        if (getColumnNames() == null)
+        List<FieldKey> columns = new ArrayList<>();
+        if (getColumnNames() != null)
         {
-            Set<ColumnInfo> cols = new HashSet<ColumnInfo>();
-            for (FieldKey fk : ti.getDefaultVisibleColumns())
+            for (String colName : getColumnNames())
             {
-                cols.add(ti.getColumn(fk));
+                columns.add(FieldKey.fromString(colName));
             }
-            return cols;
+        }
+        else
+        {
+            columns.addAll(ti.getDefaultVisibleColumns());
         }
 
-        List<FieldKey> columns = new ArrayList<FieldKey>();
-        for (String colName : getColumnNames())
-        {
-            columns.add(FieldKey.fromString(colName));
-        }
+        columns.addAll(getAlwaysPresentFieldKeys(ti));
 
         QueryService qs = QueryService.get();
         Map<FieldKey, ColumnInfo> map = qs.getColumns(ti, columns);
-        Set<FieldKey> fieldKeys = new LinkedHashSet<FieldKey>();
+        Set<FieldKey> fieldKeys = new LinkedHashSet<>();
 
         for (ColumnInfo col : map.values())
         {
