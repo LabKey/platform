@@ -27,6 +27,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.study.StudySchema;
@@ -41,6 +42,7 @@ import org.labkey.study.model.TreatmentImpl;
 import org.labkey.study.model.TreatmentManager;
 import org.labkey.study.model.TreatmentProductImpl;
 import org.labkey.study.model.VisitImpl;
+import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -76,7 +78,8 @@ public class StudyDesignController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
+            if (getContainer().hasPermission(getUser(), ManageStudyPermission.class))
+                root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
             return root.addChild("Manage Assay Schedule");
         }
     }
@@ -106,7 +109,8 @@ public class StudyDesignController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
+            if (getContainer().hasPermission(getUser(), ManageStudyPermission.class))
+                root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
             return root.addChild("Manage Study Products");
         }
     }
@@ -121,7 +125,8 @@ public class StudyDesignController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
+            if (getContainer().hasPermission(getUser(), ManageStudyPermission.class))
+                root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
             return root.addChild("Manage Immunizations");
         }
     }
@@ -464,6 +469,49 @@ public class StudyDesignController extends BaseStudyController
             response.put("Included", true);
             response.put("success", true);
             return response;
+        }
+    }
+
+    @RequiresPermissionClass(UpdatePermission.class)
+    public class UpdateAssayPlanAction extends ApiAction<AssayPlanForm>
+    {
+        @Override
+        public ApiResponse execute(AssayPlanForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+            if (study != null)
+            {
+                study = study.createMutable();
+                study.setAssayPlan(form.getAssayPlan());
+                StudyManager.getInstance().updateStudy(getUser(), study);
+                response.put("success", true);
+            }
+            else
+            {
+                response.put("success", false);
+            }
+
+            return response;
+        }
+    }
+
+    private static class AssayPlanForm
+    {
+        private String _assayPlan;
+
+        public AssayPlanForm()
+        {}
+
+        public String getAssayPlan()
+        {
+            return _assayPlan;
+        }
+
+        public void setAssayPlan(String assayPlan)
+        {
+            _assayPlan = assayPlan;
         }
     }
 }

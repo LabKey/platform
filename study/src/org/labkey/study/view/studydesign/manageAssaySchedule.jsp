@@ -320,7 +320,7 @@ function createAssayPlanPanel(value)
         border: false,
         items: [{
             xtype: 'textarea',
-            name: 'AssayPlan',
+            name: 'assayPlan',
             value: value,
             width: 500,
             height: 100,
@@ -341,10 +341,19 @@ function createAssayPlanPanel(value)
                 disabled: true,
                 handler: function() {
                     var form = _panelAP.getForm();
-                    form.submit({
-                        url     : LABKEY.ActionURL.buildURL('study', 'manageStudyProperties.view'),
-                        success : function(response) { window.location.reload(); },
-                        failure : function(cmp, resp) { Ext4.Msg.alert('Error', resp.response.statusText); }
+                    var values = form.getValues();
+
+                    Ext4.Ajax.request({
+                        url     : LABKEY.ActionURL.buildURL('study-design', 'updateAssayPlan.api'),
+                        method  : 'POST',
+                        jsonData: values,
+                        success: function(response) {
+                            window.location.reload();
+                        },
+                        failure: function(response) {
+                            Ext4.Msg.alert('Error', response.statusText);
+                        },
+                        scope   : this
                     });
                 }
             }]
