@@ -49,10 +49,9 @@ public class AssayScheduleWriter extends DefaultStudyDesignWriter implements Int
 
         StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
 
-        // add the treatment specific tables
+        // add the assay schedule specific tables
         TableInfo assaySpecimenTable = schema.getTable(StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
 
-        //writeTableInfos(ctx, vf, treatmentTables);
         writeTableData(ctx, vf, assaySpecimenTable, getDefaultColumns(assaySpecimenTable), null);
         writeAssaySpecimenVisitMap(ctx, vf);
 
@@ -77,8 +76,6 @@ public class AssayScheduleWriter extends DefaultStudyDesignWriter implements Int
         fields.add(FieldKey.fromParts("visitId", "sequenceNumMin"));
 
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, fields);
-        Results rs = QueryService.get().select(tableInfo, columns.values(), null, null);
-
-        writeResultsToTSV(rs, vf, getFileName(tableInfo));
+        writeTableData(ctx, vf, tableInfo, new ArrayList<>(columns.values()), null);
     }
 }

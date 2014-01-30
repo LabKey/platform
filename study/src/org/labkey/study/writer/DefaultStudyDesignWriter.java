@@ -2,19 +2,25 @@ package org.labkey.study.writer;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableInfoWriter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TablesType;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -86,5 +92,29 @@ public abstract class DefaultStudyDesignWriter
             columns.add(col);
         }
         return columns;
+    }
+
+    protected void writeTableInfos(StudyExportContext ctx, VirtualFile vf, Set<TableInfo> tables, String schemaFileName) throws IOException
+    {
+        // Create dataset metadata file
+        TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
+        TablesType tablesXml = tablesDoc.addNewTables();
+
+        for (TableInfo tinfo : tables)
+        {
+            TableType tableXml = tablesXml.addNewTable();
+
+            TableInfoWriter writer = new TreatementTableWriter(ctx.getContainer(), tinfo, tinfo.getColumns());
+            writer.writeTable(tableXml);
+        }
+        vf.saveXmlBean(schemaFileName, tablesDoc);
+    }
+
+    private static class TreatementTableWriter extends TableInfoWriter
+    {
+        public TreatementTableWriter(Container c, TableInfo tinfo, Collection<ColumnInfo> columns)
+        {
+            super(c, tinfo, columns);
+        }
     }
 }

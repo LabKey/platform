@@ -24,6 +24,7 @@ import java.util.List;
  */
 public class ChildStudyDefinition
 {
+    private String _mode;
     private String _name;
     private String _description;
     private String _srcPath;
@@ -298,5 +299,15 @@ public class ChildStudyDefinition
     public void setInvestigator(String investigator)
     {
         _investigator = investigator;
+    }
+
+    public String getMode()
+    {
+        return _mode;
+    }
+
+    public void setMode(String mode)
+    {
+        _mode = mode;
     }
 }

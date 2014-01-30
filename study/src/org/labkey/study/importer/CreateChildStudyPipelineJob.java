@@ -55,11 +55,14 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudySnapshot;
 import org.labkey.study.pipeline.StudyImportDatasetTask;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.writer.AssayScheduleWriter;
+import org.labkey.study.writer.CohortWriter;
 import org.labkey.study.writer.DatasetWriter;
 import org.labkey.study.writer.ParticipantGroupWriter;
 import org.labkey.study.writer.QcStateWriter;
 import org.labkey.study.writer.StudyExportContext;
 import org.labkey.study.writer.StudyWriterFactory;
+import org.labkey.study.writer.TreatmentDataWriter;
 import org.labkey.study.writer.ViewCategoryWriter;
 import org.labkey.study.writer.VisitMapWriter;
 import org.labkey.study.xml.StudyDocument;
@@ -327,6 +330,12 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
         dataTypes.add(ViewCategoryWriter.DATA_TYPE);
         dataTypes.add(ParticipantGroupWriter.DATA_TYPE);
 
+        if ("ancillary".equalsIgnoreCase(form.getMode()))
+        {
+            dataTypes.add(CohortWriter.DATA_TYPE);
+            dataTypes.add(AssayScheduleWriter.SELECTION_TEXT);
+            dataTypes.add(TreatmentDataWriter.SELECTION_TEXT);
+        }
 
         if(folderProps != null)
         {

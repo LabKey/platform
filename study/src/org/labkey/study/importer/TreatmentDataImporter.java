@@ -33,6 +33,7 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
     Map<Double, Visit> _visitMap = new HashMap<>();
 
     private ProductTableTransform _productTableTransform = new ProductTableTransform();
+    private ProductAntigenTableTransform _productAntigenTableTransform = new ProductAntigenTableTransform();
     private TreatmentTableTransform _treatmentTableTransform = new TreatmentTableTransform();
     private TreatmentProductTransform _treatmentProductTransform = new TreatmentProductTransform();
     private TreatmentVisitMapTransform _treatmentVisitMapTransform = new TreatmentVisitMapTransform();
@@ -46,7 +47,6 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
     @Override
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
-        StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
         ExportDirType dirType = ctx.getXml().getTreatmentData();
 
         if (dirType != null)
@@ -65,7 +65,7 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
 
                 TableInfo productAntigenTable = schema.getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
                 deleteData(ctx, productAntigenTable);
-                importTableData(ctx, vf, productAntigenTable, null, _productTableTransform);
+                importTableData(ctx, vf, productAntigenTable, null, _productAntigenTableTransform);
 
                 TableInfo treatmentTable = schema.getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
                 deleteData(ctx, treatmentTable);
@@ -102,27 +102,8 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
     /**
      * Transform which manages foreign keys to the rowId of the Product table
      */
-    private class ProductTableTransform implements TransformBuilder, TransformHelper
+    private class ProductTableTransform implements TransformBuilder
     {
-        @Override
-        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows)
-        {
-            List<Map<String, Object>> newRows = new ArrayList<>();
-
-            for (Map<String, Object> row : origRows)
-            {
-                Map<String, Object> newRow = new CaseInsensitiveHashMap<>();
-                newRows.add(newRow);
-                newRow.putAll(row);
-
-                if (newRow.containsKey("ProductId") && _productIdMap.containsKey(newRow.get("ProductId")))
-                {
-                    newRow.put("ProductId", _productIdMap.get(newRow.get("ProductId")));
-                }
-            }
-            return newRows;
-        }
-
         @Override
         public void createTransformInfo(StudyImportContext ctx, List<Map<String, Object>> origRows, List<Map<String, Object>> insertedRows)
         {
@@ -136,6 +117,30 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     _productIdMap.put((Integer)orig.get("RowId"), (Integer)inserted.get("RowId"));
                 }
             }
+        }
+    }
+
+    private class ProductAntigenTableTransform implements TransformHelper
+    {
+        @Override
+        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows) throws ImportException
+        {
+            List<Map<String, Object>> newRows = new ArrayList<>();
+
+            for (Map<String, Object> row : origRows)
+            {
+                Map<String, Object> newRow = new CaseInsensitiveHashMap<>();
+                newRows.add(newRow);
+                newRow.putAll(row);
+
+                if (newRow.containsKey("ProductId") && _productIdMap.containsKey(newRow.get("ProductId")))
+                {
+                    newRow.put("ProductId", _productIdMap.get(newRow.get("ProductId")));
+                }
+                else
+                    throw new ImportException("Unable to locate productId in the imported rows");
+            }
+            return newRows;
         }
     }
 
@@ -166,7 +171,7 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
     private class TreatmentProductTransform implements TransformHelper
     {
         @Override
-        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows)
+        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows) throws ImportException
         {
             List<Map<String, Object>> newRows = new ArrayList<>();
 
@@ -180,11 +185,15 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                 {
                     newRow.put("ProductId", _productIdMap.get(newRow.get("ProductId")));
                 }
+                else
+                    throw new ImportException("Unable to locate productId in the imported rows");
 
                 if (newRow.containsKey("TreatmentId") && _treatmentIdMap.containsKey(newRow.get("TreatmentId")))
                 {
                     newRow.put("TreatmentId", _treatmentIdMap.get(newRow.get("TreatmentId")));
                 }
+                else
+                    throw new ImportException("Unable to locate treatmentId in the imported rows");
             }
             return newRows;
         }
@@ -217,7 +226,7 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
         }
 
         @Override
-        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows)
+        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows) throws ImportException
         {
             List<Map<String, Object>> newRows = new ArrayList<>();
             initializeDataMaps(ctx);
@@ -254,6 +263,8 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                 {
                     newRow.put("TreatmentId", _treatmentIdMap.get(newRow.get("TreatmentId")));
                 }
+                else
+                    throw new ImportException("Unable to locate treatmentId in the imported rows");
             }
             return newRows;
         }

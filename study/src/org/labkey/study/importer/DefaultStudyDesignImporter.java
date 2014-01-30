@@ -3,6 +3,7 @@ package org.labkey.study.importer;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
@@ -37,7 +38,7 @@ public class DefaultStudyDesignImporter
         try {
             if (tableInfo instanceof FilteredTable)
             {
-                Table.delete(((FilteredTable)tableInfo).getRealTable(), new SimpleFilter(FieldKey.fromParts("Container"), ctx.getContainer()));
+                Table.delete(((FilteredTable)tableInfo).getRealTable(), SimpleFilter.createContainerFilter(ctx.getContainer()));
             }
         }
         catch (SQLException e)
@@ -113,7 +114,7 @@ public class DefaultStudyDesignImporter
      */
     interface TransformBuilder
     {
-        void createTransformInfo(StudyImportContext ctx, List<Map<String, Object>> origRows, List<Map<String, Object>> insertedRows);
+        void createTransformInfo(StudyImportContext ctx, List<Map<String, Object>> origRows, List<Map<String, Object>> insertedRows) throws ImportException;
     }
 
     /**
@@ -121,6 +122,6 @@ public class DefaultStudyDesignImporter
      */
     interface TransformHelper
     {
-        List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows);
+        List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows) throws ImportException;
     }
 }

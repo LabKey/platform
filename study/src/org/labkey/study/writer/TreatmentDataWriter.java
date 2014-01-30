@@ -22,6 +22,7 @@ import org.labkey.study.xml.StudyDocument;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -32,11 +33,7 @@ import java.util.Set;
  */
 public class TreatmentDataWriter extends DefaultStudyDesignWriter implements InternalStudyWriter
 {
-    private static final Logger LOG = Logger.getLogger(TreatmentDataWriter.class);
-    private static final String DEFAULT_DIRECTORY = "treatments";
-    private static final String SCHEMA_FILENAME = "treatments_metadata.xml";
-
-
+    private static final String DEFAULT_DIRECTORY = "treatmentData";
     public static final String SELECTION_TEXT = "Treatment Data";
 
     @Nullable
@@ -55,8 +52,6 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
         dir.setDir(DEFAULT_DIRECTORY);
 
         VirtualFile vf = root.getDir(DEFAULT_DIRECTORY);
-
-        // write the treatment tableInfos to the manifest
         Set<TableInfo> treatmentTables = new HashSet<>();
         StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
 
@@ -66,7 +61,6 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
         treatmentTables.add(schema.getTable(StudyQuerySchema.TREATMENT_TABLE_NAME));
         treatmentTables.add(schema.getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME));
 
-        //writeTableInfos(ctx, vf, treatmentTables);
         writeTableData(ctx, vf, treatmentTables, null);
 
         // for the TreatmentVisitMap table, export the visit sequence num & cohort label instead of the ID
@@ -87,22 +81,6 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
         writeTableData(ctx, vf, designTables, null);
     }
 
-    private void writeTableInfos(StudyExportContext ctx, VirtualFile vf, Set<TableInfo> tables) throws IOException
-    {
-        // Create dataset metadata file
-        TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
-        TablesType tablesXml = tablesDoc.addNewTables();
-
-        for (TableInfo tinfo : tables)
-        {
-            TableType tableXml = tablesXml.addNewTable();
-
-            TableInfoWriter writer = new TreatementTableWriter(ctx.getContainer(), tinfo, tinfo.getColumns());
-            writer.writeTable(tableXml);
-        }
-        vf.saveXmlBean(SCHEMA_FILENAME, tablesDoc);
-    }
-
     private void writeTreatmentVisitMap(StudyExportContext ctx, VirtualFile vf) throws Exception
     {
         StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
@@ -116,16 +94,6 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
         fields.add(FieldKey.fromParts("visitId", "sequenceNumMin"));
 
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, fields);
-        Results rs = QueryService.get().select(tableInfo, columns.values(), null, null);
-
-        writeResultsToTSV(rs, vf, getFileName(tableInfo));
-    }
-
-    private static class TreatementTableWriter extends TableInfoWriter
-    {
-        public TreatementTableWriter(Container c, TableInfo tinfo, Collection<ColumnInfo> columns)
-        {
-            super(c, tinfo, columns);
-        }
+        writeTableData(ctx, vf, tableInfo, new ArrayList<>(columns.values()), null);
     }
 }

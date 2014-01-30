@@ -48,6 +48,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                 StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
 
                 // assay specimen table
+                ctx.getLogger().info("Importing assay schedule tables");
                 TableInfo assaySpecimenTable = schema.getTable(StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
                 deleteData(ctx, assaySpecimenTable);
                 importTableData(ctx, vf, assaySpecimenTable, _assaySpecimenTransform, null);
@@ -114,7 +115,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
         }
 
         @Override
-        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows)
+        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows) throws ImportException
         {
             List<Map<String, Object>> newRows = new ArrayList<>();
             initializeDataMaps(ctx);
@@ -140,6 +141,8 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                 {
                     newRow.put("AssaySpecimenId", _assaySpecimenIdMap.get(newRow.get("AssaySpecimenId")));
                 }
+                else
+                    throw new ImportException("Unable to locate assaySpecimenId in the imported rows");
             }
             return newRows;
         }

@@ -1597,6 +1597,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var params = {};
 
         params.name = this.info.name;
+        params.mode = this.mode;
         params.description = this.info.description;
         params.srcPath = LABKEY.ActionURL.getContainer();
         params.dstPath = this.info.dstPath;
