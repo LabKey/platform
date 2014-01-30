@@ -329,12 +329,30 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
     var addBrush = function(){
         if (plot.brushing != null && (plot.brushing.brushstart || plot.brushing.brush || plot.brushing.brushend)) {
+            var xScale, yScale;
+
             if(brush == null) {
-                brush = d3.svg.brush().clamp([false, false]);
+                brush = d3.svg.brush();
                 brushSel = this.canvas.insert('g', '.layer').attr('class', 'brush');
             }
 
-            brush.x(plot.scales.x.scale).y(plot.scales.yLeft.scale);
+            if (plot.scales.x.trans == 'linear') {
+                xScale = plot.scales.x.scale.copy();
+                xScale.domain([xScale.invert(plot.grid.leftEdge - 5), xScale.invert(plot.grid.rightEdge + 5)]);
+                xScale.range([plot.grid.leftEdge - 5, plot.grid.rightEdge + 5]);
+            } else {
+                xScale = plot.scale.x.scale;
+            }
+
+            if (plot.scales.yLeft.trans == 'linear') {
+                yScale = plot.scales.yLeft.scale.copy();
+                yScale.domain([yScale.invert(plot.grid.bottomEdge + 5), yScale.invert(plot.grid.topEdge - 5)]);
+                yScale.range([plot.grid.bottomEdge + 5, plot.grid.topEdge - 5]);
+            } else {
+                yScale = plot.scale.yLeft.scale;
+            }
+
+            brush.x(xScale).y(yScale);
             brushSel.call(brush);
             brushSel.selectAll('.background').attr('y', 75);
             brushSel.selectAll('.extent').attr('opacity', .25);
