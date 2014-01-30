@@ -15,9 +15,6 @@
  */
 package org.labkey.api.query;
 
-import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.JspView;
-
 /*
 * User: Dave
 * Date: Apr 2, 2009

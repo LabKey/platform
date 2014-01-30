@@ -55,9 +55,11 @@ import java.util.Set;
  * Date: Oct 10, 2006
  * Time: 4:44:45 PM
  */
+
+// Keep in sync with (remote api) Filter.java and labkeymakefilter.sas
 public enum CompareType
 {
-    EQUAL("Equals", "eq", true, " = ?", "EQUAL", OperatorType.EQ)
+    EQUAL("Equals", "eq", "EQUAL", true, " = ?", OperatorType.EQ)
         {
             @Override
             FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -81,21 +83,21 @@ public enum CompareType
                 return value.equals(convert(filterValues[0], value.getClass()));
             }
         },
-    DATE_EQUAL("(Date) Equals", "dateeq", true, null, "DATE_EQUAL", OperatorType.DATEEQ)
+    DATE_EQUAL("(Date) Equals", "dateeq", "DATE_EQUAL", true, null, OperatorType.DATEEQ)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
                 return new DateEqCompareClause(fieldKey, toDatePart(asDate(value)));
             }
         },
-    DATE_NOT_EQUAL("(Date) Does Not Equal", "dateneq", true, null, "DATE_NOT_EQUAL", OperatorType.DATENEQ)
+    DATE_NOT_EQUAL("(Date) Does Not Equal", "dateneq", "DATE_NOT_EQUAL", true, null, OperatorType.DATENEQ)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
                 return new DateNeqCompareClause(fieldKey, toDatePart(asDate(value)));
             }
         },
-    NEQ_OR_NULL("Does Not Equal", "neqornull", true, " <> ?", "NOT_EQUAL_OR_MISSING", OperatorType.NEQORNULL)
+    NEQ_OR_NULL("Does Not Equal", "neqornull", "NOT_EQUAL_OR_MISSING", true, " <> ?", OperatorType.NEQORNULL)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
@@ -108,7 +110,7 @@ public enum CompareType
                 return value == null || !CompareType.EQUAL.meetsCriteria(value, filterValues);
             }
         },
-    NEQ("Does Not Equal", "neq", true, " <> ?", "NOT_EQUAL", OperatorType.NEQ)
+    NEQ("Does Not Equal", "neq", "NOT_EQUAL", true, " <> ?", OperatorType.NEQ)
         {
             @Override
             FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -122,7 +124,7 @@ public enum CompareType
                 return !CompareType.EQUAL.meetsCriteria(value, filterValues);
             }
         },
-    ISBLANK("Is Blank", "isblank", false, " IS NULL", "MISSING", OperatorType.ISBLANK)
+    ISBLANK("Is Blank", "isblank", "MISSING", false, " IS NULL", OperatorType.ISBLANK)
         {
             public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
@@ -135,7 +137,7 @@ public enum CompareType
                 return value == null;
             }
         },
-    NONBLANK("Is Not Blank", "isnonblank", false, " IS NOT NULL", "NOT_MISSING", OperatorType.ISNONBLANK)
+    NONBLANK("Is Not Blank", "isnonblank", "NOT_MISSING", false, " IS NOT NULL", OperatorType.ISNONBLANK)
         {
             public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
@@ -148,14 +150,14 @@ public enum CompareType
                 return value != null;
             }
         },
-    DATE_GT("(Date) Is Greater Than", "dategt", true, " >= ?", "DATE_GREATER_THAN", OperatorType.GTE) // GT --> >= roundup(date)
+    DATE_GT("(Date) Is Greater Than", "dategt", "DATE_GREATER_THAN", true, " >= ?", OperatorType.GTE) // GT --> >= roundup(date)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
                 return new DateGtCompareClause(fieldKey, toDatePart(asDate(value)));
             }
         },
-    GT("Is Greater Than", "gt", true, " > ?", "GREATER_THAN", OperatorType.GT)
+    GT("Is Greater Than", "gt", "GREATER_THAN", true, " > ?", OperatorType.GT)
         {
             @Override
             public boolean meetsCriteria(Object value, Object[] filterValues)
@@ -172,14 +174,14 @@ public enum CompareType
                 return ((Comparable)value).compareTo(filterValue) > 0;
             }
         },
-    DATE_LT("(Date) Is Less Than", "datelt", true, " < ?", "DATE_LESS_THAN", OperatorType.LT)
+    DATE_LT("(Date) Is Less Than", "datelt", "DATE_LESS_THAN", true, " < ?", OperatorType.LT)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
                 return new DateLtCompareClause(fieldKey, toDatePart(asDate(value)));
             }
         },
-    LT("Is Less Than", "lt", true, " < ?", "LESS_THAN", OperatorType.LT)
+    LT("Is Less Than", "lt", "LESS_THAN", true, " < ?", OperatorType.LT)
         {
             @Override
             public boolean meetsCriteria(Object value, Object[] filterValues)
@@ -196,14 +198,14 @@ public enum CompareType
                 return ((Comparable)value).compareTo(filterValue) < 0;
             }
         },
-    DATE_GTE("(Date) Is Greater Than or Equal To", "dategte", true, " >= ?", "DATE_GREATER_THAN_OR_EQUAL", OperatorType.GTE)
+    DATE_GTE("(Date) Is Greater Than or Equal To", "dategte", "DATE_GREATER_THAN_OR_EQUAL", true, " >= ?", OperatorType.GTE)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
                 return new DateGteCompareClause(fieldKey, toDatePart(asDate(value)));
             }
         },
-    GTE("Is Greater Than or Equal To", "gte", true, " >= ?", "GREATER_THAN_OR_EQUAL", OperatorType.GTE)
+    GTE("Is Greater Than or Equal To", "gte", "GREATER_THAN_OR_EQUAL", true, " >= ?", OperatorType.GTE)
         {
             @Override
             public boolean meetsCriteria(Object value, Object[] filterValues)
@@ -220,14 +222,14 @@ public enum CompareType
                 return ((Comparable)value).compareTo(filterValue) >= 0;
             }
         },
-    DATE_LTE("(Date) Is Less Than or Equal To", "datelte", true, " < ?", "DATE_LESS_THAN_OR_EQUAL", OperatorType.LT)  // LTE --> < roundup(date)
+    DATE_LTE("(Date) Is Less Than or Equal To", "datelte", "DATE_LESS_THAN_OR_EQUAL", true, " < ?", OperatorType.LT)  // LTE --> < roundup(date)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
                 return new DateLteCompareClause(fieldKey, toDatePart(asDate(value)));
             }
         },
-    LTE("Is Less Than or Equal To", "lte", true, " <= ?", "LESS_THAN_OR_EQUAL", OperatorType.LTE)
+    LTE("Is Less Than or Equal To", "lte", "LESS_THAN_OR_EQUAL", true, " <= ?", OperatorType.LTE)
         {
             @Override
             public boolean meetsCriteria(Object value, Object[] filterValues)
@@ -244,7 +246,7 @@ public enum CompareType
                 return ((Comparable)value).compareTo(filterValue) <= 0;
             }
         },
-    CONTAINS("Contains", "contains", true, null, "CONTAINS", OperatorType.CONTAINS)
+    CONTAINS("Contains", "contains", "CONTAINS", true, null, OperatorType.CONTAINS)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
@@ -257,7 +259,7 @@ public enum CompareType
                 return value != null && value.toString().indexOf((String)filterValues[0]) != -1;
             }
         },
-    DOES_NOT_CONTAIN("Does Not Contain", "doesnotcontain", true, null, "DOES_NOT_CONTAIN", OperatorType.DOESNOTCONTAIN)
+    DOES_NOT_CONTAIN("Does Not Contain", "doesnotcontain", "DOES_NOT_CONTAIN", true, null, OperatorType.DOESNOTCONTAIN)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
@@ -270,7 +272,7 @@ public enum CompareType
                 return value == null || value.toString().indexOf((String)filterValues[0]) == -1;
             }
         },
-    DOES_NOT_START_WITH("Does Not Start With", "doesnotstartwith", true, null, "DOES_NOT_START_WITH", OperatorType.DOESNOTSTARTWITH)
+    DOES_NOT_START_WITH("Does Not Start With", "doesnotstartwith", "DOES_NOT_START_WITH", true, null, OperatorType.DOESNOTSTARTWITH)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
@@ -283,7 +285,7 @@ public enum CompareType
                 return value == null || !value.toString().startsWith((String)filterValues[0]);
             }
         },
-    STARTS_WITH("Starts With", "startswith", true, null, "STARTS_WITH", OperatorType.STARTSWITH)
+    STARTS_WITH("Starts With", "startswith", "STARTS_WITH", true, null, OperatorType.STARTSWITH)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
@@ -296,7 +298,7 @@ public enum CompareType
                 return value != null && value.toString().startsWith((String)filterValues[0]);
             }
         },
-    IN("Equals One Of (e.g. 'a;b;c')", "in", true, null, "IN", OperatorType.IN)
+    IN("Equals One Of (e.g. 'a;b;c')", "in", "IN", true, null, OperatorType.IN)
         {
             // Each compare type uses CompareClause by default
             FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -329,7 +331,7 @@ public enum CompareType
                 throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
             }
         },
-    NOT_IN("Does Not Equal Any Of (e.g. 'a;b;c')", "notin", true, null, "NOT_IN", OperatorType.NOTIN)
+    NOT_IN("Does Not Equal Any Of (e.g. 'a;b;c')", "notin", "NOT_IN", true, null, OperatorType.NOTIN)
         {
             // Each compare type uses CompareClause by default
             FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -362,7 +364,7 @@ public enum CompareType
                 throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
             }
         },
-    CONTAINS_ONE_OF("Contains One Of (e.g. 'a;b;c')", "containsoneof", true, null, "CONTAINS_ONE_OF", OperatorType.CONTAINSONEOF)
+    CONTAINS_ONE_OF("Contains One Of (e.g. 'a;b;c')", "containsoneof", "CONTAINS_ONE_OF", true, null, OperatorType.CONTAINSONEOF)
         {
             // Each compare type uses CompareClause by default
             FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -388,7 +390,7 @@ public enum CompareType
                 throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.ContainsOneOfClause.class);
             }
         },
-    CONTAINS_NONE_OF("Does Not Contain Any Of (e.g. 'a;b;c')", "containsnoneof", true, null, "CONTAINS_NONE_OF", OperatorType.CONTAINSNONEOF)
+    CONTAINS_NONE_OF("Does Not Contain Any Of (e.g. 'a;b;c')", "containsnoneof", "CONTAINS_NONE_OF", true, null, OperatorType.CONTAINSNONEOF)
         {
             // Each compare type uses CompareClause by default
             FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -411,12 +413,12 @@ public enum CompareType
                 throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.ContainsOneOfClause.class);
             }
         },
-    HAS_QC("Has An MV Indicator", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "MV_INDICATOR", OperatorType.HASMVVALUE)
+    HAS_MV_INDICATOR("Has An MV Indicator", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "MV_INDICATOR", OperatorType.HASMVVALUE)
         {
             @Override
-            QcClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            MvClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
-                return new QcClause(fieldKey, false);
+                return new MvClause(fieldKey, false);
             }
 
             @Override
@@ -425,12 +427,12 @@ public enum CompareType
                 throw new UnsupportedOperationException("Conditional formatting not yet supported for MV indicators");
             }
         },
-    NO_QC("Does Not Have An MV Indicator", new String[] { "nomvvalue", "noqcvalue" }, false, " does not have a missing value indicator", "NO_MV_INDICATOR", OperatorType.NOMVVALUE)
+    NO_MV_INDICATOR("Does Not Have An MV Indicator", new String[] { "nomvvalue", "noqQccvalue" }, false, " does not have a missing value indicator", "NO_MV_INDICATOR", OperatorType.NOMVVALUE)
         {
             @Override
-            QcClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            MvClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
-                return new QcClause(fieldKey, true);
+                return new MvClause(fieldKey, true);
             }
 
             @Override
@@ -439,7 +441,7 @@ public enum CompareType
                 throw new UnsupportedOperationException("Conditional formatting not yet supported for MV indicators");
             }
         },
-    MEMBER_OF("Is Member Of", "memberof", true, " does not have a missing value indicator", "MEMBER_OF", OperatorType.MEMBEROF)
+    MEMBER_OF("Is Member Of", "memberof", "MEMBER_OF", true, " is member of", OperatorType.MEMBEROF)
         {
             @Override
             MemberOfClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -465,19 +467,20 @@ public enum CompareType
 
     CompareType(String displayValue, String[] urlKeys, boolean dataValueRequired, String sql, String scriptName, OperatorType.Enum xmlType)
     {
-        this(displayValue, urlKeys[0], dataValueRequired, sql, scriptName, xmlType);
+        this(displayValue, urlKeys[0], scriptName, dataValueRequired, sql, xmlType);
         _urlKeys.addAll(Arrays.asList(urlKeys));
     }
 
-    CompareType(String displayValue, String urlKey, boolean dataValueRequired, String sql, String scriptName, OperatorType.Enum xmlType)
+    CompareType(String displayValue, String urlKey, String scriptName, boolean dataValueRequired, String sql, OperatorType.Enum xmlType)
     {
+        _displayValue = displayValue;
         _preferredURLKey = urlKey;
+        _scriptName = scriptName;
+        _dataValueRequired = dataValueRequired;
+
         _xmlType = xmlType;
         _urlKeys.add(urlKey);
-        _displayValue = displayValue;
-        _dataValueRequired = dataValueRequired;
         _sql = sql;
-        _scriptName = scriptName;
     }
 
 
@@ -1360,13 +1363,13 @@ public enum CompareType
         }
     }
 
-    private static class QcClause extends CompareClause
+    private static class MvClause extends CompareClause
     {
         private final boolean isNull;
 
-        QcClause(FieldKey fieldKey, boolean isNull)
+        MvClause(FieldKey fieldKey, boolean isNull)
         {
-            super(fieldKey, isNull ? CompareType.NO_QC : CompareType.HAS_QC, null);
+            super(fieldKey, isNull ? CompareType.NO_MV_INDICATOR : CompareType.HAS_MV_INDICATOR, null);
             this.isNull = isNull;
         }
 
@@ -1392,8 +1395,8 @@ public enum CompareType
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             FieldKey mvFieldKey = new FieldKey(_fieldKey.getParent(), _fieldKey.getName() + MvColumn.MV_INDICATOR_SUFFIX);
-            ColumnInfo qcColumn = columnMap.get(mvFieldKey);
-            SQLFragment sql = new SQLFragment(qcColumn.getAlias() + " IS " + (isNull ? "" : "NOT ") + "NULL");
+            ColumnInfo mvColumn = columnMap.get(mvFieldKey);
+            SQLFragment sql = new SQLFragment(mvColumn.getAlias() + " IS " + (isNull ? "" : "NOT ") + "NULL");
             return sql;
         }
     }

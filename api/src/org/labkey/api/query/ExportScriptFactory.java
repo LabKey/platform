@@ -15,8 +15,6 @@
  */
 package org.labkey.api.query;
 
-import org.labkey.api.view.WebPartView;
-
 /**
  * User: adam
  * Date: Jan 27, 2009

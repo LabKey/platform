@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
@@ -23,14 +24,12 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.JspView;
-import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.WebPartView;
-import org.jetbrains.annotations.Nullable;
+import org.labkey.api.view.template.PageConfig;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -40,7 +39,7 @@ import java.util.List;
  */
 public abstract class ExportScriptModel
 {
-    private QueryView _view;
+    private final QueryView _view;
 
     public ExportScriptModel(QueryView view)
     {
@@ -56,7 +55,7 @@ public abstract class ExportScriptModel
 
     public String getCreatedOn()
     {
-        return DateUtil.formatJsonDateTime(new Date());
+        return DateUtil.formatDateTime(_view.getContainer());
     }
 
     public String getBaseUrl()

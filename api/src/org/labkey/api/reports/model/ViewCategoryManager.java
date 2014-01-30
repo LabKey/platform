@@ -15,7 +15,6 @@
  */
 package org.labkey.api.reports.model;
 
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -602,7 +601,8 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
                 // verify we don't allow duplicate subcategory names
                 boolean duplicate = false;
-                try {
+                try
+                {
 
                     ViewCategory subcat = new ViewCategory();
 
