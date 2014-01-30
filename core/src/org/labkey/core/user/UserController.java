@@ -2016,7 +2016,7 @@ public class UserController extends SpringActionController
     {
         public final List<String> emails;
         public final String title;
-        public final String message;
+        public final String messageHtml;
         public final boolean isAdminConsole;
 
         public ImpersonateUserBean(Container c, User user, boolean isAdminConsole)
@@ -2028,8 +2028,8 @@ public class UserController extends SpringActionController
                 emails = UserManager.getActiveUserEmails();
                 // Can't impersonate yourself, so remove current user
                 emails.remove(user.getEmail());
-                message = null;
-                title = isAdminConsole ? "<b>Impersonate User</b>" : null;
+                messageHtml = null;
+                title = isAdminConsole ? "Impersonate User" : null;
 
                 // TODO: Temporary test to validate new method
                 Collection<User> validUsers = ImpersonateUserContextFactory.getValidImpersonationUsers(null, user);
@@ -2058,7 +2058,7 @@ public class UserController extends SpringActionController
                         "and you inherit the user's site-level roles.  This provides a more complete picture of the user's " +
                         "experience on the site .");
 
-                message = instructions + "<br><br>";
+                messageHtml = instructions + "<br><br>";
                 title = "Impersonate User Within Project " + c.getProject().getName();
 
                 // TODO: Temporary test to validate new method

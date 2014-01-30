@@ -26,7 +26,7 @@
     DiscussionService.Settings settings = bean.settings;
 
 %><form action="<%=h(buildURL(AnnouncementsController.CustomizeAction.class))%>" method="post">
-<%=text(generateReturnUrlFormField(bean.returnURL))%>
+<%=generateReturnUrlFormField(bean.returnURL)%>
 <table>
     <tr>
         <td class="labkey-form-label">Board name</td>

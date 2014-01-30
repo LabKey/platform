@@ -40,7 +40,7 @@
 
             if (bean.isAdminConsole)
             { %>
-            <tr><td><%=bean.title%></td></tr><%
+            <tr><td><b><%=h(bean.title)%></b></td></tr><%
             }
 
             if (user.isImpersonated())
@@ -52,9 +52,9 @@
             }
             else
             {
-                if (null != bean.message)
+                if (null != bean.messageHtml)
                 { %>
-            <tr><td><%=bean.message%></td></tr><%
+            <tr><td><%=text(bean.messageHtml)%></td></tr><%
                 }
             %>
             <tr><td>
@@ -70,5 +70,6 @@
             </td></tr><%
             }
             %>
+            <tr><td>&nbsp;</td></tr>
         </table>
     </form>

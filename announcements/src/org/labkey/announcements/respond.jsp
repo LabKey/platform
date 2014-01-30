@@ -71,7 +71,7 @@ Ext.onReady(function(){
 </script>
 <form method=post enctype="multipart/form-data" action="<%=respondUrl%>" onSubmit="return validateForm(this)">
 <input type="hidden" name="cancelUrl" value="<%=h(bean.cancelURL)%>">
-<%=text(generateReturnUrlFormField(bean.cancelURL))%>
+<%=generateReturnUrlFormField(bean.cancelURL)%>
 <input type="hidden" name="fromDiscussion" value="<%=bean.fromDiscussion%>">
 <div style="max-width: 1050px;"><table style="width: 100%;"><%
 

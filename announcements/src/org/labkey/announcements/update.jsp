@@ -106,7 +106,7 @@ Ext.onReady(function(){
 <input type="hidden" name="rowId" value="<%=ann.getRowId()%>">
 <input type="hidden" name="entityId" value="<%=h(ann.getEntityId())%>">
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(ann)%>">
-<%=text(generateReturnUrlFormField(bean.returnURL))%>
+<%=generateReturnUrlFormField(bean.returnURL)%>
 <table><%
 
 if (settings.isTitleEditable())
