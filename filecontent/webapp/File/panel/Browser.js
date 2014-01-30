@@ -1900,12 +1900,32 @@ Ext4.define('File.panel.Browser', {
         this.details = Ext4.create('Ext.Panel', {
             region : 'south',
             minHeight : 100,
-            tpl : detailsTpl
+            tpl : detailsTpl,
+            listeners: {
+                afterrender: {
+                    fn: function(p) { Ext4.defer(this.detailCheck, 250, this); },
+                    single: true,
+                    scope: this
+                },
+                scope: this
+            },
+            scope: this
         });
 
         this.on('folderchange', function(){ this.details.update(''); }, this);
 
         return this.details;
+    },
+
+    detailCheck : function() {
+        if (this.showDetails) {
+            if (this.getHeight() < 300) {
+                this.getDetailPanel().hide();
+            }
+            else {
+                this.getDetailPanel().show();
+            }
+        }
     },
 
     reload : function(options) {

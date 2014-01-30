@@ -57,6 +57,7 @@
             layout : 'fit',
             items : [{
                 xtype : 'filebrowser',
+                itemId: 'browser',
                 border : false,
                 isWebDav  : true,
                 fileSystem : fileSystem,
@@ -64,7 +65,17 @@
                     selType : 'rowmodel'
                 },
                 tbarItems : ['->', htmlViewAction]
-            }]
+            }],
+            listeners: {
+                resize: function(vp) {
+                    if (vp) {
+                        var fb = vp.getComponent('browser');
+                        if (fb) {
+                            Ext4.defer(fb.detailCheck, 250, fb);
+                        }
+                    }
+                }
+            }
         });
 
     });
