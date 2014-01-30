@@ -105,6 +105,7 @@
                     fn: function(f) {
                         var size = Ext4.getBody().getSize();
                         LABKEY.ext4.Util.resizeToViewport(f, size.width, size.height, 20, null);
+                        f.detailCheck();
                     },
                     single: true
                 }
@@ -119,6 +120,7 @@
                 return;
 
             LABKEY.ext4.Util.resizeToViewport(fb, w, h, 20, null);
+            fb.detailCheck();
         };
 
         if (autoResize) {
