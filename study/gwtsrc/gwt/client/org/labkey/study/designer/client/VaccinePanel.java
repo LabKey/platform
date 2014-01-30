@@ -247,7 +247,7 @@ public class VaccinePanel extends Composite
             if (col == 1)
             {
                 final StringListBox lb = new StringListBox(studyDef.getImmunogenTypes(), StringUtils.trimToNull(immunogen.getType()), false, true);
-                lb.setTitle("Immunogen " + row + " type");
+                lb.setTitle("Immunogen " + (row + 1) + " type");
                 lb.addChangeListener(new ChangeListener() {
                     public void onChange(Widget sender)
                     {
