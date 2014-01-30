@@ -143,9 +143,16 @@ public class BlockingCache<K, V> implements Cache<K, V>
 
 
     @Override
-    public void put(K key, V value)
+    public void put(K key, final V value)
     {
-        throw new UnsupportedOperationException("use get(loader)");
+        get(key, null, new CacheLoader<K, V>()
+        {
+            @Override
+            public V load(K key, @Nullable Object argument)
+            {
+                return value;
+            }
+        });
     }
 
 
