@@ -157,7 +157,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         Domain specimenDomain = specimenTablesProvider.getDomain("Specimen", false);
         if (null == specimenDomain)
             throw new IllegalStateException("Expected Specimen table to already be created.");
-        addOptionalColumns(specimenDomain.getNonBaseProperties());
+        addOptionalColumns(specimenDomain.getNonBaseProperties(), false, null);
     }
 
     @Override

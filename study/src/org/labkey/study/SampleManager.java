@@ -592,12 +592,13 @@ public class SampleManager implements ContainerManager.ContainerListener
 
         String tableInfoSpecimenSelectName = tableInfoSpecimen.getSelectName();
         String tableInfoVialSelectName = tableInfoVial.getSelectName();
-        Map<String, Pair<String, Rollup>> matchedRollups = getVialToSpecimenRollups(container, user);
+        Map<String, List<Pair<String, Rollup>>> matchedRollups = SpecimenImporter.getVialToSpecimenRollups(container, user);
 
         SQLFragment updateSql = new SQLFragment();
         updateSql.append("UPDATE ").append(tableInfoSpecimenSelectName).append(UPDATE_SPECIMEN_SETS);
-        for (Pair<String, Rollup> rollupPair : matchedRollups.values())
-            updateSql.append(",\n    ").append(rollupPair.first).append(" = VialCounts.").append(rollupPair.first);
+        for (List<Pair<String, Rollup>> rollupList : matchedRollups.values())
+            for (Pair<String, Rollup> rollupItem : rollupList)
+                updateSql.append(",\n    ").append(rollupItem.first).append(" = VialCounts.").append(rollupItem.first);
 
         updateSql.append(UPDATE_SPECIMEN_SELECTS);
         updateSql.add(Boolean.TRUE); // AvailableVolume
@@ -607,12 +608,15 @@ public class SampleManager implements ContainerManager.ContainerListener
         updateSql.add(Boolean.TRUE); // LockedInRequest case of ExpectedAvailableCount
         updateSql.add(Boolean.FALSE); // Requestable case of ExpectedAvailableCount
 
-        for (Map.Entry<String, Pair<String, Rollup>> entry : matchedRollups.entrySet())
+        for (Map.Entry<String, List<Pair<String, Rollup>>> entry : matchedRollups.entrySet())
         {
             String fromName = entry.getKey();
-            String toName = entry.getValue().first;
-            Rollup rollup = entry.getValue().second;
-            updateSql.append(",\n\t\t").append(rollup.getRollupSql(fromName, toName));
+            for (Pair<String, Rollup> rollupItem : entry.getValue())
+            {
+                String toName = rollupItem.first;
+                Rollup rollup = rollupItem.second;
+                updateSql.append(",\n\t\t").append(rollup.getRollupSql(fromName, toName));
+            }
         }
 
         updateSql.append("\tFROM ").append(tableInfoVialSelectName).append("\n");
@@ -645,32 +649,6 @@ public class SampleManager implements ContainerManager.ContainerListener
     public void updateSpecimenCounts(Container container, User user) throws SQLException
     {
         updateSpecimenCounts(container, user, null);
-    }
-
-    private Map<String, Pair<String, Rollup>> getVialToSpecimenRollups(Container container, User user)
-    {
-        List<Rollup> rollups = SpecimenImporter.getVialSpecimenRollups();
-        Map<String, Pair<String, Rollup>> matchedRollups = new HashMap<>();
-        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
-
-        Domain specimenDomain = specimenTablesProvider.getDomain("Specimen", false);
-        if (null == specimenDomain)
-            throw new IllegalStateException("Expected SpecimenEvent table to already be created.");
-
-        Domain vialDomain = specimenTablesProvider.getDomain("Vial", false);
-        if (null == vialDomain)
-            throw new IllegalStateException("Expected Vial table to already be created.");
-
-        List<PropertyDescriptor> specimenProperties = new ArrayList<>();
-        for (DomainProperty domainProperty : specimenDomain.getNonBaseProperties())
-            specimenProperties.add(domainProperty.getPropertyDescriptor());
-
-        for (DomainProperty domainProperty : vialDomain.getNonBaseProperties())
-        {
-            PropertyDescriptor property = domainProperty.getPropertyDescriptor();
-            SpecimenImporter.findRollups(matchedRollups, property, specimenProperties, rollups);
-        }
-        return matchedRollups;
     }
 
     private void updateRequestabilityAndCounts(List<Specimen> specimens, User user) throws SQLException, RequestabilityManager.InvalidRuleException
@@ -1737,47 +1715,6 @@ public class SampleManager implements ContainerManager.ContainerListener
         return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArrayList(String.class);
     }
 
-/*  TODO: Delete... unused
-/*    public Map<Specimen, SpecimenComment> getSpecimensWithComments(Container container) throws SQLException
-    {
-        SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromString("RowId"), sampleRowIds));
-//        List<Specimen> specimens = _specimenDetailHelper.get(container, filter);
-        List<Specimen> specimens = getSpecimens(container, user, filter);
-        SpecimenComment[] allComments = Table.select(StudySchema.getInstance().getTableInfoSpecimenComment(),
-                Table.ALL_COLUMNS, filter, null, SpecimenComment.class);
-
-        Map<Specimen, SpecimenComment> result = new HashMap<>();
-        if (allComments.length > 0)
-        {
-            Map<String, SpecimenComment> globalUniqueIds = new HashMap<>();
-            for (SpecimenComment comment : allComments)
-                globalUniqueIds.put(comment.getGlobalUniqueId(), comment);
-
-            SQLFragment sql = new SQLFragment();
-            sql.append("SELECT * FROM ").append(StudySchema.getInstance().getTableInfoSpecimenDetail(container)).append(" WHERE GlobalUniqueId IN (");
-            sql.append("SELECT DISTINCT GlobalUniqueId FROM ").append(StudySchema.getInstance().getTableInfoSpecimenComment());
-            sql.append(" WHERE Container = ?");
-            sql.add(container.getId());
-            sql.append(") AND Container = ?;");
-            sql.add(container.getId());
-
-            Collection<Specimen> commented = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getCollection(Specimen.class);
-
-            for (Specimen specimen : commented)
-                result.put(specimen, globalUniqueIds.get(specimen.getGlobalUniqueId()));
-        }
-        return result;
-    }
-*/
-/*    public Specimen[] getSpecimensByAvailableVialCount(Container container, int count) throws SQLException
-    {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition("AvailableCount", count);
-
-        return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenSummary(), filter, null).getArray(Specimen.class);
-    }
-*/
-
     public Map<String,List<Specimen>> getVialsForSampleHashes(Container container, User user, Collection<String> hashes, boolean onlyAvailable)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
@@ -1875,8 +1812,6 @@ public class SampleManager implements ContainerManager.ContainerListener
         TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(container);
         TableInfo tableInfoSpecimenEvent = StudySchema.getInstance().getTableInfoSpecimenEvent(container);
         TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(container);
-        if (null == tableInfoSpecimen || null == tableInfoSpecimenEvent || null == tableInfoVial)
-            return;
 
         String tableInfoSpecimenSelectName = tableInfoSpecimen.getSelectName();
         String tableInfoSpecimenEventSelectName = tableInfoSpecimenEvent.getSelectName();
@@ -1894,7 +1829,6 @@ public class SampleManager implements ContainerManager.ContainerListener
                 .append("\tEvent.VialId = Vial.RowId\n")
                 .append("LEFT OUTER JOIN ").append(tableInfoSpecimenSelectName).append(" AS Specimen ON\n")
                 .append("\tVial.SpecimenId = Specimen.RowId\n")
-//                .append("WHERE Specimen.RowId IN (SELECT RowId ").append(specimenRowIdSelectSql).append("))");     // TODO simplify this WHERE
                 .append(specimenRowIdWhereSql).append(")");
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(deleteEventSql);
 
@@ -1905,7 +1839,6 @@ public class SampleManager implements ContainerManager.ContainerListener
                 .append(tableInfoVialSelectName).append(" AS Vial\n")
                 .append("LEFT OUTER JOIN ").append(tableInfoSpecimenSelectName).append(" AS Specimen ON\n")
                 .append("\tVial.SpecimenId = Specimen.RowId\n")
-//                .append("WHERE Specimen.RowId IN (SELECT RowId ").append(specimenRowIdSelectSql).append("))");      // TODO simplify this WHERE
                 .append(specimenRowIdWhereSql).append(")");
 
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(deleteVialSql);
@@ -3101,29 +3034,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                 // Basic SQL with joins
                 Map<FieldKey, ColumnInfo> columnMap = queryService.getColumns(tableInfo, fieldKeys);
 
-                // Container filter
-                Filter filter = null;
-                if (study.isAncillaryStudy())
-                {
-/*                    StudyQuerySchema sourceStudySchema = new StudyQuerySchema(study.getSourceStudy(), user, true);
-                    SpecimenWrapTable sourceStudyTableInfo = (SpecimenWrapTable)sourceStudySchema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
-                    tableInfo.setUnionTable(sourceStudyTableInfo)
-                    ;
-                    String[] ptids = StudyManager.getInstance().getParticipantIds(study);
-                    List<String> participantIds = new ArrayList<>(ptids.length);
-                    if (ptids == null || ptids.length == 0)
-                    {
-                        participantIds.add("NULL");
-                    }
-                    else
-                    {
-                        Collections.addAll(participantIds, ptids);
-                    }
-                    SimpleFilter.FilterClause inClause1 = new SimpleFilter.InClause(FieldKey.fromString("PTID"), participantIds);
-                    filter = new SimpleFilter(inClause1);       */
-                }
-
-                SQLFragment sql = queryService.getSelectSQL(tableInfo, columnMap.values(), filter, null, -1, 0, false);
+                SQLFragment sql = queryService.getSelectSQL(tableInfo, columnMap.values(), null, null, -1, 0, false);
 
                 // Insert COUNT
                 String sampleCountName = StudySchema.getInstance().getSqlDialect().makeLegalIdentifier("SampleCount");

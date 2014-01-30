@@ -44,8 +44,8 @@ public class SpecimenWrapTable extends BaseStudyTable
         _optionalSpecimenProperties = new ArrayList<>();
         _optionalVialProperties = new ArrayList<>();
         SpecimenDetailTable.getOptionalSpecimenAndVialProperties(schema.getContainer(), _optionalSpecimenProperties, _optionalVialProperties);
-        addOptionalColumns(_optionalVialProperties);
-        addOptionalColumns(_optionalSpecimenProperties);
+        addOptionalColumns(_optionalVialProperties, false, null);
+        addOptionalColumns(_optionalSpecimenProperties, false, null);
 
         addContainerColumn(true);
         _notificationKey = new Path("study", getClass().getName(), getName());

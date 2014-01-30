@@ -18,7 +18,6 @@
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.*;
@@ -28,6 +27,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.study.CohortForeignKey;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
+import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.StudyManager;
 import org.labkey.api.security.permissions.EditSpecimenDataPermission;
 
@@ -138,10 +138,14 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addWrapColumn(_rootTable.getColumn("LatestComments"));
         addWrapColumn(_rootTable.getColumn("LatestQualityComments"));
 
-        // Add optional fields
+        // Add optional fields; they should be editable from the Editable Specimens form, except certain rollups
         getOptionalSpecimenAndVialProperties(schema.getContainer(), _optionalSpecimenProperties, _optionalVialProperties);
-        addOptionalColumns(_optionalVialProperties);
-        addOptionalColumns(_optionalSpecimenProperties);
+
+        // If multiple columns from Vial table are rolled up from the same Event column, only allow editing of one of them
+        addOptionalColumns(_optionalVialProperties, true, SpecimenImporter.getRolledupDuplicateVialColumnNames(getContainer(), schema.getUser()));
+
+        // any rolled up column from Specimen table should be read only
+        addOptionalColumns(_optionalSpecimenProperties, true, SpecimenImporter.getRolledupSpecimenColumnNames(getContainer(), schema.getUser()));
     }
 
     @Override

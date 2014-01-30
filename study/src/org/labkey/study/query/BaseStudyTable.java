@@ -749,7 +749,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                 _userSchema.getContainer().hasPermission(user, AdminPermission.class);
     }
 
-    protected void addOptionalColumns(List<DomainProperty> optionalProperties)
+    protected void addOptionalColumns(List<DomainProperty> optionalProperties, boolean editable, @Nullable List<String> readOnlyColumnNames)
     {
         for (DomainProperty domainProperty : optionalProperties)
         {
@@ -758,6 +758,13 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             sql.append(".").append(property.getName());
             ColumnInfo column = new ExprColumn(this, property.getName(), sql, property.getJdbcType());
             PropertyColumn.copyAttributes(null, column, property, getContainer(), null);
+            if (editable)
+            {
+                // Make editable, but some should be read only
+                column.setUserEditable(editable);
+                if (readOnlyColumnNames.contains(column.getName().toLowerCase()))
+                    column.setReadOnly(true);
+            }
             addColumn(column);
         }
     }

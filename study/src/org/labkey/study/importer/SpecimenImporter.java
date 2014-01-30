@@ -656,6 +656,11 @@ public class SpecimenImporter
         return _vialSpecimenRollups;
     }
 
+    public static final List<Rollup> getEventVialRollups()
+    {
+        return _eventVialRollups;
+    }
+
     private static final String DATETIME_TYPE = "SpecimenImporter/DateTime";
     private static final String DURATION_TYPE = "SpecimenImporter/TimeOnlyDate";
     private static final String NUMERIC_TYPE = "NUMERIC(15,4)";
@@ -862,7 +867,7 @@ public class SpecimenImporter
     }
 
     // Event -> Vial Rollup map
-    private Map<String, Pair<String, Rollup>> _eventToVialRollups = new HashMap<>();
+    private Map<String, List<Pair<String, Rollup>>> _eventToVialRollups = new HashMap<>();
 
     // Provisioned specimen tables
     private TableInfo _tableInfoSpecimen = null;
@@ -1413,19 +1418,19 @@ public class SpecimenImporter
                 " SET CurrentLocation = CAST(? AS INTEGER), ProcessingLocation = CAST(? AS INTEGER), " +
                 "FirstProcessedByInitials = ?, AtRepository = ?, " +
                 "LatestComments = ?, LatestQualityComments = ? ";
-//                "LatestDeviationCode1 = ?, LatestDeviationCode2 = ?, LatestDeviationCode3 = ?, " +
-//                "LatestConcentration = CAST(? AS REAL), LatestIntegrity = CAST(? AS REAL), LatestRatio = CAST(? AS REAL), LatestYield = CAST(? AS REAL), " +
-//                "Freezer = ?, Fr_container = ?, Fr_position = ?, Fr_level1 = ?, Fr_level2 = ? " +
-        for (Pair<String, Rollup> rollup : _eventToVialRollups.values())
+        for (List<Pair<String, Rollup>> rollupList : _eventToVialRollups.values())
         {
-            String colName = rollup.first;
-            ColumnInfo column = vialTable.getColumn(colName);
-            if (null == colName)
-                throw new IllegalStateException("Expected Vial table column to exist.");
-            vialPropertiesSql += ", " + colName + " = " +
-                    (JdbcType.VARCHAR.equals(column.getJdbcType()) ?
-                    "?" :
-                    "CAST(? AS " + vialTable.getSqlDialect().sqlTypeNameFromSqlType(column.getJdbcType().sqlType) + ")");
+            for (Pair<String, Rollup> rollup : rollupList)
+            {
+                String colName = rollup.first;
+                ColumnInfo column = vialTable.getColumn(colName);
+                if (null == colName)
+                    throw new IllegalStateException("Expected Vial table column to exist.");
+                vialPropertiesSql += ", " + colName + " = " +
+                        (JdbcType.VARCHAR.equals(column.getJdbcType()) ?
+                        "?" :
+                        "CAST(? AS " + vialTable.getSqlDialect().sqlTypeNameFromSqlType(column.getJdbcType().sqlType) + ")");
+            }
         }
         vialPropertiesSql += " WHERE RowId = ?";
         String commentSql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimenComment() +
@@ -1488,17 +1493,24 @@ public class SpecimenImporter
                 }
 
                 if (!updateVial)
-                    for (Map.Entry<String, Pair<String, Rollup>> rollupEntry : _eventToVialRollups.entrySet())
+                {
+                    for (Map.Entry<String, List<Pair<String, Rollup>>> rollupEntry : _eventToVialRollups.entrySet())
                     {
-                        String vialColName = rollupEntry.getValue().first;
                         String eventColName = rollupEntry.getKey();
-                        Object rollupResult = rollupEntry.getValue().second.getRollupResult(dateOrderedEvents, eventColName);
-                        if (!Objects.equals(specimen.get(vialColName), rollupResult))
+                        for (Pair<String, Rollup> rollupItem : rollupEntry.getValue())
                         {
-                            updateVial = true;      // Something is different
-                            break;
+                            String vialColName = rollupItem.first;
+                            Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColName);
+                            if (!Objects.equals(specimen.get(vialColName), rollupResult))
+                            {
+                                updateVial = true;      // Something is different
+                                break;
+                            }
                         }
+                        if (updateVial)
+                            break;
                     }
+                }
 
                 if (updateVial)
                 {
@@ -1510,11 +1522,14 @@ public class SpecimenImporter
                     params.add(lastEvent.getComments());
                     params.add(lastEvent.getQualityComments());
 
-                    for (Map.Entry<String, Pair<String, Rollup>> rollupEntry : _eventToVialRollups.entrySet())
+                    for (Map.Entry<String, List<Pair<String, Rollup>>> rollupEntry : _eventToVialRollups.entrySet())
                     {
                         String eventColName = rollupEntry.getKey();
-                        Object rollupResult = rollupEntry.getValue().second.getRollupResult(dateOrderedEvents, eventColName);
-                        params.add(rollupResult);
+                        for (Pair<String, Rollup> rollupItem : rollupEntry.getValue())
+                        {
+                            Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColName);
+                            params.add(rollupResult);
+                        }
                     }
 
                     params.add(specimen.getRowId());
@@ -1970,7 +1985,6 @@ public class SpecimenImporter
         insertSelectSql.append("SELECT exp.Material.RowId");
         insertSelectSql.append(prefix).append(specimenTable.getColumn("RowId").getValueSql(specimenTableSelectName)).append(" AS SpecimenId");
         insertSelectSql.append(prefix).append(specimenTable.getColumn("SpecimenHash").getValueSql(specimenTableSelectName));
-//        insertSelectSql.append(prefix).append("VialList.Container");
         insertSelectSql.append(prefix).append("? AS Available");
         // Set a default value of true for the 'Available' column:
         insertSelectSql.add(Boolean.TRUE);
@@ -3214,7 +3228,6 @@ public class SpecimenImporter
             }
             String strType = dialect.sqlTypeNameFromSqlType(Types.VARCHAR);
             sql.append("\n(\n    RowId ").append(dialect.getUniqueIdentType()).append(", ");
-//            sql.append("Container ").append(strType).append("(300) NOT NULL, ");
             sql.append("LSID ").append(strType).append("(300) NOT NULL, ");
             sql.append("SpecimenHash ").append(strType).append("(300), ");
             sql.append(DRAW_DATE.getDbColumnName()).append(" ").append(DRAW_DATE.getDbType()).append(", ");
@@ -3503,13 +3516,104 @@ public class SpecimenImporter
         return new SqlExecutor(schema).execute(sql);
     }
 
-    public static void findRollups(Map<String, Pair<String, Rollup>> resultRollups, PropertyDescriptor fromProperty,
+    public static List<String> getRolledupDuplicateVialColumnNames(Container container, User user)
+    {
+        // Return names of columns where column is 2nd thru nth column rolled up on same Event column
+        List<String> rolledupNames = new ArrayList<>();
+        Map<String, List<Pair<String, Rollup>>> eventToVialRollups = getEventToVialRollups(container, user);
+        for (List<Pair<String, Rollup>> rollupList : eventToVialRollups.values())
+        {
+            boolean duplicate = false;
+            for (Pair<String, Rollup> rollupItem : rollupList)
+            {
+                if (duplicate)
+                    rolledupNames.add(rollupItem.first.toLowerCase());
+                duplicate = true;
+            }
+        }
+        return rolledupNames;
+    }
+
+    public static Map<String, List<Pair<String, Rollup>>> getEventToVialRollups(Container container, User user)
+    {
+        List<Rollup> rollups = SpecimenImporter.getEventVialRollups();
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
+
+        Domain fromDomain = specimenTablesProvider.getDomain("SpecimenEvent", false);
+        if (null == fromDomain)
+            throw new IllegalStateException("Expected SpecimenEvent table to already be created.");
+
+        Domain toDomain = specimenTablesProvider.getDomain("Vial", false);
+        if (null == toDomain)
+            throw new IllegalStateException("Expected Vial table to already be created.");
+
+        return getRollups(fromDomain, toDomain, rollups);
+    }
+
+    public static List<String> getRolledupSpecimenColumnNames(Container container, User user)
+    {
+        List<String> rolledupNames = new ArrayList<>();
+        Map<String, List<Pair<String, Rollup>>> vialToSpecimenRollups = getVialToSpecimenRollups(container, user);
+        for (List<Pair<String, Rollup>> rollupList : vialToSpecimenRollups.values())
+        {
+            for (Pair<String, Rollup> rollupItem : rollupList)
+            {
+                rolledupNames.add(rollupItem.first.toLowerCase());
+            }
+        }
+        return rolledupNames;
+    }
+
+    public static Map<String, List<Pair<String, Rollup>>> getVialToSpecimenRollups(Container container, User user)
+    {
+        List<Rollup> rollups = SpecimenImporter.getVialSpecimenRollups();
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
+
+        Domain fromDomain = specimenTablesProvider.getDomain("Vial", false);
+        if (null == fromDomain)
+            throw new IllegalStateException("Expected Vial table to already be created.");
+
+        Domain toDomain = specimenTablesProvider.getDomain("Specimen", false);
+        if (null == toDomain)
+            throw new IllegalStateException("Expected Specimen table to already be created.");
+
+        return getRollups(fromDomain, toDomain, rollups);
+    }
+
+    private static Map<String, List<Pair<String, Rollup>>> getRollups(Domain fromDomain, Domain toDomain, List<Rollup> considerRollups)
+    {
+        Map<String, List<Pair<String, Rollup>>> matchedRollups = new HashMap<>();
+        List<PropertyDescriptor> toProperties = new ArrayList<>();
+
+        for (DomainProperty domainProperty : toDomain.getNonBaseProperties())
+            toProperties.add(domainProperty.getPropertyDescriptor());
+
+        for (DomainProperty domainProperty : fromDomain.getNonBaseProperties())
+        {
+            PropertyDescriptor property = domainProperty.getPropertyDescriptor();
+            findRollups(matchedRollups, property, toProperties, considerRollups);
+        }
+        return matchedRollups;
+    }
+
+    public static void findRollups(Map<String, List<Pair<String, Rollup>>> resultRollups, PropertyDescriptor fromProperty,
                                    List<PropertyDescriptor> toProperties, List<Rollup> considerRollups)
     {
         for (Rollup rollup : considerRollups)
+        {
             for (PropertyDescriptor toProperty : toProperties)
+            {
                 if (rollup.match(fromProperty, toProperty))
-                    resultRollups.put(fromProperty.getName(), new Pair<>(toProperty.getName(), rollup));
+                {
+                    List<Pair<String, Rollup>> matches = resultRollups.get(fromProperty.getName());
+                    if (null == matches)
+                    {
+                        matches = new ArrayList<>();
+                        resultRollups.put(fromProperty.getName(), matches);
+                    }
+                    matches.add(new Pair<>(toProperty.getName(), rollup));
+                }
+            }
+        }
     }
-
 }

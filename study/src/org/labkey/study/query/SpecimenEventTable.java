@@ -78,20 +78,6 @@ public class SpecimenEventTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("TotalCellCount"));
         addWrapColumn(_rootTable.getColumn("TubeType"));
         addWrapColumn(_rootTable.getColumn("QualityComments"));
-
-/*        addWrapColumn(_rootTable.getColumn("fr_container"));
-        addWrapColumn(_rootTable.getColumn("fr_level1"));
-        addWrapColumn(_rootTable.getColumn("fr_level2"));
-        addWrapColumn(_rootTable.getColumn("fr_position"));
-        addWrapColumn(_rootTable.getColumn("freezer"));
-        addWrapColumn(_rootTable.getColumn("DeviationCode1"));
-        addWrapColumn(_rootTable.getColumn("DeviationCode2"));
-        addWrapColumn(_rootTable.getColumn("DeviationCode3"));
-        addWrapColumn(_rootTable.getColumn("Concentration"));
-        addWrapColumn(_rootTable.getColumn("Integrity"));
-        addWrapColumn(_rootTable.getColumn("Ratio"));
-        addWrapColumn(_rootTable.getColumn("Yield")); */
-
         addWrapColumn(_rootTable.getColumn("ExternalId")).setHidden(true);
         addWrapColumn(_rootTable.getColumn("OtherSpecimenId"));
         addWrapColumn(_rootTable.getColumn("ParentSpecimenId"));
@@ -105,7 +91,7 @@ public class SpecimenEventTable extends BaseStudyTable
         if (null == specimenEventDomain)
             throw new IllegalStateException("Expected SpecimenEvent table to already be created.");
 
-        addOptionalColumns(specimenEventDomain.getNonBaseProperties());
+        addOptionalColumns(specimenEventDomain.getNonBaseProperties(), false, null);
     }
 
     @Override

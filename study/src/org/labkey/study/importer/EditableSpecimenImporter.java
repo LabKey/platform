@@ -24,6 +24,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenImportStrategy;
+import org.labkey.api.util.Pair;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 
@@ -163,16 +164,23 @@ public class EditableSpecimenImporter extends SpecimenImporter
             _specialColumnNameMap.put("sequencenum", "visitvalue");
             _specialColumnNameMap.put("sitename", "labid");
             _specialColumnNameMap.put("clinic", "originatinglocationid");
-            _specialColumnNameMap.put("latestdeviationcode1", "deviationcode1");
-            _specialColumnNameMap.put("latestdeviationcode2", "deviationcode2");
-            _specialColumnNameMap.put("latestdeviationcode3", "deviationcode3");
-            _specialColumnNameMap.put("latestintegrity", "integrity");
+            _specialColumnNameMap.put("firstprocessedbyinitials", "processedbyinitials");
             _specialColumnNameMap.put("latestcomments", "comments");
             _specialColumnNameMap.put("latestqualitycomments", "qualitycomments");
-            _specialColumnNameMap.put("latestyield", "yield");
-            _specialColumnNameMap.put("latestratio", "ratio");
-            _specialColumnNameMap.put("latestconcentration", "concentration");
-            _specialColumnNameMap.put("firstprocessedbyinitials", "processedbyinitials");
+
+            // Add any rollups from optionals whose names are not matching
+            Map<String, List<Pair<String, Rollup>>> matchedRollups = SpecimenImporter.getEventToVialRollups(getContainer(), getUser());
+            for (Map.Entry<String, List<Pair<String, Rollup>>> entry : matchedRollups.entrySet())
+            {
+                String fromName = entry.getKey();
+                for (Pair<String, Rollup> rollupItem : entry.getValue())
+                {
+                    String toName = rollupItem.first;
+                    if (!fromName.equalsIgnoreCase(toName))
+                        _specialColumnNameMap.put(toName, fromName);
+                }
+            }
+
         }
 
         return _specialColumnNameMap.get(name.toLowerCase());
