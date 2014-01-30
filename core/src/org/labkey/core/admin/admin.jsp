@@ -50,29 +50,11 @@
         } %>
     <tr><td colspan="2">&nbsp;</td></tr><%
     }
-
-    if (getUser().isSiteAdmin())
-    {
-    %>
-    <tr><td colspan="2"><%
-        include(new UserController.ImpersonateView(c, getUser(), true), out);
-    %>
-    </td></tr><%
-    }
-    %>
-
-    <tr><td colspan="2">&nbsp;</td></tr>
-
-    <tr><td colspan="2"><b>Active Users in the Last Hour</b></td></tr><%
-
-    for (Pair<String, Long> pair : bean.active)
-    {
-        %><tr><td><%=h(pair.getKey())%></td><td><%=pair.getValue()%> minutes ago</td></tr><%
-    }
 %></table>
 </td>
 
 <td>
+
 <table>
 <%
     String location=null;
@@ -113,42 +95,66 @@
     <tr><td>&nbsp;</td></tr>
 </table>
 <table>
-    <tr><td colspan="2"><b>Module Information</b>&nbsp;&nbsp;<%=textLink("Module Details", new ActionURL(AdminController.ModulesAction.class, c))%></td></tr><%
+        <tr><td colspan="2"><b>Module Information</b>&nbsp;&nbsp;<%=textLink("Module Details", new ActionURL(AdminController.ModulesAction.class, c))%></td></tr><%
 
-    for (Module module : bean.modules)
-    {
-        String guid = GUID.makeGUID();
-        %>
-    <tr class="labkey-header">
-        <td valign="middle" width="9">
-            <a id="<%= h(guid) %>" onclick="return toggleLink(this, false);">
-                <img src="<%=getContextPath()%>/_images/plus.gif">
-            </a>
-        </td>
-        <td>
-            <span onclick="return toggleLink(document.getElementById('<%= h(guid) %>'), false);"><%=h(module.getName())%> <%=h(module.getFormattedVersion())%></span>
-        </td>
-    </tr>
-    <tr style="display:none">
-        <td width="9"></td>
-        <td style="padding-left: 2em">
-            <% if (!StringUtils.isEmpty(module.getDescription()))
-            {
-                %><div style="padding-left:6px;"><%=h(module.getDescription())%></div><%
-            }
-            %><table cellpadding="0"><%
-                for (Map.Entry<String, String> entry : new TreeMap<>(module.getProperties()).entrySet())
+        for (Module module : bean.modules)
+        {
+            String guid = GUID.makeGUID();
+            %>
+        <tr class="labkey-header">
+            <td valign="middle" width="9">
+                <a id="<%= h(guid) %>" onclick="return toggleLink(this, false);">
+                    <img src="<%=getWebappURL("/_images/plus.gif")%>">
+                </a>
+            </td>
+            <td>
+                <span onclick="return toggleLink(document.getElementById('<%= h(guid) %>'), false);"><%=h(module.getName())%> <%=h(module.getFormattedVersion())%></span>
+            </td>
+        </tr>
+        <tr style="display:none">
+            <td width="9"></td>
+            <td style="padding-left: 2em">
+                <% if (!StringUtils.isEmpty(module.getDescription()))
                 {
-                %><tr>
-                    <td nowrap="true" class="labkey-form-label"><%=h(entry.getKey())%></td>
-                    <td nowrap="true"><%=h(entry.getValue())%></td>
-                </tr><%
-                } %>
-            </table>
-        </td>
-    </tr><%
-    }%>
+                    %><div style="padding-left:6px;"><%=h(module.getDescription())%></div><%
+                }
+                %><table cellpadding="0"><%
+                    for (Map.Entry<String, String> entry : new TreeMap<>(module.getProperties()).entrySet())
+                    {
+                    %><tr>
+                        <td nowrap="true" class="labkey-form-label"><%=h(entry.getKey())%></td>
+                        <td nowrap="true"><%=h(entry.getValue())%></td>
+                    </tr><%
+                    } %>
+                </table>
+            </td>
+        </tr><%
+        }%>
+    </table>
+</td><td>
+
+<table><%
+
+        if (getUser().isSiteAdmin())
+        {
+        %>
+        <tr><td colspan="2"><%
+            include(new UserController.ImpersonateView(c, getUser(), true), out);
+        %>
+        </td></tr><%
+        }
+        %>
+
+        <tr><td colspan="2"><b>Active Users in the Last Hour</b></td></tr><%
+
+        for (Pair<String, Long> pair : bean.active)
+        {
+            %><tr><td><%=h(pair.getKey())%></td><td><%=pair.getValue()%> minutes ago</td></tr><%
+        }
+
+    %>
 </table>
+
 
 </td>
 </tr></table>
