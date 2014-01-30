@@ -18,6 +18,8 @@ package org.labkey.api.settings;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.User;
 
@@ -30,7 +32,7 @@ import java.util.Map;
  */
 public abstract class AbstractSettingsGroup
 {
-    public static final User SITE_CONFIG_USER = new User("site settings", -1); // Historically, site settings have userd user id -1
+    public static final User SITE_CONFIG_USER = new User("site settings", -1); // Historically, site settings have used user id -1
 
     protected abstract String getGroupName();
 
@@ -53,6 +55,11 @@ public abstract class AbstractSettingsGroup
 
     protected String lookupStringValue(String name, @Nullable String defaultValue)
     {
+        // Make sure the core.Containers table actually exists in the database; if not, just return the default value.
+        // A bit cheesy, but this allows us to safely use AppProps, etc. even at bootstrap time.
+        if (CoreSchema.getInstance().getTableInfoContainers().getTableType() == DatabaseTableType.NOT_IN_DB)
+            return defaultValue;
+
         return lookupStringValue(ContainerManager.getRoot(), name, defaultValue);
     }
 
