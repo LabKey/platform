@@ -1703,7 +1703,9 @@ public class SecurityController extends SpringActionController
                     runner.addSvgOutput(svgFile);
                     runner.execute();
                     String svg = PageFlowUtil.getFileContentsAsString(svgFile);
-                    html = svg.substring(svg.indexOf("<svg"));
+
+                    int idx = svg.indexOf("<svg");
+                    html = -1 != idx ? svg.substring(idx) : "Graphviz failed to generate this group diagram";
                 }
                 catch (IOException ioe)
                 {
