@@ -3593,7 +3593,7 @@ public class QueryController extends SpringActionController
                 }
 
                 // Don't commit if we had errors or if the client requested that we only validate (and not commit)
-                if (transacted && !errors.hasErrors() && !validateOnly)
+                if (transacted && !errors.hasErrors() && !validateOnly && errorCount == 0)
                 {
                     scope.commitTransaction();
                     committed = true;

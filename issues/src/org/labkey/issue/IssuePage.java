@@ -294,6 +294,11 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return sb.toString();
     }
 
+    public boolean hasKeywords(ColumnType type)
+    {
+        return !KeywordManager.getKeywords(_c, type).isEmpty();
+    }
+
     public String writeSelect(ColumnType type, int tabIndex) throws IOException
     {
         String value = type.getValue(getIssue());

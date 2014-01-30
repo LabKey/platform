@@ -34,6 +34,7 @@
 <%@ page import="org.labkey.issue.IssuesController.UpdateAction" %>
 <%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="java.util.Arrays" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
@@ -91,10 +92,15 @@
         <td valign="top"><table>
             <tr><td class="labkey-form-label">Status</td><td><%=h(issue.getStatus())%></td></tr>
             <tr><td class="labkey-form-label">Assigned&nbsp;To</td><td><%=h(issue.getAssignedToName(user))%></td></tr>
-            <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.TYPE))%></td><td><%=h(issue.getType())%></td></tr>
-            <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.AREA))%></td><td><%=h(issue.getArea())%></td></tr>
-            <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.PRIORITY))%></td><td><%=h(issue.getPriority())%></td></tr>
-            <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.MILESTONE))%></td><td><%=h(issue.getMilestone())%></td></tr>
+<%
+    for (ColumnType type : Arrays.asList(ColumnType.TYPE, ColumnType.AREA, ColumnType.PRIORITY, ColumnType.MILESTONE))
+    {
+        if (bean.hasKeywords(type) || type.getValue(issue) != null)
+        {
+            %><tr><td class="labkey-form-label"><%=h(bean.getLabel(type))%></td><td><%=h(type.getValue(issue))%></td></tr><%
+        }
+    }
+%>
         </table></td>
         <td valign="top"><table>
             <tr><td class="labkey-form-label"><%=text(bean.getLabel("Opened"))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>

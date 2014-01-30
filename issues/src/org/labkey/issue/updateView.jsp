@@ -32,6 +32,8 @@
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -57,6 +59,18 @@
     {
         cancelURL = IssuesController.issueURL(c, IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
     }
+
+    List<ColumnType> extraOptions = new ArrayList<>();
+    for (ColumnType type : Arrays.asList(ColumnType.TYPE, ColumnType.AREA, ColumnType.PRIORITY, ColumnType.MILESTONE))
+    {
+        if (bean.hasKeywords(type))
+        {
+            extraOptions.add(type);
+        }
+    }
+
+    //this is the rowspan used for the 2nd and 3rd columns
+    int rowSpan = 2 + extraOptions.size();
 %>
 
 <script type="text/javascript">
@@ -127,8 +141,8 @@
                 <%=text(bean.writeInput("title", issue.getTitle(), "id=title tabindex=\"1\" style=\"width:100%;\""))%>
                 </td></tr>
             <tr>
-                <td class="labkey-form-label"><%=text(bean.getLabel("Status"))%></td><td><%=h(issue.getStatus())%></td>
-                <td rowspan="6" valign="top">
+                <td class="labkey-form-label"><%=bean.getLabel("Status")%></td><td><%=h(issue.getStatus())%></td>
+                <td rowspan="<%=h(rowSpan)%>" valign="top">
                     <table>
                         <tr><td class="labkey-form-label"><%=text(bean.getLabel("Opened"))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>
                         <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
@@ -196,8 +210,8 @@
                         <%=text(bean.writeCustomColumn(ColumnType.STRING1, 2))%>
                     </table>
                 </td>
-                <td valign="top" rowspan="6"><table>
-                    <tr><td class="labkey-form-label">Closed</td><td><%=h(bean.writeDate(issue.getClosed()))%><%=text(issue.getClosedBy() != null ? " by " : "")%><%=h(issue.getClosedByName(user))%></td></tr>
+                <td valign="top" rowspan="<%=h(rowSpan)%>"><table>
+                    <tr><td class="labkey-form-label">Closed</td><td><%=text(bean.writeDate(issue.getClosed()))%><%=text(issue.getClosedBy() != null ? " by " : "")%><%=h(issue.getClosedByName(user))%></td></tr>
     <%
                 if (bean.isEditable("notifyList"))
                 {
@@ -234,11 +248,13 @@
                     <%=text(bean.writeCustomColumn(ColumnType.STRING5, 3))%>
                 </table></td>
             </tr>
-        <tr><td class="labkey-form-label"><%=text(bean.getLabel("AssignedTo"))%></td><td><%=text(bean.writeSelect("assignedTo", String.valueOf(issue.getAssignedTo()), issue.getAssignedToName(user), bean.getUserOptions(), 1))%></td></tr>
-        <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.TYPE))%></td><td><%=text(bean.writeSelect(ColumnType.TYPE, 1))%></td></tr>
-        <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.AREA))%></td><td><%=text(bean.writeSelect(ColumnType.AREA, 1))%></td></tr>
-        <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.PRIORITY))%></td><td><%=text(bean.writeSelect(ColumnType.PRIORITY, 1))%></td></tr>
-        <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.MILESTONE))%></td><td><%=text(bean.writeSelect(ColumnType.MILESTONE, 1))%></td></tr>
+        <tr><td class="labkey-form-label"><%=bean.getLabel("AssignedTo")%></td><td><%=bean.writeSelect("assignedTo", String.valueOf(issue.getAssignedTo()), issue.getAssignedToName(user), bean.getUserOptions(), 1)%></td></tr>
+        <%
+            for (ColumnType type : extraOptions)
+            {
+                %><tr><td class="labkey-form-label"><%=text(bean.getLabel(type))%></td><td><%=text(bean.writeSelect(type, 1))%></td></tr><%
+            }
+        %>
         <tr><td class="labkey-form-label">Comment</td>
             <td colspan="3">
                 <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;" tabindex="1"><%=h(bean.getBody())%></textarea>
