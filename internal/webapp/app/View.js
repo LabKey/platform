@@ -8,34 +8,17 @@ Ext.define('LABKEY.app.controller.View', {
     extend : 'Ext.app.Controller',
 
     /**
-     * A set of 'shortcuts' that are lazily initialized that allow for this class to quickly access known sub-components.
-     * An example is a ref of 'center' will provide a method on this class of 'getCenter()' which will hand back the matching
-     * selection from the Component Query.
-     * Component Query:  http://docs.sencha.com/ext-js/4-0/#!/api/Ext.ComponentQuery
+     * This is a map of all the views for the Connector Application.
+     * It's purpose is to be able to register views and then use them throughout the application lifetime
+     * NOTE: This is different from Ext.app.Controller.getView() because it returns an instance of a view
      */
-    refs : [{
-        selector : 'app-main > panel[region=center]',
-        ref : 'center'
-    },{
-        selector : 'app-main > panel[region=north]',
-        ref : 'north'
-    },{
-        selector : 'app-main > panel[region=west]',
-        ref : 'west'
-    },{
-        selector : 'app-main > panel[region=east]',
-        ref : 'east'
-    }],
+    viewMap: {},
+
+    tabMap: {},
+
+    controllerMap: {},
 
     init : function() {
-        /**
-         * This is a map of all the views for the Connector Application.
-         * It's purpose is to be able to register views and then use them throughout the application lifetime
-         * NOTE: This is different from Ext.app.Controller.getView() because it returns an instance of a view
-         */
-        this.viewMap = {};
-        this.tabMap = {};
-        this.controllerMap = {};
 
         if (LABKEY.ActionURL) {
             var params = LABKEY.ActionURL.getParameters();
@@ -46,57 +29,6 @@ Ext.define('LABKEY.app.controller.View', {
         }
 
         this.stateController = this.getController('State');
-
-        /**
-         * This map keys of known 'xtype's of views that will be managed by the application. The map values are
-         * the associated functions for either showing or hiding that view 'type'. If these are not provided then a
-         * default show/hide method is provided.
-         */
-        this.actions = {
-            hide : {
-                'filtersave' : {fn: this.hideFilterSaveView, scope: this},
-                'groupsave'  : {fn: this.hideGroupSaveView, scope: this},
-                'singleaxis' : {fn: this.hideExplorerView, scope: this},
-                'summary': {fn: this.hideSummaryView, scope: this}
-            },
-            show : {
-                'filtersave' : {fn: this.showFilterSaveView, scope: this},
-                'groupsave'  : {fn: this.showGroupSaveView, scope: this}
-            }
-        };
-
-        // Listen for when views are added to the center view and register that components xtype
-        this.control('app-main > #primarytabpanel',
-                {
-                    // See http://docs.sencha.com/ext-js/4-0/#!/api/Ext.tab.Panel-method-add
-                    add : function (tp, comp) {
-                        this._addTab(comp.xtype);
-                    }
-                }
-        );
-
-        // Since the Connector.panel.Header does not have its own controller this controller is provided.
-//        this.requestCollapse = false;
-        this.control('connectorheader',
-                {
-                    // See http://docs.sencha.com/ext-js/4-0/#!/api/Ext.tab.Panel-event-afterrender
-                    afterrender : function(c) {
-                        this.hdr = c;
-//                        if (this.requestCollapse)
-//                            this.hdr.collapse(true);
-                    },
-                    // See Connector.panel.Header event 'headerclick'.
-                    headerclick : function() {
-                        this.changeView('summary');
-                    }
-                }
-        );
-
-        this.control('panel > #videobtn',
-                {
-                    afterrender : this.initTutorial
-                }
-        );
     },
 
     /**
@@ -339,29 +271,6 @@ Ext.define('LABKEY.app.controller.View', {
 
     /**
      * @private
-     * Adds a tab to the tab mapping for the center region.
-     * @param xtype
-     */
-    _addTab : function(xtype) {
-        this.tabMap[xtype] = this.getCenter().items.length;
-    },
-
-    /**
-     * @private
-     * Ensures the east region is shown and the active tab is set.
-     * @param xtype
-     */
-    _showEastView : function(xtype, context) {
-        if (!this.viewMap[xtype]) {
-            this.viewMap[xtype] = this.createView(xtype, context);
-        }
-
-        this.getEast().add(this.viewMap[xtype]);
-        this.getEast().setActiveTab(this.viewMap[xtype]);
-    },
-
-    /**
-     * @private
      * Default show view method used to set the active view for the center region.
      * @param xtype
      */
@@ -394,148 +303,9 @@ Ext.define('LABKEY.app.controller.View', {
                 center.setActiveTab(post);
                 this.fadeInView(xtype);
             }
-            this.showStatusView('filterstatus');
         }
         else {
             console.warn('WATCH OUT: Failed to load', xtype);
-        }
-    },
-
-    /*******************************************************************************************/
-    /**---- THE FOLLOWING ARE SPECIFIC TO HOW EACH KNOWN VIEW TYPE IS TO SHOWN AND HIDDEN ----**/
-    /*******************************************************************************************/
-
-    hideExplorerView : function(xtype, cb) {
-        this.fadeOutView(xtype, cb);
-    },
-
-    showFilterSaveView : function(xtype, cb) {
-        this._showEastView(xtype);
-    },
-
-    hideFilterSaveView : function(xtype, cb) {
-        this.getEast().setActiveTab(0);
-    },
-
-    showGroupSaveView : function(xtype, cb) {
-        this._showEastView(xtype);
-    },
-
-    hideGroupSaveView : function(xtype, cb) {
-        this.getEast().setActiveTab(0);
-    },
-
-    showStatusView : function(xtype, context) {
-
-        if (!this.viewMap[xtype]) {
-            this.viewMap[xtype] = this.createView(xtype, context);
-            this.getEast().add(this.viewMap[xtype]);
-        }
-    },
-
-    hideSummaryView : function(xtype, cb) {
-        this.fadeOutView(xtype, cb);
-    },
-
-    initTutorial : function(box) {
-        if (!tutorialAvailable) {
-            return;
-        }
-        var img = Ext.DomQuery.select('img.hoverimg', box.getEl().id);
-        if (img && img.length > 0) {
-            img = img[0];
-            var me = this;
-            LABKEY.Query.selectRows({
-                schemaName : 'lists',
-                queryName  : 'resource',
-                success : function(data) {
-                    me.sources = data.rows;
-                    Ext.get(img).on('click', me.launchTutorial, me);
-                },
-                failure : function() { /* No-op */ console.warn('failed to find resource list.'); }
-            });
-        }
-        else {
-            console.warn('no tutorial image link available.');
-        }
-    },
-
-    launchTutorial : function() {
-        if (this.sources && this.sources.length > 0) {
-
-            var children = [];
-            for (var i=0; i < this.sources.length; i++) {
-                if (this.sources[i].group == 'tutorial') {
-                    children.push({
-                        tag : 'source',
-                        src : this.sources[i].source,
-                        type: this.sources[i].type
-                    });
-                }
-            }
-
-            if (children.length > 0) {
-                if (Ext.getCmp('tutorial-win')) {
-                    Ext.getCmp('tutorial-win').show();
-                    return;
-                }
-                var videoWindow = Ext.create('Ext.window.Window', {
-                    id    : 'tutorial-win',
-                    modal : true,
-                    width : 810,
-                    height: 610,
-                    frame : false,
-                    border : false,
-                    header : false,
-                    resizable : false,
-                    draggable: false,
-                    shadow : false,
-                    closable : false,
-                    cls    : 'tutorial',
-                    items : [{
-                        xtype : 'box',
-                        autoEl: {
-                            tag : 'video',
-                            width : 800,
-                            height: 600,
-                            controls : 'controls',
-                            children : children
-                        }
-                    }],
-                    closeBtn : null,
-                    listeners : {
-                        show : function(w) {
-                            if (!videoWindow.closeBtn) {
-                                var el = document.createElement('img');
-                                el.setAttribute('src', LABKEY.contextPath + '/cds/images/closebtn.png');
-                                el.setAttribute('class', 'tutorialclose');
-                                el.setAttribute('alt', 'Close Icon');
-                                el = Ext.get(el);
-
-                                var box = w.getBox();
-                                var x = box.x + box.width - 16;
-                                var y = box.y - 16;
-                                el.setXY([x,y]);
-                                el.appendTo(Ext.getBody());
-
-                                el.on('click', function(){ this.hide(); this.closeBtn.hide(); }, videoWindow);
-                                videoWindow.closeBtn = el;
-                            }
-                            else {
-                                videoWindow.closeBtn.show();
-                            }
-                        }
-                    }
-                });
-
-                videoWindow.show();
-            }
-            else {
-                console.warn('No matching group \'tutorial\' resources available.');
-            }
-        }
-        else {
-            console.warn('no tutorial sources available.');
         }
     }
 });
