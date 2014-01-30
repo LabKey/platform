@@ -31,6 +31,14 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
         }
     };
 
+    var adjustRotatedTicks = function(tickSet) {
+        // Raphael rotates the text around the center, so after we rotate the tick text we need to lower it so the text
+        // doesn't run into the grid above.
+        for (var i = 0; i < tickSet.length; i++) {
+            tickSet[i].attr('y', tickSet[i].getBBox().y2);
+        }
+    }
+
     var renderGrid = function() {
         var i, x1, y1, x2, y2, tick, tickText, tickHoverText, text, gridLine;
         if (this.bgColor) {
@@ -82,6 +90,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
                     nextBBox = xTicksSet[i+1].getBBox();
             if (curBBox.x2 >= nextBBox.x) {
                 xTicksSet.attr('text-anchor', 'start').transform('t0,0r15');
+                adjustRotatedTicks(xTicksSet);
                 break;
             }
         }
