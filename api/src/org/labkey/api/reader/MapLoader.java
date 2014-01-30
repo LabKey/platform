@@ -19,11 +19,15 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.iterator.CloseableIterator;
+import org.labkey.api.settings.DateParsingMode;
+import org.labkey.api.settings.LookAndFeelProperties;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -188,7 +192,12 @@ public class MapLoader extends DataLoader
 
             List<Map<String, Object>> data = loader.load();
             assertEquals("bob", data.get(0).get("name"));
-            assertEquals(new GregorianCalendar(2006, 0, 2).getTime(), data.get(0).get("date"));
+
+            // "1/2/2006" will be parsed based on the current date parsing mode (US vs. non-US), so change the expected value based on the setting
+            DateParsingMode mode = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDateParsingMode();
+            Calendar cal = DateParsingMode.US == mode ? new GregorianCalendar(2006, 0, 2) : new GregorianCalendar(2006, 1, 1);
+
+            assertEquals(cal.getTime(), data.get(0).get("date"));
             assertEquals(1.1, data.get(0).get("number"));
             assertEquals(1.2, data.get(2).get("number"));
 

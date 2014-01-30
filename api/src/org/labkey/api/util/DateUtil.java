@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.settings.DateParsingMode;
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelProperties;
 
@@ -1401,16 +1402,12 @@ Parse:
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03 04:05:06"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03 04:05:06.0"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03T04:05:06"));
-            assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/01 4:05:06"));
-            assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/2001 4:05:06"));
-            assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/2001 4:05:06.000"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("03 feb 2001 04:05:06"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("03 feb 2001 04:05:06am"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("03 feb 2001 04:05:06 am"));
             assertEquals(datetimeExpected-6000, DateUtil.parseDateTime("03 feb 2001 04:05am"));
             assertEquals(datetimeExpected-6000, DateUtil.parseDateTime("03 feb 2001 04:05 am"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("03-FEB-2001-04:05:06")); // FCS dates
-            assertEquals(datetimeExpected, DateUtil.parseDateTime("2-03-2001 4:05:06"));
 
             // illegal
             assertIllegalDateTime("2");
@@ -1424,8 +1421,6 @@ Parse:
             assertEquals(dateExpected, DateUtil.parseDateTime(ConvertUtils.convert(d)));
             assertEquals(dateExpected, DateUtil.parseDateTime("2001-02-03"));
             assertEquals(dateExpected, DateUtil.parseDateTime("2001-2-03"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("2/3/01"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("2/3/2001"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3-Feb-01"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3Feb01"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3Feb2001"));
@@ -1483,6 +1478,22 @@ Parse:
             assertEquals(datetimeUTC, parseDateTimeUS("2001-02-03T04:05:06Z", DateTimeOption.DateTime, true));
 
             assertIllegalDateTime("20131113_Guide Set plate 1.xls");
+        }
+
+
+        @Test
+        public void testDateTimeIntl()
+        {
+            DateParsingMode mode = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDateParsingMode();
+            long datetimeExpected = java.sql.Timestamp.valueOf(DateParsingMode.US == mode ? "2001-02-03 04:05:06" : "2001-03-02 04:05:06").getTime();
+            long dateExpected = java.sql.Date.valueOf(DateParsingMode.US == mode ? "2001-02-03" : "2001-03-02").getTime();
+
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/01 4:05:06"));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/2001 4:05:06"));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/2001 4:05:06.000"));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("2-03-2001 4:05:06"));
+            assertEquals(dateExpected, DateUtil.parseDateTime("2/3/01"));
+            assertEquals(dateExpected, DateUtil.parseDateTime("2/3/2001"));
         }
 
 
@@ -1626,16 +1637,7 @@ Parse:
             // Date
             assertEquals(dateExpected, DateUtil.parseDateTime("2001-02-03"));
             assertEquals(dateExpected, DateUtil.parseDateTime("2001-2-03"));
-            assertEquals(dateExpected, DateUtil.parseDate("2/3/01"));
-            assertEquals(dateExpected, DateUtil.parseDate("2-3-01"));
-            assertEquals(dateExpected, DateUtil.parseDate("2-3-2001"));
-            assertEquals(dateExpected, DateUtil.parseDate("2-03-2001"));
-            assertEquals(dateExpected, DateUtil.parseDate("02-3-2001"));
-            assertEquals(dateExpected, DateUtil.parseDate("2/3/2001"));
-            assertEquals(dateExpected, DateUtil.parseDate("02/03/01"));
-            assertEquals(dateExpected, DateUtil.parseDate("02-03-01"));
-            assertEquals(dateExpected, DateUtil.parseDate("02/03/2001"));
-            assertEquals(dateExpected, DateUtil.parseDate("02-03-2001"));
+
             assertEquals(dateExpected, DateUtil.parseDate("3-Feb-01"));
             assertEquals(dateExpected, DateUtil.parseDate("3Feb01"));
             assertEquals(dateExpected, DateUtil.parseDate("3Feb2001"));
@@ -1665,7 +1667,26 @@ Parse:
         }
 
 
-        @Test 
+        @Test  // Test parsing of dates whose interpretation changes based on US vs. non-US setting
+        public void testDateIntl()
+        {
+            DateParsingMode mode = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDateParsingMode();
+            long dateExpected = java.sql.Date.valueOf(DateParsingMode.US == mode ? "2001-02-03" : "2001-03-02").getTime();
+
+            assertEquals(dateExpected, DateUtil.parseDate("2/3/01"));
+            assertEquals(dateExpected, DateUtil.parseDate("2-3-01"));
+            assertEquals(dateExpected, DateUtil.parseDate("2-3-2001"));
+            assertEquals(dateExpected, DateUtil.parseDate("2-03-2001"));
+            assertEquals(dateExpected, DateUtil.parseDate("02-3-2001"));
+            assertEquals(dateExpected, DateUtil.parseDate("2/3/2001"));
+            assertEquals(dateExpected, DateUtil.parseDate("02/03/01"));
+            assertEquals(dateExpected, DateUtil.parseDate("02-03-01"));
+            assertEquals(dateExpected, DateUtil.parseDate("02/03/2001"));
+            assertEquals(dateExpected, DateUtil.parseDate("02-03-2001"));
+        }
+
+
+        @Test
         public void testTime()
         {
             long hrs12 = TimeUnit.HOURS.toMillis(12);
