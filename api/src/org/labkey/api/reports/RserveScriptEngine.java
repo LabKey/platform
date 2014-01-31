@@ -51,14 +51,22 @@ public class RserveScriptEngine extends RScriptEngine
     protected String getInputFilename(File inputScript)
     {
         String inputPath = RReport.getLocalPath(inputScript);
-        return getRemoteReportPath(inputPath);
+        String remotePath = getRemoteReportPath(inputPath);
+        if (inputPath.equals(remotePath))
+            remotePath = getRemotePipelinePath(inputPath);
+
+        return remotePath;
     }
 
     @Override
     protected String getRWorkingDir(ScriptContext context)
     {
         String workingDir = RReport.getLocalPath(getWorkingDir(context));
-        return getRemoteReportPath(workingDir);
+        String remoteDir = getRemoteReportPath(workingDir);
+        if (workingDir.equals(remoteDir))
+            remoteDir = getRemotePipelinePath(workingDir);
+
+        return remoteDir;
     }
 
     public Object eval(String script, ScriptContext context) throws ScriptException
@@ -188,9 +196,9 @@ public class RserveScriptEngine extends RScriptEngine
 
     public String getRemoteReportPath(String localPath)
     {
-        if (!StringUtils.isEmpty(_def.getReportShare()))
+        File f = (File) getBindings(ScriptContext.ENGINE_SCOPE).get(RserveScriptEngine.TEMP_ROOT);
+        if (!StringUtils.isEmpty(_def.getReportShare()) && f != null)
         {
-            File f = (File) getBindings(ScriptContext.ENGINE_SCOPE).get(RserveScriptEngine.TEMP_ROOT);
             String tempRoot = RReport.getLocalPath(f);
             return localPath.replaceAll(tempRoot, _def.getReportShare());
         }
@@ -200,9 +208,9 @@ public class RserveScriptEngine extends RScriptEngine
 
     public String getRemotePipelinePath(String localPath)
     {
-        if (!StringUtils.isEmpty(_def.getPipelineShare()))
+        File f = (File) getBindings(ScriptContext.ENGINE_SCOPE).get(RserveScriptEngine.PIPELINE_ROOT);
+        if (!StringUtils.isEmpty(_def.getPipelineShare()) && f != null)
         {
-            File f = (File) getBindings(ScriptContext.ENGINE_SCOPE).get(RserveScriptEngine.PIPELINE_ROOT);
             String pipelineRoot = RReport.getLocalPath(f);
             return localPath.replaceAll(pipelineRoot, _def.getPipelineShare());
         }
