@@ -29,6 +29,7 @@ import org.labkey.api.pipeline.cmd.*;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
@@ -336,6 +337,9 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         }
     }
 
+    // Write out a tsv file with job and task information before executing the command
+    protected boolean _writeTaskInfoFile = false;
+
     public CommandTaskImpl(PipelineJob job, Factory factory)
     {
         super(factory, job);
@@ -350,6 +354,11 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
     public String getInstallPath()
     {
         return _factory.getInstallPath();
+    }
+
+    public boolean isWriteTaskInfoFile()
+    {
+        return _writeTaskInfoFile;
     }
 
     /**
@@ -402,11 +411,38 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         }
     }
 
+    // CONSIDER: Move to ScriptTaskImpl -- it's the only usage of this method
     protected void writeTaskInfo(File file) throws IOException
     {
-        RowMapFactory<Object> factory = new RowMapFactory<>("Name", "Value", "Type");
+        RowMapFactory<Object> factory = new RowMapFactory<>("Name", "Value");
         List<Map<String, Object>> rows = new ArrayList<>();
 
+        // Job information
+        //rows.add(factory.getRowMap("protocolName", getJob().getProtocolName()));
+        rows.add(factory.getRowMap("provider", getJob().getProvider()));
+        rows.add(factory.getRowMap("description", getJob().getDescription()));
+        //rows.add(factory.getRowMap("taskPipelineId", getJob().getTaskPipelineId()));
+        rows.add(factory.getRowMap("jobGUID", getJob().getJobGUID()));
+        rows.add(factory.getRowMap("parentGUID", getJob().getParentGUID()));
+        rows.add(factory.getRowMap("splitJob", getJob().isSplitJob()));
+
+        rows.add(factory.getRowMap("baseUrl", AppProps.getInstance().getBaseServerUrl()));
+        rows.add(factory.getRowMap("contextPath", AppProps.getInstance().getContextPath()));
+        rows.add(factory.getRowMap("containerPath", getJob().getContainer().getPath()));
+        rows.add(factory.getRowMap("containerId", getJob().getContainer().getEntityId()));
+        rows.add(factory.getRowMap("user", getJob().getUser().getEmail()));
+
+        PipeRoot pipeRoot = getJob().getPipeRoot();
+        rows.add(factory.getRowMap("pipeRoot", getJob().getPipeRoot().getRootPath()));
+
+        // FileAnalysisJobSupport properties
+        FileAnalysisJobSupport support = getJobSupport();
+        rows.add(factory.getRowMap("baseName", support.getBaseName()));
+        rows.add(factory.getRowMap("joinedBaseName", support.getJoinedBaseName()));
+        rows.add(factory.getRowMap("analysisDirectory", rewritePath(support.getAnalysisDirectory().toString())));
+        rows.add(factory.getRowMap("dataDirectory", rewritePath(support.getDataDirectory().toString())));
+
+        // Task information
         rows.add(factory.getRowMap("taskId", _factory.getId()));
 
         for (Map.Entry<String, TaskPath> entry : _factory.getInputPaths().entrySet())
@@ -419,6 +455,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             String[] inputPaths = getProcessPaths(WorkDirectory.Function.input, key);
             for (String inputPath : inputPaths)
             {
+                inputPath = rewritePath(inputPath);
                 rows.add(factory.getRowMap(key, inputPath, path.getType().getDefaultSuffix()));
             }
         }
@@ -430,10 +467,11 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
 
             // CONSIDER: Include the TaskPath information (optional, etc.)
 
-            String[] inputPaths = getProcessPaths(WorkDirectory.Function.output, key);
-            for (String inputPath : inputPaths)
+            String[] outputPaths = getProcessPaths(WorkDirectory.Function.output, key);
+            for (String outputPath : outputPaths)
             {
-                rows.add(factory.getRowMap(key, inputPath, path.getType().getDefaultSuffix()));
+                outputPath = rewritePath(outputPath);
+                rows.add(factory.getRowMap(key, outputPath, path.getType().getDefaultSuffix()));
             }
         }
 
@@ -442,6 +480,11 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         tsvWriter.write(file);
     }
 
+    // CONDISER: Use PipelineJobService.get().getPathMapper() when translating paths
+    protected String rewritePath(String path)
+    {
+        return path;
+    }
 
     public RecordedActionSet run() throws PipelineJobException
     {
@@ -466,10 +509,6 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                     }
                 }
             }
-
-//            // Write task properties file
-//            File taskInfoFile = _wd.newFile(WorkDirectory.Function.input, TabLoader.TSV_FILE_TYPE);
-//            writeTaskInfo(taskInfoFile);
 
             // Always copy in the parameters file. It's small and in some cases is useful to the process we're launching
             _wd.inputFile(getJobSupport().getParametersFile(), true);

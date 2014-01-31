@@ -54,9 +54,13 @@ public class ScriptTaskImpl extends CommandTaskImpl
 {
     public static final Logger LOG = Logger.getLogger(ScriptTaskImpl.class);
 
+    private ScriptEngine _engine;
+
     /* package */ ScriptTaskImpl(PipelineJob job, SimpleTaskFactory factory)
     {
         super(job, factory);
+
+        _writeTaskInfoFile = true;
     }
 
     /**
@@ -82,7 +86,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
                 if (inputPaths[0] == null)
                     replacements.put(key, "");
                 else
-                    replacements.put(key, Matcher.quoteReplacement(rewritePath(engine, inputPaths[0].replaceAll("\\\\", "/"))));
+                    replacements.put(key, Matcher.quoteReplacement(rewritePath(inputPaths[0].replaceAll("\\\\", "/"))));
             }
             else
             {
@@ -105,7 +109,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
                 if (outputPaths[0] == null)
                     replacements.put(key, "");
                 else
-                    replacements.put(key, Matcher.quoteReplacement(rewritePath(engine, outputPaths[0].replaceAll("\\\\", "/"))));
+                    replacements.put(key, Matcher.quoteReplacement(rewritePath(outputPaths[0].replaceAll("\\\\", "/"))));
             }
             else
             {
@@ -120,8 +124,12 @@ public class ScriptTaskImpl extends CommandTaskImpl
         }
 
         // Job info replacement
-        File jobInfoFile = getJobSupport().getJobInfoFile();
-        replacements.put(PipelineJob.PIPELINE_JOB_INFO_PARAM, rewritePath(engine, jobInfoFile.getAbsolutePath()));
+        //File jobInfoFile = getJobSupport().getJobInfoFile();
+        //replacements.put(PipelineJob.PIPELINE_JOB_INFO_PARAM, rewritePath(engine, jobInfoFile.getAbsolutePath()));
+
+        // Task info replacement
+        File taskInfoFile = new File(_wd.getDir(), getJobSupport().getBaseName() + "-taskInfo.tsv");
+        replacements.put(ScriptTaskFactory.PIPELINE_TASK_INFO_PARAM, rewritePath(taskInfoFile.getAbsolutePath()));
 
         return replacements;
     }
@@ -133,16 +141,17 @@ public class ScriptTaskImpl extends CommandTaskImpl
     @Override
     protected boolean runCommand(RecordedAction action) throws IOException, PipelineJobException
     {
+        // Get the script engine
         ScriptEngineManager mgr = ServiceRegistry.get().getService(ScriptEngineManager.class);
         if (mgr == null)
             throw new PipelineJobException("Script engine manager not available");
 
         ScriptTaskFactory factory = (ScriptTaskFactory)_factory;
         String extension = factory._scriptExtension;
-        ScriptEngine engine = mgr.getEngineByName(extension);
-        if (engine == null)
-            engine = mgr.getEngineByExtension(extension);
-        if (engine == null)
+        _engine = mgr.getEngineByName(extension);
+        if (_engine == null)
+            _engine = mgr.getEngineByExtension(extension);
+        if (_engine == null)
             throw new PipelineJobException("Script engine not found: " + extension);
 
         try
@@ -170,7 +179,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
 
             // Tell the script engine where the script is and the working directory.
             // ExternalScriptEngine will copy script into working dir to perform replacements.
-            Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+            Bindings bindings = _engine.getBindings(ScriptContext.ENGINE_SCOPE);
 
             // UNDONE: Need ability to map to more than one remote pipeline path?  For now, assume everything is under the remote's pipeline root setting
             PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(getJob().getContainer());
@@ -182,8 +191,19 @@ public class ScriptTaskImpl extends CommandTaskImpl
 
             bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, _wd.getDir().getPath());
 
-            Map<String, String> replacements = createReplacements(engine);
+            Map<String, String> replacements = createReplacements(_engine);
             bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, replacements);
+
+            // Write task properties file into the work directory
+            // This needs to be called after the PIPELINE_ROOT is set in the engine bindings
+            if (isWriteTaskInfoFile())
+            {
+                String infoFileName = getJobSupport().getBaseName() + "-taskInfo.tsv";
+                //File taskInfoFile = TabLoader.TSV_FILE_TYPE.newFile(getJobSupport().getAnalysisDirectory(), infoFileName);
+
+                File taskInfoFile = new File(_wd.getDir(), infoFileName);
+                writeTaskInfo(taskInfoFile);
+            }
 
             // Just output the replaced script, if debug mode is set.
             if (AppProps.getInstance().isDevMode() || _factory.isPreview())
@@ -200,11 +220,11 @@ public class ScriptTaskImpl extends CommandTaskImpl
             // Script console output will be redirected to the job's log file as it is produced
             getJob().header("Executing script");
             LogPrintWriter writer = new LogPrintWriter(getJob().getLogger(), Level.INFO);
-            engine.getContext().setWriter(writer);
+            _engine.getContext().setWriter(writer);
             writer.flush();
 
             // Execute the script
-            Object o = engine.eval(scriptSource);
+            Object o = _engine.eval(scriptSource);
 
             if (_factory.isPipeToOutput())
             {
@@ -233,13 +253,18 @@ public class ScriptTaskImpl extends CommandTaskImpl
         {
             throw new PipelineJobException(e);
         }
+        finally
+        {
+            _engine = null;
+        }
     }
 
-    private String rewritePath(ScriptEngine engine, String path)
+    protected String rewritePath(String path)
     {
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+        if (_engine != null && AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
         {
-            // HACK: relativize to working directory
+            // HACK: Change relative path into absolute path.
+            // HACK: In the Rserve case, the process is not executed in the work directory so relative paths won't work.
             File f = new File(path);
             if (!f.isAbsolute())
             {
@@ -247,7 +272,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
                 path = f.getAbsolutePath();
             }
 
-            RserveScriptEngine rengine = (RserveScriptEngine) engine;
+            RserveScriptEngine rengine = (RserveScriptEngine) _engine;
             return rengine.getRemotePipelinePath(path);
         }
         else
