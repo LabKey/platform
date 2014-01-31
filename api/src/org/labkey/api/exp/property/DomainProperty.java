@@ -70,6 +70,7 @@ public interface DomainProperty extends ImportAliasable
     void setDimension(boolean isDimension);
     void setProtected(boolean isProtected);
     void setExcludeFromShifting(boolean isExcludeFromShifting);
+    void setScale(int scale);
 
     void setImportAliasSet(Set<String> aliases);
     void setURL(String url);

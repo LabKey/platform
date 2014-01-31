@@ -455,9 +455,9 @@ public class DomainUtil
         // For string, we have been setting scale to 100 and then ignoring it when creating provisioned tables on favor of 4000
         // So, maintain that behavior; also, we had always set scale to be STRING.size, but that's wrong for other types
         if (PropertyType.STRING.equals(p.getPropertyDescriptor().getPropertyType()) || PropertyType.MULTI_LINE.equals(p.getPropertyDescriptor().getPropertyType()))
-            p.getPropertyDescriptor().setScale(PropertyStorageSpec.DEFAULT_SIZE);
+            p.setScale(PropertyStorageSpec.DEFAULT_SIZE);
         else
-            p.getPropertyDescriptor().setScale(p.getPropertyDescriptor().getPropertyType().getScale());
+            p.setScale(p.getPropertyDescriptor().getPropertyType().getScale());
     }
 
     private static String createUniquePropertyURI(String base, Set<String> propertyUrisInUse)
