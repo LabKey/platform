@@ -1249,10 +1249,53 @@ public abstract class SqlDialect
         }
     }
 
+    /**
+     * Queries the database in a dialect-specific way to determine the procedure's parameter names, datatypes, and directions.
+     * @param scope
+     * @param procSchema
+     * @param procName
+     * @return A map of parameter name / ParameterInfo pairs
+     * @throws SQLException
+     */
     public abstract Map<String, ParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException;
+
+    /**
+     * Build the dialect-specific string to call the procedure, with the correct number and placement of parameter placeholders
+     * @param procSchema
+     * @param procName
+     * @param paramCount The total number of parameters to include in the invocation string
+     * @param hasReturn  true if the procedure has a return code/status, false if not
+     * @return
+     */
     public abstract String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn);
+
+    /**
+     * Register and set the input value for each INPUT or INPUT/OUTPUT parameter from the parameters map into the CallableStatement, and register
+     * the output parameters.
+     * @param scope
+     * @param stmt
+     * @param parameters
+     * @throws SQLException
+     */
     public abstract void registerParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters) throws SQLException;
+
+    /**
+     * Read the values of each INPUT/OUTPUT or OUTPUT parameter, and write them into the parameters map.
+     * @param scope
+     * @param stmt
+     * @param parameters
+     * @return The return code/status from the procedure, if any. Return -1 if procedure does not have a return code.
+     * @throws SQLException
+     */
     public abstract int readOutputParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters) throws SQLException;
+
+    /**
+     * Convert parameter names between dialect specific conventions (for example, SQL Server parameters have a "@" prefix), and plain
+     * alphanumeric text.
+     * @param name
+     * @param dialectSpecific true to convert to dialect specific convention, false to convert to plain alphanumeric text
+     * @return
+     */
     public abstract String translateParameterName(String name, boolean dialectSpecific);
 
 }
