@@ -1366,7 +1366,7 @@ public class PostgreSql84Dialect extends SqlDialect
     public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters) throws SQLException
     {
         int position = 0;
-        for (ParameterInfo paramInfo : parameters.values()) // TODO: Make sure that maintains proper ordering
+        for (ParameterInfo paramInfo : parameters.values())
         {
             if (paramInfo.getParamTraits().get(ParamTraits.direction) != DatabaseMetaData.procedureColumnOut)
             {
