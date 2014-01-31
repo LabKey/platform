@@ -18,7 +18,11 @@ package org.labkey.authentication.openid;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.RedirectException;
 import org.springframework.validation.BindException;
@@ -44,7 +48,16 @@ public class OpenIdController extends SpringActionController
         public ModelAndView getView(ReturnUrlForm returnUrlForm, BindException errors) throws Exception
         {
             HttpServletRequest request = getViewContext().getRequest();
-            String redirect = GoogleOpenIdProvider.getAuthenticationUrl(request, returnUrlForm.getReturnURLHelper());
+            URLHelper returnURL = returnUrlForm.getReturnURLHelper();
+
+            // double embedding the returnURL seems to make this more fragile, so just remember it
+            request.getSession().setAttribute(OpenIdController.class.getName() + "$returnURL", null==returnURL ? null : returnURL);
+
+            // openid return_to
+            URLHelper return_to = new ActionURL(ReturnAction.class,getContainer());
+            request.getSession().setAttribute(GoogleOpenIdProvider.class.getName() + "$return_to", null==return_to ? null : return_to);
+
+            String redirect = GoogleOpenIdProvider.getAuthenticationUrl(request, return_to);
             throw new RedirectException(redirect);
         }
 
@@ -54,4 +67,25 @@ public class OpenIdController extends SpringActionController
             return null;
         }
    }
+
+
+    @RequiresNoPermission
+    public class ReturnAction extends SimpleViewAction<ReturnUrlForm>
+    {
+        @Override
+        public ModelAndView getView(ReturnUrlForm returnUrlForm, BindException errors) throws Exception
+        {
+            HttpServletRequest request = getViewContext().getRequest();
+            URLHelper returnURL = (URLHelper)request.getSession().getAttribute(OpenIdController.class.getName() + "$returnURL");
+            ActionURL login = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(returnURL);
+            login.addParameters(getViewContext().getActionURL().getParameters());
+            throw new RedirectException(login);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
 }

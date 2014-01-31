@@ -22,12 +22,11 @@ import org.expressme.openid.Association;
 import org.expressme.openid.Authentication;
 import org.expressme.openid.Endpoint;
 import org.expressme.openid.OpenIdManager;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.*;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.RedirectException;
@@ -79,7 +78,7 @@ public class GoogleOpenIdProvider implements AuthenticationProvider.RequestAuthe
     }
 
 
-    public static String getAuthenticationUrl(HttpServletRequest request, URLHelper returnUrl) throws URISyntaxException
+    public static String getAuthenticationUrl(HttpServletRequest request, @NotNull URLHelper returnUrl) throws URISyntaxException
     {
         OpenIdManager manager = getOpenIdManager(returnUrl);
         Endpoint endpoint = manager.lookupEndpoint("Google");
@@ -98,7 +97,6 @@ public class GoogleOpenIdProvider implements AuthenticationProvider.RequestAuthe
         if (!AppProps.getInstance().isExperimentalFeatureEnabled(AuthenticationModule.EXPERIMENTAL_OPENID_GOOGLE))
             return AuthenticationResponse.createFailureResponse(FailureReason.notApplicable);
 
-
         String nonce = request.getParameter("openid.response_nonce");
         if (StringUtils.isEmpty(nonce))
             return AuthenticationResponse.createFailureResponse(FailureReason.notApplicable);
@@ -108,7 +106,8 @@ public class GoogleOpenIdProvider implements AuthenticationProvider.RequestAuthe
             return AuthenticationResponse.createFailureResponse(FailureReason.badCredentials);
         byte[] mac_key = (byte[]) request.getSession().getAttribute(ATTR_MAC);
         String alias = (String) request.getSession().getAttribute(ATTR_ALIAS);
-        OpenIdManager manager = getOpenIdManager(returnURL);
+        URLHelper return_to = (URLHelper)request.getSession().getAttribute(GoogleOpenIdProvider.class.getName() + "$return_to");
+        OpenIdManager manager = getOpenIdManager(return_to);
         Authentication authentication = manager.getAuthentication(request, mac_key, alias);
         //String identity = authentication.getIdentity();
         String email = authentication.getEmail();
@@ -123,15 +122,12 @@ public class GoogleOpenIdProvider implements AuthenticationProvider.RequestAuthe
 
     static OpenIdManager getOpenIdManager(URLHelper returnUrl)
     {
-        if (null == returnUrl)
-            returnUrl = AppProps.getInstance().getHomePageActionURL();
-        LoginUrls urls = PageFlowUtil.urlProvider(LoginUrls.class);
-        ActionURL loginUrl = urls.getLoginURL(returnUrl);
-        loginUrl.setContainer(ContainerManager.getRoot());
-
         OpenIdManager manager = new OpenIdManager();
         manager.setRealm(AppProps.getInstance().getBaseServerUrl());
-        manager.setReturnTo(loginUrl.getURIString());
+        String uri = returnUrl.getURIString();
+        if (uri.endsWith("?"))
+            uri = uri.substring(0,uri.length()-1);
+        manager.setReturnTo(uri);
         return manager;
     }
 
