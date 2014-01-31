@@ -116,14 +116,15 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
         setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName));
 
-        // Write out job information
-        if (writeJobInfoFile)
-        {
-            String infoFileName = _baseName + "-jobInfo";
-            _fileJobInfo = TabLoader.TSV_FILE_TYPE.newFile(_dirAnalysis, infoFileName);
-            writeJobInfoTSV(_fileJobInfo);
-            getParameters().put(PIPELINE_JOB_INFO_PARAM, _fileJobInfo.getAbsolutePath());
-        }
+        // CONSIDER: Remove writing out jobInfo file completely
+//        // Write out job information
+//        if (writeJobInfoFile)
+//        {
+//            String infoFileName = _baseName + "-jobInfo";
+//            _fileJobInfo = TabLoader.TSV_FILE_TYPE.newFile(_dirAnalysis, infoFileName);
+//            writeJobInfoTSV(_fileJobInfo);
+//            getParameters().put(PIPELINE_JOB_INFO_PARAM, _fileJobInfo.getAbsolutePath());
+//        }
     }
 
     public AbstractFileAnalysisJob(AbstractFileAnalysisJob job, File fileInput)
@@ -147,21 +148,22 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _baseName = (_inputTypes.isEmpty() ? fileInput.getName() : _inputTypes.get(0).getBaseName(fileInput));
         setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName));
 
+        // CONSIDER: Remove writing out jobInfo file completely
         // If parent job wrote a job info file, assume the child should too
-        if (job._fileJobInfo != null)
-        {
-            try
-            {
-                String infoFileName = _baseName + "-jobInfo";
-                _fileJobInfo = TabLoader.TSV_FILE_TYPE.newFile(_dirAnalysis, infoFileName);
-                writeJobInfoTSV(_fileJobInfo);
-                getParameters().put(PIPELINE_JOB_INFO_PARAM, _fileJobInfo.getAbsolutePath());
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
+//        if (job._fileJobInfo != null)
+//        {
+//            try
+//            {
+//                String infoFileName = _baseName + "-jobInfo";
+//                _fileJobInfo = TabLoader.TSV_FILE_TYPE.newFile(_dirAnalysis, infoFileName);
+//                writeJobInfoTSV(_fileJobInfo);
+//                getParameters().put(PIPELINE_JOB_INFO_PARAM, _fileJobInfo.getAbsolutePath());
+//            }
+//            catch (IOException e)
+//            {
+//                throw new RuntimeException(e);
+//            }
+//        }
     }
 
     public void clearActionSet(ExpRun run)
