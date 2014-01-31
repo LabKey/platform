@@ -191,13 +191,15 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library">
-      <library name="Ehcache 2.6.0">
+      <library name="Ehcache 2.6.8">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.6.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.6.8.jar!/" />
         </CLASSES>
-        <JAVADOC />
+        <JAVADOC>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.6.8-javadoc.jar!/" />
+        </JAVADOC>
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.6.0.sources.zip!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.6.8-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
