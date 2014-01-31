@@ -123,6 +123,13 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
      */
     public boolean canDelete(UserPrincipal user);
 
+    /**
+     * Does the user have admin permissions for this dataset
+     * @param user
+     * @return
+     */
+    public boolean canUpdateDefinition(User user);
+
     public Set<Class<? extends Permission>> getPermissions(UserPrincipal user);
 
     KeyType getKeyType();
