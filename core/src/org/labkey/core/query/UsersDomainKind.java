@@ -269,7 +269,7 @@ public class UsersDomainKind extends SimpleTableDomainKind
             DomainProperty prop = domain.addProperty();
             prop.setName(name);
             prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
-            prop.getPropertyDescriptor().setScale(scale);
+            prop.setScale(scale);
             prop.setPropertyURI(propertyURI);
             prop.setRequired(required.containsKey(name));
 
@@ -294,7 +294,7 @@ public class UsersDomainKind extends SimpleTableDomainKind
     {
         if (null != prop && prop.getScale() != scale)
         {
-            prop.getPropertyDescriptor().setScale(scale);
+            prop.setScale(scale);
             return true;
         }
         return false;

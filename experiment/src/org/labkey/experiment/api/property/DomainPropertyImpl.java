@@ -324,6 +324,13 @@ public class DomainPropertyImpl implements DomainProperty
         edit().setMvEnabled(mv);
     }
 
+    public void setScale(int scale)
+    {
+        if (scale == getScale())
+            return;
+        edit().setScale(scale);
+    }
+
     /** Need the string version of this method because it's called by reflection and must match by name */
     public void setImportAliases(String aliases)
     {
