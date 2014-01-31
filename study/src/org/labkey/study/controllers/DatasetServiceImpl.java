@@ -35,6 +35,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
@@ -135,11 +136,8 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
         assert orig.getDomainURI().equals(update.getDomainURI());
         List<String> errors = new ArrayList<>();
 
-        if (!getContainer().hasPermission(getUser(), AdminPermission.class))
-        {
-            errors.add("Unauthorized");
+        if (!checkCanUpdate(ds, errors))
             return errors;
-        }
 
         Domain d = PropertyService.get().getDomain(getContainer(), update.getDomainURI());
         if (null == d)
@@ -284,11 +282,8 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
         {
             List<String> errors = new ArrayList<>();
 
-            if (!getContainer().hasPermission(getUser(), AdminPermission.class))
-            {
-                errors.add("Unauthorized");
+            if (!checkCanUpdate(ds, errors))
                 return errors;
-            }
 
             List<Map<String, Object>> maps = null;
             if (null != tsv && tsv.length() > 0)
@@ -323,6 +318,35 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
         }
     }
 
+
+    private boolean checkCanUpdate(GWTDataset ds, List<String> errors)
+    {
+        if (!getContainer().hasPermission(getUser(), AdminPermission.class))
+        {
+            errors.add("Unauthorized");
+            return false;
+        }
+        Study study = StudyService.get().getStudy(getContainer());
+        if (null == study)
+        {
+            errors.add("Study not found in current container");
+            return false;
+        }
+        DataSetDefinition def = (DataSetDefinition)study.getDataSet(ds.getDatasetId());
+        if (null == def)
+        {
+            errors.add("Dataset not found");
+            return false;
+        }
+        if (!def.canUpdateDefinition(getUser()))
+        {
+            errors.add("Shared dataset can not be edited in this folder.");
+            return false;
+        }
+        return true;
+    }
+
+
     @Override
     public GWTDomain getDomainDescriptor(String typeURI, String domainContainerId)
     {
@@ -331,6 +355,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
                 { DefaultValueType.FIXED_EDITABLE, DefaultValueType.LAST_ENTERED }, DefaultValueType.FIXED_EDITABLE);
         return domain;
     }
+
 
     @Override
     public GWTDomain getDomainDescriptor(String typeURI)

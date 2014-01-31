@@ -15,16 +15,31 @@
  */
 package org.labkey.study.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.util.Filter;
 import org.labkey.study.StudySchema;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyManager;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -68,5 +83,45 @@ public class DataSetsTable extends FilteredTable<StudyQuerySchema>
         setTitleColumn("Label");
 
         getColumn("Container").setFk(new ContainerForeignKey(schema));
+    }
+
+
+    @Override
+    protected SimpleFilter getFilter()
+    {
+        return getDatasetFilter(getContainer());
+    }
+
+
+    static SimpleFilter getDatasetFilter(Container c)
+    {
+        Study study = StudyManager.getInstance().getStudy(c);
+        if (null == study)
+            return new SimpleFilter().addClause(new SimpleFilter.FalseClause());
+        List<String> entityIds = new ArrayList<>();
+        Set<String> containerIds = new HashSet<>();
+        for (DataSet ds : study.getDataSets())
+        {
+            entityIds.add(ds.getEntityId());
+            containerIds.add(((DataSetDefinition)ds).getDefinitionContainer().getId());
+        }
+        if (entityIds.isEmpty() || containerIds.isEmpty())
+            return new SimpleFilter().addClause(new SimpleFilter.FalseClause());
+        SimpleFilter f = new SimpleFilter();
+        f.addInClause(new FieldKey(null,"container"),containerIds);
+        f.addInClause(new FieldKey(null,"entityid"),entityIds);
+        return f;
+    }
+
+    @Override
+    public boolean supportsContainerFilter()
+    {
+        return false;
+    }
+
+    @Override
+    protected void applyContainerFilter(ContainerFilter filter)
+    {
+        assert null == filter || ContainerFilter.CURRENT == filter;
     }
 }

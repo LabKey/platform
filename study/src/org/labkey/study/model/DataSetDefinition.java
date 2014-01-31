@@ -789,6 +789,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return getContainer().hasPermission(user, AdminPermission.class);
     }
 
+
+    @Override
+    public boolean canUpdateDefinition(User user)
+    {
+        return getContainer().hasPermission(user, AdminPermission.class) && getDefinitionContainer().getId().equals(getContainer().getId());
+    }
+
+
     @Override
     public KeyType getKeyType()
     {
@@ -798,6 +806,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             return KeyType.SUBJECT_VISIT_OTHER;
         return KeyType.SUBJECT_VISIT;
     }
+
 
     /**
      * Construct a description of the key type for this dataset.
@@ -952,11 +961,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _keyPropertyName = keyPropertyName;
     }
 
+
     @Override
     public void save(User user)
     {
+        // should have checked this by now
+        if (!canUpdateDefinition(user))
+            throw new IllegalStateException("Can't save dataset in this folder...");
         StudyManager.getInstance().updateDataSetDefinition(user, this);
     }
+
 
     public void setKeyManagementType(@NotNull KeyManagementType type)
     {

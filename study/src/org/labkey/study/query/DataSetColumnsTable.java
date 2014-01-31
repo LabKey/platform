@@ -17,6 +17,7 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -75,9 +76,24 @@ public class DataSetColumnsTable extends FilteredTable<StudyQuerySchema>
         result.append("\n" +
                 "JOIN exp.PropertyDomain AS PropertyDomain ON PropertyDomain.PropertyId = PropertyDescriptor.PropertyId\n" +
                 "JOIN exp.DomainDescriptor AS DomainDescriptor ON DomainDescriptor.DomainId = PropertyDomain.DomainId\n" +
-                "JOIN study.DataSet AS DataSet ON DataSet.TypeURI = DomainDescriptor.DomainURI)");
+                "JOIN (SELECT * FROM study.DataSet ");
+        SQLFragment datasetFilter = DataSetsTable.getDatasetFilter(getContainer()).getSQLFragment(getSqlDialect());
+        result.append(datasetFilter);
+        result.append(") AS DataSet ON DataSet.TypeURI = DomainDescriptor.DomainURI) ");
         result.append(alias);
         result.appendComment("</DataSetColumnsTable>", getSqlDialect());
         return result;
+    }
+
+    @Override
+    public boolean supportsContainerFilter()
+    {
+        return false;
+    }
+
+    @Override
+    protected void applyContainerFilter(ContainerFilter filter)
+    {
+        assert null == filter || ContainerFilter.CURRENT == filter;
     }
 }

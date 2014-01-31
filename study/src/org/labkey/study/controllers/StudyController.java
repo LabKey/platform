@@ -460,6 +460,11 @@ public class StudyController extends BaseStudyController
             {
                 throw new NotFoundException();
             }
+            if (!def.canUpdateDefinition(getUser()))
+            {
+                ActionURL details = new ActionURL(DatasetDetailsAction.class,getContainer()).addParameter("id",def.getDataSetId());
+                throw new RedirectException(details);
+            }
             if (null == def.getTypeURI())
             {
                 def = def.createMutable();
