@@ -18,12 +18,15 @@ package org.labkey.pipeline.api;
 import common.Logger;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Level;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.WorkDirectory;
 import org.labkey.api.pipeline.cmd.TaskPath;
 import org.labkey.api.reports.ExternalScriptEngine;
+import org.labkey.api.reports.RserveScriptEngine;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.LogPrintWriter;
@@ -61,7 +64,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
      * to generate the script before executing it.  The replaced paths will be
      * resolved to paths in the work directory.
      */
-    private Map<String, String> createReplacements() throws IOException
+    private Map<String, String> createReplacements(ScriptEngine engine) throws IOException
     {
         Map<String, String> replacements = new HashMap<>();
 
@@ -79,7 +82,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
                 if (inputPaths[0] == null)
                     replacements.put(key, "");
                 else
-                    replacements.put(key, Matcher.quoteReplacement(inputPaths[0].replaceAll("\\\\", "/")));
+                    replacements.put(key, Matcher.quoteReplacement(rewritePath(engine, inputPaths[0].replaceAll("\\\\", "/"))));
             }
             else
             {
@@ -102,7 +105,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
                 if (outputPaths[0] == null)
                     replacements.put(key, "");
                 else
-                    replacements.put(key, Matcher.quoteReplacement(outputPaths[0].replaceAll("\\\\", "/")));
+                    replacements.put(key, Matcher.quoteReplacement(rewritePath(engine, outputPaths[0].replaceAll("\\\\", "/"))));
             }
             else
             {
@@ -118,7 +121,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
 
         // Job info replacement
         File jobInfoFile = getJobSupport().getJobInfoFile();
-        replacements.put(PipelineJob.PIPELINE_JOB_INFO_PARAM, jobInfoFile.getAbsolutePath());
+        replacements.put(PipelineJob.PIPELINE_JOB_INFO_PARAM, rewritePath(engine, jobInfoFile.getAbsolutePath()));
 
         return replacements;
     }
@@ -145,7 +148,6 @@ public class ScriptTaskImpl extends CommandTaskImpl
         try
         {
             String scriptSource = null;
-            File scriptFile = null;
             if (factory._scriptInline != null)
             {
                 scriptSource = factory._scriptInline;
@@ -157,7 +159,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
                     throw new PipelineJobException("Script path not found: " + factory._scriptPath);
 
                 String path = paths[0];
-                scriptFile = new File(path);
+                File scriptFile = new File(path);
 
                 scriptSource = FileUtils.readFileToString(scriptFile);
             }
@@ -169,11 +171,18 @@ public class ScriptTaskImpl extends CommandTaskImpl
             // Tell the script engine where the script is and the working directory.
             // ExternalScriptEngine will copy script into working dir to perform replacements.
             Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
-            if (scriptFile != null)
-                bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.toString());
+
+            // UNDONE: Need ability to map to more than one remote pipeline path?  For now, assume everything is under the remote's pipeline root setting
+            PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(getJob().getContainer());
+            bindings.put(RserveScriptEngine.PIPELINE_ROOT, pipelineRoot.getRootPath());
+
+            // UNDONE: For now, just use script source directly instead of passing SCRIPT_PATH to the engine
+//            if (scriptFile != null)
+//                bindings.put(ExternalScriptEngine.SCRIPT_PATH, rewritePath(engine, scriptFile.toString()));
+
             bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, _wd.getDir().getPath());
 
-            Map<String, String> replacements = createReplacements();
+            Map<String, String> replacements = createReplacements(engine);
             bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, replacements);
 
             // Just output the replaced script, if debug mode is set.
@@ -206,17 +215,17 @@ public class ScriptTaskImpl extends CommandTaskImpl
                 FileUtils.write(fileOutput, String.valueOf(o), "UTF-8");
             }
 
-            File rewrittenScriptFile;
+            File rewrittenScriptFile = null;
             if (bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE) instanceof File)
                 rewrittenScriptFile = (File)bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE);
-            else
-                rewrittenScriptFile = scriptFile;
+//            else
+//                rewrittenScriptFile = scriptFile;
 
             // TODO: process output?
             // TODO: Perhaps signal to _wd that rewrittenScriptFile is a copied input so it can be deleted
 
-            if (scriptFile != null)
-                action.addInput(scriptFile, "Script File"); // CONSIDER: Add replacement script instead?
+            if (rewrittenScriptFile != null)
+                action.addInput(rewrittenScriptFile, "Script File"); // CONSIDER: Add replacement script instead?
 
             return true;
         }
@@ -226,6 +235,26 @@ public class ScriptTaskImpl extends CommandTaskImpl
         }
     }
 
+    private String rewritePath(ScriptEngine engine, String path)
+    {
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+        {
+            // HACK: relativize to working directory
+            File f = new File(path);
+            if (!f.isAbsolute())
+            {
+                f = new File(_wd.getDir(), path);
+                path = f.getAbsolutePath();
+            }
+
+            RserveScriptEngine rengine = (RserveScriptEngine) engine;
+            return rengine.getRemotePipelinePath(path);
+        }
+        else
+        {
+            return path;
+        }
+    }
 }
 
 
