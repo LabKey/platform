@@ -1674,13 +1674,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     private void checkForDuplicates(DataIterator data,
                                     int indexLSID, int indexPTID, int indexVisit, int indexKey, int indexReplace,
-                                    DataIteratorContext context, Logger logger, boolean sourceOnly)
+                                    DataIteratorContext context, Logger logger, CheckForDuplicates checkDuplicates)
     {
         BatchValidationException errors = context.getErrors();
         HashMap<String, Object[]> failedReplaceMap = checkAndDeleteDupes(
                 data,
                 indexLSID, indexPTID, indexVisit, indexKey, indexReplace,
-                errors, sourceOnly);
+                errors, checkDuplicates);
 
         if (null != failedReplaceMap && failedReplaceMap.size() > 0)
         {
@@ -1689,7 +1689,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             error.append(getKeyTypeDescription());
             error.append(".  ");
 
-            error.append("Duplicates were found in the " + (sourceOnly ? "" : "database or ") + "imported data.");
+            error.append("Duplicates were found in the " + (checkDuplicates == CheckForDuplicates.sourceOnly ? "" : "database or ") + "imported data.");
             errors.addRowError(new ValidationException(error.toString()));
 
             int errorCount = 0;
@@ -2029,7 +2029,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     checkForDuplicates(scrollable, indexLSID,
                             translatedIndexPTID, null == indexVisit ? -1 : indexVisit, null == indexKeyProperty ? -1 : indexKeyProperty, null == indexReplace ? -1 : indexReplace,
                             context, logger,
-                            checkDuplicates == CheckForDuplicates.sourceOnly ? true : false);
+                            checkDuplicates);
                     scrollable.beforeFirst();
                     ret = scrollable;
                 }
@@ -2551,7 +2551,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
      */
     private HashMap<String, Object[]> checkAndDeleteDupes(DataIterator rows,
                                                           int indexLSID, int indexPTID, int indexDate, int indexKey, int indexReplace,
-                                                          BatchValidationException errors, boolean sourceOnly)
+                                                          BatchValidationException errors, CheckForDuplicates checkDuplicates)
     {
         final boolean isDemographic = isDemographicData();
 
@@ -2605,7 +2605,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             // For source check only, if we have duplicates, and we don't have an auto-keyed dataset,
             // then we cannot proceed.
-            if (sourceOnly)
+            if (checkDuplicates == CheckForDuplicates.sourceOnly)
             {
                 if (noDeleteMap.size() > 0 && getKeyManagementType() == KeyManagementType.None)
                     return noDeleteMap;
