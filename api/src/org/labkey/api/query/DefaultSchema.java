@@ -106,6 +106,11 @@ final public class DefaultSchema extends AbstractSchema
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 Container container = schema.getContainer().getProject();
+                if (container == null)
+                {
+                    // No project available from the root container
+                    return null;
+                }
                 return new FolderSchema(schema.getUser(), container, DefaultSchema.get(schema.getUser(), container));
             }
         });
