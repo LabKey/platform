@@ -46,11 +46,13 @@ import java.beans.PropertyChangeListener;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -624,9 +626,11 @@ public class UserManager
         for (User user : users)
         {
             final String fullName = StringUtils.defaultString(user.getFirstName()) + " " + StringUtils.defaultString(user.getLastName());
-            String email = showEmailAddresses ? user.getEmail() : user.getDisplayName(currentUser);
+            String completionValue = showEmailAddresses ? user.getEmail() : user.getDisplayName(currentUser);
 
-            if (fullName.trim().length() > 0)
+            // Output the most human-friendly names possible for the pick list, and append the email addresses if the user has permission to see them
+
+            if (!StringUtils.isBlank(fullName))
             {
                 StringBuilder builder = new StringBuilder();
                 builder.append(StringUtils.trimToEmpty(user.getFirstName())).append(" ").
@@ -635,9 +639,9 @@ public class UserManager
                 if (showEmailAddresses)
                     builder.append(" (").append(user.getEmail()).append(")");
 
-                completions.add(new AjaxCompletion(PageFlowUtil.filter(builder.toString()), email));
+                completions.add(new AjaxCompletion(PageFlowUtil.filter(builder.toString()), completionValue));
             }
-            else if (user.getDisplayName(currentUser).compareToIgnoreCase(user.getEmail()) != 0)
+            else if (!user.getDisplayName(currentUser).equalsIgnoreCase(user.getEmail()))
             {
                 StringBuilder builder = new StringBuilder();
                 builder.append(user.getDisplayName(currentUser));
@@ -645,11 +649,11 @@ public class UserManager
                 if (showEmailAddresses)
                     builder.append(" (").append(user.getEmail()).append(")");
 
-                completions.add(new AjaxCompletion(PageFlowUtil.filter(builder.toString()), email));
+                completions.add(new AjaxCompletion(PageFlowUtil.filter(builder.toString()), completionValue));
             }
-            else if (user.getEmail() != null)
+            else if (completionValue != null) // Note the only way to get here is if the displayName is the same as the email address
             {
-                completions.add(new AjaxCompletion(email, email));
+                completions.add(new AjaxCompletion(completionValue));
             }
         }
         return completions;
@@ -707,18 +711,7 @@ public class UserManager
      */
     public static List<String> parseUserListInput(String[] theList)
     {
-        ArrayList<String> parsed = new ArrayList<>();
-        for (String name : theList)
-        {
-            if (null == (name = StringUtils.trimToNull(name)))
-                continue;
-            User u = null;
-            try { u = getUser(new ValidEmail(name)); } catch (ValidEmail.InvalidEmailException x) {}
-            if (null == u)
-                u = getUserByDisplayName(name);
-            parsed.add(null == u ? name : String.valueOf(u.getUserId()));
-        }
-        return parsed;
+        return parseUserListInput(new HashSet<>(Arrays.asList(theList)));
     }
 
     /**
@@ -730,7 +723,7 @@ public class UserManager
     public static String parseUserListInput(String theList)
     {
         String[] names = StringUtils.split(StringUtils.trimToEmpty(theList), ";\n");
-        return  StringUtils.join(names,";");
+        return  StringUtils.join(parseUserListInput(names),";");
     }
 
     /**
@@ -741,7 +734,17 @@ public class UserManager
      */
     public static List<String> parseUserListInput(Set<String> theList)
     {
-        String[] names = theList.toArray(new String[theList.size()]);
-        return parseUserListInput(names);
+        ArrayList<String> parsed = new ArrayList<>(theList.size());
+        for (String name : theList)
+        {
+            if (null == (name = StringUtils.trimToNull(name)))
+                continue;
+            User u = null;
+            try { u = getUser(new ValidEmail(name)); } catch (ValidEmail.InvalidEmailException x) {}
+            if (null == u)
+                u = getUserByDisplayName(name);
+            parsed.add(null == u ? name : String.valueOf(u.getUserId()));
+        }
+        return parsed;
     }
 }
