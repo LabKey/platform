@@ -137,7 +137,7 @@ if (0 < announcementModel.getAttachments().size())
 
         for (Attachment d : announcementModel.getAttachments())
         { %>
-        <a href="<%=h(d.getDownloadUrl(DownloadAction.class))%>"><img alt="" src="<%=h(request.getContextPath() + d.getFileIcon())%>">&nbsp;<%=h(d.getName())%></a>&nbsp;<%
+        <a href="<%=h(d.getDownloadUrl(DownloadAction.class))%>"><img alt="" src="<%=getWebappURL(d.getFileIcon())%>">&nbsp;<%=h(d.getName())%></a>&nbsp;<%
         } %>
     </div></td>
 </tr><%
