@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
@@ -1315,9 +1316,10 @@ Parse:
     }
 
 
-    public static Pair<Date, Date> splitDate(Date fullDate)
+    public static Pair<Date, Date> splitDate(@Nullable Date fullDate)
     {
-        Long fullDateMillis = fullDate.getTime();
+        if (null == fullDate)
+            return new Pair<>(null, null);
         int year = fullDate.getYear();
         int month = fullDate.getMonth();
         int date = fullDate.getDate();
@@ -1329,8 +1331,13 @@ Parse:
         return new Pair<>(onlyDate, onlyTime);
     }
 
-    public static Date combineDateTime(Date date, Date time)
+    @Nullable
+    public static Date combineDateTime(@Nullable Date date, @Nullable Date time)
     {
+        if (null == time)
+            return date;
+        if (null == date)
+            return time;
         Date newDate = (Date)date.clone();
         newDate.setHours(time.getHours());
         newDate.setMinutes(time.getMinutes());
@@ -1338,12 +1345,14 @@ Parse:
         return newDate;
     }
 
-    public static Date getDateOnly(Date fullDate)
+    @Nullable
+    public static Date getDateOnly(@Nullable Date fullDate)
     {
         return splitDate(fullDate).first;
     }
 
-    public static Date getTimeOnly(Date fullDate)
+    @Nullable
+    public static Date getTimeOnly(@Nullable Date fullDate)
     {
         return splitDate(fullDate).second;
     }
