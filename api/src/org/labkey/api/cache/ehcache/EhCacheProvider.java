@@ -25,6 +25,11 @@ import org.labkey.api.cache.SimpleCache;
 import org.labkey.api.util.MemTracker;
 
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -40,6 +45,8 @@ public class EhCacheProvider implements CacheProvider
     private static final AtomicLong cacheCount = new AtomicLong(0);
     private static final SafeCacheManager MANAGER;
 
+    private static List<WeakReference<Cache>> ehCacheReferenceList;
+
     static
     {
         InputStream is = null;
@@ -47,7 +54,24 @@ public class EhCacheProvider implements CacheProvider
         try
         {
             is = EhCacheProvider.class.getResourceAsStream("ehcache.xml");
-            MANAGER = new SafeCacheManager(new CacheManager(is));
+            CacheManager cm = new CacheManager(is);
+            MANAGER = new SafeCacheManager(cm);
+
+            // Temporary fix for #19480 in 13.2 and 13.3. TODO: Replace with EhCache upgrade in 14.1
+            try
+            {
+                Field craField = cm.getClass().getDeclaredField("cacheRejoinAction");
+                craField.setAccessible(true);
+                Object cra = craField.get(cm);
+                Field cachedField = cra.getClass().getDeclaredField("caches");
+                cachedField.setAccessible(true);
+                ehCacheReferenceList = (List<WeakReference<Cache>>)cachedField.get(cra);
+            }
+            catch (NoSuchFieldException | IllegalAccessException e)
+            {
+                LOG.error("Could not access EhCache reference list via reflection", e);
+                ehCacheReferenceList = null;
+            }
         }
         finally
         {
@@ -105,6 +129,28 @@ public class EhCacheProvider implements CacheProvider
     void closeCache(Cache cache)
     {
         EhCacheProvider.MANAGER.removeCache(cache.getName());
+
+        // Temporary fix for #19480 in 13.2 and 13.3. TODO: Replace with EhCache upgrade in 14.1
+        if (null != ehCacheReferenceList)
+        {
+            LOG.debug("Caches in EhCache reference list: " + ehCacheReferenceList.size());
+
+            Collection<WeakReference<Cache>> toRemove = new ArrayList<WeakReference<Cache>>();
+
+            for (final WeakReference<Cache> cacheRef : ehCacheReferenceList) {
+                Cache c = cacheRef.get();
+                if (c == null) {
+                    toRemove.add(cacheRef);
+                    continue;
+                }
+
+                if (c == cache) {
+                    toRemove.add(cacheRef);
+                }
+            }
+
+            ehCacheReferenceList.removeAll(toRemove);
+        }
 
         LOG.debug("Closing \"" + cache.getName() + "\".  Ehcaches: " + MANAGER.getCacheNames().length);
     }
