@@ -755,7 +755,7 @@ LABKEY.Query = new function()
         *       generating a timeout error (defaults to 30000).
         * @param {Double} [config.apiVersion] Version of the API. If this is 13.2 or higher, a request that fails
         * validation will be returned as a successful response. Use the 'errorCount' and 'committed' properties in the
-        * response to fell if it committed or not. If this is 13.1 or lower (or unspecified), the failure callback
+        * response to tell if it committed or not. If this is 13.1 or lower (or unspecified), the failure callback
         * will be invoked instead in the event of a validation failure.
         * @param {boolean} [config.transacted] Whether all of the row changes for all of the tables
         * should be done in a single transaction, so they all succeed or all fail. Defaults to true
@@ -781,7 +781,8 @@ LABKEY.Query = new function()
                 containerPath: config.containerPath,
                 validateOnly : config.validateOnly,
                 transacted : config.transacted,
-                extraContext : config.extraContext
+                extraContext : config.extraContext,
+                apiVersion : config.apiVersion
             };
 
             var requestConfig = {
