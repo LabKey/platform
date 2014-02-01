@@ -673,7 +673,7 @@ public class SpecimenImporter
     private static final String VISIT_COL = "visit_value";
 
     // SpecimenEvent columns that form a psuedo-unqiue constraint
-    private static final SpecimenColumn GLOBAL_UNIQUE_ID, LAB_ID, SHIP_DATE, STORAGE_DATE, LAB_RECEIPT_DATE;
+    private static final SpecimenColumn GLOBAL_UNIQUE_ID, LAB_ID, SHIP_DATE, STORAGE_DATE, LAB_RECEIPT_DATE, DRAW_TIMESTAMP;
 
     public static final Collection<SpecimenColumn> BASE_SPECIMEN_COLUMNS = Arrays.asList(
             new SpecimenColumn(EVENT_ID_COL, "ExternalId", "BIGINT NOT NULL", TargetTable.SPECIMEN_EVENTS, true),
@@ -686,7 +686,7 @@ public class SpecimenImporter
             new SpecimenColumn("unique_specimen_id", "UniqueSpecimenId", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("ptid", "Ptid", "VARCHAR(32)", true, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("parent_specimen_id", "ParentSpecimenId", "INT", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("draw_timestamp", "DrawTimestamp", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
+            DRAW_TIMESTAMP = new SpecimenColumn("draw_timestamp", "DrawTimestamp", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("sal_receipt_date", "SalReceiptDate", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn(SPEC_NUMBER_TSV_COL, "SpecimenNumber", "VARCHAR(50)", true, TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("class_id", "ClassId", "VARCHAR(20)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
@@ -1860,31 +1860,44 @@ public class SpecimenImporter
     }
 
     // NOTE: In merge case, we've already checked the specimen hash columns are not in conflict.
-    private void appendConflictResolvingSQL(SqlDialect dialect, SQLFragment sql, SpecimenColumn col, String tempTableName)
+    private void appendConflictResolvingSQL(SqlDialect dialect, SQLFragment sql, SpecimenColumn col, String tempTableName,
+                                            @Nullable SpecimenColumn castColumn)
     {
+        // If castColumn no null, then we still count col, but then cast col's value to castColumn's type and name it castColumn's name
         String selectCol = tempTableName + "." + col.getDbColumnName();
 
         if (col.getAggregateEventFunction() != null)
             sql.append(col.getAggregateEventFunction()).append("(").append(selectCol).append(")");
         else
         {
-            String singletonAggregate;
+            sql.append("CASE WHEN");
             if (col.getJavaType().equals(Boolean.class))
             {
                 // gross nested calls to cast the boolean to an int, get its min, then cast back to a boolean.
                 // this is needed because most aggregates don't work on boolean values.
-                singletonAggregate = "CAST(MIN(CAST(" + selectCol + " AS INTEGER)) AS " + dialect.getBooleanDataType()  + ")";
+                sql.append(" COUNT(DISTINCT(").append(selectCol).append(")) = 1 THEN ");
+                sql.append("CAST(MIN(CAST(").append(selectCol).append(" AS INTEGER)) AS ").append(dialect.getBooleanDataType()).append(")");
             }
             else
             {
-                singletonAggregate = "MIN(" + selectCol + ")";
+                if (null != castColumn)
+                {
+                    sql.append(" COUNT(DISTINCT(").append(tempTableName).append(".").append(castColumn.getDbColumnName()).append(")) = 1 THEN ");
+                    sql.append("CAST(MIN(").append(selectCol).append(") AS ").append(castColumn.getDbType()).append(")");
+                }
+                else
+                {
+                    sql.append(" COUNT(DISTINCT(").append(selectCol).append(")) = 1 THEN ");
+                    sql.append("MIN(").append(selectCol).append(")");
+                }
             }
-            sql.append("CASE WHEN");
-            sql.append(" COUNT(DISTINCT(").append(selectCol).append(")) = 1 THEN ");
-            sql.append(singletonAggregate);
             sql.append(" ELSE NULL END");
         }
-        sql.append(" AS ").append(col.getDbColumnName());
+        sql.append(" AS ");
+        if (null != castColumn)
+            sql.append(castColumn.getDbColumnName());
+        else
+            sql.append(col.getDbColumnName());
     }
 
 
@@ -1899,7 +1912,7 @@ public class SpecimenImporter
         insertSelectSql.append(DRAW_DATE.getDbColumnName()).append(", ");
         insertSelectSql.append(DRAW_TIME.getDbColumnName()).append(", ");
         insertSelectSql.append(getSpecimenColsSql(info.getAvailableColumns())).append(" FROM (\n");
-        insertSelectSql.append(getVialListFromTempTableSql(info)).append(") VialList\n");
+        insertSelectSql.append(getVialListFromTempTableSql(info, true)).append(") VialList\n");
         insertSelectSql.append("GROUP BY ").append("SpecimenHash, ");
         insertSelectSql.append(getSpecimenColsSql(info.getAvailableColumns()));
         insertSelectSql.append(", ").append(DRAW_DATE.getDbColumnName());
@@ -1946,30 +1959,42 @@ public class SpecimenImporter
         }
     }
 
-    private SQLFragment getVialListFromTempTableSql(SpecimenLoadInfo info)
+    private SQLFragment getVialListFromTempTableSql(SpecimenLoadInfo info, boolean forSpecimenTable)
     {
-        String prefix = ",\n    ";
+        String prefix = "";
         SQLFragment vialListSql = new SQLFragment();
-        vialListSql.append("SELECT ").append(info.getTempTableName()).append(".LSID AS LSID");
+        vialListSql.append("SELECT ");
+        if (!forSpecimenTable)
+        {
+            vialListSql.append(info.getTempTableName()).append(".LSID AS LSID");
+            prefix = ",\n    ";
+        }
         vialListSql.append(prefix).append("SpecimenHash");
+        prefix = ",\n    ";
         for (SpecimenColumn col : info.getAvailableColumns())
         {
-            if (col.getTargetTable().isVials() || col.getTargetTable().isSpecimens())
+            if ((col.getTargetTable().isVials() || col.getTargetTable().isSpecimens()) &&
+                (!forSpecimenTable || !GLOBAL_UNIQUE_ID.getDbColumnName().equalsIgnoreCase(col.getDbColumnName())))
             {
                 vialListSql.append(prefix);
-                appendConflictResolvingSQL(info.getSchema().getSqlDialect(), vialListSql, col, info.getTempTableName());
+                appendConflictResolvingSQL(info.getSchema().getSqlDialect(), vialListSql, col, info.getTempTableName(), null);
             }
         }
+
+        // DrawDate and DrawTime are a little different;
+        // we need to do the conflict count on DrawTimeStamp and then cast to Date or Time
         vialListSql.append(prefix);
-        appendConflictResolvingSQL(info.getSchema().getSqlDialect(), vialListSql, DRAW_DATE, info.getTempTableName());
+        appendConflictResolvingSQL(info.getSchema().getSqlDialect(), vialListSql, DRAW_TIMESTAMP, info.getTempTableName(), DRAW_DATE);
         vialListSql.append(prefix);
-        appendConflictResolvingSQL(info.getSchema().getSqlDialect(), vialListSql, DRAW_TIME, info.getTempTableName());
+        appendConflictResolvingSQL(info.getSchema().getSqlDialect(), vialListSql, DRAW_TIMESTAMP, info.getTempTableName(), DRAW_TIME);
 
         vialListSql.append("\nFROM ").append(info.getTempTableName());
         vialListSql.append("\nGROUP BY\n");
-        vialListSql.append(info.getTempTableName()).append(".LSID,\n    ");
-        vialListSql.append(info.getTempTableName()).append(".SpecimenHash,\n    ");
-        vialListSql.append(info.getTempTableName()).append(".GlobalUniqueId");
+        if (!forSpecimenTable)
+            vialListSql.append(info.getTempTableName()).append(".LSID,\n    ");
+        vialListSql.append(info.getTempTableName()).append(".SpecimenHash");
+        if (!forSpecimenTable)
+            vialListSql.append(",\n    ").append(info.getTempTableName()).append(".GlobalUniqueId");
         return vialListSql;
     }
 
@@ -1992,7 +2017,7 @@ public class SpecimenImporter
         for (SpecimenColumn col : getVialCols(info.getAvailableColumns()))
             insertSelectSql.append(prefix).append("VialList.").append(col.getDbColumnName());
 
-        insertSelectSql.append(" FROM (").append(getVialListFromTempTableSql(info)).append(") VialList");
+        insertSelectSql.append(" FROM (").append(getVialListFromTempTableSql(info, false)).append(") VialList");
 
         // join to material:
         insertSelectSql.append("\n    JOIN exp.Material ON (");
@@ -2791,14 +2816,11 @@ public class SpecimenImporter
         // 1) should that be removed from SPECIMEN_COLUMNS?
         // 2) convert this to ETL?
         SpecimenColumn _visitCol = null;
-        SpecimenColumn _dateCol = null;
         SpecimenColumn _participantIdCol = null;
         for (SpecimenColumn sc : SPECIMEN_COLUMNS)
         {
             if (StringUtils.equals("VisitValue", sc.getDbColumnName()))
                 _visitCol = sc;
-            else if (StringUtils.equals("DrawTimestamp", sc.getDbColumnName()))
-                _dateCol = sc;
             else if (StringUtils.equals("Ptid", sc.getDbColumnName()))
                 _participantIdCol = sc;
         }
@@ -2807,7 +2829,7 @@ public class SpecimenImporter
         final SequenceNumImportHelper h = new SequenceNumImportHelper(study, null);
         final ParticipantIdImportHelper piih = new ParticipantIdImportHelper(study, _user, null);
         final SpecimenColumn visitCol = _visitCol;
-        final SpecimenColumn dateCol = _dateCol;
+        final SpecimenColumn dateCol = DRAW_TIMESTAMP;
         final SpecimenColumn participantIdCol = _participantIdCol;
         final Parameter.TypedValue nullDouble = Parameter.nullParameter(JdbcType.DOUBLE);
 
@@ -2862,7 +2884,7 @@ public class SpecimenImporter
             public Object getValue(Map<String, Object> row)
             {
                 Object d = SpecimenImporter.this.getValue(dateCol, row);
-                return null != d ? DateUtil.getDateOnly((Date) d) : null;
+                return DateUtil.getDateOnly((Date) d);
             }
         };
 
@@ -2878,7 +2900,7 @@ public class SpecimenImporter
             public Object getValue(Map<String, Object> row)
             {
                 Object d = SpecimenImporter.this.getValue(dateCol, row);
-                return null != d ? DateUtil.getTimeOnly((Date)d) : null;
+                return DateUtil.getTimeOnly((Date)d);
             }
         };
 
