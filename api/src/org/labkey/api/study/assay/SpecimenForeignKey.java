@@ -472,8 +472,11 @@ public class SpecimenForeignKey extends LookupForeignKey
             {
                 _foreignKey.declareJoins(parentAlias, map);
                 SQLFragment strJoin = _declareJoinsAssayAndVial(parentAlias, _foreignKey, map);
-                assert null == map.get(vialSubqueryAlias) || map.get(vialSubqueryAlias).getSQL().equals(strJoin.getSQL()) : "Join SQL does not match:\n" + strJoin.getSQL() + "\n\nvs\n\n" + map.get(vialSubqueryAlias).getSQL();
-                map.put(vialSubqueryAlias, strJoin);
+                if (null != strJoin)
+                {
+                    assert null == map.get(vialSubqueryAlias) || map.get(vialSubqueryAlias).getSQL().equals(strJoin.getSQL()) : "Join SQL does not match:\n" + strJoin.getSQL() + "\n\nvs\n\n" + map.get(vialSubqueryAlias).getSQL();
+                    map.put(vialSubqueryAlias, strJoin);
+                }
             }
             if (null == map.get(vialSubqueryAlias))
                 _returnNull = true;
@@ -530,7 +533,8 @@ public class SpecimenForeignKey extends LookupForeignKey
             {
                 _foreignKey.declareJoins(parentAlias, map);
                 SQLFragment strJoin = _declareJoinsAssayAndVial(parentAlias, _foreignKey, map);
-                map.put(vialSubqueryAlias, strJoin);
+                if (null != strJoin)
+                    map.put(vialSubqueryAlias, strJoin);
             }
 
             if (!map.containsKey(specimenSubqueryAlias))
