@@ -3263,7 +3263,7 @@ public class StudyManager
             else
             {
                 // TODO: modify shared definition?
-                boolean canEditDefinition = !def.canUpdateDefinition(user);
+                boolean canEditDefinition = def.canUpdateDefinition(user);
 
                 if (canEditDefinition)
                 {
