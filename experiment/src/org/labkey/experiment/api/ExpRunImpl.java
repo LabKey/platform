@@ -734,7 +734,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                 if (file != null && NetworkDrive.exists(file) && file.isFile() &&
                     file.getParentFile().equals(AssayFileWriter.ensureUploadDirectory( getContainer())) && !hasOtherRunUsing(expData, this))
                 {
-                    File archivedDir = null;
+                    File archivedDir;
                     try
                     {
                         archivedDir = AssayFileWriter.ensureSubdirectory(getContainer(), AssayFileWriter.ARCHIVED_DIR_NAME);

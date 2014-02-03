@@ -306,8 +306,6 @@ public class StatusController extends SpringActionController
         {
             Container c = getContainerCheckAdmin();
 
-            setHelpTopic(getHelpTopic("Pipeline-Status/details"));
-
             DataRegion rgn = getDetails(c, getUser(), form.getRowId());
             DetailsView detailsView = new DetailsView(rgn, form.getRowId());
             if (c == null || c.isRoot())

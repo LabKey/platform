@@ -36,6 +36,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.BaseWebPartFactory;
@@ -76,6 +77,7 @@ import org.labkey.pipeline.xstream.PathMapperImpl;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
+import javax.servlet.ServletContext;
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -197,10 +199,19 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             ContextListener.addShutdownListener(listener);
         }
 
-        // Restart any jobs that were in process or in the queue when the server shut down
-        Thread restarterThread = new Thread(new JobRestarter());
-        restarterThread.start();
-        
+        // Issue 19407. Need to delay restarting jobs until after all modules have started up, or we
+        // may try to restart a job whose pipeline hasn't yet been registered
+        ContextListener.addStartupListener("PipelineJobRestarter", new StartupListener()
+        {
+            @Override
+            public void moduleStartupComplete(ServletContext servletContext)
+            {
+                // Restart any jobs that were in process or in the queue when the server shut down
+                Thread restarterThread = new Thread(new JobRestarter());
+                restarterThread.start();
+            }
+        });
+
         PipelineEmailPreferences.get().startNotificationTasks();
         PipelineController.registerAdminConsoleLinks();
         StatusController.registerAdminConsoleLinks();
@@ -208,6 +219,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
         ServiceRegistry.get(FileContentService.class).addFileListener(new TableUpdaterFileListener(PipelineSchema.getInstance().getTableInfoStatusFiles(), "FilePath", TableUpdaterFileListener.Type.filePathForwardSlash, "RowId"));
     }
+
+
 
     @NotNull
     @Override
