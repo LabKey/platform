@@ -15,6 +15,7 @@
  */
 package org.labkey.study.model;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.study.ProductAntigen;
 
 import java.util.HashMap;
@@ -26,6 +27,7 @@ import java.util.Map;
  */
 public class ProductAntigenImpl implements ProductAntigen
 {
+    private Container _container;
     private int _rowId;
     private int _productId;
     private String _gene;
@@ -34,7 +36,14 @@ public class ProductAntigenImpl implements ProductAntigen
     private String _sequence;
 
     public ProductAntigenImpl()
+    {}
+
+    public ProductAntigenImpl(Container container, int productId, String gene, String subType)
     {
+        _container = container;
+        _productId = productId;
+        _gene = gene;
+        _subType = subType;
     }
 
     public boolean isNew()
@@ -117,5 +126,15 @@ public class ProductAntigenImpl implements ProductAntigen
         props.put("GenBankId", getGenBankId());
         props.put("Sequence", getSequence());
         return props;
+    }
+
+    public Container getContainer()
+    {
+        return _container;
+    }
+
+    public void setContainer(Container container)
+    {
+        _container = container;
     }
 }

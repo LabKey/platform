@@ -1,8 +1,11 @@
 package org.labkey.study.model;
 
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -10,15 +13,26 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.Visit;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.TestContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.StudyQuerySchema;
 
+import javax.servlet.ServletException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -305,5 +319,338 @@ public class TreatmentManager
         }
 
         return label;
+    }
+
+    /****
+     *
+     *
+     *
+     * TESTING
+     *
+     *
+     */
+
+    public static class TreatmentDataTestCase extends Assert
+    {
+        TestContext _context = null;
+        User _user = null;
+        Container _container = null;
+        StudyImpl _junitStudy = null;
+        TreatmentManager _manager = TreatmentManager.getInstance();
+        UserSchema _schema = null;
+
+        Map<String, String> _lookups = new HashMap<>();
+        List<ProductImpl> _products = new ArrayList<>();
+        List<TreatmentImpl> _treatments = new ArrayList<>();
+        List<CohortImpl> _cohorts = new ArrayList<>();
+        List<VisitImpl> _visits = new ArrayList<>();
+
+        @Test
+        public void test() throws Throwable
+        {
+            try
+            {
+                createStudy();
+                _user = _context.getUser();
+                _container = _junitStudy.getContainer();
+                _schema = QueryService.get().getUserSchema(_user, _container, StudyQuerySchema.SCHEMA_NAME);
+
+                populateLookupTables();
+                populateStudyProducts();
+                populateTreatments();
+                populateImmunizationSchedule();
+
+                verifyStudyProducts();
+                verifyTreatments();
+                verifyImmunizationSchedule();
+                verifyCleanUpTreatmentData();
+            }
+            finally
+            {
+                tearDown();
+            }
+        }
+
+        private void verifyCleanUpTreatmentData() throws Exception
+        {
+            // remove cohort and verify delete of TreatmentVisitMap
+            StudyManager.getInstance().deleteCohort(_cohorts.get(0));
+            verifyTreatmentVisitMapRecords(4);
+
+            // remove visit and verify delete of TreatmentVisitMap
+            StudyManager.getInstance().deleteVisit(_junitStudy, _visits.get(0), _user);
+            verifyTreatmentVisitMapRecords(2);
+
+            // we should still have all of our treatments and study products
+            verifyTreatments();
+            verifyStudyProducts();
+
+            // remove treatment visit map records via visit
+            _manager.deleteTreatmentVisitMapForVisit(_container, _visits.get(1).getRowId());
+            verifyTreatmentVisitMapRecords(0);
+
+            // remove treatment and verify delete of TreatmentProductMap
+            _manager.deleteTreatment(_container, _user, _treatments.get(0).getRowId());
+            verifyTreatmentProductMapRecords(_treatments.get(0).getRowId(), 0);
+            verifyTreatmentProductMapRecords(_treatments.get(1).getRowId(), 4);
+
+            // remove product and verify delete of TreatmentProductMap and ProductAntigen
+            _manager.deleteStudyProduct(_container, _user, _products.get(0).getRowId());
+            verifyTreatmentProductMapRecords(_treatments.get(1).getRowId(), 3);
+            verifyStudyProductAntigens(_products.get(0).getRowId(), 0);
+            verifyStudyProductAntigens(_products.get(1).getRowId(), 1);
+
+            // directly delete product antigen
+            _manager.deleteProductAntigens(_container, _user, _products.get(1).getRowId());
+            verifyStudyProductAntigens(_products.get(1).getRowId(), 0);
+
+            // delete treatment product map by productId and then treatmentId
+            SimpleFilter filter = SimpleFilter.createContainerFilter(_container);
+            filter.addCondition(FieldKey.fromParts("ProductId"), _products.get(1).getRowId());
+            _manager.deleteTreatmentProductMap(_container, _user, filter);
+            verifyTreatmentProductMapRecords(_treatments.get(1).getRowId(), 2);
+            filter = SimpleFilter.createContainerFilter(_container);
+            filter.addCondition(FieldKey.fromParts("TreatmentId"), _treatments.get(1).getRowId());
+            _manager.deleteTreatmentProductMap(_container, _user, filter);
+            verifyTreatmentProductMapRecords(_treatments.get(1).getRowId(), 0);
+        }
+
+        private void verifyImmunizationSchedule()
+        {
+            verifyTreatmentVisitMapRecords(8);
+
+            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, 3.0, "Visit 3", Visit.Type.FINAL_VISIT)));
+            assertEquals("Unexpected number of immunization schedule visits", 2, _manager.getVisitsForImmunizationSchedule(_container).size());
+        }
+
+        private void verifyTreatments()
+        {
+            List<TreatmentImpl> treatments = _manager.getStudyTreatments(_container, _user);
+            assertEquals("Unexpected study treatment count", 2, treatments.size());
+
+            for (TreatmentImpl treatment : treatments)
+            {
+                verifyTreatmentProductMapRecords(treatment.getRowId(), 4);
+
+                treatment = _manager.getStudyTreatmentByRowId(_container, _user, treatment.getRowId());
+                assertEquals("Unexpected number of treatment products", 4, treatment.getProducts().size());
+
+                for (ProductImpl product : treatment.getProducts())
+                {
+                    assertEquals("Unexpected product dose value", "Test Dose", product.getDose());
+                    assertEquals("Unexpected product route value", _lookups.get("Route"), product.getRoute());
+                }
+            }
+
+        }
+
+        private void verifyStudyProducts()
+        {
+            List<ProductImpl> products = _manager.getStudyProducts(_container, _user);
+            assertEquals("Unexpected study product count", 4, products.size());
+
+            for (ProductImpl product : products)
+                verifyStudyProductAntigens(product.getRowId(), 1);
+
+            assertEquals("Unexpected study product count by role", 2, _manager.getStudyProducts(_container, _user, "Immunogen", null).size());
+            assertEquals("Unexpected study product count by role", 2, _manager.getStudyProducts(_container, _user, "Adjuvant", null).size());
+            assertEquals("Unexpected study product count by role", 0, _manager.getStudyProducts(_container, _user, "UNK", null).size());
+
+            for (ProductImpl immunogen : _manager.getStudyProducts(_container, _user, "Immunogen", null))
+                assertEquals("Unexpected product lookup value", _lookups.get("ImmunogenType"), immunogen.getType());
+        }
+
+        private void populateImmunizationSchedule() throws SQLException, ServletException
+        {
+            _cohorts.add(CohortManager.getInstance().createCohort(_junitStudy, _user, "Cohort1", true, 10, null));
+            _cohorts.add(CohortManager.getInstance().createCohort(_junitStudy, _user, "Cohort2", true, 20, null));
+            assertEquals(_cohorts.size(), 2);
+
+            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, 1.0, "Visit 1", Visit.Type.BASELINE)));
+            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, 2.0, "Visit 2", Visit.Type.SCHEDULED_FOLLOWUP)));
+            assertEquals(_visits.size(), 2);
+
+            for (CohortImpl cohort : _cohorts)
+            {
+                for (VisitImpl visit : _visits)
+                {
+                    for (TreatmentImpl treatment : _treatments)
+                    {
+                        _manager.insertTreatmentVisitMap(_user, _container, cohort.getRowId(), visit.getRowId(), treatment.getRowId());
+                    }
+                }
+            }
+
+            verifyTreatmentVisitMapRecords(_cohorts.size() * _visits.size() * _treatments.size());
+        }
+
+        private void populateTreatments() throws SQLException
+        {
+            TableInfo treatmentTable = _schema.getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
+            if (treatmentTable != null)
+            {
+                TableInfo ti = ((FilteredTable)treatmentTable).getRealTable();
+
+                TreatmentImpl treatment1 = new TreatmentImpl(_container, "Treatment1", "Treatment1 description");
+                treatment1 = Table.insert(_user, ti, treatment1);
+                addProductsForTreatment(treatment1.getRowId());
+                _treatments.add(treatment1);
+
+                TreatmentImpl treatment2 = new TreatmentImpl(_container, "Treatment2", "Treatment2 description");
+                treatment2 = Table.insert(_user, ti, treatment2);
+                addProductsForTreatment(treatment2.getRowId());
+                _treatments.add(treatment2);
+            }
+
+            assertEquals(_treatments.size(), 2);
+        }
+
+        private void addProductsForTreatment(int treatmentId) throws SQLException
+        {
+            TableInfo treatmentProductTable = _schema.getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+            if (treatmentProductTable != null)
+            {
+                TableInfo ti = ((FilteredTable)treatmentProductTable).getRealTable();
+
+                for (ProductImpl product : _products)
+                {
+                    TreatmentProductImpl tp = new TreatmentProductImpl(_container, treatmentId, product.getRowId());
+                    tp.setDose("Test Dose");
+                    tp.setRoute(_lookups.get("Route"));
+                    Table.insert(_user, ti, tp);
+                }
+            }
+
+            verifyTreatmentProductMapRecords(treatmentId, _products.size());
+        }
+
+        private void populateStudyProducts() throws SQLException
+        {
+            TableInfo productTable = _schema.getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
+            if (productTable != null)
+            {
+                TableInfo ti = ((FilteredTable)productTable).getRealTable();
+
+                ProductImpl product1 = new ProductImpl(_container, "Immunogen1", "Immunogen");
+                product1.setType(_lookups.get("ImmunogenType"));
+                _products.add(Table.insert(_user, ti, product1));
+
+                ProductImpl product2 = new ProductImpl(_container, "Immunogen2", "Immunogen");
+                product2.setType(_lookups.get("ImmunogenType"));
+                _products.add(Table.insert(_user, ti, product2));
+
+                ProductImpl product3 = new ProductImpl(_container, "Adjuvant1", "Adjuvant");
+                _products.add(Table.insert(_user, ti, product3));
+
+                ProductImpl product4 = new ProductImpl(_container, "Adjuvant2", "Adjuvant");
+                _products.add(Table.insert(_user, ti, product4));
+            }
+
+            assertEquals(_products.size(), 4);
+
+            for (ProductImpl product : _products)
+                addAntigenToProduct(product.getRowId());
+        }
+
+        private void addAntigenToProduct(int productId) throws SQLException
+        {
+            TableInfo productAntigenTable = _schema.getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+            if (productAntigenTable != null)
+            {
+                TableInfo ti = ((FilteredTable)productAntigenTable).getRealTable();
+
+                ProductAntigenImpl productAntigen = new ProductAntigenImpl(_container, productId, _lookups.get("Gene"), _lookups.get("SubType"));
+                Table.insert(_user, ti, productAntigen);
+            }
+
+            verifyStudyProductAntigens(productId, 1);
+        }
+
+        private void populateLookupTables() throws SQLException
+        {
+            String name, label;
+
+            Map<String, String> data = new HashMap<>();
+            data.put("Container", _container.getId());
+
+            data.put("Name", name = "Test Immunogen Type");
+            data.put("Label", label = "Test Immunogen Type Label");
+            Table.insert(_user, StudySchema.getInstance().getTableInfoStudyDesignImmunogenTypes(), data);
+            assertEquals("Unexpected study design lookup label", label, _manager.getStudyDesignImmunogenTypeLabelByName(_container, name));
+            assertNull("Unexpected study design lookup label", _manager.getStudyDesignImmunogenTypeLabelByName(_container, "UNK"));
+            _lookups.put("ImmunogenType", name);
+
+            data.put("Name", name = "Test Gene");
+            data.put("Label", label = "Test Gene Label");
+            Table.insert(_user, StudySchema.getInstance().getTableInfoStudyDesignGenes(), data);
+            assertEquals("Unexpected study design lookup label", label, _manager.getStudyDesignLabelByName(_container, StudySchema.getInstance().getTableInfoStudyDesignGenes(), name));
+            assertNull("Unexpected study design lookup label", _manager.getStudyDesignLabelByName(_container, StudySchema.getInstance().getTableInfoStudyDesignGenes(), "UNK"));
+            _lookups.put("Gene", name);
+
+            data.put("Name", name = "Test SubType");
+            data.put("Label", label = "Test SubType Label");
+            Table.insert(_user, StudySchema.getInstance().getTableInfoStudyDesignSubTypes(), data);
+            assertEquals("Unexpected study design lookup label", label, _manager.getStudyDesignLabelByName(_container, StudySchema.getInstance().getTableInfoStudyDesignSubTypes(), name));
+            assertNull("Unexpected study design lookup label", _manager.getStudyDesignLabelByName(_container, StudySchema.getInstance().getTableInfoStudyDesignSubTypes(), "UNK"));
+            _lookups.put("SubType", name);
+
+            data.put("Name", name = "Test Route");
+            data.put("Label", label = "Test Route Label");
+            Table.insert(_user, StudySchema.getInstance().getTableInfoStudyDesignRoutes(), data);
+            assertEquals("Unexpected study design lookup label", label, _manager.getStudyDesignRouteLabelByName(_container, name));
+            assertNull("Unexpected study design lookup label", _manager.getStudyDesignRouteLabelByName(_container, "UNK"));
+            _lookups.put("Route", name);
+
+            assertEquals(_lookups.keySet().size(), 4);
+        }
+
+        private void verifyTreatmentVisitMapRecords(int expectedCount)
+        {
+            List<TreatmentVisitMapImpl> rows = _manager.getStudyTreatmentVisitMap(_container, null);
+            assertEquals("Unexpected number of study.TreatmentVisitMap rows", expectedCount, rows.size());
+        }
+
+        private void verifyTreatmentProductMapRecords(int treatmentId, int expectedCount)
+        {
+            List<TreatmentProductImpl> rows = _manager.getStudyTreatmentProducts(_container, _user, treatmentId);
+            assertEquals("Unexpected number of study.TreatmentProductMap rows", expectedCount, rows.size());
+        }
+
+        private void verifyStudyProductAntigens(int productId, int expectedCount)
+        {
+            List<ProductAntigenImpl> rows = _manager.getStudyProductAntigens(_container, _user, productId);
+            assertEquals("Unexpected number of study.ProductAntigen rows", expectedCount, rows.size());
+
+            for (ProductAntigenImpl row : rows)
+            {
+                assertEquals("Unexpected antigen lookup value", _lookups.get("Gene"), row.getGene());
+                assertEquals("Unexpected antigen lookup value", _lookups.get("SubType"), row.getSubType());
+            }
+        }
+
+        private void createStudy() throws SQLException
+        {
+            _context = TestContext.get();
+            Container junit = JunitUtil.getTestContainer();
+
+            String name = GUID.makeHash();
+            Container c = ContainerManager.createContainer(junit, name);
+            StudyImpl s = new StudyImpl(c, "Junit Study");
+            s.setTimepointType(TimepointType.VISIT);
+            s.setStartDate(new Date(DateUtil.parseDateTime(c, "2014-01-01")));
+            s.setSubjectColumnName("SubjectID");
+            s.setSubjectNounPlural("Subjects");
+            s.setSubjectNounSingular("Subject");
+            s.setSecurityType(SecurityType.BASIC_WRITE);
+            _junitStudy = StudyManager.getInstance().createStudy(_context.getUser(), s);
+        }
+
+        private void tearDown()
+        {
+            if (null != _junitStudy)
+            {
+                assertTrue(ContainerManager.delete(_junitStudy.getContainer(), _context.getUser()));
+            }
+        }
     }
 }

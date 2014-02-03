@@ -15,6 +15,7 @@
  */
 package org.labkey.study.model;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.study.Product;
 
 import java.util.HashMap;
@@ -26,6 +27,7 @@ import java.util.Map;
  */
 public class ProductImpl implements Product
 {
+    private Container _container;
     private int _rowId;
     private String _label;
     private String _role;
@@ -36,7 +38,13 @@ public class ProductImpl implements Product
     private String _route;
 
     public ProductImpl()
+    {}
+
+    public ProductImpl(Container container, String label, String role)
     {
+        _container = container;
+        _label = label;
+        _role = role;
     }
 
     public boolean isNew()
@@ -117,5 +125,15 @@ public class ProductImpl implements Product
         props.put("Role", getRole());
         props.put("Type", getType());
         return props;
+    }
+
+    public Container getContainer()
+    {
+        return _container;
+    }
+
+    public void setContainer(Container container)
+    {
+        _container = container;
     }
 }

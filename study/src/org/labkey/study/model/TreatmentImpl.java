@@ -15,6 +15,7 @@
  */
 package org.labkey.study.model;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.data.Sort;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.Treatment;
@@ -30,13 +31,20 @@ import java.util.Map;
  */
 public class TreatmentImpl implements Treatment
 {
+    private Container _container;
     private int _rowId;
     private String _label;
     private String _description;
     private List<ProductImpl> _products;
 
     public TreatmentImpl()
+    {}
+
+    public TreatmentImpl(Container container, String label, String description)
     {
+        _container = container;
+        _label = label;
+        _description = description;
     }
 
     public boolean isNew()
@@ -113,5 +121,15 @@ public class TreatmentImpl implements Treatment
         sort.appendSortColumn(FieldKey.fromParts("ProductId", "Role"), Sort.SortDirection.DESC, false);
         sort.appendSortColumn(FieldKey.fromParts("ProductId", "RowId"), Sort.SortDirection.ASC, false);
         return sort;
+    }
+
+    public Container getContainer()
+    {
+        return _container;
+    }
+
+    public void setContainer(Container container)
+    {
+        _container = container;
     }
 }

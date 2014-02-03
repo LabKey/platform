@@ -72,7 +72,7 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
 
     static {
         Set<PropertyStorageSpec> baseFields = new LinkedHashSet<>();
-        baseFields.add(createFieldSpec("Container", JdbcType.VARCHAR).setEntityId(true));
+        baseFields.add(createFieldSpec("Container", JdbcType.VARCHAR).setEntityId(true).setNullable(false));
         baseFields.add(createFieldSpec("Created", JdbcType.TIMESTAMP));
         baseFields.add(createFieldSpec("CreatedBy", JdbcType.INTEGER));
         baseFields.add(createFieldSpec("Modified", JdbcType.TIMESTAMP));

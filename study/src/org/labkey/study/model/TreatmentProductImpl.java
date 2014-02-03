@@ -15,6 +15,7 @@
  */
 package org.labkey.study.model;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.study.TreatmentProduct;
 
 import java.util.HashMap;
@@ -26,6 +27,7 @@ import java.util.Map;
  */
 public class TreatmentProductImpl implements TreatmentProduct
 {
+    private Container _container;
     private int _rowId;
     private int _treatmentId;
     private int _productId;
@@ -33,7 +35,13 @@ public class TreatmentProductImpl implements TreatmentProduct
     private String _route;
 
     public TreatmentProductImpl()
+    {}
+
+    public TreatmentProductImpl(Container container, int treatmentId, int productId)
     {
+        _container = container;
+        _treatmentId = treatmentId;
+        _productId = productId;
     }
 
     public boolean isNew()
@@ -105,5 +113,15 @@ public class TreatmentProductImpl implements TreatmentProduct
         props.put("Dose", getDose());
         props.put("Route", getRoute());
         return props;
+    }
+
+    public Container getContainer()
+    {
+        return _container;
+    }
+
+    public void setContainer(Container container)
+    {
+        _container = container;
     }
 }

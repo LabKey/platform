@@ -136,6 +136,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyLsidHandler;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.TestDatasetDomainKind;
+import org.labkey.study.model.TreatmentManager;
 import org.labkey.study.model.VialDomainKind;
 import org.labkey.study.model.VisitDatasetDomainKind;
 import org.labkey.study.pipeline.AssayImportRunTask;
@@ -738,6 +739,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         set.add(StudyImpl.ProtocolDocumentTestCase.class);
         set.add(DataSetDefinition.TestCleanupOrphanedDatasetDomains.class);
         set.add(StudyManager.VisitCreationTestCase.class);
+        set.add(TreatmentManager.TreatmentDataTestCase.class);
 
         return set;
     }
