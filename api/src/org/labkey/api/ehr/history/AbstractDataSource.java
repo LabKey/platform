@@ -27,6 +27,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.gwt.client.util.StringUtils;
+import org.labkey.api.ldk.LDKService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -141,9 +142,13 @@ abstract public class AbstractDataSource implements HistoryDataSource
 
         List<HistoryRow> rows = processRows(ts, redacted, cols);
 
-        long duration = ((new Date()).getTime() - start.getTime()) / 1000;
-        if (duration > 3)
-            _log.error("Loaded history on table " + _query + " in " + duration + " seconds");
+        Long duration = ((new Date()).getTime() - start.getTime()) / 1000;
+        if (duration > 4)
+        {
+            String msg = "Loaded history on table " + _query + " in " + duration + " seconds";
+            _log.error(msg);
+            LDKService.get().logPerfMetric(c, u, "EHRDataSource", msg, duration.doubleValue());
+        }
 
         return rows;
     }
@@ -159,13 +164,18 @@ abstract public class AbstractDataSource implements HistoryDataSource
                 Results results = new ResultsImpl(rs, cols);
                 Date date = results.getTimestamp(getDateField());
                 String categoryText = getCategoryText(results);
+                String categoryColor = getCategoryColor(results);
                 String categoryGroup = getPrimaryGroup(results);
+                String taskId = results.hasColumn(FieldKey.fromString("taskid")) ? results.getString(FieldKey.fromString("taskid")) : null;
+                String objectId = results.hasColumn(FieldKey.fromString("objectid")) ? results.getString(FieldKey.fromString("objectid")) : null;
+                Integer taskRowId = results.hasColumn(FieldKey.fromString("taskid/rowid")) ? results.getInt(FieldKey.fromString("taskid/rowid")) : null;
+                String formType = results.hasColumn(FieldKey.fromString("taskid/formtype")) ? results.getString(FieldKey.fromString("taskid/formtype")) : null;
 
                 String html = getHtml(results, redacted);
                 String subjectId = results.getString(FieldKey.fromString(_subjectIdField));
                 if (!StringUtils.isEmpty(html))
                 {
-                    HistoryRow row = createHistoryRow(results, categoryText, categoryGroup, subjectId, date, html);
+                    HistoryRow row = createHistoryRow(results, categoryText, categoryGroup, categoryColor, subjectId, date, html, taskId, taskRowId, formType, objectId);
                     if (row != null)
                         rows.add(row);
                 }
@@ -174,7 +184,7 @@ abstract public class AbstractDataSource implements HistoryDataSource
 
         return rows;
     }
-    protected HistoryRow createHistoryRow(Results results, String categoryText, String categoryGroup, String subjectId, Date date, String html) throws SQLException
+    protected HistoryRow createHistoryRow(Results results, String categoryText, String categoryGroup, String categoryColor, String subjectId, Date date, String html, String taskId, Integer taskRowId, String formType, String objectId) throws SQLException
     {
         String qcStateLabel = results.hasColumn(FieldKey.fromString("qcstate/Label")) ? results.getString(FieldKey.fromString("qcstate/Label")) : null;
         Boolean publicData = results.hasColumn(FieldKey.fromString("qcstate/PublicData")) ? results.getBoolean(FieldKey.fromString("qcstate/PublicData")) : true;
@@ -183,12 +193,17 @@ abstract public class AbstractDataSource implements HistoryDataSource
             _log.info("DataSource does not contain QCState: " + getName());
         }
 
-        return new HistoryRowImpl(categoryText, categoryGroup, subjectId, date, html, qcStateLabel, publicData);
+        return new HistoryRowImpl(this, categoryText, categoryGroup, categoryColor, subjectId, date, html, qcStateLabel, publicData, taskId, taskRowId, formType, objectId);
     }
 
     protected String getCategoryText(Results rs) throws SQLException
     {
         return _categoryText;
+    }
+
+    protected String getCategoryColor(Results rs) throws SQLException
+    {
+        return null;
     }
 
     public Set<String> getAllowableCategoryGroups(Container c, User u)
@@ -209,7 +224,10 @@ abstract public class AbstractDataSource implements HistoryDataSource
         cols.add(FieldKey.fromString("qcstate/Label"));
         cols.add(FieldKey.fromString("qcstate/PublicData"));
         cols.add(FieldKey.fromString("taskid"));
+        cols.add(FieldKey.fromString("taskid/rowid"));
+        cols.add(FieldKey.fromString("taskid/formtype"));
         cols.add(FieldKey.fromString("requestid"));
+        cols.add(FieldKey.fromString("objectid"));
 
         return cols;
     }

@@ -83,6 +83,11 @@ public class AbstractDataEntryForm implements DataEntryForm
         _label = label;
     }
 
+    protected DataEntryFormContext getCtx()
+    {
+        return _ctx;
+    }
+
     public List<FormSection> getFormSections()
     {
         return Collections.unmodifiableList(_sections);
@@ -158,7 +163,13 @@ public class AbstractDataEntryForm implements DataEntryForm
         json.put("permissions", getPermissionMap());
         json.put("buttons", getButtonConfigs());
         json.put("moreActionButtons", getMoreActionButtonConfigs());
+        json.put("canInsert", canInsert());
 
+        return json;
+    }
+
+    protected boolean canInsert()
+    {
         boolean canInsert = true;
         for (FormSection section : getFormSections())
         {
@@ -171,9 +182,8 @@ public class AbstractDataEntryForm implements DataEntryForm
                 }
             }
         }
-        json.put("canInsert", canInsert);
 
-        return json;
+        return canInsert;
     }
 
     protected List<String> getButtonConfigs()

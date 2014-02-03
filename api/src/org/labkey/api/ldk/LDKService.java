@@ -15,6 +15,7 @@
  */
 package org.labkey.api.ldk;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableCustomizer;
@@ -55,9 +56,11 @@ abstract public class LDKService
 
     abstract public void applyNaturalSort(AbstractTableInfo ti, String colName);
 
-    abstract public void appendEnddateColumns(AbstractTableInfo ti);
+    abstract public void appendCalculatedDateColumns(AbstractTableInfo ti, @Nullable String dateColName, @Nullable String enddateColName);
 
     abstract public void registerSiteSummaryNotification(NotificationSection ns);
 
     abstract public boolean isNaturalizeInstalled();
+
+    abstract public void logPerfMetric(Container c, User u, String type, String comment, Double value);
 }

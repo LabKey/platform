@@ -28,12 +28,14 @@ import java.util.Date;
  */
 public class HistoryRowImpl implements HistoryRow
 {
+    private HistoryDataSource _source;
     private String _subjectId;
     private Date _date;
     private Date _enddate;
     private Integer _projectId;
     private String _primaryGroup;
     private String _categoryText;
+    private String _categoryColor;
     private String _performedBy;
     private String _caseId;
     private String _runId;
@@ -41,6 +43,10 @@ public class HistoryRowImpl implements HistoryRow
     private String _qcStateLabel;
     private Boolean _isPublicData;
     private Boolean _showTime = false;
+    private String _taskId = null;
+    private Integer _taskRowId;
+    private String _formType;
+    private String _objectId;
     private String _html;
 
     protected static final Logger _log = Logger.getLogger(HistoryRowImpl.class);
@@ -48,21 +54,28 @@ public class HistoryRowImpl implements HistoryRow
     protected final static SimpleDateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     protected final static SimpleDateFormat _timeFormat = new SimpleDateFormat("kk:mm");
 
-    public HistoryRowImpl(String categoryText, String primaryGroup, String subjectId, Date date, String html, String qcStateLabel, Boolean publicData)
+    public HistoryRowImpl(HistoryDataSource source, String categoryText, String primaryGroup, String categoryColor, String subjectId, Date date, String html, String qcStateLabel, Boolean publicData, String taskId, Integer taskRowId, String formType, String objectId)
     {
+        _source = source;
         _categoryText = categoryText;
+        _categoryColor = categoryColor;
         _primaryGroup = primaryGroup;
         _subjectId = subjectId;
         _date = date;
         _html = html;
         _qcStateLabel = qcStateLabel;
         _isPublicData = publicData;
+        _taskId = taskId;
+        _taskRowId = taskRowId;
+        _formType = formType;
+        _objectId = objectId;
     }
 
     public JSONObject toJSON()
     {
         JSONObject json = new JSONObject();
 
+        json.put("source", _source.getName());
         json.put("dateGroup", _subjectId + "_" + getSortDateString());
         json.put("typeGroup", _subjectId + "_" + _primaryGroup);
 
@@ -71,6 +84,7 @@ public class HistoryRowImpl implements HistoryRow
 
         json.put("id", _subjectId);
         json.put("category", _categoryText);
+        json.put("categoryColor", _categoryColor);
         json.put("date", _date);
         json.put("enddate", _enddate);
         json.put("project", _projectId);
@@ -80,6 +94,11 @@ public class HistoryRowImpl implements HistoryRow
         json.put("performedby", _performedBy);
         json.put("qcStateLabel", _qcStateLabel);
         json.put("publicData", _isPublicData);
+
+        json.put("taskId", _taskId);
+        json.put("taskRowId", _taskRowId);
+        json.put("taskFormType", _formType);
+        json.put("objectId", _objectId);
 
         json.put("html", _html);
 
@@ -131,6 +150,31 @@ public class HistoryRowImpl implements HistoryRow
     public String getCategoryText()
     {
         return _categoryText;
+    }
+
+    public String getCategoryColor()
+    {
+        return _categoryColor;
+    }
+
+    public String getTaskId()
+    {
+        return _taskId;
+    }
+
+    public Integer getTaskRowId()
+    {
+        return _taskRowId;
+    }
+
+    public String getFormType()
+    {
+        return _formType;
+    }
+
+    public String getObjectId()
+    {
+        return _objectId;
     }
 
     public String getPrimaryGroup()

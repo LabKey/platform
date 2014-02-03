@@ -63,13 +63,13 @@
                 qtip.push(mvValue);
             }
 
-            if (config.record.errors && config.record.getErrors().length) {
-
-                Ext4.each(config.record.getErrors(), function(e){
-                    if(e.field==meta.name){
-                        qtip.push((e.severity || 'ERROR') +': '+e.message);
-                    }
-                }, this);
+            if (!config.record.isValid()){
+                var errors = config.record.validate().getByField(config.meta.name);
+                if (errors.length){
+                    Ext4.Array.forEach(errors, function(e){
+                        qtip.push(e.message);
+                    }, this);
+                }
             }
 
             if (config.meta.buildQtip) {
