@@ -297,28 +297,22 @@ public class TreatmentManager
 
     public String getStudyDesignRouteLabelByName(Container container, String name)
     {
-        return getStudyDesignLabelByName(container, StudySchema.getInstance().getTableInfoStudyDesignRoutes(), name);
+        return StudyManager.getInstance().getStudyDesignLabelByName(container, StudySchema.getInstance().getTableInfoStudyDesignRoutes(), name);
     }
 
     public String getStudyDesignImmunogenTypeLabelByName(Container container, String name)
     {
-        return getStudyDesignLabelByName(container, StudySchema.getInstance().getTableInfoStudyDesignImmunogenTypes(), name);
+        return StudyManager.getInstance().getStudyDesignLabelByName(container, StudySchema.getInstance().getTableInfoStudyDesignImmunogenTypes(), name);
     }
 
-    private String getStudyDesignLabelByName(Container container, TableInfo tableInfo, String name)
+    public String getStudyDesignGeneLabelByName(Container container, String name)
     {
-        // first look in the current container for the StudyDesign record, then look for it at the project level
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("Name"), name);
-        String label = new TableSelector(tableInfo, Collections.singleton("Label"), filter, null).getObject(String.class);
-        if (label == null && !container.isProject())
-        {
-            filter = SimpleFilter.createContainerFilter(container.getProject());
-            filter.addCondition(FieldKey.fromParts("Name"), name);
-            label = new TableSelector(tableInfo, Collections.singleton("Label"), filter, null).getObject(String.class);
-        }
+        return StudyManager.getInstance().getStudyDesignLabelByName(container, StudySchema.getInstance().getTableInfoStudyDesignGenes(), name);
+    }
 
-        return label;
+    public String getStudyDesignSubTypeLabelByName(Container container, String name)
+    {
+        return StudyManager.getInstance().getStudyDesignLabelByName(container, StudySchema.getInstance().getTableInfoStudyDesignSubTypes(), name);
     }
 
     /****
@@ -583,15 +577,15 @@ public class TreatmentManager
             data.put("Name", name = "Test Gene");
             data.put("Label", label = "Test Gene Label");
             Table.insert(_user, StudySchema.getInstance().getTableInfoStudyDesignGenes(), data);
-            assertEquals("Unexpected study design lookup label", label, _manager.getStudyDesignLabelByName(_container, StudySchema.getInstance().getTableInfoStudyDesignGenes(), name));
-            assertNull("Unexpected study design lookup label", _manager.getStudyDesignLabelByName(_container, StudySchema.getInstance().getTableInfoStudyDesignGenes(), "UNK"));
+            assertEquals("Unexpected study design lookup label", label, _manager.getStudyDesignGeneLabelByName(_container, name));
+            assertNull("Unexpected study design lookup label", _manager.getStudyDesignGeneLabelByName(_container, "UNK"));
             _lookups.put("Gene", name);
 
             data.put("Name", name = "Test SubType");
             data.put("Label", label = "Test SubType Label");
             Table.insert(_user, StudySchema.getInstance().getTableInfoStudyDesignSubTypes(), data);
-            assertEquals("Unexpected study design lookup label", label, _manager.getStudyDesignLabelByName(_container, StudySchema.getInstance().getTableInfoStudyDesignSubTypes(), name));
-            assertNull("Unexpected study design lookup label", _manager.getStudyDesignLabelByName(_container, StudySchema.getInstance().getTableInfoStudyDesignSubTypes(), "UNK"));
+            assertEquals("Unexpected study design lookup label", label, _manager.getStudyDesignSubTypeLabelByName(_container, name));
+            assertNull("Unexpected study design lookup label", _manager.getStudyDesignSubTypeLabelByName(_container, "UNK"));
             _lookups.put("SubType", name);
 
             data.put("Name", name = "Test Route");

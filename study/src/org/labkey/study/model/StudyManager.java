@@ -139,7 +139,6 @@ import org.labkey.study.importer.StudyReload;
 import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.query.studydesign.DefaultStudyDesignTable;
 import org.labkey.study.query.studydesign.StudyProductAntigenDomainKind;
 import org.labkey.study.query.studydesign.StudyProductDomainKind;
 import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
@@ -1253,15 +1252,20 @@ public class StudyManager
 
     public String getStudyDesignLabLabelByName(Container container, String name)
     {
+        return getStudyDesignLabelByName(container, StudySchema.getInstance().getTableInfoStudyDesignLabs(), name);
+    }
+
+    public String getStudyDesignLabelByName(Container container, TableInfo tableInfo, String name)
+    {
         // first look in the current container for the StudyDesign record, then look for it at the project level
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("Name"), name);
-        String label = new TableSelector(StudySchema.getInstance().getTableInfoStudyDesignLabs(), Collections.singleton("Label"), filter, null).getObject(String.class);
+        String label = new TableSelector(tableInfo, Collections.singleton("Label"), filter, null).getObject(String.class);
         if (label == null && !container.isProject())
         {
             filter = SimpleFilter.createContainerFilter(container.getProject());
             filter.addCondition(FieldKey.fromParts("Name"), name);
-            label = new TableSelector(StudySchema.getInstance().getTableInfoStudyDesignLabs(), Collections.singleton("Label"), filter, null).getObject(String.class);
+            label = new TableSelector(tableInfo, Collections.singleton("Label"), filter, null).getObject(String.class);
         }
 
         return label;
@@ -4978,6 +4982,168 @@ public class StudyManager
             assertEquals("Shouldn't have a rowId yet", 0, newVisit.getRowId());
             assertEquals("Wrong sequenceNumMin", seqNumMin, newVisit.getSequenceNumMin(), DELTA);
             assertEquals("Wrong sequenceNumMax", seqNumMax, newVisit.getSequenceNumMax(), DELTA);
+        }
+    }
+
+    public static class AssayScheduleTestCase extends Assert
+    {
+        TestContext _context = null;
+        User _user = null;
+        Container _container = null;
+        StudyImpl _junitStudy = null;
+        StudyManager _manager = StudyManager.getInstance();
+
+        Map<String, String> _lookups = new HashMap<>();
+        List<AssaySpecimenConfigImpl> _assays = new ArrayList<>();
+        List<VisitImpl> _visits = new ArrayList<>();
+
+        @Test
+        public void test() throws Throwable
+        {
+            try
+            {
+                createStudy();
+                _user = _context.getUser();
+                _container = _junitStudy.getContainer();
+
+                populateLookupTables();
+                populateAssayConfigurations();
+                populateAssaySchedule();
+
+                verifyAssayConfigurations();
+                verifyAssaySchedule();
+                verifyCleanUpAssayConfigurations();
+            }
+            finally
+            {
+                tearDown();
+            }
+        }
+
+        private void verifyCleanUpAssayConfigurations() throws SQLException
+        {
+            _manager.deleteAssaySpecimenVisits(_container, _visits.get(0).getRowId());
+            verifyAssayScheduleRowCount(2);
+            assertEquals(1, _manager.getAssaySpecimenVisitIds(_container, _assays.get(0)).size());
+            assertEquals(1, _manager.getVisitsForAssaySchedule(_container).size());
+
+            _manager.deleteAssaySpecimenVisits(_container, _visits.get(1).getRowId());
+            verifyAssayScheduleRowCount(0);
+            assertEquals(0, _manager.getAssaySpecimenVisitIds(_container, _assays.get(0)).size());
+            assertEquals(0, _manager.getVisitsForAssaySchedule(_container).size());
+        }
+
+        private void verifyAssaySchedule()
+        {
+            verifyAssayScheduleRowCount(4);
+
+            List<VisitImpl> visits = _manager.getVisitsForAssaySchedule(_container);
+            assertEquals("Unexpected assay schedule visit count", 2, visits.size());
+
+            for (AssaySpecimenConfigImpl assay : _manager.getAssaySpecimenConfigs(_container))
+            {
+                List<Integer> visitIds = _manager.getAssaySpecimenVisitIds(_container, assay);
+                for (VisitImpl visit : _visits)
+                    assertTrue("Assay schedule does not contain expected visitId", visitIds.contains(visit.getRowId()));
+            }
+        }
+
+        private void verifyAssayScheduleRowCount(int expectedCount)
+        {
+            TableSelector selector = new TableSelector(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(), SimpleFilter.createContainerFilter(_container), null);
+            assertEquals("Unexpected number of assay schedule visit records", expectedCount, selector.getRowCount());
+        }
+
+        private void verifyAssayConfigurations()
+        {
+            List<AssaySpecimenConfigImpl> assays = _manager.getAssaySpecimenConfigs(_container);
+            assertEquals("Unexpected assay configuration count", 2, assays.size());
+
+            for (AssaySpecimenConfigImpl assay : assays)
+            {
+                assertEquals("Unexpected assay configuration lookup value", _lookups.get("Lab"), assay.getLab());
+                assertEquals("Unexpected assay configuration lookup value", _lookups.get("SampleType"), assay.getSampleType());
+            }
+        }
+
+        private void populateAssaySchedule() throws SQLException
+        {
+            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, 1.0, "Visit 1", Visit.Type.BASELINE)));
+            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, 2.0, "Visit 2", Visit.Type.SCHEDULED_FOLLOWUP)));
+            assertEquals(_visits.size(), 2);
+
+            for (AssaySpecimenConfigImpl assay : _assays)
+            {
+                for (VisitImpl visit : _visits)
+                {
+                    AssaySpecimenVisitImpl asv = new AssaySpecimenVisitImpl(_container, assay.getRowId(), visit.getRowId());
+                    Table.insert(_user, StudySchema.getInstance().getTableInfoAssaySpecimenVisit(), asv);
+                }
+            }
+
+            verifyAssayScheduleRowCount(_assays.size() * _visits.size());
+        }
+
+        private void populateAssayConfigurations() throws SQLException
+        {
+            AssaySpecimenConfigImpl assay1 = new AssaySpecimenConfigImpl(_container, "Assay1", "Assay 1 description");
+            assay1.setLab(_lookups.get("Lab"));
+            assay1.setSampleType(_lookups.get("SampleType"));
+            _assays.add(Table.insert(_user, StudySchema.getInstance().getTableInfoAssaySpecimen(), assay1));
+
+            AssaySpecimenConfigImpl assay2 = new AssaySpecimenConfigImpl(_container, "Assay2", "Assay 2 description");
+            assay2.setLab(_lookups.get("Lab"));
+            assay2.setSampleType(_lookups.get("SampleType"));
+            _assays.add(Table.insert(_user, StudySchema.getInstance().getTableInfoAssaySpecimen(), assay2));
+
+            assertEquals(_assays.size(), 2);
+        }
+
+        private void populateLookupTables() throws SQLException
+        {
+            String name, label;
+
+            Map<String, String> data = new HashMap<>();
+            data.put("Container", _container.getId());
+
+            data.put("Name", name = "Test Lab");
+            data.put("Label", label = "Test Lab Label");
+            Table.insert(_user, StudySchema.getInstance().getTableInfoStudyDesignLabs(), data);
+            assertEquals("Unexpected study design lookup label", label, _manager.getStudyDesignLabLabelByName(_container, name));
+            assertNull("Unexpected study design lookup label", _manager.getStudyDesignLabLabelByName(_container, "UNK"));
+            _lookups.put("Lab", name);
+
+            data.put("Name", name = "Test Sample Type");
+            data.put("Label", label = "Test Sample Type Label");
+            data.put("PrimaryType", "Test Primary Type");
+            data.put("ShortSampleCode", "TPT");
+            Table.insert(_user, StudySchema.getInstance().getTableInfoStudyDesignSampleTypes(), data);
+            _lookups.put("SampleType", name);
+        }
+
+        private void createStudy() throws SQLException
+        {
+            _context = TestContext.get();
+            Container junit = JunitUtil.getTestContainer();
+
+            String name = GUID.makeHash();
+            Container c = ContainerManager.createContainer(junit, name);
+            StudyImpl s = new StudyImpl(c, "Junit Study");
+            s.setTimepointType(TimepointType.VISIT);
+            s.setStartDate(new Date(DateUtil.parseDateTime(c, "2014-01-01")));
+            s.setSubjectColumnName("SubjectID");
+            s.setSubjectNounPlural("Subjects");
+            s.setSubjectNounSingular("Subject");
+            s.setSecurityType(SecurityType.BASIC_WRITE);
+            _junitStudy = StudyManager.getInstance().createStudy(_context.getUser(), s);
+        }
+
+        private void tearDown()
+        {
+            if (null != _junitStudy)
+            {
+                assertTrue(ContainerManager.delete(_junitStudy.getContainer(), _context.getUser()));
+            }
         }
     }
 }

@@ -15,6 +15,7 @@
  */
 package org.labkey.study.model;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.study.AssaySpecimenConfig;
 
 /**
@@ -40,6 +41,13 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
 
     public AssaySpecimenConfigImpl()
     {
+    }
+
+    public AssaySpecimenConfigImpl(Container container, String assayName, String description)
+    {
+        setContainer(container);
+        _assayName = assayName;
+        _description = description;
     }
 
     public boolean isNew()

@@ -740,6 +740,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         set.add(DataSetDefinition.TestCleanupOrphanedDatasetDomains.class);
         set.add(StudyManager.VisitCreationTestCase.class);
         set.add(TreatmentManager.TreatmentDataTestCase.class);
+        set.add(StudyManager.AssayScheduleTestCase.class);
 
         return set;
     }

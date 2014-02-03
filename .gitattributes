@@ -3410,6 +3410,7 @@ study/src/org/labkey/study/model/AbstractStudyCachable.java -text
 study/src/org/labkey/study/model/AbstractStudyEntity.java -text
 study/src/org/labkey/study/model/AdditiveType.java -text
 study/src/org/labkey/study/model/AssaySpecimenConfigImpl.java -text
+study/src/org/labkey/study/model/AssaySpecimenVisitImpl.java -text
 study/src/org/labkey/study/model/BaseStudyDomainKind.java -text
 study/src/org/labkey/study/model/ChildStudyDefinition.java -text
 study/src/org/labkey/study/model/CohortDomainKind.java -text
