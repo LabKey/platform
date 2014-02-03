@@ -5116,7 +5116,7 @@ public class StudyManager
             data.put("Name", name = "Test Sample Type");
             data.put("Label", label = "Test Sample Type Label");
             data.put("PrimaryType", "Test Primary Type");
-            data.put("ShortSampleCode", "TPT");
+            data.put("ShortSampleCode", "TP");
             Table.insert(_user, StudySchema.getInstance().getTableInfoStudyDesignSampleTypes(), data);
             _lookups.put("SampleType", name);
         }
