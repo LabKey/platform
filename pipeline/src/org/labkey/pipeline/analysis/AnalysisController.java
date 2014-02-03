@@ -407,7 +407,7 @@ public class AnalysisController extends SpringActionController
             if (!statusSingle)
             {
                 fileStatus = PipelineJob.FT_LOG.newFile(dirAnalysis,
-                        AbstractFileAnalysisProtocol.getDataSetBaseName(dirData));
+                        protocol.getJoinedBaseName());
             }
             else if (fileInputName != null)
             {
