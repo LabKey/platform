@@ -23,6 +23,7 @@ import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  * User: jeckels
@@ -38,6 +39,16 @@ public class ShortURLServiceImpl implements ShortURLService
         sql.append(" WHERE LOWER(ShortURL) = LOWER(?)");
         sql.add(shortURL);
         return new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getObject(ShortURLRecord.class);
+    }
+
+    @NotNull
+    @Override
+    public List<ShortURLRecord> getAllShortURLs()
+    {
+        SQLFragment sql = new SQLFragment("SELECT * FROM ");
+        sql.append(CoreSchema.getInstance().getTableInfoShortURL(), "s");
+        sql.append(" ORDER BY LOWER(ShortURL)");
+        return new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getArrayList(ShortURLRecord.class);
     }
 
     public void deleteShortURL(@NotNull ShortURLRecord record, @NotNull User user)

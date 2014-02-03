@@ -40,6 +40,7 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasValidator;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.IgnoresAllocationTracking;
+import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -144,24 +145,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.FolderTab;
-import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NavTreeManager;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.Portal;
-import org.labkey.api.view.TabStripView;
-import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewServlet;
-import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.WebTheme;
-import org.labkey.api.view.WebThemeManager;
+import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
@@ -253,6 +237,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Configuration, "files", new ActionURL(FilesSiteSettingsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "experimental features", new ActionURL(ExperimentalFeaturesAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "folder types", new ActionURL(FolderTypesAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Configuration, "short urls", new ActionURL(ShortURLAdminAction.class, root));
 
         // Diagnostics
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
@@ -6302,4 +6287,143 @@ public class AdminController extends SpringActionController
             return response;
         }
     }
+
+    public static class ShortURLForm
+    {
+        private String _shortURL;
+        private String _fullURL;
+        private boolean _delete;
+
+        private List<ShortURLRecord> _savedShortURLs;
+
+        public void setShortURL(String shortURL)
+        {
+            _shortURL = shortURL;
+        }
+
+        public void setFullURL(String fullURL)
+        {
+            _fullURL = fullURL;
+        }
+
+        public void setDelete(boolean delete)
+        {
+            _delete = delete;
+        }
+
+        public String getShortURL()
+        {
+            return _shortURL;
+        }
+
+        public String getFullURL()
+        {
+            return _fullURL;
+        }
+
+        public boolean isDelete()
+        {
+            return _delete;
+        }
+
+        public List<ShortURLRecord> getSavedShortURLs()
+        {
+            return _savedShortURLs;
+        }
+
+        public void setSavedShortURLs(List<ShortURLRecord> savedShortURLs)
+        {
+            _savedShortURLs = savedShortURLs;
+        }
+    }
+
+    @RequiresSiteAdmin @AdminConsoleAction
+    public class ShortURLAdminAction extends FormViewAction<ShortURLForm>
+    {
+        @Override
+        public void validateCommand(ShortURLForm target, Errors errors) {}
+
+        @Override
+        public ModelAndView getView(ShortURLForm form, boolean reshow, BindException errors) throws Exception
+        {
+            form.setSavedShortURLs(ServiceRegistry.get(ShortURLService.class).getAllShortURLs());
+            JspView<ShortURLForm> newView = new JspView<>("/org/labkey/core/admin/createNewShortURL.jsp", form, errors);
+            newView.setTitle("Create New Short URL");
+            newView.setFrame(WebPartView.FrameType.PORTAL);
+            JspView<ShortURLForm> existingView = new JspView<>("/org/labkey/core/admin/existingShortURLs.jsp", form, errors);
+            existingView.setTitle("Existing Short URLs");
+            existingView.setFrame(WebPartView.FrameType.PORTAL);
+
+            return new VBox(newView, existingView);
+        }
+
+        @Override
+        public boolean handlePost(ShortURLForm form, BindException errors) throws Exception
+        {
+            String shortURL = StringUtils.trimToNull(form.getShortURL());
+            if (shortURL == null)
+            {
+                errors.addError(new LabkeyError("Short URL must not be blank"));
+            }
+            else if (shortURL.contains("#") || shortURL.contains("/"))
+            {
+                errors.addError(new LabkeyError("Short URLs may not contain '#' or '/'"));
+            }
+            URLHelper fullURL = null;
+            if (!form.isDelete())
+            {
+                String trimmedFullURL = StringUtils.trimToNull(form.getFullURL());
+                if (trimmedFullURL == null)
+                {
+                    errors.addError(new LabkeyError("Target URL must not be blank"));
+                }
+                try
+                {
+                    fullURL = new URLHelper(trimmedFullURL);
+                }
+                catch (URISyntaxException e)
+                {
+                    errors.addError(new LabkeyError("Invalid Target URL. " + e.getMessage()));
+                }
+            }
+            if (errors.getErrorCount() > 0)
+            {
+                return false;
+            }
+
+            ShortURLService service = ServiceRegistry.get(ShortURLService.class);
+            if (form.isDelete())
+            {
+                ShortURLRecord shortURLRecord = service.resolveShortURL(shortURL);
+                if (shortURLRecord == null)
+                {
+                    throw new NotFoundException("No such short URL: " + shortURL);
+                }
+                service.deleteShortURL(shortURLRecord, getUser());
+            }
+            else
+            {
+                ShortURLRecord shortURLRecord = service.saveShortURL(shortURL, fullURL, getUser());
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(shortURLRecord));
+                // Add a role assignment to let another group manage the URL. This grants permission to the journal
+                // to change where the URL redirects you to after they copy the data
+//                policy.addRoleAssignment(org.labkey.api.security.SecurityManager.getGroupId(c, "SomeGroup"));
+                SecurityPolicyManager.savePolicy(policy);
+            }
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ShortURLForm form)
+        {
+            return new ActionURL(ShortURLAdminAction.class, getContainer());
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Short URL Admin");
+        }
+    }
+
 }

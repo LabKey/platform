@@ -673,6 +673,7 @@ core/src/org/labkey/core/admin/admin.jsp -text
 core/src/org/labkey/core/admin/checkDatabase.jsp -text
 core/src/org/labkey/core/admin/confirmProjectMove.jsp -text
 core/src/org/labkey/core/admin/createFolder.jsp -text
+core/src/org/labkey/core/admin/createNewShortURL.jsp -text
 core/src/org/labkey/core/admin/customizeEmail.jsp -text
 core/src/org/labkey/core/admin/customizeMenu.jsp -text
 core/src/org/labkey/core/admin/customizeSite.jsp -text
@@ -681,6 +682,7 @@ core/src/org/labkey/core/admin/editMenuBar.jsp -text
 core/src/org/labkey/core/admin/emailProps.jsp -text
 core/src/org/labkey/core/admin/emailTest.jsp -text
 core/src/org/labkey/core/admin/enabledFolderTypes.jsp -text
+core/src/org/labkey/core/admin/existingShortURLs.jsp -text
 core/src/org/labkey/core/admin/experimentalFeatures.jsp -text
 core/src/org/labkey/core/admin/exportFolder.jsp -text
 core/src/org/labkey/core/admin/folderAliases.jsp -text
@@ -809,6 +811,7 @@ core/src/org/labkey/core/user/impersonate.jsp -text
 core/src/org/labkey/core/user/toggleInactive.jsp -text
 core/src/org/labkey/core/user/toggleShowAll.jsp -text
 core/src/org/labkey/core/user/userAccess.jsp -text
+core/src/org/labkey/core/view/ShortURLFilter.java -text
 core/src/org/labkey/core/view/ShortURLServiceImpl.java -text
 core/src/org/labkey/core/webdav/DavController.java -text
 core/src/org/labkey/core/webdav/WebdavServlet.java -text
