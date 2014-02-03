@@ -6360,14 +6360,16 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(ShortURLForm form, BindException errors) throws Exception
         {
-            String shortURL = StringUtils.trimToNull(form.getShortURL());
-            if (shortURL == null)
+            String shortURL = StringUtils.trimToEmpty(form.getShortURL());
+            if (StringUtils.isEmpty(shortURL))
             {
                 errors.addError(new LabkeyError("Short URL must not be blank"));
             }
-            else if (shortURL.contains("#") || shortURL.contains("/"))
+            if (shortURL.endsWith(".url"))
+                shortURL = shortURL.substring(0,shortURL.length()-".url".length());
+            if (shortURL.contains("#") || shortURL.contains("/") || shortURL.contains("."))
             {
-                errors.addError(new LabkeyError("Short URLs may not contain '#' or '/'"));
+                errors.addError(new LabkeyError("Short URLs may not contain '#' or '/' or '.'"));
             }
             URLHelper fullURL = null;
             if (!form.isDelete())
@@ -6377,13 +6379,16 @@ public class AdminController extends SpringActionController
                 {
                     errors.addError(new LabkeyError("Target URL must not be blank"));
                 }
-                try
+                else
                 {
-                    fullURL = new URLHelper(trimmedFullURL);
-                }
-                catch (URISyntaxException e)
-                {
-                    errors.addError(new LabkeyError("Invalid Target URL. " + e.getMessage()));
+                    try
+                    {
+                        fullURL = new URLHelper(trimmedFullURL);
+                    }
+                    catch (URISyntaxException e)
+                    {
+                        errors.addError(new LabkeyError("Invalid Target URL. " + e.getMessage()));
+                    }
                 }
             }
             if (errors.getErrorCount() > 0)
