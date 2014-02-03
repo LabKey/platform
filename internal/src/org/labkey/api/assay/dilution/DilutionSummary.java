@@ -19,6 +19,7 @@ package org.labkey.api.assay.dilution;
 import org.labkey.api.assay.nab.Luc5Assay;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
+import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.WellData;
@@ -154,12 +155,12 @@ public class DilutionSummary implements Serializable
         return _dataToSample;
     }
 
-    public double getPercent(WellData data) throws DilutionCurve.FitFailedException
+    public double getPercent(WellData data) throws FitFailedException
     {
         return _assay.getPercent(getDataToSampleMap().get(data), data);
     }
 
-    private DilutionCurve getDilutionCurve(StatsService.CurveFitType type) throws DilutionCurve.FitFailedException
+    private DilutionCurve getDilutionCurve(StatsService.CurveFitType type) throws FitFailedException
     {
         if (!_dilutionCurve.containsKey(type))
         {
@@ -169,7 +170,7 @@ public class DilutionSummary implements Serializable
         return _dilutionCurve.get(type);
     }
 
-    public double getPlusMinus(WellData data) throws DilutionCurve.FitFailedException
+    public double getPlusMinus(WellData data) throws FitFailedException
     {
         if (getPercent(data) == 0)
             return 0;
@@ -201,32 +202,32 @@ public class DilutionSummary implements Serializable
         return SampleInfo.Method.valueOf(name);
     }
 
-    public double getCutoffDilution(double cutoff, StatsService.CurveFitType type) throws DilutionCurve.FitFailedException
+    public double getCutoffDilution(double cutoff, StatsService.CurveFitType type) throws FitFailedException
     {
         return getDilutionCurve(type).getCutoffDilution(cutoff);
     }
 
-    public double getInterpolatedCutoffDilution(double cutoff, StatsService.CurveFitType type) throws DilutionCurve.FitFailedException
+    public double getInterpolatedCutoffDilution(double cutoff, StatsService.CurveFitType type) throws FitFailedException
     {
         return getDilutionCurve(type).getInterpolatedCutoffDilution(cutoff);
     }
 
-    public DoublePoint[] getCurve() throws DilutionCurve.FitFailedException
+    public DoublePoint[] getCurve() throws FitFailedException
     {
         return getDilutionCurve(_curveFitType).getCurve();
     }
 
-    public double getFitError() throws DilutionCurve.FitFailedException
+    public double getFitError() throws FitFailedException
     {
         return getDilutionCurve(_curveFitType).getFitError();
     }
 
-    public double getMinDilution(StatsService.CurveFitType type) throws DilutionCurve.FitFailedException
+    public double getMinDilution(StatsService.CurveFitType type) throws FitFailedException
     {
         return getDilutionCurve(type).getMinDilution();
     }
 
-    public double getMaxDilution(StatsService.CurveFitType type) throws DilutionCurve.FitFailedException
+    public double getMaxDilution(StatsService.CurveFitType type) throws FitFailedException
     {
         return getDilutionCurve(type).getMaxDilution();
     }
@@ -251,17 +252,17 @@ public class DilutionSummary implements Serializable
         return _firstGroup;
     }
 
-    public CurveFit.Parameters getCurveParameters(StatsService.CurveFitType type) throws DilutionCurve.FitFailedException
+    public CurveFit.Parameters getCurveParameters(StatsService.CurveFitType type) throws FitFailedException
     {
         return getDilutionCurve(type).getParameters();
     }
 
-    public double getAUC(StatsService.CurveFitType type, StatsService.AUCType calc) throws DilutionCurve.FitFailedException
+    public double getAUC(StatsService.CurveFitType type, StatsService.AUCType calc) throws FitFailedException
     {
         return getDilutionCurve(type).calculateAUC(calc);
     }
 
-    public double getAUC() throws DilutionCurve.FitFailedException
+    public double getAUC() throws FitFailedException
     {
         return getDilutionCurve(_assay.getRenderedCurveFitType()).calculateAUC(StatsService.AUCType.NORMAL);
     }

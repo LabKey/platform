@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.OORDisplayColumnFactory;
+import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -158,14 +159,14 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                 }
                 return results;
             }
-            catch (DilutionCurve.FitFailedException e)
+            catch (FitFailedException e)
             {
                 throw new ExperimentException(e.getMessage(), e);
             }
         }
 
         protected void saveICValue(String name, double icValue, DilutionSummary dilution,
-                                   Map<String, Object> results, StatsService.CurveFitType type) throws DilutionCurve.FitFailedException
+                                   Map<String, Object> results, StatsService.CurveFitType type) throws FitFailedException
         {
             String outOfRange = null;
             if (Double.NEGATIVE_INFINITY == icValue)

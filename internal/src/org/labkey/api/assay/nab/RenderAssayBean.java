@@ -18,7 +18,6 @@ package org.labkey.api.assay.nab;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionAssayRun;
-import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionDataHandler;
 import org.labkey.api.assay.dilution.DilutionSummary;
 import org.labkey.api.assay.nab.view.DuplicateDataFileRunView;
@@ -26,6 +25,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -292,7 +292,7 @@ public class RenderAssayBean extends RenderAssayForm
             if (null != fitErrorPd)
                 return new Pair<PropertyDescriptor, Object>(fitErrorPd, result.getDilutionSummary().getFitError());
         }
-        catch (DilutionCurve.FitFailedException e)
+        catch (FitFailedException e)
         {       // ignore
         }
         return null;

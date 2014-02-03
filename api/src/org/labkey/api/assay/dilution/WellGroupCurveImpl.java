@@ -18,6 +18,7 @@ package org.labkey.api.assay.dilution;
 
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
+import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.study.WellData;
 import org.labkey.api.study.WellGroup;
@@ -68,7 +69,13 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
     @Override
     public double getFitError()
     {
-        return _curveFit.getFitError();
+        try {
+            return _curveFit.getFitError();
+        }
+        catch (FitFailedException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

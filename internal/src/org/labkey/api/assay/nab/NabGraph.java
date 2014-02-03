@@ -29,11 +29,11 @@ import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.labkey.api.assay.dilution.DilutionAssayRun;
-import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionMaterialKey;
 import org.labkey.api.assay.dilution.DilutionSummary;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.statistics.DoublePoint;
+import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.study.WellData;
 import org.labkey.api.util.DateUtil;
@@ -201,7 +201,7 @@ public class NabGraph
             return captionValue.toString();
     }
 
-    public static void renderChartPNG(Container c, HttpServletResponse response, Map<DilutionSummary, DilutionAssayRun> summaries, Config config) throws IOException, DilutionCurve.FitFailedException
+    public static void renderChartPNG(Container c, HttpServletResponse response, Map<DilutionSummary, DilutionAssayRun> summaries, Config config) throws IOException, FitFailedException
     {
         boolean longCaptions = false;
         Set<String> shortCaptions = new HashSet<>();
@@ -239,7 +239,7 @@ public class NabGraph
         renderChartPNG(response, summaryMap, config);
     }
 
-    public static void renderChartPNG(Container c, HttpServletResponse response, DilutionAssayRun assay, Config config) throws IOException, DilutionCurve.FitFailedException
+    public static void renderChartPNG(Container c, HttpServletResponse response, DilutionAssayRun assay, Config config) throws IOException, FitFailedException
     {
         Map<DilutionSummary, DilutionAssayRun> samples = new LinkedHashMap<>();
         for (DilutionSummary summary : assay.getSummaries())
@@ -252,7 +252,7 @@ public class NabGraph
         renderChartPNG(c, response, samples, config);
     }
 
-    public static void renderChartPNG(HttpServletResponse response, List<Pair<String, DilutionSummary>> dilutionSummaries, Config config) throws IOException, DilutionCurve.FitFailedException
+    public static void renderChartPNG(HttpServletResponse response, List<Pair<String, DilutionSummary>> dilutionSummaries, Config config) throws IOException, FitFailedException
     {
         XYSeriesCollection curvesDataset = new XYSeriesCollection();
         XYSeriesCollection pointDataset = new XYSeriesCollection();
@@ -329,7 +329,7 @@ public class NabGraph
                 if (currentColor != null)
                     plot.getRenderer(1).setSeriesPaint(curvesDataset.getSeriesCount() - 1, currentColor);
             }
-            catch (DilutionCurve.FitFailedException e)
+            catch (FitFailedException e)
             {
                 // fall through; we'll just graph those that can be graphed.
             }

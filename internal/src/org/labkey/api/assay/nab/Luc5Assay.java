@@ -18,6 +18,7 @@ package org.labkey.api.assay.nab;
 import org.labkey.api.assay.dilution.DilutionManager;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionSummary;
+import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.study.Plate;
 import org.labkey.api.study.WellData;
@@ -95,17 +96,17 @@ public abstract class Luc5Assay implements Serializable, DilutionCurve.PercentCa
         return _cutoffs;
     }
 
-    public double getPercent(WellGroup group, WellData data) throws DilutionCurve.FitFailedException
+    public double getPercent(WellGroup group, WellData data) throws FitFailedException
     {
         if (null == group)
-            throw new DilutionCurve.FitFailedException("Invalid well group.");
+            throw new FitFailedException("Invalid well group.");
         Plate plate = group.getPlate();
         WellData cellControl = plate.getWellGroup(WellGroup.Type.CONTROL, DilutionManager.CELL_CONTROL_SAMPLE);
         if (cellControl == null)
-            throw new DilutionCurve.FitFailedException("Invalid plate template: no cell control well group was found.");
+            throw new FitFailedException("Invalid plate template: no cell control well group was found.");
         WellData virusControl = plate.getWellGroup(WellGroup.Type.CONTROL, DilutionManager.VIRUS_CONTROL_SAMPLE);
         if (virusControl == null)
-            throw new DilutionCurve.FitFailedException("Invalid plate template: no virus control well group was found.");
+            throw new FitFailedException("Invalid plate template: no virus control well group was found.");
         double controlRange = virusControl.getMean() - cellControl.getMean();
         double cellControlMean = cellControl.getMean();
         if (data.getMean() < cellControlMean)

@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.text.DecimalFormat" %>
+<%@ page import="org.labkey.api.data.statistics.FitFailedException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<RenderAssayBean> me = (JspView<RenderAssayBean>) HttpView.currentView();
@@ -86,7 +87,7 @@
             {
                 summary.getCurve();
             }
-            catch (DilutionCurve.FitFailedException e)
+            catch (FitFailedException e)
             {
                 unableToFitMessage = e.getMessage();
             }

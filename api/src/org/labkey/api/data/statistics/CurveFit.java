@@ -49,7 +49,7 @@ public interface CurveFit
      * Returns the parameters necessary to represent the fitted curve
      * @return
      */
-    Parameters getParameters();
+    Parameters getParameters() throws FitFailedException;
 
     /**
      * Sets whether the curve is assumed to be decreasing by default.  It's used as an optimization during 4&5
@@ -78,7 +78,7 @@ public interface CurveFit
      * Calculates the fit error : r squared (or coefficient of determination) of the fitted curve
      * @return
      */
-    double getFitError();
+    double getFitError() throws FitFailedException;
 
     /**
      * Returns the array of x/y pairs to render the fitted curve. The min and max x range
@@ -86,7 +86,7 @@ public interface CurveFit
      *
      * @param totalPoints The number of points in the array to return
      */
-    DoublePoint[] renderCurve(int totalPoints);
+    DoublePoint[] renderCurve(int totalPoints) throws FitFailedException;
 
     /**
      * Returns the array of x/y pairs to render the fitted curve. The min and max x range
@@ -96,7 +96,7 @@ public interface CurveFit
      * @param startX The starting x value to begin generating points for
      * @param endX The ending x value to generate points for
      */
-    DoublePoint[] renderCurve(int totalPoints, double startX, double endX);
+    DoublePoint[] renderCurve(int totalPoints, double startX, double endX) throws FitFailedException;
 
     /**
      * Calculates the area under the curve represented by this curve fit. The type of AUC calculation can be configured
@@ -112,7 +112,7 @@ public interface CurveFit
      *
      * @return The integrated area under the curve.
      */
-    double calculateAUC(StatsService.AUCType type);
+    double calculateAUC(StatsService.AUCType type) throws FitFailedException;
 
     /**
      * Calculates the area under the curve represented by this curve fit. The type of AUC calculation can be configured
@@ -127,5 +127,5 @@ public interface CurveFit
      * @param endX The ending x position on the curve to compute AUC.
      * @return The integrated area under the curve.
      */
-    double calculateAUC(StatsService.AUCType type, double startX, double endX);
+    double calculateAUC(StatsService.AUCType type, double startX, double endX) throws FitFailedException;
 }

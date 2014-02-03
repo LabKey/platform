@@ -18,6 +18,7 @@ package org.labkey.api.assay.dilution;
 
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
+import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.study.WellData;
 import org.labkey.api.study.WellGroup;
@@ -29,13 +30,6 @@ import org.labkey.api.study.WellGroup;
  */
 public interface DilutionCurve
 {
-    public class FitFailedException extends Exception
-    {
-        public FitFailedException(String message)
-        {
-            super(message);
-        }
-    }
 
     DoublePoint[] getCurve() throws FitFailedException;
 

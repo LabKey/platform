@@ -21,6 +21,7 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -239,9 +240,9 @@ public class PlateService
          * @param percentCalculator A callback to allow the caller to determine the plottable value for a given WellData within its WellGroup.
          * @param type The Type of fit desired.
          * @return A DilutionCurve instance of the appropriate type, if a fit was possible.
-         * @throws DilutionCurve.FitFailedException Thrown if a curve cannot be fit to the data points.
+         * @throws org.labkey.api.data.statistics.FitFailedException Thrown if a curve cannot be fit to the data points.
          */
-        DilutionCurve getDilutionCurve(WellGroup wellGroup, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws DilutionCurve.FitFailedException;
+        DilutionCurve getDilutionCurve(WellGroup wellGroup, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws FitFailedException;
 
         /**
          * Calculates a dilution curve for the specified well groups.
@@ -251,9 +252,9 @@ public class PlateService
          * @param percentCalculator A callback to allow the caller to determine the plottable value for a given WellData within its WellGroup.
          * @param type The Type of fit desired.
          * @return A DilutionCurve instance of the appropriate type, if a fit was possible.
-         * @throws DilutionCurve.FitFailedException Thrown if a curve cannot be fit to the data points.
+         * @throws org.labkey.api.data.statistics.FitFailedException Thrown if a curve cannot be fit to the data points.
          */
-        DilutionCurve getDilutionCurve(List<WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws DilutionCurve.FitFailedException;
+        DilutionCurve getDilutionCurve(List<WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws FitFailedException;
     }
 
     public static class NameConflictException extends Exception
