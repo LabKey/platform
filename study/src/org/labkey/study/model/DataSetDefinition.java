@@ -965,8 +965,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     @Override
     public void save(User user)
     {
-        // should have checked this by now
-        if (!canUpdateDefinition(user))
+        // caller should have checked canUpdate() by now, so we throw if not legal
+        // NOTE: don't check AdminPermission here.  It breaks assay publish-to-study
+//        if (!canUpdateDefinition(user))
+        if (!getDefinitionContainer().getId().equals(getContainer().getId()))
             throw new IllegalStateException("Can't save dataset in this folder...");
         StudyManager.getInstance().updateDataSetDefinition(user, this);
     }
