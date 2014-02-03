@@ -48,7 +48,7 @@ public class TableViewFormTestCase extends Assert
         Assert.assertEquals(ctx.getRequest().getUserPrincipal(), tf.getUser());
 
         //Test date handling
-        tf.set("datetimeNotNull", "6/20/2004");
+        tf.set("datetimeNotNull", "2004-06-20");
         Date dt = (Date) tf.getTypedValue("datetimeNotNull");
         Assert.assertTrue("Date get", dt.equals(new Date("6/20/2004")));
 
@@ -79,7 +79,7 @@ public class TableViewFormTestCase extends Assert
         //Assert.assertEquals("3 Non-null fields", errors.size(), 3);
         //Non-nullable fields are named NotNull
 
-        tf.set("datetimeNotNull", "6/20/2004");
+        tf.set("datetimeNotNull", "2004-06-20");
         tf.set("bitNotNull", "1");
         tf.set("intNotNull", "20");
         tf.set("datetimeNull", "garbage");
@@ -109,10 +109,10 @@ public class TableViewFormTestCase extends Assert
         TestForm tf = new TestForm();
         tf.setViewContext(ctx);
 
-        tf.set("datetimeNotNull", "6/20/2004");
+        tf.set("datetimeNotNull", "2004-06-20");
         tf.set("bitNotNull", "1");
         tf.set("intNotNull", "20");
-        tf.set("datetimeNull", "6/21/2004");
+        tf.set("datetimeNull", "2004-06-20");
         tf.set("text", "First test record");
         tf.doInsert();
 

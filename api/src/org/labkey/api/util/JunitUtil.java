@@ -85,15 +85,23 @@ public class JunitUtil
     /**
      * Returns the container called "_junit" to be used by test cases.
      */
+    private static Path getTestContainerPath()
+    {
+        return ContainerManager.getSharedContainer().getParsedPath().append("_junit");
+    }
+
     public static Container getTestContainer()
     {
-        return ContainerManager.ensureContainer(ContainerManager.getSharedContainer().getParsedPath().append("_junit"));
+        return ContainerManager.ensureContainer(getTestContainerPath());
     }
 
     public static void deleteTestContainer()
     {
-        ContainerManager.delete(ContainerManager.getForPath(
-                ContainerManager.getSharedContainer().getParsedPath().append("_junit")), TestContext.get().getUser());
+        Container junit = ContainerManager.getForPath(getTestContainerPath());
+
+        // Could be null, if junit tests have never been run before
+        if (null != junit)
+            ContainerManager.delete(junit, TestContext.get().getUser());
     }
 
     // Simulate a race condition by starting the specified number of threads and invoking the runnable the specified

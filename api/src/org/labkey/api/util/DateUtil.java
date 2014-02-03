@@ -709,24 +709,12 @@ validNum:       {
     }
 
 
-    public static long parseStringJava(String s)
+    // These parsers aren't affected by the MDY/DMY setting
+    private static long parseSpecialFormats(String s)
     {
         try
         {
             return parseStringJDBC(s);
-        }
-        catch (Exception ignored) {}
-
-        try
-        {
-            return DateFormat.getInstance().parse(s).getTime();
-        }
-        catch (Exception ignored) {}
-
-        try
-        {
-            //noinspection deprecation
-            return Date.parse(s);
         }
         catch (Exception ignored) {}
 
@@ -821,7 +809,7 @@ validNum:       {
         }
         catch (ConversionException ignored) {}
 
-        return parseStringJava(s) + ms;
+        return parseSpecialFormats(s) + ms;
     }
 
 
