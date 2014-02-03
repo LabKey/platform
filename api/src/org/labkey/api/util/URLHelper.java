@@ -217,7 +217,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     }
 
 
-    // Applies HTML encoding to local URI string
+    /** Applies HTML encoding to local URI string */
     public String getEncodedLocalURIString()
     {
         return PageFlowUtil.filter(getLocalURIString());

@@ -6,6 +6,8 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
 
+import java.util.List;
+
 /**
  * User: jeckels
  * Date: 1/23/14
@@ -15,6 +17,10 @@ public interface ShortURLService
     /** Checks for a registered short URL that matches the string. The string itself should not contain slashes */
     @Nullable
     public ShortURLRecord resolveShortURL(@NotNull String shortURL);
+
+    /** Gets all of the short URLs that are configured on the current server */
+    @NotNull
+    public List<ShortURLRecord> getAllShortURLs();
 
     /** Save the URL and its redirect target. If it is a new short URL, it will be owned by the user who's creating it.
      * Guests may not save or update URLs. If it is already registered, permissions will be checked. To grant or remove

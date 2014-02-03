@@ -10,6 +10,7 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 
 import java.util.Collections;
@@ -22,6 +23,8 @@ import java.util.Set;
  */
 public class ShortURLRecord implements SecurableResource
 {
+    public static final String URL_SUFFIX = ".url";
+
     private User _createdBy;
     private User _modifiedBy;
     private int _rowId;
@@ -149,5 +152,10 @@ public class ShortURLRecord implements SecurableResource
     public boolean mayInheritPolicy()
     {
         return false;
+    }
+
+    public String renderShortURL()
+    {
+        return AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath() + "/" + getShortURL() + URL_SUFFIX;
     }
 }

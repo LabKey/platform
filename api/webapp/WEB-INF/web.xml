@@ -48,6 +48,16 @@
         <url-pattern>*.poll</url-pattern>
     </filter-mapping>
 
+
+    <filter>
+        <filter-name>ShortURLFilter</filter-name>
+        <filter-class>org.labkey.core.view.ShortURLFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>ShortURLFilter</filter-name>
+        <url-pattern>*.url</url-pattern>
+    </filter-mapping>
+
     <filter>
         <filter-name>Module Loader</filter-name>
         <filter-class>org.labkey.api.module.ModuleLoader</filter-class>
