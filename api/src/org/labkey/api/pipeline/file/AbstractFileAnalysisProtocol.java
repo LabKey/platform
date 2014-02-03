@@ -41,10 +41,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
 {
     private static Logger _log = Logger.getLogger(AbstractFileAnalysisProtocol.class);
 
-    public static String getDataSetBaseName(File dirData)
-    {
-        return "all";
-    }
+    public static final String LEGACY_JOINED_BASENAME = "all";
 
     protected String description;
     protected String xml;
@@ -87,6 +84,15 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
     public void setEmail(String email)
     {
         this.email = email;
+    }
+
+    /**
+     * Get the base name used to construct files names for multi-file inputs and outputs.
+     * The default base name is the protocol's name except for AbstractMS2SearchProtocol which defaults to "all".
+     */
+    public String getJoinedBaseName()
+    {
+        return getName();
     }
 
     public String getBaseName(File file)

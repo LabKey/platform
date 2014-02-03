@@ -49,6 +49,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
     private Integer _experimentRunRowId;
     private String _protocolName;
+    private String _joinedBaseName;
     private String _baseName;
     private File _dirData;
     private File _dirAnalysis;
@@ -105,9 +106,10 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         }
 
         _splittable = splittable;
+        _joinedBaseName = protocol.getJoinedBaseName();
         if (_filesInput.size() > 1)
         {
-            _baseName = AbstractFileAnalysisProtocol.getDataSetBaseName(_dirData);
+            _baseName = _joinedBaseName;
         }
         else
         {
@@ -141,6 +143,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _parametersDefaults = job._parametersDefaults;
         _parametersOverrides = job._parametersOverrides;
         _splittable = job._splittable;
+        _joinedBaseName = job._joinedBaseName;
 
         // Change parameters which are specific to the fraction job.
         _filesInput = Collections.singletonList(fileInput);
@@ -216,7 +219,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
     public String getJoinedBaseName()
     {
-        return AbstractFileAnalysisProtocol.getDataSetBaseName(_dirData);
+        return _joinedBaseName;
     }
 
     public List<String> getSplitBaseNames()
@@ -314,7 +317,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
     public String getDescription()
     {
-        return getDataDescription(getDataDirectory(), getBaseName(), getProtocolName());
+        return getDataDescription(getDataDirectory(), getBaseName(), getJoinedBaseName(), getProtocolName());
     }
 
     public ActionURL getStatusHref()
@@ -328,7 +331,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         return null;
     }
 
-    public static String getDataDescription(File dirData, String baseName, String protocolName)
+    public static String getDataDescription(File dirData, String baseName, String joinedBaseName, String protocolName)
     {
         String dataName = "";
         if (dirData != null)
@@ -346,7 +349,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
         StringBuilder description = new StringBuilder(dataName);
         if (baseName != null && !baseName.equals(dataName) &&
-                !"all".equals(baseName))   // For cluster
+                !(joinedBaseName.equals(AbstractFileAnalysisProtocol.LEGACY_JOINED_BASENAME) || joinedBaseName.equals(baseName)))   // For cluster
         {
             if (description.length() > 0)
                 description.append("/");
