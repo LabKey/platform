@@ -244,7 +244,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     dataMaps.add(dataMap);
                 }
 
-                checkForAlreadyCopiedRows(user, protocol, study, errors, rowIdsByTargetContainer);
+                checkForAlreadyCopiedRows(user, protocol, errors, rowIdsByTargetContainer);
 
                 if (!errors.isEmpty())
                 {
@@ -261,7 +261,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
     }
 
-    private void checkForAlreadyCopiedRows(User user, ExpProtocol protocol, Container study, List<String> errors, Map<Container, Set<Integer>> rowIdsByTargetContainer)
+    private void checkForAlreadyCopiedRows(User user, ExpProtocol protocol, List<String> errors, Map<Container, Set<Integer>> rowIdsByTargetContainer)
     {
         for (Map.Entry<Container, Set<Integer>> entry : rowIdsByTargetContainer.entrySet())
         {
@@ -280,7 +280,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     {
                         // If so, don't let the user copy them again, even if they have different participant/visit/date info
                         String errorMessage = existingRowCount == 1 ? "One of the selected rows has" : (existingRowCount + " of the selected rows have");
-                        errorMessage += " already been copied to the study \"" + study.getName() + "\" in " + entry.getKey().getPath();
+                        errorMessage += " already been copied to the study \"" + targetStudy.getLabel() + "\" in " + entry.getKey().getPath();
                         errorMessage += " (RowIds: " + entry.getValue() + ")";
                         errors.add(errorMessage);
                     }
@@ -573,7 +573,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 {
                     Map.Entry<String, File> entry = iter.next();
                     // If it's not under the current pipeline root
-                    if (!pipeRoot.isUnderRoot(entry.getValue()))
+                    if (pipeRoot == null || !pipeRoot.isUnderRoot(entry.getValue()))
                     {
                         // Remove it from the collection
                         iter.remove();
