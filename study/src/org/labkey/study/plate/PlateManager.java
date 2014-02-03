@@ -34,6 +34,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
@@ -767,13 +768,13 @@ public class PlateManager implements PlateService.Service
     }
 
     @Override
-    public DilutionCurve getDilutionCurve(WellGroup wellGroup, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws DilutionCurve.FitFailedException
+    public DilutionCurve getDilutionCurve(WellGroup wellGroup, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws FitFailedException
     {
         return CurveFitFactory.getCurveImpl(wellGroup, assumeDecreasing, percentCalculator, type);
     }
 
     @Override
-    public DilutionCurve getDilutionCurve(List<WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws DilutionCurve.FitFailedException
+    public DilutionCurve getDilutionCurve(List<WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws FitFailedException
     {
         return CurveFitFactory.getCurveImpl(wellGroups, assumeDecreasing, percentCalculator, type);
     }

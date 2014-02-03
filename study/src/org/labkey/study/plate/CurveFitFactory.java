@@ -19,6 +19,7 @@ package org.labkey.study.plate;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.ParameterCurveImpl;
 import org.labkey.api.assay.dilution.PolynomialCurveImpl;
+import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.study.WellGroup;
 
@@ -33,12 +34,12 @@ public class CurveFitFactory
 {
     private CurveFitFactory(){}
 
-    public static DilutionCurve getCurveImpl(WellGroup wellGroup, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws DilutionCurve.FitFailedException
+    public static DilutionCurve getCurveImpl(WellGroup wellGroup, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws FitFailedException
     {
         return getCurveImpl(Collections.singletonList(wellGroup), assumeDecreasing, percentCalculator, type);
     }
 
-    public static DilutionCurve getCurveImpl(List<WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws DilutionCurve.FitFailedException
+    public static DilutionCurve getCurveImpl(List<WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws FitFailedException
     {
         switch (type)
         {

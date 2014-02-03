@@ -18,6 +18,7 @@ package org.labkey.core.statistics;
 import Jama.Matrix;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
+import org.labkey.api.data.statistics.FitFailedException;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -101,7 +102,13 @@ public class PolynomialCurveFit extends DefaultCurveFit implements CurveFit
     @Override
     public double fitCurve(double x)
     {
-        return fitCurve(x, getParameters());
+        try {
+            return fitCurve(x, getParameters());
+        }
+        catch (FitFailedException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

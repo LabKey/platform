@@ -17,6 +17,7 @@
 package org.labkey.study.plate;
 
 import org.labkey.api.assay.dilution.DilutionCurve;
+import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.study.*;
 
@@ -181,7 +182,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
             _plate.getWell(position.getRow(), position.getColumn()).setDilution(dilution);
     }
 
-    public DilutionCurve getDilutionCurve(DilutionCurve.PercentCalculator calculator, boolean expectedDecreasing, StatsService.CurveFitType fitType) throws DilutionCurve.FitFailedException
+    public DilutionCurve getDilutionCurve(DilutionCurve.PercentCalculator calculator, boolean expectedDecreasing, StatsService.CurveFitType fitType) throws FitFailedException
     {
         return CurveFitFactory.getCurveImpl(this, expectedDecreasing, calculator, fitType);
     }

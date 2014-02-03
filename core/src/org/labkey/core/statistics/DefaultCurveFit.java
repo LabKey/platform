@@ -17,6 +17,7 @@ package org.labkey.core.statistics;
 
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
+import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 
 import java.util.ArrayList;
@@ -64,7 +65,7 @@ public abstract class DefaultCurveFit implements CurveFit
     }
 
     @Override
-    public Parameters getParameters()
+    public Parameters getParameters() throws FitFailedException
     {
         ensureCurve();
         return _parameters;
@@ -87,11 +88,17 @@ public abstract class DefaultCurveFit implements CurveFit
         _hasXLogScale = logXScale;
     }
 
-    private void ensureCurve()
+    private void ensureCurve() throws FitFailedException
     {
         if (_parameters == null)
         {
-            _parameters = computeParameters();
+            try {
+                _parameters = computeParameters();
+            }
+            catch (Exception e)
+            {
+                throw new FitFailedException("Failure calculating fit parameters: " + e.getMessage());
+            }
         }
     }
 
@@ -134,7 +141,7 @@ public abstract class DefaultCurveFit implements CurveFit
     }
 
     @Override
-    public double calculateAUC(StatsService.AUCType type)
+    public double calculateAUC(StatsService.AUCType type) throws FitFailedException
     {
         return calculateAUC(type, getMinimumX().getX(), getMaximumX().getX());
     }
@@ -142,7 +149,7 @@ public abstract class DefaultCurveFit implements CurveFit
     /**
      * Calculate the area under the curve
      */
-    public double calculateAUC(StatsService.AUCType type, double startX, double endX)
+    public double calculateAUC(StatsService.AUCType type, double startX, double endX) throws FitFailedException
     {
         ensureCurve();
         if (!_aucMap.containsKey(type))
@@ -180,40 +187,46 @@ public abstract class DefaultCurveFit implements CurveFit
         {
             if (_ranges.isEmpty())
             {
-                Parameters parameters = getParameters();
-                AUCRange currentRange = null;
+                try {
+                    Parameters parameters = getParameters();
+                    AUCRange currentRange = null;
 
-                double step = (end - start) / 200;
-                double y;
-                double yPrev = 0;
+                    double step = (end - start) / 200;
+                    double y;
+                    double yPrev = 0;
 
-                for (double p = start; p < end; p += step)
-                {
-                    y = fitCurve(p, parameters);
-
-                    if (currentRange == null)
+                    for (double p = start; p < end; p += step)
                     {
-                        if (y != 0)
-                            currentRange = new AUCRange(p, y > 0 ? StatsService.AUCType.POSITIVE : StatsService.AUCType.NEGATIVE);
+                        y = fitCurve(p, parameters);
+
+                        if (currentRange == null)
+                        {
+                            if (y != 0)
+                                currentRange = new AUCRange(p, y > 0 ? StatsService.AUCType.POSITIVE : StatsService.AUCType.NEGATIVE);
+                        }
+                        else if (currentRange.isEnd(y))
+                        {
+                            // compute a more accurate estimate of the root
+                            if (Math.abs(y) > .001)
+                                p = findRoot(p-step, p, yPrev, y, parameters, 10, .001);
+                            currentRange.setEnd(p);
+                            StatsService.AUCType nextType = currentRange.getType() == StatsService.AUCType.POSITIVE ? StatsService.AUCType.NEGATIVE : StatsService.AUCType.POSITIVE;
+
+                            _ranges.add(currentRange);
+                            currentRange = new AUCRange(p, nextType);
+                        }
+                        yPrev = y;
                     }
-                    else if (currentRange.isEnd(y))
-                    {
-                        // compute a more accurate estimate of the root
-                        if (Math.abs(y) > .001)
-                            p = findRoot(p-step, p, yPrev, y, parameters, 10, .001);
-                        currentRange.setEnd(p);
-                        StatsService.AUCType nextType = currentRange.getType() == StatsService.AUCType.POSITIVE ? StatsService.AUCType.NEGATIVE : StatsService.AUCType.POSITIVE;
 
+                    if (currentRange != null)
+                    {
+                        currentRange.setEnd(end);
                         _ranges.add(currentRange);
-                        currentRange = new AUCRange(p, nextType);
                     }
-                    yPrev = y;
                 }
-
-                if (currentRange != null)
+                catch (FitFailedException e)
                 {
-                    currentRange.setEnd(end);
-                    _ranges.add(currentRange);
+                    throw new RuntimeException(e);
                 }
             }
             return _ranges;
@@ -244,16 +257,22 @@ public abstract class DefaultCurveFit implements CurveFit
      */
     private double integrate(double a, double b, double epsilon, int maxRecursionDepth)
     {
-        Parameters parameters = getParameters();
+        try {
+            Parameters parameters = getParameters();
 
-        double c = (a + b)/2;
-        double h = hasXLogScale() ? Math.log10(b) - Math.log10(a) : (b-a);
-        double fa = fitCurve(a, parameters);
-        double fb = fitCurve(b, parameters);
-        double fc = fitCurve(c, parameters);
-        double s = (h/6)*(fa + 4*fc + fb);
+            double c = (a + b)/2;
+            double h = hasXLogScale() ? Math.log10(b) - Math.log10(a) : (b-a);
+            double fa = fitCurve(a, parameters);
+            double fb = fitCurve(b, parameters);
+            double fc = fitCurve(c, parameters);
+            double s = (h/6)*(fa + 4*fc + fb);
 
-        return _integrate(a, b, epsilon, s, fa, fb, fc, maxRecursionDepth, parameters);
+            return _integrate(a, b, epsilon, s, fa, fb, fc, maxRecursionDepth, parameters);
+        }
+        catch (FitFailedException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     private double _integrate(double a, double b, double epsilon, double s,
@@ -276,7 +295,7 @@ public abstract class DefaultCurveFit implements CurveFit
     }
 
     @Override
-    public double getFitError()
+    public double getFitError() throws FitFailedException
     {
         ensureCurve();
         return calculateFitError(getParameters());
@@ -295,13 +314,13 @@ public abstract class DefaultCurveFit implements CurveFit
     }
 
     @Override
-    public DoublePoint[] renderCurve(int totalPoints)
+    public DoublePoint[] renderCurve(int totalPoints) throws FitFailedException
     {
         return renderCurve(totalPoints, getMinimumX().getX(), getMaximumX().getX());
     }
 
     @Override
-    public DoublePoint[] renderCurve(int totalPoints, double startX, double endX)
+    public DoublePoint[] renderCurve(int totalPoints, double startX, double endX) throws FitFailedException
     {
         ensureCurve();
         DoublePoint[] curveData = new DoublePoint[totalPoints];

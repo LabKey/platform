@@ -18,6 +18,7 @@ package org.labkey.core.statistics;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
+import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 
 import java.util.ArrayList;
@@ -123,7 +124,13 @@ public class ParameterCurveFit extends DefaultCurveFit implements CurveFit
     @Override
     public double fitCurve(double x)
     {
-        return fitCurve(x, getParameters());
+        try {
+            return fitCurve(x, getParameters());
+        }
+        catch (FitFailedException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
