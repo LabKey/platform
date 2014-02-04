@@ -31,7 +31,6 @@ import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -404,7 +403,7 @@ public class StudyUpgradeCode implements UpgradeCode
                         }
                         catch (IllegalArgumentException e)
                         {
-                            _log.error("Study date format " + dateFormat + " in " + c.getPath() + " will not be migrated to new folder date format: " + e.getMessage());
+                            _log.warn("Study date format " + dateFormat + " in " + c.getPath() + " will not be migrated to new folder date format: " + e.getMessage());
                         }
 
                     String numberFormat = props.get(NUMBER_FORMAT_STRING);
@@ -416,7 +415,7 @@ public class StudyUpgradeCode implements UpgradeCode
                         }
                         catch (IllegalArgumentException e)
                         {
-                            _log.error("Study number format " + numberFormat + " in " + c.getPath() + " will not be migrated to new folder number format: " + e.getMessage());
+                            _log.warn("Study number format " + numberFormat + " in " + c.getPath() + " will not be migrated to new folder number format: " + e.getMessage());
                         }
 
                     // Now delete the old property set
