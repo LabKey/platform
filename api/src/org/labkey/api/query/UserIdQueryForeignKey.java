@@ -32,7 +32,7 @@ public class UserIdQueryForeignKey extends QueryForeignKey
 {
     public UserIdQueryForeignKey(User user, Container container)
     {
-        super("core", container, user, "Users", "UserId", "DisplayName");
+        super("core", container, null, user, "Users", "UserId", "DisplayName");
     }
 
     /* set foreign key and display column */

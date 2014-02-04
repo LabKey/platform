@@ -542,7 +542,9 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
         return _publicSchemaName == null ? super.getPublicSchemaName() : _publicSchemaName;
     }
 
+    /** For FilteredTable, we should always have a UserSchema (it's a @NotNull constructor argument */
     @Override
+    @NotNull
     public SchemaType getUserSchema()
     {
         return _userSchema;

@@ -17,6 +17,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.ColumnInfo;
@@ -38,7 +39,12 @@ public class QueryForeignKey implements ForeignKey
 {
     TableInfo _table;
     String _schemaName;
-    Container _container;
+    /** The configured container for this lookup. Null if it should use the current container */
+    @Nullable
+    Container _lookupContainer;
+    /** The container in which the lookup should be evaluated. */
+    @NotNull
+    Container _effectiveContainer;
     User _user;
     String _tableName;
     String _lookupKey;
@@ -46,10 +52,11 @@ public class QueryForeignKey implements ForeignKey
     QuerySchema _schema;
     boolean _useRawFKValue;
 
-    public QueryForeignKey(String schemaName, Container container, User user, String tableName, @Nullable String lookupKey, @Nullable String displayField, boolean useRawFKValue)
+    public QueryForeignKey(@NotNull String schemaName, @NotNull Container effectiveContainer, @Nullable Container lookupContainer, User user, String tableName, @Nullable String lookupKey, @Nullable String displayField, boolean useRawFKValue)
     {
         _schemaName = schemaName;
-        _container = container;
+        _effectiveContainer = effectiveContainer;
+        _lookupContainer = lookupContainer;
         _user = user;
         _tableName = tableName;
         _lookupKey = lookupKey;
@@ -57,29 +64,43 @@ public class QueryForeignKey implements ForeignKey
         _useRawFKValue = useRawFKValue;
     }
 
-    public QueryForeignKey(String schemaName, Container container, User user, String tableName, @Nullable String lookupKey, @Nullable String displayField)
+    public QueryForeignKey(String schemaName, @NotNull Container effectiveContainer, @Nullable Container lookupContainer, User user, String tableName, @Nullable String lookupKey, @Nullable String displayField)
     {
-        this(schemaName, container, user, tableName, lookupKey, displayField, false);
+        this(schemaName, effectiveContainer, lookupContainer, user, tableName, lookupKey, displayField, false);
     }
 
-    public QueryForeignKey(QuerySchema schema, String tableName, @Nullable String lookupKey, @Nullable String displayField, boolean useRawFKValue)
+    /**
+     * @param schema a schema pointed at the effective container for this usage
+     * @param lookupContainer null if the lookup isn't specifically configured to point at a specific container, and should be pointing at the current container
+     */
+    public QueryForeignKey(QuerySchema schema, @Nullable Container lookupContainer, String tableName, @Nullable String lookupKey, @Nullable String displayField, boolean useRawFKValue)
     {
         _schema = schema;
         _schemaName = schema.getSchemaName();
+        _lookupContainer = lookupContainer;
         _tableName = tableName;
         _lookupKey = lookupKey;
         _displayField = displayField;
         _useRawFKValue = useRawFKValue;
     }
 
-    public QueryForeignKey(QuerySchema schema, String tableName, @Nullable String lookupKey, @Nullable String displayField)
+    /**
+     * @param schema a schema pointed at the effective container for this usage
+     * @param lookupContainer null if the lookup isn't specifically configured to point at a specific container, and should be pointing at the current container
+     */
+    public QueryForeignKey(QuerySchema schema, @Nullable Container lookupContainer, String tableName, @Nullable String lookupKey, @Nullable String displayField)
     {
-        this(schema, tableName, lookupKey, displayField, false);
+        this(schema, lookupContainer, tableName, lookupKey, displayField, false);
     }
 
-    public QueryForeignKey(TableInfo table, @Nullable String lookupKey, @Nullable String displayField)
+    /**
+     * @param table a TableInfo pointed at the effective container for this usage
+     * @param lookupContainer null if the lookup isn't specifically configured to point at a specific container, and should be pointing at the current container
+     */
+    public QueryForeignKey(TableInfo table, @Nullable Container lookupContainer, @Nullable String lookupKey, @Nullable String displayField)
     {
         _table = table;
+        _lookupContainer = lookupContainer;
         _tableName = table.getName();
         _lookupKey = lookupKey;
         _displayField = displayField;
@@ -129,10 +150,11 @@ public class QueryForeignKey implements ForeignKey
         return LookupColumn.create(foreignKey, lookupTable.getColumn(getLookupColumnName(lookupTable)), lookupTable.getColumn(displayField), false);
     }
 
+    @Nullable
     @Override
     public Container getLookupContainer()
     {
-        return null;
+        return _lookupContainer;
     }
 
     @Override
@@ -147,9 +169,9 @@ public class QueryForeignKey implements ForeignKey
 
     private QuerySchema getSchema()
     {
-        if (_schema == null && _container != null && _user != null && _schemaName != null)
+        if (_schema == null && _user != null && _schemaName != null)
         {
-            _schema = QueryService.get().getUserSchema(_user, _container, _schemaName);
+            _schema = QueryService.get().getUserSchema(_user, _effectiveContainer , _schemaName);
         }
         return _schema;
 

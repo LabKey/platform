@@ -319,7 +319,7 @@ public class SimpleUserSchema extends UserSchema
                         useRawFKValue = ((QueryForeignKey)fk).isUseRawFKValue();
                     }
 
-                    ForeignKey wrapFk = new QueryForeignKey(lookupSchemaName, getUserSchema().getContainer(), getUserSchema().getUser(), fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName(), useRawFKValue);
+                    ForeignKey wrapFk = new QueryForeignKey(lookupSchemaName, getUserSchema().getContainer(), fk.getLookupContainer(), getUserSchema().getUser(), fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName(), useRawFKValue);
                     if (fk instanceof MultiValuedForeignKey)
                     {
                         wrapFk = new MultiValuedForeignKey(wrapFk, ((MultiValuedForeignKey)fk).getJunctionLookup());

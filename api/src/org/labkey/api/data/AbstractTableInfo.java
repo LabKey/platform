@@ -726,26 +726,37 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
             useRawFKValue = fk.getFkDisplayColumnName().getUseRawValue();
         }
 
+        Container lookupContainer;
         if (fk.getFkDbSchema() != null)
         {
-            Container targetContainer = fromSchema.getContainer();
+            Container effectiveTargetContainer;
             if (fk.getFkFolderPath() != null)
             {
-                targetContainer = ContainerManager.getForPath(fk.getFkFolderPath());
-                if (targetContainer == null || !targetContainer.hasPermission(fromSchema.getUser(), ReadPermission.class))
+                effectiveTargetContainer = ContainerManager.getForPath(fk.getFkFolderPath());
+                if (effectiveTargetContainer == null || !effectiveTargetContainer.hasPermission(fromSchema.getUser(), ReadPermission.class))
                     return null;
+                lookupContainer = effectiveTargetContainer;
             }
-            if (!fromSchema.getSchemaName().equals(fk.getFkDbSchema()) || !targetContainer.equals(fromSchema.getContainer()))
+            else
+            {
+                effectiveTargetContainer = fromSchema.getContainer();
+                lookupContainer = null;
+            }
+            if (!fromSchema.getSchemaName().equals(fk.getFkDbSchema()) || !effectiveTargetContainer.equals(fromSchema.getContainer()))
             {
                 // Let the QueryForeignKey lazily create the schema on demand
-                ret = new QueryForeignKey(fk.getFkDbSchema(), targetContainer, fromSchema.getUser(), fk.getFkTable(), fk.getFkColumnName(), displayColumnName, useRawFKValue);
+                ret = new QueryForeignKey(fk.getFkDbSchema(), effectiveTargetContainer, lookupContainer, fromSchema.getUser(), fk.getFkTable(), fk.getFkColumnName(), displayColumnName, useRawFKValue);
             }
+        }
+        else
+        {
+            lookupContainer = null;
         }
 
         if (ret == null)
         {
             // We can reuse the same schema object
-            ret = new QueryForeignKey(fromSchema, fk.getFkTable(), fk.getFkColumnName(), displayColumnName, useRawFKValue);
+            ret = new QueryForeignKey(fromSchema, lookupContainer, fk.getFkTable(), fk.getFkColumnName(), displayColumnName, useRawFKValue);
         }
 
         if (fk.isSetFkMultiValued())

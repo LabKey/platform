@@ -59,7 +59,7 @@ public class ContainerForeignKey extends QueryForeignKey
 
     public ContainerForeignKey(Container c, User user)
     {
-        super("core", c, user, "Containers", "EntityId", "DisplayName");
+        super("core", c, null, user, "Containers", "EntityId", "DisplayName");
     }
 
 }
