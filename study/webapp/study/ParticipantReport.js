@@ -997,7 +997,10 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         scope: this,
                         close: function() { fb.show(); },
                         resize: function(win, width, height) {
-                            this.filterPanel.getGroupPanel().setWidth(width - 10);
+                            var panels = Ext4.ComponentQuery.query('labkey-filterselectpanel', this.filterPanel);
+                            Ext4.each(panels, function(panel) {
+                                panel.setWidth(width - 10);
+                            });
                         }
                     },
                     scope    : this
