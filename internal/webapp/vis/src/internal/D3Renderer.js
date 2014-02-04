@@ -16,7 +16,7 @@ LABKEY.vis.internal.Axis = function() {
 
     var axis = function(selection) {
         var data, textAnchor, textXFn, textYFn, gridLineFn, tickFn, border, gridLineData, hasOverlap, bBoxA, bBoxB, i,
-                tickEls, gridLineEls, textEls, borderX;
+                tickEls, gridLineEls, textAnchors, textEls;
 
         if (scale.ticks) {
             data = scale.ticks(ticks);
@@ -90,23 +90,14 @@ LABKEY.vis.internal.Axis = function() {
         gridLineEls.enter().append('path');
         gridLineEls.attr('d', gridLineFn).attr('stroke', gridLineColor);
 
-        // TODO: always append a tags, conditionally set titles.
-        if (tickHover) {
-            textSel.selectAll('text').data([]).exit().remove(); // If we added a tick hover we'll need to remove the old elements.
-            textEls = textSel.selectAll('a').data(data);
-            textEls.exit().remove();
-            textEls = textEls.enter().append('a').attr('xlink:title', tickHover).append('text');
-        } else {
-            textSel.selectAll('a').data([]).exit().remove(); // If we removed tick hovers we'll need to remove all of the anchors.
-            textEls = textSel.selectAll('text').data(data);
-            textEls.exit().remove();
-            textEls.enter().append('text');
-        }
-
-        textEls.attr('x', textXFn)
+        textAnchors = textSel.selectAll('a').data(data);
+        textAnchors.exit().remove();
+        textAnchors.enter().append('a').append('text');
+        textEls = textAnchors.select('text');
+        textEls.text(tickFormat)
+                .attr('x', textXFn)
                 .attr('y', textYFn)
                 .attr('text-anchor', textAnchor)
-                .text(tickFormat)
                 .style('font', '10px arial, verdana, helvetica, sans-serif');
 
         if (orientation == 'bottom') {
@@ -161,25 +152,19 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         labels = this.canvas.append('g').attr('class', plot.renderTo + '-labels');
 
         mainLabel.dom = labels.append('text')
-                .attr('x', plot.grid.width / 2)
-                .attr('y', 30)
                 .attr('text-anchor', 'middle')
                 .style('font', '18px verdana, arial, helvetica, sans-serif');
 
         xLabel.dom = labels.append('text')
-                .attr('x', plot.grid.leftEdge + (plot.grid.rightEdge - plot.grid.leftEdge) / 2)
-                .attr('y', plot.grid.height - 10)
                 .attr('text-anchor', 'middle')
                 .style('font', '14px verdana, arial, helvetica, sans-serif');
 
         yLeftLabel.dom = labels.append('text')
                 .attr('text-anchor', 'middle')
-                .attr('transform', 'translate(' + (plot.grid.leftEdge - 55) + ',' + (plot.grid.height / 2) + ')rotate(270)')
                 .style('font', '14px verdana, arial, helvetica, sans-serif');
 
         yRightLabel.dom = labels.append('text')
                 .attr('text-anchor', 'middle')
-                .attr('transform', 'translate(' + (plot.grid.rightEdge + 45) + ',' + (plot.grid.height / 2) + ')rotate(90)')
                 .style('font', '14px verdana, arial, helvetica, sans-serif');
 
         labelElements.main = mainLabel;
@@ -190,9 +175,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var initClipRect = function() {
-        var clipPath = this.canvas.append('defs').append('clipPath').attr('id', plot.renderTo + '-clipPath');
-        this.clipRect = clipPath.append('rect')
-                .attr('x', plot.grid.leftEdge - 10)
+        if (!this.clipRect) {
+            var clipPath = this.canvas.append('defs').append('clipPath').attr('id', plot.renderTo + '-clipPath');
+            this.clipRect = clipPath.append('rect');
+        }
+
+        this.clipRect.attr('x', plot.grid.leftEdge - 10)
                 .attr('y', plot.grid.topEdge - 10)
                 .attr('width', plot.grid.rightEdge - plot.grid.leftEdge + 20)
                 .attr('height', plot.grid.bottomEdge - plot.grid.topEdge + 20);
@@ -510,20 +498,43 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderLabel = function(name) {
+        var x, y, rotate, translate = false;
         if (!labelElements) {
             initLabelElements.call(this);
         }
 
-        if ((name == 'y' || name == 'yLeft') && (!plot.scales.yLeft || (plot.scales.yLeft && !plot.scales.yLeft.scale))) {
-            return;
-        }
-
-        if (name == 'yRight' && (!plot.scales.yRight || (plot.scales.yRight && !plot.scales.yRight.scale))) {
-            return;
+        if ((name == 'y' || name == 'yLeft')) {
+            if (!plot.scales.yLeft || (plot.scales.yLeft && !plot.scales.yLeft.scale)) {
+                return;
+            }
+            translate = true;
+            rotate = 270;
+            x = plot.grid.leftEdge - 55
+            y = plot.grid.height / 2
+        } else if (name == 'yRight') {
+            if (!plot.scales.yRight || (plot.scales.yRight && !plot.scales.yRight.scale)) {
+                return;
+            }
+            translate = true;
+            rotate = 90;
+            x = plot.grid.rightEdge + 45;
+            y = plot.grid.height / 2;
+        } else if (name == 'x') {
+            x = plot.grid.leftEdge + (plot.grid.rightEdge - plot.grid.leftEdge) / 2;
+            y = plot.grid.height - 10;
+        } else if (name == 'main') {
+            x = plot.grid.width / 2;
+            y = 30;
         }
 
         if (this.canvas && plot.labels[name] && plot.labels[name].value) {
             labelElements[name].dom.text(plot.labels[name].value);
+            if (translate) {
+                labelElements[name].dom.attr('transform', 'translate(' + x + ',' + y + ')rotate(' + rotate + ')')
+            } else {
+                labelElements[name].dom.attr('x', x);
+                labelElements[name].dom.attr('y', y);
+            }
             if (plot.labels[name].lookClickable == true) {
                 renderClickArea.call(this, name);
             }
@@ -713,7 +724,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         anchorSel.exit().remove();
         anchorSel.enter().append('a').attr('class', 'point').append('path');
         anchorSel.attr('xlink:title', hoverTextAcc);
-        pointsSel = anchorSel.selectAll('path');
+        pointsSel = anchorSel.select('path');
         pointsSel.attr('d', shapeAcc)
                 .attr('fill', colorAcc)
                 .attr('stroke', colorAcc)
