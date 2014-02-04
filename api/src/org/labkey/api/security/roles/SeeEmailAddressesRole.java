@@ -16,7 +16,9 @@
 package org.labkey.api.security.roles;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.SeeUserEmailAddressesPermission;
 
@@ -31,6 +33,8 @@ public class SeeEmailAddressesRole extends AbstractRole
     {
         super("See Email Addresses", "Allows non-administrators to see e-mail addresses",
                 SeeUserEmailAddressesPermission.class);
+
+        addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
     }
 
     @Override
