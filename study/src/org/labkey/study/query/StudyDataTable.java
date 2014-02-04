@@ -59,7 +59,7 @@ public class StudyDataTable extends FilteredTable<StudyQuerySchema>
 
         String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
         ColumnInfo participantIdColumn = new AliasedColumn(this, subjectColName, _rootTable.getColumn("participantid"));
-        participantIdColumn.setFk(new QueryForeignKey(_userSchema, StudyService.get().getSubjectTableName(getContainer()), subjectColName, null));
+        participantIdColumn.setFk(new QueryForeignKey(_userSchema, null, StudyService.get().getSubjectTableName(getContainer()), subjectColName, null));
         addColumn(participantIdColumn);
         defaultColumns.add(FieldKey.fromParts(subjectColName));
 

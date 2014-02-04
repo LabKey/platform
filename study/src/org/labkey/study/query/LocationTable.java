@@ -26,7 +26,7 @@ public class LocationTable extends BaseStudyTable
 {
     static public ForeignKey fkFor(StudyQuerySchema schema)
     {
-        return new QueryForeignKey(schema, "Location", "RowId", "Label");
+        return new QueryForeignKey(schema, null, "Location", "RowId", "Label");
     }
 
     public LocationTable(StudyQuerySchema schema)
