@@ -1787,18 +1787,19 @@ public class SampleManager implements ContainerManager.ContainerListener
         Container container = visit.getContainer();
         TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(container);
         TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(container);
-        if (null == tableInfoSpecimen || null == tableInfoVial)
-            return 0;
 
         String tableInfoSpecimenAlias = "Specimen";
         String tableInfoVialAlias = "Vial";
+        SQLFragment visitRangeSql = getVisitRangeSql(visit, tableInfoSpecimen, tableInfoSpecimenAlias);
+        if (null == visitRangeSql)
+            return 0;
 
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) AS NumVials FROM ");
         sql.append(tableInfoVial.getFromSQL(tableInfoVialAlias)).append(" \n")
                 .append("LEFT OUTER JOIN ").append(tableInfoSpecimen.getFromSQL(tableInfoSpecimenAlias)).append(" ON\n\t")
                 .append(tableInfoVial.getColumn("SpecimenId").getValueSql(tableInfoVialAlias)).append(" = ")
                 .append(tableInfoSpecimen.getColumn("RowId").getValueSql(tableInfoSpecimenAlias))
-                .append("\n WHERE ").append(getVisitRangeSql(visit, tableInfoSpecimen, tableInfoSpecimenAlias));
+                .append("\n WHERE ").append(visitRangeSql);
         List<Integer> results = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArrayList(Integer.class);
         if (1 != results.size())
             throw new IllegalStateException("Expected value from Select Count(*)");
@@ -1817,8 +1818,13 @@ public class SampleManager implements ContainerManager.ContainerListener
         String tableInfoSpecimenEventSelectName = tableInfoSpecimenEvent.getSelectName();
         String tableInfoVialSelectName = tableInfoVial.getSelectName();
 
-        SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " + tableInfoSpecimen + " WHERE ").append(getVisitRangeSql(visit, tableInfoSpecimen, tableInfoSpecimenSelectName));
-        SQLFragment specimenRowIdWhereSql = new SQLFragment(" WHERE ").append(getVisitRangeSql(visit, tableInfoSpecimen, "Specimen"));
+        // Fix 19048 (dave); handle "no visit" case better; would be better to call once and get both variations
+        SQLFragment visitRangeSql1 = getVisitRangeSql(visit, tableInfoSpecimen, tableInfoSpecimenSelectName);
+        SQLFragment visitRangeSql2 = getVisitRangeSql(visit, tableInfoSpecimen, "Specimen");
+        if (null == visitRangeSql1 || null == visitRangeSql2)
+            return;
+
+        SQLFragment specimenRowIdWhereSql = new SQLFragment(" WHERE ").append(visitRangeSql2);
 
         SQLFragment deleteEventSql = new SQLFragment("DELETE FROM ");
         deleteEventSql.append(tableInfoSpecimenEventSelectName)
@@ -1843,6 +1849,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(deleteVialSql);
 
+        SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " + tableInfoSpecimen + " WHERE ").append(visitRangeSql1);
         SQLFragment deleteSpecimenSql = new SQLFragment("DELETE ");
         deleteSpecimenSql.append(specimenRowIdSelectSql);
 
@@ -1851,8 +1858,10 @@ public class SampleManager implements ContainerManager.ContainerListener
         clearCaches(visit.getContainer());
     }
 
+    @Nullable
     private SQLFragment getVisitRangeSql(VisitImpl visit, TableInfo tinfoSpecimen, String specimenAlias)
     {
+        // Return null only in the case where there are 0 participant visits for the given visit
         Study study = StudyService.get().getStudy(visit.getContainer());
         if (null == study)
             throw new IllegalStateException("No study found.");
@@ -1879,7 +1888,7 @@ public class SampleManager implements ContainerManager.ContainerListener
             if (0 == visitValues.size())
             {
                 // No participant visits for this timepoint; return False
-                sql.append(tinfoSpecimen.getSqlDialect().getBooleanFALSE());
+                return null;
             }
             else
             {
