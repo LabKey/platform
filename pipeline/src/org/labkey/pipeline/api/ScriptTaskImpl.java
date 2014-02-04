@@ -156,6 +156,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
 
         try
         {
+            File scriptFile = null;
             String scriptSource = null;
             if (factory._scriptInline != null)
             {
@@ -168,7 +169,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
                     throw new PipelineJobException("Script path not found: " + factory._scriptPath);
 
                 String path = paths[0];
-                File scriptFile = new File(path);
+                scriptFile = new File(path);
 
                 scriptSource = FileUtils.readFileToString(scriptFile);
             }
@@ -185,9 +186,9 @@ public class ScriptTaskImpl extends CommandTaskImpl
             PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(getJob().getContainer());
             bindings.put(RserveScriptEngine.PIPELINE_ROOT, pipelineRoot.getRootPath());
 
-            // UNDONE: For now, just use script source directly instead of passing SCRIPT_PATH to the engine
-//            if (scriptFile != null)
-//                bindings.put(ExternalScriptEngine.SCRIPT_PATH, rewritePath(engine, scriptFile.toString()));
+            // NOTE: Local path to the script file doesn't need to be rewritten as a remote path
+            if (scriptFile != null)
+                bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.toString());
 
             bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, _wd.getDir().getPath());
 
@@ -199,7 +200,6 @@ public class ScriptTaskImpl extends CommandTaskImpl
             if (isWriteTaskInfoFile())
             {
                 String infoFileName = getJobSupport().getBaseName() + "-taskInfo.tsv";
-                //File taskInfoFile = TabLoader.TSV_FILE_TYPE.newFile(getJobSupport().getAnalysisDirectory(), infoFileName);
 
                 File taskInfoFile = new File(_wd.getDir(), infoFileName);
                 writeTaskInfo(taskInfoFile);
