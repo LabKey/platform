@@ -4066,15 +4066,15 @@ public class StudyManager
 
             {
                 String name = GUID.makeHash();
-                Container c = ContainerManager.createContainer(junit,name);
+                Container c = ContainerManager.createContainer(junit, name);
                 StudyImpl s = new StudyImpl(c, "Junit Study");
                 s.setTimepointType(TimepointType.DATE);
-                s.setStartDate(new Date(DateUtil.parseDateTime("2001-01-01")));
+                s.setStartDate(new Date(DateUtil.parseDateTime(c, "2001-01-01")));
                 s.setSubjectColumnName("SubjectID");
                 s.setSubjectNounPlural("Subjects");
                 s.setSubjectNounSingular("Subject");
                 s.setSecurityType(SecurityType.BASIC_WRITE);
-                s.setStartDate(new Date(DateUtil.parseDateTime("1 Jan 2000")));
+                s.setStartDate(new Date(DateUtil.parseDateTime(c, "1 Jan 2000")));
                 _studyDateBased = StudyManager.getInstance().createStudy(_context.getUser(), s);
 
                 MvUtil.assignMvIndicators(c,
@@ -4084,10 +4084,10 @@ public class StudyManager
 
             {
                 String name = GUID.makeHash();
-                Container c = ContainerManager.createContainer(junit,name);
+                Container c = ContainerManager.createContainer(junit, name);
                 StudyImpl s = new StudyImpl(c, "Junit Study");
                 s.setTimepointType(TimepointType.VISIT);
-                s.setStartDate(new Date(DateUtil.parseDateTime("2001-01-01")));
+                s.setStartDate(new Date(DateUtil.parseDateTime(c, "2001-01-01")));
                 s.setSubjectColumnName("SubjectID");
                 s.setSubjectNounPlural("Subjects");
                 s.setSubjectNounSingular("Subject");
@@ -4264,8 +4264,8 @@ public class StudyManager
             BatchValidationException errors = new BatchValidationException();
             assertNotNull(qus);
 
-            Date Jan1 = new Date(DateUtil.parseDateTime("1/1/2011"));
-            Date Jan2 = new Date(DateUtil.parseDateTime("2/1/2011"));
+            Date Jan1 = new Date(DateUtil.parseISODateTime("2011-01-01"));
+            Date Feb1 = new Date(DateUtil.parseISODateTime("2011-02-01"));
             List<Map<String, Object>> rows = new ArrayList<>();
 
             // insert one row
@@ -4301,7 +4301,7 @@ public class StudyManager
 
             // different date
             rows.clear(); errors.clear();
-            rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan2, "Measure", "Test" + (counterRow), "Value", "X"));
+            rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Feb1, "Measure", "Test" + (counterRow), "Value", "X"));
             qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
             assertFalse(errors.hasErrors());
 
@@ -4430,8 +4430,7 @@ public class StudyManager
             DataSet def = createDataset(study, "GU", DatasetType.OPTIONAL_GUID);
             TableInfo tt = ss.getTable(def.getName());
 
-            Date Jan1 = new Date(DateUtil.parseDateTime("1/1/2011"));
-            Date Jan2 = new Date(DateUtil.parseDateTime("2/1/2011"));
+            Date Jan1 = new Date(DateUtil.parseISODateTime("2011-01-01"));
             List<Map<String, Object>> rows = new ArrayList<>();
             List<String> errors = new ArrayList<>();
 
@@ -4471,8 +4470,8 @@ public class StudyManager
             DataSet def = createDataset(study, "B", false);
             TableInfo tt = ss.getTable(def.getName());
 
-            Date Jan1 = new Date(DateUtil.parseDateTime("1/1/2011"));
-            Date Jan2 = new Date(DateUtil.parseDateTime("2/1/2011"));
+            Date Jan1 = new Date(DateUtil.parseISODateTime("2011-01-01"));
+            Date Feb1 = new Date(DateUtil.parseISODateTime("2011-02-01"));
             List<Map<String, Object>> rows = new ArrayList<>();
             List<String> errors = new ArrayList<String>(){
                 @Override
@@ -4507,7 +4506,7 @@ public class StudyManager
             importRow( (String[]) null, def,PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum++));
 
             // different date
-            importRow( (String[]) null, def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan2, "Measure", "Test"+(counterRow), "Value", "X", "SequenceNum", sequenceNum++));
+            importRow( (String[]) null, def, PageFlowUtil.map("SubjectId", "A1", "Date", Feb1, "Measure", "Test"+(counterRow), "Value", "X", "SequenceNum", sequenceNum++));
 
             // different measure
             importRow( (String[]) null, def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", "X", "SequenceNum", sequenceNum++));
@@ -4637,8 +4636,7 @@ public class StudyManager
             DataSet def = createDataset(study, "Dem", true);
             TableInfo tt = ss.getTable(def.getName());
 
-            Date Jan1 = new Date(DateUtil.parseDateTime("1/1/2011"));
-            Date Jan2 = new Date(DateUtil.parseDateTime("2/1/2011"));
+            Date Feb1 = new Date(DateUtil.parseISODateTime("2011-02-01"));
             List rows = new ArrayList();
             List<String> errors = new ArrayList<>();
 
@@ -4679,7 +4677,7 @@ public class StudyManager
             {
                 // insert one row w/ date
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan2, "Measure", "Test"+(++counterRow), "Value", 1.0));
+                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Feb1, "Measure", "Test"+(++counterRow), "Value", 1.0));
                 _import(def, rows, errors);
                 if (errors.size() != 0)
                     fail(errors.get(0));
@@ -4688,7 +4686,7 @@ public class StudyManager
                 try (ResultSet rs = new TableSelector(tt).getResultSet())
                 {
                     assertTrue(rs.next());
-                    assertEquals(Jan2, new java.util.Date(rs.getTimestamp("date").getTime()));
+                    assertEquals(Feb1, new java.util.Date(rs.getTimestamp("date").getTime()));
                 }
 
                 importRow((String[]) null, def, PageFlowUtil.map("SubjectId", "A2", "Measure", "Test"+(++counterRow), "Value", 1.0));
@@ -4723,7 +4721,7 @@ public class StudyManager
 
                 // insert one row
                 List rows = new ArrayList();
-                Date jan1 = new Date(DateUtil.parseDateTime("1/1/2012"));
+                Date jan1 = new Date(DateUtil.parseISODateTime("2012-01-01"));
                 rows.add(PageFlowUtil.mapInsensitive("SubjectId", "DS1", "Date", jan1, "Measure", "Test" + (++this.counterRow), "Value", 0.0));
                 List<Map<String,Object>> ret = qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
                 assertFalse(errors.hasErrors());

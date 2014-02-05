@@ -145,7 +145,7 @@ public class SequenceNumImportHelper
 
 
     // we want to be timezone safe here
-    static final long epochLocal = DateUtil.parseDate("1970-01-01");
+    static final long epochLocal = DateUtil.parseISODateTime("1970-01-01");
 
     private static int convertToDaysSinceEpoch(Date d)
     {
@@ -178,7 +178,7 @@ translateToDouble:
                 sequencenum = parseDouble((String)seq);
                 if (null != sequencenum)
                     break translateToDouble;
-                sequencenum = parseDouble(_translateMap.get((String)seq));
+                sequencenum = parseDouble(_translateMap.get(seq));
                 if (null != sequencenum)
                     break translateToDouble;
             }

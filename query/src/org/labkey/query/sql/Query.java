@@ -769,7 +769,7 @@ public class Query
                 row[c++] = "" + (i%12);
                 row[c++] = days[i%7];
                 row[c++] = months[i%12];
-                row[c++] = DateUtil.toISO(DateUtil.parseDateTime("2010-01-01") + ((long)i)*12*60*60*1000L);
+                row[c++] = DateUtil.toISO(DateUtil.parseISODateTime("2010-01-01") + ((long)i)*12*60*60*1000L);
                 row[c++] = DateUtil.formatDuration(i*1000);
                 row[c++] = GUID.makeGUID();
             }

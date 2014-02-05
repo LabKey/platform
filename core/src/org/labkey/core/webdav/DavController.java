@@ -18,7 +18,6 @@
 
 package org.labkey.core.webdav;
 
-import com.allen_sauer.gwt.dnd.client.util.StringUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -119,7 +118,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.io.Reader;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
@@ -5197,8 +5195,8 @@ public class DavController extends SpringActionController
         return httpDateFormat.format(new Date(date));
     }
 
-    String timestampZERO_iso = getISOCreationDate(DateUtil.parseStringJDBC("1900-01-01 00:00:00"));
-    String timestampZERO_http = getHttpDateFormat(DateUtil.parseStringJDBC("1900-01-01 00:00:00"));
+    String timestampZERO_iso = getISOCreationDate(DateUtil.parseISODateTime("1900-01-01 00:00:00"));
+    String timestampZERO_http = getHttpDateFormat(DateUtil.parseISODateTime("1900-01-01 00:00:00"));
 
 
     /**

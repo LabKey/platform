@@ -117,8 +117,8 @@ public class DavCrawler implements ShutdownListener
     public interface SavePaths
     {
         final static java.util.Date failDate = SearchService.failDate;
-        final static java.util.Date nullDate = new java.sql.Timestamp(DateUtil.parseStringJDBC("1899-12-31"));
-        final static java.util.Date oldDate =  new java.sql.Timestamp(DateUtil.parseStringJDBC("1967-10-04"));
+        final static java.util.Date nullDate = new java.sql.Timestamp(DateUtil.parseISODateTime("1899-12-31"));
+        final static java.util.Date oldDate =  new java.sql.Timestamp(DateUtil.parseISODateTime("1967-10-04"));
 
         // collections
 
