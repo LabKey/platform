@@ -1374,12 +1374,12 @@ public class SimpleFilter implements Filter
             //Contains
             //Date*
 
-            Date dJan14 = new Date(DateUtil.parseDateTime("2001-01-14"));
-            Date dJan14noon = new Date(DateUtil.parseDateTime("2001-01-14 12:00:00"));
-            Date dJan15 = new Date(DateUtil.parseDateTime("2001-01-15"));
-            Date dJan15noon = new Date(DateUtil.parseDateTime("2001-01-15 12:00:00"));
-            Date dJan16 = new Date(DateUtil.parseDateTime("2001-01-16"));
-            Date dJan16noon = new Date(DateUtil.parseDateTime("2001-01-16 12:00:00"));
+            Date dJan14 = new Date(DateUtil.parseISODateTime("2001-01-14"));
+            Date dJan14noon = new Date(DateUtil.parseISODateTime("2001-01-14 12:00:00"));
+            Date dJan15 = new Date(DateUtil.parseISODateTime("2001-01-15"));
+            Date dJan15noon = new Date(DateUtil.parseISODateTime("2001-01-15 12:00:00"));
+            Date dJan16 = new Date(DateUtil.parseISODateTime("2001-01-16"));
+            Date dJan16noon = new Date(DateUtil.parseISODateTime("2001-01-16 12:00:00"));
 
             Calendar cJan15 = asCalendar("2001-01-15");
 

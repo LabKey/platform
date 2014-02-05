@@ -17,13 +17,8 @@ package org.labkey.api.settings;
 
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.labkey.api.data.Container;
-import org.labkey.api.util.DateUtil;
 
 import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
 
 import static org.labkey.api.settings.LookAndFeelFolderProperties.DEFAULT_DATE_FORMAT;
 import static org.labkey.api.settings.LookAndFeelFolderProperties.DEFAULT_NUMBER_FORMAT;
@@ -70,26 +65,6 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
     {
         // Check for legal format
         FastDateFormat.getInstance(defaultDateFormat);
-
-        // Now verify that we can parse dates in this format, since we will use this format in input forms
-        // TODO: switch DateUtil.parseDate() to use the custom format for parsing, which requires all usages to push
-        // a container into parseDate()
-        SimpleDateFormat format = new SimpleDateFormat(defaultDateFormat);
-        Calendar cal = new GregorianCalendar();
-        cal.clear();
-        cal.set(2013, Calendar.DECEMBER, 31);  // 12/31/2013
-        Date testDate = cal.getTime();
-        try
-        {
-            Date testDate2 = new Date(DateUtil.parseDate(format.format(testDate)));
-            if (!testDate.equals(testDate2))
-                throw new IllegalArgumentException("Can't parse using date format \"" + defaultDateFormat + "\": " + testDate + " does not match " + testDate2);
-
-        }
-        catch (Exception e)
-        {
-            throw new IllegalArgumentException("Can't parse using date format \"" + defaultDateFormat + "\"", e);
-        }
         storeStringValue(DEFAULT_DATE_FORMAT, defaultDateFormat);
     }
 

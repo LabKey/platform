@@ -682,7 +682,7 @@ validNum:       {
     }
 
 
-    public static long parseStringJDBC(String s)
+    public static long parseISODateTime(String s)
     {
         try
         {
@@ -714,7 +714,7 @@ validNum:       {
     {
         try
         {
-            return parseStringJDBC(s);
+            return parseISODateTime(s);
         }
         catch (Exception ignored) {}
 
@@ -837,7 +837,7 @@ validNum:       {
         {
             // quick check for JDBC/ISO date
             if (s.length() == 10 && s.charAt(4) == '-' && s.charAt(7) == '-')
-                return parseStringJDBC(s);
+                return parseISODateTime(s);
         }
         catch (ConversionException ignored) {}
 
@@ -1347,6 +1347,16 @@ Parse:
 
     public static class TestCase extends Assert
     {
+        private long parseDate(String s)
+        {
+            return DateUtil.parseDate(ContainerManager.getRoot(), s);
+        }
+
+        private long parseDateTime(String s)
+        {
+            return DateUtil.parseDateTime(ContainerManager.getRoot(), s);
+        }
+
         void assertIllegalDate(String s)
         {
             try
@@ -1392,19 +1402,19 @@ Parse:
 
             // DateTime with time
             Date dt = new Date(datetimeExpected);
-            assertEquals(datetimeExpected, DateUtil.parseDateTime(dt.toString()));
-            assertEquals(datetimeExpected, DateUtil.parseDateTime(dt.toGMTString()));
-            assertEquals(datetimeExpected, DateUtil.parseDateTime(dt.toLocaleString()));
-            assertEquals(datetimeExpected, DateUtil.parseDateTime(ConvertUtils.convert(dt)));
-            assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03 04:05:06"));
-            assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03 04:05:06.0"));
-            assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03T04:05:06"));
-            assertEquals(datetimeExpected, DateUtil.parseDateTime("03 feb 2001 04:05:06"));
-            assertEquals(datetimeExpected, DateUtil.parseDateTime("03 feb 2001 04:05:06am"));
-            assertEquals(datetimeExpected, DateUtil.parseDateTime("03 feb 2001 04:05:06 am"));
-            assertEquals(datetimeExpected-6000, DateUtil.parseDateTime("03 feb 2001 04:05am"));
-            assertEquals(datetimeExpected-6000, DateUtil.parseDateTime("03 feb 2001 04:05 am"));
-            assertEquals(datetimeExpected, DateUtil.parseDateTime("03-FEB-2001-04:05:06")); // FCS dates
+            assertEquals(datetimeExpected, parseDateTime(dt.toString()));
+            assertEquals(datetimeExpected, parseDateTime(dt.toGMTString()));
+            assertEquals(datetimeExpected, parseDateTime(dt.toLocaleString()));
+            assertEquals(datetimeExpected, parseDateTime(ConvertUtils.convert(dt)));
+            assertEquals(datetimeExpected, parseDateTime("2001-02-03 04:05:06"));
+            assertEquals(datetimeExpected, parseDateTime("2001-02-03 04:05:06.0"));
+            assertEquals(datetimeExpected, parseDateTime("2001-02-03T04:05:06"));
+            assertEquals(datetimeExpected, parseDateTime("03 feb 2001 04:05:06"));
+            assertEquals(datetimeExpected, parseDateTime("03 feb 2001 04:05:06am"));
+            assertEquals(datetimeExpected, parseDateTime("03 feb 2001 04:05:06 am"));
+            assertEquals(datetimeExpected-6000, parseDateTime("03 feb 2001 04:05am"));
+            assertEquals(datetimeExpected-6000, parseDateTime("03 feb 2001 04:05 am"));
+            assertEquals(datetimeExpected, parseDateTime("03-FEB-2001-04:05:06")); // FCS dates
 
             // illegal
             assertIllegalDateTime("2");
@@ -1412,29 +1422,29 @@ Parse:
 
             // DateTime without time
             Date d = new Date(dateExpected);
-            assertEquals(dateExpected, DateUtil.parseDateTime(d.toString()));
-            assertEquals(dateExpected, DateUtil.parseDateTime(d.toGMTString()));
-            assertEquals(dateExpected, DateUtil.parseDateTime(d.toLocaleString()));
-            assertEquals(dateExpected, DateUtil.parseDateTime(ConvertUtils.convert(d)));
-            assertEquals(dateExpected, DateUtil.parseDateTime("2001-02-03"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("2001-2-03"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("3-Feb-01"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("3Feb01"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("3Feb2001"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("03Feb01"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("03Feb2001"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("3 Feb 01"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("3 Feb 2001"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("February 3, 2001"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("20010203"));
+            assertEquals(dateExpected, parseDateTime(d.toString()));
+            assertEquals(dateExpected, parseDateTime(d.toGMTString()));
+            assertEquals(dateExpected, parseDateTime(d.toLocaleString()));
+            assertEquals(dateExpected, parseDateTime(ConvertUtils.convert(d)));
+            assertEquals(dateExpected, parseDateTime("2001-02-03"));
+            assertEquals(dateExpected, parseDateTime("2001-2-03"));
+            assertEquals(dateExpected, parseDateTime("3-Feb-01"));
+            assertEquals(dateExpected, parseDateTime("3Feb01"));
+            assertEquals(dateExpected, parseDateTime("3Feb2001"));
+            assertEquals(dateExpected, parseDateTime("03Feb01"));
+            assertEquals(dateExpected, parseDateTime("03Feb2001"));
+            assertEquals(dateExpected, parseDateTime("3 Feb 01"));
+            assertEquals(dateExpected, parseDateTime("3 Feb 2001"));
+            assertEquals(dateExpected, parseDateTime("February 3, 2001"));
+            assertEquals(dateExpected, parseDateTime("20010203"));
 
             // Only recognize years in the "recent" past/future with this all-digit format
             assertIllegalDateTime("17000101");
             assertIllegalDateTime("23000101");
 
             // Test XML date format
-            assertXmlDateMatches(DateUtil.parseDate("2001-02-03+01:00"));
-            assertXmlDateMatches(DateUtil.parseDate("2001-02-03Z"));
+            assertXmlDateMatches(parseDate("2001-02-03+01:00"));
+            assertXmlDateMatches(parseDate("2001-02-03Z"));
             assertIllegalDateTime("115468001");
 
             // some zero testing
@@ -1463,10 +1473,10 @@ Parse:
             assertEquals(zo.parse("2001-02-03 04:05:06 GMT"), ut.parse("2001-02-03 04:05:06"));
             long utcOffset = TimeZone.getDefault().getOffset(datetimeUTC);
             assertEquals(datetimeLocal + utcOffset, datetimeUTC);
-            assertEquals(datetimeUTC, DateUtil.parseDateTime("Sat Feb 03 04:05:06 GMT-0000 2001"));
-            assertEquals(datetimeUTC+TimeUnit.HOURS.toMillis(1), DateUtil.parseDateTime("Sat Feb 03 04:05:06 GMT-1 2001"));
-            assertEquals(datetimeUTC+TimeUnit.HOURS.toMillis(1), DateUtil.parseDateTime("Sat Feb 03 04:05:06 GMT-0100 2001"));
-            assertEquals(datetimeUTC-TimeUnit.MINUTES.toMillis(270), DateUtil.parseDateTime("Sat Feb 03 04:05:06 GMT+0430 2001"));
+            assertEquals(datetimeUTC, parseDateTime("Sat Feb 03 04:05:06 GMT-0000 2001"));
+            assertEquals(datetimeUTC+TimeUnit.HOURS.toMillis(1), parseDateTime("Sat Feb 03 04:05:06 GMT-1 2001"));
+            assertEquals(datetimeUTC+TimeUnit.HOURS.toMillis(1), parseDateTime("Sat Feb 03 04:05:06 GMT-0100 2001"));
+            assertEquals(datetimeUTC-TimeUnit.MINUTES.toMillis(270), parseDateTime("Sat Feb 03 04:05:06 GMT+0430 2001"));
 
             // check that parseDateTimeUS handles ISO
             assertEquals(datetimeLocal, parseDateTimeUS("2001-02-03 04:05:06", DateTimeOption.DateTime, true));
@@ -1485,12 +1495,12 @@ Parse:
             long datetimeExpected = java.sql.Timestamp.valueOf(DateParsingMode.US == mode ? "2001-02-03 04:05:06" : "2001-03-02 04:05:06").getTime();
             long dateExpected = java.sql.Date.valueOf(DateParsingMode.US == mode ? "2001-02-03" : "2001-03-02").getTime();
 
-            assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/01 4:05:06"));
-            assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/2001 4:05:06"));
-            assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/2001 4:05:06.000"));
-            assertEquals(datetimeExpected, DateUtil.parseDateTime("2-03-2001 4:05:06"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("2/3/01"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("2/3/2001"));
+            assertEquals(datetimeExpected, parseDateTime("2/3/01 4:05:06"));
+            assertEquals(datetimeExpected, parseDateTime("2/3/2001 4:05:06"));
+            assertEquals(datetimeExpected, parseDateTime("2/3/2001 4:05:06.000"));
+            assertEquals(datetimeExpected, parseDateTime("2-03-2001 4:05:06"));
+            assertEquals(dateExpected, parseDateTime("2/3/01"));
+            assertEquals(dateExpected, parseDateTime("2/3/2001"));
         }
 
 
@@ -1526,10 +1536,10 @@ Parse:
 
             // DateTime without time
             Date d = new Date(dateExpected);
-            assertEquals(dateExpected, DateUtil.parseDateTime(d.toString()));
-            assertEquals(dateExpected, DateUtil.parseDateTime(d.toGMTString()));
-            assertEquals(dateExpected, DateUtil.parseDateTime(d.toLocaleString()));
-            assertEquals(dateExpected, DateUtil.parseDateTime(ConvertUtils.convert(d)));
+            assertEquals(dateExpected, parseDateTime(d.toString()));
+            assertEquals(dateExpected, parseDateTime(d.toGMTString()));
+            assertEquals(dateExpected, parseDateTime(d.toLocaleString()));
+            assertEquals(dateExpected, parseDateTime(ConvertUtils.convert(d)));
             assertEquals(dateExpected, DateUtil.parseDateTime("2001-02-03", MonthDayOption.DAY_MONTH));
             assertEquals(dateExpected, DateUtil.parseDateTime("2001-2-03", MonthDayOption.DAY_MONTH));
             assertEquals(dateExpected, DateUtil.parseDateTime("3/2/01", MonthDayOption.DAY_MONTH));
@@ -1555,17 +1565,17 @@ Parse:
 
             // some zero testing
             datetimeExpected = java.sql.Timestamp.valueOf("2001-02-03 00:00:00.000").getTime();
-            assertEquals(datetimeExpected, parseDateTime("2001-02-03 00:00:00.000", MonthDayOption.DAY_MONTH));
-            assertEquals(datetimeExpected, parseDateTime("2001-02-03 00:00:00", MonthDayOption.DAY_MONTH));
-            assertEquals(datetimeExpected, parseDateTime("2001-02-03 00:00", MonthDayOption.DAY_MONTH));
-            assertEquals(datetimeExpected, parseDateTime("2001-02-03", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03 00:00:00.000", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03 00:00:00", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03 00:00", MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03", MonthDayOption.DAY_MONTH));
 
             // dd/mmm/yy testing
-            assertEquals(dateExpected, parseDateTime("3/Feb/01", MonthDayOption.DAY_MONTH));
-            assertEquals(dateExpected, parseDateTime("3/FEB/01", MonthDayOption.DAY_MONTH));
-            assertEquals(dateExpected, parseDateTime("3/FeB/2001", MonthDayOption.DAY_MONTH));
-            assertEquals(dateExpected, parseDateTime("03/feb/2001", MonthDayOption.DAY_MONTH));
-            assertEquals(dateExpected, parseDateTime("03/FEB/2001", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, DateUtil.parseDateTime("3/Feb/01", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, DateUtil.parseDateTime("3/FEB/01", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, DateUtil.parseDateTime("3/FeB/2001", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, DateUtil.parseDateTime("03/feb/2001", MonthDayOption.DAY_MONTH));
+            assertEquals(dateExpected, DateUtil.parseDateTime("03/FEB/2001", MonthDayOption.DAY_MONTH));
             assertIllegalDateTime("Jan/Feb/2001");
 
             // Z testing
@@ -1632,23 +1642,23 @@ Parse:
             long dateExpected = java.sql.Date.valueOf("2001-02-03").getTime();
 
             // Date
-            assertEquals(dateExpected, DateUtil.parseDateTime("2001-02-03"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("2001-2-03"));
+            assertEquals(dateExpected, parseDateTime("2001-02-03"));
+            assertEquals(dateExpected, parseDateTime("2001-2-03"));
 
-            assertEquals(dateExpected, DateUtil.parseDate("3-Feb-01"));
-            assertEquals(dateExpected, DateUtil.parseDate("3Feb01"));
-            assertEquals(dateExpected, DateUtil.parseDate("3Feb2001"));
-            assertEquals(dateExpected, DateUtil.parseDate("03Feb01"));
-            assertEquals(dateExpected, DateUtil.parseDate("03Feb2001"));
-            assertEquals(dateExpected, DateUtil.parseDate("3 Feb 01"));
-            assertEquals(dateExpected, DateUtil.parseDate("3 Feb 2001"));
-            assertEquals(dateExpected, DateUtil.parseDate("Feb 03 2001"));
-            assertEquals(dateExpected, DateUtil.parseDate("February 3, 2001"));
-            assertEquals(dateExpected, DateUtil.parseDate("20010203"));
+            assertEquals(dateExpected, parseDate("3-Feb-01"));
+            assertEquals(dateExpected, parseDate("3Feb01"));
+            assertEquals(dateExpected, parseDate("3Feb2001"));
+            assertEquals(dateExpected, parseDate("03Feb01"));
+            assertEquals(dateExpected, parseDate("03Feb2001"));
+            assertEquals(dateExpected, parseDate("3 Feb 01"));
+            assertEquals(dateExpected, parseDate("3 Feb 2001"));
+            assertEquals(dateExpected, parseDate("Feb 03 2001"));
+            assertEquals(dateExpected, parseDate("February 3, 2001"));
+            assertEquals(dateExpected, parseDate("20010203"));
 
             // Test XML date format
-            assertXmlDateMatches(DateUtil.parseDate("2001-02-03+01:00"));
-            assertXmlDateMatches(DateUtil.parseDate("2001-02-03Z"));
+            assertXmlDateMatches(parseDate("2001-02-03+01:00"));
+            assertXmlDateMatches(parseDate("2001-02-03Z"));
             assertIllegalDateTime("115468001");
 
             // Only recognize years in the "recent" past/future with this all-digit format
@@ -1670,16 +1680,16 @@ Parse:
             DateParsingMode mode = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDateParsingMode();
             long dateExpected = java.sql.Date.valueOf(DateParsingMode.US == mode ? "2001-02-03" : "2001-03-02").getTime();
 
-            assertEquals(dateExpected, DateUtil.parseDate("2/3/01"));
-            assertEquals(dateExpected, DateUtil.parseDate("2-3-01"));
-            assertEquals(dateExpected, DateUtil.parseDate("2-3-2001"));
-            assertEquals(dateExpected, DateUtil.parseDate("2-03-2001"));
-            assertEquals(dateExpected, DateUtil.parseDate("02-3-2001"));
-            assertEquals(dateExpected, DateUtil.parseDate("2/3/2001"));
-            assertEquals(dateExpected, DateUtil.parseDate("02/03/01"));
-            assertEquals(dateExpected, DateUtil.parseDate("02-03-01"));
-            assertEquals(dateExpected, DateUtil.parseDate("02/03/2001"));
-            assertEquals(dateExpected, DateUtil.parseDate("02-03-2001"));
+            assertEquals(dateExpected, parseDate("2/3/01"));
+            assertEquals(dateExpected, parseDate("2-3-01"));
+            assertEquals(dateExpected, parseDate("2-3-2001"));
+            assertEquals(dateExpected, parseDate("2-03-2001"));
+            assertEquals(dateExpected, parseDate("02-3-2001"));
+            assertEquals(dateExpected, parseDate("2/3/2001"));
+            assertEquals(dateExpected, parseDate("02/03/01"));
+            assertEquals(dateExpected, parseDate("02-03-01"));
+            assertEquals(dateExpected, parseDate("02/03/2001"));
+            assertEquals(dateExpected, parseDate("02-03-2001"));
         }
 
 
@@ -1796,7 +1806,7 @@ Parse:
             assertEquals("-106751991167d7h12m55.807s", formatDuration(-Long.MAX_VALUE));
             assertEquals("-106751991167d7h12m55.808s", formatDuration(Long.MIN_VALUE));
 
-            long start = parseStringJDBC("2010-01-31");
+            long start = parseISODateTime("2010-01-31");
             assertEquals(parseDateTime("2011-01-31"), addDuration(start,"1y"));
             assertEquals(parseDateTime("2010-02-28"), addDuration(start,"P1m"));
             assertEquals(parseDateTime("2010-02-28"), addDuration(start,"1m0d"));

@@ -63,7 +63,7 @@ public interface SearchService
     public static final SearchCategory fileCategory = new SearchCategory("file", "Files and Attachments", false);
 
     // marker value for documents with indexing errors
-    public static final java.util.Date failDate = new java.sql.Timestamp(DateUtil.parseStringJDBC("1899-12-30"));
+    public static final java.util.Date failDate = new java.sql.Timestamp(DateUtil.parseISODateTime("1899-12-30"));
 
     enum PRIORITY
     {
@@ -351,7 +351,7 @@ public interface SearchService
         SQLFragment _sqlf = new SQLFragment();
         private Set<FieldKey> _fieldKeys = new HashSet<>();
 
-        final static java.util.Date oldDate = new java.sql.Timestamp(DateUtil.parseStringJDBC("1967-10-04"));
+        final static java.util.Date oldDate = new java.sql.Timestamp(DateUtil.parseISODateTime("1967-10-04"));
 
         public LastIndexedClause(TableInfo info, java.util.Date modifiedSince, String tableAlias)
         {
