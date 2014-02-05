@@ -110,7 +110,7 @@ Ext.define('LABKEY.app.controller.State', {
                 // TODO: Remove this an apply grid filters properly from state
                 var nonGridFilters = [];
                 for (var f=0; f < s.filters.length; f++) {
-                    if (!s.filters[f].data.isGrid)
+                    if (!s.filters[f].isGrid)
                         nonGridFilters.push(s.filters[f]);
                 }
 
@@ -255,12 +255,12 @@ Ext.define('LABKEY.app.controller.State', {
         if (!this._updateState) {
             this._updateState = new Ext.util.DelayedTask(function() {
                 this.state.add({
-                    activeView : this.activeView,
-                    appVersion : this.appVersion,
-                    viewState  : {},
-                    views      : this.views,
-                    filters    : this.getFilters(),
-                    selections : this.selections
+                    activeView: this.activeView,
+                    appVersion: this.appVersion,
+                    viewState: {},
+                    views: this.views,
+                    filters: this.getFilters(true),
+                    selections: this.getSelections(true)
                 });
                 this.state.sync();
             }, this);
@@ -300,7 +300,7 @@ Ext.define('LABKEY.app.controller.State', {
                 }
             }
             else {
-                flatFilters.push(this.filters[f]);
+                flatFilters.push(this.filters[f].data);
             }
 
         }
@@ -464,12 +464,13 @@ Ext.define('LABKEY.app.controller.State', {
         for (var f=0; f < this.filters.length; f++) {
 
             if (this.filters[f].isGroup()) {
-                for (var g=0; g < this.filters[f].data.filters.length; g++) {
-                    olapFilters.push(this.filters[f].data.filters[g].getOlapFilter());
+                var grpFilters = this.filters[f].get('filters');
+                for (var g=0; g < grpFilters.length; g++) {
+                    olapFilters.push(LABKEY.app.controller.Filter.getOlapFilter(grpFilters[g]));
                 }
             }
             else {
-                olapFilters.push(this.filters[f].getOlapFilter());
+                olapFilters.push(LABKEY.app.controller.Filter.getOlapFilter(this.filters[f].data));
             }
         }
 
@@ -490,8 +491,29 @@ Ext.define('LABKEY.app.controller.State', {
         }, this);
     },
 
-    getSelections : function() {
-        return this.selections;
+    getSelections : function(flat) {
+        if (!this.selections || this.selections.length == 0)
+            return [];
+
+        if (!flat)
+            return this.selections;
+
+        var flatSelections = [];
+        for (var f=0; f < this.selections.length; f++) {
+
+            if (this.selections[f].isGroup()) {
+
+                for (var s=0; s < this.selections[f].data.filters.length; s++) {
+                    flatSelections.push(this.selections[f].data.filters[s]);
+                }
+            }
+            else {
+                flatSelections.push(this.selections[f].data);
+            }
+
+        }
+
+        return flatSelections;
     },
 
     hasSelections : function() {
