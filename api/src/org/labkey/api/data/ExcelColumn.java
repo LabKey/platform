@@ -260,6 +260,13 @@ public class ExcelColumn extends RenderColumn
             switch (_simpleType)
             {
                 case(TYPE_DATE):
+                    // Issue 19329: Work around JTDS bug 679 - http://sourceforge.net/p/jtds/bugs/679/
+                    // DATE columns are returned as VARCHAR on SQLServer
+                    if (o instanceof String)
+                    {
+                        o = new Date(DateUtil.parseDateTime(ContainerManager.getRoot(), (String)o));
+                    }
+
                     // Careful here... need to make sure we adjust dates for GMT.  This constructor automatically does the conversion, but there seem to be
                     // bugs in other jxl 2.5.7 constructors: DateTime(c, r, d) forces the date to time-only, DateTime(c, r, d, gmt) doesn't adjust for gmt
                     cell.setCellValue((Date) o);
