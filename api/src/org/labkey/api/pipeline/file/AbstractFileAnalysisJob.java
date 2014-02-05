@@ -22,8 +22,12 @@ import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.pipeline.*;
-import org.labkey.api.reader.TabLoader;
+import org.labkey.api.pipeline.ParamParser;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.PageFlowUtil;
@@ -349,7 +353,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
         StringBuilder description = new StringBuilder(dataName);
         if (baseName != null && !baseName.equals(dataName) &&
-                !(joinedBaseName.equals(AbstractFileAnalysisProtocol.LEGACY_JOINED_BASENAME) || joinedBaseName.equals(baseName)))   // For cluster
+                !(AbstractFileAnalysisProtocol.LEGACY_JOINED_BASENAME.equals(baseName) || joinedBaseName.equals(baseName)))   // For cluster
         {
             if (description.length() > 0)
                 description.append("/");
