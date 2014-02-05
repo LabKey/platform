@@ -22,16 +22,16 @@ import org.jetbrains.annotations.Nullable;
 * Date: 1/17/14
 * Time: 3:20 PM
 */
-public enum Phi
+public enum PHI
 {
     NotPHI,
     Limited,
     PHI,
     Restricted;
 
-    public static Phi fromString(@Nullable String value)
+    public static PHI fromString(@Nullable String value)
     {
-        for (Phi phi : values())
+        for (PHI phi : values())
             if (phi.name().equals(value))
                 return phi;
 

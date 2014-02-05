@@ -310,12 +310,12 @@ api/src/org/labkey/api/data/NullColumnInfo.java -text
 api/src/org/labkey/api/data/OORDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/OutOfRangeDisplayColumn.java -text
 api/src/org/labkey/api/data/Ownable.java -text
+api/src/org/labkey/api/data/PHI.java -text
 api/src/org/labkey/api/data/PanelButton.java -text
 api/src/org/labkey/api/data/Parameter.java -text
 api/src/org/labkey/api/data/ParameterDescription.java -text
 api/src/org/labkey/api/data/ParameterDescriptionImpl.java -text
 api/src/org/labkey/api/data/ParameterMarkerInClauseGenerator.java -text
-api/src/org/labkey/api/data/Phi.java -text
 api/src/org/labkey/api/data/PkFilter.java -text
 api/src/org/labkey/api/data/Project.java -text
 api/src/org/labkey/api/data/PropertyCache.java -text

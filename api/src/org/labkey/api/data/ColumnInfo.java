@@ -139,7 +139,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private List<? extends IPropertyValidator> validators = Collections.emptyList();
 
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
-    private Phi _phi = Phi.NotPHI;
+    private PHI _phi = PHI.NotPHI;
     private boolean _lockName = false;
 
     /**
@@ -705,12 +705,12 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         return _displayColumnFactory;
     }
 
-    public Phi getPhi()
+    public PHI getPhi()
     {
         return _phi;
     }
 
-    public void setPhi(Phi phi)
+    public void setPhi(PHI phi)
     {
         checkLocked();
         _phi = phi;
@@ -1003,7 +1003,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         }
 
         if (xmlCol.isSetPhi())
-            _phi = Phi.valueOf(xmlCol.getPhi().toString());
+            _phi = PHI.valueOf(xmlCol.getPhi().toString());
         if (xmlCol.isSetFacetingBehavior())
             facetingBehaviorType = FacetingBehaviorType.valueOf(xmlCol.getFacetingBehavior().toString());
         if (xmlCol.isSetDisplayColumnFactory())
