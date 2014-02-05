@@ -140,7 +140,7 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         menu.addChild(groupMenu);
     }
 
-    static Collection<Group> getValidImpersonationGroups(Container c, User user)
+    public static Collection<Group> getValidImpersonationGroups(Container c, User user)
     {
         LinkedList<Group> validGroups = new LinkedList<>();
         Group[] groups = SecurityManager.getGroups(c.getProject(), true);

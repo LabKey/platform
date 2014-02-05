@@ -151,7 +151,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
             menu.addChild(roleMenu);
     }
 
-    static Collection<Role> getValidImpersonationRoles(Container c)
+    public static Collection<Role> getValidImpersonationRoles(Container c)
     {
         Collection<Role> validRoles = new LinkedList<>();
         SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
