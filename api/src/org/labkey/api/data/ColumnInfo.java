@@ -367,7 +367,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setFacetingBehaviorType(col.getFacetingBehaviorType());
         setProtected(col.isProtected());
         setExcludeFromShifting(col.isExcludeFromShifting());
-        setPhi(col.getPhi());
+        setPHI(col.getPHI());
 
         setCrosstabColumnDimension(col.getCrosstabColumnDimension());
         setCrosstabColumnMember(col.getCrosstabColumnMember());
@@ -705,12 +705,12 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         return _displayColumnFactory;
     }
 
-    public PHI getPhi()
+    public PHI getPHI()
     {
         return _phi;
     }
 
-    public void setPhi(PHI phi)
+    public void setPHI(PHI phi)
     {
         checkLocked();
         _phi = phi;
