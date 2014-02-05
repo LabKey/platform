@@ -26,13 +26,13 @@
     exampleRecord.setShortURL("SHORT_URL");
     String exampleURL = exampleRecord.renderShortURL();
 %>
-<div style="width: 600px">
+<div style="width: 700px">
     <p>
         Short URLs allow you to create convenient, memorable links to specific content on your server.
         They are similar to TinyURL or bit.ly links. Users can access a short URL using a link like <%= h(exampleURL) %>
     </p>
     <p>
-        If the server or port number are incorrect, you can correct the Base Server URL in <%= textLink("Site Settings", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeSiteURL())%>
+        If the server or port number are incorrect, you can correct the Base Server URL in <a href="<%= h(PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeSiteURL()) %>">Site Settings</a>
     </p>
 </div>
 
