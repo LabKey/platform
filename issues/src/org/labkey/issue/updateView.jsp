@@ -37,14 +37,14 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
-    IssuePage bean = me.getModelBean();
+    final JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
+    final IssuePage bean = me.getModelBean();
     final Issue issue = bean.getIssue();
-    ViewContext context = getViewContext();
+    final ViewContext context = getViewContext();
     final Container c = getContainer();
     final User user = getUser();
     final String focusId = (0 == issue.getIssueId() ? "title" : "comment");
-    int emailPrefs = IssueManager.getUserEmailPreferences(c, user.getUserId());
+    final int emailPrefs = IssueManager.getUserEmailPreferences(c, user.getUserId());
     final String popup = getNotifyHelpPopup(emailPrefs, issue.getIssueId(), IssueManager.getEntryTypeNames(c));
 
     BindException errors = bean.getErrors();
@@ -222,17 +222,17 @@
                         if (issue.getIssueId() == 0)
                         {
     %>
-                            <%= textLink("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class).getLocalURIString(), null, null)%>
+                            <%= textLink("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class))%>
     <%
                         } else {
     %>
-                            <%= textLink("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId()).getLocalURIString(), null, null)%>
+                            <%= textLink("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId()))%>
     <%
                         }
     %>
                         </td>
                         <td>
-                            <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=h(completionUrl.getLocalURIString())%>" rows="4" tabindex="3" cols="30" value="<%=h(bean.getNotifyListString(false).toString())%>"/>
+                            <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=h(completionUrl.getLocalURIString())%>" rows="4" tabindex="3" cols="30" value="<%=h(bean.getNotifyListString(false))%>"/>
                         </td>
                     </tr>
     <%
@@ -266,7 +266,7 @@
 
     <table>
         <tr><td><table id="filePickerTable"></table></td></tr>
-        <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=getContextPath()%>/_images/paperclip.gif">Attach a file</a></td></tr>
+        <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">Attach a file</a></td></tr>
     </table>
     
 <%

@@ -203,7 +203,7 @@
                             </table>
                             <table id="wiki-new-attachments">
                             </table>
-                            <a onclick="addNewAttachmentInput('wiki-file-link');" id="wiki-file-link"><img src="<%=getContextPath()%>/_images/paperclip.gif">Attach a file</a>
+                            <a onclick="addNewAttachmentInput('wiki-file-link');" id="wiki-file-link"><img src="<%=getWebappURL("_images/paperclip.gif")%>">Attach a file</a>
                         </form>
                     </td>
                 </tr>

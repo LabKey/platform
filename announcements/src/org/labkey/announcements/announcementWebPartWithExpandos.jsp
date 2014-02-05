@@ -214,7 +214,7 @@ for (AnnouncementModel a : bean.announcementModels)
         %><tr><td colspan=3><%
         for (Attachment d : a.getAttachments())
         {
-            %><a href="<%=h(d.getDownloadUrl(DownloadAction.class))%>"><img src="<%=request.getContextPath()%><%=d.getFileIcon()%>">&nbsp;<%=d.getName()%></a>&nbsp;<%
+            %><a href="<%=h(d.getDownloadUrl(DownloadAction.class))%>"><img src="<%=getWebappURL(d.getFileIcon())%>">&nbsp;<%=d.getName()%></a>&nbsp;<%
         }
         %></td></tr><%
     }

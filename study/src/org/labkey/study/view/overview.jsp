@@ -157,7 +157,7 @@
 <br><br>
 <table id="studyOverview" class="labkey-data-region labkey-show-borders" style="border-collapse:collapse;">
     <tr class="labkey-alternate-row">
-        <td class="labkey-column-header"><img alt="" width=60 height=1 src="<%=h(contextPath)%>/_.gif"></td>
+        <td class="labkey-column-header"><img alt="" width=60 height=1 src="<%=getWebappURL("_.gif")%>"></td>
         <td class="labkey-column-header"><%
             String slash = "";
             for (VisitStatistic v : statisticsToDisplay)

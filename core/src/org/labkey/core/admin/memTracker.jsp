@@ -162,7 +162,7 @@ function toggleImg(img)
     if (!img)
         return;
 
-    img.src = img.src.match(/.*plus.gif/) ? "<%=getContextPath()%>/_images/minus.gif" : "<%=getContextPath()%>/_images/plus.gif";
+    img.src = img.src.match(/.*plus.gif/) ? "<%=getWebappURL("_images/minus.gif")%>" : "<%=getWebappURL("_images/plus.gif")%>";
 }
 
 </script>

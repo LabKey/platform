@@ -104,7 +104,7 @@
         <tr class="labkey-header">
             <td valign="middle" width="9">
                 <a id="<%= h(guid) %>" onclick="return toggleLink(this, false);">
-                    <img src="<%=getWebappURL("/_images/plus.gif")%>">
+                    <img src="<%=getWebappURL("_images/plus.gif")%>">
                 </a>
             </td>
             <td>

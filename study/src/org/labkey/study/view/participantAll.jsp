@@ -236,8 +236,8 @@
 <table class="labkey-data-region">
 
 <tr class="labkey-alternate-row">
-    <td class="labkey-participant-view-header"><img alt="" width=180 height=1 src="<%=getContextPath()%>/_.gif"></td>
-    <td class="labkey-participant-view-header"><img alt="" width=20 height=1 src="<%=getContextPath()%>/_.gif"></td>
+    <td class="labkey-participant-view-header"><img alt="" width=180 height=1 src="<%=getWebappURL("_.gif")%>"></td>
+    <td class="labkey-participant-view-header"><img alt="" width=20 height=1 src="<%=getWebappURL("_.gif")%>"></td>
     <%
 
         for (VisitImpl visit : visits)
@@ -260,8 +260,8 @@
 </tr>
 
 <tr class="labkey-alternate-row">
-    <td class="labkey-participant-view-header"><img alt="" width=1 height=1 src="<%=getContextPath()%>/_.gif"></td>
-    <td class="labkey-participant-view-header"><img alt="" width=1 height=1 src="<%=getContextPath()%>/_.gif"></td>
+    <td class="labkey-participant-view-header"><img alt="" width=1 height=1 src="<%=getWebappURL("_.gif")%>"></td>
+    <td class="labkey-participant-view-header"><img alt="" width=1 height=1 src="<%=getWebappURL("_.gif")%>"></td>
     <%
 
         for (VisitImpl visit : visits)

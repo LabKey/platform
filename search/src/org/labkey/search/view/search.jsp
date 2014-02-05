@@ -137,7 +137,7 @@
 <table width=100% cellpadding="0" cellspacing="0" style="padding-left: 10px;">
     <tr>
         <td>
-            <input id="adv-search-btn" type="image" src="<%=getContextPath()%>/_images/plus.gif" onclick="showPanel(); return false;"><span> Advanced Search</span>
+            <input id="adv-search-btn" type="image" src="<%=getWebappURL("_images/plus.gif")%>" onclick="showPanel(); return false;"><span> Advanced Search</span>
         </td>
     </tr>
     <tr>
@@ -157,7 +157,7 @@
     if (null != StringUtils.trimToNull(queryString))
     {
         %><table cellspacing=0 cellpadding=0 style="margin-top:10px;">
-        <tr><td valign="top" align="left" style="padding-right:10px;"><img title="" src="<%=getContextPath()%>/_.gif" width=500 height=1>
+        <tr><td valign="top" align="left" style="padding-right:10px;"><img title="" src="<%=getWebappURL("_.gif")%>" width=500 height=1>
            <div id="searchResults" class="labkey-search-results">
                <%
 
@@ -280,7 +280,7 @@
 
                 if (result.hits.size() > 0)
                 {
-                    %><td valign="top" align="left"><img title="" src="<%=getContextPath()%>/_.gif" width=200 height=1><%
+                    %><td valign="top" align="left"><img title="" src="<%=getWebappURL("_.gif")%>" width=200 height=1><%
                     %><div id="navigationResults" class="labkey-search-navresults"><h3>Folders</h3><%
 
                     for (SearchService.SearchHit hit : result.hits)

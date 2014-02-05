@@ -33,15 +33,15 @@
     <table class="labkey-tab-strip">
         <tr>
             <td class="labkey-tab-space">
-                <img src="<%=getContextPath()%>/_.gif" height=1 width=5>
+                <img src="<%=getWebappURL("_.gif")%>" height=1 width=5>
             </td>
             <td class=<%=SecurityController.TAB_REPORT.equals(currentTab) ? "labkey-tab-selected" : "labkey-tab-inactive"%>><a <%=SecurityController.TAB_REPORT.equals(currentTab) ? "" : "href=\"" + url.replaceParameter("tabId", SecurityController.TAB_REPORT) + "\""%>>Permissions&nbsp;</a></td>
             <td class=<%=SecurityController.TAB_STUDY.equals(currentTab) ? "labkey-tab-selected" : "labkey-tab-inactive"%>><a <%=SecurityController.TAB_STUDY.equals(currentTab) ? "" : "href=\"" + url.replaceParameter("tabId", SecurityController.TAB_STUDY) + "\""%>>Study&nbsp;Security&nbsp;</a></td>
             <td class="labkey-tab-space" style="text-align:right;" width=100%>
-                <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
+                <img src="<%=getWebappURL("_.gif")%>" height=1 width=5>
             </td>
         </tr>
         <tr>
             <td colspan="4" class="labkey-tab" style="border-top:none;text-align:left;" width=100%>
-                <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
+                <img src="<%=getWebappURL("_.gif")%>" height=1 width=5>
 

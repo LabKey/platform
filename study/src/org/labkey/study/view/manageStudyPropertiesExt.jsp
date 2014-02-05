@@ -316,7 +316,7 @@ function renderFormPanel(data, editable){
             '</div>',
         '</tpl>',
         '<div>',
-            '&nbsp;<a onclick="addExtFilePickerHandler(); return false;" href="#addFile"><img src="<%=request.getContextPath()%>/_images/paperclip.gif">&nbsp;&nbsp;Attach a file</a>',
+            '&nbsp;<a onclick="addExtFilePickerHandler(); return false;" href="#addFile"><img src="<%=getWebappURL("_images/paperclip.gif")%>">&nbsp;&nbsp;Attach a file</a>',
         '</div>'
     );
 

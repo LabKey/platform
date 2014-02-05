@@ -182,7 +182,7 @@ if (settings.hasExpires())
                 {
                     x++;
                     %><tr id="attach-<%=x%>">
-                        <td><img src="<%=h(request.getContextPath() + att.getFileIcon())%>" alt="logo"/>&nbsp;<%= h(att.getName()) %></td>
+                        <td><img src="<%=getWebappURL(att.getFileIcon())%>" alt="logo"/>&nbsp;<%= h(att.getName()) %></td>
                         <td><a onclick="removeAnnouncementAttachment(<%=PageFlowUtil.jsString(ann.getEntityId())%>, <%=PageFlowUtil.jsString(att.getName())%>, 'attach-<%=x%>'); ">remove</a></td>
                     </tr><%
                 }
@@ -191,7 +191,7 @@ if (settings.hasExpires())
         </table>
         <table>
             <tbody>
-                <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=getContextPath()%>/_images/paperclip.gif">&nbsp;Attach a file</a></td></tr>
+                <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">&nbsp;Attach a file</a></td></tr>
             </tbody>
         </table>
 	</td>

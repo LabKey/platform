@@ -132,7 +132,7 @@ However, If this account is re-enabled, it would have the following permissions.
                     <tr class="labkey-nav-tree-row labkey-header" >
                         <td class="labkey-nav-tree-text" align="left" style="border:0 none;">
                             <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#">
-                                <img src="<%=getContextPath()%>/_images/plus.gif" alt="" />
+                                <img src="<%=getWebappURL("_images/plus.gif")%>" alt="" />
                                 <span><%= row.getAccess() %><%= inherited ? "*" : "" %></span>
                             </a>
                         </td>
