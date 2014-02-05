@@ -72,8 +72,10 @@
         var aliasColumn = <%= PageFlowUtil.jsString(aliasColumn) %>;
         var aliasSourceColumn = <%= PageFlowUtil.jsString(aliasSourceColumn) %>;
         var allowAliasCreation = <%= allowAliasCreation %>;
+        var previewButton = {};
         var mergeButton = {};
         var globalError = false;
+        var fatalError = false;
 
         var init = function()
         {
@@ -89,7 +91,7 @@
                 maxLength: 20,
                 enforceMaxLength: true,
                 listeners : {
-                    change : function() {resetPreview(true);}
+                    change : function() {resetPreview(true, true);}
                 }
             });
 
@@ -103,7 +105,7 @@
                 maxLength: 20,
                 enforceMaxLength: true,
                 listeners : {
-                    change : function() { resetPreview(true); }
+                    change : function() { resetPreview(true, true); }
                 }
 
             });
@@ -113,7 +115,7 @@
                 boxLabel: 'Create an Alias for the old ' + jsSubjectNounColumnName,
                 checked: allowAliasCreation,
                 listeners : {
-                    change : function() {aliasSourceField.setDisabled(!createAliasCB.getValue()); resetPreview(true);}
+                    change : function() {aliasSourceField.setDisabled(!createAliasCB.getValue()); resetPreview(true, true);}
                 }
             });
 
@@ -128,15 +130,22 @@
                 enforceMaxLength: true,
                 disabled: !allowAliasCreation,
                 listeners : {
-                    focus : function() {resetPreview(true);}
+                    focus : function() {resetPreview(true, true);}
                 }
+            });
+
+            previewButton = Ext4.create('Ext.Button', {
+                xtype: 'button',
+                text: 'Preview',
+                disabled : true,
+                handler: function() {previewButton.setDisabled(true); trimFields(); previewMerge(oldIdField.getValue(), newIdField.getValue(), createAliasCB.getValue(), aliasSourceField.getValue());}
             });
 
             mergeButton = Ext4.create('Ext.Button', {
                 xtype: 'button',
                 text: 'Merge',
                 disabled : true,
-                handler: function() {trimFields(); commitMerge(oldIdField.getValue(), newIdField.getValue(), createAliasCB.getValue(), aliasSourceField.getValue());}
+                handler: function() {mergeButton.setDisabled(true); trimFields(); commitMerge(oldIdField.getValue(), newIdField.getValue(), createAliasCB.getValue(), aliasSourceField.getValue());}
             });
 
             var form = Ext4.create('Ext.form.FormPanel', {
@@ -170,11 +179,8 @@
                     ui : 'footer',
                     style : 'background: none',
                     height : 30,
-                    items: [{
-                        xtype: 'button',
-                        text: 'Preview',
-                        handler: function() {trimFields(); previewMerge(oldIdField.getValue(), newIdField.getValue(), createAliasCB.getValue(), aliasSourceField.getValue());}
-                    },
+                    items: [
+                    previewButton,
                     mergeButton,
                     {
                         xtype: 'button',
@@ -222,8 +228,10 @@
             aliasSourceField.setValue(Ext.util.Format.trim(aliasSourceField.getValue()));
         };
 
-        var resetPreview = function(resetPreviewPanel)
+        var resetPreview = function(resetPreviewPanel, resetPreviewButton)
         {
+            if (resetPreviewButton)
+                previewButton.setDisabled(false);
             mergeButton.setDisabled(true);
             emptyPreviewTableStatus();
             globalError = false;
@@ -259,100 +267,122 @@
         };
 
         var previewMerge = function(oldId, newId, createAlias, aliasSource) {
-            var filters = [ LABKEY.Filter.create(jsSubjectNounColumnName, oldId + ';' + newId, LABKEY.Filter.Types.IN) ];
-            var hasOldValues = false;
-            this.datasetsToProcess = this.numDatasets;
+            this.filters = [ LABKEY.Filter.create(jsSubjectNounColumnName, oldId + ';' + newId, LABKEY.Filter.Types.IN) ];
 
             // wipe away our status
-            resetPreview(false);
+            resetPreview(false, false);
+            checkTable.hasOldValues = false;
+            checkTable.oldId = oldId;
+            checkTable.newId = newId;
+            checkTable.createAlias = createAlias;
+            checkTable.keyIndex = 0;
+            checkTable.aliasSource = aliasSource;
             renderPreviewTable(oldId, newId);
 
-            // Iterate on datasets and skip the specimen detail table
-            for (var tableName in this.tables) {
+            checkTable();
+        };
 
-                if (!this.tables[tableName].datasetId)
-                    continue;
+        var checkTable = function()
+        {
+            if (fatalError)
+                return;
 
-                LABKEY.Query.selectRows( {
-                    schemaName: 'study',
-                    queryName: tableName,
-                    scope: this,
-                    filterArray : filters,
-                    columns : jsSubjectNounColumnName + ', lsid',
-                    success: function(data) {
-                        var table = this.tables[data.queryName];
-                        gatherIds(table, data.rows, oldId, newId);
-
-                        // if table has old ids, we know there's work that could be done and allow a merge
-                        if (table.name != aliasDatasetName && table.oldIds.length > 0)
-                        {
-                            hasOldValues = true;
-                             //
-                            // if table has both new and old ids, then make an update clause
-                            // and check to see if we have any conflict errors
-                            //
-                            if (table.newIds.length > 0)
-                            {
-                                LABKEY.Query.saveRows({
-                                    commands : [buildUpdateCommand(table, newId)],
-                                    success : function(data) {
-                                       checkMoveToSpecimenDetail(table, false, oldId, newId, filters, hasOldValues);
-                                    },
-                                    failure : function(errorInfo, response) {
-                                        checkMoveToSpecimenDetail(table, true, oldId, newId, filters, hasOldValues);
-                                    },
-                                    validateOnly : true
-                                });
-                            }
-                            else {
-                                    checkMoveToSpecimenDetail(table, false, oldId, newId, filters, hasOldValues);
-                            }
-                        }
-                        else if (table.name == aliasDatasetName) {
-                            table.hasConflict = false;
-                            if (table.oldIds.length > 0) {
-                                table.hasConflict = true;
-                            }
-                            if (createAlias) {
-                                LABKEY.Query.saveRows({
-                                    commands : [buildInsertCommand(oldId, newId, aliasSource)],
-                                    success : function() {checkMoveToSpecimenDetail(table, table.hasConflict, oldId, newId, filters, hasOldValues);},
-                                    failure : function(response) {updateMergeResults("Error creating alias. " + response.exception, true);
-                                        checkMoveToSpecimenDetail(table, table.hasConflict, oldId, newId, filters, hasOldValues);
-                                    },
-                                    validateOnly : true
-                                })
-                            }
-                            else {
-                                checkMoveToSpecimenDetail(table, table.hasConflict, oldId, newId, filters, hasOldValues);
-                            }
-                        }
-                        else {
-                            checkMoveToSpecimenDetail(table, false, oldId, newId, filters, hasOldValues);
-                        }
-
-                        // update progress
-                        renderPreviewTable(oldId, newId);
-                    }
-                });
+            if (checkTable.keyIndex >= this.numDatasets)
+            {
+                checkSpecimenDetail(checkTable.oldId, checkTable.newId, checkTable.hasOldValues);
+                return;
             }
+
+            var tableName = Object.keys(this.tables)[checkTable.keyIndex];
+            checkTable.keyIndex++;
+
+            LABKEY.Query.selectRows({
+                schemaName: 'study',
+                queryName: tableName,
+                scope: this,
+                filterArray: this.filters,
+                columns: jsSubjectNounColumnName + ', lsid',
+                success: function (data)
+                {
+                    var table = this.tables[data.queryName];
+                    gatherIds(table, data.rows, checkTable.oldId, checkTable.newId);
+                    table.hasConflict = false;
+                    // if table has old ids, we know there's work that could be done and allow a merge
+                    if (table.name != aliasDatasetName && table.oldIds.length > 0)
+                    {
+                        checkTable.hasOldValues = true;
+                        //
+                        // if table has both new and old ids, then make an update clause
+                        // and check to see if we have any conflict errors
+                        //
+                        if (table.newIds.length > 0)
+                        {
+                            LABKEY.Query.saveRows({
+                                commands: [buildUpdateCommand(table, checkTable.newId)],
+                                success: function (response)
+                                {
+                                    table.hasConflict = (response.errorCount > 0);
+                                    checkTable();
+                                },
+                                failure: function (response)
+                                {
+                                    fatalError = true;
+                                    updateMergeResults("Fatal Error on dataset " + tableName + ". " + response.exceptionClass + " " + response.exception, true);
+                                },
+                                validateOnly: true,
+                                apiVersion: 13.2
+                            });
+                        }
+                        else
+                        {
+                            checkTable();
+                        }
+                    }
+                    else if (table.name == aliasDatasetName)
+                    {
+                        table.hasConflict = (table.oldIds.length > 0);
+
+                        if (checkTable.createAlias)
+                        {
+                            LABKEY.Query.saveRows({
+                                commands: [buildInsertCommand(checkTable.oldId, checkTable.newId, checkTable.aliasSource)],
+                                success: function (response)
+                                {
+                                    if (response.errorCount > 0) updateMergeResults("Error creating alias. " + response.result[0].errors.exception, true);
+                                    checkTable();
+                                },
+                                failure: function (response)
+                                {
+                                    fatalError = true;
+                                    updateMergeResults("Fatal Error on dataset " + tableName + ". " + response.exceptionClass + " " + response.exception, true);
+                                },
+                                validateOnly: true,
+                                apiVersion: 13.2
+                            })
+                        }
+                        else
+                        {
+                            checkTable();
+                        }
+                    }
+                    else
+                    {
+                        checkTable();
+                    }
+                renderPreviewTable(checkTable.oldId, checkTable.newId);
+                }
+
+            });
         };
 
-        var checkMoveToSpecimenDetail = function(table, hasConflict, oldId, newId, filters, hasOldValues) {
-            table.hasConflict = hasConflict;
-            this.datasetsToProcess--;
-            if (this.datasetsToProcess == 0)
-                checkSpecimenDetail(oldId, newId, filters, hasOldValues);
-        };
-
-        var checkSpecimenDetail = function(oldId, newId, filters, hasOldValues) {
+        var checkSpecimenDetail = function(oldId, newId, hasOldValues) {
             var specimenDetail = this.tables['SpecimenDetail'];
             // now check the specimen details table
             LABKEY.Query.selectRows( {
                 schemaName: 'study',
                 queryName: 'SpecimenDetail',
                 scope: this,
-                filterArray : filters,
+                filterArray : this.filters,
                 columns : jsSubjectNounColumnName + ', RowId',
                 success: function(data) {
                     gatherIds(specimenDetail, data.rows, oldId, newId);
@@ -367,6 +397,7 @@
                         LABKEY.Query.saveRows({
                             commands : [buildUpdateCommand(specimenDetail, newId)],
                             validateOnly : true,
+                            apiVersion : 13.2,
                             success : function(data) {
                                 specimenDetail.hasConflict = false;
                                 renderPreviewTable(oldId, newId);
@@ -484,6 +515,7 @@
                     var hint = getConflictHint(table);
                     if (null == hint) {
                         updateMergeResults("You must choose whether to use old or new id values for every conflict", true);
+                        mergeButton.setDisabled(false);
                         return;
                     }
                     if (hint == 'old') {
@@ -506,16 +538,20 @@
             if (createAlias) {
                 saveRowsCommands.push(buildInsertCommand(oldId, newId, aliasSource));
             }
-            resetPreview(true);
+            resetPreview(true, false);
             updateMergeResults("Merging " + jsSubjectNounColumnName + " from " + oldId + " to " + newId + " ...", false);
             LABKEY.Query.saveRows({
                 commands : saveRowsCommands,
-                success : function(data) {
+                apiVersion : 13.2,
+                success : function(response) {
                     oldIdField.setValue("");
                     newIdField.setValue("");
                     aliasSourceField.setValue("");
-                    resetPreview(true);
-                    updateMergeResults("Successfully merged " + jsSubjectNounColumnName + " from " + oldId + " to " + newId, false);
+                    resetPreview(true, false);
+                    if (response.errorCount > 0)
+                        updateMergeResults("Error merging: " + response.result[0].errors.exception, true);
+                    else
+                        updateMergeResults("Successfully merged " + jsSubjectNounColumnName + " from " + oldId + " to " + newId, false);
                 },
                 failure : function(response) {
                     updateMergeResults(response.exception, true);
@@ -562,6 +598,11 @@
         };
 
         var renderPreviewTable = function(oldId, newId){
+            if (fatalError)
+            {
+                document.getElementById('previewPanel-div').innerHTML = "";
+                return;
+            }
             var html = [];
             var encodedOldId = Ext4.util.Format.htmlEncode(oldId);
             var encodedNewId = Ext4.util.Format.htmlEncode(newId);
@@ -611,8 +652,8 @@
                             var group = getConflictHintGroupName(table);
                             html.push("<td>" + bothIdURL + "Conflict!</td>");
                             html.push("<td>");
-                            html.push("<input type='radio' name='" + group + "' value='old'>Retain '" + encodedOldId + "' rows ");
-                            html.push("<input type='radio' name='" + group + "' value='new'>Retain '" + encodedNewId + "' rows ");
+                            html.push("<input type='radio' name='" + group + "' value='old' >Retain '" + encodedOldId + "' rows ");
+                            html.push("<input type='radio' name='" + group + "' value='new' >Retain '" + encodedNewId + "' rows ");
 
                             html.push("</td>");
                         }
