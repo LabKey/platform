@@ -16,7 +16,8 @@
  */
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
     String dataRegionName = ((JspView<String>)HttpView.currentView()).getModelBean();
 %>
@@ -47,7 +48,7 @@ function toggleNestedGrid(url, elementName)
                         var contentElement = document.getElementById("<%=dataRegionName%>-Content" + elementName);
 
                         contentElement.innerHTML = response.responseText;
-                        toggleElement.src = "<%= request.getContextPath() %>/_images/minus.gif";
+                        toggleElement.src = "<%=getWebappURL("_images/minus.gif")%>";
                         rowElement.style.display = "";
                     }
                     else
@@ -64,12 +65,12 @@ function toggleNestedGrid(url, elementName)
     if (rowElement.style.display == "none")
     {
         rowElement.style.display = "";
-        toggleElement.src = "<%= request.getContextPath() %>/_images/minus.gif";
+        toggleElement.src = "<%=getWebappURL("_images/minus.gif")%>";
     }
     else
     {
         rowElement.style.display = "none";
-        toggleElement.src = "<%= request.getContextPath() %>/_images/plus.gif";
+        toggleElement.src = "<%=getWebappURL("_images/plus.gif")%>";
     }
 }
 
