@@ -128,6 +128,8 @@ public abstract class AbstractExternalSchemaDef extends Entity
         _dataSource = dataSource;
     }
 
+    // Careful: the casing of saved names might not match the database names (we used to apply xml meta data before saving
+    // these, plus the names in the database could change). Map these to the JDBC meta data names before using them.
     public @Nullable String getTables()
     {
         return _tables;

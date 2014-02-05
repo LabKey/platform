@@ -109,7 +109,7 @@ var external = <%=isExternal%>;
 
 var schemaIndex = 3;
 
-var schemaType = new Ext.form.Hidden({name:'schemaType', value:schemaType});
+schemaType = new Ext.form.Hidden({name:'schemaType', value:schemaType});
 var userSchemaText = new Ext.form.TextField({name:'userSchemaName', fieldLabel:'Schema Name', allowBlank:false, helpPopup:{title:'Schema Name', html:<%=PageFlowUtil.qh(bean.getHelpHTML("UserSchemaName"))%>}, value:<%=q(def.getUserSchemaName())%>});
 
 // Admin can only choose from the data sources in the drop down.  Selecting a data source updates the schemas drop down below.
@@ -403,7 +403,13 @@ function selectTables(tableNames)
         var recordArray = [];
 
         for (var i = 0; i < tableNames.length; i++)
-            recordArray.push(tablesStore.getById(tableNames[i]));
+        {
+            // This should be case-insensitive, which is important, #19440
+            var idx = tablesStore.find("table", tableNames[i]);
+
+            if (-1 != idx)
+                recordArray.push(tablesStore.getAt(idx));
+        }
 
         grid.selModel.selectRecords(recordArray);
         initialTables = '*';

@@ -211,14 +211,16 @@ public class ExternalSchema extends SimpleUserSchema
         if (null == tableSource)
             return Collections.emptySet();
 
-        Set<String> allowed = null;
-        String allowedTableNames = def.getTables();
-        if (allowedTableNames != null)
+        Collection<String> jdbcNames = tableSource.getTableNames();
+        String savedTableNames = def.getTables();
+        Set<String> requested = null;
+
+        if (savedTableNames != null)
         {
-            if ("*".equals(allowedTableNames))
-                return tableSource.getTableNames();
+            if ("*".equals(savedTableNames))
+                return jdbcNames;
             else
-                allowed = new CsvSet(allowedTableNames);
+                requested = new CsvSet(savedTableNames);
         }
         else if (template != null)
         {
@@ -229,21 +231,29 @@ public class ExternalSchema extends SimpleUserSchema
                 if (tableNames != null)
                 {
                     if (tableNames.length == 1 && tableNames[0].equals("*"))
-                        return tableSource.getTableNames();
+                        return jdbcNames;
                     else
-                        allowed = new HashSet<>(Arrays.asList(tableNames));
+                        requested = new HashSet<>(Arrays.asList(tableNames));
                 }
             }
         }
 
-        if (allowed == null || allowed.size() == 0)
+        if (requested == null || requested.isEmpty())
             return Collections.emptySet();
 
-        // Some tables in the "allowed" list may no longer exist or may be query names, so check each table in the schema.  #13002
-        Set<String> available = new HashSet<>(allowed.size());
-        for (String name : allowed)
-            if (tableSource.isTableAvailable(name))
-                available.add(name);
+        // Some tables in the "requested" set may no longer exist or may be query names, so check each table in the schema, #13002
+        // Also, we want to expose the current JDBC meta names, not the saved names, so map them. #19440
+        Map<String, String> jdbcNameMap = new CaseInsensitiveHashMap<>(jdbcNames.size());
+        for (String jdbcName : jdbcNames)
+            jdbcNameMap.put(jdbcName, jdbcName);
+
+        Set<String> available = new HashSet<>(requested.size());
+        for (String requestedName : requested)
+        {
+            String jdbcName = jdbcNameMap.get(requestedName);
+            if (null != jdbcName)
+                available.add(jdbcName);
+        }
 
         return available;
     }
