@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.exp.property.Type;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.FacetingBehaviorType;
 import org.labkey.data.xml.PhiType;
@@ -70,14 +71,13 @@ public class TableInfoWriter
         String columnName = column.getName();
         columnXml.setColumnName(columnName);
 
-        JdbcType jdbcType = column.getJdbcType();
-        if (jdbcType == JdbcType.OTHER)
-            jdbcType = JdbcType.valueOf(column.getJavaClass());
+        Class clazz = column.getJavaClass();
+        Type t = Type.getTypeByClass(clazz);
 
-        if (null == jdbcType)
-            throw new IllegalStateException(columnName + " in table " + column.getParentTable().getName() + " has unknown java class " + column.getJavaClass());
+        if (null == t)
+            throw new IllegalStateException(columnName + " in table " + column.getParentTable().getName() + " has unknown java class " + clazz.getName());
 
-        columnXml.setDatatype(jdbcType.name().toLowerCase());
+        columnXml.setDatatype(t.getSqlTypeName());
 
         if (column.getInputType().equals("textarea"))
             columnXml.setInputType(column.getInputType());
