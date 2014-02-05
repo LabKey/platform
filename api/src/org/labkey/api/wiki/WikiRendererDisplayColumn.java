@@ -45,6 +45,12 @@ public class WikiRendererDisplayColumn extends DataColumn
             _defaultRenderer = defaultRenderer;
     }
 
+    @Override
+    public Object getDisplayValue(RenderContext ctx)
+    {
+        return getFormattedValue(ctx);
+    }
+
     @Override @NotNull
     public String getFormattedValue(RenderContext ctx)
     {
