@@ -4126,6 +4126,11 @@ div.headermenu a.labkey-menu-text-link img {
     text-transform: uppercase;
 }
 
+.x4-btn-default-small-disabled
+{
+    background-color: #e4e4e4;
+}
+
 .x4-boundlist-list-ct ul
 {
     margin: 0;

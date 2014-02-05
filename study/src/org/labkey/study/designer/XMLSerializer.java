@@ -74,7 +74,8 @@ public class XMLSerializer
         def.setLabs(StudyDesignManager.get().getStudyDesignLookupValues(user, c, StudySchema.getInstance().getTableInfoStudyDesignLabs()));
 
         // Set the cohort choices based on the current study configuration
-        def.setCohorts(StudyDesignManager.get().getStudyCohorts(user, c));
+        if (StudyManager.getInstance().showCohorts(c, user))
+            def.setCohorts(StudyDesignManager.get().getStudyCohorts(user, c));
 
         // set the study top level properties based on the saved info
         def.setStudyName(xdesign.getName());
@@ -104,8 +105,15 @@ public class XMLSerializer
         //TODO: XML for cohort descriptions
         for (Cohort cohort : xdesign.getCohorts().getCohortArray())
         {
-            CohortImpl existingCohort = StudyManager.getInstance().getCohortByLabel(c, user, cohort.getName());
-            def.getGroups().add(new GWTCohort(cohort.getName(), null, cohort.getCount(), existingCohort != null ? existingCohort.getRowId() : null));
+            GWTCohort gwtCohort = new GWTCohort(cohort.getName(), null, cohort.getCount(), null);
+            if (StudyManager.getInstance().showCohorts(c, user))
+            {
+                CohortImpl existingCohort = StudyManager.getInstance().getCohortByLabel(c, user, cohort.getName());
+                if (existingCohort != null)
+                    gwtCohort.setCohortId(existingCohort.getRowId());
+            }
+
+            def.getGroups().add(gwtCohort);
         }
 
         GWTAssaySchedule gAssaySchedule = new GWTAssaySchedule();

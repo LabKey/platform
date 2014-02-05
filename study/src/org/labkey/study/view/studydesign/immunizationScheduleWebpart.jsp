@@ -63,6 +63,12 @@
 <%
     if (study != null)
     {
+      if (!StudyManager.getInstance().showCohorts(c, user))
+      {
+            %><p>You do not have permissions to see this data.</p><%
+      }
+      else
+      {
         List<CohortImpl> cohorts = study.getCohorts(user);
         if (cohorts.size() == 0)
         {
@@ -164,6 +170,7 @@
         </table>
 <%
         }
+      }
     }
     else
     {

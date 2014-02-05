@@ -144,7 +144,7 @@ Ext4.onReady(function(){
            showContainerTabs: true,
            project : {
                id   : '<%=project.getRowId()%>',
-               name : <%=PageFlowUtil.qh(project.getName())%>,
+               name : <%=PageFlowUtil.jsString(project.getName())%>,
                securityHref : <%=PageFlowUtil.qh(new ActionURL(SecurityController.ProjectAction.class, project).getLocalURIString())%>
            }
         }
