@@ -45,6 +45,9 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * User: matthewb
@@ -116,7 +119,16 @@ public class TestController extends SpringActionController
     {
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            for (ActionDescriptor ad : _actionResolver.getActionDescriptors())
+            List<ActionDescriptor> descriptors = new ArrayList<>(_actionResolver.getActionDescriptors());
+            Collections.sort(descriptors, new Comparator<ActionDescriptor>(){
+                @Override
+                public int compare(ActionDescriptor ad1, ActionDescriptor ad2)
+                {
+                    return ad1.getPrimaryName().compareTo(ad2.getPrimaryName());
+                }
+            });
+
+            for (ActionDescriptor ad : descriptors)
             {
                 out.print("<a href=\"");
                 out.print(PageFlowUtil.filter(actionURL(ad.getActionClass())));
