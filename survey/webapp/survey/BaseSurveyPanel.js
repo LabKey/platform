@@ -233,7 +233,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             else
             {
                 // if the question is not defined as ext, use the column metadata form helper
-                config = LABKEY.ext.Ext4Helper.getFormEditorConfig(question);
+                config = LABKEY.ext4.Util.getFormEditorConfig(question);
             }
         }
 
