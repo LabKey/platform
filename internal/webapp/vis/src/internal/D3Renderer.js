@@ -1049,6 +1049,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         pathSel.exit().remove();
         pathSel.enter().append('path');
         pathSel.attr('d', line)
+                .attr('class', 'line')
                 .attr('stroke', color)
                 .attr('stroke-width', size)
                 .attr('stroke-opacity', geom.opacity)
