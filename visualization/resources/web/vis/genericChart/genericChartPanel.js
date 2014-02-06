@@ -461,6 +461,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             width: 400,
             resizable: false,
             closeAction: 'hide',
+            closable: false,
             items: [this.xMeasurePanel],
             listeners: {
                 show: function(){
@@ -594,6 +595,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             frame: false,
             width: 400,
             resizable: false,
+            closable: false,
             closeAction: 'hide',
             items: [
                 this.yMeasurePanel
