@@ -1741,6 +1741,20 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
             layers.push(new LABKEY.vis.Layer({data: this.chartData.rows, geom: geom}));
 
+            // client has specified a line type
+            if (this.curveFit) {
+                var factory = this.lineRenderers[this.curveFit.type];
+                if (factory) {
+                    layers.push(
+                            new LABKEY.vis.Layer({
+                                geom: new LABKEY.vis.Geom.Path({}),
+                                aes: {x: 'x', y: 'y'},
+                                data: LABKEY.vis.Stat.fn(factory.createRenderer(this.curveFit.params),
+                                        this.curveFit.points, this.curveFit.min, this.curveFit.max)})
+                    );
+                }
+            }
+
             plotConfig = {
                 renderTo: newChartDiv.id,
                 width: width,
