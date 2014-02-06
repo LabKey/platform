@@ -687,10 +687,10 @@ Ext4.define('LABKEY.ext4.panel.FolderManagement', {
             tool[0].getComponent('create').setDisabled(noCreate);
             tool[0].getComponent('create').setVisible(!noCreate);
 
-            // check to disable 'move'
+            // check to disable 'move', disabling projects handles /Shared and /home
             var noMove = node.data.isProject || node.data.isContainerTab;
-            tool[0].getComponent('move').setDisabled(noCreate);
-            tool[0].getComponent('move').setVisible(!noCreate);
+            tool[0].getComponent('move').setDisabled(noMove);
+            tool[0].getComponent('move').setVisible(!noMove);
 
             // check to disable 'delete'
             var lowerPath = node.data.containerPath.toLowerCase();
