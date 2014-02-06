@@ -1021,11 +1021,9 @@ public class SpecimenImporter
         DbSchema schema = StudySchema.getInstance().getSchema();
         _logger = logger;
 
-        try
+        DbScope scope = schema.getScope();
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            DbScope scope = schema.getScope();
-            scope.ensureTransaction();
-
             if (null != sifMap.get(_labsTableType))
                 mergeTable(schema, sifMap.get(_labsTableType), true, true);
 
@@ -1076,13 +1074,11 @@ public class SpecimenImporter
             // if an exception is thrown during loading, but this is probably okay- the DB will clean it up eventually.
             executeSQL(schema, "DROP TABLE " + loadInfo.getTempTableName());
 
-            scope.commitTransaction();
-
             updateAllStatistics();
+            transaction.commit();
         }
         finally
         {
-            schema.getScope().closeConnection();
             StudyManager.getInstance().clearCaches(_container, false);
             SampleManager.getInstance().clearCaches(_container);
         }

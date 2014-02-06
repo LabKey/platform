@@ -210,6 +210,7 @@ public class ExpGeneratorHelper
                 }
             }
 
+            ExpProtocol parentProtocol;
             try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getImportLock()))
             {
                 // Build up the sequence of steps for this pipeline definition, which gets turned into a protocol
@@ -235,12 +236,14 @@ public class ExpGeneratorHelper
 
                 String protocolObjectId = job.getTaskPipeline().getProtocolIdentifier();
                 Lsid parentProtocolLSID = new Lsid(ExperimentService.get().generateLSID(job.getContainer(), ExpProtocol.class, protocolObjectId));
-                ExpProtocol parentProtocol = ensureProtocol(job, protocolCache, protocolSequence, parentProtocolLSID, job.getTaskPipeline().getProtocolShortDescription());
+                parentProtocol = ensureProtocol(job, protocolCache, protocolSequence, parentProtocolLSID, job.getTaskPipeline().getProtocolShortDescription());
 
-                // Break the protocol insertion and run insertion into two separate transactions
-                ExperimentService.get().getSchema().getScope().commitTransaction();
-                ExperimentService.get().getSchema().getScope().ensureTransaction();
+                transaction.commit();
+            }
 
+            // Break the protocol insertion and run insertion into two separate transactions
+            try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getImportLock()))
+            {
                 run = insertRun(job, actionSet.getActions(), source, runOutputsWithRoles, runInputsWithRoles, parentProtocol);
 
                 if (null != xarWriter)
