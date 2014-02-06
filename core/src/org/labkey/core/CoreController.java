@@ -1246,7 +1246,7 @@ public class CoreController extends SpringActionController
             if (!c.getPolicy().getResourceId().equals(c.getResourceId()))
                 text += "*";
             if (c.equals(getContainer()))
-                props.put("cls", "x-tree-node-current");
+                props.put("cls", "tree-node-selected");
 
             props.put("text", text);
 

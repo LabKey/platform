@@ -61,7 +61,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
             // since forceSelection is true  we must set the initial value
             // after the store is loaded
             authorStore.on('load', function() {
-                var af = this.getComponent('authorfield');
+                var af = this.down('#authorfield');
                 if (af) {
                     af.setValue(af.initialConfig.value);
                 }

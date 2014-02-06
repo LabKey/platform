@@ -201,6 +201,7 @@
             value: <%=q(form.getReportId().toString())%>
          });
     <% } %>
+        var refreshDateStr = <%=q(form.getRefreshDate() != null ? form.getRefreshDate().toString() : null)%>;
 
         var form = Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
             url : LABKEY.ActionURL.buildURL('reports',  <%=q(action)%>, null, {returnUrl: getReturnUrl()}),
@@ -230,7 +231,7 @@
                     name: <%=q(form.getViewName())%>,
                     authorUserId: <%=form.getAuthor()%>,
                     status: <%=q(form.getStatus().name())%>,
-                    refreshDate: <%=q(DateUtil.formatDate(getContainer(), form.getRefreshDate()))%>,
+                    refreshDate: refreshDateStr ? new Date(refreshDateStr) : null,
                     category: {rowid : <%=form.getViewCategory() != null ? form.getViewCategory().getRowId() : null%>},
                     description: <%=q(form.getDescription())%>,
                     shared: <%=form.getShared()%>

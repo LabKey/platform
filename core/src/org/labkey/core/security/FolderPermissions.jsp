@@ -81,6 +81,10 @@
     span.closeicon {
         background-image: url(<%=request.getContextPath()%>/ext-4.2.1/resources/ext-theme-classic-sandbox/images/tools/tool-sprites.gif);
     }
+
+    td.tree-node-selected {
+        font-weight: bold;
+    }
 </style>
 <%--
     TABS

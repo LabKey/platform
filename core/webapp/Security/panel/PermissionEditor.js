@@ -75,11 +75,12 @@ Ext4.define('Security.panel.PermissionEditor', {
                 border     : true,
                 listeners  : {
                     load : function(store, node, recs) {
-                        for (var r=0; r < recs.length; r++) {
-                            if (recs[r].data.cls != '')
-                                return;
-                        }
-                        store.getRootNode().set('cls', 'x-tree-node-current');
+                        Ext4.defer(function() {
+                            // if we don't have a selected tree node, select the root node
+                            var target = store.getRootNode().findChild('cls', "tree-node-selected", true);
+                            if (!target)
+                                store.getRootNode().set('cls', "tree-node-selected");
+                        }, 100);
                     }
                 }
             });
