@@ -3183,15 +3183,11 @@ public class OntologyManager
                 assertNotNull(m.get(strProp));
                 assertNull(m.get(intProp));
 
-                try
+                try (DbScope.Transaction transaction = getExpSchema().getScope().beginTransaction())
                 {
-                    getExpSchema().getScope().beginTransaction();
                     intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
                     insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 5));
-                }
-                finally
-                {
-                    getExpSchema().getScope().commitTransaction();
+                    transaction.commit();
                 }
 
                 m = getProperties(c, childObjectLsid);

@@ -283,31 +283,32 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             }
 
             // transaction testing
-            scope.beginTransaction();
-            assertTrue(scope.isTransactionActive());
+            try(DbScope.Transaction transaction = scope.beginTransaction())
+            {
+                assertTrue(scope.isTransactionActive());
 
-            // Test read-through transaction cache
-            assertTrue(cache.get("key_11") == values[11]);
+                // Test read-through transaction cache
+                assertTrue(cache.get("key_11") == values[11]);
 
-            cache.remove("key_11");
-            assertTrue(null == cache.get("key_11"));
+                cache.remove("key_11");
+                assertTrue(null == cache.get("key_11"));
 
-            // imitate another thread: toggle transaction and test
-            scope.setOverrideTransactionActive(Boolean.FALSE);
-            assertTrue(cache.get("key_11") == values[11]);
-            scope.setOverrideTransactionActive(null);
+                // imitate another thread: toggle transaction and test
+                scope.setOverrideTransactionActive(Boolean.FALSE);
+                assertTrue(cache.get("key_11") == values[11]);
+                scope.setOverrideTransactionActive(null);
 
-            // This should close the transaction caches
-            scope.commitTransaction();
-            // Test that remove got applied to shared cache
-            assertTrue(null == cache.get("key_11"));
+                // This should close the transaction caches
+                transaction.commit();
+                // Test that remove got applied to shared cache
+                assertTrue(null == cache.get("key_11"));
 
-            cache.removeUsingPrefix("key");
-            assert trackingCache.size() == 0;
+                cache.removeUsingPrefix("key");
+                assert trackingCache.size() == 0;
 
-            // This should close the (temporary) shared cache
-            cache.close();
-            scope.closeConnection();
+                // This should close the (temporary) shared cache
+                cache.close();
+            }
         }
 
 

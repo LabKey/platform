@@ -147,8 +147,12 @@ public abstract class AssayProtocolSchema extends AssaySchema
      */
     public List<QueryDefinition> getFileBasedAssayProviderScopedQueries()
     {
-        Path providerPath = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY);
-        return QueryService.get().getFileBasedQueryDefs(getUser(), getContainer(), getSchemaName(), providerPath, getProvider().getDeclaringModule());
+        if (getContainer().getActiveModules().contains(getProvider().getDeclaringModule()))
+        {
+            Path providerPath = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY);
+            return QueryService.get().getFileBasedQueryDefs(getUser(), getContainer(), getSchemaName(), providerPath, getProvider().getDeclaringModule());
+        }
+        return Collections.emptyList();
     }
 
     @NotNull
