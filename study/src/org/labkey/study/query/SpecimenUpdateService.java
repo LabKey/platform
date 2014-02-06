@@ -15,8 +15,9 @@
  */
 package org.labkey.study.query;
 
-import org.apache.commons.beanutils.converters.IntegerConverter;
+import org.apache.commons.beanutils.converters.LongConverter;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
@@ -116,7 +117,8 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             SampleManager.getInstance().clearCaches(container);
 
             // Force recalculation of requestability and specimen table
-            importSpecimens(user, container, rows, true, false);
+            EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, false);
+            importSpecimens(importer, rows, true);
         }
         catch (ValidationException e)
         {
@@ -140,7 +142,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        int rowId = keyFromMap(oldRow);
+        Long rowId = keyFromMap(oldRow);
         Specimen specimen = SampleManager.getInstance().getSpecimen(container, user, rowId);
 
         if (null == specimen)
@@ -153,7 +155,8 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         try
         {
             // Force recalculation of requestability and specimen table
-            importSpecimens(user, container, rows, true, false);
+            EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, false);
+            importSpecimens(importer, rows, true);
         }
         catch (IOException e)
         {
@@ -214,7 +217,8 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
                 row.put("externalid", 1);
             }
 
-            importSpecimens(user, container, rows, true, true);
+            EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, true);
+            importSpecimens(importer, rows, true);
         }
         catch (IOException e)
         {
@@ -281,7 +285,8 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
         try
         {
-            importSpecimens(user, container, rows, true, true);
+            EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, true);
+            importSpecimens(importer, rows, true);
         }
         catch (IOException e)
         {
@@ -321,8 +326,8 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         {
             Map<String, Object> row = rows.get(i);
             Map<String, Object> oldRow = oldKeys.get(i);
-            int rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
-            rowIds.add(new Long(rowId));
+            Long rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
+            rowIds.add(rowId);
         }
         List<Specimen> specimens = SampleManager.getInstance().getSpecimens(container, user, rowIds);
         if (specimens.size() != rows.size())
@@ -339,13 +344,14 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             throw errors;
         }
 
+        EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, false);
         List<Map<String, Object>> newKeys = new ArrayList<>(rows.size());
         List<Map<String, Object>> newRows = new ArrayList<>(rows.size());
         for (int i = 0; i < rows.size(); i++)
         {
             Map<String, Object> row = rows.get(i);
             Specimen specimen = specimens.get(i);
-            Map<String, Object> rowMap = prepareRowMap(container, row, specimen);
+            Map<String, Object> rowMap = prepareRowMap(container, row, specimen, importer);
             newRows.add(rowMap);
 
             Map<String,Object> keys = new HashMap<>();
@@ -355,7 +361,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
         try
         {
-            importSpecimens(user, container, newRows, true, false);
+            importSpecimens(importer, newRows, true);
         }
         catch (ValidationException e)
         {
@@ -377,16 +383,17 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow)
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        int rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
+        Long rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
         Specimen specimen = SampleManager.getInstance().getSpecimen(container, user, rowId);
         if (specimen == null)
             throw new IllegalArgumentException("No specimen found for rowId: " + rowId);
 
         checkEditability(container, specimen);
-        Map<String, Object> rowMap = prepareRowMap(container, row, specimen);
+        EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, false);
+        Map<String, Object> rowMap = prepareRowMap(container, row, specimen, importer);
 
         // TODO: this is a hack to best deal with Requestable being Null until a better fix can be accomplished
         if (null == oldRow || null == oldRow.get("requestable"))
@@ -401,7 +408,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
         try
         {
-            importSpecimens(user, container, rows, true, false);
+            importSpecimens(importer, rows, true);
         }
         catch (IOException e)
         {
@@ -421,7 +428,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         }
     }
 
-    private int keyFromMap(Map<String,Object> map) throws InvalidKeyException
+    private Long keyFromMap(Map<String,Object> map) throws InvalidKeyException
     {
         if (null == map)
             throw new InvalidKeyException("No values provided");
@@ -433,20 +440,22 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             rowId = map.get("rowid");
         if (null == rowId)
             throw new InvalidKeyException("No value provided for 'rowId' column");
-        Integer rowInteger = (Integer)new IntegerConverter(null).convert(Integer.class, rowId);
+        Long rowInteger = (Long)new LongConverter(null).convert(Long.class, rowId);
         if (null == rowInteger)
             throw new InvalidKeyException("Unable to convert rowId of '" + rowId + "' to an int");
         return rowInteger;
     }
 
-    private Map<String, Object> prepareRowMap(Container container, Map<String, Object> row, Specimen specimen)
+    private Map<String, Object> prepareRowMap(Container container, Map<String, Object> row, Specimen specimen,
+                                              EditableSpecimenImporter importer)
     {
         // Get last event so that our input considers all fields that were set;
         // Then overwrite whatever is coming from the form
         Map<String, Object> rowMap = getLastEventMap(container, specimen);
         for (Map.Entry<String, Object> entry : row.entrySet())
         {
-            rowMap.put(entry.getKey(), entry.getValue());
+            String columnName = importer.getMappedColumnName(entry.getKey());
+            rowMap.put(columnName, entry.getValue());
         }
 
         rowMap.put("globaluniqueid", specimen.getGlobalUniqueId());
@@ -456,9 +465,9 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         return rowMap;
     }
 
-    private void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge, boolean insert) throws SQLException, IOException, ValidationException
+    private void importSpecimens(EditableSpecimenImporter importer, List<Map<String, Object>> rows,
+                                 boolean merge) throws SQLException, IOException, ValidationException
     {
-        EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, insert);
         rows = importer.mapColumnNamesToTsvColumnNames(rows);
         importer.process(rows, merge, _logger);
     }
@@ -506,8 +515,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             throw new IllegalStateException("Expected SpecimenEvent table to already exist.");
 
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition(FieldKey.fromString("VialId"), specimen.getRowId());
-        filter.addCondition(FieldKey.fromString("ExternalId"), specimenEvent.getExternalId());
+        filter.addCondition(FieldKey.fromString("RowId"), specimenEvent.getRowId());
         return new TableSelector(tableInfoSpecimenEvent, filter, null).getMap();
     }
 }

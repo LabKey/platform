@@ -24,6 +24,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -638,6 +639,18 @@ public class SpecimenImporter
         }
     }
 
+    public static class RollupPair extends Pair<String, Rollup>
+    {
+        public RollupPair(String first, Rollup second)
+        {
+            super(first.toLowerCase(), second);
+        }
+    }
+
+    public static class RollupMap extends CaseInsensitiveHashMap<List<RollupPair>>
+    {
+    }
+
     private static final List<Rollup> _eventVialRollups = new ArrayList<>();
     private static final List<Rollup> _vialSpecimenRollups = new ArrayList<>();
     static
@@ -867,7 +880,7 @@ public class SpecimenImporter
     }
 
     // Event -> Vial Rollup map
-    private Map<String, List<Pair<String, Rollup>>> _eventToVialRollups = new HashMap<>();
+    private RollupMap _eventToVialRollups = new RollupMap();
 
     // Provisioned specimen tables
     private TableInfo _tableInfoSpecimen = null;
@@ -1418,9 +1431,9 @@ public class SpecimenImporter
                 " SET CurrentLocation = CAST(? AS INTEGER), ProcessingLocation = CAST(? AS INTEGER), " +
                 "FirstProcessedByInitials = ?, AtRepository = ?, " +
                 "LatestComments = ?, LatestQualityComments = ? ";
-        for (List<Pair<String, Rollup>> rollupList : _eventToVialRollups.values())
+        for (List<RollupPair> rollupList : _eventToVialRollups.values())
         {
-            for (Pair<String, Rollup> rollup : rollupList)
+            for (RollupPair rollup : rollupList)
             {
                 String colName = rollup.first;
                 ColumnInfo column = vialTable.getColumn(colName);
@@ -1494,10 +1507,10 @@ public class SpecimenImporter
 
                 if (!updateVial)
                 {
-                    for (Map.Entry<String, List<Pair<String, Rollup>>> rollupEntry : _eventToVialRollups.entrySet())
+                    for (Map.Entry<String, List<RollupPair>> rollupEntry : _eventToVialRollups.entrySet())
                     {
                         String eventColName = rollupEntry.getKey();
-                        for (Pair<String, Rollup> rollupItem : rollupEntry.getValue())
+                        for (RollupPair rollupItem : rollupEntry.getValue())
                         {
                             String vialColName = rollupItem.first;
                             Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColName);
@@ -1522,10 +1535,10 @@ public class SpecimenImporter
                     params.add(lastEvent.getComments());
                     params.add(lastEvent.getQualityComments());
 
-                    for (Map.Entry<String, List<Pair<String, Rollup>>> rollupEntry : _eventToVialRollups.entrySet())
+                    for (Map.Entry<String, List<RollupPair>> rollupEntry : _eventToVialRollups.entrySet())
                     {
                         String eventColName = rollupEntry.getKey();
-                        for (Pair<String, Rollup> rollupItem : rollupEntry.getValue())
+                        for (RollupPair rollupItem : rollupEntry.getValue())
                         {
                             Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColName);
                             params.add(rollupResult);
@@ -3542,11 +3555,11 @@ public class SpecimenImporter
     {
         // Return names of columns where column is 2nd thru nth column rolled up on same Event column
         List<String> rolledupNames = new ArrayList<>();
-        Map<String, List<Pair<String, Rollup>>> eventToVialRollups = getEventToVialRollups(container, user);
-        for (List<Pair<String, Rollup>> rollupList : eventToVialRollups.values())
+        RollupMap eventToVialRollups = getEventToVialRollups(container, user);
+        for (List<RollupPair> rollupList : eventToVialRollups.values())
         {
             boolean duplicate = false;
-            for (Pair<String, Rollup> rollupItem : rollupList)
+            for (RollupPair rollupItem : rollupList)
             {
                 if (duplicate)
                     rolledupNames.add(rollupItem.first.toLowerCase());
@@ -3556,7 +3569,7 @@ public class SpecimenImporter
         return rolledupNames;
     }
 
-    public static Map<String, List<Pair<String, Rollup>>> getEventToVialRollups(Container container, User user)
+    public static RollupMap getEventToVialRollups(Container container, User user)
     {
         List<Rollup> rollups = SpecimenImporter.getEventVialRollups();
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
@@ -3575,10 +3588,10 @@ public class SpecimenImporter
     public static List<String> getRolledupSpecimenColumnNames(Container container, User user)
     {
         List<String> rolledupNames = new ArrayList<>();
-        Map<String, List<Pair<String, Rollup>>> vialToSpecimenRollups = getVialToSpecimenRollups(container, user);
-        for (List<Pair<String, Rollup>> rollupList : vialToSpecimenRollups.values())
+        RollupMap vialToSpecimenRollups = getVialToSpecimenRollups(container, user);
+        for (List<RollupPair> rollupList : vialToSpecimenRollups.values())
         {
-            for (Pair<String, Rollup> rollupItem : rollupList)
+            for (RollupPair rollupItem : rollupList)
             {
                 rolledupNames.add(rollupItem.first.toLowerCase());
             }
@@ -3586,7 +3599,7 @@ public class SpecimenImporter
         return rolledupNames;
     }
 
-    public static Map<String, List<Pair<String, Rollup>>> getVialToSpecimenRollups(Container container, User user)
+    public static RollupMap getVialToSpecimenRollups(Container container, User user)
     {
         List<Rollup> rollups = SpecimenImporter.getVialSpecimenRollups();
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
@@ -3602,9 +3615,9 @@ public class SpecimenImporter
         return getRollups(fromDomain, toDomain, rollups);
     }
 
-    private static Map<String, List<Pair<String, Rollup>>> getRollups(Domain fromDomain, Domain toDomain, List<Rollup> considerRollups)
+    private static RollupMap getRollups(Domain fromDomain, Domain toDomain, List<Rollup> considerRollups)
     {
-        Map<String, List<Pair<String, Rollup>>> matchedRollups = new HashMap<>();
+        RollupMap matchedRollups = new RollupMap();
         List<PropertyDescriptor> toProperties = new ArrayList<>();
 
         for (DomainProperty domainProperty : toDomain.getNonBaseProperties())
@@ -3618,7 +3631,7 @@ public class SpecimenImporter
         return matchedRollups;
     }
 
-    public static void findRollups(Map<String, List<Pair<String, Rollup>>> resultRollups, PropertyDescriptor fromProperty,
+    public static void findRollups(RollupMap resultRollups, PropertyDescriptor fromProperty,
                                    List<PropertyDescriptor> toProperties, List<Rollup> considerRollups)
     {
         for (Rollup rollup : considerRollups)
@@ -3627,13 +3640,13 @@ public class SpecimenImporter
             {
                 if (rollup.match(fromProperty, toProperty))
                 {
-                    List<Pair<String, Rollup>> matches = resultRollups.get(fromProperty.getName());
+                    List<RollupPair> matches = resultRollups.get(fromProperty.getName());
                     if (null == matches)
                     {
                         matches = new ArrayList<>();
                         resultRollups.put(fromProperty.getName(), matches);
                     }
-                    matches.add(new Pair<>(toProperty.getName(), rollup));
+                    matches.add(new RollupPair(toProperty.getName(), rollup));
                 }
             }
         }

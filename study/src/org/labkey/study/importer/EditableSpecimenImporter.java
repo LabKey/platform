@@ -16,6 +16,7 @@
 package org.labkey.study.importer;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
@@ -24,14 +25,12 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenImportStrategy;
-import org.labkey.api.util.Pair;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -120,9 +119,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
                 Object value = row.get(columnName);
                 if (null != value)
                 {
-                    String specialName = getSpecialColumnName(columnName);
-                    if (null != specialName)
-                        columnName = specialName;
+                    columnName = getMappedColumnName(columnName);
                     SpecimenColumn specCol = findSpecimenColumnFromDbName(columnName);
                     if (null != specCol)
                     {
@@ -149,6 +146,15 @@ public class EditableSpecimenImporter extends SpecimenImporter
         return _dbNameToSpecimenColumnMap.get(name.toLowerCase());
     }
 
+    @NotNull
+    public String getMappedColumnName(@NotNull String columnName)
+    {
+        String specialName = getSpecialColumnName(columnName);
+        if (null != specialName)
+            return specialName;
+        return columnName.toLowerCase();
+    }
+
     private Map<String, String> _specialColumnNameMap;
 
     private String getSpecialColumnName(String name)
@@ -169,11 +175,12 @@ public class EditableSpecimenImporter extends SpecimenImporter
             _specialColumnNameMap.put("latestqualitycomments", "qualitycomments");
 
             // Add any rollups from optionals whose names are not matching
-            Map<String, List<Pair<String, Rollup>>> matchedRollups = SpecimenImporter.getEventToVialRollups(getContainer(), getUser());
-            for (Map.Entry<String, List<Pair<String, Rollup>>> entry : matchedRollups.entrySet())
+            RollupMap matchedRollups = SpecimenImporter.getEventToVialRollups(getContainer(), getUser());
+            for (Map.Entry<String, List<RollupPair>> entry : matchedRollups.entrySet())
             {
                 String fromName = entry.getKey();
-                for (Pair<String, Rollup> rollupItem : entry.getValue())
+                List<RollupPair> rollupItems = entry.getValue();
+                for (RollupPair rollupItem : rollupItems)
                 {
                     String toName = rollupItem.first;
                     if (!fromName.equalsIgnoreCase(toName))
@@ -207,8 +214,6 @@ public class EditableSpecimenImporter extends SpecimenImporter
         Container container = getContainer();
         TableInfo tableInfoSpecimenEvent = StudySchema.getInstance().getTableInfoSpecimenEvent(container);
         TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(container);
-        if (null == tableInfoSpecimenEvent || null == tableInfoVial)
-            throw new IllegalStateException("Expected Vial and SpecimenEvent table to already exist.");
 
         SQLFragment sqlPrefix = new SQLFragment();
         sqlPrefix.append("UPDATE ").append(tableInfoSpecimenEvent.getSelectName())
