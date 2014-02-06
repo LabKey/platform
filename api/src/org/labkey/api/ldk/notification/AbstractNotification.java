@@ -18,6 +18,7 @@ package org.labkey.api.ldk.notification;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.DetailsURL;
@@ -50,17 +51,25 @@ abstract public class AbstractNotification implements Notification
         return c.getActiveModules().contains(_owner);
     }
 
+    protected String getExecuteQueryUrl(Container c, String schemaName, String queryName, @Nullable String viewName)
+    {
+        return getExecuteQueryUrl(c, schemaName, queryName, viewName, null);
+    }
+
     /**
      * This should really be using URLHelpers better, but there is a lot of legacy URL strings
      * migrated into java and its not worth changing all of it at this point
      */
-    protected String getExecuteQueryUrl(Container c, String schemaName, String queryName, @Nullable String viewName)
+    protected String getExecuteQueryUrl(Container c, String schemaName, String queryName, @Nullable String viewName, @Nullable SimpleFilter filter)
     {
         DetailsURL url = DetailsURL.fromString("/query/executeQuery.view", c);
         String ret = AppProps.getInstance().getBaseServerUrl() + url.getActionURL().toString();
         ret += "schemaName=" + schemaName + "&query.queryName=" + queryName;
         if (viewName != null)
             ret += "&query.viewName=" + viewName;
+
+        if (filter != null)
+            ret += "&" + filter.toQueryString("query");
 
         return ret;
     }

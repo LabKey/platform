@@ -74,8 +74,8 @@ Ext4.define('LABKEY.ext4.data.Store', {
     alias: ['store.labkeystore', 'store.labkey-store'],
 
     //the page size defaults to 25, which can give odd behavior for combos or other applications.
-    //applications that want to use paging should modify this.
-    pageSize: 10000,
+    //applications that want to use paging should modify this.  100K matches the implicit client API pagesize
+    pageSize: 100000,
 
     constructor: function(config) {
         config = config || {};

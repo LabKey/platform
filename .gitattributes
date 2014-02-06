@@ -486,6 +486,8 @@ api/src/org/labkey/api/ehr/security/EHRInProgressInsertPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRInProgressUpdatePermission.java -text
 api/src/org/labkey/api/ehr/security/EHRLabworkEntryPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRPathologyEntryPermission.java -text
+api/src/org/labkey/api/ehr/security/EHRProjectEditPermission.java -text
+api/src/org/labkey/api/ehr/security/EHRProtocolEditPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRRequestAdminPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRRequestApprovedAdminPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRRequestApprovedDeletePermission.java -text
@@ -737,6 +739,7 @@ api/src/org/labkey/api/ldk/AbstractNavItem.java -text
 api/src/org/labkey/api/ldk/ExtendedSimpleModule.java -text
 api/src/org/labkey/api/ldk/LDKService.java -text
 api/src/org/labkey/api/ldk/NavItem.java -text
+api/src/org/labkey/api/ldk/buttons/ShowEditUIButton.java -text
 api/src/org/labkey/api/ldk/notification/AbstractNotification.java -text
 api/src/org/labkey/api/ldk/notification/Notification.java -text
 api/src/org/labkey/api/ldk/notification/NotificationSection.java -text
@@ -7911,6 +7914,7 @@ internal/src/org/labkey/api/exp/property/SystemProperty.java -text
 internal/src/org/labkey/api/gwt/server/BaseRemoteService.java -text
 internal/src/org/labkey/api/issues/IssuesSchema.java -text
 internal/src/org/labkey/api/ldk/table/ContainerScopedTable.java -text
+internal/src/org/labkey/api/ldk/table/CustomPermissionsTable.java -text
 internal/src/org/labkey/api/message/digest/DailyMessageDigest.java -text
 internal/src/org/labkey/api/message/digest/MessageDigest.java -text
 internal/src/org/labkey/api/message/digest/PeriodicMessageDigest.java -text
