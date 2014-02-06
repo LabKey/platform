@@ -97,7 +97,7 @@
     {
         if (bean.hasKeywords(type) || type.getValue(issue) != null)
         {
-            %><tr><td class="labkey-form-label"><%=h(bean.getLabel(type))%></td><td><%=h(type.getValue(issue))%></td></tr><%
+            %><tr><td class="labkey-form-label"><%=text(bean.getLabel(type))%></td><td><%=h(type.getValue(issue))%></td></tr><%
         }
     }
 %>
