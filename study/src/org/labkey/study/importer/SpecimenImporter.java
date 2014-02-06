@@ -3574,11 +3574,11 @@ public class SpecimenImporter
         List<Rollup> rollups = SpecimenImporter.getEventVialRollups();
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
 
-        Domain fromDomain = specimenTablesProvider.getDomain("SpecimenEvent", false);
+        Domain fromDomain = specimenTablesProvider.getDomain("SpecimenEvent", true);
         if (null == fromDomain)
             throw new IllegalStateException("Expected SpecimenEvent table to already be created.");
 
-        Domain toDomain = specimenTablesProvider.getDomain("Vial", false);
+        Domain toDomain = specimenTablesProvider.getDomain("Vial", true);
         if (null == toDomain)
             throw new IllegalStateException("Expected Vial table to already be created.");
 
@@ -3604,11 +3604,11 @@ public class SpecimenImporter
         List<Rollup> rollups = SpecimenImporter.getVialSpecimenRollups();
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
 
-        Domain fromDomain = specimenTablesProvider.getDomain("Vial", false);
+        Domain fromDomain = specimenTablesProvider.getDomain("Vial", true);
         if (null == fromDomain)
             throw new IllegalStateException("Expected Vial table to already be created.");
 
-        Domain toDomain = specimenTablesProvider.getDomain("Specimen", false);
+        Domain toDomain = specimenTablesProvider.getDomain("Specimen", true);
         if (null == toDomain)
             throw new IllegalStateException("Expected Specimen table to already be created.");
 
