@@ -306,6 +306,36 @@ LABKEY.Portal = new function()
         });
     };
 
+    var showPermissions = function(webpartID, permission, containerPath) {
+
+        var display = function() {
+            Ext4.onReady(function() {
+                Ext4.create('LABKEY.Portal.WebPartPermissionsPanel', {
+                    webPartId: webpartID,
+                    permission: permission,
+                    containerPath: containerPath,
+                    autoShow: true
+                });
+            });
+        };
+
+        var loader = function() {
+            LABKEY.requiresExt4Sandbox(true, function() {
+                LABKEY.requiresScript('WebPartPermissionsPanel.js', true, display, this);
+            }, this);
+        };
+
+        // Require a webpartID for any action
+        if (webpartID) {
+            if (LABKEY.Portal.WebPartPermissionsPanel) {
+                display();
+            }
+            else {
+                loader();
+            }
+        }
+    };
+
     // public methods:
     /** @scope LABKEY.Portal.prototype */
     return {
@@ -694,7 +724,9 @@ LABKEY.Portal = new function()
 
                 showEditTabWindow("Rename Tab", renameHandler, currentName);
             }
-        }
+        },
+
+        _showPermissions : showPermissions
     };
 };
 

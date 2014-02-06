@@ -42,9 +42,9 @@
     Set<String> gwtModules = GWTView.getModulesForRootContext();
     Container c = getContainer();
     User user = getUser();
-//    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     ThemeFont themeFont = ThemeFont.getThemeFont(c);
     boolean isPrint = bean.getTemplate() == PageConfig.Template.Print;
+    String themeClass = themeFont.getClassName() + (isPrint ? " print": "");
 
     if (bean.getFrameOption() != PageConfig.FrameOption.ALLOW)
         response.setHeader("X-FRAME-OPTIONS", bean.getFrameOption().name());
@@ -72,29 +72,12 @@
     <!-- <base href="<%=h(base.getURIString())%>" /> -->
 <%= bean.getMetaTags(url) %>
 <%= PageFlowUtil.getStandardIncludes(getViewContext(), bean.getClientDependencies()) %><%
-if(user.isSiteAdmin())
-{
-    String webPartPermissionsource = contextPath + "/WebPartPermissionsPanel.js?" + PageFlowUtil.getServerSessionHash();
-    %>
-    <script type="text/javascript" src="<%=text(webPartPermissionsource)%>"></script><%
-}
-if (null != bean.getStyleSheet())
-{
-    %>
-    <link href="<%=bean.getStyleSheet() %>" type="text/css" rel="stylesheet"/><%
-}
 if (null != bean.getRssUrl())
 {
     %>
     <link href="<%=bean.getRssUrl().getEncodedLocalURIString()%>" type="application/rss+xml" title="<%=h(bean.getRssTitle())%>" rel="alternate"/><%
 }
-if (null != bean.getStyles())
-{
-    %>
-    <style type="text/css"><!--<%= bean.getStyles() %>--></style><%
-}
 %>
-<%= null != bean.getScript() && 0 < bean.getScript().length() ? bean.getScript() + "\n": "" %>
 <% if (bean.getAllowTrackingScript())
 {
     String script = AnalyticsService.getTrackingScript();
@@ -108,14 +91,14 @@ if (null != bean.getStyles())
 %>
 </head>
 
-<body id="bodyElement" onload="<%=h(onLoad)%>" class="<%=themeFont.getClassName()%><%=isPrint?" print":""%>">
+<body id="bodyElement" onload="<%=h(onLoad)%>" class="<%= text(themeClass) %>">
 <%
 if (null != gwtModules && gwtModules.size() > 0)
 {   //Only include first js file?? %>
     <iframe id="__gwt_historyFrame" style="width:0;height:0;border:0"></iframe><%
 }
 %>
-    <table class="labkey-main <%=themeFont.getClassName()%><%=isPrint?" print":""%>" cellpadding="0" cellspacing="0" <% if (isPrint) { %>style="padding: 5px;"<% } %>><%
+    <table class="labkey-main <%= text(themeClass) %>" cellpadding="0" cellspacing="0" <% if (isPrint) { %>style="padding: 5px;"<% } %>><%
 
 if (bean.showHeader() != PageConfig.TrueFalse.False)
 {

@@ -82,16 +82,6 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
             return _properties;
         }
 
-//        public void setLoading(String message)
-//        {
-//            _loading = message;
-//        }
-
-//        public String getLoading()
-//        {
-//            return _loading;
-//        }
-
         public String getLoadingStyleName()
         {
             return _properties.get("loadingStyle");

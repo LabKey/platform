@@ -3,11 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-
-LABKEY.requiresExt4Sandbox(true);
-
-Ext4.onReady(function(){
-    Ext4.define('LABKEY.Portal.WebPartPermissionsPanel', {
+Ext4.define('LABKEY.Portal.WebPartPermissionsPanel', {
         extend: 'Ext.window.Window',
 
         constructor: function(config){
@@ -303,4 +299,3 @@ Ext4.onReady(function(){
             this.close();
         }
     });
-});

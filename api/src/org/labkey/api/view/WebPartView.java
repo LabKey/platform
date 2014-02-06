@@ -612,11 +612,11 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
                             // Wrapped in immediately invoke function expression because of Issue 16953
                             NavTree permissionsNav = new NavTree("Permissions",
-                                    "javascript:(function(){Ext4.create('LABKEY.Portal.WebPartPermissionsPanel', {" +
-                                            "webPartId: '" + getWebPartRowId() + "',\n" +
-                                            "permission: " + permissionString + ",\n" +
-                                            "containerPath: " + containerPathString + "\n" +
-                                            "}).show();}())");
+                                    "javascript:LABKEY.Portal._showPermissions(" +
+                                    getWebPartRowId() + "," +
+                                    permissionString + "," +
+                                    containerPathString + ");"
+                            );
 
                             permissionsNav.setId("permissions_"+webPart.getRowId());
                             nMenu.addChild(permissionsNav);

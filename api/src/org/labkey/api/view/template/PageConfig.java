@@ -72,9 +72,6 @@ public class PageConfig
     private String _rssTitle = null;
     private boolean _includeLoginLink = true;
     private int _minimumWidth = 400;
-    private String _styleSheet;
-    private String _styles;
-    private String _script;
     private LinkedHashSet<ClientDependency> _resources = new LinkedHashSet<>();
     private TrueFalse _showHeader = TrueFalse.Default;
     private List<NavTree> _navTrail;
@@ -211,36 +208,6 @@ public class PageConfig
     public void setMinimumWidth(int minimumWidth)
     {
         _minimumWidth = minimumWidth;
-    }
-
-    public String getStyleSheet()
-    {
-        return _styleSheet;
-    }
-
-    public void setStyleSheet(String styleSheet)
-    {
-        _styleSheet = styleSheet;
-    }
-
-    public String getStyles()
-    {
-        return _styles;
-    }
-
-    public void setStyles(String styles)
-    {
-        _styles = styles;
-    }
-
-    public String getScript()
-    {
-        return _script;
-    }
-
-    public void setScript(String script)
-    {
-        _script = script;
     }
 
     public void setShowHeader(boolean show)

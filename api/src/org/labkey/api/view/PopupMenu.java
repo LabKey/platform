@@ -160,11 +160,6 @@ public class PopupMenu extends DisplayElement
         out.append("        var m = new Ext.menu.Menu(");
         out.append(renderMenuModel(_navTree.getChildList(), getId(dataRegionName)));
         out.append("         );});");
-//        out.append("_menuMgr.register(");
-//        out.append(PageFlowUtil.qh(getId(dataRegionName)));
-//        out.append(", ");
-//        out.append(renderMenuModel(_navTree.getChildList(), getId(dataRegionName)));
-//        out.append(");");
     }
 
     private String renderUnregScript(String id)
