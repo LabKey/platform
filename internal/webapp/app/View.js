@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2014 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 /**
  * This is the primary view controller (a.k.a. Application View Controller). It is responsible for registering views
  * that are used in the application and managing what views are shown based on the active view.
