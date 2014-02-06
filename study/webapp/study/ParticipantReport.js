@@ -746,8 +746,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             transposed : this.transposed      
         };
 
-        this.updateStatus(this.response.rows.length);
-
         if (this.pageFieldStore.getCount() > 0) {
 
             for (var i=0; i < this.pageFieldStore.getCount(); i++) {
@@ -828,7 +826,12 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 this.templateReport.on('afterrender', this.fitToReport, this);
             }
 
-            this.templateReport.loadData(this.response);
+            if (this.filteredSubjects && this.filteredSubjects.length == 0) {
+                this.empty();
+            }
+            else {
+                this.templateReport.loadData(this.response);
+            }
 
             if (this.allowFilter && !this.printMode) {
                 this.on('resize', this.showFilter, this);
