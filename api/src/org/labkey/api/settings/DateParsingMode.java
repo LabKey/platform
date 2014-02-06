@@ -15,7 +15,10 @@
  */
 package org.labkey.api.settings;
 
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.util.DateUtil;
+
+import java.util.Set;
 
 /**
  * User: adam
@@ -24,16 +27,18 @@ import org.labkey.api.util.DateUtil;
  */
 public enum DateParsingMode
 {
-    US("U.S. date parsing (MDY)", DateUtil.MonthDayOption.MONTH_DAY),
-    NON_US("Non-U.S. date parsing (DMY)", DateUtil.MonthDayOption.DAY_MONTH);
+    US("U.S. date parsing (MDY)", DateUtil.MonthDayOption.MONTH_DAY, "31/1/2004, 13/1/2004, 31/12/2004"),
+    NON_US("Non-U.S. date parsing (DMY)", DateUtil.MonthDayOption.DAY_MONTH, "1/31/2004, 1/13/2004, 12/31/2004");
 
     private final String _displayString;
     private final DateUtil.MonthDayOption _dayMonth;
+    private final String _illegalFormats;
 
-    DateParsingMode(String displayString, DateUtil.MonthDayOption dayMonth)
+    DateParsingMode(String displayString, DateUtil.MonthDayOption dayMonth, String illegalFormats)
     {
         _dayMonth = dayMonth;
         _displayString = displayString;
+        _illegalFormats = illegalFormats;
     }
 
     public String getDisplayString()
@@ -52,5 +57,10 @@ public enum DateParsingMode
     public DateUtil.MonthDayOption getDayMonth()
     {
         return _dayMonth;
+    }
+
+    public Set<String> getIllegalFormats()
+    {
+        return new CsvSet(_illegalFormats);
     }
 }

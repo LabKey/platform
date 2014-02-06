@@ -1671,6 +1671,8 @@ Parse:
             assertIllegalDate("2/3/2001 0:00:00");
             assertIllegalDate("2/3/2001 12:00am");
             assertIllegalDate("2/3/2001 12:00pm");
+            assertIllegalDate("2/30/2001 12:00pm");
+            assertIllegalDate("30/2/2001 12:00pm");
         }
 
 
@@ -1690,6 +1692,9 @@ Parse:
             assertEquals(dateExpected, parseDate("02-03-01"));
             assertEquals(dateExpected, parseDate("02/03/2001"));
             assertEquals(dateExpected, parseDate("02-03-2001"));
+
+            for (String illegalFormat : mode.getIllegalFormats())
+                assertIllegalDate(illegalFormat);
         }
 
 
