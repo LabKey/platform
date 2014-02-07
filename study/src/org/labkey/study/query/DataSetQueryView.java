@@ -313,7 +313,11 @@ public class DataSetQueryView extends StudyQueryView
             button.addMenuItem("Set Default View", getViewContext().cloneActionURL().setAction(StudyController.ViewPreferencesAction.class));
 
             bar.add(button);
-            bar.add(createChartButton());
+            MenuButton chartButton = createChartButton();
+            if (chartButton.getPopupMenu().getNavTree().getChildCount() > 0)
+            {
+                bar.add(chartButton);
+            }
         }
     }
 
@@ -343,7 +347,11 @@ public class DataSetQueryView extends StudyQueryView
     {
         bar.add(createFilterButton());
         bar.add(createViewButton(getItemFilter()));
-        bar.add(createChartButton());
+        MenuButton chartButton = createChartButton();
+        if (chartButton.getPopupMenu().getNavTree().getChildCount() > 0)
+        {
+            bar.add(chartButton);
+        }
 
         bar.add(ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), getDataRegionName(), _cohortFilter, true));
 

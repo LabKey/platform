@@ -341,7 +341,8 @@ public class DefaultValueServiceImpl extends DefaultValueService
     public List<Container> getDefaultValueOverridees(Container currentContainer, Domain domain)
     {
         List<Container> overridees = new ArrayList<>();
-        getDefaultValueOverridees(currentContainer.getParent(), domain, overridees);
+        if (!currentContainer.isRoot())
+            getDefaultValueOverridees(currentContainer.getParent(), domain, overridees);
         return overridees;
     }
 
