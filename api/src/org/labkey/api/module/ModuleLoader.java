@@ -565,6 +565,11 @@ public class ModuleLoader implements Filter
             if (appender instanceof RollingFileAppender && "ERRORS".equals(appender.getName()))
             {
                 RollingFileAppender rfa = (RollingFileAppender)appender;
+                String fileName = rfa.getFile();
+                if (fileName == null)
+                {
+                    throw new IllegalStateException("Error rolling labkey-errors.log file, likely a file permissions problem in CATALINA_HOME/logs");
+                }
                 rfa.rollOver();
             }
         }

@@ -61,7 +61,7 @@ public class PopupDeveloperView extends PopupMenuView
         items.add(consoleNavTree);
         String memTrackerURL = PageFlowUtil.urlProvider(AdminUrls.class).getTrackedAllocationsViewerURL().getLocalURIString(false);
         NavTree memTrackerNavTree = new NavTree("Memory Allocations");
-        memTrackerNavTree.setScript("window.open('" + memTrackerURL + "','javascriptconsole','width=500,height=400,location=0,menubar=0,resizable=1,status=0,alwaysRaised=yes')");
+        memTrackerNavTree.setScript("window.open('" + memTrackerURL + "','memoryallocations','width=500,height=400,location=0,menubar=0,resizable=1,status=0,alwaysRaised=yes')");
         items.add(memTrackerNavTree);
         items.add(new NavTree("JavaScript API Reference", "https://www.labkey.org/download/clientapi_docs/javascript-api/"));
         if (AppProps.getInstance().isExperimentalFeatureEnabled("experimental-jsdoc"))
