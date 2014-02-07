@@ -49,25 +49,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.CSRF;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.GroupManager;
-import org.labkey.api.security.InvalidGroupMembershipException;
-import org.labkey.api.security.MemberType;
-import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityMessage;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
-import org.labkey.api.security.SecurityUrls;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.UserUrls;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -171,21 +154,30 @@ public class SecurityController extends SpringActionController
             return url.addParameter("id", id);
         }
 
-        public ActionURL getProjectURL(Container container)
+        public ActionURL getPermissionsURL(Container container)
         {
-            return new ActionURL(ProjectAction.class, container);
+            return new ActionURL(PermissionsAction.class, container);
         }
 
-        public ActionURL getProjectURL(Container container, ActionURL returnURL)
+        public ActionURL getPermissionsURL(Container container, ActionURL returnURL)
         {
-            ActionURL url = new ActionURL(ProjectAction.class, container);
+            ActionURL url = new ActionURL(PermissionsAction.class, container);
+            url.addReturnURL(returnURL);
+            return url;
+        }
+
+        @Override
+        public ActionURL getSiteGroupsURL(Container container, ActionURL returnURL)
+        {
+            ActionURL url = new ActionURL(PermissionsAction.class, container);
+            url.addParameter("t", "sitegroups");
             url.addReturnURL(returnURL);
             return url;
         }
 
         public ActionURL getContainerURL(Container container)
         {
-            return new ActionURL(ProjectAction.class, container);
+            return new ActionURL(PermissionsAction.class, container);
         }
 
         public String getCompleteUserURLPrefix(Container container)
@@ -278,7 +270,7 @@ public class SecurityController extends SpringActionController
             {
                 throw new RedirectException(new ActionURL(AddUsersAction.class, ContainerManager.getRoot()));
             }
-            throw new RedirectException(new ActionURL(ProjectAction.class, getContainer()));
+            throw new RedirectException(new ActionURL(PermissionsAction.class, getContainer()));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -289,7 +281,8 @@ public class SecurityController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class ProjectAction extends SimpleViewAction<PermissionsForm>
+    @ActionNames("permissions,project")
+    public class PermissionsAction extends SimpleViewAction<PermissionsForm>
     {
         public ModelAndView getView(PermissionsForm form, BindException errors) throws Exception
         {
@@ -299,21 +292,13 @@ public class SecurityController extends SpringActionController
             FolderPermissionsView permsView = new FolderPermissionsView(resource, doneURL);
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            getPageConfig().setTitle("Permissions for " + getContainer().getPath());
 
             return permsView;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            Container c = getContainer();
-            String title;
-            if (c.isRoot())
-                title = "Site Permissions";
-            else if (c.isProject())
-                title = "Project Permissions";
-            else
-                title = "Folder Permissions";
-            root.addChild(title + " for " + c.getPath());
             return root;
         }
     }
@@ -326,7 +311,7 @@ public class SecurityController extends SpringActionController
         
         FolderPermissionsView(String resource, ActionURL doneURL)
         {
-            super(SecurityController.class, "FolderPermissions.jsp", null);
+            super(SecurityController.class, "permissions.jsp", null);
             this.setModelBean(this);
             this.setFrame(FrameType.NONE);
             this.resource = resource;
@@ -424,7 +409,7 @@ public class SecurityController extends SpringActionController
 
         public ActionURL getSuccessURL(GroupForm form)
         {
-            return new ActionURL(ProjectAction.class, getContainer());
+            return new ActionURL(PermissionsAction.class, getContainer());
         }
     }
 
@@ -553,7 +538,7 @@ public class SecurityController extends SpringActionController
 
             _group = form.getGroupFor(getContainer());
             if (null == _group)
-                throw new RedirectException(new ActionURL(ProjectAction.class, container));
+                throw new RedirectException(new ActionURL(PermissionsAction.class, container));
 
             List<String> messages = new ArrayList<>();
 
@@ -800,7 +785,7 @@ public class SecurityController extends SpringActionController
 
     private NavTree addGroupNavTrail(NavTree root, Group group)
     {
-        root.addChild("Permissions", new ActionURL(ProjectAction.class, getContainer()));
+        root.addChild("Permissions", new ActionURL(PermissionsAction.class, getContainer()));
         root.addChild("Manage Group");
         root.addChild(group.getName() + " Group");
         return root;
@@ -862,7 +847,7 @@ public class SecurityController extends SpringActionController
         {
             _group = form.getGroupFor(getContainer());
             if (null == _group)
-                throw new RedirectException(new ActionURL(ProjectAction.class, getContainer()));
+                throw new RedirectException(new ActionURL(PermissionsAction.class, getContainer()));
             return renderGroup(_group, errors, Collections.<String>emptyList());
         }
 
@@ -1132,7 +1117,7 @@ public class SecurityController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Permissions", new ActionURL(ProjectAction.class, getContainer()));
+            root.addChild("Permissions", new ActionURL(PermissionsAction.class, getContainer()));
             root.addChild("Group Permissions");
             root.addChild(_requestedGroup == null || _requestedGroup.isUsers() ? "Access Details: Site Users" : "Access Details: " + _requestedGroup.getName());
             return root;
@@ -1830,7 +1815,7 @@ public class SecurityController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Permissions", new ActionURL(ProjectAction.class, getContainer()));
+            root.addChild("Permissions", new ActionURL(PermissionsAction.class, getContainer()));
             root.addChild("Folder Permissions");
             return root.addChild("Folder Access Details");
         }

@@ -781,7 +781,6 @@ core/src/org/labkey/core/query/UsersTable.java -text
 core/src/org/labkey/core/reader/DataLoaderServiceImpl.java -text
 core/src/org/labkey/core/search/NoopSearchService.java -text
 core/src/org/labkey/core/security/ContainersView.java -text
-core/src/org/labkey/core/security/FolderPermissions.jsp -text
 core/src/org/labkey/core/security/GroupView.java -text
 core/src/org/labkey/core/security/PermissionsDetailsView.java -text
 core/src/org/labkey/core/security/SecurityApiActions.java -text
@@ -789,6 +788,7 @@ core/src/org/labkey/core/security/addUsers.jsp -text
 core/src/org/labkey/core/security/deleteUser.jsp -text
 core/src/org/labkey/core/security/group.jsp -text
 core/src/org/labkey/core/security/groupDiagram.jsp -text
+core/src/org/labkey/core/security/permissions.jsp -text
 core/src/org/labkey/core/security/renameGroup.jsp -text
 core/src/org/labkey/core/statistics/DefaultCurveFit.java -text
 core/src/org/labkey/core/statistics/ParameterCurveFit.java -text

@@ -96,7 +96,7 @@ However, If this account is re-enabled, it would have the following permissions.
 <%
         if (!bean.showUserCol())
         {
-            ActionURL containerPermissionsLink = urlProvider(SecurityUrls.class).getProjectURL(row.getContainer());
+            ActionURL containerPermissionsLink = urlProvider(SecurityUrls.class).getPermissionsURL(row.getContainer());
             ActionURL folderAccessLink = urlProvider(SecurityUrls.class).getFolderAccessURL(row.getContainer());
 %>
             <td><%= textLink("permissions", containerPermissionsLink) %></td>

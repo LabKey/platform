@@ -168,7 +168,7 @@ Ext4.define('Security.panel.PermissionEditor', {
         if (params['t'] && valids[params['t']]) {
             return params['t'];
         }
-        return (this.isSiteRoot ? 'sitegroups' : 0);
+        return 0;
     },
 
     getTabItems : function() {

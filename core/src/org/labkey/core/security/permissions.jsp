@@ -25,16 +25,15 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.core.user.UserController" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.core.user.UserController" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
@@ -93,7 +92,9 @@
 <div id="titleDiv" class="labkey-nav-page-header" style="padding: 5px">Permissions for <%=h(c.getPath())%></div>
 <% } %>
 <div id="tabBoxDiv"></div>
+<% if (!c.isRoot()) { %>
 <div style="font-style:italic;">* indicates permissions are inherited</div>
+<% } %>
 <script type="text/javascript">
 
 var viewTabs = [];
@@ -149,7 +150,7 @@ Ext4.onReady(function(){
            project : {
                id   : '<%=project.getRowId()%>',
                name : <%=PageFlowUtil.jsString(project.getName())%>,
-               securityHref : <%=PageFlowUtil.qh(new ActionURL(SecurityController.ProjectAction.class, project).getLocalURIString())%>
+               securityHref : <%=PageFlowUtil.qh(new ActionURL(SecurityController.PermissionsAction.class, project).getLocalURIString())%>
            }
         }
     <% } %>

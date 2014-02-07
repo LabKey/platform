@@ -1250,7 +1250,7 @@ public class CoreController extends SpringActionController
 
             props.put("text", text);
 
-            ActionURL url = new ActionURL(SecurityController.ProjectAction.class, c);
+            ActionURL url = new ActionURL(SecurityController.PermissionsAction.class, c);
             props.put("href", url.getLocalURIString());
 
             //if the current container is an ancestor of the request container
