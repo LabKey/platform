@@ -136,6 +136,7 @@ Ext4.onReady(function(){
 
     var editor = Ext4.create('Security.panel.PermissionEditor', {
         renderTo       : 'tabBoxDiv',
+        minHeight      : 450,
         isSiteRoot     : isRoot,
         isSiteAdmin    : isSiteAdmin,
         isProjectRoot  : <%=(c.isProject())?"true":"false"%>, //LABKEY.Security.currentContainer.path == '/',

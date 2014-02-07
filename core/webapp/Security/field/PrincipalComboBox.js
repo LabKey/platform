@@ -87,6 +87,10 @@ Ext4.define('Security.field.PrincipalComboBox', {
 
     bindStore : function(store, initial)
     {
+        // issue 19328: don't bind store on typeAhead
+        if (store && store.filters.length > 0)
+            return;
+
         if (this.unfilteredStore)
         {
             this.unfilteredStore.removeListener("add",         this.onDataChanged, this);
