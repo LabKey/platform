@@ -583,13 +583,13 @@ public class ModuleLoader implements Filter
         List<Module> modules = new ArrayList<>();
         for(File moduleDir : explodedModuleDirs)
         {
-            Module module = null;
             File moduleXml = new File(moduleDir, "config/module.xml");
             try
             {
+                Module module;
                 if (moduleXml.exists())
                 {
-                    module = loadModuleFromXML(parentContext, module, moduleXml);
+                    module = loadModuleFromXML(parentContext, moduleXml);
                 }
                 else
                 {
@@ -673,7 +673,7 @@ public class ModuleLoader implements Filter
     }
 
     /** Read module metadata out of XML file */
-    private Module loadModuleFromXML(ApplicationContext parentContext, Module module, File moduleXml)
+    private Module loadModuleFromXML(ApplicationContext parentContext, File moduleXml)
     {
         ApplicationContext applicationContext;
         if (null != ModuleLoader.getInstance() && null != ModuleLoader.getServletContext())
@@ -696,7 +696,7 @@ public class ModuleLoader implements Filter
 
         try
         {
-            module = (Module)applicationContext.getBean("moduleBean", Module.class);
+            return (Module)applicationContext.getBean("moduleBean", Module.class);
         }
         catch (NoSuchBeanDefinitionException x)
         {
@@ -706,7 +706,7 @@ public class ModuleLoader implements Filter
         {
             _log.error("error reading module configuration: " + moduleXml.getPath(), x);
         }
-        return module;
+        return null;
     }
 
 
