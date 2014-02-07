@@ -92,14 +92,25 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     initComponent : function() {
-
+        var fk, params;
         // boolean to check if we should allow things like export to PDF
         this.supportedBrowser = !(Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8);
 
         this.editMode = (LABKEY.ActionURL.getParameter("edit") == "true" || !this.reportId) && this.allowEditMode;
 
-        var params = LABKEY.ActionURL.getParameters();
+        params = LABKEY.ActionURL.getParameters();
         this.useRaphael = params.useRaphael != null ? params.useRaphael : false;
+
+        // Issue 19163
+        if (this.autoColumnXName) {
+            fk = LABKEY.FieldKey.fromParts(this.autoColumnXName);
+            this.autoColumnXName = fk.toString();
+        }
+
+        if (this.autoColumnYName) {
+            fk = LABKEY.FieldKey.fromParts(this.autoColumnYName);
+            this.autoColumnYName = fk.toString();
+        }
 
         var typeConvert = function(value, record){
             // We take the displayFieldJSONType if available because if the column is a look up the record.type will
@@ -1813,12 +1824,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     initMeasures: function(forExport){
         // Initialize the x and y measures on first chart load. Returns false if we're missing the x or y measure.
-        var measure;
+        var measure, fk;
 
         if (!this.measures.y && !forExport) {
             if (this.autoColumnYName)
             {
-                measure = this.yMeasureStore.findRecord('name', this.autoColumnYName, 0, false, true, true);
+                // In some cases the column name is escaped, so we need to unescape it when searching.
+                fk = LABKEY.FieldKey.fromString(this.autoColumnYName);
+                measure = this.yMeasureStore.findRecord('name', fk.name, 0, false, true, true);
                 if (measure){
                     this.measures.y = measure.data;
                     this.yMeasurePanel.measure = measure.data;
@@ -1839,7 +1852,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             if(this.renderType !== "box_plot" && this.renderType !== "auto_plot"){
                 if (this.autoColumnXName)
                 {
-                    measure = this.xMeasureStore.findRecord('name', this.autoColumnXName, 0, false, true, true);
+                    fk = LABKEY.FieldKey.fromString(this.autoColumnXName);
+                    measure = this.xMeasureStore.findRecord('name', fk.name, 0, false, true, true);
                     if (measure) {
                         this.measures.x = measure.data;
                         this.xMeasurePanel.measure = measure.data;
