@@ -208,19 +208,19 @@ public abstract class
                     Class cls = Class.forName(className);
                     Field f = cls.getField(propertyName);
                     if (!Modifier.isStatic(f.getModifiers()) || !Modifier.isFinal(f.getModifiers()))
-                        parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() field must be public static final: " + propertyName, null, line, column));
+                        parseErrors.add(new QueryParseException(_name.toUpperCase() + "() field must be public static final: " + propertyName, null, line, column));
                     else if (null == JdbcType.valueOf(f.getType()))
-                        parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() field type is not supported: " + f.getType().getName(), null, line, column));
+                        parseErrors.add(new QueryParseException(_name.toUpperCase() + "() field type is not supported: " + f.getType().getName(), null, line, column));
                     else if (!f.isAnnotationPresent(Queryable.class) && cls.getPackage() != java.lang.Object.class.getPackage())
-                        parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() field is not queryable: " + propertyName, null, line, column));
+                        parseErrors.add(new QueryParseException(_name.toUpperCase() + "() field is not queryable: " + propertyName, null, line, column));
                 }
                 catch (ClassNotFoundException e)
                 {
-                    parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() class not found: " + className, null, line, column));
+                    parseErrors.add(new QueryParseException(_name.toUpperCase() + "() class not found: " + className, null, line, column));
                 }
                 catch (NoSuchFieldException e)
                 {
-                    parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() field is not accessible: " + propertyName, null, line, column));
+                    parseErrors.add(new QueryParseException(_name.toUpperCase() + "() field is not accessible: " + propertyName, null, line, column));
                 }
             }
 
