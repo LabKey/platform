@@ -29,6 +29,7 @@ import org.labkey.study.StudyModule;
  */
 public class AbstractSpecimenRole extends AbstractRole
 {
+    @SafeVarargs
     protected AbstractSpecimenRole(String name, String description, Class<? extends Permission>... perms)
     {
         super(name, description, StudyModule.class, perms);
