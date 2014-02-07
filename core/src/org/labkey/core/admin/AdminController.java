@@ -77,6 +77,7 @@ import org.labkey.api.data.TableXmlUtils;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
@@ -5097,6 +5098,8 @@ public class AdminController extends SpringActionController
 
 
     @RequiresLogin
+    @AllowedDuringUpgrade
+    @AllowedBeforeInitialUserIsSet
     public class GetSessionLogEventsAction extends ApiAction
     {
         @Override
@@ -5136,7 +5139,10 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresLogin @IgnoresAllocationTracking /* ignore so that we don't get an update in the UI for each time it requests the newest data */
+    @RequiresLogin
+    @AllowedBeforeInitialUserIsSet
+    @AllowedDuringUpgrade
+    @IgnoresAllocationTracking  /* ignore so that we don't get an update in the UI for each time it requests the newest data */
     public class GetTrackedAllocationsAction extends ApiAction
     {
         @Override
@@ -5200,6 +5206,8 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresLogin
+    @AllowedDuringUpgrade
+    @AllowedBeforeInitialUserIsSet
     public class TrackedAllocationsViewerAction extends SimpleViewAction
     {
         @Override
@@ -5224,6 +5232,8 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresLogin
+    @AllowedDuringUpgrade
+    @AllowedBeforeInitialUserIsSet
     public class SessionLoggingAction extends FormViewAction<LoggingForm>
     {
         @Override
