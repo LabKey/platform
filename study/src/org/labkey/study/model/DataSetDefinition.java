@@ -2019,13 +2019,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             // don't bother going on if we don't have these required columns
             if (null == indexPTIDInput) // input
-                setupError("All dataset rows must include a value for " + _study.getSubjectColumnName());
+                setupError("Missing required field " + _study.getSubjectColumnName());
 
             if (!timetype.isVisitBased() && null == indexVisitDate)
-                setupError("All dataset rows must include a value for Date");
+                setupError("Missing required field Date");
 
-            if (timetype.isVisitBased() && null == it.indexSequenceNumOutput)
-                setupError("All dataset rows must include a value for SequenceNum");
+            if (timetype.isVisitBased() && null == indexSequenceNumColumnInput)
+                setupError("Missing required field SequenceNum");
 
             it.setInput(ErrorIterator.wrap(input, context, false, setupError));
             DataIterator ret = LoggingDataIterator.wrap(it);
