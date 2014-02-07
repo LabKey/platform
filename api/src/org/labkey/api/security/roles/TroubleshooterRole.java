@@ -31,7 +31,7 @@ public class TroubleshooterRole extends AbstractRole
 {
     public TroubleshooterRole()
     {
-        super("Troubleshooter", "Troubleshooter may view administration settings but may not change them.",
+        super("Troubleshooter", "Troubleshooters may view administration settings but may not change them.",
                 AdminReadPermission.class);
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));

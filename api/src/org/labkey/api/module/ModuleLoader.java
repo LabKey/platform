@@ -330,17 +330,11 @@ public class ModuleLoader implements Filter
             throw new IllegalStateException("Core module was not first or could not find the Core module. Ensure that Tomcat user can create directories under the <LABKEY_HOME>/modules directory.");
         setProjectRoot(coreModule);
 
-        // Initial data sources before initializing modules; modules will fail to initialize if the appropriate data sources aren't available
+        // Initialize data sources before initializing modules; modules will fail to initialize if the appropriate data sources aren't available
         initializeDataSources();
 
-        initializeAndPruneModules();
-
-        // Clear the map to remove schemas associated with modules that failed to load
-        _schemaNameToModule.clear();
-
-        // Start up a thread that lets us hit a breakpoint in the debugger, even if
-        // all the real working threads are hung. This lets us invoke methods in the debugger,
-        // gain easier access to statics, etc.
+        // Start up a thread that lets us hit a breakpoint in the debugger, even if all the real working threads are hung.
+        // This lets us invoke methods in the debugger, gain easier access to statics, etc.
         File coreModuleDir = coreModule.getExplodedPath();
         File modulesDir = coreModuleDir.getParentFile();
         new BreakpointThread(modulesDir).start();
@@ -350,7 +344,12 @@ public class ModuleLoader implements Filter
 
         boolean coreRequiredUpgrade = upgradeCoreModule();
 
-        // Now that the core module is upgrade, upgrade the "labkey" schema in all module-required external data sources
+        initializeAndPruneModules();
+
+        // Clear the map to remove schemas associated with modules that failed to load
+        _schemaNameToModule.clear();
+
+        // Now that the core module is upgraded, upgrade the "labkey" schema in all module-required external data sources
         // to match the core module version. Each external data source records their upgrade scripts and versions their
         // module schemas via the tables in its own "labkey" schema.
         upgradeLabKeySchemaInExternalDataSources();
@@ -422,6 +421,9 @@ public class ModuleLoader implements Filter
     private void initializeAndPruneModules()
     {
         ListIterator<Module> iterator = _modules.listIterator();
+        Module core = iterator.next();  // Skip core because we already initialized it
+        if (!core.equals(getCoreModule()))
+            throw new IllegalStateException("First module should be core");
 
         //initialize each module in turn
         while (iterator.hasNext())
@@ -851,8 +853,8 @@ public class ModuleLoader implements Filter
     }
 
 
-    // Update the CoreModule "manually", outside the normal UI-based process. We want to change the core tables before
-    // we display pages, require login, check permissions, etc.
+    // Initialize and update the CoreModule "manually", outside the normal UI-based process. We want to change the core
+    // tables before we display pages, require login, check permissions, or initialize any of the other modules.
     // Returns true if core module required upgrading, otherwise false
     private boolean upgradeCoreModule() throws ServletException
     {
@@ -861,6 +863,9 @@ public class ModuleLoader implements Filter
         {
             throw new IllegalStateException("CoreModule does not exist");
         }
+
+        coreModule.initialize();
+
         ModuleContext coreContext;
 
         // If modules table doesn't exist (bootstrap case), then new up a core context
@@ -1413,7 +1418,7 @@ public class ModuleLoader implements Filter
         return modules;
     }
 
-    // Return a set of data source names representing all external data sources that are required for module schemas
+    // Returns a set of data source names representing all external data sources that are required for module schemas
     public Set<String> getAllModuleDataSources()
     {
         // Find all the external data sources that modules require

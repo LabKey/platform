@@ -26,7 +26,7 @@ public class CanSeeAuditLogRole extends AbstractRole
 {
     public CanSeeAuditLogRole()
     {
-        super("See Audit Log Events", "Allow non-administrators to view audit log events",
+        super("See Audit Log Events", "Allows non-administrators to view audit log events",
                 CanSeeAuditLogPermission.class);
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
