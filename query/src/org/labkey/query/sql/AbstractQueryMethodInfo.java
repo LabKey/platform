@@ -21,7 +21,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.AbstractMethodInfo;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthew
  * Date: 9/26/13
  * Time: 3:31 PM

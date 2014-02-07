@@ -54,7 +54,6 @@ import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthew
  * Date: 10/31/13
  * Time: 8:12 AM

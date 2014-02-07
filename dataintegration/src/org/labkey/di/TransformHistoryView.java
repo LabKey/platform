@@ -21,7 +21,6 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 
 /**
- * Created with IntelliJ IDEA.
  * User: Dax
  * Date: 9/13/13
  * Time: 12:27 PM

@@ -25,11 +25,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
-* Created with IntelliJ IDEA.
-* User: matthew
-* Date: 11/5/13
-* Time: 10:36 AM
-*/
+ * User: matthew
+ * Date: 11/5/13
+ * Time: 10:36 AM
+ */
 public class MemberSet
 {
     final Map<Member,Integer> _keyMemberToIndex;

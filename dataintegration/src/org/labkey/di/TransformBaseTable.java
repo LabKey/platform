@@ -43,11 +43,9 @@ import java.util.HashMap;
 import java.util.Set;
 
 /**
- * Created with IntelliJ IDEA.
  * User: Dax
  * Date: 9/13/13
  * Time: 12:27 PM
- * To change this template use File | Settings | File Templates.
  */
 abstract public class TransformBaseTable extends VirtualTable
 {

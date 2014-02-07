@@ -24,7 +24,6 @@ import org.labkey.api.query.UserSchema;
 import java.util.HashMap;
 
 /**
- * Created with IntelliJ IDEA.
  * User: Dax
  * Date: 9/13/13
  * Time: 12:27 PM

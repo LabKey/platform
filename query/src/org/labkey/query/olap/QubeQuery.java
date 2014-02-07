@@ -48,7 +48,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthew
  * Date: 11/5/13
  * Time: 10:32 AM
