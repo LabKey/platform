@@ -45,6 +45,11 @@ public class QueryDriver implements Driver
 {
     static QueryDriver _instanceLabKeyMemoryDriver = new QueryDriver();
 
+    public static void register()
+    {
+        // this doesn't do anything but, calling this will make sure the static initializer gets called
+    }
+
     private QueryDriver()
     {
         try

@@ -65,6 +65,7 @@ import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditViewFactory;
 import org.labkey.query.controllers.OlapController;
 import org.labkey.query.controllers.QueryController;
+import org.labkey.query.jdbc.QueryDriver;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.reports.AttachmentReport;
 import org.labkey.query.reports.LinkReport;
@@ -100,6 +101,7 @@ public class QueryModule extends DefaultModule
     {
         QueryServiceImpl i = new QueryServiceImpl();
         QueryService.set(i);
+        QueryDriver.register();
     }
 
     public String getName()
