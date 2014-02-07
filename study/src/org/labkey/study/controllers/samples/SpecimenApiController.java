@@ -603,11 +603,12 @@ public class SpecimenApiController extends BaseStudyController
                 return null;
             }
 
+            final Map<String, Object> response = getRequestResponse(getViewContext(), request);
             return new ApiResponse()
             {
                 public Map<String, ?> getProperties()
                 {
-                    return null;
+                    return response;
                 }
             };
         }
