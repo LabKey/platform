@@ -27,7 +27,7 @@ LABKEY.app.controller.Filter = new function() {
     var filtersToJSON = function(filters, isLive) {
         return Ext4.encode({
             isLive : isLive,
-            filters : Ext4.Array.pluck(filters, 'data')
+            filters : filters
         });
     };
 

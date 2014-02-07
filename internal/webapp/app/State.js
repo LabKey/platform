@@ -264,7 +264,7 @@ Ext.define('LABKEY.app.controller.State', {
                     appVersion: this.appVersion,
                     viewState: {},
                     views: this.views,
-                    filters: this.getFilters(true),
+                    filters: Ext4.Array.pluck(this.getFilters(true), 'data'),
                     selections: this.getSelections(true)
                 });
                 this.state.sync();
@@ -305,7 +305,7 @@ Ext.define('LABKEY.app.controller.State', {
                 }
             }
             else {
-                flatFilters.push(this.filters[f].data);
+                flatFilters.push(this.filters[f]);
             }
 
         }
@@ -471,7 +471,7 @@ Ext.define('LABKEY.app.controller.State', {
             if (this.filters[f].isGroup()) {
                 var grpFilters = this.filters[f].get('filters');
                 for (var g=0; g < grpFilters.length; g++) {
-                    olapFilters.push(LABKEY.app.controller.Filter.getOlapFilter(grpFilters[g]));
+                    olapFilters.push(LABKEY.app.controller.Filter.getOlapFilter(grpFilters[g].data));
                 }
             }
             else {
