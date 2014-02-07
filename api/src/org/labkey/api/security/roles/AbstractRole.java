@@ -46,16 +46,19 @@ public abstract class AbstractRole implements Role
     private final Set<Class<? extends Permission>> _permissions = new HashSet<>();
     private final Set<UserPrincipal> _excludedPrincipals = new HashSet<>();
 
+    @SafeVarargs
     protected AbstractRole(String name, String description, Class<? extends Permission>... perms)
     {
         this(name, description, ModuleLoader.getInstance().getCoreModule(), perms);
     }
 
+    @SafeVarargs
     protected AbstractRole(String name, String description, Class<? extends Module> sourceModuleClass, Class<? extends Permission>... perms)
     {
         this(name, description, ModuleLoader.getInstance().getModule(sourceModuleClass), perms);
     }
 
+    @SafeVarargs
     private AbstractRole(String name, String description, Module sourceModule, Class<? extends Permission>... perms)
     {
         _name = name;

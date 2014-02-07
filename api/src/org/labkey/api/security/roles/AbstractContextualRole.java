@@ -24,6 +24,7 @@ import org.labkey.api.security.permissions.Permission;
 */
 public abstract class AbstractContextualRole extends AbstractRole implements ContextualRole
 {
+    @SafeVarargs
     protected AbstractContextualRole(String name, String description, Class<? extends Permission>... perms)
     {
         super(name, description, perms);
