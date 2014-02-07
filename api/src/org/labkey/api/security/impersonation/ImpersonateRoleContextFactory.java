@@ -117,6 +117,12 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
 
     static void addMenu(NavTree menu, Container c, ActionURL currentURL, Set<Role> currentImpersonationRoles)
     {
+        // At the moment, impersonating roles in the root is worthless... we require Reader before allowing TroubleShooter,
+        // AuditLog, or EmailAddress roles, but Reader results in a 401 with no way to impersonate additional roles. This
+        // should be fixed with improved impersonation UI, #19451.
+        if (c.isRoot())
+            return;
+
         UserUrls userURLs = PageFlowUtil.urlProvider(UserUrls.class);
         NavTree roleMenu = new NavTree("Role");
 

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
@@ -38,26 +39,21 @@ public class PopupUserView extends PopupMenuView
 
         Container c = context.getContainer();
 
-        // TODO: Allow limited impersonation in root?
-        if (!c.isRoot())
+        ImpersonationContext impersonationContext = user.getImpersonationContext();
+        @Nullable Container project = c.getProject();
+
+        // If user is already impersonating then we need to check permissions on the actual admin user
+        User adminUser = impersonationContext.isImpersonating() ? impersonationContext.getAdminUser() : user;
+
+        // Must be site or project admin (folder admins can't impersonate)
+        if (adminUser.isSiteAdmin() || (null != project && project.hasPermission(adminUser, AdminPermission.class)))
         {
-            ImpersonationContext impersonationContext = user.getImpersonationContext();
-            Container project = c.getProject();
-            assert project != null;
+            ActionURL currentURL = context.getActionURL();
+            NavTree impersonateMenu = new NavTree("Impersonate");
+            impersonationContext.addMenu(impersonateMenu, c, user, currentURL);
 
-            // If user is already impersonating then we need to check permissions on the actual admin user
-            User adminUser = impersonationContext.isImpersonating() ? impersonationContext.getAdminUser() : user;
-
-            // Must be project or site admin (folder admins can't impersonate)
-            if (project.hasPermission(adminUser, AdminPermission.class))
-            {
-                ActionURL currentURL = context.getActionURL();
-                NavTree impersonateMenu = new NavTree("Impersonate");
-                impersonationContext.addMenu(impersonateMenu, c, user, currentURL);
-
-                if (impersonateMenu.hasChildren())
-                    tree.addChild(impersonateMenu);
-            }
+            if (impersonateMenu.hasChildren())
+                tree.addChild(impersonateMenu);
         }
 
         if (user.isImpersonated())

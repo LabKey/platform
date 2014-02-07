@@ -567,13 +567,13 @@ public class DataColumn extends DisplayColumn
             {
                 String entryName = entry.getName();
                 out.write("  <option value=\"");
-                out.write(entryName);
+                out.write(PageFlowUtil.filter(entryName));
                 out.write("\"");
                 if (isSelectInputSelected(entryName, value, valueStr))
-                    out.write(" selected ");
-                out.write(" >");
+                    out.write(" selected");
+                out.write(">");
                 if (null != entry.getObject())
-                    out.write(getSelectInputDisplayValue(entry));
+                    out.write(PageFlowUtil.filter(getSelectInputDisplayValue(entry)));
                 out.write("</option>\n");
             }
             out.write("</select>");
@@ -626,7 +626,7 @@ public class DataColumn extends DisplayColumn
              */
             out.write("<input type=\"hidden\" name=\"");
             out.write(SpringActionController.FIELD_MARKER);
-            out.write(formFieldName);
+            out.write(PageFlowUtil.filter(formFieldName));
             out.write("\" value=\"1\">");
             // disabled inputs are not posted with the form, so we output a hidden form element:
             if (disabledInput)

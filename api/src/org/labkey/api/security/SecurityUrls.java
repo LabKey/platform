@@ -30,8 +30,9 @@ public interface SecurityUrls extends UrlProvider
     ActionURL getBeginURL(Container container);
     ActionURL getManageGroupURL(Container container, String groupName);
     ActionURL getGroupPermissionURL(Container container, int id);
-    ActionURL getProjectURL(Container container);
-    ActionURL getProjectURL(Container container, ActionURL returnURL);
+    ActionURL getPermissionsURL(Container container);
+    ActionURL getPermissionsURL(Container container, ActionURL returnURL);
+    ActionURL getSiteGroupsURL(Container container, ActionURL returnURL);
     ActionURL getContainerURL(Container container);
     ActionURL getShowRegistrationEmailURL(Container container, ValidEmail email, String mailPrefix);
     ActionURL getAddUsersURL();

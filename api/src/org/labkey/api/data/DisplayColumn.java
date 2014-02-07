@@ -904,7 +904,7 @@ public abstract class DisplayColumn extends RenderColumn
         String setFocusId = (String)ctx.get("setFocusId");
         if (null != setFocusId)
         {
-            out.write(" id='" + setFocusId + "'");
+            out.write(" id='" + PageFlowUtil.filter(setFocusId) + "'");
             ctx.remove("setFocusId");
         }
     }

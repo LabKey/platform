@@ -56,7 +56,8 @@ public class SiteAdminMenu extends NavTreeMenu
                     new NavTree("Site Admins", securityUrls.getManageGroupURL(root, "Administrators")),
                     new NavTree("Site Developers", securityUrls.getManageGroupURL(root, "Developers")),
                     new NavTree("Site Users", PageFlowUtil.urlProvider(UserUrls.class).getSiteUsersURL()),
-                    new NavTree("Site Groups", securityUrls.getProjectURL(root, context.getActionURL())),
+                    new NavTree("Site Groups", securityUrls.getSiteGroupsURL(root, context.getActionURL())),
+                    new NavTree("Site Permissions", securityUrls.getPermissionsURL(root, context.getActionURL())),
                     new NavTree("Create Project", PageFlowUtil.urlProvider(AdminUrls.class).getCreateProjectURL())
             };
         }

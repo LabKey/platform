@@ -51,7 +51,7 @@ public class FolderAdminMenu extends NavTreeMenu
     public static ArrayList<NavTree> getFolderElements(Container c)
     {
         ArrayList<NavTree> admin = new ArrayList<>();
-        admin.add(new NavTree("Permissions", PageFlowUtil.urlProvider(SecurityUrls.class).getBeginURL(c)));
+        admin.add(new NavTree("Permissions", PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(c)));
         admin.add(new NavTree("Management", PageFlowUtil.urlProvider(AdminUrls.class).getFolderManagementURL(c)));
         return admin;
     }
