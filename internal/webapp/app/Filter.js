@@ -141,6 +141,7 @@ LABKEY.app.controller.Filter = new function() {
         doGroupSave: doGroupSave,
         lookupOperator: lookupOperator,
         getOlapFilter: getOlapFilter,
+        filtersFromJSON: filtersFromJSON,
         Operators: {
             UNION: 'UNION',
             INTERSECT: 'INTERSECT'

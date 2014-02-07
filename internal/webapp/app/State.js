@@ -33,6 +33,7 @@ Ext.define('LABKEY.app.controller.State', {
     preventRedundantHistory: true,
 
     init : function() {
+        XX = this;
         this.olap = this.application.olap;
 
         this.state = Ext.create('Ext.data.Store', {
@@ -115,7 +116,7 @@ Ext.define('LABKEY.app.controller.State', {
                 // TODO: Remove this an apply grid filters properly from state
                 var nonGridFilters = [];
                 for (var f=0; f < s.filters.length; f++) {
-                    if (!s.filters[f].isGrid)
+                    if (s.filters[f] && !s.filters[f].isGrid)
                         nonGridFilters.push(s.filters[f]);
                 }
 
@@ -264,7 +265,7 @@ Ext.define('LABKEY.app.controller.State', {
                     appVersion: this.appVersion,
                     viewState: {},
                     views: this.views,
-                    filters: Ext4.Array.pluck(this.getFilters(true), 'data'),
+                    filters: this.getFilters(true),
                     selections: this.getSelections(true)
                 });
                 this.state.sync();
@@ -296,18 +297,20 @@ Ext.define('LABKEY.app.controller.State', {
             return this.filters;
 
         var flatFilters = [];
+
         for (var f=0; f < this.filters.length; f++) {
-
             if (this.filters[f].isGroup()) {
-
-                for (var s=0; s < this.filters[f].data.filters.length; s++) {
-                    flatFilters.push(this.filters[f].data.filters[s]);
+                // Connector.model.FilterGroup
+                var _f = this.filters[f].get('filters');
+                for (var i=0; i < _f.length; i++) {
+                    // Connector.model.Filter
+                    flatFilters.push(_f[i].data);
                 }
             }
             else {
-                flatFilters.push(this.filters[f]);
+                // Connector.model.Filter
+                flatFilters.push(this.filters[f].data);
             }
-
         }
 
         return flatFilters;
@@ -315,30 +318,50 @@ Ext.define('LABKEY.app.controller.State', {
 
     _getFilterSet : function(filters) {
 
-        var newFilters = [];
+        var newFilters = [],
+                grpClass = 'Connector.model.FilterGroup',
+                filterClass = 'Connector.model.Filter'
         for (var s=0; s < filters.length; s++) {
+            var f = filters[s];
 
-            if (!filters[s].$className) {
-                if (filters[s].data) {
-                    if (filters[s].data.filters) {
+            // decipher object structure
+            if (!f.$className) {
+                if (f.filters) {
+                    // -- Filter Group
+                    var subfilters = [];
+                    for (var i=0; i < f.filters.length; i++) {
+                        subfilters.push(Ext.create(filterClass, f.filters[i]));
+                    }
+                    f.filters = subfilters;
+
+                    newFilters.push(Ext.create(grpClass, f));
+                }
+                else if (f.data) {
+                    if (f.data.filters) {
                         var subfilters = [];
-                        for (var f=0; f < filters[s].data.filters.length; f++) {
-                            subfilters.push(Ext.create('Connector.model.Filter', filters[s].data.filters[f].data));
+                        for (var i=0; i < f.data.filters.length; i++) {
+                            subfilters.push(Ext.create(filterClass, f.data.filters[i].data));
                         }
-                        filters[s].data.filters = subfilters;
+                        f.data.filters = subfilters;
 
-                        newFilters.push(Ext.create('Connector.model.FilterGroup', filters[s].data));
+                        newFilters.push(Ext.create(grpClass, f.data));
                     }
                     else {
-                        newFilters.push(Ext.create('Connector.model.Filter', filters[s].data));
+                        newFilters.push(Ext.create(filterClass, f.data));
                     }
                 }
                 else {
-                    newFilters.push(Ext.create('Connector.model.Filter', filters[s]));
+                    newFilters.push(Ext.create(filterClass, f));
                 }
             }
-            else if (filters[s].$className == 'Connector.model.Filter' || filters[s].$className == 'Connector.model.FilterGroup')
-                newFilters.push(filters[s]);
+            else if (f.$className == filterClass) {
+                newFilters.push(f);
+            }
+            else if (f.$className == grpClass) {
+                var grp = f;
+                grp.set('filters', this._getFilterSet(grp.get('filters')));
+                newFilters.push(grp);
+            }
         }
         return newFilters;
 
@@ -445,8 +468,7 @@ Ext.define('LABKEY.app.controller.State', {
     },
 
     setFilterOperator : function(filterId, value) {
-        for (var s=0; s < this.selections.length; s++)
-        {
+        for (var s=0; s < this.selections.length; s++) {
             if (this.selections[s].id == filterId) {
                 this.selections[s].set('operator', value);
                 this.requestSelectionUpdate(false, true);
@@ -454,8 +476,7 @@ Ext.define('LABKEY.app.controller.State', {
             }
         }
 
-        for (s=0; s < this.filters.length; s++)
-        {
+        for (s=0; s < this.filters.length; s++) {
             if (this.filters[s].id == filterId) {
                 this.filters[s].set('operator', value);
                 this.requestFilterUpdate(false, true);
@@ -471,7 +492,8 @@ Ext.define('LABKEY.app.controller.State', {
             if (this.filters[f].isGroup()) {
                 var grpFilters = this.filters[f].get('filters');
                 for (var g=0; g < grpFilters.length; g++) {
-                    olapFilters.push(LABKEY.app.controller.Filter.getOlapFilter(grpFilters[g].data));
+                    var ff = grpFilters[g].data ? grpFilters[g].data : grpFilters[g];
+                    olapFilters.push(LABKEY.app.controller.Filter.getOlapFilter(ff));
                 }
             }
             else {
@@ -479,21 +501,26 @@ Ext.define('LABKEY.app.controller.State', {
             }
         }
 
+        var proceed = true;
         for (f=0; f < olapFilters.length; f++) {
             if (olapFilters[f].arguments.length == 0) {
                 console.warn('EMPTY ARGUMENTS ON FILTER');
+                proceed = false;
             }
         }
 
-        var me = this;
-        this.onMDXReady(function(mdx){
-            mdx.setNamedFilter('statefilter', olapFilters);
-            if (!skipState)
-                me.updateState();
+        if (proceed) {
+            var me = this;
+            this.onMDXReady(function(mdx){
+                mdx.setNamedFilter('statefilter', olapFilters);
+                if (!skipState)
+                    me.updateState();
 
-            if (!silent)
-                me.fireEvent('filterchange', me.filters);
-        }, this);
+                if (!silent) {
+                    me.fireEvent('filterchange', me.filters);
+                }
+            }, this);
+        }
     },
 
     getSelections : function(flat) {
