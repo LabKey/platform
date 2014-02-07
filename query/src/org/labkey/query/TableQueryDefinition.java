@@ -34,6 +34,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.sql.Query;
@@ -115,7 +116,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
                     StringExpression expr = table.getDetailsURL(selectCols.keySet(), container);
                     // See if there's a details URL available with the set of columns that we can offer, and
                     // we have enough PK values to uniquely identify the row
-                    if (expr != null && pks.keySet().containsAll(table.getPkColumnNames()))
+                    if (expr != null && expr != AbstractTableInfo.LINK_DISABLER && pks.keySet().containsAll(table.getPkColumnNames()))
                     {
                         SimpleFilter filter = new SimpleFilter();
                         for (Map.Entry<String, Object> pk : pks.entrySet())
@@ -126,7 +127,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
                         {
                             if (rs.next())
                             {
-                                RenderContext ctx = new RenderContext(null);
+                                RenderContext ctx = new RenderContext(ViewContext.getMockViewContext(getUser(), getContainer(), null, false));
                                 ctx.setResults(rs);
                                 ctx.setRow(rs.getRowMap());
                                 return new ActionURL(expr.eval(ctx));
