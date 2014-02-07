@@ -56,16 +56,32 @@
 
 <script type="text/javascript">
 
-(function(){
-
     Ext4.onReady(function() {
 
-        Ext.override(Ext.menu.Menu, {
-            zIndex : 20000
-        });
+        Ext.override(Ext.menu.Menu, { zIndex : 20000 });
+
+        if (!Ext4.ModelManager.isRegistered('ParticipantGroup')) {
+            Ext4.define('ParticipantGroup', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    {name : 'rowId',            type : 'int',       mapping : 'id'},
+                    {name : 'label',            type : 'string'},
+                    {name : 'type',             type : 'string'},
+                    {name : 'category',         type : 'string',    convert : function(v) { return v; }, sortType: function(v) { return v.type == 'list' ? '' : v.label; }},
+                    {name : 'shared',           type : 'boolean',   mapping : 'category.shared'},
+                    {name : 'createdBy',        type : 'string',    convert : function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
+                    {name : 'modifiedBy',       type : 'string',    convert : function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
+                    {name : 'participantIds',   type : 'string',    convert : function(v, record){return v.join(', ');}},
+                    {name : 'canEdit',          type : 'boolean',   mapping : 'category.canEdit'},
+                    {name : 'canDelete',        type : 'boolean',   mapping : 'category.canDelete'},
+                    {name : 'categoryLabel',    type : 'string',    mapping : 'category.label'},
+                    {name : 'categoryOwner',    type : 'string',    mapping : 'category.createdBy', convert : function(v, record){return (v.displayValue ? v.displayValue : v.value)}}
+                ]
+            });
+        }
 
         var editParticipantGroup = function(row){
-            var dialog = Ext4.create('Study.window.ParticipantGroup', {
+            Ext4.create('Study.window.ParticipantGroup', {
                 subject: {
                     nounSingular: <%=q(subjectNounSingular)%>,
                     nounPlural: <%=q(subjectNounPlural)%>,
@@ -73,6 +89,7 @@
                 },
                 isAdmin: <%=isAdmin%>,
                 grid : grid,
+                autoShow: true,
                 category: (row ? row.get("category") : null),
                 groupRowId: (row ? row.get("rowId") : null),
                 groupLabel: (row ? row.get("label") : null),
@@ -80,21 +97,19 @@
                 categoryShared : (row ? row.get("shared") : false),
                 canEdit : (row ? row.get("canEdit") :  true) // TODO: Modify this to adhere to API to check (participant) group permission
             });
-
-            dialog.show();
         };
 
         var deleteParticipantGroup = function(row){
             // todo: do we need to handle deletion of a shared/public group differently?
 
             Ext4.Msg.show({
+                id: 'delete_categories',
                 title : 'Delete Group',
                 msg : 'Delete Selected Group:<br/>' + (row.get("label")),
                 buttons: Ext4.Msg.YESNO,
                 icon: Ext4.Msg.QUESTION,
                 fn: function(btn, text) {
-                    if (btn == 'yes')
-                    {
+                    if (btn == 'yes') {
                         Ext4.Ajax.request({
                             url: LABKEY.ActionURL.buildURL("participant-group", "deleteParticipantGroup"),
                             method: "POST",
@@ -106,94 +121,10 @@
                             },
                             jsonData: {rowId: row.get("rowId")}
                         });
-                    }},
-                id: 'delete_categories'
+                    }
+                }
             });
         };
-
-        Ext4.define('ParticipantGroup', {
-            extend : 'Ext.data.Model',
-            fields : [
-                {name : 'rowId',            type : 'int',       mapping : 'id'},
-                {name : 'label',            type : 'string'},
-                {name : 'type',             type : 'string'},
-                {name : 'category',         type : 'string',    convert : function(v) { return v; }, sortType: function(v) { return v.type == 'list' ? '' : v.label; }},
-                {name : 'shared',           type : 'boolean',   mapping : 'category.shared'},
-                {name : 'createdBy',        type : 'string',    convert : function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
-                {name : 'modifiedBy',       type : 'string',    convert : function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
-                {name : 'participantIds',   type : 'string',    convert : function(v, record){return v.join(', ');}},
-                {name : 'canEdit',          type : 'boolean',   mapping : 'category.canEdit'},
-                {name : 'canDelete',        type : 'boolean',   mapping : 'category.canDelete'},
-                {name : 'categoryLabel',    type : 'string',    mapping : 'category.label'},
-                {name : 'categoryOwner',    type : 'string',    mapping : 'category.createdBy', convert : function(v, record){return (v.displayValue ? v.displayValue : v.value)}}
-            ]
-        });
-
-        var createButton = Ext4.create('Ext.button.Button',
-            {
-                text : 'Create',
-                handler: function(){
-                    editParticipantGroup(null);
-                },
-                scope: this
-            });
-
-         var editButton = Ext4.create('Ext.button.Button',
-            {
-                id : 'editSelectedButtonExt4',
-                text : 'Edit Selected',
-                disabled : true,
-              handler: function(){
-                  if (grid.getSelectionModel().hasSelection()){
-                      editParticipantGroup(grid.getSelectionModel().getLastSelected());
-                  }
-              }
-            });
-
-        var deleteButton = Ext4.create('Ext.button.Button',
-            {
-                id : 'deleteSelectedButtonExt4',
-                text : 'Delete Selected',
-                disabled : 'true',
-                handler: function(){
-                    if (grid.getSelectionModel().hasSelection())
-                    {
-                        deleteParticipantGroup(grid.getSelectionModel().getLastSelected());
-                    }
-                },
-                scope : this
-            });
-
-
-
-        var participantStore = Ext4.create('Ext.data.Store', {
-            model : 'ParticipantGroup',
-            proxy: {
-                type: 'ajax',
-                url : LABKEY.ActionURL.buildURL("participant-group", "browseParticipantGroups", null, {distinctCategories : false}),
-                extraParams : {
-                    type : 'participantGroup',
-                    includeParticipantIds: true,
-                    includeUnassigned : false
-                },
-                reader: {
-                    type: 'json',
-                    root: 'groups'
-                }
-            },
-            sorters: [
-                { property: 'category', direction: 'ASC' },
-                { property: 'label', direction: 'ASC' }
-            ],
-            autoLoad: true,
-            listeners: {
-                load: function ()
-                {
-                    // clear selection on load of the grid store
-                    grid.getSelectionModel().deselectAll();
-                }
-            }
-        });
 
         var categoryRenderer = function(value){
             if (value.type == "list")
@@ -202,10 +133,37 @@
         };
 
         var grid = Ext4.create('Ext.grid.Panel', {
-            store: participantStore,
-            id : 'participantCategoriesGrid',
-            cls: 'participantCategoriesGrid',
+            renderTo: 'participantCategoriesGrid',
+            cls: 'ptid-group-grid',
             width : 975,
+            store: {
+                xtype: 'store',
+                model: 'ParticipantGroup',
+                proxy: {
+                    type: 'ajax',
+                    url : LABKEY.ActionURL.buildURL("participant-group", "browseParticipantGroups", null, {distinctCategories : false}),
+                    extraParams : {
+                        type : 'participantGroup',
+                        includeParticipantIds: true,
+                        includeUnassigned : false
+                    },
+                    reader: {
+                        type: 'json',
+                        root: 'groups'
+                    }
+                },
+                sorters: [
+                    { property: 'category', direction: 'ASC' },
+                    { property: 'label', direction: 'ASC' }
+                ],
+                autoLoad: true,
+                listeners: {
+                    load: function () {
+                        // clear selection on load of the grid store
+                        grid.getSelectionModel().deselectAll();
+                    }
+                }
+            },
             columns: [
                 {header:'Label',       dataIndex:'label',    width: 270, renderer: Ext4.htmlEncode},
                 {header:'Category',    dataIndex:'category', width: 270, renderer: categoryRenderer},
@@ -218,31 +176,49 @@
                 xtype: 'toolbar',
                 dock: 'top',
                 style: 'border-color: #b4b4b4;',
-                items: [createButton, editButton, deleteButton]
+                items: [{
+                    text: 'Create',
+                    handler: function() { editParticipantGroup(null); },
+                    scope: this
+                },{
+                    id: 'editSelectedButtonExt4',
+                    text: 'Edit Selected',
+                    disabled: true,
+                    handler: function() {
+                        if (grid.getSelectionModel().hasSelection()) {
+                            editParticipantGroup(grid.getSelectionModel().getLastSelected());
+                        }
+                    }
+                },{
+                    id: 'deleteSelectedButtonExt4',
+                    text: 'Delete Selected',
+                    disabled: true,
+                    handler: function() {
+                        if (grid.getSelectionModel().hasSelection()) {
+                            deleteParticipantGroup(grid.getSelectionModel().getLastSelected());
+                        }
+                    },
+                    scope : this
+                }]
             }],
-            renderTo: 'participantCategoriesGrid'
-        });
+            listeners: {
+                itemclick : function(grid, row) {
+                    var editButton = Ext4.getCmp('editSelectedButtonExt4');
+                    var deleteButton = Ext4.getCmp('deleteSelectedButtonExt4');
 
-        grid.on('itemclick', function(g, rec){
-            var row = grid.getSelectionModel().getLastSelected();
+                    editButton.setDisabled(false);
+                    editButton.setText(row.get('canEdit') ? 'Edit Selected' : 'View Selected');
 
-            editButton.setDisabled(false);
-            if (row.get("canEdit"))
-                editButton.setText("Edit Selected");
-            else
-                editButton.setText("View Selected");
-
-            if (row.get("canDelete"))
-                deleteButton.setDisabled(false);
-            else
-                deleteButton.setDisabled(true);
-        }, this);
-        grid.on('itemdblclick', function(g, idx, e){
-            if (g.getSelectionModel().hasSelection()) {
-                editParticipantGroup(g.getSelectionModel().getSelection()[0]);
+                    deleteButton.setDisabled(row.get("canDelete") ? false : true);
+                },
+                itemdblclick : function(g) {
+                    if (g.getSelectionModel().hasSelection()) {
+                        editParticipantGroup(g.getSelectionModel().getSelection()[0]);
+                    }
+                },
+                scope: this
             }
         });
-
     });
-})();
+
 </script>
