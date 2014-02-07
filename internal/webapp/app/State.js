@@ -33,7 +33,6 @@ Ext.define('LABKEY.app.controller.State', {
     preventRedundantHistory: true,
 
     init : function() {
-        XX = this;
         this.olap = this.application.olap;
 
         this.state = Ext.create('Ext.data.Store', {
@@ -588,7 +587,7 @@ Ext.define('LABKEY.app.controller.State', {
                     if (!oldFilters[i].isGroup() && !opFilters[n].isGroup()) {
 
                         if (oldFilters[i].getHierarchy() == opFilters[n].getHierarchy()) {
-                            oldFilters[i].set('operator', opFilters[n].getOperator());
+                            oldFilters[i].set('operator', LABKEY.app.controller.Filter.lookupOperator(opFilters[n].data));
                         }
                     }
                 }
