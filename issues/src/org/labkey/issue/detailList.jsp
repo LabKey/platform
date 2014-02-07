@@ -98,9 +98,9 @@
 <%
             }
 %>
-            <%=text(bean.writeCustomColumn(ColumnType.INT1, 10))%>
-            <%=text(bean.writeCustomColumn(ColumnType.INT2, 10))%>
-            <%=text(bean.writeCustomColumn(ColumnType.STRING1, 10))%>
+            <%=text(bean.writeCustomColumn(ColumnType.INT1, 10, false))%>
+            <%=text(bean.writeCustomColumn(ColumnType.INT2, 10, false))%>
+            <%=text(bean.writeCustomColumn(ColumnType.STRING1, 10, false))%>
         </table></td>
         <td valign="top" width="33%"><table>
             <tr><td class="labkey-form-label">Changed&nbsp;By</td><td><%=h(issue.getModifiedByName(user))%></td></tr>
@@ -108,10 +108,10 @@
             <tr><td class="labkey-form-label">Closed&nbsp;By</td><td><%=h(issue.getClosedByName(user))%></td></tr>
             <tr><td class="labkey-form-label">Closed</td><td><%=h(bean.writeDate(issue.getClosed()))%></td></tr>
 
-            <%=text(bean.writeCustomColumn(ColumnType.STRING2, 20))%>
-            <%=text(bean.writeCustomColumn(ColumnType.STRING3, 20))%>
-            <%=text(bean.writeCustomColumn(ColumnType.STRING4, 20))%>
-            <%=text(bean.writeCustomColumn(ColumnType.STRING5, 20))%>
+            <%=text(bean.writeCustomColumn(ColumnType.STRING2, 20, false))%>
+            <%=text(bean.writeCustomColumn(ColumnType.STRING3, 20, false))%>
+            <%=text(bean.writeCustomColumn(ColumnType.STRING4, 20, false))%>
+            <%=text(bean.writeCustomColumn(ColumnType.STRING5, 20, false))%>
         </table></td>
     </tr>
 </table>

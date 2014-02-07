@@ -97,16 +97,16 @@
     {
         if (bean.hasKeywords(type) || type.getValue(issue) != null)
         {
-            %><tr><td class="labkey-form-label"><%=text(bean.getLabel(type))%></td><td><%=h(type.getValue(issue))%></td></tr><%
+            %><tr><td class="labkey-form-label"><%=text(bean.getLabel(type, false))%></td><td><%=h(type.getValue(issue))%></td></tr><%
         }
     }
 %>
         </table></td>
         <td valign="top"><table>
-            <tr><td class="labkey-form-label"><%=text(bean.getLabel("Opened"))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>
+            <tr><td class="labkey-form-label"><%=text(bean.getLabel("Opened", false))%></td><td nowrap="true"><%=bean.writeDate(issue.getCreated())%> by <%=h(issue.getCreatedByName(user))%></td></tr>
             <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
-            <tr><td class="labkey-form-label"><%=text(bean.getLabel("Resolved"))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
-            <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.RESOLUTION))%></td><td><%=h(issue.getResolution())%></td></tr><%
+            <tr><td class="labkey-form-label"><%=text(bean.getLabel("Resolved", false))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
+            <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.RESOLUTION, false))%></td><td><%=h(issue.getResolution())%></td></tr><%
             if (bean.isEditable("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
             {
                 %><tr><td class="labkey-form-label">Duplicate</td><td>
@@ -122,8 +122,8 @@
                 %><tr><td class="labkey-form-label">Duplicates</td><td><%=bean.renderDuplicates(issue.getDuplicates())%></td></tr><%
             }
 %>
-            <%=bean.writeCustomColumn(ColumnType.INT1, 10)%>
-            <%=bean.writeCustomColumn(ColumnType.INT2, 10)%>
+            <%=bean.writeCustomColumn(ColumnType.INT1, 10, false)%>
+            <%=bean.writeCustomColumn(ColumnType.INT2, 10, false)%>
         </table></td>
         <td valign="top" width="33%"><table>
             <tr><td class="labkey-form-label">Closed</td><td nowrap="true"><%=h(bean.writeDate(issue.getClosed()))%><%= issue.getClosedBy() != null ? " by " : "" %><%=h(issue.getClosedByName(user))%></td></tr>
@@ -133,11 +133,11 @@
                 {
                     %><tr><td class="labkey-form-label">Notify</td><td><%=bean.getNotifyList()%></td></tr><%
             }
-            %><%=bean.writeCustomColumn(ColumnType.STRING1, 30)%>
-            <%=bean.writeCustomColumn(ColumnType.STRING2, 30)%>
-            <%=bean.writeCustomColumn(ColumnType.STRING3, 30)%>
-            <%=bean.writeCustomColumn(ColumnType.STRING4, 30)%>
-            <%=bean.writeCustomColumn(ColumnType.STRING5, 30)%>
+            %><%=bean.writeCustomColumn(ColumnType.STRING1, 30, false)%>
+            <%=bean.writeCustomColumn(ColumnType.STRING2, 30, false)%>
+            <%=bean.writeCustomColumn(ColumnType.STRING3, 30, false)%>
+            <%=bean.writeCustomColumn(ColumnType.STRING4, 30, false)%>
+            <%=bean.writeCustomColumn(ColumnType.STRING5, 30, false)%>
         </table></td>
     </tr>
 </table>

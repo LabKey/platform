@@ -129,7 +129,7 @@
             if (0 == issue.getIssueId())
             {
 %>
-                <td class="labkey-form-label"><%=text(bean.getLabel("Title"))%></td>
+                <td class="labkey-form-label"><%=text(bean.getLabel("Title", true))%></td>
 <%
             } else {
 %>
@@ -141,13 +141,13 @@
                 <%=text(bean.writeInput("title", issue.getTitle(), "id=title tabindex=\"1\" style=\"width:100%;\""))%>
                 </td></tr>
             <tr>
-                <td class="labkey-form-label"><%=bean.getLabel("Status")%></td><td><%=h(issue.getStatus())%></td>
+                <td class="labkey-form-label"><%=text(bean.getLabel("Status", true))%></td><td><%=h(issue.getStatus())%></td>
                 <td rowspan="<%=h(rowSpan)%>" valign="top">
                     <table>
-                        <tr><td class="labkey-form-label"><%=text(bean.getLabel("Opened"))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>
+                        <tr><td class="labkey-form-label"><%=text(bean.getLabel("Opened", true))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>
                         <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
-                        <tr><td class="labkey-form-label"><%=text(bean.getLabel("Resolved"))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
-                        <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.RESOLUTION))%></td><td><%=text(bean.writeSelect(ColumnType.RESOLUTION, 2))%></td></tr>
+                        <tr><td class="labkey-form-label"><%=text(bean.getLabel("Resolved", true))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
+                        <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.RESOLUTION, true))%></td><td><%=text(bean.writeSelect(ColumnType.RESOLUTION, 2))%></td></tr>
         <% if (bean.isEditable("resolution") || !"open".equals(issue.getStatus())) { %>
                         <tr><td class="labkey-form-label">Duplicate</td><td>
                         <% if (bean.isEditable("duplicate")) {
@@ -205,9 +205,9 @@
                         %>
                         </td></tr>
         <% } %>
-                        <%=text(bean.writeCustomColumn(ColumnType.INT1, 2))%>
-                        <%=text(bean.writeCustomColumn(ColumnType.INT2, 2))%>
-                        <%=text(bean.writeCustomColumn(ColumnType.STRING1, 2))%>
+                        <%=text(bean.writeCustomColumn(ColumnType.INT1, 2, true))%>
+                        <%=text(bean.writeCustomColumn(ColumnType.INT2, 2, true))%>
+                        <%=text(bean.writeCustomColumn(ColumnType.STRING1, 2, true))%>
                     </table>
                 </td>
                 <td valign="top" rowspan="<%=h(rowSpan)%>"><table>
@@ -217,7 +217,7 @@
                 {
     %>
                     <tr>
-                        <td class="labkey-form-label-nowrap"><%=text(bean.getLabel("NotifyList"))%><%=text(popup)%><br/><br/>
+                        <td class="labkey-form-label-nowrap"><%=text(bean.getLabel("NotifyList", true))%><%=text(popup)%><br/><br/>
     <%
                         if (issue.getIssueId() == 0)
                         {
@@ -242,17 +242,17 @@
     <%
                 }
     %>
-                    <%=text(bean.writeCustomColumn(ColumnType.STRING2, 3))%>
-                    <%=text(bean.writeCustomColumn(ColumnType.STRING3, 3))%>
-                    <%=text(bean.writeCustomColumn(ColumnType.STRING4, 3))%>
-                    <%=text(bean.writeCustomColumn(ColumnType.STRING5, 3))%>
+                    <%=text(bean.writeCustomColumn(ColumnType.STRING2, 3, true))%>
+                    <%=text(bean.writeCustomColumn(ColumnType.STRING3, 3, true))%>
+                    <%=text(bean.writeCustomColumn(ColumnType.STRING4, 3, true))%>
+                    <%=text(bean.writeCustomColumn(ColumnType.STRING5, 3, true))%>
                 </table></td>
             </tr>
-        <tr><td class="labkey-form-label"><%=bean.getLabel("AssignedTo")%></td><td><%=bean.writeSelect("assignedTo", String.valueOf(issue.getAssignedTo()), issue.getAssignedToName(user), bean.getUserOptions(), 1)%></td></tr>
+        <tr><td class="labkey-form-label"><%=text(bean.getLabel("AssignedTo", true))%></td><td><%=bean.writeSelect("assignedTo", String.valueOf(issue.getAssignedTo()), issue.getAssignedToName(user), bean.getUserOptions(), 1)%></td></tr>
         <%
             for (ColumnType type : extraOptions)
             {
-                %><tr><td class="labkey-form-label"><%=text(bean.getLabel(type))%></td><td><%=text(bean.writeSelect(type, 1))%></td></tr><%
+                %><tr><td class="labkey-form-label"><%=text(bean.getLabel(type, true))%></td><td><%=text(bean.writeSelect(type, 1))%></td></tr><%
             }
         %>
         <tr><td class="labkey-form-label">Comment</td>

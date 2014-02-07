@@ -203,7 +203,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     }
 
 
-    public String writeCustomColumn(ColumnType type, int tabIndex) throws IOException
+    public String writeCustomColumn(ColumnType type, int tabIndex, boolean markIfRequired) throws IOException
     {
         if (_ccc.shouldDisplay(_user, type.getColumnName()))
         {
@@ -211,7 +211,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             final StringBuilder sb = new StringBuilder();
 
             sb.append("<tr><td class=\"labkey-form-label\">");
-            sb.append(getLabel(type));
+            sb.append(getLabel(type, markIfRequired));
             sb.append("</td><td>");
 
             // If custom column has pick list, then show select with keywords, otherwise input box
@@ -361,12 +361,12 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     }
 
 
-    public String getLabel(ColumnType type)
+    public String getLabel(ColumnType type, boolean markIfRequired)
     {
-        return getLabel(type.getColumnName());
+        return getLabel(type.getColumnName(), markIfRequired);
     }
 
-    public String getLabel(String columnName)
+    public String getLabel(String columnName, boolean markIfRequired)
     {
         ColumnInfo col = IssuesSchema.getInstance().getTableInfoIssues().getColumn(columnName);
         String name = null;
@@ -379,7 +379,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         if (name != null && name.length() > 0)
         {
             String label = PageFlowUtil.filter(name).replaceAll(" ", "&nbsp;");
-            if (_requiredFields != null && _requiredFields.contains(columnName.toLowerCase()))
+            if (markIfRequired && _requiredFields != null && _requiredFields.contains(columnName.toLowerCase()))
                 return label + "<span class=\"labkey-error\">*</span>";
             return label;
         }
