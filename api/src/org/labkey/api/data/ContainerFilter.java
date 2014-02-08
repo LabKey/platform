@@ -95,13 +95,6 @@ public abstract class ContainerFilter
         return new ContainerClause(schema, containerFilterColumn, this, container);
     }
 
-    /** Create a FilterClause that restricts based on the containers that meet the filter and user that meets the permission*/
-    public SimpleFilter.FilterClause createFilterClause(DbSchema schema, FieldKey containerFilterColumn, Container container, Class<? extends Permission> permission)
-    {
-        return new ContainerClause(schema, containerFilterColumn, this, container, permission);
-    }
-
-
     /** Use FieldKey version instead. Create an expression for a WHERE clause */
     @Deprecated
     public SQLFragment getSQLFragment(DbSchema schema, String containerColumnSQL, Container container)
@@ -132,12 +125,7 @@ public abstract class ContainerFilter
         SecurityLogger.indent("ContainerFilter");
         Collection<String> ids = getIds(container);
         SecurityLogger.outdent();
-        return getSQLFragment(schema, containerColumnSQL, ids, useJDBCParameters, allowNulls);
-    }
 
-    // instances of ContainerFilterWithUser will call this getSQLFragment after GetIds with a specific permission to check against the user
-    protected SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Collection<String> ids, boolean useJDBCParameters, boolean allowNulls)
-    {
         if (ids == null)
         {
             if (allowNulls)
@@ -334,40 +322,15 @@ public abstract class ContainerFilter
         }
     };
 
-    public static abstract class ContainerFilterWithUser extends ContainerFilter
+    private static abstract class ContainerFilterWithUser extends ContainerFilter
     {
         protected final User _user;
+        protected final Class<? extends Permission> _perm;
 
-        public ContainerFilterWithUser(User user)
+        public ContainerFilterWithUser(User user, Class<? extends Permission> perm)
         {
             _user = user;
-        }
-
-        public SQLFragment getSQLFragment(DbSchema schema, FieldKey containerColumnFieldKey, Container container, Class<? extends Permission> permission)
-        {
-            return getSQLFragment(schema, new SQLFragment(containerColumnFieldKey.toString()), container, permission);
-        }
-
-        public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, Class<? extends Permission> permission)
-        {
-            return getSQLFragment(schema, containerColumnSQL, container, permission, true, true);
-        }
-
-        public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, Class<? extends Permission> permission, boolean useJDBCParameters, boolean allowNulls)
-        {
-            SecurityLogger.indent("ContainerFilter");
-            Collection<String> ids = getIds(container, permission);
-            SecurityLogger.outdent();
-            return getSQLFragment(schema, containerColumnSQL, ids, useJDBCParameters, allowNulls);
-        }
-
-        public abstract Collection<String> getIds(Container currentContainer, Class<? extends Permission> permission);
-
-        // If a permission is not explicitly passed, then use ReadPermission by default.  Otherwise, subclasses
-        // of ContainerFilterWithUser should override.
-        public Collection<String> getIds(Container currentContainer)
-        {
-            return getIds(currentContainer, ReadPermission.class);
+            _perm = perm;
         }
     }
 
@@ -397,17 +360,22 @@ public abstract class ContainerFilter
 
         public CurrentPlusExtras(User user, Container... extraContainers)
         {
-            super(user);
+            this(user, ReadPermission.class, extraContainers);
+        }
+
+        public CurrentPlusExtras(User user, Class<? extends Permission> perm, Container... extraContainers)
+        {
+            super(user, perm);
             _extraContainers = extraContainers;
         }
 
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm)
+        public Collection<String> getIds(Container currentContainer)
         {
             Set<Container> containers = new HashSet<>();
             containers.add(currentContainer);
             for (Container extraContainer : _extraContainers)
             {
-                if (extraContainer.hasPermission(_user, perm))
+                if (extraContainer.hasPermission(_user, _perm))
                 {
                     containers.add(extraContainer);
                 }
@@ -425,21 +393,28 @@ public abstract class ContainerFilter
     {
         public CurrentAndFirstChildren(User user)
         {
-            super(user);
+            this(user, ReadPermission.class);
         }
 
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm)
+        public CurrentAndFirstChildren(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
+        }
+
+        public Collection<String> getIds(Container currentContainer)
         {
             Set<Container> containers = new HashSet<>();
-            for(Container c : ContainerManager.getChildren(currentContainer, _user, perm))
+            for(Container c : ContainerManager.getChildren(currentContainer, _user, _perm))
             {
-                if(!c.isWorkbook() && c.hasPermission(_user, perm))
+                if(!c.isWorkbook() && c.hasPermission(_user, _perm))
                 {
                     containers.add(c);
                 }
             }
             containers.add(currentContainer);
             return toIds(containers);
+
+
         }
 
         public Type getType()
@@ -452,20 +427,25 @@ public abstract class ContainerFilter
     {
         public CurrentAndSubfolders(User user)
         {
-            super(user);
+            this(user, ReadPermission.class);
+        }
+
+        public CurrentAndSubfolders(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
         }
 
         @Override
-        public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, Class<? extends Permission> permission, boolean useJDBCParameters, boolean allowNulls)
+        public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, boolean useJDBCParameters, boolean allowNulls)
         {
             if (_user.isSiteAdmin() && container.isRoot())
                 return new SQLFragment("1 = 1");
-            return super.getSQLFragment(schema,containerColumnSQL,container, permission, useJDBCParameters,allowNulls);
+            return super.getSQLFragment(schema,containerColumnSQL,container,useJDBCParameters,allowNulls);
         }
 
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm)
+        public Collection<String> getIds(Container currentContainer)
         {
-            List<Container> containers = new ArrayList<>(removeWorkbooks(ContainerManager.getAllChildren(currentContainer, _user, perm)));
+            List<Container> containers = new ArrayList<>(removeWorkbooks(ContainerManager.getAllChildren(currentContainer, _user, _perm)));
             containers.add(currentContainer);
             return toIds(containers);
         }
@@ -480,15 +460,20 @@ public abstract class ContainerFilter
     {
         public CurrentPlusProject(User user)
         {
-            super(user);
+            this(user, ReadPermission.class);
         }
 
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm)
+        public CurrentPlusProject(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
+        }
+
+        public Collection<String> getIds(Container currentContainer)
         {
             Set<Container> containers = new HashSet<>();
             containers.add(currentContainer);
             Container project = currentContainer.getProject();
-            if (project != null && project.hasPermission(_user, perm))
+            if (project != null && project.hasPermission(_user, _perm))
             {
                 containers.add(project);
             }
@@ -505,15 +490,20 @@ public abstract class ContainerFilter
     {
         public CurrentAndParents(User user)
         {
-            super(user);
+            this(user, ReadPermission.class);
         }
 
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm)
+        public CurrentAndParents(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
+        }
+
+        public Collection<String> getIds(Container currentContainer)
         {
             Set<Container> containers = new HashSet<>();
             do
             {
-                if (currentContainer.hasPermission(_user, perm))
+                if (currentContainer.hasPermission(_user, _perm))
                 {
                     containers.add(currentContainer);
                 }
@@ -533,18 +523,23 @@ public abstract class ContainerFilter
     {
         public WorkbookAssay(User user)
         {
-            super(user);
+            this(user, ReadPermission.class);
+        }
+
+        public WorkbookAssay(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
         }
 
         @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm)
+        public Collection<String> getIds(Container currentContainer)
         {
             Collection<String> result = super.getIds(currentContainer);
             if (result == null)
             {
                 return null;
             }
-            if (currentContainer.isWorkbook() && currentContainer.getParent().hasPermission(_user, perm))
+            if (currentContainer.isWorkbook() && currentContainer.getParent().hasPermission(_user, _perm))
             {
                 result.add(currentContainer.getParent().getId());
             }
@@ -562,18 +557,23 @@ public abstract class ContainerFilter
     {
         public WorkbookAndParent(User user)
         {
-            super(user);
+            this(user, ReadPermission.class);
+        }
+
+        public WorkbookAndParent(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
         }
 
         @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm)
+        public Collection<String> getIds(Container currentContainer)
         {
             Set<String> result = new HashSet<>();
-            if (currentContainer.hasPermission(_user, perm))
+            if (currentContainer.hasPermission(_user, _perm))
             {
                 result.add(currentContainer.getId());
             }
-            if (currentContainer.isWorkbook() && currentContainer.getParent().hasPermission(_user, perm))
+            if (currentContainer.isWorkbook() && currentContainer.getParent().hasPermission(_user, _perm))
             {
                 result.add(currentContainer.getParent().getId());
             }
@@ -591,19 +591,24 @@ public abstract class ContainerFilter
     {
         public CurrentOrParentAndWorkbooks(User user)
         {
-            super(user);
+            this(user, ReadPermission.class);
+        }
+
+        public CurrentOrParentAndWorkbooks(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
         }
 
         @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm)
+        public Collection<String> getIds(Container currentContainer)
         {
             Set<String> result = new HashSet<>();
-            if (currentContainer.hasPermission(_user, perm))
+            if (currentContainer.hasPermission(_user, _perm))
                 result.add(currentContainer.getId());
 
             if (currentContainer.isWorkbook())
             {
-                if(currentContainer.getParent().hasPermission(_user, perm))
+                if(currentContainer.getParent().hasPermission(_user, _perm))
                     result.add(currentContainer.getParent().getId());
             }
 
@@ -621,15 +626,20 @@ public abstract class ContainerFilter
     {
         public CurrentAndSiblings(User user)
         {
-            super(user);
+            this(user, ReadPermission.class);
+        }
+
+        public CurrentAndSiblings(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
         }
 
         @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm)
+        public Collection<String> getIds(Container currentContainer)
         {
             Set<String> result = new HashSet<>();
 
-            if (currentContainer.isRoot() && currentContainer.hasPermission(_user, perm))
+            if (currentContainer.isRoot() && currentContainer.hasPermission(_user, _perm))
                 result.add(currentContainer.getId());  //if not root, we will add the current container below
 
             Container parent = currentContainer.getParent();
@@ -637,7 +647,7 @@ public abstract class ContainerFilter
             {
                 for(Container c : parent.getChildren())
                 {
-                    if (c.hasPermission(_user, perm))
+                    if (c.hasPermission(_user, _perm))
                     {
                         result.add(c.getId());
                     }
@@ -660,15 +670,25 @@ public abstract class ContainerFilter
 
         public StudyAndSourceStudy(User user, boolean skipPermissionChecks)
         {
-            super(user);
+            this(user, ReadPermission.class, skipPermissionChecks);
+        }
+
+        public StudyAndSourceStudy(User user, Class<? extends Permission> perm)
+        {
+            this(user, perm, false);
+        }
+
+        protected StudyAndSourceStudy(User user, Class<? extends Permission> perm, boolean skipPermissionChecks)
+        {
+            super(user, perm);
             _skipPermissionChecks = skipPermissionChecks;
         }
 
         @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm)
+        public Collection<String> getIds(Container currentContainer)
         {
             Set<String> result = new HashSet<>();
-            if (_skipPermissionChecks || currentContainer.hasPermission(_user, perm))
+            if (_skipPermissionChecks || currentContainer.hasPermission(_user, _perm))
             {
                 result.add(currentContainer.getId());
             }
@@ -676,7 +696,7 @@ public abstract class ContainerFilter
             if (study != null && study.isAncillaryStudy())
             {
                 Study sourceStudy = study.getSourceStudy();
-                if (sourceStudy != null && (_skipPermissionChecks || sourceStudy.getContainer().hasPermission(_user, perm)))
+                if (sourceStudy != null && (_skipPermissionChecks || sourceStudy.getContainer().hasPermission(_user, _perm)))
                 {
                     result.add(sourceStudy.getContainer().getId());
                 }
@@ -696,21 +716,25 @@ public abstract class ContainerFilter
     {
         public CurrentPlusProjectAndShared(User user)
         {
-            super(user);
+            this(user, ReadPermission.class);
         }
 
-        @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm)
+        public CurrentPlusProjectAndShared(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
+        }
+
+        public Collection<String> getIds(Container currentContainer)
         {
             Set<Container> containers = new HashSet<>();
             containers.add(currentContainer);
             Container project = currentContainer.getProject();
-            if (project != null && project.hasPermission(_user, perm))
+            if (project != null && project.hasPermission(_user, _perm))
             {
                 containers.add(project);
             }
             Container shared = ContainerManager.getSharedContainer();
-            if (shared.hasPermission(_user, perm))
+            if (shared.hasPermission(_user, _perm))
             {
                 containers.add(shared);
             }
@@ -727,11 +751,15 @@ public abstract class ContainerFilter
     {
         public AllInProject(User user)
         {
-            super(user);
+            this(user, ReadPermission.class);
         }
 
-        @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm)
+        public AllInProject(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
+        }
+
+        public Collection<String> getIds(Container currentContainer)
         {
             Container project = currentContainer.isProject() ? currentContainer : currentContainer.getProject();
             if (project == null)
@@ -739,7 +767,7 @@ public abstract class ContainerFilter
                 // Don't allow anything
                 return Collections.emptySet();
             }
-            Set<Container> containers = new HashSet<>(removeWorkbooks(ContainerManager.getAllChildren(project, _user, perm)));
+            Set<Container> containers = new HashSet<>(removeWorkbooks(ContainerManager.getAllChildren(project, _user, _perm)));
             containers.add(project);
             return toIds(containers);
         }
@@ -754,18 +782,22 @@ public abstract class ContainerFilter
     {
         public AllFolders(User user)
         {
-            super(user);
+            this(user, ReadPermission.class);
         }
 
-        @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm)
+        public AllFolders(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
+        }
+
+        public Collection<String> getIds(Container currentContainer)
         {
             if (_user.isSiteAdmin())
             {
                 // Don't bother filtering, the user can see everything
                 return null;
             }
-            List<Container> containers = ContainerManager.getAllChildren(ContainerManager.getRoot(), _user, perm);
+            List<Container> containers = ContainerManager.getAllChildren(ContainerManager.getRoot(), _user, _perm);
             // To reduce the number of ids that need to be passed around, filter out workbooks. They'll get included
             // automatically because we always add them via the SQL that we generate
             Set<String> ids = new HashSet<>();
@@ -776,7 +808,7 @@ public abstract class ContainerFilter
                     ids.add(container.getId());
                 }
             }
-            if (ContainerManager.getRoot().hasPermission(_user, perm))
+            if (ContainerManager.getRoot().hasPermission(_user, _perm))
             {
                 ids.add(ContainerManager.getRoot().getId());
             }
@@ -805,20 +837,13 @@ public abstract class ContainerFilter
         private final FieldKey _fieldKey;
         private final ContainerFilter _filter;
         private final Container _container;
-        private final Class<? extends Permission> _permission;
 
         public ContainerClause(DbSchema schema, FieldKey fieldKey, ContainerFilter filter, Container container)
-        {
-            this(schema, fieldKey, filter, container, null);
-        }
-
-        public ContainerClause(DbSchema schema, FieldKey fieldKey, ContainerFilter filter, Container container, Class<? extends Permission> permission)
         {
             _schema = schema;
             _fieldKey = fieldKey;
             _filter = filter;
             _container = container;
-            _permission = (permission != null) ? permission : ReadPermission.class;
         }
 
         @Override
@@ -843,11 +868,6 @@ public abstract class ContainerFilter
         @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            if (_filter instanceof ContainerFilterWithUser)
-            {
-                ContainerFilterWithUser filter = (ContainerFilterWithUser) _filter;
-                return filter.getSQLFragment(_schema, _fieldKey, _container, _permission);
-            }
             return _filter.getSQLFragment(_schema, _fieldKey, _container);
         }
     }

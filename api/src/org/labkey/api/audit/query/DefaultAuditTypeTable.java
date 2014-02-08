@@ -17,14 +17,11 @@ package org.labkey.api.audit.query;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditTypeProvider;
-import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -125,16 +122,6 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     {
         for (ColumnInfo col : getColumns())
             initColumn(col);
-    }
-
-    /**
-     * issue 19515:  be sure to apply the CanSeeAuditLog permission to the container filter so that folder filters
-     * do not show unauthorized events
-     */
-    @Override
-    protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
-    {
-        return filter.createFilterClause(getSchema(), fieldKey, getContainer(), CanSeeAuditLogPermission.class);
     }
 
     // Subclasses may override this to provide customizations to the column
