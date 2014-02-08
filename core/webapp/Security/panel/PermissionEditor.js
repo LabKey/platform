@@ -281,15 +281,6 @@ Ext4.define('Security.panel.PermissionEditor', {
                 select: function(list,group){
                     showPopup.call(this, group);
                 },
-                render: function(cmp) {
-                    // issue 13875
-                    cmp.getGrid().on('viewready', function(grid) {
-                        // set initial height based on tab panel height minus room for create new header panel
-                        var height = this.getHeight() - 135;
-                        if (grid.getHeight() > height)
-                            grid.setHeight(height);
-                    }, this);
-                },
                 scope: this
             },
             scope : this
