@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.security.permissions.Permission;
 
 import java.util.Collection;
 
@@ -23,7 +24,7 @@ import java.util.Collection;
  * User: jeckels
  * Date: Feb 4, 2009
  */
-public class DelegatingContainerFilter extends ContainerFilter
+public class DelegatingContainerFilter extends ContainerFilter.ContainerFilterWithUser
 {
     private final TableInfo _source;
     private final boolean _promoteWorkbooksToParentContainer;
@@ -38,17 +39,31 @@ public class DelegatingContainerFilter extends ContainerFilter
      */
     public DelegatingContainerFilter(TableInfo source, boolean promoteWorkbooksToParentContainer)
     {
+        super(null);
         _source = source;
         _promoteWorkbooksToParentContainer = promoteWorkbooksToParentContainer;
     }
 
+    /**
+     * If we are delegating to a ContainerFilterWithUser subclass, then be sure to apply the appropriate
+     * permission.  See issue 19515
+     */
+    @Nullable
+    public Collection<String> getIds(Container currentContainer, Class<? extends Permission> permission)
+    {
+        currentContainer = getContainer(currentContainer);
+        ContainerFilter cf = _source.getContainerFilter();
+        if (cf instanceof ContainerFilterWithUser)
+            return ((ContainerFilterWithUser)cf).getIds(currentContainer, permission);
+
+        return cf.getIds(currentContainer);
+    }
+
+
     @Nullable
     public Collection<String> getIds(Container currentContainer)
     {
-        if (_promoteWorkbooksToParentContainer && currentContainer.isWorkbook())
-        {
-            currentContainer = currentContainer.getParent();
-        }
+        currentContainer = getContainer(currentContainer);
         return _source.getContainerFilter().getIds(currentContainer);
     }
 
@@ -56,5 +71,13 @@ public class DelegatingContainerFilter extends ContainerFilter
     public Type getType()
     {
         return _source.getContainerFilter().getType();
+    }
+
+    private Container getContainer(Container currentContainer)
+    {
+        if (_promoteWorkbooksToParentContainer && currentContainer.isWorkbook())
+            return currentContainer.getParent();
+
+        return currentContainer;
     }
 }

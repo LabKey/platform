@@ -479,8 +479,17 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
         if (containerColumn != null && getContainer() != null)
         {
             clearConditions(containerColumn.getFieldKey());
-            addCondition(new SimpleFilter(filter.createFilterClause(getSchema(), containerColumn.getFieldKey(), getContainer())));
+            addCondition(new SimpleFilter(getContainerFilterClause(filter, containerColumn.getFieldKey())));
         }
+    }
+
+    /**
+     * Subclasses should override this if they need to create a filter clause with an explicit permission (for example,
+     * the DefaultAudityTypeTable).  See issue 19515
+     */
+    protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
+    {
+        return filter.createFilterClause(getSchema(), fieldKey, getContainer());
     }
 
     @NotNull
