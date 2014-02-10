@@ -17,7 +17,6 @@
 package org.labkey.study.query;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SimpleFilter;
@@ -77,16 +76,10 @@ public abstract class BaseStudyQueryView extends QueryView
         {
             ButtonBar bbar = new ButtonBar();
             bbar.addAll(view.getDataRegion().getButtonBar(DataRegion.MODE_GRID).getList());
-            for (DisplayElement button : _buttons)
-            {
-                bbar.add(button);
-                if (button == ActionButton.BUTTON_SELECT_ALL || button == ActionButton.BUTTON_CLEAR_ALL)
-                    view.getDataRegion().setShowRecordSelectors(true);
-            }
+            bbar.addAll(_buttons);
+            view.getDataRegion().setShowRecordSelectors(true);
             view.getDataRegion().setButtonBar(bbar);
         }
-        //else
-        //    view.getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
         view.getDataRegion().setButtonBarPosition(getButtonBarPosition());
         return view;
     }
