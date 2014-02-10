@@ -63,7 +63,6 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.HttpView;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 import org.springframework.web.servlet.mvc.Controller;
@@ -666,8 +665,7 @@ public class ModuleLoader implements Filter
         simpleModule.setName(moduleName);
         simpleModule.setSourcePath(moduleDir.getAbsolutePath());
         BeanUtils.populate(simpleModule, props);
-        if (simpleModule instanceof ApplicationContextAware)
-            simpleModule.setApplicationContext(parentContext);
+        simpleModule.setApplicationContext(parentContext);
 
         return simpleModule;
     }
