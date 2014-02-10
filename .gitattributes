@@ -691,7 +691,6 @@ api/src/org/labkey/api/jsp/taglib/AutoCompleteTextTag.java -text
 api/src/org/labkey/api/jsp/taglib/AutoCompleteTextareaTag.java -text
 api/src/org/labkey/api/jsp/taglib/ButtonTag.java -text
 api/src/org/labkey/api/jsp/taglib/CheckboxTag.java -text
-api/src/org/labkey/api/jsp/taglib/ClearAll.java -text
 api/src/org/labkey/api/jsp/taglib/CsrfInputTag.java -text
 api/src/org/labkey/api/jsp/taglib/ErrorsTag.java -text
 api/src/org/labkey/api/jsp/taglib/HelpPopupTag.java -text
@@ -699,7 +698,6 @@ api/src/org/labkey/api/jsp/taglib/LinkTag.java -text
 api/src/org/labkey/api/jsp/taglib/OptionsTag.java -text
 api/src/org/labkey/api/jsp/taglib/RadioTag.java -text
 api/src/org/labkey/api/jsp/taglib/ScriptDependenciesTag.java -text
-api/src/org/labkey/api/jsp/taglib/SelectAll.java -text
 api/src/org/labkey/api/jsp/taglib/SimpleTagBase.java -text
 api/src/org/labkey/api/laboratory/AbstractDataProvider.java -text
 api/src/org/labkey/api/laboratory/AbstractImportingNavItem.java -text

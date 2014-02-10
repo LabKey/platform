@@ -62,8 +62,6 @@ public class ActionButton extends DisplayElement implements Cloneable
     public static ActionButton BUTTON_SHOW_GRID = null;
     public static ActionButton BUTTON_DO_INSERT = null;
     public static ActionButton BUTTON_DO_UPDATE = null;
-    public static ActionButton BUTTON_SELECT_ALL = null;
-    public static ActionButton BUTTON_CLEAR_ALL = null;
 
     static
     {
@@ -98,18 +96,6 @@ public class ActionButton extends DisplayElement implements Cloneable
         BUTTON_DO_UPDATE = new ActionButton("update.post", "Submit");
         BUTTON_DO_UPDATE.lock();
         MemTracker.getInstance().remove(BUTTON_DO_UPDATE);
-
-        BUTTON_SELECT_ALL = new ActionButton("selectAll", "Select All");
-        BUTTON_SELECT_ALL.setScript("setAllCheckboxes(this.form, true);return false;");
-        BUTTON_SELECT_ALL.setActionType(ActionButton.Action.GET);
-        BUTTON_SELECT_ALL.lock();
-        MemTracker.getInstance().remove(BUTTON_SELECT_ALL);
-
-        BUTTON_CLEAR_ALL = new ActionButton("clearAll", "Clear All");
-        BUTTON_CLEAR_ALL.setScript("setAllCheckboxes(this.form, false);return false;");
-        BUTTON_CLEAR_ALL.setActionType(ActionButton.Action.GET);
-        BUTTON_CLEAR_ALL.lock();
-        MemTracker.getInstance().remove(BUTTON_CLEAR_ALL);
     }
 
 

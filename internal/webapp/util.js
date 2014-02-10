@@ -3,44 +3,6 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-
-function setAllCheckboxes(form, value, elementName)
-{
-    if (form.dataRegion)
-    {
-        return form.dataRegion.selectPage(value);
-    }
-    
-    var elems = form.elements;
-    var l = elems.length;
-    var ids = [];
-    for (var i = 0; i < l; i++)
-    {
-        var e = elems[i];
-        if (e.type == 'checkbox' && !e.disabled && (elementName == null || elementName == e.name))
-        {
-            e.checked = value;
-            if (e.name != ".toggle")
-                ids.push(e.value);
-        }
-    }
-    return ids;
-}
-
-function getCheckedValues(form, elementName)
-{
-    var elems = form.elements;
-    var l = elems.length;
-    var values = [];
-    for (var i = 0; i < l; i++)
-    {
-        var e = elems[i];
-        if (e.type == 'checkbox' && !e.disabled && (elementName == null || elementName == e.name) && e.checked)
-            values.push(e.value);
-    }
-    return values;
-}
-
 function toggleLink(link, notify)
 {
     collapseExpand(link, notify);

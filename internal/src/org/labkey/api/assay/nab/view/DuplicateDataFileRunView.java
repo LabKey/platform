@@ -26,7 +26,6 @@ import org.labkey.api.nab.NabUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.util.PageFlowUtil;
@@ -54,13 +53,6 @@ public class DuplicateDataFileRunView extends RunListQueryView
         DataView view = super.createDataView();
         DataRegion rgn = view.getDataRegion();
         ButtonBar bar = rgn.getButtonBar(DataRegion.MODE_GRID);
-        ActionButton selectButton = ActionButton.BUTTON_SELECT_ALL.clone();
-        selectButton.setDisplayPermission(InsertPermission.class);
-        bar.add(selectButton);
-
-        ActionButton clearButton = ActionButton.BUTTON_CLEAR_ALL.clone();
-        clearButton.setDisplayPermission(InsertPermission.class);
-        bar.add(clearButton);
 
         ActionButton deleteButton = new ActionButton(PageFlowUtil.urlProvider(NabUrls.class).urlDeleteRun(getContainer()),
                 "Delete", DataRegion.MODE_GRID, ActionButton.Action.POST);

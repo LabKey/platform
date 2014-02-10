@@ -493,7 +493,17 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
              */
             getChecked: function ()
             {
-                return getCheckedValues(this.form, '.select');
+                var elementName = '.select';
+                var elems = this.form.elements;
+                var l = elems.length;
+                var values = [];
+                for (var i = 0; i < l; i++)
+                {
+                    var e = elems[i];
+                    if (e.type == 'checkbox' && !e.disabled && (elementName == null || elementName == e.name) && e.checked)
+                        values.push(e.value);
+                }
+                return values;
             },
 
             /**
