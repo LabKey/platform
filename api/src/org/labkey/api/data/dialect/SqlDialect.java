@@ -348,8 +348,19 @@ public abstract class SqlDialect
         return sqlState.equals("42501"); // Insufficient Privilege // TODO verify SQL Server
     }
 
-    // Do dialect-specific work for this new data source.
-    public void prepareNewDbScope(DbScope scope)
+    // We're bootstrapping a new labkey database; do nothing by default
+    public void prepareNewLabKeyDatabase(DbScope scope)
+    {
+    }
+
+    // Core module is done upgrading. Do any required work in the core database, nothing by default.
+    public void afterCoreUpgrade(ModuleContext context)
+    {
+    }
+
+    // Do scope-specific initialization work for this dialect. Note: this might be called multiple times, for example,
+    // during bootstrap or upgrade.
+    public void prepare(DbScope scope)
     {
         initialize();
     }
@@ -572,11 +583,6 @@ public abstract class SqlDialect
 
     // does provider support ROUND(double,x) where x != 0
     public abstract boolean supportsRoundDouble();
-
-    // Do nothing by default
-    public void prepareNewLabKeyDatabase(DbScope scope)
-    {
-    }
 
     public void handleCreateDatabaseException(SQLException e) throws ServletException
     {

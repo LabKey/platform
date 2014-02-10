@@ -21,7 +21,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 

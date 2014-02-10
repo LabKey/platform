@@ -864,7 +864,7 @@ public class DbScope
                     }
 
                     DbScope scope = new DbScope(dsName, dataSources.get(dsName));
-                    scope.getSqlDialect().prepareNewDbScope(scope);
+                    scope.getSqlDialect().prepare(scope);
                     _scopes.put(dsName, scope);
                 }
                 catch (Exception e)
