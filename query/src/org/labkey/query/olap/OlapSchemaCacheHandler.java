@@ -24,7 +24,6 @@ import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 
 import java.util.regex.Pattern;
@@ -73,12 +72,12 @@ public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<OlapSc
         @Override
         public OlapSchemaDescriptor load(String configId, @Nullable Object argument)
         {
-            Pair<Module, String> pair = ModuleResourceCache.parseCacheKey(configId, CONFIG_ID_PATTERN);
-            Module module = pair.first;
-            String configName = pair.second;
+            ModuleResourceCache.CacheId tid = ModuleResourceCache.parseCacheKey(configId, CONFIG_ID_PATTERN);
+            Module module = tid.getModule();
+            String configName = tid.getName();
 
             Path configPath = new Path(DIR_NAME, configName + ".xml");
-            Resource config = pair.first.getModuleResolver().lookup(configPath);
+            Resource config  = module.getModuleResolver().lookup(configPath);
 
             if (config != null && config.isFile())
                 return new OlapSchemaDescriptor(configId, module, config);
