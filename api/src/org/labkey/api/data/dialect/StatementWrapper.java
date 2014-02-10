@@ -1597,6 +1597,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     
 
     private static Package _java_lang = java.lang.String.class.getPackage();
+    boolean _memTracked = false;        // don't log the same statement multiple times
 
     private void _logStatement(String sql, Exception x)
     {
@@ -1665,18 +1666,27 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         final String logString = logEntry.toString();
         _log.log(Level.DEBUG, logString);
 
-        MemTracker.getInstance().put(new MemTrackable(){
-            @Override
-            public String toMemTrackerString()
-            {
-                return logString;
-            }
-        });
+        assert _memTracked || (MemTracker.getInstance().put(new _StringMemTrackable(logString)) && (_memTracked = true));
 
         // check for deadlock or transaction related error
         if (x instanceof SQLException && SqlDialect.isTransactionException(x))
         {
             BreakpointThread.dumpThreads(_log);
+        }
+    }
+
+
+    private static class _StringMemTrackable implements MemTrackable
+    {
+        final String s;
+        _StringMemTrackable(String s)
+        {
+            this.s = s;
+        }
+        @Override
+        public String toMemTrackerString()
+        {
+            return s;
         }
     }
 
