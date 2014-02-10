@@ -2024,7 +2024,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (!timetype.isVisitBased() && null == indexVisitDate)
                 setupError("Missing required field Date");
 
-            if (timetype.isVisitBased() && null == indexSequenceNumColumnInput)
+            if (timetype.isVisitBased() && null == it.indexSequenceNumOutput)
                 setupError("Missing required field SequenceNum");
 
             it.setInput(ErrorIterator.wrap(input, context, false, setupError));
