@@ -1,6 +1,5 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="true">
-        <script path="extWidgets/Ext4Helper.js"/>
         <script path="extWidgets/LabkeyCombo.js"/>
         <script path="extWidgets/ExtComponents.js"/>
         <script path="extWidgets/Ext4FormPanel.js"/>
@@ -8,7 +7,6 @@
         <script path="extWidgets/DetailsPanel.js"/>
     </library>
     <dependencies>
-        <dependency path="Ext4"/>
         <dependency path="clientapi/ext4"/>
     </dependencies>
 </libraries>

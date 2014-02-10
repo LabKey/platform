@@ -435,7 +435,6 @@ if (typeof LABKEY == "undefined")
                 "clientapi/ext4/data/Reader.js",
                 "clientapi/ext4/data/Proxy.js",
                 "clientapi/ext4/data/Store.js",
-                "extWidgets/Ext4Helper.js",
                 "extWidgets/LabkeyCombo.js",
                 "extWidgets/ExtComponents.js",
                 "extWidgets/Ext4FormPanel.js",

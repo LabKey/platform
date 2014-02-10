@@ -8275,7 +8275,6 @@ internal/webapp/extWidgets/Ext4DefaultFilterPanel.js -text
 internal/webapp/extWidgets/Ext4DetailsPanel.css -text
 internal/webapp/extWidgets/Ext4FormPanel.js -text
 internal/webapp/extWidgets/Ext4GridPanel.js -text
-internal/webapp/extWidgets/Ext4Helper.js -text
 internal/webapp/extWidgets/ExtComponents.js -text
 internal/webapp/extWidgets/FileUploadPanel.js -text
 internal/webapp/extWidgets/IconPanel.css -text
