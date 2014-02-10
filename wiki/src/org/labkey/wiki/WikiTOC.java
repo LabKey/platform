@@ -16,6 +16,7 @@
 
 package org.labkey.wiki;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
@@ -29,9 +30,11 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.menu.NavTreeMenu;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.wiki.model.Wiki;
 
 import java.io.PrintWriter;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Stack;
 
@@ -156,6 +159,16 @@ public class WikiTOC extends NavTreeMenu
         return _selectedLink != null && link.compareToIgnoreCase(_selectedLink) == 0;
     }
 
+    @NotNull
+    @Override
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        // add dependent client-side scripts
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("wiki/internal/Wiki.js"));
+        return resources;
+    }
+
     @Override
     protected void renderView(Object model, PrintWriter out) throws Exception
     {
@@ -276,21 +289,9 @@ public class WikiTOC extends NavTreeMenu
 
             if (showExpandOption)
             {
-                out.println("<script type=\"text/javascript\">");
-                out.println("   var adjustAllTocEntries = function(parentId, notify, expand) {");
-                out.println("       var tocParent = document.getElementById (parentId);");
-                out.println("       var tocTable = tocParent.childNodes.item(0);");
-                out.println("       while (tocTable && tocTable.nodeName != \"TABLE\") {");
-                out.println("           tocTable = tocTable.nextSibling;");
-                out.println("       }");
-                out.println("       if (tocTable) {");
-                out.println("           toggleTable(tocTable, expand, notify);");
-                out.println("       }");
-                out.println("   };");
-                out.println("</script>");
                 out.println("</td></tr><tr><td>&nbsp;</td></tr><tr><td>");
-                out.println(PageFlowUtil.textLink("expand all", "javascript:void(0);", "adjustAllTocEntries('NavTree-" + getId() + "', true, true)", ""));
-                out.println(PageFlowUtil.textLink("collapse all", "javascript:void(0);", "adjustAllTocEntries('NavTree-" + getId() + "', true, false)", ""));
+                out.println(PageFlowUtil.textLink("expand all", "javascript:void(0);", "LABKEY.wiki.internal.Wiki.adjustAllTocEntries('NavTree-" + getId() + "', true, true)", ""));
+                out.println(PageFlowUtil.textLink("collapse all", "javascript:void(0);", "LABKEY.wiki.internal.Wiki.adjustAllTocEntries('NavTree-" + getId() + "', true, false)", ""));
             }
 
             out.println("</td>\n</tr>\n</table>");

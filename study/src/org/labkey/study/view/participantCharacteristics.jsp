@@ -119,7 +119,7 @@
         <th nowrap colspan="<%=2%>" align="left" class="labkey-expandable-row-header">
             <a title="Click to expand/collapse"
                href="<%=new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>"
-               onclick="return toggleLink(this, true);">
+               onclick="return LABKEY.Utils.toggleLink(this, true);">
                 <img src="<%=getContextPath()%>/_images/<%= text(expanded ? "minus.gif" : "plus.gif") %>"
                      alt="Click to expand/collapse">
                 <%=h(dataSet.getDisplayString())%>

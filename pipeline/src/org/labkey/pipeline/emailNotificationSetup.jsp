@@ -18,11 +18,10 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.pipeline.api.PipelineEmailPreferences" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.pipeline.PipelineController" %>
+<%@ page import="org.labkey.pipeline.api.PipelineEmailPreferences" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -83,7 +82,7 @@
         {
             var notifyOwnerOnError = document.getElementById("notifyOwnerOnError");
         }
-        collapseExpand(selection, false);
+        LABKEY.Utils.collapseExpand(selection, false);
     }
 
     function updateSuccessNotifyInterval()

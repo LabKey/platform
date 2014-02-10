@@ -63,7 +63,7 @@
             var details = values[i];
             innerHTML += '<tr class="labkey-header">';
             if (details.group)
-                innerHTML += '<td class="labkey-nav-tree-node"><a onclick="return toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/plus.gif")%>"></a></td>';
+                innerHTML += '<td class="labkey-nav-tree-node"><a onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/plus.gif")%>"></a></td>';
             else
                 innerHTML += '<td class="labkey-nav-tree-node"><img width="9" src="<%=getWebappURL("_.gif")%>"></td>';
 
@@ -143,7 +143,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a  style="color:#000000;width:auto" onclick="return toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/minus.gif")%>" alt="" />
+                        <a  style="color:#000000;width:auto" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/minus.gif")%>" alt="" />
                             <span>View All Specimens</span></a><a style="width:auto"
                                onmouseover="return showHelpDivDelay(this, 'Vial Viewing Options', 'Vials may be viewed individually, with one row per vial, or by vial group, with one row per subject, time point, and sample type combination.');"
                                onmouseout="return hideHelpDivDelay();"
@@ -175,7 +175,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/minus.gif")%>" alt="" />
+                        <a style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/minus.gif")%>" alt="" />
                             <span>Search Specimens</span>
                         </a>
                     </td>
@@ -213,7 +213,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/plus.gif")%>" alt="" />
+                        <a style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/plus.gif")%>" alt="" />
                             <span>Specimen Reports</span>
                         </a>
                     </td>
@@ -240,7 +240,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#">
+                        <a  style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#">
                             <img src="<%=getWebappURL("_images/plus.gif")%>" alt="" />
                             <span>Specimen Requests</span>
                         </a>
@@ -283,7 +283,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header" >
                     <td class="labkey-nav-tree-text" align="left">
-                        <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#">
+                        <a  style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#">
                             <img src="<%=getWebappURL("_images/minus.gif")%>" alt="" />
                             <span id="<%=text(groupHeading1)%>"></span>
                         </a>
@@ -302,7 +302,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#">
+                        <a  style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#">
                             <img src="<%=getWebappURL("_images/plus.gif")%>" alt="" />
                             <span id="<%=text(groupHeading2)%>"></span>
                         </a>
@@ -324,7 +324,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/plus.gif")%>" alt="" />
+                        <a style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/plus.gif")%>" alt="" />
                             <span>Administration</span>
                         </a>
                     </td>

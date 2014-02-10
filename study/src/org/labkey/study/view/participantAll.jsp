@@ -229,7 +229,7 @@
     var toggleIfReady = function (link, notify)
     {
         if (tableReady)
-            toggleLink(link, notify);
+            LABKEY.Utils.toggleLink(link, notify);
         return false;
     };
 </script>

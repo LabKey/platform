@@ -147,6 +147,8 @@ public class WikiController extends SpringActionController
         if (template instanceof HomeTemplate && !(action instanceof EditWikiAction))
         {
             WebPartView toc = new WikiTOC(context);
+            page.addClientDependencies(toc.getClientDependencies());
+
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
             if (null == ss)

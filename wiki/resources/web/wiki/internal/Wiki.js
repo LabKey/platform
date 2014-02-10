@@ -128,7 +128,7 @@
             // though they can't correct them -- the tiny_mce contextmenu plugin takes over the context menu
             gecko_spellcheck : true,
 
-            content_css : LABKEY.contextPath + "/core/themeStylesheet.view",
+            content_css : LABKEY.contextPath + "/core/themeStylesheet.view"
 
             // labkey specific
             //handle_event_callback : tinyMceHandleEvent,
@@ -306,6 +306,18 @@
     }
 
     LABKEY.wiki.internal.Wiki = {
+        adjustAllTocEntries : function(parentId, notify, expand) {
+            var tocParent = document.getElementById(parentId);
+            var tocTable = tocParent.childNodes.item(0);
+
+            while (tocTable && tocTable.nodeName != "TABLE") {
+                tocTable = tocTable.nextSibling;
+            }
+
+            if (tocTable) {
+                LABKEY.wiki.internal.Wiki.toggleTable(tocTable, expand, notify);
+            }
+        },
         createWebPartInlineEditor : function (config) {
             if (!config.webPartId)
                 throw new Error("webPartId required");
@@ -319,8 +331,73 @@
 
             var dependencies = [ "tiny_mce/tiny_mce_src.js" ];
             LABKEY.requiresScript(dependencies, true, function () { inlineWikiEdit(config); }, this, false);
-        }
+        },
+        toggleTable : function(tocTable, expand, notify) {
+            //Structure of a navtree table:
+            //  Each row contains either a node in the tree, or the children of the node in the previous row
+            //  For each, row we check the first TD for an anchor.  If it's there, this is a node row and
+            //  we toggle it appropriately
+            //  We then check the second TD for a table, if it's there we recurse
+            //  Note taht some rows have neither (non-expandable nodes)
 
+            if (tocTable)
+            {
+                if (0 == tocTable.childNodes.length)
+                    return false;
+
+                var topics = tocTable.childNodes.item(0);
+                while (topics && topics.nodeName != "TBODY")
+                { topics = topics.nextSibling; }
+
+                if (!topics)
+                    return false;
+
+                for (var i = 0; i < topics.childNodes.length; i++)
+                {
+                    var topic = topics.childNodes.item(i);
+                    if (topic.nodeName == "TR")
+                    {
+                        var firstTD = topic.childNodes.item(0);
+                        while (firstTD && firstTD.nodeName != "TD")
+                        { firstTD = firstTD.nextSibling; }
+                        if (!firstTD) continue;
+
+                        var link = firstTD.childNodes.item(0);
+                        while (link && link.nodeName != "A")
+                        { link = link.nextSibling; }
+                        if (link != null)
+                        {
+                            //First we need to get the current state by looking at the img
+                            var img = link.childNodes.item(0);
+                            var expanded = (img.src.indexOf("minus.gif") != -1) ? true : false;
+                            //now if we are expanded and want to collapse, or are collapsed and want to expand, do it
+                            if ( (expanded && !expand) || (!expanded && expand))
+                                LABKEY.Utils.toggleLink(link, notify);
+                            else if (expanded && expand && notify && link.href != null)
+                            {
+                                //hack to handle the case where the node is expanded because it or a child is in view
+                                //but the user has selected 'expand all'.  We still need to notify the server to ensure
+                                //that the state is saved
+                                LABKEY.Utils.notifyExpandCollapse(link.href, false);
+                            }
+                        }
+
+                        var secondTD = firstTD.nextSibling;
+                        while (secondTD && secondTD.nodeName != "TD")
+                        { secondTD = secondTD.nextSibling; }
+                        if (!secondTD) continue;
+                        var table = secondTD.childNodes.item(0);
+                        while (table && table.nodeName != "TABLE")
+                        { table = table.nextSibling; }
+                        if (table != null)
+                        {
+                            //if there's a table in the second td, recursively process it
+                            LABKEY.wiki.internal.Wiki.toggleTable(table, expand, notify);
+                        }
+                    }
+                }
+            }
+        }
     };
 })();
 

@@ -103,12 +103,12 @@
             %>
         <tr class="labkey-header">
             <td valign="middle" width="9">
-                <a id="<%= h(guid) %>" onclick="return toggleLink(this, false);">
+                <a id="<%= h(guid) %>" onclick="return LABKEY.Utils.toggleLink(this, false);">
                     <img src="<%=getWebappURL("_images/plus.gif")%>">
                 </a>
             </td>
             <td>
-                <span onclick="return toggleLink(document.getElementById('<%= h(guid) %>'), false);"><%=h(module.getName())%> <%=h(module.getFormattedVersion())%></span>
+                <span onclick="return LABKEY.Utils.toggleLink(document.getElementById('<%= h(guid) %>'), false);"><%=h(module.getName())%> <%=h(module.getFormattedVersion())%></span>
             </td>
         </tr>
         <tr style="display:none">
