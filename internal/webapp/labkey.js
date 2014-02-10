@@ -648,15 +648,6 @@ if (typeof LABKEY == "undefined")
                 elem.style.visibility = "visible";
         };
 
-        var toHTML = function(elem)
-        {
-            if ('htmlText' in elem)
-                return elem.htmlText;
-            var y = document.createElement("SPAN");
-            y.appendChild(elem);
-            return y.innerHTML;
-        };
-
         return {
 
             /**** Variables ****/
@@ -781,8 +772,7 @@ if (typeof LABKEY == "undefined")
             requiresVisualization: requiresVisualization,
             setDirty: setDirty,
             setSubmit: setSubmit,
-            showNavTrail: showNavTrail,
-            toHTML: toHTML
+            showNavTrail: showNavTrail
         }
     };
 

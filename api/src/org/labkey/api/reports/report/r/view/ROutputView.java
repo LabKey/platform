@@ -116,7 +116,7 @@ public class ROutputView extends HttpView
         if (_showHeader)
         {
             sb.append("<tr class=\"labkey-wp-header\"><th colspan=2 align=left>");
-            sb.append("   <a href=\"#\" onclick=\"return toggleLink(this, false);\">");
+            sb.append("   <a href=\"#\" onclick=\"return LABKEY.Utils.toggleLink(this, false);\">");
             sb.append("   <img src=\"");
             sb.append(getViewContext().getContextPath());
             sb.append("/_images/");

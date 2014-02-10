@@ -82,6 +82,69 @@ LABKEY.Utils = new function()
         }
     }
 
+    var getNextRow = function(rowElem)
+    {
+        if (null == rowElem)
+            return null;
+
+
+        var nextRow = rowElem.nextSibling;
+        while (nextRow != null && !nextRow.tagName)
+            nextRow = nextRow.nextSibling;
+
+        if (nextRow == null || nextRow.tagName != "TR")
+            return null;
+
+        return nextRow;
+    };
+
+    var collapseExpand = function(elem, notify)
+    {
+        var collapse = false;
+        var url = elem.href;
+        while (elem.tagName != 'TR')
+            elem = elem.parentNode;
+
+        var nextRow = getNextRow(elem);
+        if (null != nextRow && nextRow.style.display != "none")
+            collapse = true;
+
+        while (nextRow != null)
+        {
+            if (nextRow.className.indexOf("labkey-header") != -1)
+                break;
+            if (nextRow.style.display != "none")
+                nextRow.style.display = "none";
+            else
+                nextRow.style.display = "";
+            nextRow = getNextRow(nextRow);
+        }
+
+        if (null != url && notify)
+            notifyExpandCollapse(url, collapse);
+        return false;
+    };
+
+    var notifyExpandCollapse = function(url, collapse)
+    {
+        if (collapse)
+            url += "&collapse=true";
+        LABKEY.ExtAdapter.Ajax.request({url: url});
+    };
+
+    var toggleLink = function(link, notify)
+    {
+        collapseExpand(link, notify);
+        var i = 0;
+        while (typeof(link.childNodes[i].src) == "undefined" )
+            i++;
+
+        if (link.childNodes[i].src.search("plus.gif") >= 0)
+            link.childNodes[i].src = link.childNodes[i].src.replace("plus.gif", "minus.gif");
+        else
+            link.childNodes[i].src = link.childNodes[i].src.replace("minus.gif", "plus.gif");
+        return false;
+    };
 
     /** @scope LABKEY.Utils */
     return {
@@ -979,7 +1042,12 @@ LABKEY.Utils.convertToTable(
                         LABKEY.loadedScripts(json.implicitJsIncludes);
                 }
             }
-        }
+        },
+
+        // private
+        collapseExpand: collapseExpand,
+        notifyExpandCollapse: notifyExpandCollapse,
+        toggleLink: toggleLink
 
     };
 };

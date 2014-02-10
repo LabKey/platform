@@ -2934,6 +2934,129 @@ LABKEY.DataRegion.buildQueryString = function (pairs)
     return queryString.join("");
 };
 
+// private
+// Migrated from util.js due to dependency on DataRegion
+// generator function to create a function to call when flag field is clicked
+// This is used in FlagColumnRenderer
+LABKEY.DataRegion._showFlagDialog = function(config)
+{
+    config = Ext.apply({}, config, {
+        url: LABKEY.ActionURL.buildURL('experiment', 'setFlag.api'),
+        dataRegionName: null,
+        defaultComment: "Flagged for review",
+        dialogTitle: "Review",
+        imgTitle: "Flag for review",
+        imgSrcFlagged: LABKEY.contextPath + "/Experiment/flagDefault.gif",
+        imgClassFlagged: "",
+        imgSrcUnflagged: LABKEY.contextPath + "/Experiment/unflagDefault.gif",
+        imgClassUnflagged: "",
+        translatePrimaryKey: null
+    });
+
+    function getDataRegion()
+    {
+        if (LABKEY.DataRegions && typeof config.dataRegionName == 'string')
+            return LABKEY.DataRegions[config.dataRegionName];
+        return null;
+    }
+
+    var setFlag = function(flagId)
+    {
+        Ext.QuickTips.init();
+
+        var clickedComment;
+        var flagImages = Ext.DomQuery.select("IMG[flagId='" + flagId + "']");
+        if (!flagImages || 0==flagImages.length)
+            return;
+        var img = flagImages[0];
+        if (img.title != config.imgTitle)
+            clickedComment = img.title;
+
+        var checkedLsids = [];
+        var dr = getDataRegion();
+        if (dr && typeof config.translatePrimaryKey == 'function')
+        {
+            var pks = dr.getChecked() || [];
+            for (var i=0 ; i<pks.length ; i++)
+                checkedLsids.push(config.translatePrimaryKey(pks[i]));
+        }
+
+        var msg = 'Enter a comment';
+        var comment = clickedComment || config.defaultComment;
+        if (checkedLsids.length > 0)
+        {
+            msg = "Enter comment for " + checkedLsids.length + " selected " + (checkedLsids.length==1?"row":"rows");
+            comment = config.defaultComment;        // consider inspect all for equal comments
+        }
+
+        var lsids = checkedLsids.length==0 ? [flagId] : checkedLsids;
+        var successFn = function(response, options)
+        {
+            var comment = options.params.comment;
+            for (var i=0 ; i<lsids.length ; i++)
+            {
+                var lsid = lsids[i];
+                var flagImages = Ext.DomQuery.select("IMG[flagId='" + lsid + "']");
+                if (!flagImages || 0==flagImages.length)
+                    continue;
+                el = Ext.get(flagImages[0]);
+                if (comment)
+                {
+                    el.dom.src = config.imgSrcFlagged;
+                    el.dom.title = comment;
+                    if (config.imgClassUnflagged)
+                        (el.removeCls||el.removeClass)(config.imgClassUnflagged);
+                    (el.addCls||el.addClass)(config.imgClassFlagged);
+                }
+                else
+                {
+                    el.dom.src = config.imgSrcUnflagged;
+                    el.dom.title = config.imgTitle;
+                    if (config.imgClassFlagged)
+                        (el.removeCls||el.removeClass)(config.imgClassFlagged);
+                    (el.addCls||el.addClass)(config.imgClassUnflagged);
+                }
+            }
+        };
+
+        var el = Ext.get(img);
+        Ext.MessageBox.show({
+            title: config.dialogTitle,
+            prompt: true,
+            msg: msg,
+            value: comment,
+            width: 300,
+            fn: function(btnId, value)
+            {
+                if (btnId == 'ok')
+                {
+                    Ext.Ajax.request({
+                        url: config.url,
+                        params: {
+                            lsid: lsids,
+                            comment: value,
+                            unique: new Date().getTime()
+                        },
+                        success: successFn,
+                        failure: function() { alert("Failure!"); }
+                    });
+                }
+            },
+            buttons: Ext.MessageBox.OKCANCEL
+        });
+    };
+
+    if (Ext.isReady)
+    {
+        return setFlag;
+    }
+
+    return function(flagId)
+    {
+        Ext.onReady(function(){setFlag(flagId)});
+    };
+};
+
 
 // NOTE filter UI is shared, but I still don't like all these global/single instance variables
 

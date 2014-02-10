@@ -95,7 +95,7 @@ public class FlagColumnRenderer extends DataColumn
         try
         {
             out.write("<script type=\"text/javascript\">\n");
-            out.write("var " + setFlagFn + " = showFlagDialogFn({");
+            out.write("var " + setFlagFn + " = LABKEY.DataRegion._showFlagDialog({");
             if (null != endpoint)
                 out.write("url: " + PageFlowUtil.jsString(endpoint) + ", ");
             if (null != jsConvertPKToLSID)
