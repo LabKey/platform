@@ -286,6 +286,17 @@ Ext4.define('Security.panel.PermissionEditor', {
             scope : this
         });
 
+        // issue 13875
+        groupList.on('afterlayout', function(cmp) {
+            if (cmp.hasGrid())
+            {
+                // set initial height based on tab panel height minus room for create new header panel
+                var height = this.getHeight() - 135;
+                if (cmp.getGrid().getHeight() > height)
+                    cmp.getGrid().setHeight(height);
+            }
+        }, this);
+
         items.push(groupList);
 
         return {

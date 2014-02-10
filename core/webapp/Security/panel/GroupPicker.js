@@ -15,9 +15,7 @@ Ext4.define('Security.panel.GroupPicker', {
 
     projectId : null,
     view : null,
-//    cls : 'x-combo-list',
-//    selectedClass : 'x-combo-selected',
-
+    grid : null,
     selectedGroup : null,
 
     initComponent : function()
@@ -60,9 +58,13 @@ Ext4.define('Security.panel.GroupPicker', {
         return c;
     },
 
+    hasGrid : function() {
+        return this.grid != null;
+    },
+
     getGrid : function() {
 
-        if (this.grid)
+        if (this.hasGrid())
             return this.grid;
 
         if (!this.store)
