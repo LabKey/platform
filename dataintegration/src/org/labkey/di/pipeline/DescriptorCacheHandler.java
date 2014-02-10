@@ -74,12 +74,14 @@ public class DescriptorCacheHandler implements ModuleResourceCacheHandler<Schedu
         @Override
         public ScheduledPipelineJobDescriptor load(String configId, @Nullable Object argument)
         {
-            Pair<Module, String> pair = ModuleResourceCache.parseCacheKey(configId, CONFIG_ID_PATTERN);
-            Module module = pair.first;
-            String configName = pair.second;
+            ModuleResourceCache.TransformId tid = ModuleResourceCache.parseCacheKey(configId, CONFIG_ID_PATTERN);
+            Module module = tid.getModule();
+            String configName = tid.getName();
 
+            if (null == module)
+                return null;
             Path configPath = new Path(DIR_NAME, configName + ".xml");
-            Resource config = pair.first.getModuleResolver().lookup(configPath);
+            Resource config = module.getModuleResolver().lookup(configPath);
 
             if (config != null && config.isFile())
                 return _transformManager.parseETL(config, module);
