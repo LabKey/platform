@@ -43,7 +43,7 @@
     final ViewContext context = getViewContext();
     final Container c = getContainer();
     final User user = getUser();
-    final String focusId = (0 == issue.getIssueId() ? "title" : "comment");
+    final String focusId = bean.isInsert() ? "title" : "comment";
     final int emailPrefs = IssueManager.getUserEmailPreferences(c, user.getUserId());
     final String popup = getNotifyHelpPopup(emailPrefs, issue.getIssueId(), IssueManager.getEntryTypeNames(c));
 
@@ -126,7 +126,7 @@
         </tr>
         <tr>
 <%
-            if (0 == issue.getIssueId())
+            if (bean.isInsert())
             {
 %>
                 <td class="labkey-form-label"><%=text(bean.getLabel("Title", true))%></td>
@@ -219,7 +219,7 @@
                     <tr>
                         <td class="labkey-form-label-nowrap"><%=text(bean.getLabel("NotifyList", true))%><%=text(popup)%><br/><br/>
     <%
-                        if (issue.getIssueId() == 0)
+                        if (bean.isInsert())
                         {
     %>
                             <%= textLink("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class))%>
@@ -255,7 +255,7 @@
                 %><tr><td class="labkey-form-label"><%=text(bean.getLabel(type, true))%></td><td><%=text(bean.writeSelect(type, 1))%></td></tr><%
             }
         %>
-        <tr><td class="labkey-form-label">Comment</td>
+        <tr><td class="labkey-form-label"><%=bean.getLabel("Comment", bean.isInsert())%></td>
             <td colspan="3">
                 <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;" tabindex="1"><%=h(bean.getBody())%></textarea>
             </td></tr>

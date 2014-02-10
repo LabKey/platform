@@ -66,7 +66,7 @@
             <tr><td colspan=2>Select fields to be required when entering or updating <%=h(bean.getEntryTypeNames().getIndefiniteSingularArticle())%> <%=h(bean.getEntryTypeNames().singularName)%>:</td></tr>
             <tr><td colspan=2>&nbsp;</td></tr>
             <tr>
-                <td><input type="checkbox" name="requiredFields"<%=checked(isRequired("comment", bean.getRequiredFields()))%>value="comment">Comments (new issues only)</td><%
+                <td><input type="checkbox" name="requiredFields"<%=checked(isRequired("comment", bean.getRequiredFields()))%> value="comment">Comments (new issues only)</td><%
             List<ColumnInfo> columns = bean.getColumns();
             for (int i = 0; i < columns.size(); i++)
             {

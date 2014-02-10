@@ -16,13 +16,13 @@
 
 package org.labkey.issue;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
@@ -107,6 +107,11 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return _print;
     }
     
+    public boolean isInsert()
+    {
+        return 0 == _issue.getIssueId();
+    }
+
     public Set<String> getIssueIds()
     {
         return _issueIds;
@@ -376,15 +381,12 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         else if (col != null)
             name = col.getLabel();
 
-        if (name != null && name.length() > 0)
-        {
-            String label = PageFlowUtil.filter(name).replaceAll(" ", "&nbsp;");
-            if (markIfRequired && _requiredFields != null && _requiredFields.contains(columnName.toLowerCase()))
-                return label + "<span class=\"labkey-error\">*</span>";
-            return label;
-        }
+        String label = PageFlowUtil.filter(StringUtils.isEmpty(name) ? columnName : name).replaceAll(" ", "&nbsp;");
 
-        return columnName;
+        if (markIfRequired && _requiredFields != null && _requiredFields.contains(columnName.toLowerCase()))
+            return label + "<span class=\"labkey-error\">*</span>";
+        else
+            return label;
     }
 
     public String writeDate(Date d)
