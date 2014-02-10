@@ -22,7 +22,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.SimpleWebPartFactory;
-import org.labkey.api.util.Pair;
 
 import java.nio.file.Path;
 
@@ -64,9 +63,9 @@ public class SimpleWebPartFactoryCacheHandler implements ModuleResourceCacheHand
             @Override
             public SimpleWebPartFactory load(String key, @Nullable Object argument)
             {
-                Pair<Module, String> pair = ModuleResourceCache.parseCacheKey(key);
+                ModuleResourceCache.CacheId tid = ModuleResourceCache.parseCacheKey(key);
 
-                return new SimpleWebPartFactory(pair.first, pair.second);
+                return new SimpleWebPartFactory(tid.getModule(), tid.getName());
             }
         };
     }

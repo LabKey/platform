@@ -24,7 +24,6 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.util.Pair;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -242,18 +241,54 @@ public final class ModuleResourceCache<T>
 
     private static final Pattern STANDARD_CACHE_KEY_PATTERN = Pattern.compile("(\\w+)/(.+)");
 
-    /**
-     * Parse a cacheKey that uses standard format (see parseCacheKey()) into its components.
-     *
-     * @param cacheKey Cache key String in standard format
-     * @return Pair&lt;Module, String&gt;
-     */
-    public static Pair<Module, String> parseCacheKey(String cacheKey)
+
+    public static class CacheId
+    {
+        final String _moduleName;
+        final String _name;
+
+        public CacheId(String module, String name)
+        {
+            _moduleName = module;
+            _name = name;
+        }
+
+        public CacheId(Module module, String name)
+        {
+            _moduleName = module.getName();
+            _name = name;
+        }
+
+        public Module getModule()
+        {
+            return ModuleLoader.getInstance().getModule(_moduleName);
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public String getModuleName()
+        {
+            return _moduleName;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "{" + _moduleName + "}/" + _name;
+        }
+    }
+
+
+    public static CacheId parseCacheKey(String cacheKey)
     {
         return parseCacheKey(cacheKey, STANDARD_CACHE_KEY_PATTERN);
     }
 
-    public static Pair<Module, String> parseCacheKey(String cacheKey, Pattern pattern)
+
+    public static CacheId parseCacheKey(String cacheKey, Pattern pattern)
     {
         // Parse out the module name and the config name
         Matcher matcher = pattern.matcher(cacheKey);
@@ -263,11 +298,6 @@ public final class ModuleResourceCache<T>
 
         String moduleName = matcher.group(1);
         String filename = matcher.group(2);
-        Module module = ModuleLoader.getInstance().getModule(moduleName);
-
-        if (null == module)
-            throw new IllegalStateException("Module does not exist: " + moduleName);
-
-        return new Pair<>(module, filename);
+        return new CacheId(moduleName, filename);
     }
 }

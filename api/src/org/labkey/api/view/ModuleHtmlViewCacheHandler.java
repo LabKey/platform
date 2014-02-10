@@ -23,7 +23,6 @@ import org.labkey.api.module.ModuleHtmlViewDefinition;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 
 import static org.labkey.api.module.ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION;
@@ -68,10 +67,9 @@ public class ModuleHtmlViewCacheHandler implements ModuleResourceCacheHandler<Mo
             @Override
             public ModuleHtmlViewDefinition load(String key, @Nullable Object argument)
             {
-                Pair<Module, String> pair = ModuleResourceCache.parseCacheKey(key);
-                Path path = Path.parse(pair.second);
-                Resource r = pair.first.getModuleResource(path);
-
+                ModuleResourceCache.CacheId tid = ModuleResourceCache.parseCacheKey(key);
+                Path path = Path.parse(tid.getName());
+                Resource r = tid.getModule().getModuleResource(path);
                 return new ModuleHtmlViewDefinition(r);
             }
         };
