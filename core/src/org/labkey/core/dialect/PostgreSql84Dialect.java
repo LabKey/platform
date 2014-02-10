@@ -737,13 +737,13 @@ public class PostgreSql84Dialect extends SqlDialect
 
 
     @Override
-    public void prepareNewDbScope(DbScope scope)
+    public void prepare(DbScope scope)
     {
         initializeUserDefinedTypes(scope);
         initializeInClauseGenerator(scope);
         determineSettings(scope);
         determineIfArraySortFunctionExists(scope);
-        super.prepareNewDbScope(scope);
+        super.prepare(scope);
     }
 
     // When a new PostgreSQL DbScope is created, we enumerate the domains (user-defined types) in the public schema
@@ -798,16 +798,7 @@ public class PostgreSql84Dialect extends SqlDialect
     private void determineSettings(DbScope scope)
     {
         Selector selector = new SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'");
-        selector.forEach(new Selector.ForEachBlock<ResultSet>(){
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                if (null != _standardConformingStrings)
-                    throw new IllegalStateException("PostgreSQL returned more than one 'standard_conforming_strings' setting");
-
-                _standardConformingStrings = "on".equalsIgnoreCase(rs.getString(1));
-            }
-        });
+        _standardConformingStrings = "on".equalsIgnoreCase(selector.getObject(String.class));
     }
 
 
@@ -1467,7 +1458,7 @@ public class PostgreSql84Dialect extends SqlDialect
                 }
             }
 
-            return scale.intValue();
+            return scale;
         }
 
         // Domain could be defined in the current schema or in the "public" schema

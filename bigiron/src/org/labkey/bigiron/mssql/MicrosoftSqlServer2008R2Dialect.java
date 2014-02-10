@@ -72,6 +72,8 @@ import java.util.regex.Pattern;
 // Dialect specifics for Microsoft SQL Server
 public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 {
+    private volatile boolean _groupConcatInstalled = false;
+
     @Override
     protected @NotNull Set<String> getReservedWords()
     {
@@ -453,7 +455,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     @Override
     public boolean supportsGroupConcat()
     {
-        return true;
+        return _groupConcatInstalled;
     }
 
     // Uses custom CLR aggregate function defined in group_concat_install.sql
@@ -463,6 +465,9 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         // SQL Server does not support aggregates on sub-queries; return a string constant in that case to keep from
         // blowing up. TODO: Don't pass sub-selects into group_contact.
         if (StringUtils.containsIgnoreCase(sql.getSQL(), "SELECT"))
+            return new SQLFragment("'NOT SUPPORTED'");
+
+        if (!supportsGroupConcat())
             return new SQLFragment("'NOT SUPPORTED'");
 
         SQLFragment result = new SQLFragment("core.GROUP_CONCAT_D");
@@ -1012,6 +1017,19 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         Statement stmt = conn.createStatement();
         stmt.execute("SET ARITHABORT ON");
         stmt.close();
+    }
+
+    @Override
+    public void afterCoreUpgrade(ModuleContext context)
+    {
+        GroupConcatInstallationManager.ensureGroupConcat(context);
+    }
+
+    @Override
+    public void prepare(DbScope scope)
+    {
+        _groupConcatInstalled = GroupConcatInstallationManager.isInstalled(scope);
+        super.prepare(scope);
     }
 
     @Override

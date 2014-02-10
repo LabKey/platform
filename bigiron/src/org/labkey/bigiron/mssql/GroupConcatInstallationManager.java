@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.core;
+package org.labkey.bigiron.mssql;
 
 import org.apache.log4j.Level;
 import org.jetbrains.annotations.NotNull;
@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlScriptManager;
@@ -40,11 +41,12 @@ import java.sql.Connection;
 public class GroupConcatInstallationManager
 {
     private static final String INITIAL_VERISON = "1.00.11845";
+    private static final String CURRENT_GROUP_CONCAT_VERSION = "1.00.23696";
 
     private final @Nullable String _installedVersion;
 
 
-    GroupConcatInstallationManager()
+    private GroupConcatInstallationManager()
     {
         _installedVersion = determineInstalledVersion();
     }
@@ -69,30 +71,18 @@ public class GroupConcatInstallationManager
         }
     }
 
-    public boolean isInstalled()
+    private boolean isInstalled()
     {
-        try
-        {
-            // Attempt to use the core.GROUP_CONCAT() aggregate function. If this succeeds, we know it's installed.
-            SqlExecutor executor = new SqlExecutor(CoreSchema.getInstance().getSchema());
-            executor.setLogLevel(Level.OFF);  // We expect this to fail in many cases... shut off data layer logging
-            executor.execute("SELECT x.G, core.GROUP_CONCAT('Foo') FROM (SELECT 1 AS G) x GROUP BY G");
-
-            return true;
-        }
-        catch (Exception e)
-        {
-            return false;
-        }
+        return isInstalled(CoreSchema.getInstance().getSchema().getScope());
     }
 
     @Nullable
-    public String getInstalledVersion()
+    private String getInstalledVersion()
     {
         return _installedVersion;
     }
 
-    public boolean uninstallPrevious(ModuleContext context)
+    private boolean uninstallPrevious(ModuleContext context)
     {
         FileSqlScriptProvider provider = new FileSqlScriptProvider(ModuleLoader.getInstance().getCoreModule());
         SqlScriptRunner.SqlScript script = new FileSqlScriptProvider.FileSqlScript(provider, CoreSchema.getInstance().getSchema(), "group_concat_uninstall.sql", "core");
@@ -117,7 +107,7 @@ public class GroupConcatInstallationManager
         }
     }
 
-    public void install(ModuleContext context, String scriptName)
+    private void install(ModuleContext context, String scriptName)
     {
         FileSqlScriptProvider provider = new FileSqlScriptProvider(ModuleLoader.getInstance().getCoreModule());
         SqlScriptRunner.SqlScript script = new FileSqlScriptProvider.FileSqlScript(provider, CoreSchema.getInstance().getSchema(), scriptName, "core");
@@ -139,11 +129,49 @@ public class GroupConcatInstallationManager
         }
     }
 
-    public boolean isInstalled(String version)
+    private boolean isInstalled(String version)
     {
         return version.equals(getInstalledVersion());
     }
 
+    static boolean isInstalled(DbScope scope)
+    {
+        try
+        {
+            // Attempt to use the core.GROUP_CONCAT() aggregate function. If this succeeds, we know it's installed.
+            SqlExecutor executor = new SqlExecutor(scope);
+            executor.setLogLevel(Level.OFF);  // We expect this to fail in many cases... shut off data layer logging
+            executor.execute("SELECT x.G, core.GROUP_CONCAT('Foo') FROM (SELECT 1 AS G) x GROUP BY G");
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
+    }
+
+    // This was originally a synchronous upgrade invoked by core-13.22-13.23.sql, see #18600. Then we marked it with
+    // @DeferredUpgrade to ensure property manager was completely upgraded, #18979. But this would fail if (e.g.) the
+    // core schema was bootstrapped, the server restarted, and module upgrade continued. So this is now called
+    // (indirectly) from CoreModule.afterUpdate().
+    static void ensureGroupConcat(ModuleContext context)
+    {
+        GroupConcatInstallationManager manager = new GroupConcatInstallationManager();
+
+        // Return if newest version is already present...
+        if (manager.isInstalled(GroupConcatInstallationManager.CURRENT_GROUP_CONCAT_VERSION))
+            return;
+
+        boolean success = manager.uninstallPrevious(context);
+
+        // If we can't uninstall the old version then give up; GroupConcatInstallationManager already logged the error
+        if (!success)
+            return;
+
+        // Attempt to install the new version
+        manager.install(context, "group_concat_install_1.00.23696.sql");
+    }
 
     public static class TestCase extends Assert
     {
@@ -154,10 +182,10 @@ public class GroupConcatInstallationManager
             {
                 GroupConcatInstallationManager mgr = new GroupConcatInstallationManager();
                 assertTrue(mgr.isInstalled());
-                assertTrue(mgr.isInstalled(CoreUpgradeCode.CURRENT_GROUP_CONCAT_VERSION));
-                assertEquals(CoreUpgradeCode.CURRENT_GROUP_CONCAT_VERSION, mgr.getVersion());
-                assertEquals(CoreUpgradeCode.CURRENT_GROUP_CONCAT_VERSION, mgr.determineInstalledVersion());
-                assertEquals(CoreUpgradeCode.CURRENT_GROUP_CONCAT_VERSION, mgr.getInstalledVersion());
+                assertTrue(mgr.isInstalled(CURRENT_GROUP_CONCAT_VERSION));
+                assertEquals(CURRENT_GROUP_CONCAT_VERSION, mgr.getVersion());
+                assertEquals(CURRENT_GROUP_CONCAT_VERSION, mgr.determineInstalledVersion());
+                assertEquals(CURRENT_GROUP_CONCAT_VERSION, mgr.getInstalledVersion());
             }
         }
     }

@@ -34,7 +34,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
@@ -81,35 +80,6 @@ public class CoreUpgradeCode implements UpgradeCode
     public void handleUnknownModules(ModuleContext context)
     {
         ModuleLoader.getInstance().handleUnkownModules();
-    }
-
-    static final String CURRENT_GROUP_CONCAT_VERSION = "1.00.23696";
-
-    // invoked by core-13.22-13.23.sql
-    @SuppressWarnings({"UnusedDeclaration"})
-    @DeferredUpgrade
-    public void installGroupConcat(ModuleContext context)
-    {
-        SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
-
-        // Install only on SQL Server
-        if (dialect.isSqlServer())
-        {
-            GroupConcatInstallationManager manager = new GroupConcatInstallationManager();
-
-            // Just return if newest version is already present... probably installed by admin before upgrade
-            if (manager.isInstalled(CURRENT_GROUP_CONCAT_VERSION))
-                return;
-
-            boolean success = manager.uninstallPrevious(context);
-
-            // If we can't uninstall the old version then give up; GroupConcatInstallationManager already logged the error
-            if (!success)
-                return;
-
-            // Attempt to install the new version
-            manager.install(context, "group_concat_install_1.00.23696.sql");
-        }
     }
 
     // invoked by core-12.21-12.22.sql

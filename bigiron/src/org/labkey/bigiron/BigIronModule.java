@@ -17,10 +17,12 @@
 package org.labkey.bigiron;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.bigiron.mssql.GroupConcatInstallationManager;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.bigiron.mssql.MicrosoftSqlServerDialectFactory;
 import org.labkey.bigiron.mysql.MySqlDialectFactory;
@@ -30,6 +32,7 @@ import org.labkey.bigiron.oracle.OracleDialectFactory;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 
 public class BigIronModule extends DefaultModule
 {
@@ -75,5 +78,12 @@ public class BigIronModule extends DefaultModule
     public TabDisplayMode getTabDisplayMode()
     {
         return TabDisplayMode.DISPLAY_NEVER;
+    }
+
+    @NotNull
+    @Override
+    public Set<Class> getIntegrationTests()
+    {
+        return PageFlowUtil.<Class>set(GroupConcatInstallationManager.TestCase.class);
     }
 }
