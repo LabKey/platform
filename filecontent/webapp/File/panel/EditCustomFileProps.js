@@ -76,7 +76,7 @@ Ext4.define('File.panel.EditCustomFileProps', {
 
             if (field.name != 'RowId')
             {
-                var fieldConfig = LABKEY.ext.Ext4Helper.getFormEditorConfig(field);
+                var fieldConfig = LABKEY.ext4.Util.getFormEditorConfig(field);
                 fieldConfig.id = fieldConfig.name;
                 fieldConfig.width = 330;
                 fieldConfig.padding = "8 8 0 0";
