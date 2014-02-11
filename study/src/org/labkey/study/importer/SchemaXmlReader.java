@@ -21,6 +21,7 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.exp.ImportTypesHelper;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.util.XmlBeansUtil;
@@ -56,7 +57,7 @@ public class SchemaXmlReader implements SchemaReader
     private final List<Map<String, Object>> _importMaps = new LinkedList<>();
     private final Map<Integer, DatasetImportInfo> _datasetInfoMap;
 
-    public SchemaXmlReader(StudyImpl study, VirtualFile root, String metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException, ImportException
+    public SchemaXmlReader(final StudyImpl study, VirtualFile root, String metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException, ImportException
     {
         TablesDocument tablesDoc;
 
@@ -83,9 +84,9 @@ public class SchemaXmlReader implements SchemaReader
 
         for (TableType tableXml : tablesXml.getTableArray())
         {
-            String datasetName = tableXml.getTableName();
+            final String datasetName = tableXml.getTableName();
 
-            DatasetImportInfo info = new DatasetImportInfo(datasetName);
+            final DatasetImportInfo info = new DatasetImportInfo(datasetName);
             DatasetImportProperties tableProps = extraImportProps.get(datasetName);
 
             if (null == tableProps)
@@ -108,101 +109,14 @@ public class SchemaXmlReader implements SchemaReader
 
             _datasetInfoMap.put(tableProps.getId(), info);
 
-            // Set up RowMap with all the keys that OntologyManager.importTypes() handles
-            RowMapFactory<Object> mapFactory = new RowMapFactory<>(NAME_KEY, "Property", "PropertyURI", "Label", "Description",
-                    "RangeURI", "NotNull", "ConceptURI", "Format", "InputType", "HiddenColumn", "MvEnabled", "LookupFolderPath",
-                    "LookupSchema", "LookupQuery", "URL", "ImportAliases", "ShownInInsertView", "ShownInUpdateView",
-                    "ShownInDetailsView", "Measure", "Dimension", "ConditionalFormats", "FacetingBehaviorType", "Protected", "ExcludeFromShifting");
-
-            if (tableXml.getColumns() != null)
+            ImportTypesHelper importHelper = new ImportTypesHelper(tableXml, NAME_KEY, datasetName)
             {
-                for (ColumnType columnXml : tableXml.getColumns().getColumnArray())
+                @Override
+                protected boolean acceptColumn(String columnName, ColumnType columnXml) throws Exception
                 {
-                    String columnName = columnXml.getColumnName();
-
                     // filter out the built-in types
-                    if (DataSetDefinition.isDefaultFieldName(columnName, study))
-                        continue;
-
-                    String dataType = columnXml.getDatatype();
-                    Type t = Type.getTypeBySqlTypeName(dataType);
-                    if ("entityid".equalsIgnoreCase(dataType))
-                    {
-                        // Special case handling for GUID keys
-                        t = Type.StringType;
-                    }
-
-                    if (t == null)
-                        throw new IllegalStateException("Unknown property type '" + dataType + "' for property '" + columnXml.getColumnName() + "' in dataset '" + datasetName + "'.");
-
-                    // Assume nullable if not specified
-                    boolean notNull = columnXml.isSetNullable() && !columnXml.getNullable();
-
-                    boolean mvEnabled = columnXml.isSetIsMvEnabled() ? columnXml.getIsMvEnabled() : null != columnXml.getMvColumnName();
-
-                    // These default to being visible if nothing's specified in the XML
-                    boolean shownInInsertView = !columnXml.isSetShownInInsertView() || columnXml.getShownInInsertView();
-                    boolean shownInUpdateView = !columnXml.isSetShownInUpdateView() || columnXml.getShownInUpdateView();
-                    boolean shownInDetailsView = !columnXml.isSetShownInDetailsView() || columnXml.getShownInDetailsView();
-
-                    boolean measure;
-                    if (columnXml.isSetMeasure())
-                        measure = columnXml.getMeasure();
-                    else
-                        measure = ColumnRenderProperties.inferIsMeasure(columnXml.getColumnName(), columnXml.getColumnTitle(), t.isNumeric(), columnXml.getIsAutoInc(), columnXml.getFk() != null, columnXml.getIsHidden());
-
-                    boolean dimension;
-                    if (columnXml.isSetDimension())
-                        dimension = columnXml.getDimension();
-                    else
-                        dimension = ColumnRenderProperties.inferIsDimension(columnXml.getColumnName(), columnXml.getFk() != null, columnXml.getIsHidden());
-
-                    Set<String> importAliases = new LinkedHashSet<>();
-                    if (columnXml.isSetImportAliases())
-                    {
-                        importAliases.addAll(Arrays.asList(columnXml.getImportAliases().getImportAliasArray()));
-                    }
-
-                    FacetingBehaviorType.Enum type = columnXml.getFacetingBehavior();
-                    String facetingBehaviorType = FacetingBehaviorType.AUTOMATIC.toString();
-                    if (type != null)
-                        facetingBehaviorType = type.toString();
-
-                    boolean isProtected = columnXml.isSetProtected() && columnXml.getProtected();
-                    boolean isExcludeFromShifting = columnXml.isSetExcludeFromShifting() && columnXml.getExcludeFromShifting();
-
-                    ColumnType.Fk fk = columnXml.getFk();
-                    List<ConditionalFormat> conditionalFormats = ConditionalFormat.convertFromXML(columnXml.getConditionalFormats());
-                    Map<String, Object> map = mapFactory.getRowMap(
-                        datasetName,
-                        columnName,
-                        columnXml.getPropertyURI(),
-                        columnXml.getColumnTitle(),
-                        columnXml.getDescription(),
-                        t.getXsdType(),
-                        notNull,
-                        columnXml.getConceptURI(),
-                        columnXml.getFormatString(),
-                        columnXml.isSetInputType() ? columnXml.getInputType() : null,
-                        columnXml.getIsHidden(),
-                        mvEnabled,
-                        null != fk ? fk.getFkFolderPath() : null,
-                        null != fk ? fk.getFkDbSchema() : null,
-                        null != fk ? fk.getFkTable() : null,
-                        columnXml.getUrl(),
-                        ColumnRenderProperties.convertToString(importAliases),
-                        shownInInsertView,
-                        shownInUpdateView,
-                        shownInDetailsView,
-                        measure,
-                        dimension,
-                        conditionalFormats,
-                        facetingBehaviorType,
-                        isProtected,
-                        isExcludeFromShifting
-                    );
-
-                    _importMaps.add(map);
+                    if (DataSetDefinition.isDefaultFieldName(columnXml.getColumnName(), study))
+                        return false;
 
                     if (columnXml.getIsKeyField())
                     {
@@ -226,7 +140,17 @@ public class SchemaXmlReader implements SchemaReader
                         else
                             throw new IllegalStateException("Dataset " + datasetName + " has multiple visitdate fields specified: '" + info.visitDatePropertyName + "' and '" + columnName + "'");
                     }
+
+                    return true;
                 }
+            };
+
+            try {
+                _importMaps.addAll(importHelper.createImportMaps());
+            }
+            catch (Exception e)
+            {
+                throw new IllegalStateException(e);
             }
         }
     }

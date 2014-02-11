@@ -30,6 +30,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.ImportTypesHelper;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListDefinition.KeyType;
 import org.labkey.api.exp.list.ListService;
@@ -284,7 +285,7 @@ public class ListImporter
 
     private boolean createNewList(Container c, User user, String listName, Collection<Integer> preferredListIds, TableType listXml, @Nullable ListsDocument.Lists.List listSettingsXml, List<String> errors) throws Exception
     {
-        String keyName = listXml.getPkColumnName();
+        final String keyName = listXml.getPkColumnName();
 
         if (null == keyName)
         {
@@ -327,91 +328,19 @@ public class ListImporter
 
         list.setPreferredListIds(preferredListIds);
 
-        // TODO: This code is largely the same as SchemaXmlReader -- should consolidate
-
-        // Set up RowMap with all the keys that OntologyManager.importTypes() handles
-        RowMapFactory<Object> mapFactory = new RowMapFactory<>(TYPE_NAME_COLUMN, "Property", "PropertyURI", "Label", "Description",
-                "RangeURI", "NotNull", "ConceptURI", "Format", "InputType", "HiddenColumn", "MvEnabled", "LookupFolderPath",
-                "LookupSchema", "LookupQuery", "URL", "ImportAliases", "ShownInInsertView", "ShownInUpdateView",
-                "ShownInDetailsView", "Measure", "Dimension", "ConditionalFormats", "FacetingBehaviorType", "Protected", "ExcludeFromShifting");
-        List<Map<String, Object>> importMaps = new LinkedList<>();
-
-        for (ColumnType columnXml : listXml.getColumns().getColumnArray())
+        ImportTypesHelper importHelper = new ImportTypesHelper(listXml, TYPE_NAME_COLUMN, listName)
         {
-            String columnName = columnXml.getColumnName();
-
-            if (columnXml.getIsKeyField() && !columnName.equalsIgnoreCase(keyName))
-                throw new ImportException("More than one key specified: '" + keyName + "' and '" + columnName + "'");
-
-            String dataType = columnXml.getDatatype();
-            Type t = Type.getTypeBySqlTypeName(dataType);
-
-            if (t == null)
-                t = Type.getTypeByLabel(dataType);
-
-            if (t == null)
-                throw new ImportException("Unknown property type \"" + dataType + "\" for property \"" + columnXml.getColumnName() + "\".");
-
-            // Assume nullable if not specified
-            boolean notNull = columnXml.isSetNullable() && !columnXml.getNullable();
-
-            boolean mvEnabled = columnXml.isSetIsMvEnabled() ? columnXml.getIsMvEnabled() : null != columnXml.getMvColumnName();
-
-            // These default to being visible if nothing's specified in the XML
-            boolean shownInInsertView = !columnXml.isSetShownInInsertView() || columnXml.getShownInInsertView();
-            boolean shownInUpdateView = !columnXml.isSetShownInUpdateView() || columnXml.getShownInUpdateView();
-            boolean shownInDetailsView = !columnXml.isSetShownInDetailsView() || columnXml.getShownInDetailsView();
-
-            boolean measure = columnXml.isSetMeasure() && columnXml.getMeasure();
-            boolean dimension = columnXml.isSetDimension() && columnXml.getDimension();
-
-            FacetingBehaviorType.Enum type = columnXml.getFacetingBehavior();
-            String facetingBehaviorType = FacetingBehaviorType.AUTOMATIC.toString();
-            if (type != null)
-                facetingBehaviorType = type.toString();
-
-            boolean isProtected = columnXml.isSetProtected() && columnXml.getProtected();
-            boolean isExcludeFromShifting = columnXml.isSetExcludeFromShifting() && columnXml.getExcludeFromShifting();
-
-            Set<String> importAliases = new LinkedHashSet<>();
-            if (columnXml.isSetImportAliases())
+            @Override
+            protected boolean acceptColumn(String columnName, ColumnType columnXml) throws Exception
             {
-                importAliases.addAll(Arrays.asList(columnXml.getImportAliases().getImportAliasArray()));
+                if (columnXml.getIsKeyField() && !columnName.equalsIgnoreCase(keyName))
+                    throw new ImportException("More than one key specified: '" + keyName + "' and '" + columnName + "'");
+
+
+                return true;
             }
-
-            ColumnType.Fk fk = columnXml.getFk();
-
-            Map<String, Object> map = mapFactory.getRowMap(
-                listName,
-                columnName,
-                columnXml.getPropertyURI(),
-                columnXml.getColumnTitle(),
-                columnXml.getDescription(),
-                t.getXsdType(),
-                notNull,
-                columnXml.getConceptURI(),
-                columnXml.getFormatString(),
-                columnXml.isSetInputType() ? columnXml.getInputType() : null,
-                columnXml.getIsHidden(),
-                mvEnabled,
-                null != fk ? fk.getFkFolderPath() : null,
-                null != fk ? fk.getFkDbSchema() : null,
-                null != fk ? fk.getFkTable() : null,
-                columnXml.getUrl(),
-                ColumnRenderProperties.convertToString(importAliases),
-                shownInInsertView,
-                shownInUpdateView,
-                shownInDetailsView,
-                measure,
-                dimension,
-                ConditionalFormat.convertFromXML(columnXml.getConditionalFormats()),
-                facetingBehaviorType,
-                isProtected,
-                isExcludeFromShifting
-            );
-
-            importMaps.add(map);
-        }
+        };
+        List<Map<String, Object>> importMaps = importHelper.createImportMaps();
 
         return ListManager.get().importListSchema(list, TYPE_NAME_COLUMN, importMaps, user, errors);
     }

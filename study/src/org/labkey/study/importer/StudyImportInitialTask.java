@@ -201,6 +201,19 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             new DatasetDefinitionImporter().process(ctx, vf, errors);
             if (errors.hasErrors())
                 throwFirstErrorAsPiplineJobException(errors);
+
+            StudyDocument.Study.Specimens specimens = studyXml.getSpecimens();
+            if (null != specimens && null != specimens.getDir())
+            {
+                VirtualFile specimenDir = ctx.getRoot().getDir(specimens.getDir());
+
+                if (null != specimenDir && null != specimens.getFile())
+                {
+                    new SpecimenSchemaImporter().process(ctx, specimenDir, errors);
+                    if (errors.hasErrors())
+                        throwFirstErrorAsPiplineJobException(errors);
+                }
+            }
         }
         catch (CancelledException e)
         {

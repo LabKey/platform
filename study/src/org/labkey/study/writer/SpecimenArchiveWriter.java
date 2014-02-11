@@ -15,21 +15,38 @@
  */
 package org.labkey.study.writer;
 
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableInfoWriter;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TablesType;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.query.SpecimenTablesProvider;
 import org.labkey.study.writer.StandardSpecimenWriter.QueryInfo;
 import org.labkey.study.xml.StudyDocument;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: adam
  * Date: Apr 23, 2009
  * Time: 11:28:37 AM
  */
-class SpecimenArchiveWriter extends AbstractSpecimenWriter
+public class SpecimenArchiveWriter extends AbstractSpecimenWriter
 {
     public static final String SELECTION_TEXT = "Specimens";
+    public static final String SCHEMA_FILENAME = "specimens_metadata.xml";
 
     public String getSelectionText()
     {
@@ -57,6 +74,72 @@ class SpecimenArchiveWriter extends AbstractSpecimenWriter
         new SpecimenWriter().write(study, ctx, zip);
 
         zip.close();
+
+        // Create specimens metadata file and write out the table infos for the specimens, event, and vial tables
+        TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
+        SpecimenTablesProvider tablesProvider = new SpecimenTablesProvider(ctx.getContainer(), ctx.getUser(), null);
+        TablesType tablesXml = tablesDoc.addNewTables();
+        Map<String, TableInfo> specimenTables = new HashMap<>();
+
+        TableInfo eventTable = tablesProvider.getTableInfoIfExists(SpecimenTablesProvider.SPECIMENEVENT_TABLENAME);
+        if (eventTable != null)
+            specimenTables.put(SpecimenTablesProvider.SPECIMENEVENT_TABLENAME, eventTable);
+
+        TableInfo specimenTable = tablesProvider.getTableInfoIfExists(SpecimenTablesProvider.SPECIMEN_TABLENAME);
+        if (specimenTable != null)
+            specimenTables.put(SpecimenTablesProvider.SPECIMEN_TABLENAME, specimenTable);
+
+        TableInfo vialTable = tablesProvider.getTableInfoIfExists(SpecimenTablesProvider.VIAL_TABLENAME);
+        if (vialTable != null)
+            specimenTables.put(SpecimenTablesProvider.VIAL_TABLENAME, vialTable);
+
+        for (Map.Entry<String, TableInfo> entry : specimenTables.entrySet())
+        {
+            TableType tableXml = tablesXml.addNewTable();
+
+            Domain domain = tablesProvider.getDomain(entry.getKey(), false);
+            TableInfo table = entry.getValue();
+            List columns = new ArrayList();
+
+            for (ColumnInfo col : table.getColumns())
+            {
+                if (!col.isKeyField())
+                    columns.add(col);
+            }
+
+            SpecimenTableInfoWriter xmlWriter = new SpecimenTableInfoWriter(ctx.getContainer(), table, entry.getKey(), domain, columns);
+            xmlWriter.writeTable(tableXml);
+        }
+        specimensDir.saveXmlBean(SCHEMA_FILENAME, tablesDoc);
     }
 
+    private static class SpecimenTableInfoWriter extends TableInfoWriter
+    {
+        private final Map<String, DomainProperty> _properties = new HashMap<>();
+        private Domain _domain;
+        private String _name;
+
+        protected SpecimenTableInfoWriter(Container c, TableInfo ti, String tableName, Domain domain, Collection<ColumnInfo> columns)
+        {
+            super(c, ti, columns);
+            _domain = domain;
+            _name = tableName;
+
+            for (DomainProperty prop : _domain.getProperties())
+                _properties.put(prop.getName(), prop);
+        }
+
+        @Override
+        public void writeTable(TableType tableXml)
+        {
+            super.writeTable(tableXml);
+            tableXml.setTableName(_name);  // Use specimen table name, not provisioned storage name
+        }
+
+        @Override  // No reason to ever export list PropertyURIs
+        protected String getPropertyURI(ColumnInfo column)
+        {
+            return null;
+        }
+    }
 }

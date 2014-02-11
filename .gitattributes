@@ -3386,6 +3386,7 @@ study/src/org/labkey/study/importer/SimpleSpecimenImporter.java -text
 study/src/org/labkey/study/importer/SpecimenImportFile.java -text
 study/src/org/labkey/study/importer/SpecimenImporter.java -text
 study/src/org/labkey/study/importer/SpecimenRefreshPipelineJob.java -text
+study/src/org/labkey/study/importer/SpecimenSchemaImporter.java -text
 study/src/org/labkey/study/importer/SpecimenSettingsImporter.java -text
 study/src/org/labkey/study/importer/StandardSpecimenImportStrategy.java -text
 study/src/org/labkey/study/importer/StudyImportContext.java -text
