@@ -109,7 +109,7 @@ if (AppProps.getInstance().isExperimentalFeatureEnabled("experimental-openid-goo
             hasGoogle = true;
     if (hasGoogle)
     {
-        ActionURL toGoogle = new ActionURL("openid","redirect",ContainerManager.getRoot()).addParameter("provider","Google").addParameter("returnUrl",returnURL.getURIString());
+        ActionURL toGoogle = new ActionURL("openid","redirect",ContainerManager.getRoot()).addParameter("provider","Google").addParameter("returnUrl",returnURL.getLocalURIString());
         %><a href="<%=h(toGoogle)%>"><img src="<%=getContextPath()%>/authentication/openid_google.png"></a><%
     }
 }
