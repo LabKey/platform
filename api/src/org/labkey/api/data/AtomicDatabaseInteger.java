@@ -195,14 +195,24 @@ public class AtomicDatabaseInteger
             final int n = 1000;
             final long start = System.currentTimeMillis();
 
+            long currentGetStart;
+            long currentGetDuration;
+            long longestGet = -1;
+
             for (int i = 0; i < n; i++)
+            {
+                currentGetStart = System.currentTimeMillis();
                 _adi.incrementAndGet();
+                currentGetDuration = System.currentTimeMillis() - currentGetStart;
+                if (currentGetDuration > longestGet)
+                    longestGet = currentGetDuration;
+            }
 
             final long elapsed = System.currentTimeMillis() - start;
 
             double perSecond = n / (elapsed / 1000.0);
 
-            assertTrue("Performance measured less than 100 increments per second", perSecond > 100);   // A very low bar
+            assertTrue(String.format("Performance measured less than 100 increments per second: %dincrements in %dms; slowest get %dms", n, elapsed, longestGet), perSecond > 100);   // A very low bar
         }
 
         @After
