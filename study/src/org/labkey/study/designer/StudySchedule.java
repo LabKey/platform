@@ -24,7 +24,6 @@ import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.User;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DataSetDefinition;
@@ -128,9 +127,8 @@ public class StudySchedule implements CustomApiForm
         if (_viewInfo.containsKey(ds.getEntityId()))
         {
             DataViewInfo info = _viewInfo.get(ds.getEntityId());
-            String dateFormat = DateUtil.getDateFormatString(ds.getContainer());
 
-            o = DataViewService.get().toJSON(ds.getContainer(), user, info, dateFormat);
+            o = DataViewService.get().toJSON(ds.getContainer(), user, info);
             o.put("entityId", ds.getEntityId());
         }
         o.put("label", ds.getLabel());
