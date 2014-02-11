@@ -116,9 +116,8 @@ import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
-import org.labkey.api.thumbnail.ThumbnailService.*;
+import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.ExtUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
@@ -2690,7 +2689,6 @@ public class ReportsController extends SpringActionController
                         viewTypeProps.put(type.getName(), DataViewService.get().toJSON(getContainer(), getUser(), editInfo));
                 }
                 response.put("editInfo", viewTypeProps);
-                response.put("dateFormat", ExtUtil.toExtDateFormat(dateFormat));
             }
 
             if (form.includeData())
@@ -2745,7 +2743,7 @@ public class ReportsController extends SpringActionController
                             category.setDisplayOrder(defaultCategoryMap.get(category.getLabel()));
                     }
                 }
-                response.put("data", DataViewService.get().toJSON(getContainer(), getUser(), views, dateFormat));
+                response.put("data", DataViewService.get().toJSON(getContainer(), getUser(), views));
             }
 
             return response;
@@ -2836,8 +2834,6 @@ public class ReportsController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class BrowseDataTreeAction extends ApiAction<BrowseDataForm>
     {
-        private String dateFormat;
-
         @Override
         public ApiResponse execute(BrowseDataForm form, BindException errors) throws Exception
         {
@@ -2908,8 +2904,6 @@ public class ReportsController extends SpringActionController
                         category.setDisplayOrder(defaultCategoryMap.get(category.getLabel()));
                 }
             }
-
-            dateFormat = DateUtil.getDateFormatString(getContainer());
 
             return buildTree(views);
         }
@@ -3042,7 +3036,7 @@ public class ReportsController extends SpringActionController
             // process views
             for (DataViewInfo view : groups.get(vc.getRowId()))
             {
-                JSONObject viewJson = DataViewService.get().toJSON(getContainer(), getUser(), view, dateFormat);
+                JSONObject viewJson = DataViewService.get().toJSON(getContainer(), getUser(), view);
                 viewJson.put("name", view.getName());
                 viewJson.put("leaf", true);
                 viewJson.put("icon", view.getIcon());

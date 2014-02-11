@@ -405,8 +405,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             this._height = parseInt(json.webpart.height);
             this.setHeight(this._height);
         }
-        this.dateFormat = json.dateFormat;
-        this.dateRenderer = Ext4.util.Format.dateRenderer(json.dateFormat);
+        this.dateFormat = LABKEY.extDefaultDateFormat;
+        this.dateRenderer = Ext4.util.Format.dateRenderer(this.dateFormat);
         this.editInfo = json.editInfo;
 
         this.initGrid(json.visibleColumns);

@@ -118,21 +118,6 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
             });
         }
 
-        if (this.visibleFields['modifieddate']) {
-
-            propertiesItems.push({
-                xtype       : 'datefield',
-                fieldLabel  : "Date",
-                name        : "modifiedDate",
-                value       : this.data.modifiedDate != null && this.data.modifiedDate != '' ? new Date(this.data.modifiedDate) : '',
-                blankText   : 'Modified Date',
-                format      : this.dateFormat,
-                labelWidth : 120,
-                width      : 400,
-                editable    : false
-            });
-        }
-
         if (this.visibleFields['datacutdate']) {
 
             propertiesItems.push({
@@ -141,7 +126,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 name        : 'refreshDate',
                 value       : this.data.refreshDate != null  ? this.data.refreshDate : '',
                 blankText   : 'Date of last refresh',
-                format      : this.dateFormat,
+                format      : LABKEY.extDateInputFormat,
                 editable    : true,
                 labelWidth : 120,
                 width      : 400,
