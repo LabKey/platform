@@ -19,7 +19,6 @@ package org.labkey.api.pipeline;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
-import java.io.IOException;
 import java.util.List;
 
 public interface PipelineQueue
@@ -28,8 +27,9 @@ public interface PipelineQueue
      * Add a <code>PipelineJob</code> to this queue to be run.
      *
      * @param job Job to be run
+     * @param preserveJobId whether the job's ID should be retained or not
      */
-    void addJob(PipelineJob job) throws PipelineValidationException;
+    void addJob(PipelineJob job, boolean preserveJobId) throws PipelineValidationException;
 
     /**
      * Cancel a previously added <code>PipelineJob</code>.  The job may be still on the

@@ -493,7 +493,7 @@ public class StorageProvisioner
             tableName = _create(scope, kind, domain);
 
         SchemaTableInfo ti =  new SchemaTableInfo(parentSchema, DatabaseTableType.TABLE, tableName, tableName, schemaName + ".\"" + tableName + "\"", title);
-        // TODO: could DataSetDefinition use this mecahnism for metadata?
+        // TODO: could DataSetDefinition use this mechanism for metadata?
         if (null != kind.getMetaDataSchemaName())
         {
             ti.setMetaDataSchemaName(schemaName);

@@ -1237,7 +1237,9 @@ public class DbScope
 
     public enum CommitTaskOption
     {
+        /** Run inside of the same transaction, immediately before committing it */
         PRECOMMIT,
+        /** Run after the main transaction has been committed, separate from the transaction itself */
         POSTCOMMIT
     }
 

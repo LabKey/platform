@@ -85,7 +85,20 @@ abstract public class PipelineService
     @NotNull
     abstract public PipelineQueue getPipelineQueue();
 
+    /**
+     * Add a <code>PipelineJob</code> to this queue to be run. Will reset the JobID.
+     *
+     * @param job Job to be run
+     */
     abstract public void queueJob(PipelineJob job) throws PipelineValidationException;
+
+    /**
+     * Add a <code>PipelineJob</code> to this queue to be run.
+     *
+     * @param job Job to be run
+     * @param preserveJobId whether the job's ID should be retained or not
+     */
+    abstract public void queueJob(PipelineJob job, boolean preserveJobId) throws PipelineValidationException;
 
     abstract public void setPipelineProperty(Container container, String name, String value);
 

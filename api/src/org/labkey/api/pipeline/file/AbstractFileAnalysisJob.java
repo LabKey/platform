@@ -191,15 +191,15 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         return _splittable && getInputFiles().size() > 1;
     }
 
-    public PipelineJob[] createSplitJobs()
+    public List<PipelineJob> createSplitJobs()
     {
         if (getInputFiles().size() == 1)
-            return new AbstractFileAnalysisJob[] { this };
+            return Collections.<PipelineJob>singletonList(this);
 
-        ArrayList<AbstractFileAnalysisJob> jobs = new ArrayList<>();
+        ArrayList<PipelineJob> jobs = new ArrayList<>();
         for (File file : getInputFiles())
             jobs.add(createSingleFileJob(file));
-        return jobs.toArray(new AbstractFileAnalysisJob[jobs.size()]);
+        return Collections.unmodifiableList(jobs);
     }
 
     public TaskPipeline getTaskPipeline()

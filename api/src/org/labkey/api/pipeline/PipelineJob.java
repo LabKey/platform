@@ -67,8 +67,10 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
@@ -915,9 +917,9 @@ abstract public class PipelineJob extends Job implements Serializable
      *
      * @return sub-jobs requiring separate processing
      */
-    public PipelineJob[] createSplitJobs()
+    public List<PipelineJob> createSplitJobs()
     {
-        return new PipelineJob[] { this };
+        return Collections.singletonList(this);
     }
 
     /**
