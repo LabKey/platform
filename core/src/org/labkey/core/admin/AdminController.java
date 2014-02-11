@@ -5364,7 +5364,7 @@ public class AdminController extends SpringActionController
                 {
                     ViewBackgroundInfo info = getViewBackgroundInfo();
                     PipelineJob job = new ValidateDomainsPipelineJob(info, root);
-                    PipelineService.get().getPipelineQueue().addJob(job);
+                    PipelineService.get().queueJob(job);
                     return true;
                 }
             }

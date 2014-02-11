@@ -24,10 +24,8 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobData;
 import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
-import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.view.ActionURL;
@@ -44,9 +42,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  */
-public class PipelineQueueImpl implements PipelineQueue
+public class PipelineQueueImpl extends AbstractPipelineQueue
 {
-    private static Logger _log = Logger.getLogger(PipelineQueueImpl.class);
+    private static Logger LOG = Logger.getLogger(PipelineQueueImpl.class);
     private int MAX_RUNNING_JOBS = 10;
 
     List<PipelineJob> _pending = new ArrayList<>();
@@ -58,33 +56,10 @@ public class PipelineQueueImpl implements PipelineQueue
 
     JobRunner _runner = new JobRunner(MAX_RUNNING_JOBS);
 
-    public synchronized void addJob(PipelineJob job) throws PipelineValidationException
+    protected synchronized void enqueue(PipelineJob job)
     {
-        if (null == job)
-            throw new NullPointerException();
-
-        job.validateParameters();
-
-        _logDebug("PENDING:   " + job.toString());
-
-        // Make sure status file path and Job ID are in synch.
-        File logFile = job.getLogFile();
-        if (logFile != null)
-        {
-            PipelineStatusFileImpl pipelineStatusFile = PipelineStatusManager.getStatusFile(logFile);
-            if (pipelineStatusFile == null)
-            {
-                PipelineStatusManager.setStatusFile(job, job.getUser(), PipelineJob.WAITING_STATUS, null, true);
-            }
-
-            PipelineStatusManager.resetJobId(job.getLogFile(), job.getJobGUID());
-        }
-
-        if (job.setQueue(this, PipelineJob.WAITING_STATUS))
-        {
-            _pending.add(job);
-            submitJobs();
-        }
+        _pending.add(job);
+        submitJobs();
     }
 
     public boolean isLocal()
@@ -105,7 +80,7 @@ public class PipelineQueueImpl implements PipelineQueue
         // WARNING: This method is for pipeline maintenance only.  Do not put
         //          important functionality side-effects in here, since this
         //          function is not supported in the Enterprise Pipeline.
-        _logDebug("RUNNING:   " + job.toString());
+        LOG.debug("RUNNING:   " + job.toString());
         boolean removed = _pending.remove(job);
         assert removed;
         _running.add(job);
@@ -118,7 +93,7 @@ public class PipelineQueueImpl implements PipelineQueue
         // WARNING: This method is for pipeline maintenance only.  Do not put
         //          important functionality side-effects in here, since this
         //          function is not supported in the Enterprise Pipeline.
-        _logDebug("COMPLETED: " + job.toString());
+        LOG.debug("COMPLETED: " + job.toString());
         ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
         boolean removed = _running.remove(job);
         assert removed;
@@ -280,12 +255,6 @@ public class PipelineQueueImpl implements PipelineQueue
         return ret;
     }
 
-    private void _logDebug(String s)
-    {
-        _log.debug(s);
-        //System.err.println(s);
-    }
-
     //
     // JUNIT
     //
@@ -352,7 +321,7 @@ public class PipelineQueueImpl implements PipelineQueue
 
             // Add four jobs
             for (int i = 0; i < 4; i++)
-                queue.addJob(jobs[i]);
+                queue.addJob(jobs[i], false);
             Thread.sleep(1);
             data = queue.getJobDataInMemory(containerA);
             //assertEquals(2, data.getPendingJobs().size() + data.getRunningJobs().size() + data.getCompletedJobs().size());
@@ -366,7 +335,7 @@ public class PipelineQueueImpl implements PipelineQueue
 
             // add remaining jobs
             for (int i = 4; i < jobs.length; i++)
-                queue.addJob(jobs[i]);
+                queue.addJob(jobs[i], false);
             Thread.sleep(1);
             data = queue.getJobDataInMemory(null);
             //assertEquals(jobs.length, data.getPendingJobs().size() + data.getRunningJobs().size() + data.getCompletedJobs().size());

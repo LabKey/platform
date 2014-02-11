@@ -5194,6 +5194,8 @@ public class QueryController extends SpringActionController
     {
         public ApiResponse execute(GetQueriesForm form, BindException errors) throws Exception
         {
+            if (1 == 1) throw new UnauthorizedException();
+
             if (null == StringUtils.trimToNull(form.getSchemaName()))
                 throw new IllegalArgumentException("You must supply a value for the 'schemaName' parameter!");
 

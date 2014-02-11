@@ -1401,7 +1401,7 @@ public class ReportsController extends SpringActionController
             if (report instanceof RReport)
             {
                 ((RReport)report).createInputDataFile(getViewContext());
-                PipelineService.get().getPipelineQueue().addJob(job);
+                PipelineService.get().queueJob(job);
                 response.put("success", true);
             }
 

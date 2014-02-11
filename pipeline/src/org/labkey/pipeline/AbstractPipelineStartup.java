@@ -16,11 +16,11 @@
 package org.labkey.pipeline;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceLoader;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.mule.LoggerUtil;
@@ -29,7 +29,10 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -45,9 +48,6 @@ public abstract class AbstractPipelineStartup
     protected Map<String, BeanFactory> initContext(String log4JConfigPath, List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, PipelineJobService.LocationType locationType) throws IOException
     {
         LoggerUtil.initLogging(log4JConfigPath);
-
-        // Set up the PipelineJobService so that Spring can configure it
-        PipelineJobServiceImpl.initDefaults(locationType);
 
         //load the modules and sort them by dependencies
         List<Module> modules = new ModuleLoader().doInit(moduleFiles);
@@ -80,6 +80,9 @@ public abstract class AbstractPipelineStartup
         }
 
         Map<String, BeanFactory> result = new CaseInsensitiveHashMap<>();
+
+        // Set up the PipelineJobService so that Spring can configure it
+        PipelineJobServiceImpl.initDefaults(locationType);
 
         for (final Module module : modules)
         {

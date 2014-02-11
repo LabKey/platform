@@ -99,7 +99,7 @@ public class SpecimenRefreshMaintainanceTask implements SystemMaintenance.Mainte
 
                     PipeRoot root = PipelineService.get().findPipelineRoot(sourceStudy.getContainer());
                     PipelineJob job = new SpecimenRefreshPipelineJob(sourceStudy.getContainer(), destinationStudy.getContainer(), user, null, root, settings);
-                    PipelineService.get().getPipelineQueue().addJob(job);
+                    PipelineService.get().queueJob(job);
                 }
                 catch(Exception e)
                 {

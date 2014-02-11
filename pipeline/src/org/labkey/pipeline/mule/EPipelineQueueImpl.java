@@ -15,27 +15,40 @@
  */
 package org.labkey.pipeline.mule;
 
-import org.labkey.api.pipeline.*;
+import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobData;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JobRunner;
+import org.labkey.pipeline.api.AbstractPipelineQueue;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
-import org.labkey.pipeline.api.PipelineStatusFileImpl;
-import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.api.properties.GlobusClientPropertiesImpl;
 import org.labkey.pipeline.mule.filters.JobIdJmsSelectorFilter;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
+import org.mule.MuleManager;
 import org.mule.extras.client.MuleClient;
+import org.mule.impl.RequestContext;
 import org.mule.umo.UMOException;
 import org.mule.umo.endpoint.UMOEndpoint;
-import org.mule.MuleManager;
-import org.mule.impl.RequestContext;
-import org.apache.log4j.Logger;
-import org.apache.activemq.ActiveMQConnectionFactory;
 
-import javax.jms.*;
-import java.io.File;
-import java.util.*;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.QueueBrowser;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Map;
 
 /**
  * EPipelineQueueImpl class
@@ -46,7 +59,7 @@ import java.util.*;
  *
  * @author bmaclean
  */
-public class EPipelineQueueImpl implements PipelineQueue
+public class EPipelineQueueImpl extends AbstractPipelineQueue
 {
     private static Logger _log = Logger.getLogger(EPipelineQueueImpl.class);
     private static final String PIPELINE_QUEUE_NAME = "PipelineQueue";
@@ -236,51 +249,29 @@ public class EPipelineQueueImpl implements PipelineQueue
         return result;
     }
 
-    public void addJob(PipelineJob job) throws PipelineValidationException
+    protected void enqueue(PipelineJob job)
     {
-        job.validateParameters();
-
-        // Duplicate code from PipelineQueueImpl, should be refactored into a superclass
-        File logFile = job.getLogFile();
-
-        if (logFile != null)
+        if (RequestContext.getEvent() == null)
         {
-            // Check if we have an existing entry in the database
-            PipelineStatusFileImpl pipelineStatusFile = PipelineStatusManager.getStatusFile(logFile);
-            if (pipelineStatusFile == null)
+            try
             {
-                // Insert it if we don't
-                PipelineStatusManager.setStatusFile(job, job.getUser(), PipelineJob.WAITING_STATUS, null, true);
+                dispatchJob(job);
             }
+            catch (UMOException e)
+            {
+                _log.error(e);
 
-            // Reset the ID in case this was a resubmit
-            PipelineStatusManager.resetJobId(job.getLogFile(), job.getJobGUID());
+                // If dispatch failed, make sure the job is set to error,
+                // so it can be retried.
+                job.error(e.getMessage(), e);
+            }
         }
-
-        if (job.setQueue(this, PipelineJob.WAITING_STATUS))
+        else
         {
-            if (RequestContext.getEvent() == null)
-            {
-                try
-                {
-                    dispatchJob(job);
-                }
-                catch (UMOException e)
-                {
-                    _log.error(e);
-
-                    // If dispatch failed, make sure the job is set to error,
-                    // so it can be retried.
-                    job.error(e.getMessage(), e);
-                }
-            }
-            else
-            {
-                _log.debug("MuleClient does not work reliably from inside an event. Using outbound routing.");
-                if (_outboundJobs.get() == null)
-                    _outboundJobs.set(new ArrayList<PipelineJob>());
-                _outboundJobs.get().add(job);
-            }
+            _log.debug("MuleClient does not work reliably from inside an event. Using outbound routing.");
+            if (_outboundJobs.get() == null)
+                _outboundJobs.set(new ArrayList<PipelineJob>());
+            _outboundJobs.get().add(job);
         }
     }
 

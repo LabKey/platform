@@ -87,7 +87,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
             // run the remainder of the study creation as a pipeline job
             PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
             CreateChildStudyPipelineJob job = new CreateChildStudyPipelineJob(getViewContext(), root, form, _destFolderCreated);
-            PipelineService.get().getPipelineQueue().addJob(job);
+            PipelineService.get().queueJob(job);
 
             String redirect = PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()).getLocalURIString();
 
