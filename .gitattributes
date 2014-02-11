@@ -2590,6 +2590,7 @@ query/src/org/labkey/query/view/externalSchema.jsp -text
 query/src/org/labkey/query/view/internalDeleteView.jsp -text
 query/src/org/labkey/query/view/internalNewView.jsp -text
 query/src/org/labkey/query/view/internalSourceView.jsp -text
+query/src/org/labkey/query/view/json.jsp -text
 query/src/org/labkey/query/view/linkedSchema.jsp -text
 query/src/org/labkey/query/view/manageRemoteConnections.jsp -text
 query/src/org/labkey/query/view/manageViews.jsp -text

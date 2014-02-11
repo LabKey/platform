@@ -59,18 +59,41 @@
 
     function executeQuery(query)
     {
-        Ext4.getBody().mask();
-        var config = {
+        // first verify that the JSON looks like JSON
+        var jsonQuery = null;
+        try
+        {
+            if (query)
+                jsonQuery = JSON.parse(query);
+        }
+        catch (x)
+        {
+            alert(x);
+        }
+
+        var configDefaults =
+        {
             configId:<%=q(form.getConfigId())%>,
             schemaName:<%=q(form.getSchemaName())%>,
-            query:query,
             success:function(cs){renderCellSet(cs,'cellset');},
             failure:failed
         };
+        var config;
+        if ('query' in jsonQuery)
+        {
+            config = Ext4.apply({}, jsonQuery, configDefaults);
+        }
+        else
+        {
+            config = Ext4.apply({}, {query:jsonQuery}, configDefaults);
+        }
+
+        Ext4.getBody().mask();
         startTime = new Date().getTime();
-        LABKEY.query.olap.CubeManager.executeOlapQuery(config);
+        mdx.query(config);
         return false;
     }
+
 
     function failed(json,response,options)
     {
@@ -91,7 +114,7 @@
         var html = [];
         html.push('<table class="labkey-data-region labkey-show-borders"><tr>');
         if (cs.axes.length>1)
-            html.push('<td>&nbsp;</td>');
+                html.push('<td>&nbsp;</td>');
         for (var col=0 ; col<cs.axes[0].positions.length ; col++)
         {
             // only showing first member (handle hierarchy)

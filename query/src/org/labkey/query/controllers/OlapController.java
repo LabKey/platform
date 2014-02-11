@@ -456,6 +456,30 @@ public class OlapController extends SpringActionController
     }
 
 
+    // for testing
+    @RequiresPermissionClass(AdminPermission.class)
+    public class TestJsonAction extends SimpleViewAction<OlapForm>
+    {
+        @Override
+        public ModelAndView getView(OlapForm form, BindException errors) throws Exception
+        {
+            OlapSchemaDescriptor d = null;
+            if (StringUtils.isNotEmpty(form.getConfigId()))
+                d = ServerManager.getDescriptor(getContainer(), form.getConfigId());
+            if (null == d && StringUtils.isNotEmpty(form.getConfigId()))
+            {
+                errors.reject(ERROR_MSG, "Olap configuration not found: " + form.getSchemaName());
+            }
+            return new JspView("/org/labkey/query/view/json.jsp", form, errors);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+    }
+
 
     private Cube getCube(OlapForm form, BindException errors) throws SQLException
     {

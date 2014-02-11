@@ -48,7 +48,7 @@
                     url.addParameter("configId",sd.getId());
                     url.addParameter("schemaName",s.getName());
                     url.addParameter("cubeName",c.getName());
-                    %><li><%=textLink(c.getName(),url)%>&nbsp;<%=textLink("mdx",url.setAction(OlapController.TestMdxAction.class))%></li><%
+                    %><li><%=textLink(c.getName(),url)%>&nbsp;<%=textLink("mdx",url.setAction(OlapController.TestMdxAction.class))%>&nbsp;<%=textLink("json",url.setAction(OlapController.TestJsonAction.class))%></li><%
                 }
                 %></ul><%
             }
