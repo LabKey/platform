@@ -62,7 +62,7 @@ public class QueryDriver implements Driver
         }
         catch (Exception x)
         {
-            throw new RuntimeException("Error initializing Derby database", x);
+            throw new RuntimeException("Error initializing LabKey database driver", x);
         }
     }
 
