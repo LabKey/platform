@@ -15,11 +15,13 @@
  */
 package org.labkey.authentication.ldap;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -50,14 +52,10 @@ public class LdapAuthenticationManager
     //
     // Attempt LDAP authentication on a single server
     //
-    static boolean authenticate(String url, @NotNull ValidEmail email, @NotNull String password, boolean saslAuthentication)
-            throws NamingException
+    static boolean authenticate(String url, @NotNull ValidEmail email, @NotNull String password, boolean saslAuthentication) throws NamingException
     {
         if (useEmailAsPrincipal())
         {
-            // Don't pass blank or null password or email to connect -- it will ALWAYS SUCCEED
-            // We've already verfied above that password and email are not blank
-    
             return connect(url, emailToLdapPrincipal(email), password, saslAuthentication);
         }
         else
@@ -77,7 +75,7 @@ public class LdapAuthenticationManager
     }
 
 
-    // Careful... blank principal or password will switch to "anonymous bind", meaning it will always succeed
+    // Principal and password shouldn't be empty
     public static boolean connect(String url, @NotNull String principal, @NotNull String password, boolean saslAuthentication) throws NamingException
     {
         boolean authenticated = false;
@@ -104,15 +102,22 @@ public class LdapAuthenticationManager
     }
 
 
-    // Careful... blank principal or password will switch to "anonymous bind", meaning it will always succeed
+    // Blank principal or password will throw to prevent anonymous bind
     public static DirContext connectToLdap(String url, @NotNull String principal, @NotNull String password, boolean saslAuthentication) throws NamingException
     {
+        if (StringUtils.isBlank(password))
+            throw new IllegalStateException("Blank password is not allowed in connectToLdap");
+
+        if (StringUtils.isBlank(principal))
+            throw new ConfigurationException("Blank principal is not allowed in connectToLdap: LDAP is likely misconfigured");
+
         Hashtable<String, String> env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
         env.put(Context.PROVIDER_URL, url);
         env.put(Context.SECURITY_AUTHENTICATION, saslAuthentication ? "DIGEST-MD5 CRAM-MD5 GSSAPI" : "simple");
         env.put(Context.SECURITY_PRINCIPAL, principal);
         env.put(Context.SECURITY_CREDENTIALS, password);
+
         return new InitialDirContext(env);
     }
 

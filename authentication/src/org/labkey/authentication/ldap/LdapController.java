@@ -17,6 +17,7 @@ package org.labkey.authentication.ldap;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
@@ -32,7 +33,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -66,32 +67,42 @@ public class LdapController extends SpringActionController
         public ModelAndView getView(Config form, boolean reshow, BindException errors) throws Exception
         {
             form.setSASL(LdapAuthenticationManager.useSASL());
-            return new JspView<>("/org/labkey/authentication/ldap/configure.jsp", form);
+            return new JspView<>("/org/labkey/authentication/ldap/configure.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("configLdap");
             PageFlowUtil.urlProvider(LoginUrls.class).appendAuthenticationNavTrail(root).addChild("Configure LDAP Authentication");
             return root;
         }
 
         public void validateCommand(Config target, Errors errors)
         {
+            String template = target.getPrincipalTemplate();
+
+            if (StringUtils.isBlank(template))
+            {
+                errors.reject(ERROR_MSG, "Invalid template: template cannot be blank");
+            }
+            else
+            {
+                String noTemplates = StringUtils.remove(StringUtils.remove(template, "${email}"), "${uid}");
+
+                if (noTemplates.contains("${"))
+                    errors.reject(ERROR_MSG, "Invalid template: valid replacements are ${email} and ${uid}");
+            }
         }
 
         public boolean handlePost(Config config, BindException errors) throws Exception
         {
-            if (!getUser().isSiteAdmin())
-            {
-                throw new UnauthorizedException();
-            }
             LdapAuthenticationManager.saveProperties(config);
             return true;
         }
 
         public ActionURL getSuccessURL(Config config)
         {
-            return getConfigureURL(true);  // Redirect to same action -- want to reload props from database
+            return getConfigureURL(true);  // Redirect to same action -- reload props from database
         }
     }
 
@@ -110,6 +121,7 @@ public class LdapController extends SpringActionController
             return servers;
         }
 
+        @SuppressWarnings("UnusedDeclaration")
         public void setServers(String servers)
         {
             this.servers = servers;
@@ -120,6 +132,7 @@ public class LdapController extends SpringActionController
             return domain;
         }
 
+        @SuppressWarnings("UnusedDeclaration")
         public void setDomain(String domain)
         {
             this.domain = domain;
@@ -130,6 +143,7 @@ public class LdapController extends SpringActionController
             return principalTemplate;
         }
 
+        @SuppressWarnings("UnusedDeclaration")
         public void setPrincipalTemplate(String principalTemplate)
         {
             this.principalTemplate = principalTemplate;
@@ -145,13 +159,14 @@ public class LdapController extends SpringActionController
             this.useSASL = useSASL;
         }
 
+        @SuppressWarnings("UnusedDeclaration")
         public boolean isReshow()
         {
             return reshow;
         }
 
-        public void setReshow(boolean reshow)
-        {
+        @SuppressWarnings("UnusedDeclaration")
+        public void setReshow(boolean reshow) {
             this.reshow = reshow;
         }
     }
@@ -182,11 +197,11 @@ public class LdapController extends SpringActionController
             try
             {
                 boolean success = LdapAuthenticationManager.connect(form.getServer(), form.getPrincipal(), form.getPassword(), form.getSASL());
-                form.setMessage("<b>Connected to server.  Authentication " + (success ? "succeeded" : "failed") + ".</b>");
+                form.setMessage("<b>Connected to server. Authentication " + (success ? "succeeded" : "failed") + ".</b>");
             }
-            catch(Exception e)
+            catch (Exception e)
             {
-                String message = "<b>Failed to connect with these settings.  Error was:</b><br>" + ExceptionUtil.renderException(e);
+                String message = "<b>Failed to connect with these settings. Error was:</b><br>" + ExceptionUtil.renderException(e);
                 form.setMessage(message);
             }
             return false;
@@ -204,7 +219,7 @@ public class LdapController extends SpringActionController
     }
 
 
-    public static class TestLdapForm extends ReturnUrlForm
+    public static class TestLdapForm extends ReturnUrlForm implements HasViewContext
     {
         private String server = LdapAuthenticationManager.getServers()[0];
         private String principal;
@@ -212,9 +227,10 @@ public class LdapController extends SpringActionController
         private String message;
         private boolean useSASL = false;  // Always initialize to false because of checkbox behavior
 
-        public TestLdapForm()
+        @Override
+        public void setViewContext(ViewContext context)
         {
-            User user = HttpView.currentContext().getUser();
+            User user = context.getUser();
             ValidEmail email;
 
             try
@@ -232,11 +248,18 @@ public class LdapController extends SpringActionController
                 principal = null;
         }
 
+        @Override
+        public ViewContext getViewContext()
+        {
+            return null;
+        }
+
         public String getPrincipal()
         {
             return (null == principal ? "" : principal);
         }
 
+        @SuppressWarnings("UnusedDeclaration")
         public void setPrincipal(String principal)
         {
             this.principal = principal;
@@ -247,6 +270,7 @@ public class LdapController extends SpringActionController
             return (null == password ? "" : password);
         }
 
+        @SuppressWarnings("UnusedDeclaration")
         public void setPassword(String password)
         {
             this.password = password;
@@ -257,6 +281,7 @@ public class LdapController extends SpringActionController
             return (null == server ? "" : server);
         }
 
+        @SuppressWarnings("UnusedDeclaration")
         public void setServer(String server)
         {
             this.server = server;

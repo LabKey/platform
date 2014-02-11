@@ -29,6 +29,7 @@
 %>
 <form action="configure.post" method="post"><labkey:csrf/>
 <table>
+    <%=formatMissedErrorsInTable("form", 2)%>
     <tr>
         <td class="labkey-form-label">LDAP servers<%= PageFlowUtil.helpPopup("LDAP servers", "Specifies the addresses of your organization's LDAP server or servers. You can provide a list of multiple servers separated by semicolons. The general form for the LDAP server address is ldap://servername.domain.org:389")%></td>
         <td><input type="text" name="servers" size="50" value="<%=h(bean.getServers()) %>"></td>
@@ -38,7 +39,7 @@
         <td><input type="text" name="domain" size="50" value="<%=h(bean.getDomain()) %>"></td>
     </tr>
     <tr>
-        <td class="labkey-form-label">LDAP principal template</td>
+        <td class="labkey-form-label">LDAP principal template<%=PageFlowUtil.helpPopup("LDAP principal template", "Enter an LDAP principal template that matches the requirements of the configured LDAP server(s). The template supports substitution syntax: include ${email} to substitute the user's full email address and ${uid} to substitute the left part of the user's email address.")%></td>
         <td><input type="text" name="principalTemplate" size="50" value="<%=h(bean.getPrincipalTemplate()) %>"></td>
     </tr>
     <tr>
