@@ -301,8 +301,32 @@ Ext.define('LABKEY.app.controller.State', {
             if (this.filters[f].isGroup()) {
                 // Connector.model.FilterGroup
                 var _f = this.filters[f].get('filters');
+                var ff = Ext.clone(this.filters[f].data);
                 for (var i=0; i < _f.length; i++) {
-                    // Connector.model.Filter
+                    ff.filters[i] = _f[i].data;
+                }
+                flatFilters.push(ff);
+            }
+            else {
+                // Connector.model.Filter
+                flatFilters.push(this.filters[f].data);
+            }
+        }
+
+        return flatFilters;
+    },
+
+    getFlatFilters : function() {
+        if (!this.filters || this.filters.length == 0)
+            return [];
+
+        var flatFilters = [];
+
+        for (var f=0; f < this.filters.length; f++) {
+            if (this.filters[f].isGroup()) {
+                // Connector.model.FilterGroup
+                var _f = this.filters[f].get('filters');
+                for (var i=0; i < _f.length; i++) {
                     flatFilters.push(_f[i].data);
                 }
             }
@@ -452,7 +476,7 @@ Ext.define('LABKEY.app.controller.State', {
             this.addSelection(ss, false, true, true);
         }
         else {
-            this.clearSelections(true);
+            this.clearSelections(false);
         }
     },
 
@@ -485,14 +509,24 @@ Ext.define('LABKEY.app.controller.State', {
     },
 
     requestFilterUpdate : function(skipState, opChange, silent) {
-        var olapFilters = [];
+        var olapFilters = [], ff;
         for (var f=0; f < this.filters.length; f++) {
 
             if (this.filters[f].isGroup()) {
                 var grpFilters = this.filters[f].get('filters');
                 for (var g=0; g < grpFilters.length; g++) {
-                    var ff = grpFilters[g].data ? grpFilters[g].data : grpFilters[g];
-                    olapFilters.push(LABKEY.app.controller.Filter.getOlapFilter(ff));
+                    if (grpFilters[g].isGroup && grpFilters[g].isGroup()) {
+                        var _g = grpFilters[g].get('filters');
+                        // have a subgroup
+                        for (var i=0; i < _g.length; i++) {
+                            ff = _g[i].data ? _g[i].data : _g[i];
+                            olapFilters.push(LABKEY.app.controller.Filter.getOlapFilter(ff));
+                        }
+                    }
+                    else {
+                        ff = grpFilters[g].data ? grpFilters[g].data : grpFilters[g];
+                        olapFilters.push(LABKEY.app.controller.Filter.getOlapFilter(ff));
+                    }
                 }
             }
             else {
