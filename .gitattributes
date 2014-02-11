@@ -567,6 +567,7 @@ api/src/org/labkey/api/exp/ExperimentRunTypeSource.java -text
 api/src/org/labkey/api/exp/Handler.java -text
 api/src/org/labkey/api/exp/Identifiable.java -text
 api/src/org/labkey/api/exp/IdentifiableBase.java -text
+api/src/org/labkey/api/exp/ImportTypesHelper.java -text
 api/src/org/labkey/api/exp/Lsid.java -text
 api/src/org/labkey/api/exp/LsidManager.java -text
 api/src/org/labkey/api/exp/LsidType.java -text
