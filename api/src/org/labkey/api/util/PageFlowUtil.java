@@ -2073,6 +2073,11 @@ public class PageFlowUtil
         LookAndFeelProperties laf = LookAndFeelProperties.getInstance(settingsContainer);
         json.put("useMDYDateParsing", laf.getDateParsingMode().getDayMonth() == DateUtil.MonthDayOption.MONTH_DAY);
 
+        // For now, all input forms should format using ISO date format, to ensure we can parse the dates we format. We can't
+        // guarantee that the default date display formats are parseable. We might change this in the future, so use this
+        // property instead of hard-coding formats on the client.
+        json.put("extDateInputFormat", ExtUtil.toExtDateFormat(DateUtil.getStandardDateFormatString()));
+
         JSONObject userProps = new JSONObject();
 
         userProps.put("id", user.getUserId());

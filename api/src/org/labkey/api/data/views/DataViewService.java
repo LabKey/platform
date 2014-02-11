@@ -24,7 +24,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -160,27 +159,16 @@ public class DataViewService
 
     public JSONArray toJSON(Container container, User user, List<DataViewInfo> views)
     {
-        return toJSON(container, user, views, DateUtil.getStandardDateFormatString());
-    }
-
-    public JSONArray toJSON(Container container, User user, List<DataViewInfo> views, String dateFormat)
-    {
-        if (dateFormat == null)
-            throw new IllegalArgumentException("Date format cannot be null");
-
         JSONArray jsonViews = new JSONArray();
 
         for (DataViewInfo info : views)
-            jsonViews.put(toJSON(container, user, info, dateFormat));
+            jsonViews.put(toJSON(container, user, info));
 
         return jsonViews;
     }
 
-    public JSONObject toJSON(Container container, User user, DataViewInfo info, String dateFormat)
+    public JSONObject toJSON(Container container, User user, DataViewInfo info)
     {
-        if (dateFormat == null)
-            throw new IllegalArgumentException("Date format cannot be null");
-
         JSONObject o = new JSONObject();
 
         o.put("id", info.getId());
