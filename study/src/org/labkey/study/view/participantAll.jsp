@@ -75,6 +75,7 @@
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
 <%@ page import="org.labkey.study.query.StudyQuerySchema" %>
+<%@ page import="org.labkey.api.util.Formats" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -252,7 +253,7 @@
     %>
     <td class="labkey-participant-view-header" colspan="<%=seqKeyCount%>">
         <%= h(visit.getDisplayString()) %>
-        <%= visit.getDescription() != null ? PageFlowUtil.helpPopup("Visit Description", visit.getDescription()) : "" %>
+        <%= text(visit.getDescription() != null ? PageFlowUtil.helpPopup("Visit Description", visit.getDescription()) : "") %>
     </td>
     <%
         }
@@ -275,7 +276,7 @@
                     keyCount = 1;
     %>
     <td class="labkey-participant-view-header"
-        colspan="<%=keyCount%>"><%= text(null == date ? "&nbsp;" : h(ConvertUtils.convert(date))) %>
+        colspan="<%=keyCount%>"><%=formatDate(date)%>
     </td>
     <%
             }
@@ -473,7 +474,7 @@
                             hasSourceLsid = true;
                         Object value = col.getValue(propMap);
     %>
-    <td><%= (null == value ? "&nbsp;" : h(ConvertUtils.convert(value), true))%>
+    <td><%=format(value)%>
     </td>
     <%
                 countTD++;
@@ -632,5 +633,16 @@
         }
     }
 
+
+    _HtmlString format(Object value)
+    {
+        if (value instanceof Date)
+            return formatDate((Date)value);
+
+        if (value instanceof Number)
+            return new _HtmlString(h(Formats.formatNumber(getContainer(), (Number) value)));
+
+        return new _HtmlString(null == value ? "&nbsp;" : h(ConvertUtils.convert(value), true));
+    }
 %>
 
