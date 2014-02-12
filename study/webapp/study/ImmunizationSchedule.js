@@ -411,7 +411,7 @@ Ext4.define('LABKEY.ext4.ImmunogensGrid', {
                         text : 'Insert New',
                         scope : this,
                         handler : function() {
-                            rowEditing.cancelEdit();
+                            rowEditing.completeEdit();
                             store.add({RowId: null, ProductId: record.get("RowId")});
                             rowEditing.startEdit(store.getCount() - 1, 0);
                         }
@@ -422,7 +422,7 @@ Ext4.define('LABKEY.ext4.ImmunogensGrid', {
                         disabled: true,
                         scope: this,
                         handler: function() {
-                            rowEditing.cancelEdit();
+                            rowEditing.completeEdit();
                             store.remove(grid.getSelectionModel().getLastSelected());
                         }
                     }]
@@ -434,6 +434,17 @@ Ext4.define('LABKEY.ext4.ImmunogensGrid', {
                     win.down('#deleteAntigenBtn').setDisabled(!records.length);
                 }
             }
+        });
+
+        // issue 19583 : part 2
+        rowEditing.on('validateedit', function(editor, context) {
+            var hasValues = false;
+            Ext4.each(context.grid.columns, function(column) {
+                var newVal = context.newValues[column.dataIndex];
+                if (newVal != undefined && newVal.length > 0)
+                    hasValues = true;
+            });
+            return hasValues;
         });
 
         var win = Ext4.create('Ext.window.Window', {
@@ -452,6 +463,10 @@ Ext4.define('LABKEY.ext4.ImmunogensGrid', {
                 text: 'Submit',
                 scope: this,
                 handler: function() {
+                    // issue 19583 : part 1
+                    if (rowEditing.editing)
+                        rowEditing.completeEdit();
+
                     // get new, updated, and removed records from the store and make saveRows commands accordingly
                     var commands = [];
                     var rows = [];
