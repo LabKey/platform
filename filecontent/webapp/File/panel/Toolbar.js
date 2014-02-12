@@ -105,7 +105,7 @@ Ext4.define('File.panel.Toolbar', {
             var tbarAction = baseData[this.tbarActions[i].id];
             tbarAction.hideIcon = this.tbarActions[i].hideIcon;
             tbarAction.hideText = this.tbarActions[i].hideText;
-            tbarAction.shown = true;
+            tbarAction.shown = !(this.tbarActions[i].hideIcon && this.tbarActions[i].hideText);
             tbarAction.id = this.tbarActions[i].id;
             tbarAction.used = true;
             processedData.push(tbarAction);
@@ -341,17 +341,14 @@ Ext4.define('File.panel.Toolbar', {
             {
                 item.shown = true;
             }
-            if(item.shown){
-                if(item.hideIcon && item.hideText)
-                    continue;
-                tBarRet[position] = {
-                    position : position,
-                    id : item.id,
-                    hideIcon : item.hideIcon,
-                    hideText : item.hideText
-                };
-                position++;
-            }
+
+            tBarRet[position] = {
+                position : position,
+                id : item.id,
+                hideIcon : !item.shown || item.hideIcon,
+                hideText : !item.shown || item.hideText
+            };
+            position++;
         }
 
         return tBarRet;

@@ -730,6 +730,11 @@ Ext4.define('File.panel.Browser', {
                 // check map to ensure that we should process this action
                 if (mapTbarItems[tbarConfig[i].id]) {
                     actionConfig = tbarConfig[i];
+
+                    // issue 19166
+                    if (actionConfig.hideText && actionConfig.hideIcon)
+                        continue;
+
                     action = this.actions[actionConfig.id];
 
                     action.initialConfig.hideText = actionConfig.hideText;
