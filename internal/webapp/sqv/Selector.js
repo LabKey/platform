@@ -515,14 +515,21 @@ Ext4.define('LABKEY.sqv.Model', {
                     values = values.split(",");
 
                 if (Ext4.isArray(values)) {
-                    var records = [];
-                    for (var i = 0; i < values.length; i++) {
-                        var record = combo.store.getById(values[i]);
-                        if (record)
-                            records.push(record);
+                    // Get the idProperty of the model.  I'm not sure how to get this other than constructing a new model instance.
+                    var record = combo.store.model.create({});
+                    if (record) {
+                        var idProperty = record.idProperty;
+
+                        var records = [];
+                        for (var i = 0; i < values.length; i++) {
+                            // This should be case-insensitive, which is important, #19440
+                            var idx = combo.store.find(idProperty, values[i]);
+                            if (-1 != idx)
+                                records.push(combo.store.getAt(idx));
+                        }
+                        combo.setValue(records);
+                        //combo.fireEvent('select', combo);
                     }
-                    combo.setValue(records);
-                    //combo.fireEvent('select', combo);
                 }
             }
             else if (combo.store.getById(values)) {
