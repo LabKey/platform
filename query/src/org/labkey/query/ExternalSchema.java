@@ -189,7 +189,10 @@ public class ExternalSchema extends SimpleUserSchema
 
     protected static @NotNull Collection<String> getAvailableTables(AbstractExternalSchemaDef def, TemplateSchemaType template, @Nullable TableSource tableSource, Map<String, TableType> metaDataMap)
     {
-        Collection<String> tableNames = getAvailableTables(def, template, tableSource);
+        if (null == tableSource)
+            return Collections.emptySet();
+
+        Collection<String> tableNames = getAvailableTables(def.getTables(), template, tableSource.getTableNames());
 
         if (tableNames.isEmpty() || metaDataMap.isEmpty())
             return tableNames;
@@ -206,19 +209,22 @@ public class ExternalSchema extends SimpleUserSchema
         return xmlTableNames;
     }
 
-    private static @NotNull Collection<String> getAvailableTables(AbstractExternalSchemaDef def, TemplateSchemaType template, @Nullable TableSource tableSource)
+    protected static @NotNull Collection<String> getAvailableQueries(AbstractExternalSchemaDef def, TemplateSchemaType template, @Nullable TableSource tableSource)
     {
         if (null == tableSource)
             return Collections.emptySet();
 
-        Collection<String> jdbcNames = tableSource.getTableNames();
-        String savedTableNames = def.getTables();
+        return getAvailableTables(def.getTables(), template, tableSource.getQueryNames());
+    }
+
+    private static @NotNull Collection<String> getAvailableTables(String savedTableNames, TemplateSchemaType template, Collection<String> sourceTableNames)
+    {
         Set<String> requested = null;
 
         if (savedTableNames != null)
         {
             if ("*".equals(savedTableNames))
-                return jdbcNames;
+                return sourceTableNames;
             else
                 requested = new CsvSet(savedTableNames);
         }
@@ -231,7 +237,7 @@ public class ExternalSchema extends SimpleUserSchema
                 if (tableNames != null)
                 {
                     if (tableNames.length == 1 && tableNames[0].equals("*"))
-                        return jdbcNames;
+                        return sourceTableNames;
                     else
                         requested = new HashSet<>(Arrays.asList(tableNames));
                 }
@@ -243,60 +249,17 @@ public class ExternalSchema extends SimpleUserSchema
 
         // Some tables in the "requested" set may no longer exist or may be query names, so check each table in the schema, #13002
         // Also, we want to expose the current JDBC meta names, not the saved names, so map them. #19440
-        Map<String, String> jdbcNameMap = new CaseInsensitiveHashMap<>(jdbcNames.size());
-        for (String jdbcName : jdbcNames)
-            jdbcNameMap.put(jdbcName, jdbcName);
+        Map<String, String> sourceNameMap = new CaseInsensitiveHashMap<>(sourceTableNames.size());
+        for (String sourceTableName : sourceTableNames)
+            sourceNameMap.put(sourceTableName, sourceTableName);
 
         Set<String> available = new HashSet<>(requested.size());
         for (String requestedName : requested)
         {
-            String jdbcName = jdbcNameMap.get(requestedName);
-            if (null != jdbcName)
-                available.add(jdbcName);
+            String sourceTableName = sourceNameMap.get(requestedName);
+            if (null != sourceTableName)
+                available.add(sourceTableName);
         }
-
-        return available;
-    }
-
-    protected static @NotNull Collection<String> getAvailableQueries(AbstractExternalSchemaDef def, TemplateSchemaType template, @Nullable TableSource tableSource)
-    {
-        if (null == tableSource)
-            return Collections.emptySet();
-
-        Collection<String> allowed = null;
-        String allowedTableNames = def.getTables();
-        if (allowedTableNames != null)
-        {
-            if ("*".equals(allowedTableNames))
-                allowed = tableSource.getQueryNames();
-            else
-                allowed = new CsvSet(allowedTableNames);
-        }
-        else if (template != null)
-        {
-            TemplateSchemaType.Tables tables = template.getTables();
-            if (tables != null)
-            {
-                String[] tableNames = tables.getTableNameArray();
-                if (tableNames != null)
-                {
-                    if (tableNames.length == 1 && tableNames[0].equals("*"))
-                        allowed = tableSource.getQueryNames();
-                    else
-                        allowed = Arrays.asList(tableNames);
-                }
-            }
-        }
-
-        if (allowed == null || allowed.size() == 0)
-            return Collections.emptySet();
-
-        // The "allowed" list contains both query and table names, so check each query in the schema.
-        Collection<String> queryNames = tableSource.getQueryNames();
-        Set<String> available = new HashSet<>(allowed.size());
-        for (String queryName : queryNames)
-            if (allowed.contains(queryName))
-                available.add(queryName);
 
         return available;
     }
