@@ -63,6 +63,7 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
     private SaveButtonBar saveBarBottom;
     private HandlerRegistration _closeHandlerManager;
     private String _designerURL;
+    private boolean _showing = false;
 
     private boolean _saveInProgress = false;
 
@@ -110,6 +111,7 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
 
     private void show()
     {
+        _showing = true;
         _rootPanel.clear();
         _domainEditors.clear();
         saveBarTop = new SaveButtonBar(this);
@@ -120,16 +122,6 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
         {
             _rootPanel.add(new HTML("<br/>"));
 
-            PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> editor =
-                    new PropertiesEditor.PD(_rootPanel, null, getService());
-            editor.addChangeHandler(new ChangeHandler()
-            {
-                public void onChange(ChangeEvent e)
-                {
-                    setDirty(true);
-                }
-            });
-
             // Make sure required properties cannot be edited or moved
             for (GWTPropertyDescriptor property : domain.getFields())
                 if (property.isRequired())
@@ -137,6 +129,17 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
                     property.setDisableEditing(true);
                     property.setPreventReordering(true);
                 }
+
+            PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> editor =
+                    new PropertiesEditor.PD(_rootPanel, null, getService());
+            editor.addChangeHandler(new ChangeHandler()
+            {
+                public void onChange(ChangeEvent e)
+                {
+                    if (!isShowing())
+                        setDirty(true);
+                }
+            });
 
             editor.init(domain);
             _domainEditors.add(editor);
@@ -158,8 +161,13 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
         _rootPanel.add(saveBarBottom);
 
         _closeHandlerManager = Window.addWindowClosingHandler(new AssayCloseListener());
+        _showing = false;
     }
 
+    private boolean isShowing()
+    {
+        return _showing;
+    }
 
     protected void addErrorMessage(String message)
     {
