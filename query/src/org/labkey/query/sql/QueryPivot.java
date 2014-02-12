@@ -66,7 +66,6 @@ import java.util.Set;
  */
 public class QueryPivot extends QueryRelation
 {
-    final boolean usePivotForeignKey = false;
     final QuerySelect _from;
     final AliasManager _manager;
     final Map<FieldKey,String> pivotColumnAliases = new HashMap<>();
@@ -465,10 +464,7 @@ public class QueryPivot extends QueryRelation
             _s.copyColumnAttributesTo(to);
             if (_aggregates.containsKey(_s.getFieldKey().getName()))
             {
-                if (usePivotForeignKey)
-                    to.setFk(new PivotForeignKey(_s));
-                else
-                    to.setHidden(true);
+                to.setHidden(true);
             }
         }
     }
@@ -507,14 +503,14 @@ public class QueryPivot extends QueryRelation
                 RelationColumn p = new PivotColumn(s);
                 _columns.put(name, p);
 
-                if (!usePivotForeignKey && _aggregates.containsKey(name))
+                if (_aggregates.containsKey(name))
                 {
                     aggs.add(entry);
                 }
             }
 
             // Add the pivoted aggregate columns grouped by pivot value
-            if (!usePivotForeignKey && !aggs.isEmpty())
+            if (!aggs.isEmpty())
             {
                 for (String pivotValue : pivotValues.keySet())
                 {
@@ -632,9 +628,7 @@ public class QueryPivot extends QueryRelation
                 to.setCrosstabColumnDimension(agg.getFieldKey());
                 to.setCrosstabColumnMember(member);
 
-                if (usePivotForeignKey)
-                    to.setLabel(null);
-                else if (_aggregates.size() == 1)
+                if (_aggregates.size() == 1)
                     to.setLabel(name);
                 else
                 {
@@ -813,43 +807,13 @@ public class QueryPivot extends QueryRelation
         @Override
         public List<FieldKey> getDefaultVisibleColumns()
         {
-            Map<String, IConstant> pivotValues;
-            try
-            {
-                pivotValues = getPivotValues();
-            }
-            catch (SQLException x)
-            {
-                pivotValues = Collections.EMPTY_MAP;
-            }
-
             ArrayList<FieldKey> list = new ArrayList<>();
 
-            if (usePivotForeignKey)
+            for (RelationColumn col : getAllColumns().values())
             {
-                for (RelationColumn col : _select.values())
-                {
-                    if (_aggregates.containsKey(col.getFieldKey().getName()))
-                    {
-                        for (String displayField : pivotValues.keySet())
-                        {
-                            list.add(new FieldKey(col.getFieldKey(), displayField));
-                        }
-                    }
-                    else
-                    {
-                        list.add(col.getFieldKey());
-                    }
-                }
-            }
-            else
-            {
-                for (RelationColumn col : getAllColumns().values())
-                {
-                    if (_aggregates.containsKey(col.getFieldKey().getName()))
-                        continue;
-                    list.add(col.getFieldKey());
-                }
+                if (_aggregates.containsKey(col.getFieldKey().getName()))
+                    continue;
+                list.add(col.getFieldKey());
             }
             return list;
         }
