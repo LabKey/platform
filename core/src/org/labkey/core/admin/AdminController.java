@@ -1277,6 +1277,12 @@ public class AdminController extends SpringActionController
 
             if (null != form.getBaseServerUrl())
             {
+                if (form.isSslRequired() && !form.getBaseServerUrl().startsWith("https"))
+                {
+                    errors.reject(ERROR_MSG, "Invalid Base Server URL. SSL connection is required. Consider https://.");
+                    return false;
+                }
+
                 try
                 {
                     props.setBaseServerUrl(form.getBaseServerUrl());
