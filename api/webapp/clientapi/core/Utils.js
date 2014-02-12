@@ -209,7 +209,7 @@ LABKEY.Utils = new function()
          */
         getDateAltFormats : function()
         {
-            return LABKEY.useMDYDateParsing ? DATEALTFORMATS_DayMonth : DATEALTFORMATS_MonthDay;
+            return LABKEY.useMDYDateParsing ? DATEALTFORMATS_MonthDay : DATEALTFORMATS_DayMonth;
         },
 
         /**
