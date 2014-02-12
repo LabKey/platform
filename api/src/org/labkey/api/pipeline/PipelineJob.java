@@ -66,8 +66,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -914,12 +914,13 @@ abstract public class PipelineJob extends Job implements Serializable
 
     /**
      * Override and return instances of sub-jobs for a splittable job.
+     * Note that callers may modify this list to indicate that split jobs have completed their work.
      *
      * @return sub-jobs requiring separate processing
      */
     public List<PipelineJob> createSplitJobs()
     {
-        return Collections.singletonList(this);
+        return new ArrayList<>(Arrays.asList(this));
     }
 
     /**
