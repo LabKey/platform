@@ -416,13 +416,13 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                             // width/height since the image has not been loaded when it calculates the layout.
                             if (!this.thumbnail) {
                                 this.thumbnail = new Image();
+                                this.thumbnail.style.width = 'auto';
+                                this.thumbnail.style.height = 'auto';
                                 var t = this.thumbnail; // needed for callback closure.
                                 this.thumbnail.onload = function(){
                                     var thumbnailDiv = panel.getEl().dom.querySelector('.thumbnail');
                                     thumbnailDiv.appendChild(t);
                                     panel.doLayout();
-                                    t.width = thumbnailDiv.offsetWidth;
-                                    t.height = thumbnailDiv.offsetHeight;
                                 };
                                 this.thumbnail.src = this.data.thumbnail;
                             }

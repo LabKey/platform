@@ -544,12 +544,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
                         if (rec) {
                             var thumbnail = new Image();
+                            thumbnail.style.width = 'auto';
+                            thumbnail.style.height = 'auto';
                             thumbnail.onload = function(){
                                 var thumbnailDiv = tip.getEl().dom.querySelector('.thumbnail');
                                 thumbnailDiv.appendChild(thumbnail);
                                 tip.doLayout();
-                                thumbnail.width = thumbnailDiv.offsetWidth;
-                                thumbnail.height = thumbnailDiv.offsetHeight;
                             };
                             thumbnail.src = rec.get('thumbnail');
                         }
