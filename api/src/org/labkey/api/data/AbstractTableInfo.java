@@ -391,8 +391,12 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
     {
         for (ColumnInfo col : getColumns())
         {
-            if (col.getPropertyName().equalsIgnoreCase(name))
-                return col;
+            if (null != col)        // #19358
+            {
+                String propName = col.getPropertyName();
+                if (null != propName && propName.equalsIgnoreCase(name))
+                    return col;
+            }
         }
         return null;
     }
