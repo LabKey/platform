@@ -402,6 +402,11 @@ public class AnalysisController extends SpringActionController
         private String initStatusFile(AbstractFileAnalysisProtocol protocol, File dirData, File dirAnalysis,
                                   String fileInputName, boolean statusSingle)
         {
+            if (protocol == null)
+            {
+                return UNKNOWN_STATUS;
+            }
+
             File fileStatus = null;
 
             if (!statusSingle)
@@ -411,10 +416,6 @@ public class AnalysisController extends SpringActionController
             }
             else if (fileInputName != null)
             {
-                if (protocol == null)
-                {
-                    return UNKNOWN_STATUS;
-                }
                 File fileInput = new File(dirData, fileInputName);
                 FileType ft = protocol.findInputType(fileInput);
                 if (ft != null)
