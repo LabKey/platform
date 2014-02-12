@@ -62,6 +62,12 @@
     else
     {
 %>
+<!-- 19142: Browser action tooltips are clipped in IE -->
+<style type="text/css">
+    #ext-quicktips-tip-innerCt {
+        white-space: nowrap;
+    }
+</style>
 <!-- Set a fixed height for this div so that the whole page doesn't relayout when the file browser renders into it -->
 <div id="<%=h(bean.getContentId())%>"></div>
 <script type="text/javascript">

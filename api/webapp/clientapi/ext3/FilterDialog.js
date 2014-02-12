@@ -1141,6 +1141,7 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
     onViewReady : function() {
         if (this.gridReady && this.storeReady) {
             var grid = Ext.getCmp(this.gridID);
+            this.hideMask();
 
             if (grid) {
 
@@ -1252,9 +1253,28 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             xtype: 'panel',
             width: this.width - 40, //prevent horizontal scroll
             bodyStyle: 'padding-left: 5px;',
-            items: [ this.getGridConfig(0) ]
+            items: [ this.getGridConfig(0) ],
+            listeners : {
+                afterrender : {
+                    fn: this.showMask,
+                    scope: this,
+                    single: true
+                }
+            }
         }];
         panel.add(toAdd);
+    },
+
+    showMask : function() {
+        if (!this.gridReady && this.getEl()) {
+            this.getEl().mask('Loading...');
+        }
+    },
+
+    hideMask : function() {
+        if (this.getEl()) {
+            this.getEl().unmask();
+        }
     }
 });
 
