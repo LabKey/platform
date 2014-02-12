@@ -793,6 +793,7 @@ public class QueryPivot extends QueryRelation
 
         SQLFragment _sqlPivot = null;
 
+        @NotNull
         @Override
         public SQLFragment getFromSQL(String pivotTableAlias)
         {
