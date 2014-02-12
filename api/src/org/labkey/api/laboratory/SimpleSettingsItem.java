@@ -18,6 +18,7 @@ package org.labkey.api.laboratory;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.laboratory.security.LaboratoryAdminPermission;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
@@ -30,105 +31,43 @@ import org.labkey.api.view.ActionURL;
  * Date: 10/1/12
  * Time: 1:40 PM
  */
-public class SimpleSettingsItem extends AbstractQueryNavItem implements SettingsNavItem
+public class SimpleSettingsItem extends QueryImportNavItem implements SettingsNavItem
 {
-    String _schema;
-    String _query;
-    String _category;
-    String _title;
-    DataProvider _provider;
-
-
-    public SimpleSettingsItem(DataProvider provider, String schema, String query, String category, String title)
+    public SimpleSettingsItem(DataProvider provider, String schema, String query, String category, String label)
     {
-        _schema = schema;
-        _query = query;
-        _category = category;
-        _title = title;
-        _provider = provider;
+        super(provider, schema, query, category, label);
     }
 
-    public SimpleSettingsItem(DataProvider provider, String schema, String query, String category)
-    {
-        _schema = schema;
-        _query = query;
-        _category = category;
-        _title = query;
-        _provider = provider;
-    }
-
-    public String getSchema()
-    {
-        return _schema;
-    }
-
-    public String getQuery()
-    {
-        return _query;
-    }
-
-    public String getName()
-    {
-        return _query;
-    }
-
-    public String getLabel()
-    {
-        return _title;
-    }
-
-    public String getCategory()
-    {
-        return _category;
-    }
-
+    @Override
     public boolean isImportIntoWorkbooks(Container c, User u)
     {
         return false;
     }
 
+    @Override
     public boolean getDefaultVisibility(Container c, User u)
     {
         return true;
     }
 
+    @Override
+    public Container getTargetContainer(Container c)
+    {
+        Container target = super.getTargetContainer(c);
+        if (target.isRoot())
+            target = ContainerManager.getSharedContainer();
+
+        return target;
+    }
+
+    @Override
     public ActionURL getImportUrl(Container c, User u)
     {
-        if (c.isRoot())
-            c = ContainerManager.getSharedContainer();
+        if (!getTargetContainer(c).hasPermission(u, LaboratoryAdminPermission.class))
+        {
+            return null;
+        }
 
-        return c.hasPermission(u, AdminPermission.class) ? PageFlowUtil.urlProvider(LaboratoryUrls.class).getImportUrl(c, u, _schema, _query) : null;
-    }
-
-    public ActionURL getSearchUrl(Container c, User u)
-    {
-        if (c.isRoot())
-            c = ContainerManager.getSharedContainer();
-
-        return PageFlowUtil.urlProvider(LaboratoryUrls.class).getSearchUrl(c, _schema, _query);
-    }
-
-    public ActionURL getBrowseUrl(Container c, User u)
-    {
-        if (c.isRoot())
-            c = ContainerManager.getSharedContainer();
-
-        ActionURL url = QueryService.get().urlFor(u, c, QueryAction.executeQuery, _schema, _query);
-        return appendDefaultView(c, url, "query");
-    }
-
-    public JSONObject toJSON(Container c, User u)
-    {
-        JSONObject json = super.toJSON(c, u);
-
-        json.put("schemaName", _schema);
-        json.put("queryName", _query);
-
-        return json;
-    }
-
-    public DataProvider getDataProvider()
-    {
-        return _provider;
+        return super.getImportUrl(c, u);
     }
 }

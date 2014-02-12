@@ -63,4 +63,6 @@ abstract public class LDKService
     abstract public boolean isNaturalizeInstalled();
 
     abstract public void logPerfMetric(Container c, User u, String type, String comment, Double value);
+
+    abstract public void registerContainerScopedTable(String dbSchemaName, String tableName, String pseudoPk);
 }

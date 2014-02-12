@@ -20,57 +20,54 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-
-import java.util.ArrayList;
 
 /**
  * User: bimber
  * Date: 10/1/12
  * Time: 12:27 PM
  */
-public class SimpleQueryNavItem extends AbstractQueryNavItem
+public class QueryImportNavItem extends AbstractImportingNavItem
 {
+    private Container _targetContainer = null;
     private String _schema;
     private String _query;
-    private String _label;
-    private String _category;
-    private DataProvider _dataProvider;
     private boolean _visible = true;
 
-    public SimpleQueryNavItem(DataProvider provider, String schema, String query, String category)
+    public QueryImportNavItem(DataProvider provider, String schema, String query, String category)
     {
         this(provider, schema, query, category, query);
     }
 
-    public SimpleQueryNavItem(DataProvider provider, String schema, String query, String category, String label)
+    public QueryImportNavItem(DataProvider provider, String schema, String query, String category, String label)
     {
+        this(provider, null, schema, query, category, label);
+    }
+
+    public QueryImportNavItem(DataProvider provider, Container targetContainer, String schema, String query, String category, String label)
+    {
+        super(provider, query, label, category);
         _schema = schema;
         _query = query;
-        _category = category;
-        _dataProvider = provider;
-        _label = label;
+        _targetContainer = targetContainer;
     }
 
-    public String getName()
+    @Override
+    public Container getTargetContainer(Container c)
     {
-        return _query;
+        return _targetContainer == null ? c : _targetContainer;
     }
 
-    public String getLabel()
+    @Override
+    public void setTargetContainer(Container targetContainer)
     {
-        return _label;
-    }
-
-    public String getCategory()
-    {
-        return _category;
+        _targetContainer = targetContainer;
     }
 
     @Override
@@ -94,73 +91,57 @@ public class SimpleQueryNavItem extends AbstractQueryNavItem
 
     protected QueryDefinition getQueryDef(Container c, User u)
     {
-        UserSchema us = QueryService.get().getUserSchema(u, c, getSchema());
+        UserSchema us = QueryService.get().getUserSchema(u, getTargetContainer(c), _schema);
         if (us == null)
             return null;
 
         return us.getQueryDefForTable(getQuery());
     }
 
-    public TableInfo getTableInfo(Container c, User u)
+    protected TableInfo getTableInfo(Container c, User u)
     {
-        UserSchema us = QueryService.get().getUserSchema(u, c, _schema);
+        UserSchema us = QueryService.get().getUserSchema(u, getTargetContainer(c), _schema);
         if (us == null)
+        {
+            _log.error("Unable to find schema: " + _schema + " in container: " + getTargetContainer(c).getPath());
             return null;
+        }
 
         return us.getTable(_query);
-//        QueryDefinition qd = getQueryDef(c, u);
-//        if (qd == null)
-//            return null;
-//
-//        if (!qd.isTableQueryDefinition())
-//            return null;
-//
-//        return qd.getTable(new ArrayList<QueryException>(), false);
     }
 
+    @Override
     public boolean getDefaultVisibility(Container c, User u)
     {
         return _visible;
     }
 
+    @Override
     public ActionURL getImportUrl(Container c, User u)
     {
-        try
-        {
-            TableInfo ti = getTableInfo(c, u);
-            if (ti == null)
-                return null;
-
-            return ti.getImportDataURL(c);
-
-        }
-        catch (QueryParseException e)
-        {
-            return null;
-        }
+        return PageFlowUtil.urlProvider(LaboratoryUrls.class).getImportUrl(getTargetContainer(c), u, getSchema(), getQuery());
     }
 
+    @Override
     public ActionURL getSearchUrl(Container c, User u)
     {
-        return PageFlowUtil.urlProvider(LaboratoryUrls.class).getSearchUrl(c, _schema, _query);
+        return PageFlowUtil.urlProvider(LaboratoryUrls.class).getSearchUrl(getTargetContainer(c), _schema, _query);
     }
 
+    @Override
     public ActionURL getBrowseUrl(Container c, User u)
     {
         try
         {
-            ActionURL url = QueryService.get().urlFor(u, c, QueryAction.executeQuery, _schema, _query);
+            ActionURL url = QueryService.get().urlFor(u, getTargetContainer(c), QueryAction.executeQuery, _schema, _query);
             return appendDefaultView(c, url, "query");
         }
         catch (QueryParseException e)
         {
+            _log.error(e.getMessage(), e);
+
             return null;
         }
-    }
-
-    public DataProvider getDataProvider()
-    {
-        return _dataProvider;
     }
 
     public String getSchema()
@@ -180,6 +161,17 @@ public class SimpleQueryNavItem extends AbstractQueryNavItem
 
     protected boolean isAvailable(Container c, User u)
     {
-        return QueryService.get().getQueryDef(u, c, getSchema(), getQuery()) != null;
+        return QueryService.get().getQueryDef(u, getTargetContainer(c), getSchema(), getQuery()) != null;
+    }
+
+    @Override
+    public JSONObject toJSON(Container c, User u)
+    {
+        JSONObject json = super.toJSON(c, u);
+
+        json.put("schemaName", _schema);
+        json.put("queryName", _query);
+
+        return json;
     }
 }

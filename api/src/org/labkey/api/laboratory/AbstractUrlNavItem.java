@@ -27,54 +27,58 @@ import org.labkey.api.view.ActionURL;
  * Date: 4/4/13
  * Time: 9:39 AM
  */
-public class SimpleUrlNavItem extends AbstractNavItem
+abstract public class AbstractUrlNavItem extends AbstractNavItem
 {
     protected DataProvider _provider;
-    protected String _label;
-    protected String _itemText;
-    protected DetailsURL _itemUrl = null;
-    protected String _urlString = null;
-
+    protected String _labelText = null;
+    protected String _itemText = null;
     protected String _category;
+    protected DetailsURL _detailsURL = null;
+    protected String _staticURL = null;
 
-    public SimpleUrlNavItem(DataProvider provider, String label, String itemText, DetailsURL itemUrl, String category)
+    public AbstractUrlNavItem(DataProvider provider, String labelText, String itemText, DetailsURL detailsURL, String category)
     {
         _provider = provider;
-        _label = label;
+        _labelText = labelText;
         _itemText = itemText;
-        _itemUrl = itemUrl;
+        _detailsURL = detailsURL;
         _category = category;
     }
 
-    public SimpleUrlNavItem(DataProvider provider, String label, String itemText, String urlString, String category)
+    public AbstractUrlNavItem(DataProvider provider, String labelText, String itemText, String staticURL, String category)
     {
         _provider = provider;
-        _label = label;
+        _labelText = labelText;
         _itemText = itemText;
-        _urlString = urlString;
+        _staticURL = staticURL;
         _category = category;
     }
 
+    @Override
     public String getName()
     {
-        return _label;
+        return _labelText == null ? _itemText : _labelText;
     }
 
+    @Override
     public String getLabel()
     {
-        return _label;
+        return getName();
     }
 
+    @Override
     public String getCategory()
     {
         return _category;
     }
 
+    @Override
     public String getRendererName()
     {
-        return "defaultRenderer";
+        return _itemText == null ? "linkWithoutLabel" : "linkWithLabel";
     }
 
+    @Override
     public boolean getDefaultVisibility(Container c, User u)
     {
         return true;
@@ -82,28 +86,36 @@ public class SimpleUrlNavItem extends AbstractNavItem
 
     protected ActionURL getActionURL(Container c, User u)
     {
-        if (_itemUrl != null)
-            return _itemUrl.copy(c).getActionURL();
+        if (_detailsURL != null)
+            return _detailsURL.copy(getTargetContainer(c)).getActionURL();
 
         return null;
     }
 
+    @Override
     public DataProvider getDataProvider()
     {
         return _provider;
     }
 
+    @Override
     public JSONObject toJSON(Container c, User u)
     {
         JSONObject ret = super.toJSON(c, u);
         ret.put("itemText", _itemText);
+        ret.put("label", getLabel());
 
         ActionURL url = getActionURL(c, u);
         if (url != null)
             ret.put("urlConfig", getUrlObject(url));
         else
-            ret.put("url", _urlString);
+            ret.put("url", _staticURL);
 
         return ret;
+    }
+
+    public void setTargetContainer(Container c)
+    {
+        _targetContainer = c;
     }
 }

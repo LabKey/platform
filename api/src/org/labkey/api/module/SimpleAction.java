@@ -18,6 +18,7 @@ package org.labkey.api.module;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.NavTrailAction;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
@@ -44,7 +45,7 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
         return r != null && r.isFile() ? new ModuleHtmlView(r, webpart) : null;
     }
 
-    public enum Permission
+    public enum PermissionEnum
     {
         login(0),
         read(ACL.PERM_READ),
@@ -56,7 +57,7 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
 
         private int _value = 0;
 
-        Permission(int value)
+        PermissionEnum(int value)
         {
             _value = value;
         }
@@ -127,6 +128,20 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
                 throw new ForbiddenProjectException();
             else
                 throw new UnauthorizedException("You do not have permission to view this content.");
+        }
+
+        if (null != _view && !_view.getRequiredPermissionClasses().isEmpty())
+        {
+            for (Class<? extends Permission> perm : _view.getRequiredPermissionClasses())
+            {
+                if (!container.hasPermission(user, perm))
+                {
+                    if (container.isForbiddenProject(user))
+                        throw new ForbiddenProjectException();
+                    else
+                        throw new UnauthorizedException("You do not have permission to view this content.");
+                }
+            }
         }
         
         if (!getViewContext().hasAgreedToTermsOfUse())

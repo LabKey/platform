@@ -1385,6 +1385,18 @@ public class SecurityManager
         return null != principal ? principal : getGroup(id);
     }
 
+    /** This will preferentially return project users/groups.  If no principal is found at the project level and includeSiteGroups=true, it will check site groups */
+    public static UserPrincipal getPrincipal(String name, Container container, boolean includeSiteGroups)
+    {
+        UserPrincipal up = getPrincipal(name, container);
+        if (up != null || !includeSiteGroups)
+        {
+            return up;
+        }
+
+        return getPrincipal(name, null);
+    }
+
     public static UserPrincipal getPrincipal(String name, Container container)
     {
         Integer id = getGroupId(container, name, false);

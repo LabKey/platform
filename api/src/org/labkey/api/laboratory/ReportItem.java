@@ -15,26 +15,20 @@
  */
 package org.labkey.api.laboratory;
 
-import org.apache.log4j.Logger;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.PropertyManager;
-import org.labkey.api.ldk.AbstractNavItem;
-import org.labkey.api.ldk.NavItem;
 import org.labkey.api.security.User;
-
-import java.util.Map;
 
 /**
  * User: bimber
  * Date: 5/5/13
  * Time: 9:41 AM
  */
-public class ReportItem extends SimpleQueryNavItem
+public class ReportItem extends QueryImportNavItem
 {
-    public ReportItem(DataProvider provider, String schema, String query, String category, String label)
+    public ReportItem(DataProvider provider, Container targetContainer, String schema, String query, String category, String label)
     {
-        super(provider, schema, query, category, label);
+        super(provider, targetContainer, schema, query, category, label);
     }
 
     public ReportItem(DataProvider provider, String schema, String query, String category)

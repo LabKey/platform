@@ -50,6 +50,8 @@ public interface DataEntryForm
 
     abstract public String getJavascriptClass();
 
+    abstract public JSONObject toJSON(boolean includeFormElements);
+
     abstract public JSONObject toJSON();
 
     abstract public List<FormSection> getFormSections();

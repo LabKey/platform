@@ -25,7 +25,9 @@ import org.labkey.api.ehr.security.EHRDataEntryPermission;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.study.DataSetTable;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.template.ClientDependency;
@@ -196,16 +198,32 @@ abstract public class AbstractFormSection implements FormSection
 
     public boolean hasPermission(DataEntryFormContext ctx, Class<? extends Permission> perm)
     {
-        for (TableInfo ti : getTables(ctx))
+        Map<String, DataSet> dataSetMap = ctx.getDatasetMap();
+        for (Pair<String, String> pair : getTableNames())
         {
-            if (AbstractEHRPermission.class.isAssignableFrom(perm) && !(ti instanceof DataSetTable))
+            //datasets can be tested directly
+            if ("study".equalsIgnoreCase(pair.first) && dataSetMap.containsKey(pair.second))
             {
-                return ctx.getContainer().hasPermission(ctx.getUser(), EHRDataEntryPermission.class);
+                DataSet ds = dataSetMap.get(pair.second);
+                if (!ds.getPermissions(ctx.getUser()).contains(perm))
+                    return false;
+
             }
             else
             {
-                if (!ti.hasPermission(ctx.getUser(), perm))
-                    return false;
+                // non-datasets are a little awkward.  unlikle datasets we cannot assign permissions directly,
+                // so this is a best guess.  if this is an EHR-specific permission, like EHRInProgressInsertPermission, we default back to
+                // checking EHRDataEntryPermission at the container level.  otherwise we construct the table info and test it directly
+                // the latter is expensive and unfortunate, but it does allow CustomPermissionTable to function properly.
+                if (AbstractEHRPermission.class.isAssignableFrom(perm))
+                {
+                    if (!ctx.getContainer().hasPermission(ctx.getUser(), EHRDataEntryPermission.class))
+                        return false;
+
+                    //finally check InsertPermission, which will be required for CustomPermissionTable
+                    TableInfo ti = ctx.getTable(pair.first, pair.second);
+                    return ti.hasPermission(ctx.getUser(), InsertPermission.class);
+                }
             }
         }
 
@@ -237,7 +255,8 @@ abstract public class AbstractFormSection implements FormSection
         return tables;
     }
 
-    public JSONObject toJSON(DataEntryFormContext ctx)
+    @Override
+    public JSONObject toJSON(DataEntryFormContext ctx, boolean includeFormElements)
     {
         JSONObject json = new JSONObject();
 
@@ -248,7 +267,10 @@ abstract public class AbstractFormSection implements FormSection
         json.put("clientModelClass", getClientModelClass());
         json.put("clientStoreClass", getClientStoreClass());
         json.put("location", getLocation().name());
-        json.put("fieldConfigs", getFieldConfigs(ctx));
+
+        if (includeFormElements)
+            json.put("fieldConfigs", getFieldConfigs(ctx));
+
         json.put("supportsTemplates", _templateMode != TEMPLATE_MODE.NONE);
         json.put("configSources", getConfigSources());
         json.put("tbarButtons", getTbarButtons());

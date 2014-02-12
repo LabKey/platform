@@ -15,27 +15,17 @@
  */
 package org.labkey.api.laboratory;
 
-import org.json.JSONObject;
-import org.labkey.api.data.Container;
-import org.labkey.api.ldk.AbstractNavItem;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
 
 /**
  * User: bimber
  * Date: 11/21/12
  * Time: 5:52 PM
  */
-public class SingleNavItem extends SimpleUrlNavItem
+public class StaticURLNavItem extends AbstractUrlNavItem
 {
-    public SingleNavItem(DataProvider provider, String label, String itemText, DetailsURL itemUrl, String category)
+    public StaticURLNavItem(DataProvider provider, String label, String itemText, String urlString, String category)
     {
-        super(provider, label, itemText, itemUrl, category);
-    }
-
-    public String getRendererName()
-    {
-        return "singleItemRenderer";
+        super(provider, label, itemText, urlString, category);
     }
 }

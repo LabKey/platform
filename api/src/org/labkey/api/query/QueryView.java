@@ -419,6 +419,7 @@ public class QueryView extends WebPartView<Object>
         {
             case detailsQueryRow:
             case insertQueryRow:
+            case importData:
             case updateQueryRow:
             case deleteQueryRows:
             {
@@ -476,6 +477,7 @@ public class QueryView extends WebPartView<Object>
                 break;
             case detailsQueryRow:
             case insertQueryRow:
+            case importData:
             case updateQueryRow:
             case deleteQueryRows:
                 ret.addReturnURL(getReturnURL());

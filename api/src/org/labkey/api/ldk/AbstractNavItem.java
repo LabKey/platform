@@ -15,9 +15,13 @@
  */
 package org.labkey.api.ldk;
 
+import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.ldk.NavItem;
 import org.labkey.api.security.User;
@@ -32,8 +36,12 @@ import java.util.Map;
  */
 abstract public class AbstractNavItem implements NavItem
 {
-    protected String _ownerKey;
+    protected static final Logger _log = Logger.getLogger(AbstractNavItem.class);
 
+    protected String _ownerKey = null;
+    protected Container _targetContainer = null;
+
+    @Override
     public JSONObject toJSON(Container c, User u)
     {
         JSONObject ret = new JSONObject();
@@ -45,6 +53,7 @@ abstract public class AbstractNavItem implements NavItem
         ret.put("providerName", getDataProvider() == null ? null : getDataProvider().getName());
         ret.put("key", getPropertyManagerKey());
         ret.put("ownerKey", getOwnerKey());
+        ret.put("targetContainer", (_targetContainer == null ? null : _targetContainer.getPath()));
 
         return ret;
     }
@@ -62,6 +71,7 @@ abstract public class AbstractNavItem implements NavItem
         return json;
     }
 
+    @Override
     public boolean isVisible(Container c, User u)
     {
         Container targetContainer = c.isWorkbook() ? c.getParent() : c;
@@ -78,6 +88,13 @@ abstract public class AbstractNavItem implements NavItem
         return getDefaultVisibility(targetContainer, u);
     }
 
+    @NotNull
+    public Container getTargetContainer(Container c)
+    {
+        return _targetContainer == null ? c : null;
+    }
+
+    @Override
     public String getPropertyManagerKey()
     {
         return getDataProvider().getKey() + "||" + getCategory() + "||" + getName() + "||" + getLabel();

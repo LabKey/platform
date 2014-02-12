@@ -22,6 +22,7 @@ import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
@@ -33,6 +34,8 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.data.xml.view.DependenciesType;
 import org.labkey.data.xml.view.DependencyType;
 import org.labkey.data.xml.view.ModuleContextType;
+import org.labkey.data.xml.view.PermissionClassListType;
+import org.labkey.data.xml.view.PermissionClassType;
 import org.labkey.data.xml.view.PermissionType;
 import org.labkey.data.xml.view.PermissionsListType;
 import org.labkey.data.xml.view.RequiredModuleType;
@@ -69,6 +72,7 @@ public class ModuleHtmlViewDefinition
 
     private String _html;
     private int _requiredPerms = ACL.PERM_READ;  //8550: Default perms for simple module views should be read
+    private Set<Class<? extends Permission>> _requiredPermissionClasses = new HashSet<>();
     private boolean _requiresLogin = false;
     private Set<ClientDependency> _clientDependencies = new LinkedHashSet<>();
     private ViewType _viewDef = null;
@@ -155,21 +159,47 @@ public class ModuleHtmlViewDefinition
     protected void calculatePermissions()
     {
         PermissionsListType permsList = _viewDef.getPermissions();
-        if (null == permsList)
-            return;
-
-        PermissionType[] perms = permsList.getPermissionArray();
-        if (null == perms)
-            return;
-
-        for (PermissionType permEntry : perms)
+        if (permsList != null && permsList.getPermissionArray() != null)
         {
-            SimpleAction.Permission perm = SimpleAction.Permission.valueOf(permEntry.getName().toString());
+            for (PermissionType permEntry : permsList.getPermissionArray())
+            {
+                SimpleAction.PermissionEnum perm = SimpleAction.PermissionEnum.valueOf(permEntry.getName().toString());
 
-            if (SimpleAction.Permission.login == perm)
-                _requiresLogin = true;
-            else if (null != perm)
-                _requiredPerms |= perm.toInt();
+
+                if (SimpleAction.PermissionEnum.login == perm)
+                    _requiresLogin = true;
+                else if (null != perm)
+                    _requiredPerms |= perm.toInt();
+            }
+        }
+
+        PermissionClassListType permClassList = _viewDef.getPermissionClasses();
+        if (permClassList != null && permClassList.getPermissionClassArray() != null)
+        {
+            for (PermissionClassType className : permClassList.getPermissionClassArray())
+            {
+                addPermissionClass(className.getName());
+            }
+        }
+    }
+
+    private void addPermissionClass(String permissionClassName)
+    {
+        try
+        {
+            Class c = Class.forName(permissionClassName);
+            if (Permission.class.isAssignableFrom(c))
+            {
+                _requiredPermissionClasses.add((Class<? extends Permission>)c);
+            }
+            else
+            {
+                _log.warn("Resolved class " + permissionClassName + " from view: " + getName() + ", but it was not of the expected type, " + Permission.class);
+            }
+        }
+        catch (ClassNotFoundException e)
+        {
+            _log.warn("Could not find permission class " + permissionClassName + " for view: " + getName());
         }
     }
 
@@ -238,6 +268,11 @@ public class ModuleHtmlViewDefinition
     {
         return _requiredPerms;
     }
+    
+    public Set<Class<? extends Permission>> getRequiredPermissionClasses()
+    {
+        return _requiredPermissionClasses;    
+    }           
 
     public boolean isRequiresLogin()
     {

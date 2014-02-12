@@ -20,7 +20,7 @@ package org.labkey.api.laboratory;
  * Date: 10/7/12
  * Time: 10:14 AM
  */
-public interface SettingsNavItem extends QueryNavItem
+public interface SettingsNavItem extends ImportingNavItem
 {
 
 }

@@ -19,16 +19,21 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.ehr.security.EHRDataEntryPermission;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleProperty;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.study.DataSetTable;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.util.ArrayList;
@@ -57,6 +62,7 @@ public class AbstractDataEntryForm implements DataEntryForm
     private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
     private AbstractFormSection.TEMPLATE_MODE _templateMode = AbstractFormSection.TEMPLATE_MODE.MULTI;
     private Module _owner;
+    private boolean _displayReviewRequired = false;
 
     public AbstractDataEntryForm(DataEntryFormContext ctx, Module owner, String name, String label, String category, List<FormSection> sections)
     {
@@ -76,6 +82,11 @@ public class AbstractDataEntryForm implements DataEntryForm
     public String getLabel()
     {
         return _label;
+    }
+
+    protected void setDisplayReviewRequired(boolean displayReviewRequired)
+    {
+        _displayReviewRequired = displayReviewRequired;
     }
 
     protected void setLabel(String label)
@@ -144,6 +155,11 @@ public class AbstractDataEntryForm implements DataEntryForm
 
     public JSONObject toJSON()
     {
+        return toJSON(true);
+    }
+
+    public JSONObject toJSON(boolean includeFormElements)
+    {
         JSONObject json = new JSONObject();
 
         json.put("name", getName());
@@ -157,15 +173,36 @@ public class AbstractDataEntryForm implements DataEntryForm
         JSONArray sections = new JSONArray();
         for (FormSection section : getFormSections())
         {
-            sections.put(section.toJSON(_ctx));
+            sections.put(section.toJSON(_ctx, includeFormElements));
         }
         json.put("sections", sections);
         json.put("permissions", getPermissionMap());
         json.put("buttons", getButtonConfigs());
         json.put("moreActionButtons", getMoreActionButtonConfigs());
         json.put("canInsert", canInsert());
+        json.put("defaultAssignedTo", getDefaultAssignedTo());
+        json.put("defaultReviewRequiredPrincipal", getDefaultReviewRequiredPrincipal());
 
         return json;
+    }
+
+    protected Integer getDefaultAssignedTo()
+    {
+        return _ctx.getUser().getUserId();
+    }
+
+    protected Integer getDefaultReviewRequiredPrincipal()
+    {
+        ModuleProperty prop = ModuleLoader.getInstance().getModule("ehr").getModuleProperties().get("EHRSubmitForReviewPrincipal");
+        String stringVal = prop.getEffectiveValue(_ctx.getContainer());
+        if (stringVal != null)
+        {
+            UserPrincipal up = SecurityManager.getPrincipal(stringVal, _ctx.getContainer(), true);
+            if (up != null)
+                return up.getUserId();
+        }
+
+        return null;
     }
 
     protected boolean canInsert()
@@ -191,6 +228,10 @@ public class AbstractDataEntryForm implements DataEntryForm
         List<String> defaultButtons = new ArrayList<String>();
         defaultButtons.add("SAVEDRAFT");
         defaultButtons.add("CLOSE");
+
+        if (_displayReviewRequired)
+            defaultButtons.add("REVIEW");
+
         defaultButtons.add("SUBMIT");
 
         return defaultButtons;
@@ -209,7 +250,9 @@ public class AbstractDataEntryForm implements DataEntryForm
         if (_templateMode.getFormBtn() != null)
             defaultButtons.add(_templateMode.getFormBtn());
 
-        defaultButtons.add("REVIEW");
+        if (!_displayReviewRequired)
+            defaultButtons.add("REVIEW");
+
         defaultButtons.add("SUBMITANDNEXT");
         defaultButtons.add("FORCESUBMIT");
         defaultButtons.add("DISCARD");
@@ -220,10 +263,12 @@ public class AbstractDataEntryForm implements DataEntryForm
     private Map<String, Map<String, Map<String, String>>> getPermissionMap()
     {
         Map<String, Map<String, Map<String, String>>> permissionMap = new HashMap<>();
-        for (TableInfo ti : getTables())
+        Map<String, DataSet> dataSetMap = getCtx().getDatasetMap();
+
+        for (Pair<String, String> pair : getTableNames())
         {
-            String schemaName= ti.getPublicSchemaName();
-            String queryName = ti.getPublicName();
+            String schemaName= pair.first;
+            String queryName = pair.second;
 
             Map<String, Map<String, String>> schemaPerms = permissionMap.get(schemaName);
             if (schemaPerms == null)
@@ -234,10 +279,11 @@ public class AbstractDataEntryForm implements DataEntryForm
                 queryPerms = new HashMap<>();
 
             SecurityPolicy policy = null;
-            if (ti instanceof DataSetTable)
+
+            //test if this is a dataset
+            if ("study".equalsIgnoreCase(schemaName) && dataSetMap.get(queryName) != null)
             {
-                DataSetTable ds = (DataSetTable)ti;
-                policy = SecurityPolicyManager.getPolicy(ds.getDataSet());
+                policy = SecurityPolicyManager.getPolicy(dataSetMap.get(queryName));
             }
             else
             {
@@ -265,6 +311,16 @@ public class AbstractDataEntryForm implements DataEntryForm
         for (FormSection section : getFormSections())
         {
             tables.addAll(section.getTables(_ctx));
+        }
+        return tables;
+    }
+
+    public Set<Pair<String, String>> getTableNames()
+    {
+        Set<Pair<String, String>> tables = new HashSet<>();
+        for (FormSection section : getFormSections())
+        {
+            tables.addAll(section.getTableNames());
         }
         return tables;
     }

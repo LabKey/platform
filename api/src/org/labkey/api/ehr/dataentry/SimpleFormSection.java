@@ -82,9 +82,9 @@ public class SimpleFormSection extends AbstractFormSection
     }
 
     @Override
-    public JSONObject toJSON(DataEntryFormContext ctx)
+    public JSONObject toJSON(DataEntryFormContext ctx, boolean includeFormElements)
     {
-        JSONObject json = super.toJSON(ctx);
+        JSONObject json = super.toJSON(ctx, includeFormElements);
 
         JSONArray queries = new JSONArray();
 

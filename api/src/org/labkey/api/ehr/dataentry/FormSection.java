@@ -48,7 +48,7 @@ public interface FormSection
 
     abstract public Set<TableInfo> getTables(DataEntryFormContext ctx);
 
-    abstract public JSONObject toJSON(DataEntryFormContext ctx);
+    abstract public JSONObject toJSON(DataEntryFormContext ctx, boolean includeFormElements);
 
     abstract public LinkedHashSet<ClientDependency> getClientDependencies();
 

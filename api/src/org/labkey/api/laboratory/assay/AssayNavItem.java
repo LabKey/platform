@@ -18,7 +18,7 @@ package org.labkey.api.laboratory.assay;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.laboratory.AbstractQueryNavItem;
+import org.labkey.api.laboratory.AbstractImportingNavItem;
 import org.labkey.api.laboratory.LaboratoryService;
 import org.labkey.api.laboratory.LaboratoryUrls;
 import org.labkey.api.security.User;
@@ -33,27 +33,18 @@ import org.labkey.api.view.ActionURL;
  * Date: 10/1/12
  * Time: 8:46 AM
  */
-public class AssayNavItem extends AbstractQueryNavItem
+public class AssayNavItem extends AbstractImportingNavItem
 {
-    AssayDataProvider _ad;
-    AssayProvider _ap;
-    ExpProtocol _protocol;
+    private AssayDataProvider _provider;
+    private AssayProvider _ap;
+    private ExpProtocol _protocol;
 
-    public AssayNavItem(AssayDataProvider ad, ExpProtocol protocol)
+    public AssayNavItem(AssayDataProvider provider, ExpProtocol protocol)
     {
-        _ad = ad;
-        _ap = ad.getAssayProvider();
+        super(provider, protocol.getName(), protocol.getName(), LaboratoryService.NavItemCategory.data.name());
+        _ap = provider.getAssayProvider();
+        _provider = provider;
         _protocol = protocol;
-    }
-
-    public String getName()
-    {
-        return _protocol.getName();
-    }
-
-    public String getLabel()
-    {
-        return _protocol.getName();
     }
 
     @Override
@@ -62,57 +53,52 @@ public class AssayNavItem extends AbstractQueryNavItem
         return getDataProvider().getKey() + "||" + getCategory() + "||" + getName() + "||" + _protocol.getRowId();
     }
 
-    public AssayDataProvider getDataProvider()
-    {
-        return _ad;
-    }
-
-    public String getCategory()
-    {
-        return LaboratoryService.NavItemCategory.data.name();
-    }
-
+    @Override
     public boolean isImportIntoWorkbooks(Container c, User u)
     {
         return true;
     }
 
+    @Override
     public boolean getDefaultVisibility(Container c, User u)
     {
         //by default, we only enable assays if they were created in the current folder
         //if the DataProvider registered an associated module, also only turn on by default if that module is enabled
         Container toCompare = c.isWorkbook() ? c.getParent() : c;
-        return _protocol.getContainer().equals(toCompare) && getDataProvider().isModuleEnabled(c);
+        return _protocol.getContainer().equals(toCompare) && _provider.isModuleEnabled(c);
     }
 
+    @Override
     public ActionURL getImportUrl(Container c, User u)
     {
         return _ap.getImportURL(c, _protocol);
     }
 
+    @Override
     public ActionURL getSearchUrl(Container c, User u)
     {
         return PageFlowUtil.urlProvider(LaboratoryUrls.class).getSearchUrl(c, AssaySchema.NAME, _protocol.getName() + " Data");
     }
 
+    @Override
     public ActionURL getBrowseUrl(Container c, User u)
     {
         ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(c, _protocol);
         return appendDefaultView(c, url, "Data");
     }
 
-    public ActionURL getAssayRunTemplateUrl(Container c, User u)
+    private ActionURL getAssayRunTemplateUrl(Container c, User u)
     {
-        if (_ad != null && _ad.supportsRunTemplates())
+        if (_provider != null && _provider.supportsRunTemplates())
         {
             return PageFlowUtil.urlProvider(LaboratoryUrls.class).getAssayRunTemplateUrl(c, _protocol);
         }
         return null;
     }
 
-    public ActionURL getViewAssayRunTemplateUrl(Container c, User u)
+    private ActionURL getViewAssayRunTemplateUrl(Container c, User u)
     {
-        if (_ad != null && _ad.supportsRunTemplates())
+        if (_provider != null && _provider.supportsRunTemplates())
         {
             return PageFlowUtil.urlProvider(LaboratoryUrls.class).getViewAssayRunTemplateUrl(c, u, _protocol);
         }
@@ -124,7 +110,7 @@ public class AssayNavItem extends AbstractQueryNavItem
     {
         JSONObject json = super.toJSON(c, u);
         json.put("rowId", _protocol.getRowId());
-        json.put("supportsRunTemplates", _ad.supportsRunTemplates());
+        json.put("supportsRunTemplates", _provider.supportsRunTemplates());
         json.put("assayRunTemplateUrl", getUrlObject(getAssayRunTemplateUrl(c, u)));
         json.put("viewRunTemplateUrl", getUrlObject(getViewAssayRunTemplateUrl(c, u)));
 

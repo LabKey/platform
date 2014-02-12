@@ -53,9 +53,9 @@ public class NonStoreFormSection extends AbstractFormSection
     }
 
     @Override
-    public JSONObject toJSON(DataEntryFormContext ctx)
+    public JSONObject toJSON(DataEntryFormContext ctx, boolean includeFormElements)
     {
-        JSONObject ret = super.toJSON(ctx);
+        JSONObject ret = super.toJSON(ctx, includeFormElements);
         ret.put("supportsTemplates", false);
 
         return ret;

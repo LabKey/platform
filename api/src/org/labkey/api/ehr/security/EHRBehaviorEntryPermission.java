@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2014 LabKey Corporation
+ * Copyright (c) 2013 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,27 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.ehr.dataentry;
-
-import org.labkey.api.data.Container;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.security.User;
-import org.labkey.api.study.DataSet;
-
-import java.util.Map;
+package org.labkey.api.ehr.security;
 
 /**
  * User: bimber
- * Date: 12/3/13
- * Time: 1:11 PM
+ * Date: 1/17/13
+ * Time: 7:49 PM
  */
-public interface DataEntryFormContext
+public class EHRBehaviorEntryPermission extends AbstractEHRPermission
 {
-    public TableInfo getTable(String schemaName, String queryName);
-
-    public Map<String, DataSet> getDatasetMap();
-
-    public Container getContainer();
-
-    public User getUser();
+    public EHRBehaviorEntryPermission()
+    {
+        super("EHRBehaviorEntryPermission", "This is the permission required to enter behavior data");
+    }
 }

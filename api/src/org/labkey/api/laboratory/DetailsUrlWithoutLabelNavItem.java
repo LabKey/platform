@@ -16,22 +16,28 @@
 package org.labkey.api.laboratory;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.ldk.NavItem;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 
 /**
  * User: bimber
  * Date: 11/21/12
- * Time: 5:07 PM
+ * Time: 5:52 PM
  */
-public interface ImportingNavItem extends NavItem
+public class DetailsUrlWithoutLabelNavItem extends AbstractUrlNavItem
 {
-    public ActionURL getImportUrl(Container c, User u);
+    public DetailsUrlWithoutLabelNavItem(DataProvider provider, String itemText, DetailsURL itemUrl, String category)
+    {
+        super(provider, itemText, null, itemUrl, category);
+    }
 
-    public ActionURL getSearchUrl(Container c, User u);
+    public static DetailsUrlWithoutLabelNavItem createForQuery(DataProvider provider, User u, Container c, String schema, String query, String label, String category)
+    {
+        ActionURL url = QueryService.get().urlFor(u, c, QueryAction.executeQuery, schema, query);
 
-    public ActionURL getBrowseUrl(Container c, User u);
-
-    public boolean isImportIntoWorkbooks(Container c, User u);
+        return new DetailsUrlWithoutLabelNavItem(provider, label, new DetailsURL(url), category);
+    }
 }

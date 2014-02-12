@@ -84,15 +84,16 @@ abstract public class AbstractTableCustomizer implements TableCustomizer
         assert targetContainer != null : "No container provided";
 
         String key = targetContainer.getEntityId() + "||" + schemaName + "||" + queryName;
-        if (_tableInfos.containsKey(key))
-            return _tableInfos.get(key);
+        //NOTE: dont cache tableinfos for now.  consider revisiting
+        //if (_tableInfos.containsKey(key))
+        //      return _tableInfos.get(key);
 
         UserSchema us = getUserSchema(ti, schemaName, targetContainer);
         if (us == null)
             return null;
 
         TableInfo table = us.getTable(queryName);
-        _tableInfos.put(key, table);
+        //_tableInfos.put(key, table);
 
         return table;
     }

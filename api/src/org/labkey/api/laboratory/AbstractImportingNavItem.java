@@ -17,8 +17,14 @@ package org.labkey.api.laboratory;
 
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.ldk.AbstractNavItem;
+import org.labkey.api.ldk.NavItem;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
+
+import java.util.Map;
 
 /**
  * User: bimber
@@ -27,21 +33,86 @@ import org.labkey.api.security.User;
  */
 abstract public class AbstractImportingNavItem extends AbstractNavItem implements ImportingNavItem
 {
+    private String _name;
+    private String _label;
+    private String _category;
+    private DataProvider _provider;
+
+    public AbstractImportingNavItem(DataProvider provider, String name, String label, String category)
+    {
+        _provider = provider;
+        _name = name;
+        _label = label;
+        _category = category;
+    }
+
+    @Override
+    public DataProvider getDataProvider()
+    {
+        return _provider;
+    }
+
+    @Override
+    public String getName()
+    {
+        return _name;
+    }
+
+    @Override
+    public String getLabel()
+    {
+        return _label;
+    }
+
+    @Override
+    public String getCategory()
+    {
+        return _category;
+    }
+
+    @Override
     public JSONObject toJSON(Container c, User u)
     {
         JSONObject ret = super.toJSON(c, u);
 
-        ret.put("importIntoWorkbooks", isImportIntoWorkbooks());
+        ret.put("importIntoWorkbooks", isImportIntoWorkbooks(c, u));
 
         ret.put("importUrl", getUrlObject(getImportUrl(c, u)));
         ret.put("searchUrl", getUrlObject(getSearchUrl(c, u)));
         ret.put("browseUrl", getUrlObject(getBrowseUrl(c, u)));
+        ret.put("browseDefaultView", getDefaultViewName(c, getPropertyManagerKey()));
 
         return ret;
     }
 
+    @Override
     public String getRendererName()
     {
-        return "importingItemRenderer";
+        return "importingNavItem";
+    }
+
+    public static String getDefaultViewName(Container c, String key)
+    {
+        Map<String, String> map = PropertyManager.getProperties(c, NavItem.VIEW_PROPERTY_CATEGORY);
+        if (map != null && map.containsKey(key))
+            return map.get(key);
+
+        return null;
+    }
+
+    public ActionURL appendDefaultView(Container c, ActionURL url, String dataRegionName)
+    {
+        String view = getDefaultViewName(c, getPropertyManagerKey());
+        if (view != null)
+        {
+            url.addParameter(dataRegionName + ".viewName", view);
+        }
+
+        return url;
+    }
+
+    protected void setTargetContainer(Container c)
+    {
+        _targetContainer = c;
     }
 }

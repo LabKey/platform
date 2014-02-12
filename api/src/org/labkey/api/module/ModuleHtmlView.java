@@ -21,6 +21,7 @@ import org.json.JSONObject;
 import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HtmlView;
@@ -30,6 +31,7 @@ import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 
 /*
@@ -133,5 +135,10 @@ public class ModuleHtmlView extends HtmlView
     public int getRequiredPerms()
     {
         return _viewdef.getRequiredPerms();
+    }
+
+    public Set<Class<? extends Permission>> getRequiredPermissionClasses()
+    {
+        return _viewdef.getRequiredPermissionClasses();
     }
 }
