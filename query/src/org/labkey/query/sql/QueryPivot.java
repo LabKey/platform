@@ -707,11 +707,15 @@ public class QueryPivot extends QueryRelation
             }
             catch (QueryService.NamedParameterNotProvided x)
             {
-                throw new QueryParseException("When used with parameterized query, PIVOT requires an explicit values list", null);
+                QueryParseException qpe = new QueryParseException("When used with parameterized query, PIVOT requires an explicit values list", null);
+                _query.decorateException(qpe);
+                throw qpe;
             }
             catch (SQLException x)
             {
-                throw new QueryParseException("Could not compute pivot column list", null);
+                QueryParseException qpe = new QueryParseException("Could not compute pivot column list", null);
+                _query.decorateException(qpe);
+                throw qpe;
             }
             
             // add aggregate expressions
@@ -797,7 +801,13 @@ public class QueryPivot extends QueryRelation
             SQLFragment f = new SQLFragment();
             SQLFragment fromSql = getSql();
             if (null == fromSql)
-                return null;
+            {
+                if (!getParseErrors().isEmpty())
+                    throw getParseErrors().get(0);
+                QueryParseException qpe = new QueryParseException("Error compiling query" + (null!=_query._name?": " + _query._name:""), null, 0, 0);
+                _query.decorateException(qpe);
+                throw qpe;
+            }
             f.append("(").append(fromSql).append(") ").append(pivotTableAlias);
             _sqlPivot = f;
             return _sqlPivot;

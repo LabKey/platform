@@ -207,14 +207,18 @@ public class Query
         
         for (QueryException e : _parseErrors)
         {
-            ExceptionUtil.decorateException(e, LabkeySQL, _querySource, false);
-            if (null != getSchema() && null != getSchema().getName())
-                ExceptionUtil.decorateException(e, QuerySchema, getSchema().getName(), false);
-            if (null != _name)
-                ExceptionUtil.decorateException(e, QueryName, _name, false);
+            decorateException(e);
         }
     }
 
+    public void decorateException(Exception e)
+    {
+        ExceptionUtil.decorateException(e, LabkeySQL, _querySource, false);
+        if (null != getSchema() && null != getSchema().getName())
+            ExceptionUtil.decorateException(e, QuerySchema, getSchema().getName(), false);
+        if (null != _name)
+            ExceptionUtil.decorateException(e, QueryName, _name, false);
+    }
 
     public void parse(String queryText)
     {
