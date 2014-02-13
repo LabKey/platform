@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 
 import java.lang.ref.WeakReference;
@@ -88,7 +89,7 @@ public class ViewCategory extends Entity implements Comparable
 
     public boolean canEdit(Container container, User user)
     {
-        return user.isSiteAdmin();
+        return container.hasPermission(user, AdminPermission.class);
     }
 
     public boolean canDelete(Container container, User user)
