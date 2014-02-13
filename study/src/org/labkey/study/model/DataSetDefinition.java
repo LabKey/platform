@@ -2600,7 +2600,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 }
 
                 String uniq = isDemographic ? ptid : uri;
-                if (null == uniq)
+                // Don't count NULL's in any of the key fields as potential dupes; instead let downstream processing catch this
+                // so the fact the values (or entire column) are missing is reported correctly.
+                if (null == uniq || null == key[1] || (indexKey > 0 && null == key[2]))
                     continue;
                 if (null != uriMap.put(uniq, key))
                     noDeleteMap.put(uniq,key);
