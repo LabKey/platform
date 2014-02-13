@@ -115,6 +115,10 @@ class UserCache
         return new LinkedList<>(getUserCollections().getActiveEmails());
     }
 
+    static @NotNull List<Integer> getUserIds()
+    {
+        return new LinkedList<>(getUserCollections().getUserIdMap().keySet());
+    }
 
     static int getActiveUserCount()
     {

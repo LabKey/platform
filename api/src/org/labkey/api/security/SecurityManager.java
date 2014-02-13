@@ -1504,6 +1504,13 @@ public class SecurityManager
     /** Returns the members of this group dictated by memberType, including those in subgroups (recursive) */
     public static @NotNull <P extends UserPrincipal> Set<P> getAllGroupMembers(Group group, MemberType<P> memberType)
     {
+        return getAllGroupMembers(group, memberType, false);
+    }
+
+    /** Returns the members of this group dictated by memberType, including those in subgroups (recursive). If group is all site users
+     * and returnSiteUsers is false, return empty set */
+    public static @NotNull <P extends UserPrincipal> Set<P> getAllGroupMembers(Group group, MemberType<P> memberType, boolean returnSiteUsers)
+    {
         Set<Group> visitedGroups = new HashSet<>();
         Set<P> members = new LinkedHashSet<>();
         LinkedList<Group> pendingGroups = new LinkedList<>();
@@ -1517,11 +1524,25 @@ public class SecurityManager
             // groups and skip some work if we've already seen this group.
             if (visitedGroups.add(next))
             {
-                int[] ids = GroupMembershipCache.getGroupMembers(next);
-
-                // Consider: optimize with a single loop
-                addMembers(members, ids, memberType);
-                addMembers(pendingGroups, ids, MemberType.GROUPS);
+                // 19532 Site user group membership is not explicitly defined in the core.Members table, so that
+                // group always returned empty set. Allow a special case of returning real set if explicitly requested.
+                if (next.isUsers() && returnSiteUsers)
+                {
+                    List<Integer> userIds = UserManager.getUserIds();
+                    int[] ids = new int[userIds.size()];
+                    for (int i = 0; i < userIds.size(); i++)
+                    {
+                        ids[i] = userIds.get(i);
+                    }
+                    addMembers(members, ids, memberType);
+                }
+                else
+                {
+                    int[] ids = GroupMembershipCache.getGroupMembers(next);
+                    // Consider: optimize with a single loop
+                    addMembers(members, ids, memberType);
+                    addMembers(pendingGroups, ids, MemberType.GROUPS);
+                }
             }
         }
 

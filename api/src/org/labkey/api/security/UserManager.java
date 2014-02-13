@@ -326,6 +326,10 @@ public class UserManager
         return UserCache.getActiveUserEmails();
     }
 
+    public static List<Integer> getUserIds()
+    {
+        return UserCache.getUserIds();
+    }
 
     public static void clearUserList(int userId)
     {
