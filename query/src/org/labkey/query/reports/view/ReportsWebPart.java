@@ -103,37 +103,23 @@ public class ReportsWebPart extends WebPartView
 
     private Report getReport(Map<String, String> props) throws Exception
     {
+        Report report = null;
+
         String reportIdString = props.get(Report.renderParam.reportId.name());
         if (reportIdString != null)
         {
-            ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdString);
-
-            //allow bare report ids for backward compatibility
-            if (reportId == null && NumberUtils.isDigits(reportIdString))
-                reportId = new DbReportIdentifier(Integer.parseInt(reportIdString));
-
-            if (reportId != null)
-            {
-                return reportId.getReport(getViewContext());
-            }
+            report = ReportUtil.getReportById(getViewContext(), reportIdString);
         }
         else
         {
             // try schema/query/reportName combo
-
             String reportName = props.get(Report.renderParam.reportName.name());
             if (!StringUtils.isEmpty(reportName))
             {
                 String key = StringUtils.trimToNull(ReportUtil.getReportKey(props.get(QueryParam.schemaName.name()), props.get(QueryParam.queryName.name())));
-
-                // try to match by report name including any explicitly shared reports in parent folders or reports in the shared container
-                for (Report rpt : ReportUtil.getReports(getViewContext().getContainer(), getViewContext().getUser(), key, true))
-                {
-                    if (reportName.equals(rpt.getDescriptor().getReportName()))
-                        return rpt;
-                }
+                report = ReportUtil.getReportByName(getViewContext(), reportName, key);
             }
         }
-        return null;
+        return report;
     }
 }

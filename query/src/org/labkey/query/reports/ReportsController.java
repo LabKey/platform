@@ -708,6 +708,9 @@ public class ReportsController extends SpringActionController
     {
         private String _reportSessionId;
         private String _reportId;
+        private String _reportName;
+        private String _schemaName;
+        private String _queryName;
         private Map<String, Object> _inputParams;
 
         public ExecuteScriptForm()
@@ -735,6 +738,36 @@ public class ReportsController extends SpringActionController
             _reportId = reportId;
         }
 
+        public String getReportName()
+        {
+            return _reportName;
+        }
+
+        public void setReportName(String reportName)
+        {
+            _reportName = reportName;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public String getQueryName()
+        {
+            return _queryName;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            _queryName = queryName;
+        }
+
         public Map<String, Object> getInputParams()
         {
             return _inputParams;
@@ -758,21 +791,17 @@ public class ReportsController extends SpringActionController
 
         public ApiResponse execute(ExecuteScriptForm form, BindException errors) throws Exception
         {
-            //
-            // validate input parameters
-            //
-            String reportId = form.getReportId();
+            if (null == form.getReportId() && null == form.getReportName())
+                throw new IllegalArgumentException("You must provide a value for the " + Report.renderParam.reportId.name() +
+                        " or " + Report.renderParam.reportName.name() + " parameter!");
 
-            if (null == reportId || reportId.length() == 0)
-                throw new IllegalArgumentException("You must provide a value for the " + Report.renderParam.reportId.name() + " parameter!");
-
-            Report report = getReport(reportId);
+            Report report = getReport(form);
 
             //
             // validate that the underlying report is present and based on a script
             //
             if (null == report)
-                throw new IllegalArgumentException("Unknown report id");
+                throw new IllegalArgumentException("Unknown report id or report name");
 
             if (!(report instanceof Report.ScriptExecutor))
                 throw new IllegalArgumentException("The specified report is not based upon a script and therefore cannot be executed.");
@@ -838,25 +867,28 @@ public class ReportsController extends SpringActionController
             return response;
         }
 
-        // consider:  making a utility function that is shared with ReportsWebPart.java
-        // consider:  move from ReportsWebPart .java to ReportUtil class?
-        private Report getReport(String reportId)
+        private Report getReport(ExecuteScriptForm form)
         {
+            Report report;
+            String reportId = form.getReportId();
+
             if (reportId != null)
             {
-                ReportIdentifier rid = ReportService.get().getReportIdentifier(reportId);
-
-                //allow bare report ids for backward compatibility
-                if (rid == null && NumberUtils.isDigits(reportId))
-                    rid = new DbReportIdentifier(Integer.parseInt(reportId));
-
-                if (rid != null)
-                {
-                    return rid.getReport(getViewContext());
-                }
+                report = ReportUtil.getReportById(getViewContext(), reportId);
             }
+            else
+            {
+                String reportName = form.getReportName();
+                String key = ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName());
 
-            return null;
+                // consider:  moving this logic into the getReportKey function for 14.2
+                // see issue 19206 for more details
+                if (StringUtils.isBlank(key))
+                    key = reportName;
+
+                report = ReportUtil.getReportByName(getViewContext(), reportName, key);
+            }
+            return report;
         }
     }
 
