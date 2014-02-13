@@ -36,6 +36,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
@@ -60,6 +61,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     public enum Props {
         assayId,                // the assay id from the run properties field
         runComments,            // run properties comments
+        baseUrl,
         containerPath,
         assayType,              // assay definition name : general, nab, elispot etc.
         assayName,              // assay instance name
@@ -336,6 +338,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
         map.put(Props.assayId.name(), StringUtils.defaultString(context.getName()));
         map.put(Props.runComments.name(), StringUtils.defaultString(context.getComments()));
+        map.put(Props.baseUrl.name(), AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath());
         map.put(Props.containerPath.name(), context.getContainer().getPath());
         map.put(Props.assayType.name(), context.getProvider().getName());
         map.put(Props.assayName.name(), context.getProtocol().getName());
