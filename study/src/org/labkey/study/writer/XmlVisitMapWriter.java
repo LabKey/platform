@@ -86,8 +86,8 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
                 if (visit.getSequenceNumMin() != visit.getSequenceNumMax())
                     visitXml.setMaxSequenceNum(visit.getSequenceNumMax());
 
-                if (visit.getSequenceNumMin() != visit.getSequenceNumTarget())
-                    visitXml.setTargetSequenceNum(visit.getSequenceNumTarget());
+                if (visit.getSequenceNumMin() != visit.getProtocolDay())
+                    visitXml.setProtocolDay(visit.getProtocolDay());
 
                 if (null != visit.getCohort())
                     visitXml.setCohort(visit.getCohort().getLabel());

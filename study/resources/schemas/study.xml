@@ -262,8 +262,8 @@
       <ns:column columnName="SequenceNumMin">
         <ns:description>The minimum sequence number associated with each visit.</ns:description>
       </ns:column>
-      <ns:column columnName="SequenceNumTarget">
-        <ns:description>The target sequence number associated with the sequence range for this visit, used for study alignment.</ns:description>
+      <ns:column columnName="ProtocolDay">
+        <ns:description>The expected day for this visit according to the protocol, used for study alignment.</ns:description>
       </ns:column>
       <ns:column columnName="cohortid">
         <ns:description>The ID of each visit's cohort, if it is cohort specific.</ns:description>

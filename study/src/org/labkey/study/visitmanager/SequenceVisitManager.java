@@ -203,7 +203,7 @@ public class SequenceVisitManager extends VisitManager
         {
             SQLFragment sqlUpdateVisitDates = new SQLFragment();
             sqlUpdateVisitDates.append("UPDATE " + tableParticipantVisit + "\n")
-                .append("SET VisitDate = NULL")
+                .append("SET VisitDate = NULL, Day = NULL")
                 .append(" WHERE Container=?");
             sqlUpdateVisitDates.add(container);
             executor.execute(sqlUpdateVisitDates);
@@ -212,18 +212,22 @@ public class SequenceVisitManager extends VisitManager
         {
             TableInfo tableStudyDataFiltered = StudySchema.getInstance().getTableInfoStudyDataFiltered(getStudy(), defsWithVisitDates, user);
             SQLFragment sqlUpdateVisitDates = new SQLFragment();
-            sqlUpdateVisitDates.append("UPDATE " + tableParticipantVisit + "\n" +
-                    "SET VisitDate = \n" +
-                    " (\n" +
-                    " SELECT DISTINCT(SD._VisitDate)\n" +
-                    " FROM ").append(tableStudyDataFiltered.getFromSQL("SD")).append(",  " + tableVisit + " V\n" +
-                    " WHERE  ParticipantVisit.VisitRowId = V.RowId AND" +    // 'join' V
-                    "   SD.ParticipantId = ParticipantVisit.ParticipantId AND SD.SequenceNum = ParticipantVisit.SequenceNum AND\n" +    // 'join' SD
-                    "   SD.DatasetId = V.VisitDateDatasetId AND V.Container=?\n" +
-                    " )\n");
-            if (schema.getSqlDialect().isSqlServer()) // for SQL Server 2000
-                sqlUpdateVisitDates.append("FROM " + tableParticipantVisit + " ParticipantVisit\n");
-            sqlUpdateVisitDates.append("WHERE Container=?");
+            sqlUpdateVisitDates.append("UPDATE ").append(tableParticipantVisit.getSelectName());
+            if (!schema.getSqlDialect().isSqlServer())
+                sqlUpdateVisitDates.append(" PV");          // For Postgres put "PV" here
+            sqlUpdateVisitDates.append("\n").append("SET VisitDate = _VisitDate, Day = _VisitDay FROM\n")
+                    .append(" (\n")
+                    .append(" SELECT DISTINCT _VisitDate, _VisitDay, SequenceNum, ParticipantId, DatasetId\n")
+                    .append(" FROM ").append(tableStudyDataFiltered.getFromSQL("SD1")).append(") SD,  ")
+                    .append(tableVisit.getFromSQL("V"));
+
+            if (schema.getSqlDialect().isSqlServer())
+                sqlUpdateVisitDates.append(", ").append(tableParticipantVisit.getFromSQL("PV"));     // Have to put the "PV" here for MSSQL
+
+            sqlUpdateVisitDates.append("\n WHERE  PV.VisitRowId = V.RowId AND")    // 'join' V
+                    .append("   SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum AND\n")   // 'join' SD
+                    .append("   SD.DatasetId = V.VisitDateDatasetId AND V.Container=? AND PV.Container=?\n");
+
             sqlUpdateVisitDates.add(container);
             sqlUpdateVisitDates.add(container);
             executor.execute(sqlUpdateVisitDates);

@@ -65,9 +65,9 @@
             </td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Target Day Number&nbsp;<%=helpPopup("Target Day Number", "The target sequence number associated with the sequence range for this visit, used for study alignment.")%></td>
+            <td class="labkey-form-label">Protocol Day&nbsp;<%=helpPopup("Protocol Day", "The expected day for this visit according to the protocol, used for study alignment.")%></td>
             <td>
-                <input type="text" size="26" name="sequenceNumTarget" value="<%=(int) visit.getSequenceNumTarget()%>">
+                <input type="text" size="26" name="protocolDay" value="<%=(int) visit.getProtocolDay()%>">
             </td>
         </tr>
 <%
@@ -82,9 +82,9 @@
             </td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Target Sequence Number&nbsp;<%=helpPopup("Target Sequence Number", "The target sequence number associated with the sequence range for this visit, used for study alignment.")%></td>
+            <td class="labkey-form-label">Protocol Day&nbsp;<%=helpPopup("Protocol Day", "The expected day for this visit according to the protocol, used for study alignment.")%></td>
             <td>
-                <input type="text" size="26" name="sequenceNumTarget" value="<%=visit.getSequenceNumTarget()%>">
+                <input type="text" size="26" name="protocolDay" value="<%=visit.getProtocolDay()%>">
             </td>
         </tr>
 <%

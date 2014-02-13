@@ -97,6 +97,16 @@ public class StudyUnionTableInfo extends VirtualTable
             else
                 sqlf.append(", ").append(NullColumnInfo.nullValue(getSqlDialect().getDefaultDateTimeDataType())).append(" AS _visitdate");
 
+            ColumnInfo dayColumn = ti.getColumn("day");
+            if (null == dayColumn)
+                dayColumn = ti.getColumn("studyday");
+            if (null == dayColumn)
+                dayColumn = ti.getColumn("study_day");
+            if (null != dayColumn && dayColumn.getJdbcType() == JdbcType.INTEGER)
+                sqlf.append(", ").append(dayColumn.getValueSql("D")).append(" AS _visitday");
+            else
+                sqlf.append(", ").append(NullColumnInfo.nullValue(JdbcType.INTEGER.name())).append(" AS _visitday");
+
             // Add all of the standard dataset columns
             for (String column : unionColumns)
             {

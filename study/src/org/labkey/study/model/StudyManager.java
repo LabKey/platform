@@ -664,8 +664,8 @@ public class StudyManager
         if (visit.getSequenceNumMin() > visit.getSequenceNumMax())
             throw new VisitCreationException("SequenceNumMin must be less than or equal to SequenceNumMax");
 
-        if (visit.getSequenceNumTarget() < visit.getSequenceNumMin() || visit.getSequenceNumTarget() > visit.getSequenceNumMax())
-            throw new VisitCreationException("SequenceNumTarget must be within the min and max range");
+        if (visit.getProtocolDay() < visit.getSequenceNumMin() || visit.getProtocolDay() > visit.getSequenceNumMax())
+            throw new VisitCreationException("ProtocolDay must be within the min and max range");
 
         if (null == existingVisits)
             existingVisits = getVisits(study, Visit.Order.SEQUENCE_NUM);

@@ -36,7 +36,7 @@ public class VisitForm extends ViewForm
     private String[] _dataSetStatus;
     private Double _sequenceNumMin;
     private Double _sequenceNumMax;
-    private Double _sequenceNumTarget;
+    private Double _protocolDay;
     private Character _typeCode;
     private boolean _showByDefault;
     private Integer _cohortId;
@@ -81,8 +81,8 @@ public class VisitForm extends ViewForm
             setSequenceNumMax(getSequenceNumMin());
 
         // if target sequence num is null, set to min
-        if (null == getSequenceNumTarget())
-            setSequenceNumTarget(getSequenceNumMin());
+        if (null == getProtocolDay())
+            setProtocolDay(getSequenceNumMin());
 
         VisitImpl visit = getBean();
         if (visit.getSequenceNumMin() > visit.getSequenceNumMax())
@@ -115,8 +115,8 @@ public class VisitForm extends ViewForm
             _visit.setSequenceNumMax(getSequenceNumMax());
         if (null != getSequenceNumMin())
             _visit.setSequenceNumMin(getSequenceNumMin());
-        if (null != getSequenceNumTarget())
-            _visit.setSequenceNumTarget(getSequenceNumTarget());
+        if (null != getProtocolDay())
+            _visit.setProtocolDay(getProtocolDay());
 
         _visit.setCohortId(getCohortId());
         _visit.setVisitDateDatasetId(getVisitDateDatasetId());
@@ -133,8 +133,8 @@ public class VisitForm extends ViewForm
             setSequenceNumMax(bean.getSequenceNumMax());
         if (0 != bean.getSequenceNumMin())
             setSequenceNumMin(bean.getSequenceNumMin());
-        if (0 != bean.getSequenceNumTarget())
-            setSequenceNumTarget(bean.getSequenceNumTarget());
+        if (0 != bean.getProtocolDay())
+            setProtocolDay(bean.getProtocolDay());
         if (null != bean.getType())
             setTypeCode(bean.getTypeCode());
         setLabel(bean.getLabel());
@@ -182,14 +182,14 @@ public class VisitForm extends ViewForm
         _sequenceNumMax = sequenceNumMax;
     }
 
-    public Double getSequenceNumTarget()
+    public Double getProtocolDay()
     {
-        return _sequenceNumTarget;
+        return _protocolDay;
     }
 
-    public void setSequenceNumTarget(Double sequenceNumTarget)
+    public void setProtocolDay(Double protocolDay)
     {
-        _sequenceNumTarget = sequenceNumTarget;
+        _protocolDay = protocolDay;
     }
 
     public Character getTypeCode()

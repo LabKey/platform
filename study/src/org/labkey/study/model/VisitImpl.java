@@ -49,7 +49,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     private int _rowId = 0;
     private double _sequenceMin = 0;
     private double _sequenceMax = 0;
-    private double _sequenceTarget = 0;
+    private double _protocolDay = 0;
     private Character _typeCode;
     private Integer _visitDateDatasetid = 0;
     private Integer _cohortId;
@@ -85,7 +85,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         setContainer(container);
         _sequenceMin = seqMin;
         _sequenceMax = seqMax;
-        _sequenceTarget = seqMin;
+        _protocolDay = seqMin;
         _label = name;
         _typeCode = typeCode;
         _showByDefault = true;
@@ -192,14 +192,14 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         this._sequenceMax = sequenceMax;
     }
 
-    public double getSequenceNumTarget()
+    public double getProtocolDay()
     {
-        return _sequenceTarget;
+        return _protocolDay;
     }
 
-    public void setSequenceNumTarget(double sequenceTarget)
+    public void setProtocolDay(double protocolDay)
     {
-        this._sequenceTarget = sequenceTarget;
+        this._protocolDay = protocolDay;
     }
 
     public int getRowId()
