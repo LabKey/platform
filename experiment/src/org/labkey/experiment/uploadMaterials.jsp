@@ -30,6 +30,8 @@
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="org.labkey.experiment.samples.UploadMaterialSetForm" %>
 <%@ page import="org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -41,6 +43,13 @@
 %>
 
 <%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("ext3"));
+        return resources;
+    }
+
     public String getDisplayName(DomainProperty prop)
     {
         if (prop.getLabel() != null)
@@ -151,7 +160,7 @@
             <br>
             <textarea id="textbox" onchange="updateIds(this)" rows=25 cols="120" style="width: 100%;" name="data" wrap="off"><%=h(form.getData())%></textarea>
             <script type="text/javascript">
-                Ext.EventManager.on('textbox', 'keydown', handleTabsInTextArea);
+                Ext.EventManager.on('textbox', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
             </script>
         </td>
     </tr>

@@ -33,7 +33,7 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("Ext3"));
+        resources.add(ClientDependency.fromFilePath("ext3"));
         resources.add(ClientDependency.fromFilePath("clientapi"));
         resources.add(ClientDependency.fromFilePath("tiny_mce/tiny_mce.js"));
         resources.add(ClientDependency.fromFilePath("wiki/internal/wikiEdit.js"));
@@ -182,7 +182,7 @@
                                 <textarea rows="30" cols="80" style="width:100%; border:none;" id="<%=ID_PREFIX%>body"
                                           name="body" onkeypress="setWikiDirty()" onchange="setWikiDirty()"></textarea>
                                     <script type="text/javascript">
-                                        Ext.EventManager.on('<%=ID_PREFIX%>body', 'keydown', handleTabsInTextArea);
+                                        Ext.EventManager.on('<%=ID_PREFIX%>body', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
                                     </script>
                                 </form>
                             </div>

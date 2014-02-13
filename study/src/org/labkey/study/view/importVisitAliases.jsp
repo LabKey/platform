@@ -16,8 +16,19 @@
  */
 %>
 <%@ page import="org.labkey.study.controllers.StudyController.ShowVisitImportMappingAction" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("ext3"));
+        return resources;
+    }
+%>
 <form action="" method="post">
     <table width="80%">
         <%=formatMissedErrorsInTable("form", 1)%>
@@ -39,6 +50,6 @@
     </table>
 </form>
 <script type="text/javascript">
-    Ext.EventManager.on('tsv', 'keydown', handleTabsInTextArea);
+    Ext.EventManager.on('tsv', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
 </script>
 

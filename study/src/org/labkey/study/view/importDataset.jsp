@@ -18,8 +18,19 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.StudyController"%>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("ext3"));
+        return resources;
+    }
+%>
 <%
     JspView<StudyController.ImportDataSetForm> me = (JspView<StudyController.ImportDataSetForm>) HttpView.currentView();
     StudyController.ImportDataSetForm form = me.getModelBean();
@@ -39,7 +50,7 @@
         <tr><td colspan=2 width="100%">
             <textarea id=tsv name=tsv rows=25 cols=80 wrap=off style="width:100%;"><%=h(form.getTsv())%></textarea>
             <script type="text/javascript">
-                Ext.EventManager.on('tsv', 'keydown', handleTabsInTextArea);
+                Ext.EventManager.on('tsv', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
             </script>
         </td></tr>
     </table>

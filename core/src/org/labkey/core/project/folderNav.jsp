@@ -103,20 +103,16 @@
 <script type="text/javascript">
     Ext4.onReady(function() {
 
+        var expandCls = 'expand-folder';
+        var collapseCls = 'collapse-folder';
+
         var toggle = function(selector) {
             var p = selector.parent();
 
             if (p) {
-                var collapse = true;
-                if (p.hasCls('expand-folder')) {
-                    // collapse the tree
-                    p.replaceCls('expand-folder', 'collapse-folder');
-                }
-                else {
-                    // expand the tree
-                    p.replaceCls('collapse-folder', 'expand-folder');
-                    collapse = false;
-                }
+                var collapse = p.hasCls(expandCls);
+
+                collapse ? p.replaceCls(expandCls, collapseCls) : p.replaceCls(collapseCls, expandCls);
 
                 var a = p.child('a');
                 if (a) {

@@ -20,8 +20,19 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.query.QueryUrls" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.FormPage"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("ext3"));
+        return resources;
+    }
+%>
 <labkey:errors />
 <%
     UploadListItemsForm form = (UploadListItemsForm) __form;
@@ -38,7 +49,7 @@
                 <br>
                 <textarea rows="25" id="listTsv" style="width: 100%" cols="150" name="ff_data" wrap="off"><%=h(form.ff_data)%></textarea><br>
                 <script type="text/javascript">
-                    Ext.EventManager.on('listTsv', 'keydown', handleTabsInTextArea);
+                    Ext.EventManager.on('listTsv', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
                 </script>
             </td>
         </tr>

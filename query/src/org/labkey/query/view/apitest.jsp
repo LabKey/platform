@@ -26,6 +26,7 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("ext3")); // LABKEY.ext.Utils.handleTabsInTextArea
         resources.add(ClientDependency.fromFilePath("Ext4"));
         return resources;
     }
@@ -362,7 +363,7 @@
             getUrl();
     }
 
-    Ext4.onReady(function() {
-        Ext4.EventManager.on('txtPost', 'keydown', handleTabsInTextArea);
+    Ext.onReady(function() {
+        Ext.EventManager.on('txtPost', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
     });
 </script>
