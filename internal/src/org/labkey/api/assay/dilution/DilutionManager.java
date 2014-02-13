@@ -156,7 +156,7 @@ public class DilutionManager
     {
         TableInfo table = getSchema().getTable(NAB_SPECIMEN_TABLE_NAME);
         String str = "NAbSpecimenId IN (SELECT RowId FROM " + table.getSelectName() + " " +
-                nabSpecimenFilter.getWhereSQL(getSchema().getSqlDialect()) + ")";
+                nabSpecimenFilter.getWhereSQL(table) + ")";
 
         List<Object> paramVals = nabSpecimenFilter.getWhereParams(table);
         Object[] params = new Object[paramVals.size()];

@@ -102,17 +102,20 @@ public abstract class ContainerFilter
     }
 
 
-    /** Use FieldKey version instead. Create an expression for a WHERE clause */
-    @Deprecated
-    public SQLFragment getSQLFragment(DbSchema schema, String containerColumnSQL, Container container)
-    {
-        return getSQLFragment(schema, new SQLFragment(containerColumnSQL), container);
-    }
-
     /** Create an expression for a WHERE clause */
-    public SQLFragment getSQLFragment(DbSchema schema, FieldKey containerColumnFieldKey, Container container)
+    public SQLFragment getSQLFragment(DbSchema schema, FieldKey containerColumnFieldKey, Container container, Map<FieldKey, ? extends ColumnInfo> columnMap)
     {
-        return getSQLFragment(schema, new SQLFragment(containerColumnFieldKey.toString()), container);
+        ColumnInfo columnInfo = columnMap.get(containerColumnFieldKey);
+        SQLFragment sql;
+        if (columnInfo != null)
+        {
+            sql = new SQLFragment(columnInfo.getSelectName());
+        }
+        else
+        {
+            sql = new SQLFragment(containerColumnFieldKey.toString());
+        }
+        return getSQLFragment(schema, sql, container);
     }
 
     /** Create an expression for a WHERE clause */
@@ -848,7 +851,7 @@ public abstract class ContainerFilter
                 ContainerFilterWithUser filter = (ContainerFilterWithUser) _filter;
                 return filter.getSQLFragment(_schema, _fieldKey, _container, _permission);
             }
-            return _filter.getSQLFragment(_schema, _fieldKey, _container);
+            return _filter.getSQLFragment(_schema, _fieldKey, _container, columnMap);
         }
     }
 }

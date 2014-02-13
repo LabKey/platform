@@ -114,7 +114,7 @@ public class CutoffValueTable extends FilteredTable<AssayProtocolSchema>
             sql.append(", ");
             sql.append(DilutionManager.getTableInfoNAbSpecimen(), "ns");
             sql.append(" WHERE r.RowId = ns.RunId AND ");
-            sql.append(filter.getSQLFragment(getSchema(), CONTAINER_FIELD_KEY, _userSchema.getContainer()));
+            sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("Container"), _userSchema.getContainer()));
             sql.append(")");
             addCondition(sql, CONTAINER_FIELD_KEY);
         }

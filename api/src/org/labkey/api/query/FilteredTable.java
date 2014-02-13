@@ -307,7 +307,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     {
         assertCorrectParentTable(col);
         SQLFragment frag = new SQLFragment();
-        frag.append(filterName(col));
+        frag.append(col.getSelectName());
         frag.append(" = ");
         frag.appendStringLiteral(value);
         addCondition(frag, col.getFieldKey());
@@ -363,7 +363,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     @Override
     public String getSelectName()
     {
-        if (_filter.getWhereSQL(_rootTable.getSqlDialect()).length() == 0)
+        if (_filter.getWhereSQL(_rootTable).length() == 0)
             return getFromTable().getSelectName();
         return null;
     }
@@ -379,7 +379,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     @NotNull
     public SQLFragment getFromSQL(String alias)
     {
-        if (getFilter().getWhereSQL(_rootTable.getSqlDialect()).length() == 0)
+        if (getFilter().getWhereSQL(_rootTable).length() == 0)
             return getFromTable().getFromSQL(alias);
 
         // SELECT

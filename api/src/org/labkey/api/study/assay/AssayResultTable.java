@@ -265,7 +265,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         {
             FieldKey containerColumn = FieldKey.fromParts("Run", "Folder");
             clearConditions(containerColumn);
-            addCondition(filter.getSQLFragment(getSchema(), "(SELECT d.Container FROM exp.Data d WHERE d.RowId = DataId)", getContainer()), containerColumn);
+            addCondition(filter.getSQLFragment(getSchema(), new SQLFragment("(SELECT d.Container FROM exp.Data d WHERE d.RowId = DataId)"), getContainer()), containerColumn);
         }
     }
 

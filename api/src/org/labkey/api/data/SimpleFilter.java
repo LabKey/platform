@@ -1231,9 +1231,9 @@ public class SimpleFilter implements Filter
         return Collections.unmodifiableList(_clauses);
     }
 
-    public String getWhereSQL(SqlDialect dialect)
+    public String getWhereSQL(TableInfo tableInfo)
     {
-        SQLFragment frag = getSQLFragment(dialect);
+        SQLFragment frag = getSQLFragment(tableInfo, null);
         return frag.getSQL();
     }
 
