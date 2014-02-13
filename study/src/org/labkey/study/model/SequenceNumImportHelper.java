@@ -97,7 +97,7 @@ public class SequenceNumImportHelper
                 Date date = null;
                 try
                 {
-                    if (null == d && d instanceof Date)
+                    if (null == d || d instanceof Date)
                         date = (Date)d;
                     else
                         date = new Date(DateUtil.parseDateTime(String.valueOf(d)));
