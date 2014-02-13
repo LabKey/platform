@@ -112,7 +112,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
         // Filter out hidden run groups
         ret.append(" WHERE e.Hidden = ? AND rl.ExperimentId = e.RowId AND rl.ExperimentRunId = er.RowId AND ");
         ret.add(false);
-        ret.append(getContainerFilter().getSQLFragment(ExperimentServiceImpl.get().getSchema(), "er.Container", getExpSchema().getContainer()));
+        ret.append(getContainerFilter().getSQLFragment(ExperimentServiceImpl.get().getSchema(), new SQLFragment("er.Container"), getExpSchema().getContainer()));
         ret.append(") X ");
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), columnMap);

@@ -110,7 +110,7 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
         SQLFragment sql = new SQLFragment("IssueId IN (SELECT i.IssueId FROM ");
         sql.append(IssuesSchema.getInstance().getTableInfoIssues(), "i");
         sql.append(" WHERE ");
-        sql.append(filter.getSQLFragment(getSchema(), "i.Container", getContainer()));
+        sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("i.Container"), getContainer()));
         sql.append(")");
         addCondition(sql, containerFieldKey);
     }

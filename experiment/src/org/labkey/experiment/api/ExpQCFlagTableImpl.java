@@ -143,7 +143,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
         SQLFragment sql = new SQLFragment("RunId IN (SELECT er.RowId FROM ");
         sql.append(ExperimentService.get().getTinfoExperimentRun(), "er");
         sql.append(" WHERE ");
-        sql.append(filter.getSQLFragment(getSchema(), "er.Container", getContainer()));
+        sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("er.Container"), getContainer()));
         sql.append(")");
 
         addCondition(sql, containerFieldKey);
