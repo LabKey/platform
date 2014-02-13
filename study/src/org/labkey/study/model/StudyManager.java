@@ -4495,6 +4495,7 @@ public class StudyManager
             try (Results results = new TableSelector(tt).getResults())
             {
                 assertTrue(results.next());
+                assertFalse(results.next());
             }
 
             // duplicate row
