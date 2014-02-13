@@ -532,7 +532,7 @@ public class IssueManager
                 Group group = getAssignedToGroup(c);
 
                 if (null != group)
-                    return createAssignedToList(c, SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_USERS));
+                    return createAssignedToList(c, SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_USERS, true));
                 else
                     return createAssignedToList(c, SecurityManager.getProjectUsers(c.getProject()));
             }

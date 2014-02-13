@@ -156,7 +156,8 @@
                                 <select<%=disabled(null == bean.assignedToGroup)%> name="assignedToGroup"><%
                                     for (Group group : SecurityManager.getGroups(c.getProject(), true))
                                     {
-                                        if (!group.isGuests())
+                                        <%-- 19532 partial. Only show Site: Users option to site admins --%>
+                                        if (!group.isGuests() && (!group.isUsers() || getUser().isSiteAdmin()))
                                         {
                                             String displayText = (group.isProjectGroup() ? "" : "Site:") + group.getName();
                                             out.println("<option value=\"" + group.getUserId() + "\"" + selected(null != bean.assignedToGroup && group.getUserId() == bean.assignedToGroup.getUserId()) + ">" + h(displayText) + "</option>");
