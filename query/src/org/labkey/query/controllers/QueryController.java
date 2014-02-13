@@ -3293,9 +3293,17 @@ public class QueryController extends SpringActionController
             if (json == null)
                 throw new IllegalArgumentException("Empty request");
 
-            JSONArray rows = json.getJSONArray(PROP_ROWS);
-            if (null == rows || rows.length() < 1)
-                throw new IllegalArgumentException("No 'rows' array supplied!");
+            JSONArray rows;
+            try
+            {
+                rows = json.getJSONArray(PROP_ROWS);
+                if (rows.length() < 1)
+                    throw new IllegalArgumentException("No '"+PROP_ROWS+"' array supplied!");
+            }
+            catch (JSONException x)
+            {
+                throw new IllegalArgumentException("No '"+PROP_ROWS+"' array supplied!");
+            }
 
             String schemaName = json.getString(PROP_SCHEMA_NAME);
             String queryName = json.getString(PROP_QUERY_NAME);
