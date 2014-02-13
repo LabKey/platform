@@ -492,9 +492,8 @@ public class DomainUtil
         {
             String containerId = from.getLookupContainer();
             Container c = null;
-            if (Strings.isNullOrEmpty(containerId))
-                c = to.getContainer();              // null or empty; use current container
-            else if (containerId != null)
+            containerId = StringUtils.trimToNull(containerId);
+            if (containerId != null)
             {
                 if (GUID.isGUID(containerId))
                     c = ContainerManager.getForId(containerId);
