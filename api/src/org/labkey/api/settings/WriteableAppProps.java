@@ -18,6 +18,7 @@ package org.labkey.api.settings;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.util.ExceptionReportingLevel;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.UsageReportingLevel;
 
 import java.net.URISyntaxException;
@@ -38,6 +39,17 @@ public class WriteableAppProps extends AppPropsImpl
     public void save()
     {
         super.save();
+        try
+        {
+            // Copy server URL to AppProps singleton. The URL properties are special, and are also stashed
+            // separately in AppProps, unlike other properties which always go back to the property bag for their values
+            AppProps.getInstance().setBaseServerUrlAttributes(getBaseServerUrl());
+        }
+        catch (URISyntaxException e)
+        {
+            // Shouldn't get here - should have been validated before it was saved
+            throw new UnexpectedException(e);
+        }
     }
 
     public void setAdminOnlyMessage(String adminOnlyMessage)
