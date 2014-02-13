@@ -200,6 +200,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
 
         this.canvas.attr('width', plot.grid.width).attr('height', plot.grid.height);
+
+        if (plot.bgColor) {
+            if (!this.bgRect) {
+                this.bgRect = this.canvas.append('g').attr('class', 'bg-rect').append('rect');
+            }
+
+            this.bgRect.attr('width', plot.grid.width).attr('height', plot.grid.height).attr('fill', plot.bgColor);
+        }
     };
 
     var renderError = function(msg) {
@@ -228,7 +236,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 .tickSize(8)
                 .tickPadding(10)
                 .ticks(7)
-                .gridLineColor(plot.gridLinecolor ? plot.gridLineColor : '#dddddd');
+                .gridLineColor(plot.gridLineColor ? plot.gridLineColor : '#dddddd');
 
         if (plot.scales.x.tickFormat) {
             xAxis.tickFormat(plot.scales.x.tickFormat);
@@ -252,7 +260,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     .tickSize(8)
                     .tickPadding(0)
                     .ticks(10)
-                    .gridLineColor(plot.gridLinecolor ? plot.gridLineColor : '#dddddd');
+                    .gridLineColor(plot.gridLineColor ? plot.gridLineColor : '#dddddd');
 
             if (plot.scales.yLeft.tickFormat) {
                 leftAxis.tickFormat(plot.scales.yLeft.tickFormat);
@@ -276,7 +284,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     .tickSize(8)
                     .tickPadding(0)
                     .ticks(10)
-                    .gridLineColor(plot.gridLinecolor ? plot.gridLineColor : '#dddddd');
+                    .gridLineColor(plot.gridLineColor ? plot.gridLineColor : '#dddddd');
 
             if (plot.scales.yRight.tickFormat) {
                 rightAxis.tickFormat(plot.scales.yRight.tickFormat);
@@ -563,6 +571,19 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         if (plot.clipRect) {
             initClipRect.call(this);
         }
+
+        if (plot.gridColor) {
+            if (!this.gridRect) {
+                this.gridRect = this.canvas.append('g').attr('class', 'grid-rect').append('rect');
+            }
+
+            this.gridRect.attr('width', plot.grid.rightEdge - plot.grid.leftEdge)
+                    .attr('height', plot.grid.bottomEdge - plot.grid.topEdge)
+                    .attr('x', plot.grid.leftEdge)
+                    .attr('y', plot.grid.topEdge)
+                    .attr('fill', plot.gridColor);
+        }
+
         renderXAxis.call(this);
         renderYLeftAxis.call(this);
         renderYRightAxis.call(this);
