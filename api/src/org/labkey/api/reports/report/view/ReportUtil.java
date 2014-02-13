@@ -18,6 +18,7 @@ package org.labkey.api.reports.report.view;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -39,6 +40,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.report.ChartReportDescriptor;
+import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
@@ -510,6 +512,32 @@ public class ReportUtil
             json.put(o);
         }
         return json;
+    }
+
+    public static Report getReportById(ViewContext viewContext, String reportIdString)
+    {
+        ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdString);
+
+        //allow bare report ids for backward compatibility
+        if (reportId == null && NumberUtils.isDigits(reportIdString))
+            reportId = new DbReportIdentifier(Integer.parseInt(reportIdString));
+
+        if (reportId != null)
+            return reportId.getReport(viewContext);
+
+        return null;
+    }
+
+    public static Report getReportByName(ViewContext viewContext, String reportName, String reportKey)
+    {
+        // try to match by report name including any explicitly shared reports in parent folders or reports in the shared container
+        for (Report rpt : ReportUtil.getReports(viewContext.getContainer(), viewContext.getUser(), reportKey, true))
+        {
+            if (reportName.equals(rpt.getDescriptor().getReportName()))
+                return rpt;
+        }
+
+        return null;
     }
 
     /**

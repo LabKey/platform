@@ -138,6 +138,9 @@ LABKEY.Report = new function(){
          * @param {String} [config.containerPath] The container in which to make the request (defaults to current container)
          * @param {Object} [config.scope] The scope to use when calling the callbacks (defaults to this).
          * @param {String} config.reportId Identifier for the report to execute
+         * @param {String} [config.reportName] name of the report to execute if the id is unknown
+         * @param {String} [config.schemaName] schema to which this report belongs (only used if reportName is used)
+         * @param {String} [config.queryName] query to which this report belongs (only used if reportName is used)
          * @param {String} [config.reportSessionId] Execute within the existsing report session.
          * @param {String} [config.inputParams] An object with properties for input parameters.
          * @param {Function} config.success The function to call if the operation is successful.  This function will
@@ -157,8 +160,8 @@ LABKEY.Report = new function(){
             if (!config)
                 throw "You must supply a config object to call this method.";
 
-            if (!config.reportId)
-                throw "You must supply a value for the reportId config property.";
+            if (!config.reportId && !config.reportName)
+                throw "You must supply a value for the reportId or reportName config property.";
 
             var execParams = {};
 
@@ -168,14 +171,20 @@ LABKEY.Report = new function(){
                 execParams["inputParams[" + key + "]"] = config.inputParams[key];
             }
 
-            // must have a script id  by now, the scriptId is the reportId
-            execParams["reportId"] = config.reportId;
+            if (config.reportId)
+                execParams["reportId"] = config.reportId;
 
-            // optional session id
+            if (config.reportName)
+                execParams["reportName"] = config.reportName;
+
+            if (config.schemaName)
+                execParams["schemaName"] = config.schemaName;
+
+            if (config.queryName)
+                execParams["queryName"] = config.queryName;
+
             if (config.reportSessionId)
-            {
                 execParams["reportSessionId"] = config.reportSessionId;
-            }
 
             return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("reports", "execute", config.containerPath),
