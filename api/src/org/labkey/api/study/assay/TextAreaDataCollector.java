@@ -40,7 +40,9 @@ public class TextAreaDataCollector<ContextType extends AssayRunUploadContext<? e
     {
         return new HtmlView("<textarea id=\"" + FORM_ELEMENT_NAME + "\" name=\"" + FORM_ELEMENT_NAME + "\" rows=\"10\" cols=\"80\"></textarea>\n" +
                 "<script type=\"text/javascript\">\n" +
-                "    Ext.EventManager.on('" + FORM_ELEMENT_NAME + "', 'keydown', handleTabsInTextArea);\n" +
+                "    LABKEY.requiresExt3ClientAPI(true, function() {\n" +
+                "       Ext.EventManager.on('" + FORM_ELEMENT_NAME + "', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);\n" +
+                "    });\n" +
                 "</script>");
     }
 

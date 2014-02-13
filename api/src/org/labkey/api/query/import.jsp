@@ -28,7 +28,7 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("Ext3"));
+        resources.add(ClientDependency.fromFilePath("ext3"));
         resources.add(ClientDependency.fromFilePath("FileUploadField.js"));
         return resources;
     }
@@ -329,7 +329,7 @@
             pinned: true
         });
         tsvTextarea = Ext.get(<%=q(tsvId)%>);
-        Ext.EventManager.on(tsvTextarea, 'keydown', handleTabsInTextArea);
+        Ext.EventManager.on(tsvTextarea, 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
 
         var fibasic = new Ext.form.FileUploadField({
             width: 300,

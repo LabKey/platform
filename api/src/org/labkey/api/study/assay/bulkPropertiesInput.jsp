@@ -20,7 +20,18 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("ext3"));
+        return resources;
+    }
+%>
 <%
     BulkPropertiesUploadForm form = ((JspView<BulkPropertiesUploadForm>)HttpView.currentView()).getModelBean();
     String existingValue = form.getRawBulkProperties();
@@ -71,5 +82,5 @@
 </table>
 <script type="text/javascript">
     // Allow tabs in the TSV text area
-    Ext.EventManager.on('<%= BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME%>', 'keydown', handleTabsInTextArea);
+    Ext.EventManager.on('<%= BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME%>', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
 </script>

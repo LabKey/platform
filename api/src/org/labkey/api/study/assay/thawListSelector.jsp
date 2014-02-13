@@ -20,7 +20,18 @@
 <%@ page import="org.labkey.api.study.assay.ThawListResolverType" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("ext3"));
+        return resources;
+    }
+%>
 <%
     JspView<ThawListBean> thisView = (JspView<ThawListBean>)HttpView.currentView();
     ThawListBean bean = thisView.getModelBean();
@@ -56,5 +67,5 @@
 
 <script type="text/javascript">
     // Allow tabs in the TSV text area
-    Ext.EventManager.on('<%= ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME %>', 'keydown', handleTabsInTextArea);
+    Ext.EventManager.on('<%= ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME %>', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
 </script>
