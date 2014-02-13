@@ -227,6 +227,7 @@ public class ConnectionWrapper implements java.sql.Connection
     public void setAutoCommit(boolean autoCommit)
     throws SQLException
     {
+        _log.debug("setAutoCommit(" + (autoCommit?"TRUE)":"FALSE)"));
         _connection.setAutoCommit(autoCommit);
     }
 
@@ -239,12 +240,14 @@ public class ConnectionWrapper implements java.sql.Connection
     public void commit()
     throws SQLException
     {
+        _log.debug("commit()");
         _connection.commit();
     }
 
     public void rollback()
     throws SQLException
     {
+        _log.debug("rollback()");
         _connection.rollback();
     }
 
