@@ -62,10 +62,12 @@ public class ManageStudyProductsTester
         Locator.XPathLocator adjuvantGrid = Locator.id("adjuvants-grid");
         Locator.XPathLocator insertNewAdjuvantButton = adjuvantGrid.append(Locator.ext4Button("Insert New"));
 
+        Locator.XPathLocator insertAdjuvantWindow = Ext4HelperWD.Locators.window("Insert Adjuvant");
+
         _test.click(insertNewAdjuvantButton);
-        _test._extHelper.waitForExtDialog("Insert Adjuvant");
+        _test.waitForElement(insertAdjuvantWindow);
         _test.setFormElement(Locator.name("Label"), label);
-        _test.clickButton("Submit", 0);
+        _test.click(insertAdjuvantWindow.append(Locator.ext4ButtonEnabled("Submit")));
         _test._ext4Helper.waitForMaskToDisappear();
     }
 
