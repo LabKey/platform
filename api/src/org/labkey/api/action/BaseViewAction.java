@@ -315,7 +315,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         }
         
         /* 'regular' commandName handling */
-        if (null != params.getPropertyValue(".oldValues"))
+        if (null != params && null != params.getPropertyValue(".oldValues"))
         {
             try
             {
