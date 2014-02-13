@@ -206,11 +206,11 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/guava-14.0.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/guava-15.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/guava-14.0.1-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/guava-15.0-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
