@@ -1010,8 +1010,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     renderDataGrid : function(renderTo) {
         var urlParams = LABKEY.ActionURL.getParameters(this.baseUrl);
         var filterUrl = urlParams['filterUrl'];
+        var userFilters, wpConfig, wp;
 
-        var userFilters;
         if (this.userFilters)
             userFilters = this.userFilters;
         else
@@ -1019,11 +1019,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         var userSort = LABKEY.Filter.getSortFromUrl(filterUrl, this.dataRegionName);
 
-        var wp = new LABKEY.QueryWebPart({
+        wpConfig = {
             schemaName  : this.schemaName,
             queryName   : this.queryName,
             viewName    : this.viewName,
-            dataRegionName: this.dataRegionName,
             columns     : this.savedColumns,        // TODO, qwp does not support passing in a column list
             frame       : 'none',
             showBorders : false,
@@ -1048,8 +1047,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 },
                 scope  : wp
             }
-        });
+        };
 
+        if (this.dataRegionName) {
+            wpConfig.dataRegionName = this.dataRegionName;
+        }
+
+        wp = new LABKEY.QueryWebPart(wpConfig);
         // save the dataregion
         this.panelDataRegionName = wp.dataRegionName;
 
