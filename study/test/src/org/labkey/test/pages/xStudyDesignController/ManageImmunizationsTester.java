@@ -1,4 +1,4 @@
-package org.labkey.test.pages.StudyDesignController;
+package org.labkey.test.pages.xStudyDesignController;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.test.BaseWebDriverTest;

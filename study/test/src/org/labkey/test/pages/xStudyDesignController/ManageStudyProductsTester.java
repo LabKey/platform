@@ -1,4 +1,4 @@
-package org.labkey.test.pages.StudyDesignController;
+package org.labkey.test.pages.xStudyDesignController;
 
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
