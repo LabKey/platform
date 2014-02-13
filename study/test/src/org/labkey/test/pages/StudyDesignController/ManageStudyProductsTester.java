@@ -67,7 +67,7 @@ public class ManageStudyProductsTester
         _test.click(insertNewAdjuvantButton);
         _test.waitForElement(insertAdjuvantWindow);
         _test.setFormElement(Locator.name("Label"), label);
-        _test.click(insertAdjuvantWindow.append(Locator.ext4ButtonEnabled("Submit")));
+        _test.waitAndClick(insertAdjuvantWindow.append(Locator.ext4ButtonEnabled("Submit")));
         _test._ext4Helper.waitForMaskToDisappear();
     }
 
