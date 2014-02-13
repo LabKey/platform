@@ -2326,6 +2326,7 @@ public class StudyManager
             assert deletedTables.add(ParticipantGroupManager.getInstance().getTableInfoParticipantGroup());
             Table.delete(StudySchema.getInstance().getTableInfoParticipantCategory(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoParticipantCategory());
+            ParticipantGroupManager.getInstance().clearCache(c);
 
             //
             // participant and assay data (OntologyManager will take care of properties)

@@ -32,7 +32,6 @@ import java.util.Map;
 
 public class SiteSettingsAuditDetailsModel
 {
-    private User _user = null;
     private FastDateFormat _dateFormat = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss");
     private String _diff;
     private User _createdBy;
@@ -60,15 +59,8 @@ public class SiteSettingsAuditDetailsModel
         return _dateFormat.format(_created);
     }
 
-    public User getUser()
+    public User getCreatedBy()
     {
-        if(null != _user)
-            return _user;
-        
-        if(null == _createdBy)
-            return null;
-
-        _user = _createdBy;
-        return _user;
+        return _createdBy;
     }
 }

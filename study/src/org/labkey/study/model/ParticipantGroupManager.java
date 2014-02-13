@@ -1184,6 +1184,12 @@ public class ParticipantGroupManager
         return errors;
     }
 
+    public void clearCache(Container c)
+    {
+        GROUP_CACHE.clear();
+        CATEGORY_CACHE.remove(c);
+    }
+
     public static class ParticipantGroupTestCase extends Assert
     {
 
