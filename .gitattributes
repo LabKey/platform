@@ -3874,9 +3874,9 @@ study/src/org/labkey/study/writer/VisitMapWriter.java -text
 study/src/org/labkey/study/writer/XmlVisitMapWriter.java -text
 study/test/StudyTest.iml -text
 study/test/src/org/labkey/test/pages/DesignerController/DesignerTester.java -text
-study/test/src/org/labkey/test/pages/xStudyDesignController/ManageAssayScheduleTester.java -text
-study/test/src/org/labkey/test/pages/xStudyDesignController/ManageImmunizationsTester.java -text
-study/test/src/org/labkey/test/pages/xStudyDesignController/ManageStudyProductsTester.java -text
+study/test/src/org/labkey/test/pages/studydesigncontroller/ManageAssayScheduleTester.java -text
+study/test/src/org/labkey/test/pages/studydesigncontroller/ManageImmunizationsTester.java -text
+study/test/src/org/labkey/test/pages/studydesigncontroller/ManageStudyProductsTester.java -text
 study/test/src/org/labkey/test/tests/VaccineProtocolTest.java -text
 study/webapp/WEB-INF/study/studyContext.xml -text
 study/webapp/sampleRequest.js -text
