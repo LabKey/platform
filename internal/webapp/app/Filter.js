@@ -89,7 +89,7 @@ LABKEY.app.controller.Filter = new function() {
     };
 
 
-    var doGroupUpdate = function(mdx, grpData, onGroupUpdated) {
+    var doGroupUpdate = function(mdx, onUpdateSuccess, onUpdateFaiure, grpData) {
         mdx.queryParticipantList({
             filter : getOlapFilters(filtersFromJSON(grpData.filters)),
             group : grpData,
@@ -101,8 +101,8 @@ LABKEY.app.controller.Filter = new function() {
                     participantIds : ids,
                     success : function(group, response)
                     {
-                        if (onGroupUpdated)
-                            onGroupUpdated.call(this, group);
+                        if (onUpdateSuccess)
+                            onUpdateSuccess.call(this, group);
                     }
                 });
             }
@@ -142,6 +142,7 @@ LABKEY.app.controller.Filter = new function() {
         lookupOperator: lookupOperator,
         getOlapFilter: getOlapFilter,
         filtersFromJSON: filtersFromJSON,
+        filtersToJSON: filtersToJSON,
         Operators: {
             UNION: 'UNION',
             INTERSECT: 'INTERSECT'

@@ -90,6 +90,9 @@ LABKEY.ParticipantGroup = new function()
             if (config.description) {
                 group.description = config.description;
             }
+            if (config.filters) {
+                group.filters = config.filters;
+            }
 
             sendJsonQueryRequest({
                 url : LABKEY.ActionURL.buildURL("participant-group", "updateParticipantGroup", config.containerPath),

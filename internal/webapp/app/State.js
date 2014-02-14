@@ -33,6 +33,9 @@ Ext.define('LABKEY.app.controller.State', {
     preventRedundantHistory: true,
 
     init : function() {
+        if (LABKEY.devMode) {
+            STATE = this;
+        }
         this.olap = this.application.olap;
 
         this.state = Ext.create('Ext.data.Store', {
@@ -537,7 +540,7 @@ Ext.define('LABKEY.app.controller.State', {
         var proceed = true;
         for (f=0; f < olapFilters.length; f++) {
             if (olapFilters[f].arguments.length == 0) {
-                console.warn('EMPTY ARGUMENTS ON FILTER');
+                alert('EMPTY ARGUMENTS ON FILTER');
                 proceed = false;
             }
         }
