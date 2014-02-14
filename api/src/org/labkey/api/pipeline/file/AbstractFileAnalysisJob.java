@@ -199,7 +199,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         ArrayList<PipelineJob> jobs = new ArrayList<>();
         for (File file : getInputFiles())
             jobs.add(createSingleFileJob(file));
-        return jobs;
+        return Collections.unmodifiableList(jobs);
     }
 
     public TaskPipeline getTaskPipeline()

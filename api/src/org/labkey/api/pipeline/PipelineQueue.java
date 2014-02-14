@@ -27,9 +27,9 @@ public interface PipelineQueue
      * Add a <code>PipelineJob</code> to this queue to be run.
      *
      * @param job Job to be run
-     * @param preserveJobId whether the job's ID should be retained or not
+     *
      */
-    void addJob(PipelineJob job, boolean preserveJobId) throws PipelineValidationException;
+    void addJob(PipelineJob job) throws PipelineValidationException;
 
     /**
      * Cancel a previously added <code>PipelineJob</code>.  The job may be still on the
