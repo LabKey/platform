@@ -19,6 +19,8 @@ api/src/org/json/XML.java -text
 api/src/org/json/XMLTokener.java -text
 api/src/org/labkey/api/ScrollableDataIterator.java -text
 api/src/org/labkey/api/action/AbstractFileUploadAction.java -text
+api/src/org/labkey/api/action/Action.java -text
+api/src/org/labkey/api/action/ActionType.java -text
 api/src/org/labkey/api/action/AjaxAction.java -text
 api/src/org/labkey/api/action/ApiAction.java -text
 api/src/org/labkey/api/action/ApiBeanResponse.java -text

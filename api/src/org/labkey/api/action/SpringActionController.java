@@ -28,6 +28,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlViewDefinition;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SimpleAction;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.LoginUrls;
@@ -340,7 +341,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
             if (action instanceof HasPageConfig)
                 ((HasPageConfig)action).setPageConfig(pageConfig);
 
-            if (action.getClass().isAnnotationPresent(IgnoresAllocationTracking.class))
+            Class<? extends Controller> actionClass = action.getClass();
+
+            if (actionClass.isAnnotationPresent(IgnoresAllocationTracking.class))
             {
                 request.setAttribute(IgnoresAllocationTracking.class.getName(), Boolean.TRUE);
             }
@@ -351,7 +354,14 @@ public abstract class SpringActionController implements Controller, HasViewConte
             }
             else
             {
-                BaseViewAction.checkPermissionsAndTermsOfUse(action.getClass(), context, null);
+                BaseViewAction.checkPermissionsAndTermsOfUse(actionClass, context, null);
+            }
+
+            // Actions can annotate themselves with an ActionType, which helps custom schemas that want to limit access from generic actions
+            if (actionClass.isAnnotationPresent(Action.class))
+            {
+                Action actionAnnotation = actionClass.getAnnotation(Action.class);
+                QueryService.get().setEnvironment(QueryService.Environment.ACTION, actionAnnotation.value());
             }
 
             beforeAction(action);

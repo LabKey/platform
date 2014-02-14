@@ -228,12 +228,16 @@ abstract public class QueryService
     //
     // Thread local environment for executing a query
     //
-    // currently only supports USER for implementing the USERID() and USERNAME() method
+    // currently supports:
+    // - USER for implementing the USERID() and USERNAME() method
+    // - CONTAINER for
+    // - ACTION so query schemas can exclude certain types of actions (e.g., disallow export)
     //
     public enum Environment
     {
         USER(JdbcType.OTHER),
-        CONTAINER(JdbcType.OTHER);
+        CONTAINER(JdbcType.OTHER),
+        ACTION(JdbcType.OTHER);
 
         public JdbcType type;
 
