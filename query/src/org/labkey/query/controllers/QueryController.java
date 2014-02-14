@@ -1240,6 +1240,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public class ExecuteQueryAction extends QueryViewAction
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
@@ -5198,6 +5199,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectMetaData)
     public class GetQueriesAction extends ApiAction<GetQueriesForm>
     {
         public ApiResponse execute(GetQueriesForm form, BindException errors) throws Exception

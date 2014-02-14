@@ -18,6 +18,8 @@ package org.labkey.query.controllers;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.action.Action;
+import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -63,6 +65,7 @@ import java.util.Map;
  * Time: 3:36:07 PM
  */
 @RequiresPermissionClass(ReadPermission.class)
+@Action(ActionType.SelectMetaData)
 public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
 {
     public ApiResponse execute(Form form, BindException errors) throws Exception

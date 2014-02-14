@@ -1307,6 +1307,7 @@ public class QueryServiceImpl extends QueryService
         return new SimpleUserSchema(name, description, user, container, schema);
     }
 
+    @Override
     public List<ColumnInfo> getDefaultVisibleColumnInfos(List<ColumnInfo> columns)
     {
         List<ColumnInfo> ret = new ArrayList<>(columns.size());
@@ -1328,6 +1329,7 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
+    @Override
     public List<FieldKey> getDefaultVisibleColumns(List<ColumnInfo> columns)
     {
         List<FieldKey> ret = new ArrayList<>();
@@ -1340,6 +1342,7 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
+    @Override
     public Collection<TableType> findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, boolean allModules, @NotNull Collection<QueryException> errors, Path dir)
     {
         Collection<QueryDef> queryDefs = findMetadataOverrideImpl(schema, tableName, customQuery, allModules, dir);
@@ -1571,6 +1574,7 @@ public class QueryServiceImpl extends QueryService
     }
 
 
+    @Override
     public ResultSet select(@NotNull QuerySchema schema, String sql, boolean strictColumnList) throws SQLException
 	{
 		Query q = new Query(schema);
@@ -1591,6 +1595,7 @@ public class QueryServiceImpl extends QueryService
 	}
 
 
+    @Override
     public void bindNamedParameters(SQLFragment frag, @Nullable Map<String,Object> in)
     {
         Map<String, Object> params = null == in ? Collections.<String, Object>emptyMap() :
@@ -1637,6 +1642,7 @@ public class QueryServiceImpl extends QueryService
 
 
     // verify that named parameters have been bound
+    @Override
     public void validateNamedParameters(SQLFragment frag)
     {
         for (Object o : frag.getParams())
@@ -1676,6 +1682,7 @@ public class QueryServiceImpl extends QueryService
     }
 
 
+    @Override
 	public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
                                     int maxRows, long offset, boolean forceSort)
 	{
@@ -1844,21 +1851,25 @@ public class QueryServiceImpl extends QueryService
 		}
 	}
 
+    @Override
     public void addQueryListener(QueryChangeListener listener)
     {
         QueryManager.get().addQueryListener(listener);
     }
 
+    @Override
     public void removeQueryListener(QueryChangeListener listener)
     {
         QueryManager.get().removeQueryListener(listener);
     }
 
+    @Override
     public void addCustomViewListener(CustomViewChangeListener listener)
     {
         QueryManager.get().addCustomViewListener(listener);
     }
 
+    @Override
     public void removeCustomViewListener(CustomViewChangeListener listener)
     {
         QueryManager.get().removeCustomViewListener(listener);
@@ -1923,13 +1934,14 @@ public class QueryServiceImpl extends QueryService
     @Override
     public void setEnvironment(QueryService.Environment e, Object value)
     {
-        HashMap<Environment,Object> env = environments.get();
-        env.put(e,e.type.convert(value));
+        HashMap<Environment, Object> env = environments.get();
+        env.put(e, e.type.convert(value));
     }
 
+    @Override
     public Object getEnvironment(QueryService.Environment e)
     {
-        HashMap<Environment,Object> env = environments.get();
+        HashMap<Environment, Object> env = environments.get();
         return env.get(e);
     }
 
