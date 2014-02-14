@@ -322,6 +322,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var addBrushHandles = function(brush, brushSel){
+        // TODO: Brushing from handles when there are discrete axes is broken. Should probably just disable brushing on
+        // discrete axes (i.e. only allow 1D selection)...
         var xBrushStart, xBrush, xBrushEnd, yBrushStart, yBrush, yBrushEnd;
 
         if (!xHandleSel) {
@@ -455,7 +457,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var addBrush = function(){
-        if (plot.brushing != null && (plot.brushing.brushstart || plot.brushing.brush || plot.brushing.brushend)) {
+        if (plot.brushing != null && (plot.brushing.brushstart || plot.brushing.brush || plot.brushing.brushend ||
+                plot.brushing.brushclear)) {
             var xScale, yScale;
 
             if(brush == null) {
@@ -463,23 +466,23 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 brushSel = this.canvas.insert('g', '.layer').attr('class', 'brush');
             }
 
-            if (plot.scales.x.trans == 'linear') {
+            if (plot.scales.x.scaleType == 'continuous' && plot.scales.x.trans == 'linear') {
                 // We need to add some padding to the scale in order for us to actually be able to select all of the points.
                 // If we don't, any points that lie exactly at the edge of the chart will be unselectable.
                 xScale = plot.scales.x.scale.copy();
                 xScale.domain([xScale.invert(plot.grid.leftEdge - 5), xScale.invert(plot.grid.rightEdge + 5)]);
                 xScale.range([plot.grid.leftEdge - 5, plot.grid.rightEdge + 5]);
             } else {
-                xScale = plot.scale.x.scale;
+                xScale = plot.scales.x.scale;
             }
 
-            if (plot.scales.yLeft.trans == 'linear') {
+            if (plot.scales.yLeft.scaleType == 'continuous' && plot.scales.yLeft.trans == 'linear') {
                 // See the note above.
                 yScale = plot.scales.yLeft.scale.copy();
                 yScale.domain([yScale.invert(plot.grid.bottomEdge + 5), yScale.invert(plot.grid.topEdge - 5)]);
                 yScale.range([plot.grid.bottomEdge + 5, plot.grid.topEdge - 5]);
             } else {
-                yScale = plot.scale.yLeft.scale;
+                yScale = plot.scales.yLeft.scale;
             }
 
             brush.x(xScale).y(yScale);
@@ -535,9 +538,13 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     xHandleBrush(xHandleSel);
                     yHandleBrush.clear();
                     yHandleBrush(yHandleSel);
-                    plot.brushing.brushclear(event, allData, getAllLayerSelections());
+                    if (plot.brushing.brushclear) {
+                        plot.brushing.brushclear(event, allData, getAllLayerSelections());
+                    }
                 } else {
-                    plot.brushing.brushend(event, allData, extent, getAllLayerSelections());
+                    if (plot.brushing.brushend) {
+                        plot.brushing.brushend(event, allData, extent, getAllLayerSelections());
+                    }
                 }
             });
         }

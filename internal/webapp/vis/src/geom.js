@@ -61,13 +61,13 @@ LABKEY.vis.Geom.XY.prototype.initAesthetics = function(scales, layerAes, parentA
     return true;
 };
 
-LABKEY.vis.Geom.XY.prototype.getVal = function(scale, map, row){
+LABKEY.vis.Geom.XY.prototype.getVal = function(scale, map, row, isY){
     // Takes a row, returns the scaled y value.
     var value = map.getValue(row);
 
     if(!LABKEY.vis.isValid(value)){
         if(this.plotNullPoints){
-            return scale(scale.domain()[0]) - 5;
+            return isY ? scale(scale.domain()[0]) + 5 : scale(scale.domain()[0]) - 5;
         } else {
             return null;
         }
@@ -78,12 +78,12 @@ LABKEY.vis.Geom.XY.prototype.getVal = function(scale, map, row){
 
 LABKEY.vis.Geom.XY.prototype.getX = function(row){
     // Takes a row, returns the scaled x value.
-    return this.getVal(this.xScale.scale, this.xAes, row);
+    return this.getVal(this.xScale.scale, this.xAes, row, false);
 };
 
 LABKEY.vis.Geom.XY.prototype.getY = function(row){
     // Takes a row, returns the scaled x value.
-    return this.getVal(this.yScale.scale, this.yAes, row);
+    return this.getVal(this.yScale.scale, this.yAes, row, true);
 };
 
 /**
