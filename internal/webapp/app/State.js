@@ -692,7 +692,8 @@ Ext.define('LABKEY.app.controller.State', {
             }
         }
 
-        this.addFilters(prunedSelections, false, true);
+        if (prunedSelections.length > 0)
+            this.addFilters(prunedSelections, false, true);
     },
 
     getPrivateSelection : function(name) {
