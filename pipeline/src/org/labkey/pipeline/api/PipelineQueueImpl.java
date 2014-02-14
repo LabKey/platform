@@ -321,7 +321,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
 
             // Add four jobs
             for (int i = 0; i < 4; i++)
-                queue.addJob(jobs[i], false);
+                queue.addJob(jobs[i]);
             Thread.sleep(1);
             data = queue.getJobDataInMemory(containerA);
             //assertEquals(2, data.getPendingJobs().size() + data.getRunningJobs().size() + data.getCompletedJobs().size());
@@ -335,7 +335,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
 
             // add remaining jobs
             for (int i = 4; i < jobs.length; i++)
-                queue.addJob(jobs[i], false);
+                queue.addJob(jobs[i]);
             Thread.sleep(1);
             data = queue.getJobDataInMemory(null);
             //assertEquals(jobs.length, data.getPendingJobs().size() + data.getRunningJobs().size() + data.getCompletedJobs().size());

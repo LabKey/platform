@@ -28,6 +28,7 @@ import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.TaskId;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
@@ -200,7 +201,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
                     jobJoin.setActiveTaskId(tid, false);
                     try
                     {
-                        PipelineService.get().queueJob(jobJoin, true);
+                        PipelineService.get().queueJob(jobJoin);
                     }
                     catch (PipelineValidationException e)
                     {
@@ -227,7 +228,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
         {
             _joinJob = job;
             // Need list with editable content.
-            _splitJobs = splitJobs;
+            _splitJobs = new ArrayList<>(splitJobs);
         }
 
         public boolean isJoinJob(String jobId)

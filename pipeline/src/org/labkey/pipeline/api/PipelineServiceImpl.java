@@ -308,12 +308,7 @@ public class PipelineServiceImpl extends PipelineService
 
     public void queueJob(PipelineJob job) throws PipelineValidationException
     {
-        queueJob(job, false);
-    }
-
-    public void queueJob(PipelineJob job, boolean preserveJobId) throws PipelineValidationException
-    {
-        getPipelineQueue().addJob(job, preserveJobId);
+        getPipelineQueue().addJob(job);
     }
 
     public void setPipelineProperty(Container container, String name, String value)

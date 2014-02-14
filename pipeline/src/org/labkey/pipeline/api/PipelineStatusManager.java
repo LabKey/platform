@@ -243,24 +243,27 @@ public class PipelineStatusManager
             enforceLockOrder(jobId, active);
 
             PipelineStatusFileImpl sfExist = getStatusFile(path);
-            if (sfExist != null)
+            if (!jobId.equals(sfExist.getJob()))
             {
-                PipelineStatusFileImpl[] children = getSplitStatusFiles(sfExist.getJobId(), ContainerManager.getForId(sfExist.getContainerId()));
-                for (PipelineStatusFileImpl child : children)
+                if (sfExist != null)
                 {
-                    child.setJobParent(null);
-                    child.beforeUpdate(null, child);
-                    enforceLockOrder(child.getJobId(), active);
-                    updateStatusFile(child);
-                }
-                sfExist.setJob(jobId);
-                sfExist.beforeUpdate(null, sfExist);
-                updateStatusFile(sfExist);
-                for (PipelineStatusFileImpl child : children)
-                {
-                    child.setJobParent(jobId);
-                    child.beforeUpdate(null, child);
-                    updateStatusFile(child);
+                    PipelineStatusFileImpl[] children = getSplitStatusFiles(sfExist.getJobId(), ContainerManager.getForId(sfExist.getContainerId()));
+                    for (PipelineStatusFileImpl child : children)
+                    {
+                        child.setJobParent(null);
+                        child.beforeUpdate(null, child);
+                        enforceLockOrder(child.getJobId(), active);
+                        updateStatusFile(child);
+                    }
+                    sfExist.setJob(jobId);
+                    sfExist.beforeUpdate(null, sfExist);
+                    updateStatusFile(sfExist);
+                    for (PipelineStatusFileImpl child : children)
+                    {
+                        child.setJobParent(jobId);
+                        child.beforeUpdate(null, child);
+                        updateStatusFile(child);
+                    }
                 }
             }
             transaction.commit();
