@@ -71,11 +71,6 @@
 %>
         <table class='study-vaccine-design'>
             <tr>
-                <td><h2>Immunogens</h2></td>
-                <td style="width: 20px;">&nbsp;</td>
-                <td><h2>Adjuvants</h2></td>
-            </tr>
-            <tr>
 <%
         List<ProductImpl> immunogens = study.getStudyProducts(user, "Immunogen");
         if (immunogens.size() == 0)
@@ -87,6 +82,9 @@
 %>
             <td valign="top" style="max-width: 800px;">
                 <table class="labkey-read-only labkey-data-region labkey-show-borders" style="border: solid #ddd 1px;">
+                    <tr>
+                        <td class="labkey-col-header" colspan="3"><div class="study-vaccine-design-header">Immunogens</div></td>
+                    </tr>
                     <tr>
                         <td class="labkey-col-header">Label</td>
                         <td class="labkey-col-header">Type</td>
@@ -122,6 +120,9 @@
 %>
             <td valign="top">
                 <table class="labkey-read-only labkey-data-region labkey-show-borders" style="border: solid #ddd 1px;">
+                    <tr>
+                        <td class="labkey-col-header" colspan="1"><div class="study-vaccine-design-header">Adjuvants</div></td>
+                    </tr>
                     <tr><td class="labkey-col-header">Label</td></tr>
 <%
                 for (ProductImpl adjuvant : adjuvants)

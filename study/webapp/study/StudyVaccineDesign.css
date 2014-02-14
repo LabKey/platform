@@ -74,12 +74,12 @@ table.study-vaccine-design .labkey-col-header-active .gwt-Label:hover {
     cursor: pointer;
 }
 
-.assay-schedule-header {
+.study-vaccine-design-header {
     font-weight: bold;
     text-align: center;
 }
 
-.assay-schedule-header .gwt-label {
+.study-vaccine-design-header .gwt-label {
     font-weight: bold;
 }
 

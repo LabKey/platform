@@ -85,7 +85,7 @@
 %>
             <table class="labkey-read-only labkey-data-region labkey-show-borders study-vaccine-design" style="border: solid #ddd 1px;">
                 <tr>
-                    <td class="labkey-col-header assay-schedule-header" colspan="<%=visits.size()+3%>"><div class="assay-schedule-header">Assay Schedule</div></td>
+                    <td class="labkey-col-header" colspan="<%=visits.size()+3%>"><div class="study-vaccine-design-header">Assay Schedule</div></td>
                 </tr>
                 <tr>
                     <td class="labkey-col-header">Assay</td>
