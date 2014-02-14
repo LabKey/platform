@@ -132,19 +132,11 @@ public abstract class ScriptReport extends AbstractReport
         String webpartString = (String)context.get(Report.renderParam.reportWebPart.name());
         boolean webpart = (null != webpartString && BooleanFormat.getInstance().parseObject(webpartString));
 
-        // Module-based reports are always read-only.
+        // Module-based reports are always read-only, but we still allow viewing the report source in the source tab.
         // if tab == "Source" then use update mode, which lets developers edit the source
         // otherwise, if we're a webpart then use view mode
         // otherwise, use viewAndUpdate, which means show the view tab first, but let developers edit the source
-        Mode mode;
-        if (getDescriptor().isModuleBased())
-        {
-            mode = Mode.view;
-        }
-        else
-        {
-            mode = (TAB_SOURCE.equals(tabId) ? Mode.update : (webpart ? Mode.view : Mode.viewAndUpdate));
-        }
+        Mode  mode = (TAB_SOURCE.equals(tabId) ? Mode.update : (webpart ? Mode.view : Mode.viewAndUpdate));
 
         if (hasClientDependencies())
         {
