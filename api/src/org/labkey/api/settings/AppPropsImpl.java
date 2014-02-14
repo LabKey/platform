@@ -143,6 +143,11 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         return _serverName;
     }
 
+    @Override
+    public boolean isBaseServerUrlInitialized()
+    {
+        return _serverName != null;
+    }
 
     public void initializeFromRequest(HttpServletRequest request)
     {

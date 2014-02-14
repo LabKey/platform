@@ -69,6 +69,7 @@ public class AppProps
         public int getServerPort();
         public String getScheme();
         public String getServerName();
+        public boolean isBaseServerUrlInitialized();
         public void initializeFromRequest(HttpServletRequest request);
         public void setBaseServerUrlAttributes(String baseServerUrl) throws URISyntaxException;
         public HttpServletRequest createMockRequest();

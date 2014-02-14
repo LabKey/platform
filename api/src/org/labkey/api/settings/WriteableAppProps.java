@@ -35,9 +35,12 @@ public class WriteableAppProps extends AppPropsImpl
         makeWriteable(c);
         try
         {
-            // Copy original values from AppProps singleton. The URL properties are special, and are also stashed
-            // separately in AppProps, unlike other properties which always go back to the property bag for their values
-            setBaseServerUrl(AppProps.getInstance().getBaseServerUrl());
+            if (AppProps.getInstance().isBaseServerUrlInitialized())
+            {
+                // Copy original values from AppProps singleton. The URL properties are special, and are also stashed
+                // separately in AppProps, unlike other properties which always go back to the property bag for their values
+                setBaseServerUrl(AppProps.getInstance().getBaseServerUrl());
+            }
         }
         catch (URISyntaxException e)
         {
@@ -52,8 +55,11 @@ public class WriteableAppProps extends AppPropsImpl
         super.save();
         try
         {
-            // Copy server URL back to AppProps singleton.
-            AppProps.getInstance().setBaseServerUrlAttributes(getBaseServerUrl());
+            if (isBaseServerUrlInitialized())
+            {
+                // If we know the server name, copy server URL back to AppProps singleton.
+                AppProps.getInstance().setBaseServerUrlAttributes(getBaseServerUrl());
+            }
         }
         catch (URISyntaxException e)
         {
