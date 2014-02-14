@@ -142,7 +142,7 @@
                 List<Integer> assaySpecimenVisits = StudyManager.getInstance().getAssaySpecimenVisitIds(c, assaySpecimen);
                 for (VisitImpl visit : visits)
                 {
-                    %><td class="assay-row-padded-view" align="center"><%=h(assaySpecimenVisits.contains(visit.getRowId()) ? "[x]" : " ")%></td><%
+                    %><td class="assay-row-padded-view" align="center"><%=assaySpecimenVisits.contains(visit.getRowId()) ? "&#x2713;" : " "%></td><%
                 }
 %>
                 </tr>
