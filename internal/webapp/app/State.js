@@ -631,6 +631,33 @@ Ext.define('LABKEY.app.controller.State', {
         return oldFilters;
     },
 
+    /**
+     * Returns the set of filters found in newFilters that were not present in oldFilters
+     * @param newFilters
+     * @param oldFilters
+     */
+    pruneFilters : function(newFilters, oldFilters) {
+        // 15464
+        var prunedSelections = [], found;
+        for (var s=0; s < newFilters.length; s++) {
+            found = false;
+            for (var f=0; f < oldFilters.length; f++) {
+                if (newFilters[s].isGroup()) {
+                    if (oldFilters[f].isGroup() && oldFilters[f].get('name') == newFilters[s].get('name')) {
+                        found = true;
+                    }
+                }
+                else if (newFilters[s].isEqualAsFilter(oldFilters[f])) {
+                    found = true;
+                }
+            }
+            if (!found) {
+                prunedSelections.push(newFilters[s]);
+            }
+        }
+        return prunedSelections;
+    },
+
     addSelection : function(selections, skipState, merge, clear) {
 
         var newSelectors = this._getFilterSet(selections);
@@ -677,23 +704,7 @@ Ext.define('LABKEY.app.controller.State', {
     },
 
     moveSelectionToFilter : function() {
-
-        // 15464
-        var prunedSelections = [], found;
-        for (var s=0; s < this.selections.length; s++) {
-            found = false;
-            for (var f=0; f < this.filters.length; f++) {
-                if (this.selections[s].isEqualAsFilter(this.filters[f])) {
-                    found = true;
-                }
-            }
-            if (!found) {
-                prunedSelections.push(this.selections[s]);
-            }
-        }
-
-        if (prunedSelections.length > 0)
-            this.addFilters(prunedSelections, false, true);
+        this.addFilters(this.pruneFilters(this.selections, this.filters), false, true);
     },
 
     getPrivateSelection : function(name) {
