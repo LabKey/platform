@@ -1083,6 +1083,7 @@ public class ParticipantGroupController extends BaseStudyController
         private int _rowId;
         private String _label;
         private String _description;
+        private String _filters;
         private String[] _participantIds;
         private String[] _ensureParticipantIds;
         private String[] _deleteParticipantIds;
@@ -1115,6 +1116,16 @@ public class ParticipantGroupController extends BaseStudyController
         public void setDescription(String description)
         {
             _description = description;
+        }
+
+        public String getFilters()
+        {
+            return _filters;
+        }
+
+        public void setFilters(String filters)
+        {
+            _filters = filters;
         }
 
         public String[] getParticipantIds()
@@ -1177,6 +1188,10 @@ public class ParticipantGroupController extends BaseStudyController
             if (form.getLabel() != null)
             {
                 participantGroup.setLabel(form.getLabel());
+            }
+            if (form.getFilters() != null)
+            {
+                participantGroup.setFilters(form.getFilters());
             }
 
             ParticipantGroupManager.getInstance().setParticipantGroup(getContainer(), getUser(), participantGroup);
