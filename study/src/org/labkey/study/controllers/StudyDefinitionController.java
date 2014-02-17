@@ -16,13 +16,14 @@
 package org.labkey.study.controllers;
 
 import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -52,11 +53,11 @@ public class StudyDefinitionController extends BaseStudyController
         setActionResolver(ACTION_RESOLVER);
     }
 
-    private abstract class EditDefinitionAction extends SimpleRedirectAction
+    private abstract class EditDefinitionAction extends SimpleRedirectAction<ReturnUrlForm>
     {
         protected abstract ExtensibleStudyEntity.DomainInfo getDomainInfo();
 
-        public ActionURL getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(ReturnUrlForm form) throws Exception
         {
             // Get domain Id
             ExtensibleStudyEntity.DomainInfo domainInfo = getDomainInfo();
@@ -68,7 +69,9 @@ public class StudyDefinitionController extends BaseStudyController
                 domain.save(getUser());
             }
 
-            return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), domain.getTypeURI(), false, false, false);
+            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), domain.getTypeURI(), false, false, false);
+            form.propagateReturnURL(url);
+            return url;
         }
     }
 
