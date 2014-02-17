@@ -108,9 +108,7 @@ public class ReturnUrlForm
             if (null != url)
                 return url;
         }
-        catch (URLException e)
-        {
-        }
+        catch (URLException ignored) {}
         return defaultURL;
     }
 
@@ -123,9 +121,7 @@ public class ReturnUrlForm
             if (null != url)
                 return url;
         }
-        catch (URLException e)
-        {
-        }
+        catch (URLException ignored) {}
         return defaultURL;
     }
 
@@ -140,5 +136,14 @@ public class ReturnUrlForm
     public void setReturnURL(ReturnURLString returnUrl)
     {
         setReturnUrl(returnUrl);
+    }
+
+    /** Applies the return URL from this form (if any) to the given URL */
+    public void propagateReturnURL(ActionURL urlNeedingParameter)
+    {
+        if (getReturnUrl() != null)
+        {
+            urlNeedingParameter.addParameter(ActionURL.Param.returnUrl, getReturnUrl());
+        }
     }
 }
