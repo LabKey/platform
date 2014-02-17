@@ -252,7 +252,7 @@ public class StudyQuerySchema extends UserSchema
             ret.add("SpecimenComment");
 
             ret.add("DataSets");
-            ret.add("DataSetColumns");
+            ret.add(DataSetColumnsTable.NAME);
 
             // Only show cohorts if the user has permission
             if (StudyManager.getInstance().showCohorts(getContainer(), getUser()))
@@ -547,7 +547,7 @@ public class StudyQuerySchema extends UserSchema
             DataSetsTable ret = new DataSetsTable(this);
             return ret;
         }
-        if ("DataSetColumns".equalsIgnoreCase(name))
+        if (DataSetColumnsTable.NAME.equalsIgnoreCase(name))
         {
             DataSetColumnsTable ret = new DataSetColumnsTable(this);
             return ret;
