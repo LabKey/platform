@@ -17,10 +17,17 @@
 package org.labkey.study.importer;
 
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.pipeline.*;
+import org.labkey.api.pipeline.AbstractTaskFactory;
+import org.labkey.api.pipeline.AbstractTaskFactorySettings;
+import org.labkey.api.pipeline.CancelledException;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.FileType;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
@@ -59,6 +66,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
     public static void doImport(PipelineJob job, StudyImportContext ctx, BindException errors, String originalFileName) throws PipelineJobException
     {
+        SpecimenTablesTemplate previousTablesTemplate = null;
         try
         {
             StudyDocument.Study studyXml = ctx.getXml();
@@ -84,6 +92,12 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             }
             
             StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
+            boolean hasSpecimenSchemasToImport = SpecimenSchemaImporter.containsSchemasToImport(ctx);
+            if (hasSpecimenSchemasToImport)
+            {
+                // if specimen schemas will be imported, don't create optional specimen table fields
+                previousTablesTemplate = StudySchema.getInstance().setSpecimenTablesTemplats(new SpecimenSchemaImporter.ImportTemplate());
+            }
 
             // Create the study if it doesn't exist... otherwise, modify the existing properties
             if (null == study)
@@ -202,12 +216,10 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             if (errors.hasErrors())
                 throwFirstErrorAsPiplineJobException(errors);
 
-            StudyDocument.Study.Specimens specimens = studyXml.getSpecimens();
-            if (null != specimens && null != specimens.getDir())
+            if (hasSpecimenSchemasToImport)
             {
-                VirtualFile specimenDir = ctx.getRoot().getDir(specimens.getDir());
-
-                if (null != specimenDir && null != specimens.getFile())
+                VirtualFile specimenDir = SpecimenSchemaImporter.getSpecimenFolder(ctx);
+                if (null != specimenDir)
                 {
                     new SpecimenSchemaImporter().process(ctx, specimenDir, errors);
                     if (errors.hasErrors())
@@ -223,6 +235,11 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
         catch (Throwable t)
         {
             throw new PipelineJobException(t) {};
+        }
+        finally
+        {
+            if (previousTablesTemplate != null)
+                StudySchema.getInstance().setSpecimenTablesTemplats(previousTablesTemplate);
         }
     }
 

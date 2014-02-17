@@ -45,7 +45,7 @@ public class StudySchema
     private static final StudySchema instance = new StudySchema();
     private static final String SCHEMA_NAME = "study";
 
-    private static SpecimenTablesTemplate specimenTablesTemplate = new DefaultSpecimenTablesTemplate();
+    private static SpecimenTablesTemplate _specimenTablesTemplate = new DefaultSpecimenTablesTemplate();
 
     public static StudySchema getInstance()
     {
@@ -190,10 +190,22 @@ public class StudySchema
         return getTableInfoVial(container, null);
     }
 
+    public SpecimenTablesTemplate setSpecimenTablesTemplats(SpecimenTablesTemplate template)
+    {
+        if (template != null)
+        {
+            SpecimenTablesTemplate prevTemplate = _specimenTablesTemplate;
+            _specimenTablesTemplate = template;
+
+            return prevTemplate;
+        }
+        return null;
+    }
+
     @NotNull
     public TableInfo getTableInfoVial(Container container, User user)
     {
-        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, specimenTablesTemplate);
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
         return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.VIAL_TABLENAME);
     }
 
@@ -213,7 +225,7 @@ public class StudySchema
     @NotNull
     public TableInfo getTableInfoSpecimen(Container container, User user)
     {
-        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, specimenTablesTemplate);
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
         return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.SPECIMEN_TABLENAME);
     }
 
@@ -233,7 +245,7 @@ public class StudySchema
     @NotNull
     public TableInfo getTableInfoSpecimenEvent(Container container, User user)
     {
-        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, specimenTablesTemplate);
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
         return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.SPECIMENEVENT_TABLENAME);
     }
 

@@ -1,10 +1,13 @@
 package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlObject;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.ImportTypesHelper;
 import org.labkey.api.exp.OntologyManager;
@@ -12,7 +15,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.gwt.client.ui.domain.ImportException;
+import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
@@ -20,23 +23,62 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
+import org.labkey.study.model.DefaultSpecimenTablesTemplate;
 import org.labkey.study.query.SpecimenTablesProvider;
 import org.labkey.study.writer.SpecimenArchiveWriter;
+import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by klum on 2/7/14.
  */
 public class SpecimenSchemaImporter implements InternalStudyImporter
 {
+    SpecimenTablesTemplate _template = new ImportTemplate();
+
     @Override
     public String getDescription()
     {
         return "specimen schemas";
+    }
+
+    public static boolean containsSchemasToImport(StudyImportContext ctx) throws ImportException
+    {
+        StudyDocument.Study.Specimens specimens = ctx.getXml().getSpecimens();
+        if (null != specimens && null != specimens.getDir())
+        {
+            try {
+                VirtualFile specimenDir = ctx.getRoot().getDir(specimens.getDir());
+                if (null != specimenDir && null != specimens.getFile())
+                {
+                    XmlObject schemaXml = specimenDir.getXmlBean(SpecimenArchiveWriter.SCHEMA_FILENAME);
+                    return (schemaXml instanceof TablesDocument);
+                }
+            }
+            catch (IOException e)
+            {
+                throw new ImportException(e.getMessage());
+            }
+        }
+        return false;
+    }
+
+    @Nullable
+    public static VirtualFile getSpecimenFolder(StudyImportContext ctx) throws org.labkey.api.admin.ImportException
+    {
+        StudyDocument.Study.Specimens specimens = ctx.getXml().getSpecimens();
+        if (null != specimens && null != specimens.getDir())
+        {
+            return ctx.getRoot().getDir(specimens.getDir());
+        }
+        return null;
     }
 
     @Override
@@ -63,7 +105,7 @@ public class SpecimenSchemaImporter implements InternalStudyImporter
         }
 
         TablesType tablesXml = tablesDoc.getTables();
-        SpecimenTablesProvider tablesProvider = new SpecimenTablesProvider(ctx.getContainer(), ctx.getUser(), null);
+        SpecimenTablesProvider tablesProvider = new SpecimenTablesProvider(ctx.getContainer(), ctx.getUser(), _template);
 
         for (TableType tableXml : tablesXml.getTableArray())
         {
@@ -121,6 +163,31 @@ public class SpecimenSchemaImporter implements InternalStudyImporter
                 if (isDirty)
                     domain.save(ctx.getUser());
             }
+        }
+    }
+
+    /**
+     * A specimen tables template implementation that only provides the required (built in) fields but none of the optional
+     * fields. This makes it easier to handle both additions and subtractions to the specimen domains on export/import.
+     */
+    public static class ImportTemplate extends DefaultSpecimenTablesTemplate implements SpecimenTablesTemplate
+    {
+        @Override
+        public Set<PropertyStorageSpec> getExtraSpecimenEventProperties()
+        {
+            return Collections.emptySet();
+        }
+
+        @Override
+        public Set<PropertyStorageSpec> getExtraVialProperties()
+        {
+            return Collections.emptySet();
+        }
+
+        @Override
+        public Set<PropertyStorageSpec> getExtraSpecimenProperties()
+        {
+            return Collections.emptySet();
         }
     }
 }
