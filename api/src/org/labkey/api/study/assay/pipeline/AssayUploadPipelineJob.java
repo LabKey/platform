@@ -109,6 +109,8 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
     {
         try
         {
+            _context.setLogger(getLogger());
+
             setStatus("RUNNING");
             getLogger().info("Starting assay upload");
 

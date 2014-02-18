@@ -20,6 +20,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -351,7 +352,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         return map;
     }
 
-    public void processValidationOutput(File runInfo) throws ValidationException
+    public void processValidationOutput(File runInfo, @Nullable Logger log) throws ValidationException
     {
         if (runInfo.exists())
         {
@@ -397,6 +398,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                                     errors.add(new PropertyValidationError(row.get("message").toString(), propName));
                                 else
                                     errors.add(new SimpleValidationError(row.get("message").toString()));
+                            }
+                            else if ("warn".equalsIgnoreCase(row.get("type").toString()) && log != null)
+                            {
+                                log.warn(row.get("message").toString());
                             }
                         }
                     }
@@ -529,7 +534,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         _filesToIgnore.add(scriptFile);
 
         // check to see if any errors were generated
-        processValidationOutput(runInfo);
+        processValidationOutput(runInfo, context.getLogger());
 
         // Find the output step for the run
         ExpProtocolApplication outputProtocolApplication = null;
@@ -864,6 +869,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         public void uploadComplete(ExpRun run) throws ExperimentException
         {
             // no-op
+        }
+
+        @Override
+        public Logger getLogger()
+        {
+            return null;
         }
     }
 }

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.assay;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
@@ -349,5 +350,11 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     public void uploadComplete(ExpRun run) throws ExperimentException
     {
         // no-op
+    }
+
+    @Override
+    public Logger getLogger()
+    {
+        return null;
     }
 }

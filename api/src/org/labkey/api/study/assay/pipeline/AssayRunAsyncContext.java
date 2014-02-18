@@ -79,6 +79,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     private transient Map<DomainProperty, String> _batchProperties;
     private transient Set<Domain> _domains;
     private transient TransformResult _transformResult;
+    private transient Logger _logger;
 
     public AssayRunAsyncContext(AssayRunUploadContext<ProviderType> originalContext) throws IOException, ExperimentException
     {
@@ -388,5 +389,16 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     public void uploadComplete(ExpRun run) throws ExperimentException
     {
         // no-op
+    }
+
+    @Override
+    public Logger getLogger()
+    {
+        return _logger;
+    }
+
+    public void setLogger(Logger logger)
+    {
+        _logger = logger;
     }
 }

@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -96,4 +97,6 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider>
     Integer getReRunId();
 
     void uploadComplete(ExpRun run) throws ExperimentException;
+
+    Logger getLogger();
 }

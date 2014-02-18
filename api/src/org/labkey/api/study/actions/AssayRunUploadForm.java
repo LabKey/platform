@@ -19,6 +19,7 @@ package org.labkey.api.study.actions;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -542,5 +543,11 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         {
             _uploadedData = collector.uploadComplete(this, run);
         }
+    }
+
+    @Override
+    public Logger getLogger()
+    {
+        return null;
     }
 }
