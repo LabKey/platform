@@ -46,6 +46,7 @@ import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -195,9 +196,20 @@ public class QueryProfiler
         {
             if (sql.contains(listener.getKey()))
             {
+                Map<DatabaseQueryListener, Object> listenersEnvironment = (Map)QueryService.get().getEnvironment(QueryService.Environment.LISTENER_ENVIRONMENTS);
+                Object listenerEnvironment;
+                if (listenersEnvironment == null)
+                {
+                    listenerEnvironment = null;
+                    LOG.warn("No DatabaseQueryListener environment available", new Exception());
+                }
+                else
+                {
+                    listenerEnvironment = listenersEnvironment.get(listener.getValue());
+                }
                 listener.getValue().queryInvoked(scope, sql,
                         (User) QueryService.get().getEnvironment(QueryService.Environment.USER),
-                        (Container)QueryService.get().getEnvironment(QueryService.Environment.CONTAINER));
+                        (Container)QueryService.get().getEnvironment(QueryService.Environment.CONTAINER), listenerEnvironment);
             }
         }
 
@@ -404,6 +416,24 @@ public class QueryProfiler
         }
 
         return tracker;
+    }
+
+    /**
+     * Makes sure that the environment from each registered DatabaseQueryListener is available via
+     * QueryService.get().getEnvironment(). Will preserve the existing environment if it has already been registered.
+     */
+    public void ensureListenerEnvironment()
+    {
+        if (QueryService.get().getEnvironment(QueryService.Environment.LISTENER_ENVIRONMENTS) == null)
+        {
+            Map<DatabaseQueryListener, Object> listenerEnvironment = new HashMap<>();
+            for (Pair<String, DatabaseQueryListener> entry : _listeners)
+            {
+                DatabaseQueryListener listener = entry.getValue();
+                listenerEnvironment.put(listener, listener.getEnvironment());
+            }
+            QueryService.get().setEnvironment(QueryService.Environment.LISTENER_ENVIRONMENTS, listenerEnvironment);
+        }
     }
 
     public static class QueryStatTsvWriter extends TSVWriter

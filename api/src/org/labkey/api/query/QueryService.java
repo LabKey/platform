@@ -237,7 +237,8 @@ abstract public class QueryService
     {
         USER(JdbcType.OTHER),
         CONTAINER(JdbcType.OTHER),
-        ACTION(JdbcType.OTHER);
+        ACTION(JdbcType.OTHER),
+        LISTENER_ENVIRONMENTS(JdbcType.OTHER);
 
         public JdbcType type;
 

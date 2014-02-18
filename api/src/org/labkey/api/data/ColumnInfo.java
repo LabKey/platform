@@ -105,8 +105,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         public DisplayColumn createRenderer(ColumnInfo colInfo)
         {
-            DataColumn dataColumn = new DataColumn(colInfo, false);
-            return dataColumn;
+            return new DataColumn(colInfo, false);
         }
     };
 
@@ -582,10 +581,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 //if we cannot resolve any of the intended columns, rather than proceed
                 // with just 1 of them, default back to the original column
                 StringBuilder msg = new StringBuilder("Unable to resolve one or more sortFieldKeys for column: " + getFieldKey() + " on table: " + (getParentTable() != null ? getParentTable().getName() : "") + ".  The fieldKeys are: ");
-                for (FieldKey k : translatedFieldKeys)
-                {
-                    msg.append(k.toString()).append(", ");
-                }
+                msg.append(StringUtils.join(translatedFieldKeys, ","));
                 _log.warn(msg);
 
                 sortCols = new ArrayList<>();
@@ -633,10 +629,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         // NOTE: most non-string types don't have spaces after conversion except dates
         // let's make sure they don't wrap (bug 392)
-        if (null == getJdbcType())
-            return false;
-        return java.util.Date.class.isAssignableFrom(getJdbcType().cls) ||
-                isNumericType();
+        return null != getJdbcType() && (java.util.Date.class.isAssignableFrom(getJdbcType().cls) || isNumericType());
     }
 
     public void setDisplayField(ColumnInfo field)
@@ -735,9 +728,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         if ("_ts".equalsIgnoreCase(getName()) || "Modified".equalsIgnoreCase(getName()))
             return true;
-        if (JdbcType.BINARY == getJdbcType() && 8 == getScale() && "timestamp".equals(getSqlTypeName()))
-            return true;
-        return false;
+        return JdbcType.BINARY == getJdbcType() && 8 == getScale() && "timestamp".equals(getSqlTypeName());
     }
 
 
@@ -1025,42 +1016,41 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
             try
             {
-                if (displayColumnClassName.equals("DEFAULT"))
+                switch (displayColumnClassName)
                 {
-                    _displayColumnFactory = DEFAULT_FACTORY;
-                }
-                else if (displayColumnClassName.equals("NOWRAP"))
-                {
-                    _displayColumnFactory = NOWRAP_FACTORY;
-                }
-                else if (displayColumnClassName.equals("NOLOOKUP"))
-                {
-                    _displayColumnFactory = NOLOOKUP_FACTORY;
-                }
-                else
-                {
-                    Class clazz = Class.forName(displayColumnClassName);
+                    case "DEFAULT":
+                        _displayColumnFactory = DEFAULT_FACTORY;
+                        break;
+                    case "NOWRAP":
+                        _displayColumnFactory = NOWRAP_FACTORY;
+                        break;
+                    case "NOLOOKUP":
+                        _displayColumnFactory = NOLOOKUP_FACTORY;
+                        break;
+                    default:
+                        Class clazz = Class.forName(displayColumnClassName);
 
-                    if (DisplayColumnFactory.class.isAssignableFrom(clazz))
-                    {
-                        //noinspection unchecked
-                        Class<DisplayColumnFactory> factoryClass = (Class<DisplayColumnFactory>)clazz;
-
-                        if (null == props)
+                        if (DisplayColumnFactory.class.isAssignableFrom(clazz))
                         {
-                            Constructor<DisplayColumnFactory> ctor = factoryClass.getConstructor();
-                            _displayColumnFactory = ctor.newInstance();
+                            //noinspection unchecked
+                            Class<DisplayColumnFactory> factoryClass = (Class<DisplayColumnFactory>) clazz;
+
+                            if (null == props)
+                            {
+                                Constructor<DisplayColumnFactory> ctor = factoryClass.getConstructor();
+                                _displayColumnFactory = ctor.newInstance();
+                            }
+                            else
+                            {
+                                Constructor<DisplayColumnFactory> ctor = factoryClass.getConstructor(MultiMap.class);
+                                _displayColumnFactory = ctor.newInstance(props);
+                            }
                         }
                         else
                         {
-                            Constructor<DisplayColumnFactory> ctor = factoryClass.getConstructor(MultiMap.class);
-                            _displayColumnFactory = ctor.newInstance(props);
+                            _log.error("Class is not a DisplayColumnFactory: " + displayColumnClassName);
                         }
-                    }
-                    else
-                    {
-                        _log.error("Class is not a DisplayColumnFactory: " + displayColumnClassName);
-                    }
+                        break;
                 }
             }
             catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e)
@@ -1072,7 +1062,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     private void setSortFieldKeysFromXml(String xml)
     {
-        List<FieldKey> keys = new ArrayList<FieldKey>();
+        List<FieldKey> keys = new ArrayList<>();
         for (String key : xml.split(","))
         {
             keys.add(FieldKey.fromString(key));
@@ -1933,7 +1923,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         if (getSortFieldKeys() == null)
             return;
 
-        List<FieldKey> remappedKeys = new ArrayList<FieldKey>();
+        List<FieldKey> remappedKeys = new ArrayList<>();
         for (FieldKey key : getSortFieldKeys())
         {
             remappedKeys.add(FieldKey.remap(key, parent, remap));
