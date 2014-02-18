@@ -645,7 +645,7 @@ Ext.define('LABKEY.app.controller.State', {
         for (var s=0; s < newFilters.length; s++) {
             found = false;
             for (var f=0; f < oldFilters.length; f++) {
-                if (newFilters[s].isGroup()) {
+                if (Ext.isDefined(newFilters[s].isGroup) && newFilters[s].isGroup()) {
                     if (oldFilters[f].isGroup() && oldFilters[f].get('name') == newFilters[s].get('name')) {
                         found = true;
                     }
