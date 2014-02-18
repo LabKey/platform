@@ -444,7 +444,7 @@ Ext.define('LABKEY.app.controller.State', {
             else {
 
                 // Check if removing group/grid
-                if (target[t].isGroup() || target[t].isGrid())
+                if (target[t].isGroup() || target[t].isGrid() || target[t].isPlot())
                     continue;
 
                 // Found the targeted filter to be removed
