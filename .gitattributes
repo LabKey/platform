@@ -325,7 +325,6 @@ api/src/org/labkey/api/data/PropertyEncryption.java -text
 api/src/org/labkey/api/data/PropertySchema.java -text
 api/src/org/labkey/api/data/PropertyStorageSpec.java -text
 api/src/org/labkey/api/data/PropertyStore.java -text
-api/src/org/labkey/api/data/QueryProfiler.java -text
 api/src/org/labkey/api/data/RemappingDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/RenderColumn.java -text
 api/src/org/labkey/api/data/RenderContextDecorator.java -text
@@ -410,6 +409,12 @@ api/src/org/labkey/api/data/dialect/sql2003Keywords.txt -text
 api/src/org/labkey/api/data/dialect/sqlKeywords.txt -text
 api/src/org/labkey/api/data/nestedGridScript.jsp -text
 api/src/org/labkey/api/data/parameterForm.jsp -text
+api/src/org/labkey/api/data/queryprofiler/DatabaseQueryListener.java -text
+api/src/org/labkey/api/data/queryprofiler/Query.java -text
+api/src/org/labkey/api/data/queryprofiler/QueryProfiler.java -text
+api/src/org/labkey/api/data/queryprofiler/QueryTracker.java -text
+api/src/org/labkey/api/data/queryprofiler/QueryTrackerComparator.java -text
+api/src/org/labkey/api/data/queryprofiler/QueryTrackerSet.java -text
 api/src/org/labkey/api/data/statistics/CurveFit.java -text
 api/src/org/labkey/api/data/statistics/DoublePoint.java -text
 api/src/org/labkey/api/data/statistics/FitFailedException.java -text

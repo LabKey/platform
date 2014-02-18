@@ -421,7 +421,7 @@ public class Table
 
 
     /** @return if this is a statement that starts with SELECT, ignoring comment lines that start with "--" */
-    static boolean isSelect(String sql)
+    public static boolean isSelect(String sql)
     {
         for (String sqlLine : sql.split("\\r?\\n"))
         {

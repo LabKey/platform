@@ -21,13 +21,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import java.util.Map;
 
 /**
- * User: adam
- * Date: 6/20/13
- * Time: 8:43 AM
- */
-
-/*
-
     These are the supported formatting functions that can be used with string substitution, for example, when substituting
     values into a details URL or the javaScriptEvents property of a JavaScriptDisplayColumnFactory. The function definitions
     are patterned off Ext.util.Format (formats used in ExtJs templates), http://docs.sencha.com/extjs/4.2.1/#!/api/Ext.util.Format
@@ -39,6 +32,10 @@ import java.util.Map;
 
     We should add more functions and allow paramaterized functions. As we add fucntions, we should use the Ext names and
     parameters if at all possible.
+
+ * User: adam
+ * Date: 6/20/13
+ * Time: 8:43 AM
 
 */
 public enum SubstitutionFormat

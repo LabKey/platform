@@ -395,6 +395,8 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
             return;
         while (s.size() > reset)
             s.pop();
+        if (s.isEmpty())
+            _viewContexts.remove();
     }
 
 

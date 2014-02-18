@@ -20,7 +20,9 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.MockHttpResponseWithRealPassthrough;
+import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
@@ -88,12 +90,13 @@ public class AsyncQueryRequest<T>
     {
         final QueryService qs = QueryService.get();
         final Object state = qs.cloneEnvironment();
+        final ViewContext context = HttpView.hasCurrentView() ? HttpView.currentContext() : null;
         
         Runnable runnable = new Runnable()
         {
             public void run()
             {
-                qs.copyEnvironment(state);
+                propagateState();
                 try
                 {
                     setResult(callable.call());
@@ -104,8 +107,28 @@ public class AsyncQueryRequest<T>
                 }
                 finally
                 {
-                    qs.clearEnvironment();    
+                    cleanUpState();
                 }
+            }
+
+            private void propagateState()
+            {
+                if (context != null)
+                {
+                    ViewContext mockViewContext = ViewContext.getMockViewContext(context.getUser(), context.getContainer(), context.getActionURL(), true);
+                    mockViewContext.setRequest(context.getRequest());
+                    mockViewContext.setResponse(context.getResponse());
+                }
+                qs.copyEnvironment(state);
+            }
+
+            private void cleanUpState()
+            {
+                if (context != null)
+                {
+                    HttpView.resetStackSize(0);
+                }
+                qs.clearEnvironment();
             }
         };
 

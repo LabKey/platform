@@ -25,6 +25,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
@@ -341,7 +342,41 @@ public class ViewServlet extends HttpServlet
         ActionURL url = new ActionURL(request);
         assert validChars(url);
 
-        // canonicalize container
+        Container c = canonicalizeContainer(request, url);
+
+        if (null != c)
+        {
+            url.setContainer(c);
+            QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, c);
+        }
+
+        // lastfilter
+        boolean expandLastFilter = ColumnInfo.booleanFromString(url.getParameter(DataRegion.LAST_FILTER_PARAM));
+
+        if (expandLastFilter)
+        {
+            ActionURL expand = (ActionURL) request.getSession(true).getAttribute(url.getPath() + "#" + DataRegion.LAST_FILTER_PARAM);
+            if (null != expand)
+            {
+                // any parameters on the URL override those stored in the last filter:
+                for (Pair<String, String> parameter : url.getParameters())
+                {
+                    // don't add the .lastFilter parameter (or we'll have an infinite redirect):
+                    if (!DataRegion.LAST_FILTER_PARAM.equals(parameter.getKey()))
+                        expand.replaceParameter(parameter.getKey(), parameter.getValue());
+                }
+                if ("GET".equals(request.getMethod()))
+                    throw new RedirectException(expand.getLocalURIString());
+                _log.error(DataRegion.LAST_FILTER_PARAM + " not supported for " + request.getMethod());
+            }
+        }
+
+        url.setReadOnly();
+        return url;
+    }
+
+    private Container canonicalizeContainer(HttpServletRequest request, ActionURL url)
+    {
         Path path = url.getParsedPath();
         Container c = ContainerManager.getForPath(path);
         if (null == c)
@@ -399,33 +434,7 @@ public class ViewServlet extends HttpServlet
                     throw new RedirectException(url.getLocalURIString());
             }
         }
-
-        if (null != c)
-            url.setContainer(c);
-
-        // lastfilter
-        boolean expandLastFilter = ColumnInfo.booleanFromString(url.getParameter(DataRegion.LAST_FILTER_PARAM));
-
-        if (expandLastFilter)
-        {
-            ActionURL expand = (ActionURL) request.getSession(true).getAttribute(url.getPath() + "#" + DataRegion.LAST_FILTER_PARAM);
-            if (null != expand)
-            {
-                // any parameters on the URL override those stored in the last filter:
-                for (Pair<String, String> parameter : url.getParameters())
-                {
-                    // don't add the .lastFilter parameter (or we'll have an infinite redirect):
-                    if (!DataRegion.LAST_FILTER_PARAM.equals(parameter.getKey()))
-                        expand.replaceParameter(parameter.getKey(), parameter.getValue());
-                }
-                if ("GET".equals(request.getMethod()))
-                    throw new RedirectException(expand.getLocalURIString());
-                _log.error(DataRegion.LAST_FILTER_PARAM + " not supported for " + request.getMethod());
-            }
-        }
-
-        url.setReadOnly();
-        return url;
+        return c;
     }
 
 

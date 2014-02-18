@@ -25,10 +25,14 @@ import javax.servlet.ServletContextEvent;
  */
 public interface ShutdownListener
 {
-    // called first, should be used only for non-blocking operations (set _shuttingDown=true, interrupt threads)
-    // also possible to launch an async shutdown task here!
+    /**
+     * called first, should be used only for non-blocking operations (set _shuttingDown=true, interrupt threads)
+     * also possible to launch an async shutdown task here!
+     */
     void shutdownPre(ServletContextEvent servletContextEvent);
 
-    // perform shutdown tasks
+    /**
+     * perform shutdown tasks
+     */
     void shutdownStarted(ServletContextEvent servletContextEvent);
 }
