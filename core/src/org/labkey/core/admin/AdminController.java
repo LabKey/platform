@@ -72,7 +72,7 @@ import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.QueryProfiler;
+import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.TableXmlUtils;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -2248,7 +2248,7 @@ public class AdminController extends SpringActionController
         {
             String buttonHTML = PageFlowUtil.generateButton("Reset All Statistics", getResetQueryStatisticsURL()) + "&nbsp;" + PageFlowUtil.generateButton("Export", getExportQueriesURL());
 
-            return QueryProfiler.getReportView(form.getStat(), buttonHTML, new QueryProfiler.ActionURLFactory() {
+            return QueryProfiler.getInstance().getReportView(form.getStat(), buttonHTML, new QueryProfiler.ActionURLFactory() {
                 public ActionURL getActionURL(String name)
                 {
                     return getQueriesURL(name);
@@ -2298,7 +2298,7 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            return QueryProfiler.getStackTraceView(form.getSqlHashCode(), new QueryProfiler.ActionURLFactory() {
+            return QueryProfiler.getInstance().getStackTraceView(form.getSqlHashCode(), new QueryProfiler.ActionURLFactory() {
                 @Override
                 public ActionURL getActionURL(String sql)
                 {
@@ -2332,7 +2332,7 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _hashCode = form.getSqlHashCode();
-            return QueryProfiler.getExecutionPlanView(form.getSqlHashCode());
+            return QueryProfiler.getInstance().getExecutionPlanView(form.getSqlHashCode());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2390,7 +2390,7 @@ public class AdminController extends SpringActionController
     {
         public ActionURL getRedirectURL(QueriesForm form) throws Exception
         {
-            QueryProfiler.resetAllStatistics();
+            QueryProfiler.getInstance().resetAllStatistics();
             return getQueriesURL(form.getStat());
         }
     }

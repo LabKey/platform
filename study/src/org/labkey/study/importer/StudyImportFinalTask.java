@@ -108,6 +108,7 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
                 {
                     // Retrieve userid for queries being validated through the pipeline (study import).
                     QueryService.get().setEnvironment(QueryService.Environment.USER, null==job.getUser() ? User.guest : job.getUser());
+                    QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, job.getContainer());
 
                     List<PipelineJobWarning> warnings = new ArrayList<>();
                     for (FolderImporter importer : externalStudyImporters)

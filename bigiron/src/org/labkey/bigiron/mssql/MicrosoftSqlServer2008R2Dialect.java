@@ -984,7 +984,16 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         colSpec.add(sqlTypeNameFromSqlType(prop));
 
         if (prop.getJdbcType().sqlType == Types.VARCHAR && !prop.isEntityId())
-            colSpec.add("(" + prop.getSize() + ")");
+        {
+            if (prop.getSize() == Integer.MAX_VALUE)
+            {
+                colSpec.add("(MAX)");
+            }
+            else
+            {
+                colSpec.add("(" + prop.getSize() + ")");
+            }
+        }
         else if (prop.getJdbcType() == JdbcType.DECIMAL)
             colSpec.add("(15,4)");
 
