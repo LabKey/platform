@@ -34,6 +34,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -1814,6 +1815,8 @@ public class QueryServiceImpl extends QueryService
             String s = _prettyPrint(t.getSQL());
             ret = new SQLFragment(s, ret.getParams());
         }
+
+        QueryProfiler.getInstance().ensureListenerEnvironment();
 
 	    return ret;
     }
