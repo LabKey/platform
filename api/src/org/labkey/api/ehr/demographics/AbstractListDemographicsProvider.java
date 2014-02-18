@@ -24,9 +24,11 @@ import org.labkey.api.query.FieldKey;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: bimber
@@ -64,9 +66,9 @@ abstract public class AbstractListDemographicsProvider extends AbstractDemograph
 
         List<Map<String, Object>> records = (List)map.get(_propName);
         if (records == null)
-            records = new ArrayList<Map<String, Object>>();
+            records = new ArrayList<>();
 
-        Map<String, Object> record = new HashMap<String, Object>();
+        Map<String, Object> record = new HashMap<>();
         for  (FieldKey key : cols.keySet())
         {
             if ("Id".equalsIgnoreCase(key.toString()))
@@ -83,5 +85,10 @@ abstract public class AbstractListDemographicsProvider extends AbstractDemograph
         records.add(record);
 
         map.put(_propName, records);
+    }
+
+    public Set<String> getKeys()
+    {
+        return Collections.singleton(_propName);
     }
 }

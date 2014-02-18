@@ -15,7 +15,7 @@
  */
 package org.labkey.api.data;
 
-import org.labkey.api.util.StringExpression;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.template.ClientDependency;
 
@@ -33,7 +33,7 @@ import java.util.Set;
 public class JavaScriptDisplayColumn extends DataColumn
 {
     private final LinkedHashSet<ClientDependency> _dependencies;
-    private final StringExpression _eventExpression;
+    private final StringExpressionFactory.FieldKeyStringExpression _eventExpression;
 
     public JavaScriptDisplayColumn(ColumnInfo col, Collection<String> dependencies, String javaScriptEvents)
     {
@@ -66,5 +66,16 @@ public class JavaScriptDisplayColumn extends DataColumn
     public Set<ClientDependency> getClientDependencies()
     {
         return _dependencies;
+    }
+
+    @Override
+    public void addQueryFieldKeys(Set<FieldKey> keys)
+    {
+        super.addQueryFieldKeys(keys);
+
+        if (_eventExpression != null)
+        {
+            keys.addAll(_eventExpression.getFieldKeys());
+        }
     }
 }

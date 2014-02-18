@@ -59,6 +59,14 @@ public enum SubstitutionFormat
                 return PageFlowUtil.filter(value);
             }
         },
+    jsString("jsString")
+        {
+            @Override
+            public String format(String value)
+            {
+                return PageFlowUtil.jsString(value);
+            }
+        },
     urlEncode("path")
         {
             @Override

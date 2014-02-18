@@ -335,6 +335,19 @@ public class StringExpressionFactory
                     return "";
                 }
             },
+            dataRegionName
+                    {
+                        @Override
+                        public String getValue(RenderContext context)
+                        {
+                            DataRegion region = context.getCurrentRegion();
+                            if (region != null)
+                            {
+                                return region.getName();
+                            }
+                            return "";
+                        }
+                    },
             containerPath
             {
                 @Override

@@ -21,6 +21,7 @@ import org.labkey.api.security.User;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: bimber
@@ -38,4 +39,7 @@ public interface DemographicsProvider
     // report whether this provider requires calculation of cached data when a row in this passed table has changed
     // this is a somewhat blunt approach, but it errs on the side of re-calculating
     public boolean requiresRecalc(String schema, String query);
+
+    // returns the top-level keys used by this provider
+    public Set<String> getKeys();
 }

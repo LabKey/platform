@@ -39,6 +39,7 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
     private String _text;
     private DetailsURL _url = null;
     private String _jsHandler = null;
+    private Integer _insertPosition = null;
     private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
 
     public SimpleButtonConfigFactory(Module owner, String text, DetailsURL url)
@@ -74,7 +75,15 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
         if (onClick != null)
             btn.setOnClick(onClick);
 
+        if (_insertPosition != null)
+            btn.setInsertPosition(_insertPosition);
+
         return btn;
+    }
+
+    public void setInsertPosition(Integer insertPosition)
+    {
+        _insertPosition = insertPosition;
     }
 
     public NavTree create(TableInfo ti)

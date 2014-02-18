@@ -140,6 +140,20 @@ abstract public class AbstractDemographicsProvider implements DemographicsProvid
         }
     }
 
+    public Set<String> getKeys()
+    {
+        Set<String> ret = new HashSet<>();
+        for (FieldKey key : getFieldKeys())
+        {
+            ret.add(key.toString());
+        }
+
+        ret.add("Id");
+        ret.add("objectid");
+
+        return ret;
+    }
+
     protected Map<FieldKey, ColumnInfo> getColumns(TableInfo ti)
     {
         Set<FieldKey> keys = new HashSet<FieldKey>();
