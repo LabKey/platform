@@ -17,6 +17,7 @@
 package org.labkey.api.query;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -410,6 +411,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return set;
     }
 
+    @NotNull
     public Map<String, QueryDefinition> getQueryDefs()
     {
         return new CaseInsensitiveHashMap<>(QueryService.get().getQueryDefs(getUser(), getContainer(), getSchemaName()));

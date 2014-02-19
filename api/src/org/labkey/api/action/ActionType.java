@@ -7,7 +7,8 @@ package org.labkey.api.action;
  */
 public enum ActionType
 {
+    Configure,
     Export,
     SelectData,
-    SelectMetaData
+    SelectMetaData,
 }

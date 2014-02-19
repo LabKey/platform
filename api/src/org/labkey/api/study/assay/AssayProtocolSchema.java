@@ -124,6 +124,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
     }
 
     @Override
+    @NotNull
     public Map<String, QueryDefinition> getQueryDefs()
     {
         // Get all the custom queries from the standard locations

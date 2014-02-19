@@ -19,6 +19,7 @@ package org.labkey.api.action;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -168,6 +169,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     public interface ActionStats
     {
+        ActionType getActionType();
         long getCount();
         long getElapsedTime();
         long getMaxTime();
@@ -610,21 +612,35 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 _maxTime = maxTime;
             }
 
+            @Override
             public long getCount()
             {
                 return _count;
             }
 
+            @Override
             public long getElapsedTime()
             {
                 return _elapsedTime;
             }
 
+            @Override
             public long getMaxTime()
             {
                 return _maxTime;
             }
-        }
+
+            @Override
+            @Nullable
+            public ActionType getActionType()
+            {
+                ActionDescriptor desc = BaseActionDescriptor.this;
+                Class<? extends Controller> actionClass = desc.getActionClass();
+                Action actionAnnotation = actionClass.getAnnotation(Action.class);
+
+                return  null != actionAnnotation ? actionAnnotation.value() : null;
+            }
+       }
     }
 
     public static class HTMLFileActionResolver implements ActionResolver

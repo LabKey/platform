@@ -224,22 +224,14 @@ public class DataRegionSelection
         return selectAll(context, key, form);
     }
 
-    public static int selectAll(ViewContext context, String key, QueryForm form)
-            throws SQLException, IOException
+    public static int selectAll(ViewContext context, String key, QueryForm form) throws SQLException, IOException
     {
         QueryView view = new QueryView(form, null);
         TableInfo table = view.getTable();
-        ResultSet rs = null;
-        try
+        try (ResultSet rs = view.getResultSet())
         {
-            rs = view.getResultSet();
-
             List<String> selection = createSelectionList(rs, table);
             return setSelected(context, key, selection, true);
-        }
-        finally
-        {
-            if (rs != null) { try { rs.close(); } catch (SQLException ignored) {} }
         }
 
     }
