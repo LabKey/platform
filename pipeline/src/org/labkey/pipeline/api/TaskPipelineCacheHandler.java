@@ -36,7 +36,7 @@ import org.labkey.pipeline.analysis.FileAnalysisTaskPipelineImpl;
  * Loads TaskPipeline from file-based modules from a /pipelines/pipeline/&lt;name&gt;.pipeline.xml file.
  * Similar to the ETL DescriptorCache's ScheduledPipelineJobDescriptor, the TaskPipeline may register some locally defined TaskFactories as well.
  */
-/* package */ class TaskPipelineCacheHandler implements ModuleResourceCacheHandler<TaskPipeline>
+/* package */ class TaskPipelineCacheHandler implements ModuleResourceCacheHandler<String, TaskPipeline>
 {
     private static final Logger LOG = Logger.getLogger(TaskPipelineCacheHandler.class);
     private static final String PIPELINE_CONFIG_EXTENSION = ".pipeline.xml";

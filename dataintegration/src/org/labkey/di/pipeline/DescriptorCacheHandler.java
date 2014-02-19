@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
  * Date: 9/13/13
  * Time: 4:26 PM
  */
-public class DescriptorCacheHandler implements ModuleResourceCacheHandler<ScheduledPipelineJobDescriptor>
+public class DescriptorCacheHandler implements ModuleResourceCacheHandler<String, ScheduledPipelineJobDescriptor>
 {
     private static final TransformManager _transformManager = TransformManager.get();
 

@@ -29,7 +29,7 @@ import org.labkey.api.util.Path;
 import java.util.regex.Pattern;
 
 
-public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<OlapSchemaDescriptor>
+public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<String, OlapSchemaDescriptor>
 {
     public static final String DIR_NAME = "olap";
 

@@ -39,7 +39,7 @@ import java.io.IOException;
  * User: kevink
  * Date: 1/6/14
  */
-/* package */ class TaskFactoryCacheHandler implements ModuleResourceCacheHandler<TaskFactory>
+/* package */ class TaskFactoryCacheHandler implements ModuleResourceCacheHandler<String, TaskFactory>
 {
     private static final Logger LOG = Logger.getLogger(TaskFactoryCacheHandler.class);
     private static final String TASK_CONFIG_EXTENSION = ".task.xml";
