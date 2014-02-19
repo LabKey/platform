@@ -87,6 +87,14 @@ Ext.define('LABKEY.app.controller.State', {
         }
     },
 
+    getPreviousState : function() {
+        var index = -1;
+        if (this.state.getCount() > 1) {
+            index = this.state.getCount()-2;
+        }
+        return index;
+    },
+
     onMDXReady : function(callback, scope) {
         var s = scope || this;
         this.olap.onReady(callback, s);
@@ -301,19 +309,15 @@ Ext.define('LABKEY.app.controller.State', {
         var flatFilters = [];
 
         for (var f=0; f < this.filters.length; f++) {
+            var data = Ext.clone(this.filters[f].data);
             if (this.filters[f].isGroup()) {
                 // Connector.model.FilterGroup
                 var _f = this.filters[f].get('filters');
-                var ff = Ext.clone(this.filters[f].data);
                 for (var i=0; i < _f.length; i++) {
-                    ff.filters[i] = _f[i].data;
+                    data.filters[i] = _f[i].data;
                 }
-                flatFilters.push(ff);
             }
-            else {
-                // Connector.model.Filter
-                flatFilters.push(this.filters[f].data);
-            }
+            flatFilters.push(data);
         }
 
         return flatFilters;
@@ -330,12 +334,12 @@ Ext.define('LABKEY.app.controller.State', {
                 // Connector.model.FilterGroup
                 var _f = this.filters[f].get('filters');
                 for (var i=0; i < _f.length; i++) {
-                    flatFilters.push(_f[i].data);
+                    flatFilters.push(Ext.clone(_f[i].data));
                 }
             }
             else {
                 // Connector.model.Filter
-                flatFilters.push(this.filters[f].data);
+                flatFilters.push(Ext.clone(this.filters[f].data));
             }
         }
 
@@ -422,8 +426,18 @@ Ext.define('LABKEY.app.controller.State', {
         return newFilters;
     },
 
-    setFilters : function(filters, skipState) {
+    loadFilters : function(stateIndex) {
+        var previousState =  this.state.getAt(stateIndex);
+        if (Ext.isDefined(previousState)) {
+            var filters = previousState.get('filters');
+            this.setFilters(filters);
+        }
+        else {
+            console.warn('Unable to find previous filters: ', stateIndex);
+        }
+    },
 
+    setFilters : function(filters, skipState) {
         this.filters = this._getFilterSet(filters);
         this.requestFilterUpdate(skipState, false);
     },
@@ -469,6 +483,8 @@ Ext.define('LABKEY.app.controller.State', {
         else {
             this.clearFilters();
         }
+
+        this.fireEvent('filterremove', this.getFilters());
     },
 
     removeSelection : function(filterId, hierarchyName, uname) {
@@ -481,6 +497,8 @@ Ext.define('LABKEY.app.controller.State', {
         else {
             this.clearSelections(false);
         }
+
+        this.fireEvent('selectionremove', this.getSelections());
     },
 
     addGroup : function(grp) {
