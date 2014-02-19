@@ -21,6 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.action.Action;
+import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
@@ -132,6 +134,7 @@ public class OlapController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectMetaData)
     public class GetCubeDefinitionAction extends ApiAction<OlapForm>
     {
         @Override
@@ -183,6 +186,7 @@ public class OlapController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public class ExecuteMdxAction extends ApiAction<ExecuteMdxForm>
     {
         @Override
@@ -309,6 +313,7 @@ public class OlapController extends SpringActionController
      * the particulars of the JSON format may change, and is very tied to the dataspace implementation
      */
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public class JsonQueryAction extends ApiAction<JsonQueryForm>
     {
         @Override
@@ -350,6 +355,7 @@ public class OlapController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public class XmlaAction extends SimpleViewAction<OlapForm>
     {
         @Override
@@ -410,6 +416,7 @@ public class OlapController extends SpringActionController
 
     // for testing
     @RequiresPermissionClass(AdminPermission.class)
+    @Action(ActionType.SelectData)
     public class TestBrowserAction extends SimpleViewAction<OlapForm>
     {
         @Override
@@ -433,6 +440,7 @@ public class OlapController extends SpringActionController
 
     // for testing
     @RequiresPermissionClass(AdminPermission.class)
+    @Action(ActionType.SelectData)
     public class TestMdxAction extends SimpleViewAction<OlapForm>
     {
         @Override
@@ -458,6 +466,7 @@ public class OlapController extends SpringActionController
 
     // for testing
     @RequiresPermissionClass(AdminPermission.class)
+    @Action(ActionType.SelectData)
     public class TestJsonAction extends SimpleViewAction<OlapForm>
     {
         @Override
@@ -601,6 +610,7 @@ public class OlapController extends SpringActionController
      */
 
     @RequiresSiteAdmin
+    @Action(ActionType.SelectData)
     public class TestCDS extends SimpleViewAction
     {
         @Override
