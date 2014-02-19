@@ -128,14 +128,17 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
                                     assert false : "Unknown event!";
                             }
                         }
-
-                        // If it's no longer valid, then I guess we should remove the listener
-                        if (!watchKey.reset())
-                            _listeners.remove(watchKey);        // TODO: create an event to notify listeners?
                     }
                     catch (Throwable e)  // Make sure throwables don't kill the background thread
                     {
                         ExceptionUtil.logExceptionToMothership(null, e);
+                    }
+                    finally
+                    {
+                        // Always reset the watchKey, even if a listener throws, otherwise we'll never see another event on this directory.
+                        // If watch key is no longer valid, then I guess we should remove the listener
+                        if (!watchKey.reset())
+                            _listeners.remove(watchKey);        // TODO: create an event to notify listeners?
                     }
                 }
             }

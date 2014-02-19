@@ -33,7 +33,7 @@ import static org.labkey.api.module.ModuleHtmlViewDefinition.VIEW_METADATA_EXTEN
  * Date: 1/21/14
  * Time: 9:47 PM
  */
-public class ModuleHtmlViewCacheHandler implements ModuleResourceCacheHandler<ModuleHtmlViewDefinition>
+public class ModuleHtmlViewCacheHandler implements ModuleResourceCacheHandler<Path, ModuleHtmlViewDefinition>
 {
     @Override
     public boolean isResourceFile(String filename)
@@ -54,9 +54,9 @@ public class ModuleHtmlViewCacheHandler implements ModuleResourceCacheHandler<Mo
     }
 
     @Override
-    public String createCacheKey(Module module, String resourceName)
+    public String createCacheKey(Module module, Path path)
     {
-        return ModuleResourceCache.createCacheKey(module, resourceName);
+        return ModuleResourceCache.createCacheKey(module, path.toString());
     }
 
     @Override
@@ -67,9 +67,10 @@ public class ModuleHtmlViewCacheHandler implements ModuleResourceCacheHandler<Mo
             @Override
             public ModuleHtmlViewDefinition load(String key, @Nullable Object argument)
             {
-                ModuleResourceCache.CacheId tid = ModuleResourceCache.parseCacheKey(key);
-                Path path = Path.parse(tid.getName());
-                Resource r = tid.getModule().getModuleResource(path);
+                ModuleResourceCache.CacheId cid = ModuleResourceCache.parseCacheKey(key);
+                Path path = Path.parse(cid.getName());
+                Resource r = cid.getModule().getModuleResource(path);
+
                 return new ModuleHtmlViewDefinition(r);
             }
         };

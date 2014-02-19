@@ -25,6 +25,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.ModuleHtmlViewCacheHandler;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
@@ -45,6 +46,8 @@ import java.util.regex.Matcher;
  */
 public class ModuleHtmlView extends HtmlView
 {
+    public static final PathBasedModuleResourceCache<ModuleHtmlViewDefinition> MODULE_HTML_VIEW_DEFINITION_CACHE = ModuleResourceCaches.create("HTML view definitions", new ModuleHtmlViewCacheHandler());
+
     private final ModuleHtmlViewDefinition _viewdef;
 
     public ModuleHtmlView(@NotNull Resource r)
@@ -64,9 +67,7 @@ public class ModuleHtmlView extends HtmlView
         assert resolver instanceof ModuleResourceResolver;
         Module module = ((ModuleResourceResolver) resolver).getModule();
 
-        String previousName = module.getName() + "/" + r.getName();
-        String newName = module.getName() + "/" + r.getPath();
-        _viewdef = Portal.MODULE_HTML_VIEW_DEFINITION_CACHE.getResource(newName);
+        _viewdef = MODULE_HTML_VIEW_DEFINITION_CACHE.getResource(module, r.getPath());
         assert null != _viewdef;
 
         setTitle(_viewdef.getTitle());

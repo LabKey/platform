@@ -40,17 +40,18 @@ import java.util.regex.Pattern;
  * Time: 7:17 AM
  */
 
-// Standard cache for module resources that handles registration and listening for file system events. The goal is to
-// factor out all common cache functionality to make creating well behaved caches for new module resource types easy.
+// Standard cache for file-system resources where each module provides a single, flat directory containing all the resource
+// files. This class loads individual resources as requested, caches the loaded resources, registers file system listeners
+// for each resource directory, and clears elements and collections from the cache in response to file system changes.
 public final class ModuleResourceCache<T>
 {
     private static final Logger LOG = Logger.getLogger(ModuleResourceCache.class);
 
     private final BlockingStringKeyCache<Object> _cache;
-    private final ModuleResourceCacheHandler<T> _handler;
+    private final ModuleResourceCacheHandler<String, T> _handler;
     private final ModuleResourceDirectory _directory;
 
-    ModuleResourceCache(ModuleResourceDirectory directory, String description, ModuleResourceCacheHandler<T> handler)
+    ModuleResourceCache(ModuleResourceDirectory directory, String description, ModuleResourceCacheHandler<String, T> handler)
     {
         _directory = directory;
         _cache = CacheManager.getBlockingStringKeyCache(1000, CacheManager.DAY, description, null);
@@ -181,8 +182,9 @@ public final class ModuleResourceCache<T>
             String filename = entry.toString();
             if (_handler.isResourceFile(filename))
             {
+                // Remove even on create, since we might have previously cached a miss
+                removeResource(_module, _handler.getResourceName(_module, filename));
                 removeResourceNames(_module);
-                // TODO: Probably should removeResource() as well... we may have previously cached a miss
 
                 if (null != _chainedListener)
                     _chainedListener.entryCreated(directory, entry);
@@ -195,8 +197,8 @@ public final class ModuleResourceCache<T>
             String filename = entry.toString();
             if (_handler.isResourceFile(filename))
             {
-                removeResourceNames(_module);
                 removeResource(_module, _handler.getResourceName(_module, filename));
+                removeResourceNames(_module);
 
                 if (null != _chainedListener)
                     _chainedListener.entryDeleted(directory, entry);

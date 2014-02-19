@@ -49,7 +49,7 @@ public class ModuleResourceResolver implements Resolver
     private static final BlockingStringKeyCache<Resource> CACHE = CacheManager.getBlockingStringKeyCache(4096, CacheManager.HOUR, "Module resources", null);
     private static final FileSystemWatcher WATCHER = FileSystemWatchers.get("Module resource resolver watcher");
 
-    // Consider: single static set to track all registered listeners?
+    // This ends up one per module; Consider: single static set to track all registered listeners?
     private final Set<Path> _pathsWithListeners = new ConcurrentHashSet<>();
     private final Module _module;
     private final MergedDirectoryResource _root;
@@ -87,7 +87,7 @@ public class ModuleResourceResolver implements Resolver
         _classes = additional.toArray(new ClassResourceCollection[classes.length]);
     }
 
-    // We're in dev mode, r is a collection, and r exists()
+    // r exists and r is a collection
     private void registerListener(Resource r)
     {
         Path path = r.getPath();

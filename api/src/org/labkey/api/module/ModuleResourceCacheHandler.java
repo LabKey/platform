@@ -24,20 +24,20 @@ import org.labkey.api.files.FileSystemDirectoryListener;
  * Date: 1/10/14
  * Time: 9:53 PM
  */
-public interface ModuleResourceCacheHandler<T>
+public interface ModuleResourceCacheHandler<K, V>
 {
     /**
      * Returns true if this file is used in the loading of this resource, either as the primary file or a secondary
-     * dependency. This is called on every file notification, to determine if the cache should be clear. Note that
-     * isResourceFile() and getResourceName() must be consistent.
+     * dependency. This is called on every file notification, to determine if an associated resource should be removed
+     * from the cache. Note that isResourceFile() and getResourceName() must be consistent.
      *
      * @param filename A filename to test
-     * @return True if the file is used in the creation of these resources, otherwise false.
+     * @return True if the file is used in the creation of this handler's resources, otherwise false.
      */
     boolean isResourceFile(String filename);
 
     /**
-     * Returns the canonical resource name used to refer to these resources. This might be the full filename (without
+     * Returns the canonical resource name used to refer to this resource. This might be the full filename (without
      * the path) or a simplified version (e.g., the base name with no extension). getResourceName() must be consistent
      * with isResourceFile(): every file that makes up the same resource must return the same String from this method
      * when its name is passed in.
@@ -48,7 +48,7 @@ public interface ModuleResourceCacheHandler<T>
      */
     String getResourceName(Module module, String filename);
 
-    String createCacheKey(Module module, String resourceName);
+    String createCacheKey(Module module, K resourceLocation);
 
     /**
      * Returns a cache loader for this resource that, given a cache key returned by createCacheKey, will load
@@ -56,7 +56,7 @@ public interface ModuleResourceCacheHandler<T>
      *
      * @return A CacheLoader implementation
      */
-    CacheLoader<String, T> getResourceLoader();
+    CacheLoader<String, V> getResourceLoader();
 
     /**
      * If needed, returns a FileSystemDirectoryListener that implements resource-specific file change handling. The

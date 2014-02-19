@@ -40,11 +40,9 @@ import org.labkey.api.data.Transient;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleHtmlViewDefinition;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
-import org.labkey.api.module.ModuleResourceDirectory;
 import org.labkey.api.module.SimpleController;
 import org.labkey.api.module.SimpleWebPartFactory;
 import org.labkey.api.portal.ProjectUrls;
@@ -89,18 +87,8 @@ public class Portal
     public static final String DEFAULT_PORTAL_PAGE_ID = "portal.default";
     public static final int MOVE_UP = 0;
     public static final int MOVE_DOWN = 1;
-
-    public static final ModuleResourceCache<SimpleWebPartFactory> WEB_PART_FACTORY_CACHE;
-    public static final ModuleResourceCache<ModuleHtmlViewDefinition> MODULE_HTML_VIEW_DEFINITION_CACHE;
-
-    static
-    {
-        // File-based webparts and file-based HTML views shared the same directory, so create two separate caches that
-        // share a ModuleResourceDirectory.
-        ModuleResourceDirectory dir = ModuleResourceCaches.createModuleResourceDirectory(new Path(SimpleController.VIEWS_DIRECTORY));
-        WEB_PART_FACTORY_CACHE = ModuleResourceCaches.create(dir, "File-based webpart definitions", new SimpleWebPartFactoryCacheHandler());
-        MODULE_HTML_VIEW_DEFINITION_CACHE = ModuleResourceCaches.create(dir, "HTML view definitions", new ModuleHtmlViewCacheHandler());
-    }
+    public static final ModuleResourceCache<SimpleWebPartFactory> WEB_PART_FACTORY_CACHE =
+        ModuleResourceCaches.create(new Path(SimpleController.VIEWS_DIRECTORY), "File-based webpart definitions", new SimpleWebPartFactoryCacheHandler());
 
     private static HashMap<String, WebPartFactory> _viewMap = null;
     private static MultiHashMap<String, String> _regionMap = null;
@@ -466,7 +454,7 @@ public class Portal
     {
         Collection<WebPart> parts = WebPartCache.getWebParts(c, pageId);
         if (parts instanceof List)
-            return Collections.unmodifiableList((List)parts);
+            return Collections.unmodifiableList((List<WebPart>)parts);
         return Collections.unmodifiableList(new ArrayList<>(parts));
     }
 
@@ -1174,9 +1162,9 @@ public class Portal
 
     static void clearWebPartFactories(Module module)
     {
-        // TODO: Move the webPartFactory handling into Portal
         if (module instanceof DefaultModule)
         {
+            // TODO: Move the webPartFactory handling into Portal
             ((DefaultModule) module).clearWebPartFactories();
         }
     }

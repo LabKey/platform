@@ -37,8 +37,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ModuleResourceCaches
 {
     /**
-     * Create a new ModuleResourceCache. This is the standard method to use in most situations, where the directory
-     * contains files that represent a single object type.
+     * Create a new ModuleResourceCache. This is the standard method to use in most situations, where each module has a
+     * single directory that contains files that represent a single object type.
      *
      * @param path Path representing the module resource directory
      * @param description Short description of the cache
@@ -46,14 +46,14 @@ public class ModuleResourceCaches
      * @param <T> Object type that this cache handles
      * @return A ModuleResourceCache
      */
-    public static <T> ModuleResourceCache<T> create(Path path, String description, ModuleResourceCacheHandler<T> handler)
+    public static <T> ModuleResourceCache<T> create(Path path, String description, ModuleResourceCacheHandler<String, T> handler)
     {
         return create(createModuleResourceDirectory(path), description, handler);
     }
 
     /**
-     * Create a new ModuleResourceCache. This method is needed only in cases where multiple caches handling different object
-     * types need to operate on the same resource directory. This method lets caches to share a ModuleResourceDirectory,
+     * Create a new ModuleResourceCache. This method is needed only in cases where multiple caches, handling different
+     * object types, need to operate on the same resource directory. This method lets caches share a ModuleResourceDirectory,
      * which shares the underlying FileSystemDirectoryListener.
      *
      * @param directory A ModuleResourceDirectory that's been initialized to a particular path
@@ -62,12 +62,17 @@ public class ModuleResourceCaches
      * @param <T> Object type that this cache handles
      * @return A ModuleResourceCache
      */
-    public static <T> ModuleResourceCache<T> create(ModuleResourceDirectory directory, String description, ModuleResourceCacheHandler<T> handler)
+    public static <T> ModuleResourceCache<T> create(ModuleResourceDirectory directory, String description, ModuleResourceCacheHandler<String, T> handler)
     {
         ModuleResourceCache<T> cache = new ModuleResourceCache<>(directory, description, handler);
         directory.registerCache(cache);
 
         return cache;
+    }
+
+    public static <T> PathBasedModuleResourceCache<T> create(String description, ModuleResourceCacheHandler<Path, T> handler)
+    {
+        return new PathBasedModuleResourceCache<>(description, handler);
     }
 
     /**

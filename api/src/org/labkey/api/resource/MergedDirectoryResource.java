@@ -220,7 +220,7 @@ public class MergedDirectoryResource extends AbstractResourceCollection
         }
     }
 
-    // Listen for events in all directories associated with this resource  TODO: This is just a test... final impl will change
+    // Listen for events in all directories associated with this resource
     @SafeVarargs
     public final void registerListener(FileSystemWatcher watcher, FileSystemDirectoryListener listener, WatchEvent.Kind<java.nio.file.Path>... events)
     {
