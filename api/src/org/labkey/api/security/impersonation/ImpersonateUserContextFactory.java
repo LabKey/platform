@@ -16,7 +16,6 @@
 package org.labkey.api.security.impersonation;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -25,11 +24,9 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -137,13 +134,11 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
     }
 
 
-    static void addMenu(NavTree menu, Container c, User user)
+    static void addMenu(NavTree menu)
     {
-        UserUrls userURLs = PageFlowUtil.urlProvider(UserUrls.class);
-        AdminUrls adminURLs = PageFlowUtil.urlProvider(AdminUrls.class);
-        ActionURL impersonateURL = user.isSiteAdmin() ? adminURLs.getAdminConsoleURL() : userURLs.getProjectUsersURL(c.getProject());
-        NavTree userMenu = new NavTree("User", impersonateURL);
-        menu.addChild(userMenu);
+        NavTree newUser = new NavTree("User");
+        newUser.setScript("LABKEY.Security.showImpersonateUser();");
+        menu.addChild(newUser);
     }
 
     // Somewhat redundant with verifyPermissions() below, but much more expensive in the single-user case. Keep these two methods in sync.

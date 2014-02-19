@@ -1484,7 +1484,30 @@ LABKEY.Security = new function()
          */
         getSharedContainer: function(){
             return LABKEY.sharedContainer;
-        }
+        },
 
+        /**
+         * @private
+         */
+        showImpersonateUser: function(){
+            var display = function() {
+                Ext4.onReady(function() {
+                    Ext4.create('LABKEY.Security.ImpersonateUserPanel', {
+                        autoShow: true
+                    });
+                });
+            };
+
+            if (LABKEY.Security.ImpersonateUserPanel)
+            {
+                display();
+            }
+            else
+            {
+                LABKEY.requiresExt4Sandbox(true, function() {
+                    LABKEY.requiresScript('ImpersonateUserPanel.js', true, display, this);
+                }, this);
+            }
+        }
     };
 };

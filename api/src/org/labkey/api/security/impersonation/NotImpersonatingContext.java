@@ -92,7 +92,7 @@ public class NotImpersonatingContext implements ImpersonationContext
     @Override
     public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
     {
-        ImpersonateUserContextFactory.addMenu(menu, c, user);
+        ImpersonateUserContextFactory.addMenu(menu);
         ImpersonateGroupContextFactory.addMenu(menu, c, user, currentURL);
         ImpersonateRoleContextFactory.addMenu(menu, c, currentURL, Collections.<Role>emptySet());
     }
