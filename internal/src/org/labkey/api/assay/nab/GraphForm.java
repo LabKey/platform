@@ -15,6 +15,8 @@
  */
 package org.labkey.api.assay.nab;
 
+import org.labkey.api.assay.nab.view.RunDetailOptions;
+
 /**
  * User: klum
  * Date: 5/15/13
@@ -25,6 +27,7 @@ public class GraphForm extends RenderAssayForm
     private int _maxSamples = -1;
     private int _height = -1;
     private int _width = -1;
+    private RunDetailOptions.DataIdentifier _dataIdentifier = RunDetailOptions.DataIdentifier.DefaultFormat;
 
     public int getFirstSample()
     {
@@ -64,5 +67,15 @@ public class GraphForm extends RenderAssayForm
     public void setWidth(int width)
     {
         _width = width;
+    }
+
+    public RunDetailOptions.DataIdentifier getDataIdentifier()
+    {
+        return _dataIdentifier;
+    }
+
+    public void setDataIdentifier(RunDetailOptions.DataIdentifier dataIdentifier)
+    {
+        _dataIdentifier = dataIdentifier;
     }
 }

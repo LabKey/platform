@@ -73,6 +73,7 @@ public abstract class DilutionGraphAction extends SimpleViewAction<GraphForm>
             config.setHeight(form.getHeight());
         if (form.getWidth() > 0)
             config.setWidth(form.getWidth());
+        config.setDataIdentifier(form.getDataIdentifier());
 
         return config;
     }

@@ -15,6 +15,8 @@
  */
 package org.labkey.api.assay.dilution;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.nab.view.RunDetailOptions;
 import org.labkey.api.util.DateUtil;
 
 import java.util.Date;
@@ -49,23 +51,31 @@ public class DilutionMaterialKey
         }
     }
 
-    public String getDisplayString(boolean longForm)
+    public String getDisplayString(@Nullable RunDetailOptions.DataIdentifier identifier)
     {
-        if (!longForm)
+        if (identifier != null)
         {
-            if (_specimenId != null)
-                return _specimenId;
-            else if (_visitId == null && _date != null)
+            switch (identifier)
             {
-                if (_date.getHours() == 0 && _date.getMinutes() == 0 && _date.getSeconds() == 0)
-                    return _participantId + ", " + DateUtil.formatDate(_date);
-                else
-                    return _participantId + ", " + DateUtil.formatDateTime(_date);
+                case Specimen:
+                    return _specimenId;
+                case ParticipantVisit:
+                    return _participantId + ", Vst " + _visitId;
+                case SpecimenParticipantVisit:
+                    return _specimenId + ", " + _participantId + ", Vst " + _visitId;
+
+                case LongFormat:
+                    return getDisplayString(true);
+                case DefaultFormat:
+                    return getDisplayString(false);
             }
-            else
-                return _participantId + ", Vst " + _visitId;
         }
-        else
+        return getDisplayString(false);
+    }
+
+    private String getDisplayString(boolean longForm)
+    {
+        if (longForm)
         {
             StringBuilder builder = new StringBuilder();
             appendAndSeparate(builder, _specimenId);
@@ -80,6 +90,20 @@ public class DilutionMaterialKey
             else if (_visitId != null)
                 appendAndSeparate(builder, "Vst " + _visitId);
             return builder.toString();
+        }
+        else
+        {
+            if (_specimenId != null)
+                return _specimenId;
+            else if (_visitId == null && _date != null)
+            {
+                if (_date.getHours() == 0 && _date.getMinutes() == 0 && _date.getSeconds() == 0)
+                    return _participantId + ", " + DateUtil.formatDate(_date);
+                else
+                    return _participantId + ", " + DateUtil.formatDateTime(_date);
+            }
+            else
+                return _participantId + ", Vst " + _visitId;
         }
     }
 

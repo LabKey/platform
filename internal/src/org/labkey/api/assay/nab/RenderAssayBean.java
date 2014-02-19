@@ -21,6 +21,7 @@ import org.labkey.api.assay.dilution.DilutionAssayRun;
 import org.labkey.api.assay.dilution.DilutionDataHandler;
 import org.labkey.api.assay.dilution.DilutionSummary;
 import org.labkey.api.assay.nab.view.DuplicateDataFileRunView;
+import org.labkey.api.assay.nab.view.RunDetailOptions;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
@@ -81,6 +82,7 @@ public class RenderAssayBean extends RenderAssayForm
     private String _neutralizationAbrev = "Neut.";
     private ActionURL _graphURL;
     private String _plateDataFormat;
+    private RunDetailOptions.DataIdentifier _dataIdentifier = RunDetailOptions.DataIdentifier.DefaultFormat;
 
     public RenderAssayBean()
     {
@@ -419,5 +421,15 @@ public class RenderAssayBean extends RenderAssayForm
     public void setPlateDataFormat(String plateDataFormat)
     {
         _plateDataFormat = plateDataFormat;
+    }
+
+    public RunDetailOptions.DataIdentifier getDataIdentifier()
+    {
+        return _dataIdentifier;
+    }
+
+    public void setDataIdentifier(RunDetailOptions.DataIdentifier dataIdentifier)
+    {
+        _dataIdentifier = dataIdentifier;
     }
 }

@@ -42,7 +42,7 @@
         <td>
             <table class="labkey-data-region">
                 <tr>
-                    <td colspan="4" class="labkey-data-region-header-container" style="text-align:center;"><%= h(results.getCaption()) %></td>
+                    <td colspan="4" class="labkey-data-region-header-container" style="text-align:center;"><%= h(results.getCaption(bean.getDataIdentifier())) %></td>
                 </tr>
                 <tr>
                     <td align="right" style="text-decoration:underline"><%= summary.getMethod().getAbbreviation() %></td>

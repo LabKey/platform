@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.assay.nab.view.RunDetailOptions" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<RenderAssayBean> me = (JspView<RenderAssayBean>) HttpView.currentView();
@@ -35,6 +36,9 @@
     int sampleCount = bean.getSampleResults().size();
     graphAction.addParameter("width", bean.getGraphWidth());
     graphAction.addParameter("height", bean.getGraphHeight());
+
+    if (bean.getDataIdentifier() != null)
+        graphAction.addParameter(RunDetailOptions.DATA_IDENTIFIER_PARAM, bean.getDataIdentifier().name());
 
     int graphCount = 0;
     for (int firstSample = 0; firstSample < sampleCount; firstSample += maxSamplesPerGraph)

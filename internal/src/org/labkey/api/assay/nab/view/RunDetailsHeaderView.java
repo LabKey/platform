@@ -15,10 +15,14 @@
  */
 package org.labkey.api.assay.nab.view;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.labkey.api.assay.dilution.DilutionAssayRun;
 import org.labkey.api.assay.nab.NabGraph;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.statistics.StatsService;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.nab.NabUrls;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -33,6 +37,7 @@ import org.labkey.api.view.NavTree;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: klum
@@ -43,13 +48,28 @@ public class RunDetailsHeaderView extends AssayHeaderView
     private int _runId;
     private Container _container;
     private boolean _showGraphLayoutOptions;
+    private List<DilutionAssayRun.SampleResult> _samples;
+    private Map<String, PropertyDescriptor> _propertyDescriptorMap = new CaseInsensitiveHashMap<>();
 
-    public RunDetailsHeaderView(Container container, ExpProtocol protocol, AssayProvider provider, int runId, boolean showLayoutOptions)
+    public RunDetailsHeaderView(Container container, ExpProtocol protocol, AssayProvider provider, int runId, List<DilutionAssayRun.SampleResult> samples)
     {
         super(protocol, provider, true, true, null);
         _container = container;
         _runId = runId;
-        _showGraphLayoutOptions = showLayoutOptions;
+        _samples = samples;
+        _showGraphLayoutOptions = (samples.size() > 10);
+
+        for (DilutionAssayRun.SampleResult sample : samples)
+        {
+            for (Map.Entry<PropertyDescriptor, Object> entry : sample.getSampleProperties().entrySet())
+            {
+                if (entry.getValue() != null)
+                {
+                    if (!_propertyDescriptorMap.containsKey(entry.getKey().getName()))
+                        _propertyDescriptorMap.put(entry.getKey().getName(), entry.getKey());
+                }
+            }
+        }
     }
 
     @Override
@@ -84,6 +104,7 @@ public class RunDetailsHeaderView extends AssayHeaderView
             graphOptionsMenu.addChild(getSamplesPerGraphMenu());
             graphOptionsMenu.addChild(getGraphLayoutMenu());
         }
+        graphOptionsMenu.addChild(getDataIdentifiersMenu());
         links.add(graphOptionsMenu);
 
         ActionURL downloadURL = PageFlowUtil.urlProvider(NabUrls.class).urlDownloadDatafile(_container).addParameter("rowId", _runId);
@@ -201,5 +222,42 @@ public class RunDetailsHeaderView extends AssayHeaderView
         menu.addChild(item);
 
         return menu;
+    }
+
+    private NavTree getDataIdentifiersMenu()
+    {
+        String currentIdentifier = StringUtils.defaultString(getViewContext().getActionURL().getParameter(RunDetailOptions.DATA_IDENTIFIER_PARAM), "");
+        NavTree menu = new NavTree("Data Identifiers");
+
+        for (RunDetailOptions.DataIdentifier identifier : RunDetailOptions.DataIdentifier.values())
+        {
+            if (identifier.isSelectable())
+            {
+                ActionURL url = getViewContext().cloneActionURL();
+                url.replaceParameter(RunDetailOptions.DATA_IDENTIFIER_PARAM, identifier.name());
+                NavTree item = new NavTree(identifier.getCaption(), url);
+
+                if (containsSampleProperties(identifier.getRequiredProperties()))
+                    item.setSelected(identifier.name().equals(currentIdentifier));
+                else
+                {
+                    item.setDisabled(true);
+                    item.setTip("This option is disabled because the required information does not exist.");
+                }
+
+                menu.addChild(item);
+            }
+        }
+        return menu;
+    }
+
+    private boolean containsSampleProperties(String[] names)
+    {
+        for (String name : names)
+        {
+            if (!_propertyDescriptorMap.containsKey(name))
+                return false;
+        }
+        return true;
     }
 }

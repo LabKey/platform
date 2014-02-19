@@ -61,6 +61,7 @@ public class NavTree implements Collapsible
     private Integer _imageHeight;
     private Integer _imageWidth;
     private String _target = null;
+    private String _tip;
 
     private final @NotNull List<NavTree> _children = new LinkedList<>();
 
@@ -130,6 +131,7 @@ public class NavTree implements Collapsible
         _imageHeight = source._imageHeight;
         _imageWidth = source._imageWidth;
         _target = source._target;
+        _tip = source._tip;
 
         for (NavTree child : source._children)
             _children.add(new NavTree(child));
@@ -459,6 +461,16 @@ public class NavTree implements Collapsible
         return _nofollow;
     }
 
+    public String getTip()
+    {
+        return _tip;
+    }
+
+    public void setTip(String tip)
+    {
+        _tip = tip;
+    }
+
     public String childrenToJS()
     {
         return toJS(_children, new StringBuilder(), false).toString();
@@ -496,6 +508,8 @@ public class NavTree implements Collapsible
             o.put("hrefTarget", getTarget());
         if (null != getScript())
             o.put("handler", "function(){" + getScript() + "}");
+        if (null != getTip())
+            o.put("tip", getTip());
         if (recursive && hasChildren())
         {
             JSONArray a = new JSONArray();
@@ -551,6 +565,8 @@ public class NavTree implements Collapsible
         {
             sb.append(",leaf:true");
         }
+        if (null != getTip())
+            sb.append(",tooltip:").append(PageFlowUtil.qh(getTip()));
         sb.append("}");
         return sb;
     }

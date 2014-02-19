@@ -31,6 +31,7 @@ import org.jfree.data.xy.XYSeriesCollection;
 import org.labkey.api.assay.dilution.DilutionAssayRun;
 import org.labkey.api.assay.dilution.DilutionMaterialKey;
 import org.labkey.api.assay.dilution.DilutionSummary;
+import org.labkey.api.assay.nab.view.RunDetailOptions;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;
@@ -79,6 +80,7 @@ public class NabGraph
         private int _maxSamples = -1;
         private String _yAxisLabel = "Percent Neutralization";
         private String _xAxisLabel = "Dilution/Concentration";
+        private RunDetailOptions.DataIdentifier _dataIdentifier = RunDetailOptions.DataIdentifier.DefaultFormat;
 
         public int[] getCutoffs()
         {
@@ -179,12 +181,22 @@ public class NabGraph
         {
             _xAxisLabel = xAxisLabel;
         }
+
+        public RunDetailOptions.DataIdentifier getDataIdentifier()
+        {
+            return _dataIdentifier;
+        }
+
+        public void setDataIdentifier(RunDetailOptions.DataIdentifier dataIdentifier)
+        {
+            _dataIdentifier = dataIdentifier;
+        }
     }
 
-    private static String getDefaultCaption(DilutionSummary summary, boolean longForm)
+    private static String getCaption(DilutionSummary summary, RunDetailOptions.DataIdentifier dataIdentifier)
     {
         DilutionMaterialKey materialKey = summary.getMaterialKey();
-        return materialKey.getDisplayString(longForm);
+        return materialKey.getDisplayString(dataIdentifier);
     }
 
     private static String formatCaption(Container c, Object captionValue)
@@ -203,14 +215,21 @@ public class NabGraph
 
     public static void renderChartPNG(Container c, HttpServletResponse response, Map<DilutionSummary, DilutionAssayRun> summaries, Config config) throws IOException, FitFailedException
     {
-        boolean longCaptions = false;
-        Set<String> shortCaptions = new HashSet<>();
-        for (DilutionSummary summary : summaries.keySet())
+        RunDetailOptions.DataIdentifier identifier = config.getDataIdentifier();
+        if (identifier == RunDetailOptions.DataIdentifier.DefaultFormat)
         {
-            String shortCaption = getDefaultCaption(summary, false);
-            if (shortCaptions.contains(shortCaption))
-                longCaptions = true;
-            shortCaptions.add(shortCaption);
+            // ensure captions are unique
+            Set<String> shortCaptions = new HashSet<>();
+            for (DilutionSummary summary : summaries.keySet())
+            {
+                String shortCaption = getCaption(summary, identifier);
+                if (shortCaptions.contains(shortCaption))
+                {
+                    identifier = RunDetailOptions.DataIdentifier.LongFormat;
+                    break;
+                }
+                shortCaptions.add(shortCaption);
+            }
         }
         List<Pair<String, DilutionSummary>> summaryMap = new ArrayList<>();
         for (Map.Entry<DilutionSummary, DilutionAssayRun> sampleEntry : summaries.entrySet())
@@ -233,7 +252,7 @@ public class NabGraph
                 }
             }
             if (caption == null || caption.length() == 0)
-                caption = getDefaultCaption(summary, longCaptions);
+                caption = getCaption(summary, identifier);
             summaryMap.add(new Pair<>(caption, summary));
         }
         renderChartPNG(response, summaryMap, config);

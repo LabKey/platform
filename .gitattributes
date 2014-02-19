@@ -7883,6 +7883,7 @@ internal/src/org/labkey/api/assay/nab/view/GraphSelectedAction.java -text
 internal/src/org/labkey/api/assay/nab/view/GraphSelectedBean.java -text
 internal/src/org/labkey/api/assay/nab/view/GraphSelectedForm.java -text
 internal/src/org/labkey/api/assay/nab/view/MultiGraphAction.java -text
+internal/src/org/labkey/api/assay/nab/view/RunDetailOptions.java -text
 internal/src/org/labkey/api/assay/nab/view/RunDetailsAction.java -text
 internal/src/org/labkey/api/assay/nab/view/RunDetailsHeaderView.java -text
 internal/src/org/labkey/api/assay/nab/view/controlSummary.jsp -text

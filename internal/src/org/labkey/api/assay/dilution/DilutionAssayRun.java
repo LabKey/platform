@@ -18,6 +18,7 @@ package org.labkey.api.assay.dilution;
 import org.labkey.api.assay.dilution.query.DilutionProviderSchema;
 import org.labkey.api.assay.nab.Luc5Assay;
 import org.labkey.api.assay.nab.NabSpecimen;
+import org.labkey.api.assay.nab.view.RunDetailOptions;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
@@ -342,9 +343,12 @@ public abstract class DilutionAssayRun extends Luc5Assay
             return _dilutionSummary;
         }
 
-        public String getCaption()
+        public String getCaption(RunDetailOptions.DataIdentifier identifier)
         {
-            return _materialKey.getDisplayString(_longCaptions);
+            if (_longCaptions && identifier == RunDetailOptions.DataIdentifier.DefaultFormat)
+                return _materialKey.getDisplayString(RunDetailOptions.DataIdentifier.LongFormat);
+            else
+                return _materialKey.getDisplayString(identifier);
         }
 
         public Map<PropertyDescriptor, Object> getSampleProperties()

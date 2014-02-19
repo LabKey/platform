@@ -94,7 +94,7 @@
     %>
     <tr>
         <td class="sample-heading">
-            <%=h(results.getCaption())%>
+            <%=h(results.getCaption(bean.getDataIdentifier()))%>
         </td>
         <%
             for (int set = 0; set < 2; set++)

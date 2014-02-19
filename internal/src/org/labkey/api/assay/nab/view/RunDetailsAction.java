@@ -102,7 +102,7 @@ public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends
 
         HttpView view = new JspView<RenderAssayBean>("/org/labkey/api/assay/nab/view/runDetails.jsp", form);
         if (!isPrint())
-            view = new VBox(new RunDetailsHeaderView(getContainer(), _protocol, provider, _runRowId, assay.getSampleResults().size() > 10), view);
+            view = new VBox(new RunDetailsHeaderView(getContainer(), _protocol, provider, _runRowId, assay.getSampleResults()), view);
 
         return view;
     }
