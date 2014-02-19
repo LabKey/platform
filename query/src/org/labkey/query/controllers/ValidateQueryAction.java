@@ -17,6 +17,8 @@
 package org.labkey.query.controllers;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.action.Action;
+import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -37,6 +39,7 @@ import org.springframework.validation.Errors;
  */
 
 @RequiresPermissionClass(ReadPermission.class)
+@Action(ActionType.SelectMetaData)
 public class ValidateQueryAction extends ApiAction<ValidateQueryAction.ValidateQueryForm>
 {
     UserSchema schema;

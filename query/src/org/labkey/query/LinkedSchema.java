@@ -194,6 +194,7 @@ public class LinkedSchema extends ExternalSchema
     }
 
     @Override
+    @NotNull
     public Map<String, QueryDefinition> getQueryDefs()
     {
         if (_availableQueries.size() == 0)

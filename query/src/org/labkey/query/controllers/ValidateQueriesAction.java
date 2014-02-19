@@ -17,6 +17,8 @@ package org.labkey.query.controllers;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.action.Action;
+import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -34,6 +36,7 @@ import org.springframework.validation.BindException;
  * Validates all queries.
  */
 @RequiresPermissionClass(ReadPermission.class)
+@Action(ActionType.SelectMetaData)
 public class ValidateQueriesAction extends ApiAction
 {
     @Override

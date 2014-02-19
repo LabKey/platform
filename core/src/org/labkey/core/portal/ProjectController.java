@@ -19,6 +19,8 @@ package org.labkey.core.portal;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.Action;
+import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -1221,6 +1223,7 @@ public class ProjectController extends SpringActionController
     // being served up to be readable in the current container. Might be worth delegating permissions to the
     // webparts and defaulting to a state of ReadPermission.
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public class GetWebPartAction extends ApiAction<GetWebPartForm>
     {
         public static final String PARAM_WEBPART = "webpart.name";

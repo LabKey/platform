@@ -16,12 +16,15 @@
 
 package org.labkey.core.admin;
 
+import org.labkey.api.action.Action;
+import org.labkey.api.action.ActionType;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.ContainerManager;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.PrintWriter;
 import java.util.Map;
@@ -42,12 +45,12 @@ class ActionsView extends HttpView
 
         Map<String, Map<String, Map<String, SpringActionController.ActionStats>>> modules = ActionsHelper.getActionStatistics();
 
-        out.print("<table id=\"springActions\">");
+        out.print("<table id=\"actions\">");
 
         if (_summary)
-            out.print("<tr align=left><th>Spring Controller</th><th>Actions</th><th>Invoked</th><th>Coverage</th></tr>");
+            out.print("<tr align=left><th>Controller</th><th>Actions</th><th>Invoked</th><th>Coverage</th></tr>");
         else
-            out.print("<tr align=left><th>Spring Controller</th><th>Action</th><th>Invocations</th><th>Cumulative Time</th><th>Average Time</th><th>Max Time</th></tr>");
+            out.print("<tr align=left><th>Controller</th><th>Action</th><th>ActionType</th><th>Invocations</th><th>Cumulative Time</th><th>Average Time</th><th>Max Time</th></tr>");
 
         int totalActions = 0;
         int totalInvoked = 0;
@@ -79,6 +82,11 @@ class ActionsView extends HttpView
                         controllerTd = "<td>&nbsp;</td>";
                         out.print("<td>");
                         out.print(action.getKey());
+                        out.print("</td>");
+
+                        ActionType type = action.getValue().getActionType();
+                        out.print("<td>");
+                        out.print(null != type ? type.name() : "&nbsp;");
                         out.print("</td>");
                     }
 

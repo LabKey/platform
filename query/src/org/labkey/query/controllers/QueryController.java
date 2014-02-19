@@ -858,6 +858,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class)
+    @Action(ActionType.SelectData)
     public class NewQueryAction extends FormViewAction<NewQueryForm>
     {
         NewQueryForm _form;
@@ -1068,6 +1069,7 @@ public class QueryController extends SpringActionController
      * JSON serialized error information.
      */
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.Configure)
     public class SaveSourceQueryAction extends MutatingApiAction<SourceForm>
     {
         SourceForm _form;
@@ -1542,6 +1544,7 @@ public class QueryController extends SpringActionController
 
     // for backwards compat same as _executeQuery.view ?_print=1
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.Export)
     public class PrintRowsAction extends ExecuteQueryAction
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
@@ -1808,6 +1811,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectMetaData)
     public class MetadataServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
@@ -1817,6 +1821,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
+    @Action(ActionType.SelectMetaData)
     public class MetadataQueryAction extends FormViewAction<QueryForm>
     {
         QueryDefinition _query = null;
@@ -2019,7 +2024,7 @@ public class QueryController extends SpringActionController
     {
         assert param.startsWith(dataRegionName + ".");
         String check = param.substring(dataRegionName.length() + 1);
-        if (check.indexOf("~") >= 0)
+        if (check.contains("~"))
             return true;
         if ("sort".equals(check))
             return true;
@@ -2029,6 +2034,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.Configure)
     public class SaveQueryViewsAction extends ApiAction<SimpleApiJsonForm>
     {
         @Override
@@ -2591,6 +2597,7 @@ public class QueryController extends SpringActionController
     @ActionNames("selectRows, getQuery")
     @RequiresPermissionClass(ReadPermission.class)
     @ApiVersion(9.1)
+    @Action(ActionType.SelectData)
     public class SelectRowsAction extends ApiAction<APIQueryForm>
     {
         public ApiResponse execute(APIQueryForm form, BindException errors) throws Exception
@@ -2875,6 +2882,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public class SelectDistinctAction extends ApiAction<SelectDistinctForm>
     {
         @Override
@@ -4920,6 +4928,7 @@ public class QueryController extends SpringActionController
 
     @ActionNames("clearSelected, selectNone")
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public static class SelectNoneAction extends ApiAction<SelectForm>
     {
         public SelectNoneAction()
@@ -4950,6 +4959,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public static class SelectAllAction extends ApiAction<SelectAllForm>
     {
         public SelectAllAction()
@@ -4968,8 +4978,7 @@ public class QueryController extends SpringActionController
 
         public ApiResponse execute(final SelectAllForm form, BindException errors) throws Exception
         {
-            int count = DataRegionSelection.selectAll(
-                    getViewContext(), form.getKey(), form);
+            int count = DataRegionSelection.selectAll(getViewContext(), form.getKey(), form);
             return new SelectionResponse(count);
         }
     }
@@ -5652,6 +5661,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectMetaData)
     public class ValidateQueryMetadataAction extends ApiAction<QueryForm>
     {
         public ApiResponse execute(QueryForm form, BindException errors) throws Exception

@@ -2053,11 +2053,7 @@ public class AdminController extends SpringActionController
                         }
                     }
                 }
-                catch (IOException e)
-                {
-                    errors.reject(ERROR_MSG, "Error mounting drive: " + e);
-                }
-                catch (InterruptedException e)
+                catch (IOException | InterruptedException e)
                 {
                     errors.reject(ERROR_MSG, "Error mounting drive: " + e);
                 }
@@ -2065,11 +2061,7 @@ public class AdminController extends SpringActionController
                 {
                     testDrive.unmount(driveLetter);
                 }
-                catch (IOException e)
-                {
-                    errors.reject(ERROR_MSG, "Error mounting drive: " + e);
-                }
-                catch (InterruptedException e)
+                catch (IOException | InterruptedException e)
                 {
                     errors.reject(ERROR_MSG, "Error mounting drive: " + e);
                 }
@@ -2180,7 +2172,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Spring Actions", this.getClass());
+            return appendAdminNavTrail(root, "Actions", this.getClass());
         }
     }
 

@@ -16,6 +16,7 @@
 
 package org.labkey.core.admin;
 
+import org.labkey.api.action.ActionType;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.TSVWriter;
 
@@ -32,7 +33,7 @@ public class ActionsTsvWriter extends TSVWriter
     @Override
     protected void writeColumnHeaders()
     {
-        writeLine(Arrays.asList("module", "controller", "action", "invocations", "cumulative", "average", "max"));
+        writeLine(Arrays.asList("module", "controller", "action", "type", "invocations", "cumulative", "average", "max"));
     }
 
     @Override
@@ -62,6 +63,10 @@ public class ActionsTsvWriter extends TSVWriter
                         _pw.print('\t');
 
                         SpringActionController.ActionStats stats = action.getValue();
+                        ActionType type = stats.getActionType();
+                        if (null != type)
+                            _pw.print(type.name());
+                        _pw.print('\t');
                         _pw.print(stats.getCount());
                         _pw.print('\t');
                         _pw.print(stats.getElapsedTime());
