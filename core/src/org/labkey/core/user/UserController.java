@@ -1999,9 +1999,8 @@ public class UserController extends SpringActionController
             for (User user : users)
             {
                 Map<String, Object> map = new HashMap<>();
-                map.put("email", user.getEmail());
                 map.put("userId", user.getUserId());
-                map.put("displayName", user.getDisplayName(currentUser));
+                map.put("displayName", user.getEmail() + " (" + user.getDisplayName(currentUser) + ")");
                 responseUsers.add(map);
             }
 
@@ -2094,6 +2093,8 @@ public class UserController extends SpringActionController
     public static class ImpersonateUserForm extends ReturnUrlForm
     {
         private String _email;
+        private Integer _userId;
+        private boolean _stayOnCurrentPage = false;
 
         public String getEmail()
         {
@@ -2104,6 +2105,26 @@ public class UserController extends SpringActionController
         public void setEmail(String email)
         {
             _email = email;
+        }
+
+        public Integer getUserId()
+        {
+            return _userId;
+        }
+
+        public void setUserId(Integer userId)
+        {
+            _userId = userId;
+        }
+
+        public boolean isStayOnCurrentPage()
+        {
+            return _stayOnCurrentPage;
+        }
+
+        public void setStayOnCurrentPage(boolean stayOnCurrentPage)
+        {
+            _stayOnCurrentPage = stayOnCurrentPage;
         }
     }
 
@@ -2116,10 +2137,20 @@ public class UserController extends SpringActionController
             if (getUser().isImpersonated())
                 throw new UnauthorizedException("Can't impersonate; you're already impersonating");
 
-            String rawEmail = form.getEmail();
-            ValidEmail email = new ValidEmail(rawEmail);
+            // User ID and email are both supported; check for user ID first
+            final User impersonatedUser;
+            Integer userId = form.getUserId();
 
-            final User impersonatedUser = UserManager.getUser(email);
+            if (null != userId)
+            {
+                impersonatedUser = UserManager.getUser(userId);
+            }
+            else
+            {
+                String rawEmail = form.getEmail();
+                ValidEmail email = new ValidEmail(rawEmail);
+                impersonatedUser = UserManager.getUser(email);
+            }
 
             if (null == impersonatedUser)
                 throw new NotFoundException("User doesn't exist");
@@ -2127,10 +2158,17 @@ public class UserController extends SpringActionController
             SecurityManager.impersonateUser(getViewContext(), impersonatedUser, form.getReturnURLHelper());
             Container c = getContainer();
 
-            if (c.isRoot())
-                return AppProps.getInstance().getHomePageActionURL();
+            if (form.isStayOnCurrentPage())
+            {
+                return form.getReturnActionURL();
+            }
             else
-                return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
+            {
+                if (c.isRoot())
+                    return AppProps.getInstance().getHomePageActionURL();
+                else
+                    return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
+            }
         }
     }
 
