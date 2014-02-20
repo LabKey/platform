@@ -75,7 +75,7 @@ public class QubeQuery
     QubeExpr filters;               // for regular slices, e.g. [Species].[Homo Sapiens]
     // for magic count(distinct) handling
 //    QubeExpr distinctMeasureFilters;       // for filtering the count distinct measure
-//    Level countDistinctLevel;       // [Participant].[Participant]
+//    Level countDistinctLevel;       // [Subject].[Subject]
     Member countDistinctMember;     // [Measures].[ParticipantCount]
     Member countRowsMember;         // [Measures].[RowCount]
 
@@ -825,13 +825,13 @@ public class QubeQuery
             {
                 if (m.getUniqueName().contains("Row"))
                     rows = m;
-                else if (m.getUniqueName().contains("Participant"))
+                else if (m.getUniqueName().contains("Subject"))
                     distinct = m;
             }
             QubeQuery qq = new QubeQuery(cube);
             qq.countRowsMember = rows;
             qq.countDistinctMember = distinct;
-//            qq.countDistinctLevel = cube.getHierarchies().get("Participant").getLevels().get("Participant");
+//            qq.countDistinctLevel = cube.getHierarchies().get("Subject").getLevels().get("Subject");
             qq.fromJson(o, errors);
             String mdx = qq.generateMDX(errors);
             compare(this.mdxExpected, mdx);
@@ -860,398 +860,398 @@ public class QubeQuery
             return;
         _tests = new ArrayList<>();
     new QueryTest(
-        "{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine.Type','members':'members'}],'filter':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','Adenovirus']}]}}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine.Type].[Adenovirus]))\n" +
+        "{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine.Type','members':'members'}],'filter':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','Adenovirus']}]}}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine.Type].[Adenovirus]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Vaccine.Type].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
     new QueryTest(
-        "{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine.Type','members':'members'}],'filter':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','Adenovirus','VRC-HIVADV014-00-VP']}]}}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine.Type].[Adenovirus].[VRC-HIVADV014-00-VP]))\n" +
+        "{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine.Type','members':'members'}],'filter':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','Adenovirus','VRC-HIVADV014-00-VP']}]}}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine.Type].[Adenovirus].[VRC-HIVADV014-00-VP]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Vaccine.Type].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
     new QueryTest(
-        "{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine.Type','members':'members'}],'filter':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','DNA']}]}}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine.Type].[DNA]))\n" +
+        "{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine.Type','members':'members'}],'filter':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','DNA']}]}}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine.Type].[DNA]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Vaccine.Type].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
     new QueryTest(
-        "{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine.Type','members':'members'}],'filter':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','DNA','VRC-HIVDNA016-00-VP']}]}}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine.Type].[DNA].[VRC-HIVDNA016-00-VP]))\n" +
+        "{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine.Type','members':'members'}],'filter':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','DNA','VRC-HIVDNA016-00-VP']}]}}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine.Type].[DNA].[VRC-HIVDNA016-00-VP]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Vaccine.Type].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
     new QueryTest(
-        "{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine.Type','members':'members'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','DNA','VRC-HIVDNA016-00-VP']}]}}]}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine.Type].[DNA].[VRC-HIVDNA016-00-VP]))\n" +
+        "{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine.Type','members':'members'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','DNA','VRC-HIVDNA016-00-VP']}]}}]}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine.Type].[DNA].[VRC-HIVDNA016-00-VP]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Vaccine.Type].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'hierarchy':'Study','lnum':0}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','DNA','VRC-HIVDNA016-00-VP']}]}}]}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine.Type].[DNA].[VRC-HIVDNA016-00-VP]))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'hierarchy':'Study','lnum':0}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','DNA','VRC-HIVDNA016-00-VP']}]}}]}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine.Type].[DNA].[VRC-HIVDNA016-00-VP]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Study].[(All)].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'level':'[Study].[Study]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','DNA','VRC-HIVDNA016-00-VP']}]}}]}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine.Type].[DNA].[VRC-HIVDNA016-00-VP]))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'level':'[Study].[Study]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','DNA','VRC-HIVDNA016-00-VP']}]}}]}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine.Type].[DNA].[VRC-HIVDNA016-00-VP]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Study].[Study].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'level':'[Assay.Target Area].[Name]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','DNA','VRC-HIVDNA016-00-VP']}]}}]}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine.Type].[DNA].[VRC-HIVDNA016-00-VP]))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'level':'[Assay.Target Area].[Name]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','DNA','VRC-HIVDNA016-00-VP']}]}}]}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine.Type].[DNA].[VRC-HIVDNA016-00-VP]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Assay.Target Area].[Name].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'level':'[Lab].[Lab]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','DNA','VRC-HIVDNA016-00-VP']}]}}]}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine.Type].[DNA].[VRC-HIVDNA016-00-VP]))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'level':'[Lab].[Lab]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','DNA','VRC-HIVDNA016-00-VP']}]}}]}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine.Type].[DNA].[VRC-HIVDNA016-00-VP]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Lab].[Lab].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'level':'[Antigen.Tier].[Name]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','DNA','VRC-HIVDNA016-00-VP']}]}}]}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine.Type].[DNA].[VRC-HIVDNA016-00-VP]))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'level':'[Antigen.Tier].[Name]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine.Type','members':[{'uname':['Vaccine.Type','DNA','VRC-HIVDNA016-00-VP']}]}}]}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine.Type].[DNA].[VRC-HIVDNA016-00-VP]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Antigen.Tier].[Name].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
     new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine.Type','members':'members'}],'filter':[]}",
         "SELECT\n" +
         "[Measures].DefaultMember ON COLUMNS\n" +
         ", [Vaccine.Type].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
     new QueryTest("{'onRows':[{'hierarchy':'Study','lnum':0}],'filter':[]}",
         "SELECT\n" +
         "[Measures].DefaultMember ON COLUMNS\n" +
         ",  NON EMPTY [Study].[(All)].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
     new QueryTest("{'onRows':[{'level':'[Study].[Study]'}],'filter':[]}",
         "SELECT\n" +
         "[Measures].DefaultMember ON COLUMNS\n" +
         ",  NON EMPTY [Study].[Study].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
     new QueryTest("{'onRows':[{'level':'[Assay.Target Area].[Name]'}],'filter':[]}",
         "SELECT\n" +
         "[Measures].DefaultMember ON COLUMNS\n" +
         ",  NON EMPTY [Assay.Target Area].[Name].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
     new QueryTest("{'onRows':[{'level':'[Lab].[Lab]'}],'filter':[]}",
         "SELECT\n" +
         "[Measures].DefaultMember ON COLUMNS\n" +
         ",  NON EMPTY [Lab].[Lab].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
     new QueryTest("{'onRows':[{'level':'[Antigen.Tier].[Name]'}],'filter':[]}",
         "SELECT\n" +
         "[Measures].DefaultMember ON COLUMNS\n" +
         ",  NON EMPTY [Antigen.Tier].[Name].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
     new QueryTest("{'onRows':[{'level':'[Antigen.Clade].[Clade]'}],'filter':[]}",
         "SELECT\n" +
         "[Measures].DefaultMember ON COLUMNS\n" +
         ",  NON EMPTY [Antigen.Clade].[Clade].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
     new QueryTest("{'onRows':[{'level':'[Antigen.Sample Type].[Sample Type]'}],'filter':[]}",
         "SELECT\n" +
         "[Measures].DefaultMember ON COLUMNS\n" +
         ",  NON EMPTY [Antigen.Sample Type].[Sample Type].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
     new QueryTest("{'onRows':[{'level':'[Antigen.Tier].[Tier]'}],'filter':[]}",
         "SELECT\n" +
         "[Measures].DefaultMember ON COLUMNS\n" +
         ",  NON EMPTY [Antigen.Tier].[Tier].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
     new QueryTest("{'onRows':[{'level':'[Antigen.Clade].[Name]'}],'filter':[]}",
         "SELECT\n" +
         "[Measures].DefaultMember ON COLUMNS\n" +
         ",  NON EMPTY [Antigen.Clade].[Name].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
     new QueryTest("{'onRows':[{'hierarchy':'Assay.Target Area','lnum':2}],'filter':[]}",
         "SELECT\n" +
         "[Measures].DefaultMember ON COLUMNS\n" +
         ",  NON EMPTY [Assay.Target Area].[Name].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
     new QueryTest("{'onRows':[{'hierarchy':'Lab','lnum':1}],'filter':[]}",
         "SELECT\n" +
         "[Measures].DefaultMember ON COLUMNS\n" +
         ",  NON EMPTY [Lab].[Lab].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'hierarchy':'Participant.Race','lnum':0}],'filter':[]}",
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'hierarchy':'Subject.Race','lnum':0}],'filter':[]}",
         "SELECT\n" +
         "[Measures].DefaultMember ON COLUMNS\n" +
-        ",  NON EMPTY [Participant.Race].[(All)].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'hierarchy':'Participant.Race','lnum':1}],'filter':[]}",
+        ",  NON EMPTY [Subject.Race].[(All)].members ON ROWS\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'hierarchy':'Subject.Race','lnum':1}],'filter':[]}",
         "SELECT\n" +
         "[Measures].DefaultMember ON COLUMNS\n" +
-        ",  NON EMPTY [Participant.Race].[Race].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'hierarchy':'Participant.Country','lnum':1}],'filter':[]}",
+        ",  NON EMPTY [Subject.Race].[Race].members ON ROWS\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'hierarchy':'Subject.Country','lnum':1}],'filter':[]}",
         "SELECT\n" +
         "[Measures].DefaultMember ON COLUMNS\n" +
-        ",  NON EMPTY [Participant.Country].[Country].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'level':'[Participant.Sex].[Sex]'}],'filter':[]}",
+        ",  NON EMPTY [Subject.Country].[Country].members ON ROWS\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'level':'[Subject.Sex].[Sex]'}],'filter':[]}",
         "SELECT\n" +
         "[Measures].DefaultMember ON COLUMNS\n" +
-        ",  NON EMPTY [Participant.Sex].[Sex].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        ",  NON EMPTY [Subject.Sex].[Sex].members ON ROWS\n" +
+        "FROM [DataspaceCube]");
 //  TODO: looks wrong [Vaccine.Type] is a hierarchy not a level!
 //    new QueryTest("{'onRows':[{'level':'[Vaccine.Type]'}],'filter':[]}",
 //        "SELECT\n" +
 //        "[Measures].DefaultMember ON COLUMNS\n" +
 //        ",  NON EMPTY [Vaccine.Type].members ON ROWS\n" +
-//        "FROM [ParticipantCube]");
+//        "FROM [DataspaceCube]");
     new QueryTest("{'onRows':[{'hierarchy':'[Vaccine.Type]'}],'filter':[]}",
         "SELECT\n" +
         "[Measures].DefaultMember ON COLUMNS\n" +
         ",  NON EMPTY [Vaccine.Type].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
 //    new QueryTest("{'onRows':[{'level':'[Vaccine Component]'}],'filter':[]}",
 //        "SELECT\n" +
 //        "[Measures].DefaultMember ON COLUMNS\n" +
 //        ",  NON EMPTY [Vaccine Component].members ON ROWS\n" +
-//        "FROM [ParticipantCube]");
+//        "FROM [DataspaceCube]");
     new QueryTest("{'onRows':[{'hierarchy':'[Vaccine Component]'}],'filter':[]}",
-        "SELECT [Measures].DefaultMember ON COLUMNS, NON EMPTY [Vaccine Component.Vaccine Insert].members ON ROWS FROM [ParticipantCube]");
-    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine Component.Vaccine Insert','members':'members'}],'filter':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env]))\n" +
+        "SELECT [Measures].DefaultMember ON COLUMNS, NON EMPTY [Vaccine Component.Vaccine Insert].members ON ROWS FROM [DataspaceCube]");
+    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine Component.Vaccine Insert','members':'members'}],'filter':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Vaccine Component.Vaccine Insert].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine Component.Vaccine Insert','members':'members'}],'filter':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env','gp140']}]}}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env].[gp140]))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine Component.Vaccine Insert','members':'members'}],'filter':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env','gp140']}]}}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env].[gp140]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Vaccine Component.Vaccine Insert].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine Component.Vaccine Insert','members':'members'}],'filter':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','gag']}]}}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[gag]))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine Component.Vaccine Insert','members':'members'}],'filter':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','gag']}]}}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[gag]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Vaccine Component.Vaccine Insert].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine Component.Vaccine Insert','members':'members'}],'filter':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env','gp145']}]}}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env].[gp145]))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine Component.Vaccine Insert','members':'members'}],'filter':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env','gp145']}]}}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env].[gp145]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Vaccine Component.Vaccine Insert].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine Component.Vaccine Insert','members':'members'}],'filter':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','gag','gag']}]}}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[gag].[gag]))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine Component.Vaccine Insert','members':'members'}],'filter':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','gag','gag']}]}}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[gag].[gag]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Vaccine Component.Vaccine Insert].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine Component.Vaccine Insert','members':'members'}],'filter':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','pol']}]}}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[pol]))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine Component.Vaccine Insert','members':'members'}],'filter':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','pol']}]}}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[pol]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Vaccine Component.Vaccine Insert].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine Component.Vaccine Insert','members':'members'}],'filter':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','nef','nef']}]}}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[nef].[nef]))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine Component.Vaccine Insert','members':'members'}],'filter':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','nef','nef']}]}}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[nef].[nef]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Vaccine Component.Vaccine Insert].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine Component.Vaccine Insert','members':'members'}],'filter':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','nef']}]}}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[nef]))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine Component.Vaccine Insert','members':'members'}],'filter':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','nef']}]}}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[nef]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Vaccine Component.Vaccine Insert].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine Component.Vaccine Insert','members':'members'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env]))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Vaccine Component.Vaccine Insert','members':'members'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Vaccine Component.Vaccine Insert].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'hierarchy':'Study','lnum':0}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env]))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'hierarchy':'Study','lnum':0}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Study].[(All)].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'level':'[Study].[Study]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env]))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'level':'[Study].[Study]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Study].[Study].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'level':'[Lab].[Lab]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env]))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'level':'[Lab].[Lab]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Lab].[Lab].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'level':'[Antigen.Tier].[Name]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env]))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'level':'[Antigen.Tier].[Name]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Antigen.Tier].[Name].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'level':'[Assay.Target Area].[Name]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env]))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'level':'[Assay.Target Area].[Name]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Assay.Target Area].[Name].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
     new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Assay.Target Area','members':'members'}],'filter':[]}",
         "SELECT\n" +
         "[Measures].DefaultMember ON COLUMNS\n" +
         ", [Assay.Target Area].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Assay.Target Area','members':'members'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
-        "WITH SET ptids AS Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env]))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Assay.Target Area','members':'members'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
+        "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Assay.Target Area].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Assay.Target Area','members':'members'}],'filter':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}},{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
-        "WITH SET ptids AS Intersect(Filter([Participant].[Participant].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])),Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Assay.Target Area','members':'members'}],'filter':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}},{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
+        "WITH SET ptids AS Intersect(Filter([Subject].[Subject].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])),Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Assay.Target Area].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Assay.Target Area','members':'members'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
-        "WITH SET ptids AS Intersect(Filter([Participant].[Participant].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])),Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Assay.Target Area','members':'members'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
+        "WITH SET ptids AS Intersect(Filter([Subject].[Subject].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])),Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Assay.Target Area].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'hierarchy':'Study','lnum':0}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
-        "WITH SET ptids AS Intersect(Filter([Participant].[Participant].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])),Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'hierarchy':'Study','lnum':0}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
+        "WITH SET ptids AS Intersect(Filter([Subject].[Subject].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])),Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Study].[(All)].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'level':'[Study].[Study]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
-        "WITH SET ptids AS Intersect(Filter([Participant].[Participant].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])),Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'level':'[Study].[Study]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
+        "WITH SET ptids AS Intersect(Filter([Subject].[Subject].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])),Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Study].[Study].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'level':'[Assay.Target Area].[Name]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
-        "WITH SET ptids AS Intersect(Filter([Participant].[Participant].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])),Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'level':'[Assay.Target Area].[Name]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
+        "WITH SET ptids AS Intersect(Filter([Subject].[Subject].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])),Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Assay.Target Area].[Name].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'level':'[Lab].[Lab]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
-        "WITH SET ptids AS Intersect(Filter([Participant].[Participant].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])),Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'level':'[Lab].[Lab]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
+        "WITH SET ptids AS Intersect(Filter([Subject].[Subject].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])),Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Lab].[Lab].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'level':'[Antigen.Tier].[Name]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
-        "WITH SET ptids AS Intersect(Filter([Participant].[Participant].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])),Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'level':'[Antigen.Tier].[Name]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]}]}",
+        "WITH SET ptids AS Intersect(Filter([Subject].[Subject].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])),Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Antigen.Tier].[Name].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Assay.Target Area','members':'members'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]}]}",
-        "WITH SET ptids AS Intersect(Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])),Filter([Participant].[Participant].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Assay.Target Area','members':'members'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]}]}",
+        "WITH SET ptids AS Intersect(Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])),Filter([Subject].[Subject].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Assay.Target Area].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'hierarchy':'Study','lnum':0}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]}]}",
-        "WITH SET ptids AS Intersect(Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])),Filter([Participant].[Participant].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'hierarchy':'Study','lnum':0}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]}]}",
+        "WITH SET ptids AS Intersect(Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])),Filter([Subject].[Subject].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Study].[(All)].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'level':'[Study].[Study]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]}]}",
-        "WITH SET ptids AS Intersect(Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])),Filter([Participant].[Participant].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'level':'[Study].[Study]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]}]}",
+        "WITH SET ptids AS Intersect(Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])),Filter([Subject].[Subject].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Study].[Study].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'level':'[Assay.Target Area].[Name]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]}]}",
-        "WITH SET ptids AS Intersect(Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])),Filter([Participant].[Participant].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'level':'[Assay.Target Area].[Name]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]}]}",
+        "WITH SET ptids AS Intersect(Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])),Filter([Subject].[Subject].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Assay.Target Area].[Name].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'level':'[Lab].[Lab]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]}]}",
-        "WITH SET ptids AS Intersect(Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])),Filter([Participant].[Participant].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'level':'[Lab].[Lab]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]}]}",
+        "WITH SET ptids AS Intersect(Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])),Filter([Subject].[Subject].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Lab].[Lab].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{'onRows':[{'level':'[Antigen.Tier].[Name]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]}]}",
-        "WITH SET ptids AS Intersect(Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])),Filter([Participant].[Participant].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{'onRows':[{'level':'[Antigen.Tier].[Name]'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]}]}",
+        "WITH SET ptids AS Intersect(Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])),Filter([Subject].[Subject].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ",  NON EMPTY [Antigen.Tier].[Name].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Assay.Target Area','members':'members'}],'filter':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','#null']}]}},{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]}]}",
-        "WITH SET ptids AS Intersect(Intersect(Filter([Participant].[Participant].members,NOT ISEMPTY([Assay.Target Area].[#null])),Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env]))),Filter([Participant].[Participant].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Assay.Target Area','members':'members'}],'filter':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','#null']}]}},{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]}]}",
+        "WITH SET ptids AS Intersect(Intersect(Filter([Subject].[Subject].members,NOT ISEMPTY([Assay.Target Area].[#null])),Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env]))),Filter([Subject].[Subject].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Assay.Target Area].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
     new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Study','members':'members'}],'filter':[]}",
         "SELECT\n" +
         "[Measures].DefaultMember ON COLUMNS\n" +
         ", [Study].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
-    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Study','members':'members'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Participant','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]}]}",
-        "WITH SET ptids AS Intersect(Filter([Participant].[Participant].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])),Filter([Participant].[Participant].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])))\n" +
+        "FROM [DataspaceCube]");
+    new QueryTest("{showEmpty:true, 'onRows':[{'hierarchy':'Study','members':'members'}],'filter':[{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Vaccine Component.Vaccine Insert','members':[{'uname':['Vaccine Component.Vaccine Insert','env']}]}}]},{'operator':'INTERSECT','arguments':[{'hierarchy':'Subject','membersQuery':{'hierarchy':'Assay.Target Area','members':[{'uname':['Assay.Target Area','Adaptive: humoral and B-cell']}]}}]}]}",
+        "WITH SET ptids AS Intersect(Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[env])),Filter([Subject].[Subject].members,NOT ISEMPTY([Assay.Target Area].[Adaptive: humoral and B-cell])))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Study].members ON ROWS\n" +
-        "FROM [ParticipantCube]");
+        "FROM [DataspaceCube]");
     }
 
 
@@ -1260,7 +1260,7 @@ public class QubeQuery
         {
             OlapSchemaDescriptor d = ServerManager.getDescriptor(c, "CDS:/CDS");
             Schema s = d.getSchema(d.getConnection(c, u), c, u, "CDS");
-            Cube cube = s.getCubes().get("ParticipantCube");
+            Cube cube = s.getCubes().get("DataspaceCube");
 
             init();
             for (QueryTest t : _tests)
@@ -1282,12 +1282,12 @@ public class QubeQuery
         {
             OlapSchemaDescriptor d = ServerManager.getDescriptor(c, "CDS:/CDS");
             Schema s = d.getSchema(d.getConnection(c, u), c, u, "CDS");
-            Cube cube = s.getCubes().get("ParticipantCube");
+            Cube cube = s.getCubes().get("DataspaceCube");
 
             init();
 
             QueryTest t = new QueryTest(
-                    "{\"showEmpty\":false,\"onRows\":[{\"hierarchy\":\"Antigen.Tier\",\"members\":\"members\"}],\"filter\":[{\"operator\":\"INTERSECT\",\"arguments\":[{\"hierarchy\":\"Participant\",\"membersQuery\":{\"hierarchy\":\"Antigen.Tier\",\"members\":[{\"uname\":[\"Antigen.Tier\",\"1B\",\"DJ263.8\"]}]}},{\"hierarchy\":\"Participant\",\"membersQuery\":{\"hierarchy\":\"Antigen.Tier\",\"members\":[{\"uname\":[\"Antigen.Tier\",\"1A\",\"SF162.LS\"]}]}}]},{\"operator\":\"INTERSECT\",\"arguments\":[{\"hierarchy\":\"Participant\",\"membersQuery\":{\"hierarchy\":\"Antigen.Tier\",\"members\":[{\"uname\":[\"Antigen.Tier\",\"1B\"]}]}}]}]}",
+                    "{\"showEmpty\":false,\"onRows\":[{\"hierarchy\":\"Antigen.Tier\",\"members\":\"members\"}],\"filter\":[{\"operator\":\"INTERSECT\",\"arguments\":[{\"hierarchy\":\"Subject\",\"membersQuery\":{\"hierarchy\":\"Antigen.Tier\",\"members\":[{\"uname\":[\"Antigen.Tier\",\"1B\",\"DJ263.8\"]}]}},{\"hierarchy\":\"Subject\",\"membersQuery\":{\"hierarchy\":\"Antigen.Tier\",\"members\":[{\"uname\":[\"Antigen.Tier\",\"1A\",\"SF162.LS\"]}]}}]},{\"operator\":\"INTERSECT\",\"arguments\":[{\"hierarchy\":\"Subject\",\"membersQuery\":{\"hierarchy\":\"Antigen.Tier\",\"members\":[{\"uname\":[\"Antigen.Tier\",\"1B\"]}]}}]}]}",
                     "");
 
             try

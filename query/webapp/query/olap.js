@@ -1120,8 +1120,6 @@ Ext4.define('LABKEY.query.olap.MDX', {
         if (rowset)
             query += ", " + (config.showEmpty ? "" : " NON EMPTY ") + rowset + " ON ROWS\n";
         query += "FROM [" + this._cube.getName() + "]\n";
-
-        console.debug(query);
         return query;
     },
 
@@ -1136,7 +1134,7 @@ Ext4.define('LABKEY.query.olap.MDX', {
         if (config.filter && config.filter.length > 0)
             filterset = this._toSetString(this._processExpr(config.filter,"XINTERSECT","XINTERSECT"));
         else
-            filterset = "[Participant].[Participant].members";
+            filterset = "[Subject].[Subject].members";
 
         if (filterset)
             withDefinition = "WITH SET " + countMeasure + " AS " + filterset + "\n";

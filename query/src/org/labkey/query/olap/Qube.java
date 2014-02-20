@@ -72,14 +72,14 @@ import java.util.Map;
  * The level map is a collection of Member->MemberSet entries where the MemberSet is the collection of key Members that
  * have this 'attribute'.
  *
- * For instance, the key attribute level might be [Participant].[Participant], and the Gender level may have a few members such as
+ * For instance, the key attribute level might be [Subject].[Subject], and the Gender level may have a few members such as
  * [Gender].[Male], [Gender].[Female], [Gender].[Unknown]
  *
  * Each member will have an associated set of participant members.
  *
- * [Gender].[Male] -> {[Participant].[P001], [Participant].[P002]}
- * [Gender].[Female] -> {[Participant].[P003], [Participant].[P004]}
- * [Gender].[Unknown] -> {[Participant].[P005]}
+ * [Gender].[Male] -> {[Subject].[P001], [Subject].[P002]}
+ * [Gender].[Female] -> {[Subject].[P003], [Subject].[P004]}
+ * [Gender].[Unknown] -> {[Subject].[P005]}
  */
 
 public class Qube
