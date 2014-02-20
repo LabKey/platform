@@ -27,6 +27,7 @@ import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StartupListener;
@@ -62,6 +63,9 @@ public class FileContentModule extends DefaultModule
         addController("filecontent", FileContentController.class);
         PropertyService.get().registerDomainKind(new FilePropertiesDomainKind());
         ServiceRegistry.get().registerService(FileContentService.class, new FileContentServiceImpl());
+
+        AdminConsole.addExperimentalFeatureFlag(FileContentService.EXPERIMENTAL_DRAG_DROP_UPLOAD, "Drag-and-drop File Upload",
+                "Allow uploading of files in the file-browser by drag-and-drop from the desktop.", false);
     }
 
     @NotNull

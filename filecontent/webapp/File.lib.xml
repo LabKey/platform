@@ -19,5 +19,6 @@
     </library>
     <dependencies>
         <dependency path="Ext4"/>
+        <dependency path="Dropzone"/>
     </dependencies>
 </libraries>

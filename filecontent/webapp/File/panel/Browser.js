@@ -36,7 +36,13 @@ Ext4.define('File.panel.Browser', {
      * @cfg {Ext4.util.Format.fileSize} fileSize
      */
     sizeRenderer : function(value, metaData, record) {
-        return !record.get("collection") ? Ext4.util.Format.fileSize(value) : null;
+        if (record && !record.get("collection"))
+            return Ext4.util.Format.fileSize(value);
+
+        // Details panel renders a template without a record.
+        if (value)
+            return Ext4.util.Format.fileSize(value);
+        return null;
     },
 
     /**
@@ -1121,7 +1127,11 @@ Ext4.define('File.panel.Browser', {
             proxy : this.fileSystem.getProxyCfg('xml'),
             root : {
                 text : this.fileSystem.rootName,
+                // name property used by details panel template
+                name : this.fileSystem.rootName,
                 id : this.fileSystem.getBaseURL(),
+                // uri property used by details panel template
+                uri : this.fileSystem.getAbsoluteURL(),
                 expanded : true,
                 cls : 'fileset-root-node', // for selenium testing
                 icon : LABKEY.contextPath + '/_images/labkey.png'
@@ -1708,8 +1718,8 @@ Ext4.define('File.panel.Browser', {
         if (this.showDetails) {
             if (selectedRecords.length == 1)
                 this.getDetailPanel().update(selectedRecords[0].data);
-            else
-                this.getDetailPanel().update('');
+            else if (this.currentDirectory)
+                this.getDetailPanel().update(this.currentDirectory.data);
         }
 
         this.fireEvent('selectionchange', File.panel.Browser._toggleActions(this.fileSystem, this.actions, selectedRecords));
@@ -1818,6 +1828,11 @@ Ext4.define('File.panel.Browser', {
         }
         this.currentDirectory = model;
         this.changeTestFlag(true, true);
+
+        if (this.showDetails) {
+            if (this.currentDirectory)
+                this.getDetailPanel().update(this.currentDirectory.data);
+        }
     },
 
     // calling select does not fire 'selectionchange'
@@ -1882,7 +1897,7 @@ Ext4.define('File.panel.Browser', {
         var detailsTpl = new Ext4.XTemplate(
            '<table class="fb-details">' +
                 '<tr><th>Name:</th><td>{name}</td></tr>' +
-                '<tr><th>WebDav URL:</th><td><a target="_blank" href="{href}">{href}</a></td></tr>' +
+                '<tr><th>WebDav URL:</th><td><a target="_blank" href="{[values.href||values.uri]}">{[values.href||values.uri]}</a></td></tr>' +
                 '<tpl if="lastmodified != undefined">' +
                     '<tr><th>Modified:</th><td>{lastmodified:this.renderDate}</td></tr>' +
                 '</tpl>' +
@@ -1945,6 +1960,10 @@ Ext4.define('File.panel.Browser', {
 
         var node = (nodes && nodes.length ? nodes[0] : treeStore.getRootNode());
         treeStore.load({node: node});
+
+        if (this.showDetails) {
+            this.getDetailPanel().update(node.data);
+        }
     },
 
     onCreateDirectory : function() {

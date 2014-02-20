@@ -46,6 +46,14 @@ Ext4.define('File.system.Webdav', {
     },
 
     /**
+     * Returns the absolute URL including the offsetUrl.
+     * @returns {String}
+     */
+    getAbsoluteURL : function() {
+        return this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.getURL());
+    },
+
+    /**
      * Returns the base relative URL which is after the context URL. The 'root' for this instance
      * e.g. "/home/@files"
      */
@@ -273,6 +281,13 @@ Ext4.define('File.system.Webdav', {
         });
 
         return true;
+    },
+
+    ensureDirectories : function (config)
+    {
+        // UNDONE
+        if (config.success)
+            config.success.call(config.scope);
     },
 
     /**

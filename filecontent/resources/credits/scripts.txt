@@ -1,0 +1,5 @@
+{table}
+Library|Version|Source|License|LabKey Dev|Purpose
+Dropzone.js|3.8.4|{link:dropzone.js|http://www.dropzonejs.com/}|{link:MIT|http://opensource.org/licenses/MIT}|kevink|drag-drop file upload functionality
+{table}
+

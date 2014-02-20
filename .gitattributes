@@ -1427,6 +1427,7 @@ filecontent/gwtsrc/org/labkey/filecontent/designer/client/FilePropertiesDesigner
 filecontent/gwtsrc/org/labkey/filecontent/designer/client/FilePropertiesService.java -text
 filecontent/gwtsrc/org/labkey/filecontent/designer/client/FilePropertiesServiceAsync.java -text
 filecontent/module.properties -text
+filecontent/resources/credits/scripts.txt -text
 filecontent/resources/schemas/dbscripts/postgresql/filecontent-0.00-10.10.sql -text
 filecontent/resources/schemas/dbscripts/postgresql/filecontent-11.30-12.10.sql -text
 filecontent/resources/schemas/dbscripts/postgresql/obsolete/filecontent-11.30-11.31.sql -text
@@ -1461,6 +1462,7 @@ filecontent/src/org/labkey/filecontent/view/fileNotifySettings.jsp -text
 filecontent/src/org/labkey/filecontent/view/files.jsp -text
 filecontent/src/org/labkey/filecontent/view/iframe.jsp -text
 filecontent/webapp/ActionsAdmin.js -text
+filecontent/webapp/Dropzone.lib.xml -text
 filecontent/webapp/File.lib.xml -text
 filecontent/webapp/File/data/Pipeline.js -text
 filecontent/webapp/File/data/webdav/Proxy.js -text
@@ -1484,6 +1486,9 @@ filecontent/webapp/PipelineAction.js -text
 filecontent/webapp/Reorderer.js -text
 filecontent/webapp/ToolbarDroppable.js -text
 filecontent/webapp/ToolbarReorderer.js -text
+filecontent/webapp/dropzone-3.8.4/README.txt -text
+filecontent/webapp/dropzone-3.8.4/css/basic.css -text
+filecontent/webapp/dropzone-3.8.4/dropzone.js -text
 freezerpro/FreezerPro.iml -text
 freezerpro/module.properties -text
 freezerpro/src/org/labkey/freezerpro/FreezerProController.java -text
