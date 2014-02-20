@@ -1689,6 +1689,8 @@ public class QueryServiceImpl extends QueryService
 	{
         assert Table.validMaxRows(maxRows) : maxRows + " is an illegal value for rowCount; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
 
+        QueryProfiler.getInstance().ensureListenerEnvironment();
+
         if (null == selectColumns)
             selectColumns = table.getColumns();
 
@@ -1815,8 +1817,6 @@ public class QueryServiceImpl extends QueryService
             String s = _prettyPrint(t.getSQL());
             ret = new SQLFragment(s, ret.getParams());
         }
-
-        QueryProfiler.getInstance().ensureListenerEnvironment();
 
 	    return ret;
     }
