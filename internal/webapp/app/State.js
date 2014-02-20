@@ -668,7 +668,7 @@ Ext.define('LABKEY.app.controller.State', {
                         found = true;
                     }
                 }
-                else if (newFilters[s].isEqualAsFilter(oldFilters[f])) {
+                else if (newFilters[s].isEqual(oldFilters[f])) {
                     found = true;
                 }
             }
