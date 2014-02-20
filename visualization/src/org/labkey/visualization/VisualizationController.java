@@ -25,6 +25,8 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.action.Action;
+import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiResponse;
@@ -763,6 +765,7 @@ public class VisualizationController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public class GetDataAction extends ApiAction<VisualizationSQLGenerator>
     {
         @Override
@@ -1397,6 +1400,7 @@ public class VisualizationController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public class GenericChartWizardAction extends SimpleViewAction<GenericReportForm>
     {
         private GenericChartReport.RenderType _renderType;
@@ -1580,6 +1584,7 @@ public class VisualizationController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectMetaData)
     public class GetGenericReportColumnsAction extends ApiAction<ColumnListForm>
     {
         @Override

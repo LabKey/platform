@@ -1607,6 +1607,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.Export)
     public class ExportScriptAction extends SimpleViewAction<ExportScriptForm>
     {
         public ModelAndView getView(ExportScriptForm form, BindException errors) throws Exception
@@ -1624,6 +1625,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.Export)
     public class ExportRowsExcelAction extends _ExportQuery
     {
         void _export(QueryForm form, QueryView view) throws Exception
@@ -1633,6 +1635,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.Export)
     public class ExportRowsXLSXAction extends _ExportQuery
     {
         void _export(QueryForm form, QueryView view) throws Exception
@@ -1686,6 +1689,7 @@ public class QueryController extends SpringActionController
      *
      */
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.Export)
     public class ExportExcelTemplateAction extends _ExportQuery<TemplateForm>
     {
         public ExportExcelTemplateAction()
@@ -1727,6 +1731,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.Export)
     public class ExportRowsTsvAction extends _ExportQuery<ExportRowsTsvForm>
     {
         public ExportRowsTsvAction()
@@ -1743,6 +1748,7 @@ public class QueryController extends SpringActionController
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
+    @Action(ActionType.Export)
     public class ExcelWebQueryAction extends ExportRowsTsvAction
     {
         public ModelAndView getView(ExportRowsTsvForm form, BindException errors) throws Exception
@@ -1775,6 +1781,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.Export)
     public class ExcelWebQueryDefinitionAction extends SimpleViewAction<QueryForm>
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
@@ -2670,6 +2677,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public class GetDataAction extends ApiAction<SimpleApiJsonForm>
     {
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
@@ -2773,6 +2781,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermissionClass(ReadPermission.class)
     @ApiVersion(9.1)
+    @Action(ActionType.SelectData)
     public class ExecuteSqlAction extends ApiAction<ExecuteSqlForm>
     {
         public ApiResponse execute(ExecuteSqlForm form, BindException errors) throws Exception
@@ -3096,6 +3105,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermissionClass(ReadPermission.class)
     @ApiVersion(9.2)
+    @Action(ActionType.Export)
     public class ExportSqlAction extends ExportAction<ExportSqlForm>
     {
         public void export(ExportSqlForm form, HttpServletResponse response, BindException errors) throws Exception
@@ -4483,6 +4493,7 @@ public class QueryController extends SpringActionController
     // Issue 18870: Guest user can't revert unsaved custom view changes
     // Permission will be checked inline (guests are allowed to delete their session custom views)
     @RequiresNoPermission
+    @Action(ActionType.Configure)
     public class DeleteViewAction extends ApiAction<DeleteViewForm>
     {
         @Override
@@ -5362,6 +5373,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectMetaData)
     public class GetQueryViewsAction extends ApiAction<GetQueryViewsForm>
     {
         public ApiResponse execute(GetQueryViewsForm form, BindException errors) throws Exception
@@ -5429,7 +5441,6 @@ public class QueryController extends SpringActionController
 
             return response;
         }
-
     }
 
     @RequiresNoPermission
@@ -5899,6 +5910,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
+    @Action(ActionType.Export)
     public class ExportTablesAction extends FormViewAction<ExportTablesForm>
     {
         private ActionURL _successUrl;

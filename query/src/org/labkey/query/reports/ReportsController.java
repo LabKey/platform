@@ -24,6 +24,8 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.labkey.api.action.Action;
+import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -327,6 +329,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public class DesignChartAction extends SimpleViewAction<ChartDesignerBean>
     {
         public ModelAndView getView(ChartDesignerBean form, BindException errors) throws Exception
@@ -2864,6 +2867,7 @@ public class ReportsController extends SpringActionController
      * See 'asTree' in DataViewsPanel.js.
      */
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectMetaData)
     public class BrowseDataTreeAction extends ApiAction<BrowseDataForm>
     {
         @Override
