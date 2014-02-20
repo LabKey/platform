@@ -15,6 +15,7 @@
  */
 package org.labkey.study.writer;
 
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -22,6 +23,7 @@ import org.labkey.api.data.TableInfoWriter;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
@@ -115,7 +117,7 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
 
     private static class SpecimenTableInfoWriter extends TableInfoWriter
     {
-        private final Map<String, DomainProperty> _properties = new HashMap<>();
+        private final Map<String, DomainProperty> _properties = new CaseInsensitiveHashMap<>();
         private Domain _domain;
         private String _name;
 
@@ -140,6 +142,21 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
         protected String getPropertyURI(ColumnInfo column)
         {
             return null;
+        }
+
+        @Override
+        public void writeColumn(ColumnInfo column, ColumnType columnXml)
+        {
+            super.writeColumn(column, columnXml);
+
+            // Since the specimen tables only return a SchemaTableInfo, the column names will be decapitalized,
+            // to preserve casing we defer to the DomainProperty names. This is mostly cosmetic
+            if (_properties.containsKey(column.getName()))
+            {
+                DomainProperty dp = _properties.get(column.getName());
+                if (dp.getName() != null)
+                    columnXml.setColumnName(dp.getName());
+            }
         }
     }
 }
