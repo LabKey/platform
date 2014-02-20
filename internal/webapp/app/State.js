@@ -762,12 +762,10 @@ Ext.define('LABKEY.app.controller.State', {
             }
             else
             {
-                mdx.setNamedFilter(name, [
-                    {
-                        hierarchy : 'Participant',
-                        membersQuery : selection
-                    }
-                ]);
+                mdx.setNamedFilter(name, [{
+                    hierarchy : 'Subject',
+                    membersQuery : selection
+                }]);
             }
             me.fireEvent('privateselectionchange', mdx._filter[name], name);
 

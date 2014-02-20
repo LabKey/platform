@@ -40,11 +40,11 @@ LABKEY.app.controller.Filter = new function() {
         switch (data.hierarchy) {
             case 'Study':
                 return ops.UNION;
-            case 'Participant.Race':
+            case 'Subject.Race':
                 return ops.UNION;
-            case 'Participant.Country':
+            case 'Subject.Country':
                 return ops.UNION;
-            case 'Participant.Sex':
+            case 'Subject.Sex':
                 return ops.UNION;
             default:
                 return ops.INTERSECT;
@@ -57,10 +57,10 @@ LABKEY.app.controller.Filter = new function() {
             arguments: []
         };
 
-        if (data.hierarchy == 'Participant') {
+        if (data.hierarchy == 'Subject') {
 
             filter.arguments.push({
-                hierarchy : 'Participant',
+                hierarchy : 'Subject',
                 members  : data.members
             });
             return filter;
@@ -68,7 +68,7 @@ LABKEY.app.controller.Filter = new function() {
 
         for (var m=0; m < data.members.length; m++) {
             filter.arguments.push({
-                hierarchy : 'Participant',
+                hierarchy : 'Subject',
                 membersQuery : {
                     hierarchy : data.hierarchy,
                     members   : [data.members[m]]
