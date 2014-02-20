@@ -279,7 +279,7 @@ that points back to the current page:
             var query = LABKEY.ActionURL.queryString(parameters);
 
             var newUrl;
-            if (LABKEY.experimentalContainerRelativeURL)
+            if (LABKEY.experimental && LABKEY.experimental.containerRelativeURL)
                 newUrl = LABKEY.contextPath + containerPath + controller + "-" + action;
             else
                 newUrl = LABKEY.contextPath + "/" + controller + containerPath + action;

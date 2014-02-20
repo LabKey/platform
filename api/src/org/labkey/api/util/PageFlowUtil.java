@@ -41,6 +41,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.QueryParam;
@@ -2044,7 +2045,13 @@ public class PageFlowUtil
         AppProps.Interface appProps = AppProps.getInstance();
         String contextPath = appProps.getContextPath();
         JSONObject json = new JSONObject();
-        json.put("experimentalContainerRelativeURL", appProps.getUseContainerRelativeURL());
+
+        // Expose some experimental flags to the client
+        JSONObject experimental = new JSONObject();
+        experimental.put("containerRelativeURL", appProps.getUseContainerRelativeURL());
+        experimental.put(FileContentService.EXPERIMENTAL_DRAG_DROP_UPLOAD, appProps.isExperimentalFeatureEnabled(FileContentService.EXPERIMENTAL_DRAG_DROP_UPLOAD));
+        json.put("experimental", experimental);
+
         json.put("contextPath", contextPath);
         json.put("imagePath", contextPath + "/_images");
         json.put("extJsRoot", extJsRoot());
