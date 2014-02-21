@@ -318,20 +318,25 @@ public interface ListDefinition extends Comparable<ListDefinition>
 
     ListItem createListItem();
     ListItem getListItem(Object key, User user);
+    ListItem getListItem(Object key, User user, Container c);
     ListItem getListItemForEntityId(String entityId, User user);
 
-    int insertListItems(User user, List<ListItem> listItems) throws IOException;
-    int insertListItems(User user, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey) throws IOException;
+    int insertListItems(User user, Container container, List<ListItem> listItems) throws IOException;
+    int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey) throws IOException;
 
     @Nullable TableInfo getTable(User user);
+    @Nullable TableInfo getTable(User user, Container c);
 
     ActionURL urlShowDefinition();
-    ActionURL urlUpdate(User user, @Nullable Object pk, @Nullable URLHelper returnUrl);
+    ActionURL urlUpdate(User user, Container container, @Nullable Object pk, @Nullable URLHelper returnUrl);
     ActionURL urlDetails(@Nullable Object pk);
+    ActionURL urlDetails(@Nullable Object pk, Container c);
     ActionURL urlShowData();
-    ActionURL urlShowHistory();
+    ActionURL urlShowData(Container c);
+    ActionURL urlShowHistory(Container c);
 
     ActionURL urlFor(Class<? extends Controller> actionClass);
+    ActionURL urlFor(Class<? extends Controller> actionClass, Container c);
 
     Collection<String> getDependents(User user);
 

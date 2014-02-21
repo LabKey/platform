@@ -101,7 +101,7 @@ public class JunitUtil
 
         // Could be null, if junit tests have never been run before
         if (null != junit)
-            ContainerManager.delete(junit, TestContext.get().getUser());
+            ContainerManager.deleteAll(junit, TestContext.get().getUser());
     }
 
     // Simulate a race condition by starting the specified number of threads and invoking the runnable the specified
