@@ -280,6 +280,7 @@ public class FileSystemResource extends AbstractWebdavResource
         File file = getFile();
         if (!file.exists())
         {
+            // NOTE: WebDAV spec forbids PUT from creating intermediate directories
             file.getParentFile().mkdirs();
             try
             {
