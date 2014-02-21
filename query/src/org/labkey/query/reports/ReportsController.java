@@ -352,6 +352,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public class ChartServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
@@ -361,6 +362,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public class PlotChartAction extends SimpleViewAction<ChartDesignerBean>
     {
         public ModelAndView getView(ChartDesignerBean form, BindException errors) throws Exception
@@ -1012,6 +1014,7 @@ public class ReportsController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public class ViewScriptReportAction extends ApiAction<ScriptReportBean>
     {
         @Override
