@@ -20,11 +20,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.ValidEmail;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.RoleManager;
 
 import java.sql.Connection;
 import java.sql.Driver;
@@ -32,8 +32,8 @@ import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.util.Collections;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
@@ -81,25 +81,15 @@ public class QueryDriver implements Driver
             properties.put(part.substring(0,equals),part.substring(equals+1));
         }
 
-        if (null == properties.get("user") || null==properties.get("container") || null==properties.get("schema"))
-            throw new SQLException("connection must specify user, container, and schema");
+        if (null==properties.get("container") || null==properties.get("schema"))
+            throw new SQLException("connection must specify container and schema");
 
-        // USER
-        Integer userId = null;
-        ValidEmail userName = null;
-        try
-        {
-            String u = String.valueOf(properties.get("user"));
-            if (u.equalsIgnoreCase("guest"))
-                userId = 0;
-            if (u.contains("@"))
-                userName = new ValidEmail(u);
-            else
-                userId = (Integer)JdbcType.INTEGER.convert(u);
-        }
-        catch (Exception x)
-        {
-        }
+        // NOTE: This code is only accessible from within LabKey Server when using components that require their own
+        //JDBC Connection (e.g. Mondrian). The user must currently be a limited service user that cannot update
+        User user = new LimitedUser(User.guest, new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+        user.setPrincipalType(PrincipalType.SERVICE);
+        user.setDisplayName("Internal JDBC Service User");
+        user.setEmail("internaljdbc@labkey.org");
 
         // CONTAINER
         Integer containerId = (Integer)JdbcType.INTEGER.convert(properties.get("container"));
@@ -109,12 +99,8 @@ public class QueryDriver implements Driver
         if (StringUtils.isEmpty(schemaName))
             schemaName = "core";
 
-        if ((null == userId && null==userName)|| null==containerId || null==schemaName)
-            throw new SQLException("connection must specify user, container, and schema");
-
-        User user = null!=userId ? UserManager.getUser(userId) : UserManager.getUser(userName);
-        if (null == user)
-            throw new SQLException("unknown user: " + properties.get("user"));
+        if (null==containerId || null==schemaName)
+            throw new SQLException("connection must specify container and schema");
 
         Container c = ContainerManager.getForRowId(containerId);
         return new QueryConnection(user, c, schemaName);

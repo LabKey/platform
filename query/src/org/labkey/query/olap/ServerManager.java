@@ -241,9 +241,11 @@ public class ServerManager
     }
 
 
+    @SuppressWarnings("UnusedParameters")
     static String getDatabaseConnectionString(Container c, User user)
     {
-        return "jdbc:labkey:query:" + getDatabaseName(c) + ":user=" + user.getUserId() + ":container=" + c.getRowId() + ":schema=core";
+        //Currently all internal connections must be done with a limited service user
+        return "jdbc:labkey:query:" + getDatabaseName(c) + ":container=" + c.getRowId() + ":schema=core";
     }
 
 

@@ -19,6 +19,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 
@@ -48,7 +49,7 @@ import java.util.concurrent.Executor;
  */
 public class QueryConnection implements Connection
 {
-    final int _userId;
+    final User _user;
     final String _containerId;
     final String _schemaName;
 
@@ -59,7 +60,9 @@ public class QueryConnection implements Connection
 
     QueryConnection(User user, Container c, String defaultSchemaName)
     {
-        _userId = user.getUserId();
+        //Currently can only be used by internal service users
+        assert user.getPrincipalType() == PrincipalType.SERVICE;
+        _user = user;
         _containerId = c.getId();
         _schemaName = defaultSchemaName;
     }
@@ -71,7 +74,7 @@ public class QueryConnection implements Connection
 
     User getUser()
     {
-        return UserManager.getUser(_userId);
+        return _user;
     }
 
     Container getContainer()
