@@ -23,11 +23,10 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.OneBasedList;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.QueryProfiler;
+import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.MemTrackable;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.ViewServlet;
 
@@ -1606,7 +1605,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
 
         // Make a copy of the parameters list (it gets modified below) and switch to zero-based list (_parameters is a one-based list)
         List<Object> zeroBasedList = null != _parameters ? new ArrayList<>(_parameters.getUnderlyingList()) : null;
-        QueryProfiler.track(_conn.getScope(), sql, zeroBasedList, elapsed, _stackTrace, isRequestThread());
+        QueryProfiler.getInstance().track(_conn.getScope(), sql, zeroBasedList, elapsed, _stackTrace, isRequestThread());
 
         if (!_log.isEnabledFor(Level.DEBUG) && !isAssertEnabled)
             return;
