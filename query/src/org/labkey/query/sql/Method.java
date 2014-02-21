@@ -1014,7 +1014,8 @@ public abstract class
                     break getProperty;
                 }
 
-                return new SQLFragment("CAST(? AS " + schema.getSqlDialect().sqlTypeNameFromJdbcType(JdbcType.VARCHAR) + ")", value);
+                //see issue 19661.  SQLServer defaults to 30 for VARCHAR, unless a length is explicitly specified, so we CAST using the length of this string
+                return new SQLFragment("CAST(? AS " + schema.getSqlDialect().sqlTypeNameFromJdbcType(JdbcType.VARCHAR) + (value == null ? "" : "(" + value.toString().length() + ")") + ")", value);
             }
 
             // no legal field found
