@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.OneBasedList;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.queryprofiler.QueryProfiler;
+import org.labkey.api.data.QueryProfiler;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -1597,7 +1597,6 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     
 
     private static Package _java_lang = java.lang.String.class.getPackage();
-    boolean _memTracked = false;        // don't log the same statement multiple times
 
     private void _logStatement(String sql, Exception x)
     {
@@ -1607,7 +1606,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
 
         // Make a copy of the parameters list (it gets modified below) and switch to zero-based list (_parameters is a one-based list)
         List<Object> zeroBasedList = null != _parameters ? new ArrayList<>(_parameters.getUnderlyingList()) : null;
-        QueryProfiler.getInstance().track(_conn.getScope(), sql, zeroBasedList, elapsed, _stackTrace, isRequestThread());
+        QueryProfiler.track(_conn.getScope(), sql, zeroBasedList, elapsed, _stackTrace, isRequestThread());
 
         if (!_log.isEnabledFor(Level.DEBUG) && !isAssertEnabled)
             return;
@@ -1666,27 +1665,19 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         final String logString = logEntry.toString();
         _log.log(Level.DEBUG, logString);
 
-        assert _memTracked || (MemTracker.getInstance().put(new _StringMemTrackable(logString)) && (_memTracked = true));
+// modified on trunk, just commenting out for now
+//        MemTracker.getInstance().put(new MemTrackable(){
+//            @Override
+//            public String toMemTrackerString()
+//            {
+//                return logString;
+//            }
+//        });
 
         // check for deadlock or transaction related error
         if (x instanceof SQLException && SqlDialect.isTransactionException(x))
         {
             BreakpointThread.dumpThreads(_log);
-        }
-    }
-
-
-    private static class _StringMemTrackable implements MemTrackable
-    {
-        final String s;
-        _StringMemTrackable(String s)
-        {
-            this.s = s;
-        }
-        @Override
-        public String toMemTrackerString()
-        {
-            return s;
         }
     }
 
