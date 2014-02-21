@@ -21,6 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.labkey.api.action.Action;
+import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -32,9 +34,6 @@ import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.CustomView;
@@ -111,8 +110,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.PrintWriter;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -643,6 +640,7 @@ public class ReportsController extends BaseStudyController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public class ParticipantCrosstabAction extends FormViewAction<CrosstabDesignBean>
     {
         public ModelAndView getView(CrosstabDesignBean form, boolean reshow, BindException errors) throws Exception
