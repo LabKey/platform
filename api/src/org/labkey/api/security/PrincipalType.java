@@ -25,7 +25,8 @@ public enum PrincipalType
     USER('u', "User"),
     GROUP('g', "Group"),
     ROLE('r', "Role"),
-    MODULE('m', "Module Group");
+    MODULE('m', "Module Group"),
+    SERVICE('s', "Service");
 
     private final char _typeChar;
     private final String _description;
