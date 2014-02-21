@@ -28,7 +28,7 @@
     boolean allowReload = study.isAllowReload();
     ReloadInterval currentInterval = ReloadInterval.getForSeconds(study.getReloadInterval());
 
-    User reloadUser = (allowReload && null != study.getReloadUser() ? UserManager.getUser(study.getReloadUser().intValue()) : null);
+    User reloadUser = (allowReload && null != study.getReloadUser() ? UserManager.getUser(study.getReloadUser()) : null);
 %>
 <form action="" method="post">
     <table width="80%">

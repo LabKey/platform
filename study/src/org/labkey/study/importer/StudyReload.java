@@ -217,7 +217,7 @@ public class StudyReload
             }
 
             // Check if we should schedule a new trigger
-            if (allowReload && null != secondsInterval && 0 != secondsInterval.intValue())
+            if (allowReload && null != secondsInterval && 0 != secondsInterval)
             {
                 int reasonableInterval = Math.max(secondsInterval.intValue(), 10);
 
@@ -284,8 +284,8 @@ public class StudyReload
             String studyContainerId = (String)context.getJobDetail().getJobDataMap().get(CONTAINER_ID_KEY);
             try
             {
-                ImportOptions options = new ImportOptions(studyContainerId);
-                attemptReload(options);    // Ignore success messages
+                ImportOptions options = new ImportOptions(studyContainerId, null);
+                attemptReload(options, "a configured automatic reload timer");    // Ignore success messages
             }
             catch (ImportException ie)
             {
@@ -301,7 +301,7 @@ public class StudyReload
             }
         }
 
-        public ReloadStatus attemptReload(ImportOptions options) throws SQLException, ImportException
+        public ReloadStatus attemptReload(ImportOptions options, String source) throws SQLException, ImportException
         {
             Container c = ContainerManager.getForId(options.getContainerId());
 
@@ -342,6 +342,27 @@ public class StudyReload
 
                         if (null == lastReload || studyload.lastModified() > (lastReload.getTime() + 1000))  // Add a second since SQL Server rounds datetimes
                         {
+                            options.addMessage("Study reload was initiated by " + source);
+
+                            // Check for valid reload user
+                            User reloadUser = options.getUser();
+
+                            if (null == reloadUser)
+                            {
+                                Integer reloadUserId = study.getReloadUser();
+
+                                if (null != reloadUserId)
+                                    reloadUser = UserManager.getUser(reloadUserId);
+
+                                if (null == reloadUser)
+                                    throw new ImportException("Reload user is not set to a valid user. Update the reload settings on this study to ensure a valid reload user.");
+
+                                options.setUser(reloadUser);
+                                options.addMessage("User \"" + reloadUser.getDisplayName(null) + "\" is configured as the reload user for this study. This can be changed by visiting the \"Manage Reloading\" page.");
+                            }
+
+                            // TODO: Check for inactive user and not sufficient permissions
+
                             // Try to add this study to the reload queue; if it's full, wait until next time
                             // We could submit reload pipeline jobs directly, but:
                             //  1) we need a way to throttle automatic reloads and
@@ -350,7 +371,7 @@ public class StudyReload
                             // TODO: Better throttling behavior (e.g., prioritize studies that check infrequently)
 
                             // Careful: Naive approach would be to offer the container to the queue and set last reload
-                            // time on the study only if successful.  This will introduce a race condition, since the
+                            // time on the study only if successful. This will introduce a race condition, since the
                             // import job and the update are likely to be updating the study at roughly the same time.
                             // Instead, we optimistically update the last reload time before offering the container and
                             // back out that change if the queue is full.
@@ -429,26 +450,18 @@ public class StudyReload
                 {
                     ImportOptions options = QUEUE.take();
                     c = ContainerManager.getForId(options.getContainerId());
+                    User reloadUser = options.getUser();
                     PipeRoot root = StudyReload.getPipelineRoot(c);
                     study = manager.getStudy(c);
                     //noinspection ThrowableInstanceNeverThrown
                     BindException errors = new NullSafeBindException(c, "reload");
                     ActionURL manageStudyURL = new ActionURL(StudyController.ManageStudyAction.class, c);
 
-                    User reloadUser = null;
-                    Integer reloadUserId = study.getReloadUser();
-
-                    if (null != reloadUserId)
-                        reloadUser = UserManager.getUser(reloadUserId.intValue());
-
-                    if (null == reloadUser)
-                        throw new ImportException("Reload user is not set to a valid user. Update the reload settings on this study to ensure a valid reload user.");
-
                     LOG.info("Handling " + c.getPath());
 
                     File studyXml = root.resolvePath("study.xml");
 
-                    // issue 15681: if there is a folder acrhive instead of a study archive, see if the folder.xml exists to point to the study root dir
+                    // issue 15681: if there is a folder archive instead of a study archive, see if the folder.xml exists to point to the study root dir
                     if (!studyXml.exists())
                     {
                         File folderXml = root.resolvePath("folder.xml");

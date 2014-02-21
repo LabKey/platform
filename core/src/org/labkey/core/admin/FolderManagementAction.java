@@ -579,7 +579,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
                     User user = getUser();
                     ActionURL url = context.getActionURL();
-                    ImportOptions options = new ImportOptions(getContainer().getId());
+                    ImportOptions options = new ImportOptions(getContainer().getId(), user.getUserId());
                     options.setSkipQueryValidation(!form.isValidateQueries());
                     options.setCreateSharedDatasets(form.createSharedDatasets);
 

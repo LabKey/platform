@@ -38,6 +38,7 @@ import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.sql.SQLException;
+import java.util.Collection;
 
 /**
  * User: adam
@@ -70,6 +71,9 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
         _reload = (null != study);
 
         LOG.info("Pipeline job initialized for " + (_reload ? "reloading" : "importing") + " study " + (_reload ? "\"" + study.getLabel() + "\" " : "") + "to folder " + c.getPath());
+
+        for (String message : options.getMessages())
+            _ctx.getLogger().info(message);
     }
 
     public StudyImpl getStudy()

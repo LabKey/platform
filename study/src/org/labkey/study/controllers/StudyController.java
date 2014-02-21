@@ -3878,7 +3878,7 @@ public class StudyController extends BaseStudyController
         ActionURL url = context.getActionURL();
         try
         {
-            ImportOptions options = new ImportOptions(c.getId());
+            ImportOptions options = new ImportOptions(c.getId(), user.getUserId());
             PipelineService.get().queueJob(new StudyImportJob(c, user, url, studyXml, originalFilename, errors, pipelineRoot, options));
         }
         catch (PipelineValidationException e)
@@ -6072,8 +6072,8 @@ public class StudyController extends BaseStudyController
         {
             StudyImpl study = getStudyThrowIfNull();
 
-            // If the "allow reload" state or the interval changes then update the study and initialize the timer
-            if (form.isAllowReload() != study.isAllowReload() || !nullSafeEqual(form.getInterval(), study.getReloadInterval()))
+            // If the "allow reload" state, interval, or reload user changes then update the study and initialize the timer
+            if (form.isAllowReload() != study.isAllowReload() || !nullSafeEqual(form.getInterval(), study.getReloadInterval()) || getUser().getUserId() != study.getReloadUser())
             {
                 study = study.createMutable();
                 study.setAllowReload(form.isAllowReload());
@@ -6246,9 +6246,18 @@ public class StudyController extends BaseStudyController
 
             try
             {
-                ImportOptions options = new ImportOptions(getContainer().getId());
+                User user = getUser();
+                ImportOptions options = new ImportOptions(getContainer().getId(), !user.isGuest() ? user.getUserId() : null);
                 options.setSkipQueryValidation(form.isSkipQueryValidation());
-                ReloadStatus status = task.attemptReload(options);
+
+                final String source;
+
+                if (form.isUi())
+                    source = (user.isGuest() ? "an unauthenticated user" : "user \"" + user.getDisplayName(null) + "\"") + " clicking the \"Attempt Reload\" button";
+                else
+                    source = "a script invoking the \"Attempt Reload\" action while " + (user.isGuest() ? "not authenticated" : "authenticated as user \"" + user.getDisplayName(null) + "\"");
+
+                ReloadStatus status = task.attemptReload(options, source);
 
                 if (status.isReloadQueued() && form.isUi())
                     return HttpView.redirect(PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()));
