@@ -250,8 +250,11 @@ public class WikiCollections
     {
         trees.add(root);
 
-        for (WikiTree child : root.getChildren())
-            populateWikiTrees(child, trees);
+        if (root != null)
+        {
+            for (WikiTree child : root.getChildren())
+                populateWikiTrees(child, trees);
+        }
 
         return trees;
     }
