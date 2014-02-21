@@ -145,12 +145,14 @@ Ext4.define('File.panel.Upload', {
             // LabKey webdav only handles single POST per file
             uploadMultiple: false,
 
+            // LabKey webdav PUT will create intermediate directories, while POST'ing into the parent collection won't.
+            method: 'PUT',
+
             accept: function (file, done) {
                 console.log("accpet event: ", file);
                 console.log(" -> fullPath: " + file.fullPath);
 
                 // UNDONE: If file.fullPath is not empty, check that the Upload panel is configured to allowsDirectoryUpload
-                // UNDONE: Limit directory depth
                 done();
             }
         });
@@ -194,28 +196,27 @@ Ext4.define('File.panel.Upload', {
                 // Overwrite if explicitly set (in confirmation by user) or if we're uploading multiple files.
                 var overwrite = file.overwrite || this.files.length > 1;
 
-                if (file.fullPath)
-                {
-                    var parentPath = this.uploadPanel.fileSystem.getParentPath(file.fullPath);
-                    if (parentPath)
-                        cwd = this.uploadPanel.fileSystem.concatPaths(cwd, parentPath);
-                }
+                var uri = this.uploadPanel.concatPaths(cwd, file.fullPath ? file.fullPath : file.name);
 
-                this.options.url = this.uploadPanel.fileSystem.getURI(cwd) + '?overwrite=' + (overwrite ? 'T' : 'F');
+                // Save the original uri for use in the 'transfercomplete' event
+                file.uri = this.uploadPanel.fileSystem.getURI(uri);
+                this.options.url = file.uri + '?overwrite=' + (overwrite ? 'T' : 'F');
             }
         });
 
         this.dropzone.on('uploadprogress', function (file, progress, bytesSent) {
             console.log("uploadprogress event: ", file, progress);
-//            this.uploadPanel.statusText.setText('Uploading ' + file.name + '...');
-//            this.uploadPanel.showProgressBar();
-//            this.uploadPanel.progressBar.updateProgress(progress, file.name);
         });
 
         this.dropzone.on('totaluploadprogress', function (progress, totalBytes, totalBytesSent) {
             console.log("totaluploadprogress event: ", progress, totalBytes, totalBytesSent);
-            this.uploadPanel.showProgressBar();
-            this.uploadPanel.progressBar.updateProgress(progress);
+            if (progress == 100 && totalBytes == 0 && totalBytesSent == 0) {
+                // Dropzone is telling us all transfers are complete
+                this.uploadPanel.hideProgressBar();
+            } else {
+                this.uploadPanel.showProgressBar();
+                this.uploadPanel.progressBar.updateProgress(progress/100);
+            }
         });
 
         this.dropzone.on('sending', function (file, xhr, formData) {
@@ -277,7 +278,8 @@ Ext4.define('File.panel.Upload', {
                 else
                 {
                     file.status = Dropzone.ERROR;
-                    this.emit('error', file, response.exception, null);
+                    var xhr = evt.target;
+                    this.emit('error', file, response.exception, xhr);
                 }
             }
             else
@@ -288,24 +290,6 @@ Ext4.define('File.panel.Upload', {
 
         this.dropzone.on('error', function (file, message, xhr) {
             console.log("error event: ", file, message);
-
-//            // UNDONE: Create intermediate directories
-//            if (xhr.status == 409 && file.fullPath)
-//            {
-//                // Intermediate directories don't exist
-//                // Remove file name and create directories
-//                var parentPath = file.fullPath.split('/').pop().join('/');
-//                if (parentPath.length > 0)
-//                {
-//                    this.uploadPanel.fileSystem.ensureDirectories({
-//                        path: parentPath,
-//                        success: function () {
-//                            // re-enqueue file for upload
-//                            this.processFile(file);
-//                        }
-//                    });
-//                }
-//            }
 
             this.uploadPanel.statusText.setText('Error uploading ' + file.name + (message ? (': ' + message) : ''));
             this.uploadPanel.showErrorMsg('Error', message);
@@ -325,23 +309,21 @@ Ext4.define('File.panel.Upload', {
             console.log("queuecomplete event");
 
             this.uploadPanel.setBusy(false);
-            this.uploadPanel.progressBar.hide();
             this.uploadPanel.hideProgressBar();
 
-            // TODO: Use .getUploadedFiles() instead of tracking it ourselves
-
             var errorFiles = [];
-            var successFileNames = [];
+            var fileRecords = [];
             for (var i = 0; i < this.files.length; i++) {
                 var file = this.files[i];
-                if (file.status == Dropzone.SUCCESS)
-                    successFileNames.push({name:file.name});
-                else if (file.status == Dropzone.ERROR)
+                if (file.status == Dropzone.SUCCESS) {
+                    fileRecords.push({data: {name:file.name, id:file.uri, href:file.uri}});
+                } else if (file.status == Dropzone.ERROR) {
                     errorFiles.push(file);
+                }
             }
 
-            if (successFileNames.length && errorFiles.length == 0) {
-                this.uploadPanel.fireEvent('transfercomplete', {fileNames : successFileNames});
+            if (fileRecords.length && errorFiles.length == 0) {
+                this.uploadPanel.fireEvent('transfercomplete', {fileRecords : fileRecords});
             }
 
             this.removeAllFiles();

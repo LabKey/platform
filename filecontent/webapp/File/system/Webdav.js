@@ -283,12 +283,6 @@ Ext4.define('File.system.Webdav', {
         return true;
     },
 
-    ensureDirectories : function (config)
-    {
-        // UNDONE
-        if (config.success)
-            config.success.call(config.scope);
-    },
 
     /**
      * Can be used to delete a file or folder.

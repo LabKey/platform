@@ -144,14 +144,6 @@ Ext4.define('File.system.Abstract', {
      * @ignore
      * @param config
      */
-    ensureDirectories : function(config) // callback(filesystem, success, path)
-    {
-    },
-
-    /**
-     * @ignore
-     * @param config
-     */
     deletePath : function(config)   // callback(filesystem, success, path)
     {
         return false;
