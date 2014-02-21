@@ -15,7 +15,12 @@
  */
 package org.labkey.api.admin;
 
-import org.labkey.api.data.Container;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+
+import java.util.Collection;
+import java.util.LinkedList;
 
 /**
  * User: klum
@@ -26,10 +31,13 @@ public class ImportOptions
     private boolean _skipQueryValidation;
     private boolean _createSharedDatasets;
     private String _containerId;
+    private Integer _userId = null;
+    private Collection<String> _messages = new LinkedList<>();
 
-    public ImportOptions(String containerId)
+    public ImportOptions(String containerId, @Nullable Integer userId)
     {
         _containerId = containerId;
+        _userId = userId;
     }
 
     public boolean isSkipQueryValidation()
@@ -60,5 +68,25 @@ public class ImportOptions
     public void setCreateSharedDatasets(boolean createSharedDatasets)
     {
         _createSharedDatasets = createSharedDatasets;
+    }
+
+    public @Nullable User getUser()
+    {
+        return null != _userId ? UserManager.getUser(_userId) : null;
+    }
+
+    public void setUser(User user)
+    {
+        _userId = user.getUserId();
+    }
+
+    public void addMessage(String message)
+    {
+        _messages.add(message);
+    }
+
+    public Collection<String> getMessages()
+    {
+        return _messages;
     }
 }
