@@ -192,7 +192,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                     String entityId = (String) row.get(ID);
                     String newRecord = mgr.formatAuditItem(_list, user, row);
 
-                    mgr.addAuditEvent(_list, user, "A new list record was inserted", entityId, null, newRecord);
+                    mgr.addAuditEvent(_list, user, container, "A new list record was inserted", entityId, null, newRecord);
                 }
             }
 
@@ -213,7 +213,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     /**
      * TODO: Make attachmentDirs work for other QueryUpdateServices. This is private to list for now.
      */
-    public int insertETL(DataLoader loader, User user, BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey)
+    public int insertETL(DataLoader loader, User user, Container container, BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey)
     {
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setFailFast(false);
@@ -221,7 +221,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         context.setSupportAutoIncrementKey(supportAutoIncrementKey);
         setAttachmentDirectory(attachmentDir);
 
-        DataIteratorBuilder dib = createImportETL(user, _list.getContainer(), loader, context);
+        DataIteratorBuilder dib = createImportETL(user, container, loader, context);
 
         if (context.getErrors().hasErrors())
             return 0;                           // if there are errors dib may be returned as null (bug #17286)
@@ -375,7 +375,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 String newRecord = mgr.formatAuditItem(_list, user, result);
 
                 // Audit
-                mgr.addAuditEvent(_list, user, "An existing list record was modified", entityId, oldRecord, newRecord);
+                mgr.addAuditEvent(_list, user, container, "An existing list record was modified", entityId, oldRecord, newRecord);
             }
         }
 
@@ -425,7 +425,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 String deletedRecord = mgr.formatAuditItem(_list, user, result);
 
                 // Audit
-                mgr.addAuditEvent(_list, user, "An existing list record was deleted", entityId, deletedRecord, null);
+                mgr.addAuditEvent(_list, user, container, "An existing list record was deleted", entityId, deletedRecord, null);
 
                 // Remove discussions
                 DiscussionService.get().deleteDiscussions(container, user, entityId);

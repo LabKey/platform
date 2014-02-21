@@ -50,7 +50,9 @@ import org.labkey.list.view.ListWebPart;
 import org.labkey.list.view.SingleListWebPartFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -64,7 +66,7 @@ public class ListModule extends DefaultModule
     // Note: ExperimentModule handles the list schema
     public double getVersion()
     {
-        return 13.30;
+        return 13.31;
     }
 
     // Note: ExperimentModule handles the list schema
@@ -126,10 +128,10 @@ public class ListModule extends DefaultModule
     public Collection<String> getSummary(Container c)
     {
         Collection<String> results = new ArrayList<>();
-        ListDef[] lists = ListManager.get().getLists(c);
-        if(lists.length > 0)
+        Collection<ListDef> lists = ListManager.get().getLists(c);
+        if(lists.size() > 0)
         {
-            results.add(lists.length + " lists");
+            results.add(lists.size() + " lists");
         }
         return results;
     }
@@ -178,5 +180,23 @@ public class ListModule extends DefaultModule
 
             ListManager.get().ensureListDomains();
         }
+
+        /** called at 13.30->13.31 */
+        public void addContainerColumns(final ModuleContext moduleContext)
+        {
+            if (moduleContext.isNewInstall())
+                return;
+
+            ListManager.get().addContainerColumns(moduleContext.getUpgradeUser());
+        }
+    }
+
+    @NotNull
+    @Override
+    public Set<Class> getUnitTests()
+    {
+        return new HashSet<Class>(Arrays.asList(
+                ListManager.TestCase.class
+        ));
     }
 }

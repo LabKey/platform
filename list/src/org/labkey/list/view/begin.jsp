@@ -63,14 +63,14 @@
             for (ListDefinition list : new TreeSet<>(lists.values()))
             {
                 links = new NavTree("");
-                links.addChild("View Data", list.urlShowData());
+                links.addChild("View Data", list.urlShowData(c));
                 if (c.hasPermission(user, DesignListPermission.class))
                 {
                     links.addChild("View Design", list.urlShowDefinition());
                 }
                 if (AuditLogService.get().isViewable())
                 {
-                    links.addChild("View History", list.urlShowHistory());
+                    links.addChild("View History", list.urlShowHistory(c));
                 }
                 if (c.hasPermission(user, DesignListPermission.class))
                 {
@@ -85,7 +85,7 @@
                     include(pmw, out);
                     %></td><%
                 }
-                %><td><a href="<%=h(list.urlShowData())%>"><%=h(list.getName())%></a></td><%
+                %><td><a href="<%=h(list.urlShowData(c))%>"><%=h(list.getName())%></a></td><%
                 if (isBegin)
                 {
                     for (NavTree link : links.getChildren())

@@ -28,6 +28,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.list.controllers.ListController;
 
+import java.util.Collection;
 import java.util.Map;
 
 public class ListServiceImpl implements ListService.Interface
@@ -45,8 +46,8 @@ public class ListServiceImpl implements ListService.Interface
 
     public boolean hasLists(Container container)
     {
-        ListDef[] lists = ListManager.get().getLists(container);
-        return lists != null && lists.length > 0;
+        Collection<ListDef> lists = ListManager.get().getLists(container);
+        return lists.size() > 0;
     }
 
     public ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType)

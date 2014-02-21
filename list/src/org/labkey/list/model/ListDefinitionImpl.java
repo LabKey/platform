@@ -41,7 +41,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
@@ -436,10 +435,15 @@ public class ListDefinitionImpl implements ListDefinition
 
     public ListItem getListItem(Object key, User user)
     {
+        return getListItem(key, user, getContainer());
+    }
+
+    public ListItem getListItem(Object key, User user, Container c)
+    {
         // Convert key value to the proper type, since PostgreSQL 8.3 requires that key parameter types match their column types.
         Object typedKey = getKeyType().convertKey(key);
 
-        return getListItem(new SimpleFilter(FieldKey.fromParts(getKeyName()), typedKey), user);
+        return getListItem(new SimpleFilter(FieldKey.fromParts(getKeyName()), typedKey), user, c);
     }
 
     public ListItem getListItemForEntityId(String entityId, User user)
@@ -447,9 +451,9 @@ public class ListDefinitionImpl implements ListDefinition
         return getListItem(new SimpleFilter(FieldKey.fromParts("EntityId"), entityId), user);
     }
 
-    private ListItem getListItem(SimpleFilter filter, User user)
+    private ListItem getListItem(SimpleFilter filter, User user, Container c)
     {
-        TableInfo tbl = getTable(user);
+        TableInfo tbl = getTable(user, c);
 
         if (null == tbl)
             return null;
@@ -514,7 +518,7 @@ public class ListDefinitionImpl implements ListDefinition
 
 
     @Override
-    public int insertListItems(User user, List<ListItem> listItems) throws IOException
+    public int insertListItems(User user, Container container, List<ListItem> listItems) throws IOException
     {
         BatchValidationException ve = new BatchValidationException();
 
@@ -542,19 +546,19 @@ public class ListDefinitionImpl implements ListDefinition
         MapLoader loader = new MapLoader(rows);
 
         // TODO: Find out the attachment directory?
-        return insertListItems(user, loader, ve, null, null, false);
+        return insertListItems(user, container, loader, ve, null, null, false);
     }
 
 
     @Override
-    public int insertListItems(User user, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey) throws IOException
+    public int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey) throws IOException
     {
-        TableInfo table = getTable(user);
+        TableInfo table = getTable(user, container);
         if (null != table)
         {
             ListQueryUpdateService lqus = (ListQueryUpdateService) table.getUpdateService();
             if (null != lqus)
-                return lqus.insertETL(loader, user, errors, attachmentDir, progress, supportAutoIncrementKey);
+                return lqus.insertETL(loader, user, container, errors, attachmentDir, progress, supportAutoIncrementKey);
         }
         return 0;
     }
@@ -603,10 +607,17 @@ public class ListDefinitionImpl implements ListDefinition
     @Nullable
     public TableInfo getTable(User user)
     {
+        return getTable(user, getContainer());
+    }
+
+    /** NOTE consider using ListQuerySchema.getTable(), unless you have a good reason */
+    @Nullable
+    public TableInfo getTable(User user, Container c)
+    {
         ListTable table;
         try
         {
-            table = new ListTable(new ListQuerySchema(user, getContainer()), this);
+            table = new ListTable(new ListQuerySchema(user, c), this);
             table.afterConstruct();
         }
         catch (IllegalStateException e)
@@ -620,17 +631,17 @@ public class ListDefinitionImpl implements ListDefinition
 
     public ActionURL urlShowDefinition()
     {
-        return urlFor(ListController.EditListDefinitionAction.class);
+        return urlFor(ListController.EditListDefinitionAction.class, getContainer());
     }
 
-    public ActionURL urlShowData()
+    public ActionURL urlShowData(Container c)
     {
-        return urlFor(ListController.GridAction.class);
+        return urlFor(ListController.GridAction.class, c);
     }
 
-    public ActionURL urlUpdate(User user, @Nullable Object pk, @Nullable URLHelper cancelUrl)
+    public ActionURL urlUpdate(User user, Container container, @Nullable Object pk, @Nullable URLHelper cancelUrl)
     {
-        ActionURL url = QueryService.get().urlFor(user, getContainer(), QueryAction.updateQueryRow, ListQuerySchema.NAME, getName());
+        ActionURL url = QueryService.get().urlFor(user, container, QueryAction.updateQueryRow, ListQuerySchema.NAME, getName());
 
         // Can be null if caller will be filling in pk (e.g., grid edit column)
         if (null != pk)
@@ -644,7 +655,12 @@ public class ListDefinitionImpl implements ListDefinition
 
     public ActionURL urlDetails(@Nullable Object pk)
     {
-        ActionURL url = urlFor(ListController.DetailsAction.class);
+        return urlDetails(pk, getContainer());
+    }
+
+    public ActionURL urlDetails(@Nullable Object pk, Container c)              //TODO: workbook touchpoint
+    {
+        ActionURL url = urlFor(ListController.DetailsAction.class, c);
         // Can be null if caller will be filling in pk (e.g., grid edit column)
 
         if (null != pk)
@@ -653,14 +669,26 @@ public class ListDefinitionImpl implements ListDefinition
         return url;
     }
 
-    public ActionURL urlShowHistory()
+    public ActionURL urlShowHistory(Container c)
     {
-        return urlFor(ListController.HistoryAction.class);
+        return urlFor(ListController.HistoryAction.class, c);
     }
 
+    // TODO: workbook touchpoint, these temp overloads may go away
+    public ActionURL urlShowData()
+    {
+        return urlShowData(getContainer());
+    }
+
+    // TODO: workbook touchpoint, these temp overloads may go away
     public ActionURL urlFor(Class<? extends Controller> actionClass)
     {
-        ActionURL ret = new ActionURL(actionClass, getContainer());
+        return urlFor(actionClass, getContainer());
+    }
+
+    public ActionURL urlFor(Class<? extends Controller> actionClass, Container c)
+    {
+        ActionURL ret = new ActionURL(actionClass, c);
         ret.addParameter("listId", getListId());
         return ret;
     }

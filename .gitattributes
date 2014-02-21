@@ -1599,10 +1599,12 @@ list/gwtsrc/org/labkey/list/client/ListEditorService.java -text
 list/gwtsrc/org/labkey/list/client/ListEditorServiceAsync.java -text
 list/module.properties -text
 list/resources/schemas/dbscripts/postgresql/list-13.10-13.20.sql -text
+list/resources/schemas/dbscripts/postgresql/list-13.30-13.31.sql -text
 list/resources/schemas/dbscripts/postgresql/obsolete/list-13.10-13.11.sql -text
 list/resources/schemas/dbscripts/postgresql/obsolete/list-13.11-13.12.sql -text
 list/resources/schemas/dbscripts/postgresql/obsolete/list-13.12-13.13.sql -text
 list/resources/schemas/dbscripts/sqlserver/list-13.10-13.20.sql -text
+list/resources/schemas/dbscripts/sqlserver/list-13.30-13.31.sql -text
 list/resources/schemas/dbscripts/sqlserver/obsolete/list-13.10-13.11.sql -text
 list/resources/schemas/dbscripts/sqlserver/obsolete/list-13.11-13.12.sql -text
 list/resources/schemas/dbscripts/sqlserver/obsolete/list-13.12-13.13.sql -text

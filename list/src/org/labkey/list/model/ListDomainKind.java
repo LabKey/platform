@@ -60,7 +60,8 @@ public abstract class ListDomainKind extends AbstractDomainKind
             new PropertyStorageSpec("createdBy", JdbcType.INTEGER),
             new PropertyStorageSpec("modifiedBy", JdbcType.INTEGER),
             new PropertyStorageSpec("entityId", JdbcType.VARCHAR).setEntityId(true).setNullable(false),
-            new PropertyStorageSpec("lastIndexed", JdbcType.TIMESTAMP)
+            new PropertyStorageSpec("lastIndexed", JdbcType.TIMESTAMP),
+            new PropertyStorageSpec("container", JdbcType.VARCHAR).setEntityId(true).setNullable(false)
         };
 
         BASE_PROPERTIES = new HashSet<>(Arrays.asList(props));
@@ -143,7 +144,7 @@ public abstract class ListDomainKind extends AbstractDomainKind
     @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
-        return PageFlowUtil.set("EntityId", "Created", "CreatedBy", "Modified", "ModifiedBy", "LastIndexed");
+        return PageFlowUtil.set("EntityId", "Created", "CreatedBy", "Modified", "ModifiedBy", "LastIndexed", "Container");
     }
 
     @Override

@@ -21,28 +21,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ConditionalFormat;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DbSequence;
-import org.labkey.api.data.DbSequenceManager;
-import org.labkey.api.data.PkFilter;
-import org.labkey.api.data.Results;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -57,6 +44,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleUpgrader;
@@ -67,15 +55,20 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior;
 import org.labkey.api.util.StringExpressionFactory.FieldKeyStringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.webdav.SimpleDocumentResource;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -110,20 +103,54 @@ public class ListManager implements SearchService.DocumentProvider
         return getListMetadataSchema().getTable("list");
     }
 
-    public ListDef[] getLists(Container container)
+    public Collection<ListDef> getLists(Container container)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), container.getEntityId());
-        return new TableSelector(getListMetadataTable(), filter, null).getArray(ListDef.class);
+        Collection<ListDef> ownLists = new TableSelector(getListMetadataTable(), filter, null).getCollection(ListDef.class);
+
+        return getAllScopedLists(ownLists, container);
     }
 
+    private Collection<ListDef> getAllScopedLists(Collection<ListDef> ownLists, Container container)
+    {
+        // Workbooks can see parent lists. In the event of a name collision, the child workbook list wins.
+        // In future, may add additional ways to cross-folder scope lists
+        if (container.getType() == Container.TYPE.workbook)
+        {
+            SimpleFilter parentFilter = new SimpleFilter(FieldKey.fromParts("Container"), container.getParent().getEntityId());
+            Collection<ListDef> parentLists = new TableSelector(getListMetadataTable(), parentFilter, null).getCollection(ListDef.class);
+            if (ownLists.size() > 0 && parentLists.size() > 0)
+            {
+                Map<String, ListDef> listDefMap = new CaseInsensitiveHashMap<>();
+                for (ListDef def : parentLists)
+                {
+                    listDefMap.put(def.getName(), def);
+                }
+                for (ListDef def : ownLists)
+                {
+                    listDefMap.put(def.getName(), def);
+                }
+                return listDefMap.values();
+            }
+            else if (parentLists.size() > 0)
+                return parentLists;
+        }
+        return ownLists;
+    }
 
     public ListDef getList(Container container, int listId)
     {
         SimpleFilter filter = new PkFilter(getListMetadataTable(), new Object[]{container, listId});
+        ListDef list = new TableSelector(getListMetadataTable(), filter, null).getObject(ListDef.class);
 
-        return new TableSelector(getListMetadataTable(), filter, null).getObject(ListDef.class);
+        // Workbooks can see their parent's lists, so check that container if we didn't find the list the first time
+        if (list == null && container.getType() == Container.TYPE.workbook)
+        {
+            filter = new PkFilter(getListMetadataTable(), new Object[]{container.getParent(), listId});
+            list = new TableSelector(getListMetadataTable(), filter, null).getObject(ListDef.class);
+        }
+        return list;
     }
-
 
     // Note: callers must invoke indexer (can't invoke here since we may be in a transaction)
     public ListDef insert(User user, final ListDef def, Collection<Integer> preferredListIds) throws SQLException
@@ -740,14 +767,13 @@ public class ListManager implements SearchService.DocumentProvider
     /**
      * Modeled after ListItemImpl.addAuditEvent
      */
-    public void addAuditEvent(ListDefinitionImpl list, User user, String comment, String entityId, @Nullable String oldRecord, @Nullable String newRecord)
+    public void addAuditEvent(ListDefinitionImpl list, User user, Container c, String comment, String entityId, @Nullable String oldRecord, @Nullable String newRecord)
     {
         AuditLogEvent event = new AuditLogEvent();
 
         event.setCreatedBy(user);
         event.setComment(comment);
 
-        Container c = list.getContainer();
         event.setContainerId(c.getId());
         Container project = c.getProject();
         if (null != project)
@@ -1314,4 +1340,165 @@ public class ListManager implements SearchService.DocumentProvider
         audit.add(listDef.getDomain().getTypeURI());
         new SqlExecutor(schema).execute(audit);
     }
+
+    /** Used for 13.30 -> 13.31 upgrade */
+    public void addContainerColumns(User u)
+    {
+         /*
+            Rename any existing Container domain properties to Container_old
+            On the off chance Container_old also already exists, rename Container to Container_old_+ a GUID
+            Then add a real container column to all List hard tables
+         */
+        ListDef[] listDefs = new TableSelector(getListMetadataTable()).getArray(ListDef.class);
+        for (ListDef def : listDefs)
+        {
+            ListDefinition list = ListDefinitionImpl.of(def);
+            Domain domain = list.getDomain();
+            DomainProperty existingContainerProp = domain.getPropertyByName("Container");
+            if (existingContainerProp != null)
+            {
+                String newName = domain.getPropertyByName("Container_old") == null ? "Container_old" : "Container_old_" + GUID.makeGUID();
+                existingContainerProp.setName(newName);
+                String uri = ListDomainKind.createPropertyURI(list.getName(), newName, domain.getContainer(), list.getKeyType()).toString();
+                existingContainerProp.setPropertyURI(uri);
+                try
+                {
+                    domain.save(u);
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        DbScope scope = ListSchema.getInstance().getSchema().getScope();
+        try (DbScope.Transaction transaction = scope.ensureTransaction(Connection.TRANSACTION_SERIALIZABLE);
+             Connection conn = transaction.getConnection())
+        {
+            for (ListDef def : listDefs)
+            {
+                ListDefinition list = ListDefinitionImpl.of(def);
+                if (list.getTable(u).getColumn(FieldKey.fromParts("container")) != null)
+                    continue;
+                Domain domain = list.getDomain();
+                DomainKind kind = domain.getDomainKind();
+
+                PropertyStorageSpec newContainerSpec =  new PropertyStorageSpec("container", JdbcType.VARCHAR).setEntityId(true).setNullable(false);
+                newContainerSpec.setDefaultValue(list.getContainer().getEntityId());
+
+                TableChange change = new TableChange(kind.getStorageSchemaName(), domain.getStorageTableName(), TableChange.ChangeType.AddColumns);
+                change.addColumn(newContainerSpec);
+                for (String sql : scope.getSqlDialect().getChangeStatements(change))
+                {
+                    conn.prepareStatement(sql).execute();
+                }
+                kind.invalidate(domain);
+            }
+            transaction.commit();
+        }
+        catch (SQLException e)
+        {
+            // We're calling Statement.execute() directly, so we need to log the SQL if an exception occurs
+            String sql = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.DialectSQL);
+
+            if (null != sql)
+                LOG.error(sql);
+
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        private ListDefinition list;
+        private static final String LIST_NAME = "Unit Test list";
+        private static final String WORKBOOK_NAME = "Unit Test Workbook";
+        private Container c;
+        private User u;
+        private Container workbook;
+
+        @Before
+        public void setUp() throws Exception
+        {
+
+            JunitUtil.deleteTestContainer();
+            cleanup();
+            c = JunitUtil.getTestContainer();
+            TestContext context = TestContext.get();
+            u = context.getUser();
+            list = ListService.get().createList(c, LIST_NAME, ListDefinition.KeyType.AutoIncrementInteger);
+            list.setKeyName("Unit test list Key");
+            list.save(u);
+        }
+
+        @After
+        public void tearDown() throws Exception
+        {
+            cleanup();
+        }
+
+        private void cleanup() throws Exception
+        {
+            //Container c = JunitUtil.getTestContainer();
+            TestContext context = TestContext.get();
+            ExperimentService.get().deleteAllExpObjInContainer(c, u);
+
+        }
+
+        @Test
+        public void testListServiceInOwnFolder() throws Exception
+        {
+            Map<String, ListDefinition> lists = ListService.get().getLists(c);
+            assertTrue("Test List not found in own container", lists.containsKey(LIST_NAME));
+        }
+
+        @Test
+        public void testSchemaBrowserInOwnFolder() throws Exception
+        {
+
+        }
+
+        @Test
+        public void testListServiceInWorkbook() throws Exception
+        {
+            workbook = setupWorkbook();
+            Map<String, ListDefinition> lists = ListService.get().getLists(workbook);
+           // assertTrue("Test List not found in workbook", lists.containsKey(LIST_NAME));
+        }
+
+        @Test
+        public void testSchemaBrowserInWorkbook() throws Exception
+        {
+
+        }
+
+        private Container setupWorkbook()
+        {
+            return ContainerManager.createContainer(c, WORKBOOK_NAME, WORKBOOK_NAME, null, Container.TYPE.workbook, u);
+        }
+
+        /*
+        @Test
+        public void testUpgrade() throws Exception
+        {
+            ListDefinition listWithContainerCol = ListService.get().createList(c, "Junit List with container col", ListDefinition.KeyType.AutoIncrementInteger);
+            listWithContainerCol.setKeyName("some test key");
+
+            Domain domain = listWithContainerCol.getDomain();
+            DomainProperty p = domain.addProperty();
+
+            p.setName("Container");
+            p.setType(PropertyService.get().getType(domain.getContainer(), PropertyType.STRING.getXmlName()));
+            p.setPropertyURI(ListDomainKind.createPropertyURI(listWithContainerCol.getName(), "Container", domain.getContainer(), listWithContainerCol.getKeyType()).toString());
+            p.setScale(4000);
+
+            listWithContainerCol.save(u);
+
+            ListManager.get().addContainerColumns(u);
+            return;
+        }
+        */
+    }
+
 }

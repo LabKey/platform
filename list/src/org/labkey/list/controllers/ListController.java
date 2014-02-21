@@ -509,7 +509,7 @@ public class ListController extends SpringActionController
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
         {
             _list = form.getList();
-            TableInfo table = _list.getTable(getUser());
+            TableInfo table = _list.getTable(getUser(), getContainer());
 
             if (null == table)
                 throw new NotFoundException("List does not exist");
@@ -522,13 +522,13 @@ public class ListController extends SpringActionController
 
             if (table.hasPermission(getUser(), UpdatePermission.class))
             {
-                ActionURL updateUrl = _list.urlUpdate(getUser(), tableForm.getPkVal(), getViewContext().getActionURL());
+                ActionURL updateUrl = _list.urlUpdate(getUser(), getContainer(), tableForm.getPkVal(), getViewContext().getActionURL());
                 ActionButton editButton = new ActionButton("Edit", updateUrl);
                 bb.add(editButton);
             }
 
             ActionButton gridButton;
-            ActionURL gridUrl = _list.urlShowData();
+            ActionURL gridUrl = _list.urlShowData(getViewContext().getContainer());
             if (form.getReturnUrl() != null)
             {
                 URLHelper url = form.getReturnURLHelper();
@@ -547,7 +547,7 @@ public class ListController extends SpringActionController
 
             VBox view = new VBox();
             ListItem item;
-            item = _list.getListItem(tableForm.getPkVal(), getUser());
+            item = _list.getListItem(tableForm.getPkVal(), getUser(), getContainer());
 
             if (null == item)
                 throw new NotFoundException("List item '" + tableForm.getPkVal() + "' does not exist");
@@ -683,7 +683,7 @@ public class ListController extends SpringActionController
         protected void initRequest(ListDefinitionForm form) throws ServletException
         {
             _list = form.getList();
-            setTarget(_list.getTable(getUser()));
+            setTarget(_list.getTable(getUser(), getContainer()));
         }
 
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
@@ -695,7 +695,7 @@ public class ListController extends SpringActionController
         @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
         {
-            int count = _list.insertListItems(getUser(), dl, errors, null, null, false);
+            int count = _list.insertListItems(getUser(),getContainer() , dl, errors, null, null, false);
             return count;
         }
 

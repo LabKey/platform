@@ -20,9 +20,6 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.InvalidFileException;
-import org.labkey.api.collections.RowMapFactory;
-import org.labkey.api.data.ColumnRenderProperties;
-import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
@@ -34,7 +31,6 @@ import org.labkey.api.exp.ImportTypesHelper;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListDefinition.KeyType;
 import org.labkey.api.exp.list.ListService;
-import org.labkey.api.exp.property.Type;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
@@ -47,14 +43,12 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
-import org.labkey.data.xml.FacetingBehaviorType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.list.xml.ListsDocument;
 
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -215,7 +209,7 @@ public class ListImporter
                                     }
                                 }
 
-                                def.insertListItems(user, loader, batchErrors, listsDir.getDir(legalName), null, supportAI);
+                                def.insertListItems(user, c, loader, batchErrors, listsDir.getDir(legalName), null, supportAI);
                                 for (ValidationException v : batchErrors.getRowErrors())
                                     errors.add(v.getMessage());
 

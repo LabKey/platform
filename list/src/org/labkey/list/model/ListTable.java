@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
@@ -73,7 +74,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
     public ListTable(ListQuerySchema schema, ListDefinition listDef)
     {
-        super(StorageProvisioner.createTableInfo(listDef.getDomain(), schema.getDbSchema()), schema);
+        super(StorageProvisioner.createTableInfo(listDef.getDomain(), schema.getDbSchema()), schema);//, new ContainerFilter.WorkbookAndParent(schema.getUser()));
         setName(listDef.getName());
         setDescription(listDef.getDescription());
         _list = listDef;
@@ -165,6 +166,14 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                 ColumnInfo column = addWrapColumn(baseColumn);
                 column.setHidden(true);
                 column.setUserEditable(false);
+            }
+            else if (name.equalsIgnoreCase("Container"))
+            {
+                ColumnInfo folderColumn = wrapColumn(baseColumn);
+                folderColumn.setFk(new ContainerForeignKey(schema));
+                folderColumn.setUserEditable(false);
+                folderColumn.setLabel("Folder");
+                addColumn(folderColumn);
             }
             // MV indicator columns will be handled by their associated value column
             else if (!baseColumn.isMvIndicatorColumn())
@@ -285,17 +294,17 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
             addColumn(entityId);
         }
 
-        DetailsURL gridURL = new DetailsURL(_list.urlShowData(), Collections.<String, String>emptyMap());
+        DetailsURL gridURL = new DetailsURL(_list.urlShowData(_userSchema.getContainer()), Collections.<String, String>emptyMap());
         setGridURL(gridURL);
 
-        DetailsURL detailsURL = new DetailsURL(_list.urlDetails(null), Collections.singletonMap("pk", _list.getKeyName()));
+        DetailsURL detailsURL = new DetailsURL(_list.urlDetails(null, _userSchema.getContainer()), Collections.singletonMap("pk", _list.getKeyName()));
         setDetailsURL(detailsURL);
 
         if (!listDef.getAllowUpload())
             setImportURL(LINK_DISABLER);
         else
         {
-            ActionURL importURL = listDef.urlFor(ListController.UploadListItemsAction.class);
+            ActionURL importURL = listDef.urlFor(ListController.UploadListItemsAction.class, _userSchema.getContainer());
             setImportURL(new DetailsURL(importURL));
         }
 
@@ -313,7 +322,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public ContainerContext getContainerContext()
     {
-        return _list != null ? _list.getContainer() : null;
+        return _list != null ? _userSchema.getContainer() : null;
     }
 
     private String findTitleColumn(ListDefinition listDef, ColumnInfo colKey)
@@ -425,9 +434,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
-        // NOTE: it's a little ambiguious how to factor code between persistRows() and createImportETL()
+        // NOTE: it's a little ambiguous how to factor code between persistRows() and createImportETL()
         data = new _DataIteratorBuilder(data, context);
-        return TableInsertDataIterator.create(data, this, _list.getContainer(), context);
+        return TableInsertDataIterator.create(data, this, _userSchema.getContainer(), context);
     }
 
 
@@ -504,10 +513,4 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         throw new UnsupportedOperationException();
     }
 
-
-    @Override
-    public boolean supportsContainerFilter()
-    {
-        return false;
-    }
 }
