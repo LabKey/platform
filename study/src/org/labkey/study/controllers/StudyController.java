@@ -1905,6 +1905,77 @@ public class StudyController extends BaseStudyController
         }
     }
 
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class DeleteUnusedVisitsAction extends ConfirmAction<IdForm>
+    {
+        @Override
+        public void validateCommand(IdForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getConfirmView(IdForm idForm, BindException errors) throws Exception
+        {
+            StudyImpl study = getStudyThrowIfNull();
+            if (study.getTimepointType() == TimepointType.CONTINUOUS)
+                errors.reject(null, "Unsupported operation for continuous date study");
+
+            Collection<Integer> ids = new SqlSelector(StudySchema.getInstance().getScope(),
+                    new SQLFragment(
+                            "SELECT V.RowId FROM study.Visit V WHERE Container=? AND NOT EXISTS (SELECT * FROM study.participantvisit PV where PV.container = ? and PV.visitrowid=V.rowid)",
+                            getContainer(), getContainer()
+                    )
+            ).getCollection(Integer.class);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Delete visits:<br>");
+            for (Integer rowid : ids)
+            {
+                VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, rowid);
+                if (null != visit)
+                {
+                    sb.append(PageFlowUtil.filter(visit.getLabel()) + " (" + visit.getSequenceNumMin());
+                    if (visit.getSequenceNumMax() != visit.getSequenceNumMin())
+                        sb.append("-").append(visit.getSequenceNumMax());
+                    sb.append(")<br>");
+                }
+            }
+            if (ids.isEmpty())
+                sb.append("No unused visits found.<br>");
+            return new HtmlView(sb.toString());
+        }
+
+        @Override
+        public boolean handlePost(IdForm form, BindException errors) throws Exception
+        {
+            StudyImpl study = getStudyThrowIfNull();
+            if (study.getTimepointType() == TimepointType.CONTINUOUS)
+                errors.reject(null, "Unsupported operation for continuous date study");
+
+            Collection<Integer> ids = new SqlSelector(StudySchema.getInstance().getScope(),
+                    new SQLFragment(
+                        "SELECT V.RowId FROM study.Visit V WHERE Container=? AND NOT EXISTS (SELECT * FROM study.participantvisit PV where PV.container = ? and PV.visitrowid=V.rowid)",
+                        getContainer(), getContainer()
+                    )
+                ).getCollection(Integer.class);
+
+            for (Integer rowid : ids)
+            {
+                VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, rowid);
+                    StudyManager.getInstance().deleteVisit(study, visit, getUser());
+            }
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(IdForm idForm)
+        {
+            return new ActionURL(ManageVisitsAction.class, getContainer());
+        }
+    }
+
+
     @RequiresPermissionClass(AdminPermission.class)
     public class ConfirmDeleteVisitAction extends SimpleViewAction<IdForm>
     {

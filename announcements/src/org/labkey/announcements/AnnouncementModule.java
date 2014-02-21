@@ -107,20 +107,8 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Arrays.asList(new AlwaysAvailableWebPartFactory(WEB_PART_NAME)
-            {
-                public WebPartView getWebPartView(ViewContext parentCtx, Portal.WebPart webPart)
-                {
-                    try
-                    {
-                        return new AnnouncementsController.AnnouncementWebPart(parentCtx);
-                    }
-                    catch(Exception e)
-                    {
-                        throw new RuntimeException(e); // TODO: getWebPartView should throw Exception?
-                    }
-                }
-            },
+        return new ArrayList<WebPartFactory>(Arrays.asList(
+            new AnnouncementsController.AnnoucementWebPartFactory(WEB_PART_NAME),
             new AlwaysAvailableWebPartFactory(WEB_PART_NAME + " List")
             {
                 public WebPartView getWebPartView(ViewContext parentCtx, Portal.WebPart webPart)

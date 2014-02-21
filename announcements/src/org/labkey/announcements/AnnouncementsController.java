@@ -98,12 +98,14 @@ import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
+import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.Portal;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
@@ -676,7 +678,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    public static ActionURL getCustomizeURL(Container c, URLHelper returnUrl)
+    public static ActionURL getAdminURL(Container c, URLHelper returnUrl)
     {
         ActionURL url = new ActionURL(CustomizeAction.class, c);
         url.addReturnURL(returnUrl);
@@ -2057,7 +2059,7 @@ public class AnnouncementsController extends SpringActionController
     {
         public DiscussionService.Settings settings;
         public String filterText;
-        public ActionURL customizeURL;
+        public ActionURL adminURL;
         public ActionURL emailPrefsURL;
         public ActionURL emailManageURL;
         public ActionURL insertURL;
@@ -2070,7 +2072,7 @@ public class AnnouncementsController extends SpringActionController
             {
                 this.settings = settings;
                 filterText = getFilterText(settings, displayAll, isFiltered, rowLimit);
-                customizeURL = c.hasPermission(user, AdminPermission.class) ? getCustomizeURL(c, url) : null;
+                adminURL = c.hasPermission(user, AdminPermission.class) ? getAdminURL(c, url) : null;
                 emailPrefsURL   = user.isGuest() ? null : getEmailPreferencesURL(c, url, c.getId());
                 emailManageURL = c.hasPermission(user, AdminPermission.class) ? getAdminEmailURL(c, url) : null;
                 insertURL = perm.allowInsert() ? getInsertURL(c, url) : null;
@@ -2100,8 +2102,8 @@ public class AnnouncementsController extends SpringActionController
                     email.addChild("Preferences", bean.emailPrefsURL);
                 if (bean.emailManageURL != null)
                     email.addChild("Administration", bean.emailManageURL);
-                if (bean.customizeURL != null)
-                    menu.addChild("Customize", bean.customizeURL);
+                if (bean.adminURL != null)
+                    menu.addChild("Admin", bean.adminURL);
                 menu.addChild(email);
             }
             
@@ -2137,9 +2139,9 @@ public class AnnouncementsController extends SpringActionController
 
     public static class AnnouncementWebPart extends JspView<AnnouncementWebPart.MessagesBean>
     {
-        public AnnouncementWebPart(Container c, ActionURL url, User user, Settings settings, boolean displayAll, boolean asWebPart) throws SQLException, ServletException
+        public AnnouncementWebPart(String jsp, Container c, ActionURL url, User user, Settings settings, boolean displayAll, boolean asWebPart) throws SQLException, ServletException
         {
-            super("/org/labkey/announcements/announcementWebPartWithExpandos.jsp",
+            super(jsp,
                 new MessagesBean(c, url, user, settings, displayAll));
             setTitle(settings.getBoardName());
             setTitleHref(getBeginURL(c));
@@ -2161,16 +2163,21 @@ public class AnnouncementsController extends SpringActionController
                 menu.addChild(email);
             }
 
-            if (bean.customizeURL != null)
-                setCustomize(new NavTree("", bean.customizeURL.toString()));
+            if (bean.adminURL != null)
+                menu.addChild("Admin", bean.adminURL.toString());
 
             setIsWebPart(asWebPart);
             setNavMenu(menu);
         }
 
-        public AnnouncementWebPart(ViewContext ctx) throws SQLException, ServletException
+        public AnnouncementWebPart(String jsp, ViewContext ctx) throws SQLException, ServletException
         {
-            this(ctx.getContainer(), getPageURL(ctx), ctx.getUser(), getSettings(ctx.getContainer()), false, true);
+            this(jsp, ctx.getContainer(), getPageURL(ctx), ctx.getUser(), getSettings(ctx.getContainer()), false, true);
+        }
+
+        public AnnouncementWebPart(Container c, ActionURL url, User user, Settings settings, boolean displayAll, boolean asWebPart) throws SQLException, ServletException
+        {
+            this("/org/labkey/announcements/announcementWebPartWithExpandos.jsp", c, url, user, settings, displayAll, asWebPart);
         }
 
         private static ActionURL getPageURL(ViewContext ctx)
@@ -2202,6 +2209,51 @@ public class AnnouncementsController extends SpringActionController
                 announcementModels = pair.first;
                 listURL = getListURL(c);
             }
+        }
+    }
+
+
+    public static class CustomizeAnnouncementWebPart extends JspView<Portal.WebPart>
+    {
+        public CustomizeAnnouncementWebPart(Portal.WebPart webPart)
+        {
+            super("/org/labkey/announcements/customizeAnnouncementWebPart.jsp", webPart);
+        }
+    }
+
+
+    public static class AnnoucementWebPartFactory extends AlwaysAvailableWebPartFactory
+    {
+        AnnoucementWebPartFactory(String name)
+        {
+            super(name);
+        }
+
+        public WebPartView getWebPartView(ViewContext parentCtx, Portal.WebPart webPart)
+        {
+            try
+            {
+                String jsp = "/org/labkey/announcements/announcementWebPartWithExpandos.jsp";
+                if ("simple".equals(webPart.getPropertyMap().get("style")))
+                    jsp =  "/org/labkey/announcements/announcementWebPartSimple.jsp";
+                return new AnnouncementsController.AnnouncementWebPart(jsp, parentCtx);
+            }
+            catch(Exception e)
+            {
+                throw new RuntimeException(e); // TODO: getWebPartView should throw Exception?
+            }
+        }
+
+        @Override
+        public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+        {
+            return new AnnouncementsController.CustomizeAnnouncementWebPart(webPart);
+        }
+
+        @Override
+        public boolean isEditable()
+        {
+            return true;
         }
     }
 

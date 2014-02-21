@@ -110,6 +110,7 @@ announcements/src/org/labkey/announcements/announcementEmailDefaults.jsp -text
 announcements/src/org/labkey/announcements/announcementListLinkBar.jsp -text
 announcements/src/org/labkey/announcements/announcementThread.jsp -text
 announcements/src/org/labkey/announcements/announcementWebPart.jsp -text
+announcements/src/org/labkey/announcements/announcementWebPartSimple.jsp -text
 announcements/src/org/labkey/announcements/announcementWebPartWithExpandos.jsp -text
 announcements/src/org/labkey/announcements/api/AnnouncementImpl.java -text
 announcements/src/org/labkey/announcements/api/AnnouncementServiceImpl.java -text
@@ -118,6 +119,7 @@ announcements/src/org/labkey/announcements/config/MessageConfigServiceImpl.java 
 announcements/src/org/labkey/announcements/confirmDelete.jsp -text
 announcements/src/org/labkey/announcements/confirmRemoveUser.jsp -text
 announcements/src/org/labkey/announcements/customize.jsp -text
+announcements/src/org/labkey/announcements/customizeAnnouncementWebPart.jsp -text
 announcements/src/org/labkey/announcements/customizeDiscussionWebPart.jsp -text
 announcements/src/org/labkey/announcements/dailyDigest.jsp -text
 announcements/src/org/labkey/announcements/dailyDigestPlain.jsp -text

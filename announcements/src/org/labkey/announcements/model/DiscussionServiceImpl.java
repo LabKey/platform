@@ -410,7 +410,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
             this.title = title;
             this.emailPreferencesURL = AnnouncementsController.getEmailPreferencesURL(c, pageURL, objectId);
             this.adminEmailURL = AnnouncementsController.getAdminEmailURL(c, pageURL);
-            this.customizeURL = AnnouncementsController.getCustomizeURL(c, pageURL);
+            this.customizeURL = AnnouncementsController.getAdminURL(c, pageURL);
             this.announcementModels = announcementModels;
             this.isDiscussionVisible = isDiscussionVisible;
             this.allowMultipleDiscussions = allowMultipleDiscussions;
