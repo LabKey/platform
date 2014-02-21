@@ -15,7 +15,9 @@
  */
 package org.labkey.api.ldk.table;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -23,6 +25,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DelegatingContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -57,18 +60,19 @@ import java.util.concurrent.Callable;
  * This is designed to wrap a DB table which has a true PK (like an auto-incrementing rowid) and enforce a different
  * column as the PK within a container.
  */
-public class ContainerScopedTable extends SimpleUserSchema.SimpleTable
+public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomPermissionsTable<SchemaType>
 {
     private String _pseudoPk;
     private Set<String> _realPKs = new HashSet<>();
+    private static final Logger _log = Logger.getLogger(ContainerScopedTable.class);
 
-    public ContainerScopedTable(UserSchema us, TableInfo st, String newPk)
+    public ContainerScopedTable(SchemaType schema, TableInfo st, String newPk)
     {
-        super(us, st);
+        super(schema, st);
         _pseudoPk = newPk;
     }
 
-    public SimpleUserSchema.SimpleTable init()
+    public ContainerScopedTable<SchemaType> init()
     {
         super.init();
 
@@ -131,9 +135,10 @@ public class ContainerScopedTable extends SimpleUserSchema.SimpleTable
         protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
             ColumnInfo pkCol = getPkCol();
+            keys = new HashMap<>(keys);  //create copy
             if (!keys.containsKey(pkCol.getName()) || keys.get(pkCol.getName()) == null)
             {
-                String pseudoKey = (String)keys.get(_pseudoPk);
+                Object pseudoKey = keys.get(_pseudoPk);
                 if (pseudoKey != null)
                 {
                     SimpleFilter filter = new SimpleFilter(FieldKey.fromString(_pseudoPk), pseudoKey);
@@ -291,6 +296,16 @@ public class ContainerScopedTable extends SimpleUserSchema.SimpleTable
 
         public boolean rowExists(Container c, Object key)
         {
+            ColumnInfo pkCol = getColumn(FieldKey.fromString(_pseudoPk));
+            try
+            {
+                key = ConvertHelper.convert(key, pkCol.getJavaClass());
+            }
+            catch (ConversionException e)
+            {
+                _log.error("Unable to convert value for column: " + _pseudoPk + " to class: " + pkCol.getJavaClass() + " for table: " + getPublicSchemaName() + "." + getName(), e);
+            }
+
             boolean exists = _encounteredKeys.contains(key);
             _encounteredKeys.add(key);
 

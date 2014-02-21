@@ -17,6 +17,7 @@ package org.labkey.api.ehr.demographics;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.Results;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.FieldKey;
@@ -77,7 +78,7 @@ abstract public class AbstractListDemographicsProvider extends AbstractDemograph
             Object val = rs.getObject(key);
             if (val instanceof Clob)
             {
-                val = ((Clob)val).toString();
+                val = ConvertHelper.convertClobToString((Clob)val);
             }
 
             record.put(key.toString(), val);

@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Experimental.  This goal is to allow a table to specify an additional permission which is required at insert/update/delete.
+ * The goal is to allow a table to specify an additional permission which is required at insert/update/delete.
  * Table permissions are checked by calling hasPermission(), which tests for a specific Permission, such as InsertPermission, or UpdatePermission.
  * You are able to map an addition permission to any of these, which the user must also have.  Because InsertPermission and UpdatePermission are checked upstream anyway,
  * the user must also have these permissions.  This is just a way of enforcing more refined security, but not completely changing security.

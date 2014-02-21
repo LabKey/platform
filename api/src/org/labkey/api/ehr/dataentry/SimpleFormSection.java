@@ -105,7 +105,7 @@ public class SimpleFormSection extends AbstractFormSection
         for (TableInfo ti : getTables(ctx))
         {
             List<FieldKey> keys = EHRService.get().getDefaultFieldKeys(ti);
-            if (_showLocation == true)
+            if (_showLocation)
             {
                 keys.add(0, FieldKey.fromString("Id/curLocation/location"));
             }
