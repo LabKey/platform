@@ -1183,11 +1183,11 @@ public class AdminController extends SpringActionController
             if (form.isSslRequired() && !(request.isSecure() && (form.getSslPort() == request.getServerPort())))
             {
                 URL testURL = new URL("https", request.getServerName(), form.getSslPort(), AppProps.getInstance().getContextPath());
-                String error = HttpsUtil.testSslUrl(testURL, "Ensure that the web server is configured for SSL and the port is correct. If SSL is enabled, try saving these settings while connected via SSL.");
+                Pair<String, Integer> sslResponse = HttpsUtil.testSslUrl(testURL, "Ensure that the web server is configured for SSL and the port is correct. If SSL is enabled, try saving these settings while connected via SSL.");
 
-                if (error != null)
+                if (sslResponse != null)
                 {
-                    errors.reject(ERROR_MSG, error);
+                    errors.reject(ERROR_MSG, sslResponse.first);
                     return false;
                 }
             }
@@ -1214,7 +1214,7 @@ public class AdminController extends SpringActionController
                 errors.reject(ERROR_MSG, "Default LSID Authority may not be blank");
                 return false;
             }
-            if (lsidAuthority.indexOf(":") != -1)
+            if (lsidAuthority.contains(":"))
             {
                 errors.reject(ERROR_MSG, "Default LSID Authority may not contain ':'. It should be a domain name, like 'labkey.com'.");
                 return false;
