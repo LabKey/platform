@@ -1379,10 +1379,15 @@ public class ListManager implements SearchService.DocumentProvider
             for (ListDef def : listDefs)
             {
                 ListDefinition list = ListDefinitionImpl.of(def);
-                if (list.getTable(u).getColumn(FieldKey.fromParts("container")) != null)
-                    continue;
                 Domain domain = list.getDomain();
                 DomainKind kind = domain.getDomainKind();
+                if (kind instanceof ListDomainType)
+                {
+                    LOG.warn("Found list that has not been migrated to a hard table: " + domain.getTypeURI());
+                    break;
+                }
+                if (list.getTable(u).getColumn(FieldKey.fromParts("container")) != null)
+                    continue;
 
                 PropertyStorageSpec newContainerSpec =  new PropertyStorageSpec("container", JdbcType.VARCHAR).setEntityId(true).setNullable(false);
                 newContainerSpec.setDefaultValue(list.getContainer().getEntityId());
