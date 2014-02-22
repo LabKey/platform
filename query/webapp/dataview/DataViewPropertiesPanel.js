@@ -11,39 +11,41 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
     extend  : 'Ext.form.Panel',
     alias   : 'widget.dvproperties',
     alternateClassName : ['LABKEY.study.DataViewPropertiesPanel'],
+    border: false,
+    frame: false,
+    autoScroll: true,
+    cls: 'iScroll', // webkit custom scroll bars
+    buttonAlign: 'left',
+    dateFormat: 'Y-m-d',
+    fieldDefaults  : {
+        labelWidth : 120,
+        style      : 'margin: 0px 0px 10px 0px',
+        labelSeparator : ''
+    },
+
+    record: {},
+
+    data: {},
+
+    visibleFields: {},
+
+    extraItems: [],
+
+    disableShared: false,
 
     constructor : function(config) {
 
-        Ext4.applyIf(config, {
-            border  : false,
-            frame   : false,
-            autoScroll : true,
-            cls     : 'iScroll', // webkit custom scroll bars
-            buttonAlign : 'left',
-            dateFormat  : 'Y-m-d',
-            fieldDefaults  : {
-                labelWidth : 120,
-                style      : 'margin: 0px 0px 10px 0px',
-                labelSeparator : ''
-            }
-        });
-
         // the optional data model record for exiting data views
-        this.record = config.record || {};
-        this.data = this.record.data || {};
-        this.visibleFields = config.visibleFields || {};
-        this.extraItems = config.extraItems || [];
-        this.disableShared = config.disableShared;
+        if (config.record && config.record.data) {
+            this.data = config.record.data;
+        }
 
         this.callParent([config]);
     },
 
     initComponent : function() {
 
-        var propertiesItems = [];
-        var imagesItems = [];
-
-        propertiesItems.push({
+        var propertiesItems = [{
             xtype      : 'textfield',
             allowBlank : false,
             name       : 'viewName',
@@ -52,7 +54,8 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
             width      : 400,
             fieldLabel : 'Name',
             value      : this.data.name
-        });
+        }];
+        var imagesItems = [];
 
         if (this.visibleFields['author']) {
 
@@ -148,8 +151,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 queryMode      : 'remote',
                 displayField   : 'label',
                 valueField     : 'rowid',
-                emptyText      : 'Uncategorized',
-                forceSelection : true,
+                emptyText      : 'Choose Category...',
                 labelWidth : 120,
                 width      : 400,
                 listeners      : {

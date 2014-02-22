@@ -33,8 +33,7 @@ Ext4.define('TreeFilter', {
             matches = [],                         // array of nodes matching the search criteria
             _propArray = propArray || ['text'],   // propArray is optional - will be set to the ['text'] property of the TreeStore record by default
             _re = re || new RegExp(value, "ig"),  // the regExp could be modified to allow for case-sensitive, starts  with, etc.
-            visibleNodes = [],                    // array of nodes matching the search criteria + each parent non-leaf node up to root
-            viewNode;
+            visibleNodes = [];                    // array of nodes matching the search criteria + each parent non-leaf node up to root
 
         tree.expandAll();                         // expand all nodes for the the following iterative routines
 
@@ -125,272 +124,259 @@ Ext4.define('TreeFilter', {
 
 Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
-    extend : 'Ext.panel.Panel',
+    extend: 'Ext.panel.Panel',
+
+    layout: 'border',
+
+    minWidth: 625,
+
+    frame: false,
+
+    border: false,
+
+    allowCustomize: true,
+
+    pageId: -1,
+
+    index: -1,
+
+    minHeight: 200,
+
+    // delete views template
+    deleteTpl: new Ext4.XTemplate(
+            '<div><span>Are you sure you want to delete the selected view(s)?</span></div><br/>' +
+            '<tpl for=".">' +
+                '<tpl if="data.type">' +
+                    '<div><span><img src="{data.icon}" alt="{data.type}">&nbsp;&nbsp;{data.name}</span></div>' +
+                '</tpl>' +
+            '</tpl>'),
+
+    // delete unsupported template
+    unsupportedDeleteTpl: new Ext4.XTemplate(
+            '<div><span>Delete is not allowed for the following view type(s), please omit them from your selection.</span></div><br/>' +
+            '<tpl for=".">' +
+                '<div><span><img src="{data.icon}" alt="{data.type}">&nbsp;&nbsp;{data.name}</span></div>' +
+            '</tpl>'),
 
     constructor : function(config) {
-
-        Ext4.QuickTips.init();
-
-        // TODO : Make the following not required since it might not be its own webpart
-        // REQUIRES:
-        // pageId
-        // index
-        // webpartId
-
-        Ext4.applyIf(config, {
-            layout : 'border',
-            minWidth: 625,
-            frame  : false, border : false,
-            allowCustomize : true,
-            pageId  : -1,
-            index   : -1,
-            minHeight  : 200
-        });
-
-        // The following default to type 'string'
-        var fields = [
-            {name : 'id'},
-            {name : 'category'},
-            {name : 'categorylabel',
-                convert : function(v, record) {
-                    if (record.raw && record.raw.category)
-                        return record.raw.category.label;
-                    return 0;
-                }
-            },
-            {name : 'created',              type : 'date'},
-            {name : 'createdBy'},
-            {name : 'createdByUserId',      type : 'int'},
-            {name : 'authorUserId',
-                convert : function(v, record) {
-                    if (record.raw && record.raw.author)
-                        return record.raw.author.userId;
-                    return 0;
-                }
-            },
-            {name : 'authorDisplayName',
-                convert : function(v, record) {
-                    if (record.raw && record.raw.author)
-                        return record.raw.author.displayName;
-                    return '';
-                }
-            },
-            {name : 'container'},
-            {name : 'dataType'},
-            {name : 'editable',             type : 'boolean'},
-            {name : 'editUrl'},
-            {name : 'type'},
-            {name : 'description'},
-            {name : 'displayOrder',         type : 'int'},
-            {name : 'shared',               type : 'boolean'},
-            {name : 'visible',              type : 'boolean'},
-            {name : 'readOnly',             type : 'boolean'},
-            {name : 'icon'},
-            {name : 'modified',             type : 'date'},
-            {name : 'modifiedBy'},
-            {name : 'refreshDate',          type : 'date'},
-            {name : 'name'},
-            {name : 'access',               mapping : 'access.label'},
-            {name : 'accessUrl',            mapping : 'access.url'},
-            {name : 'runUrl'},
-            {name : 'runTarget', defaultValue:undefined},
-            {name : 'detailsUrl'},
-            {name : 'thumbnail'},
-            {name : 'thumbnailType'},
-            {name : 'href', mapping : 'runUrl'},
-            {name : 'allowCustomThumbnail'},
-            {name : 'status'},
-            {name : 'reportId'}
-        ];
-
-        // define Models
-        Ext4.define('Dataset.Browser.View', {
-            extend : 'Ext.data.Model',
-            idProperty : 'fakeid', // do not use the 'id' property, rather just make something up which Ext will then generate
-            fields : fields
-        });
-
-        Ext4.define('Dataset.Browser.Category', {
-            extend : 'Ext.data.Model',
-            fields : [
-                {name : 'created',      type : 'string'},
-                {name : 'createdBy'                  },
-                {name : 'displayOrder', type : 'int' },
-                {name : 'label'                      },
-                {name : 'modfied',      type : 'string'},
-                {name : 'modifiedBy'                 },
-                {name : 'rowid',        type : 'int' },
-                {name : 'subCategories' },
-                {name : 'parent',       type : 'int' }
-            ]
-        });
-
-        Ext4.define('LABKEY.data.User', {
-            extend : 'Ext.data.Model',
-            fields : [
-                {name : 'userId',       type : 'int'},
-                {name : 'displayName'               }
-            ]
-        });
+        this.defineModels();
 
         this.callParent([config]);
 
-        if (this.isCustomizable())
+        if (this.isCustomizable()) {
             this.addEvents(
-                    'enableCustomMode',
-                    'disableCustomMode',
-                    'enableEditMode',
-                    'disableEditMode'
+                'enableCustomMode',
+                'disableCustomMode',
+                'enableEditMode',
+                'disableEditMode'
             );
+        }
     },
 
     initComponent : function() {
 
-        this.customMode = false;
-        this.editMode = this.manageView;
-        this.searchVal = "";
-        this._height = null;
-
-        this.items = [];
-        this.editInfo = {};
-
-        this.store = null;
-        this.centerPanel = null;
-        this.gridPanel = null;
-
-        // primary display panels
-        this.items = this.initializeBorderLayout();
-        this.items.push(this.initCenterPanel());
+        // private settings
+        Ext4.apply(this, {
+            customMode: false,
+            editMode: this.manageView,
+            searchVal: '',
+            _height: null,
+            editInfo: {},
+            store: null,
+            centerPanel: null,
+            gridPanel: null
+        });
 
         // secondary display panels
-        this.customPanel = this.initCustomization();
+        this.customPanel = Ext4.create('Ext.panel.Panel', {
+            layout: 'fit',
+            border: false, frame: false
+        });
 
-        // delete views template
-        this.deleteTpl = new Ext4.XTemplate(
-            '<div><span>Are you sure you want to delete the selected view(s)?</span></div><br/>' +
-            '<tpl for=".">' +
-                '<tpl if="data.type">' +
-                '<div><span><img src="{data.icon}" alt="{data.type}">&nbsp;&nbsp;{data.name}</span></div>' +
-                '</tpl>' +
-            '</tpl>');
-
-        // delete unsupported template
-        this.unsupportedDeleteTpl = new Ext4.XTemplate(
-            '<div><span>Delete is not allowed for the following view type(s), please omit them from your selection.</span></div><br/>' +
-            '<tpl for=".">' +
-                '<div><span><img src="{data.icon}" alt="{data.type}">&nbsp;&nbsp;{data.name}</span></div>' +
-            '</tpl>');
+        // primary display panels
+        this.items = [{
+            xtype: 'panel',
+            region: 'north',
+            itemId: 'north',
+            layout: 'fit',
+            style: 'margin-bottom: 10px',
+            hidden: true,
+            preventHeader: true,
+            border: false, frame: false,
+            height: 220,
+            items: [ this.customPanel ]
+        },{
+            xtype: 'panel',
+            region: 'center',
+            border: false, frame: false,
+            layout: 'fit',
+            flex: 4,
+            items: [ this.getCenter() ]
+        }];
 
         this.callParent();
+
+        this.on('enableCustomMode', this.onEnableCustomMode,  this);
+        this.on('disableCustomMode', this.onDisableCustomMode, this);
+        this.on('enableEditMode', this.onEnableEditMode, this);
+        this.on('disableEditMode', this.onDisableEditMode, this);
+
+        Ext4.QuickTips.init();
     },
 
-    initializeBorderLayout : function() {
-        var regions = ['north']; // only need north at this time
-        var items = [];
-
-        for (var r=0; r < regions.length; r++) {
-            this[regions[r]] = Ext4.create('Ext.panel.Panel', {
-                layout : 'fit',
-                region : regions[r],
-                style : 'margin-bottom: 10px',
-                hidden : true,
-                preventHeader : true,
-                border : false, frame : false
+    defineModels : function() {
+        // define Models
+        if (!Ext4.ModelManager.isRegistered('Dataset.Browser.View')) {
+            Ext4.define('Dataset.Browser.View', {
+                extend: 'Ext.data.Model',
+                idProperty: 'fakeid', // do not use the 'id' property, rather just make something up which Ext will then generate
+                fields: [
+                    {name : 'id'},
+                    {name : 'category'},
+                    {name : 'categorylabel',
+                        convert : function(v, record) {
+                            if (record.raw && record.raw.category)
+                                return record.raw.category.label;
+                            return 0;
+                        }
+                    },
+                    {name : 'created', type: 'date'},
+                    {name : 'createdBy'},
+                    {name : 'createdByUserId', type: 'int'},
+                    {name : 'authorUserId',
+                        convert : function(v, record) {
+                            if (record.raw && record.raw.author)
+                                return record.raw.author.userId;
+                            return 0;
+                        }
+                    },
+                    {name : 'authorDisplayName',
+                        convert : function(v, record) {
+                            if (record.raw && record.raw.author)
+                                return record.raw.author.displayName;
+                            return '';
+                        }
+                    },
+                    {name : 'container'},
+                    {name : 'dataType'},
+                    {name : 'editable', type: 'boolean'},
+                    {name : 'editUrl'},
+                    {name : 'type'},
+                    {name : 'description'},
+                    {name : 'displayOrder', type: 'int'},
+                    {name : 'shared', type: 'boolean'},
+                    {name : 'visible', type: 'boolean'},
+                    {name : 'readOnly', type: 'boolean'},
+                    {name : 'icon'},
+                    {name : 'modified', type: 'date'},
+                    {name : 'modifiedBy'},
+                    {name : 'refreshDate',  type: 'date'},
+                    {name : 'name'},
+                    {name : 'access', mapping: 'access.label'},
+                    {name : 'accessUrl', mapping: 'access.url'},
+                    {name : 'runUrl'},
+                    {name : 'runTarget', defaultValue: undefined},
+                    {name : 'detailsUrl'},
+                    {name : 'thumbnail'},
+                    {name : 'thumbnailType'},
+                    {name : 'href', mapping: 'runUrl'},
+                    {name : 'allowCustomThumbnail'},
+                    {name : 'status'},
+                    {name : 'reportId'}
+                ]
             });
-            items.push(this[regions[r]]);
         }
-        return items;
+
+        if (!Ext4.ModelManager.isRegistered('Dataset.Browser.Category')) {
+            Ext4.define('Dataset.Browser.Category', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    {name : 'created'},
+                    {name : 'createdBy'},
+                    {name : 'displayOrder', type: 'int'},
+                    {name : 'label'},
+                    {name : 'modfied'},
+                    {name : 'modifiedBy'},
+                    {name : 'rowid'},
+                    {name : 'subCategories'},
+                    {name : 'parent'}
+                ]
+            });
+        }
+
+        if (!Ext4.ModelManager.isRegistered('LABKEY.data.User')) {
+            Ext4.define('LABKEY.data.User', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    {name : 'userId', type: 'int'},
+                    {name : 'displayName'}
+                ]
+            });
+        }
     },
 
-    getViewProxy : function() {
-        return {
-            type   : 'ajax',
-            url    : LABKEY.ActionURL.buildURL('reports', 'browseDataTree.api'),
-            extraParams : {
-                // These parameters are required for specific webpart filtering
-                pageId      : this.pageId,
-                index       : this.index,
-                returnUrl   : this.returnUrl,
-                manageView  : this.manageView
-            },
-            reader : 'json'
-        };
-    },
+    getViewStore : function() {
 
-    initializeViewStore : function() {
-
-        if (this.store)
-            return this.store;
-
-        var config = {
-            pageSize: 100,
-            model   : 'Dataset.Browser.View',
-            autoLoad: true,
-            proxy   : this.getViewProxy(),
-            listeners : {
-                beforeload : function() {
-                    if (this.centerPanel) {
+        if (!this.store) {
+            this.store = Ext4.create('Ext.data.TreeStore', {
+                pageSize: 100,
+                model   : 'Dataset.Browser.View',
+                autoLoad: true,
+                proxy   : {
+                    type   : 'ajax',
+                    url    : LABKEY.ActionURL.buildURL('reports', 'browseDataTree.api'),
+                    extraParams : {
+                        // These parameters are required for specific webpart filtering
+                        pageId      : this.pageId,
+                        index       : this.index,
+                        returnUrl   : this.returnUrl,
+                        manageView  : this.manageView
+                    },
+                    reader : 'json'
+                },
+                listeners : {
+                    beforeload : function() {
                         if (this.catWinID) {
                             var w = Ext4.getCmp(this.catWinID);
                             if (w && !w.isVisible())
-                                this.centerPanel.getEl().mask('Loading...');
+                                this.getCenter().getEl().mask('Loading...');
                         }
-                        else
-                            this.centerPanel.getEl().mask('Loading...');
-                    }
+                        else {
+                            this.getCenter().getEl().mask('Loading...');
+                        }
+                    },
+                    load : this.onViewLoad,
+                    scope: this
                 },
-                load : this.onViewLoad,
-                scope: this
-            },
-            sortRoot : 'displayOrder',
-            scope : this
-        };
+                sortRoot : 'displayOrder',
+                scope : this
+            });
+        }
 
-        this.store = Ext4.create('Ext.data.TreeStore', config);
         return this.store;
     },
 
-    initializeUserStore : function() {
+    getCenter : function() {
+        if (!this.centerPanel) {
+            this.centerPanel = Ext4.create('Ext.panel.Panel', {
+                border: false, frame: false,
+                layout: 'fit',
+                listeners: { render: this.configureGrid, scope: this }
+            });
+        }
 
-        return Ext4.create('Ext.data.Store', {
-            model   : 'LABKEY.data.User',
-            autoLoad: true,
-            proxy   : {
-                type   : 'ajax',
-                url : LABKEY.ActionURL.buildURL('user', 'getUsers.api'),          
-                reader : {
-                    type : 'json',
-                    root : 'users'
-                }
-            }
-        });
-
+        return this.centerPanel;
     },
 
-    initCenterPanel : function() {
-
-        this.centerPanel = Ext4.create('Ext.panel.Panel', {
-            border   : false,
-            frame    : false,
-            layout   : 'fit',
-            listeners: { render: this.configureGrid, scope: this }
-        });
-
-        return {
-            xtype  : 'panel',
-            border : false, frame : false,
-            layout : 'fit',
-            flex   : 4,
-            region : 'center',
-            items  : [this.centerPanel]
-        };
+    getNorth : function() {
+        return this.getComponent('north');
     },
 
     /**
      * Invoked once when the grid is initially setup
      */
     configureGrid : function() {
-        this.centerPanel.getEl().mask('Initializing...');
+        this.getCenter().getEl().mask('Initializing...');
         this.getConfiguration(this.onConfigure, this);
     },
 
@@ -399,7 +385,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
      * @param json
      */
     onConfigure : function(json) {
-        this.centerPanel.getEl().unmask();
+        this.getCenter().getEl().unmask();
 
         if (json.webpart) {
             this._height = parseInt(json.webpart.height);
@@ -418,15 +404,15 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     updateConfiguration : function() {
 
         var handler = function(json) {
-            this.centerPanel.getEl().unmask();
+            this.getCenter().getEl().unmask();
             this._height = parseInt(json.webpart.height);
-            this.centerPanel.removeAll(true);
+            this.getCenter().removeAll(true);
             this.setHeight(this._height);
             this.initGrid(json.visibleColumns);
             this.store.load();
         };
 
-        this.centerPanel.getEl().mask('Initializing...');
+        this.getCenter().getEl().mask('Initializing...');
         this.getConfiguration(handler, this);
     },
 
@@ -468,31 +454,32 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 '<tpl if="data.category != undefined && (data.category.length || data.category.label)">' +
                 '<tr><td>Source:</td><td>{[this.renderCategory(values.data.category)]}</td></tr>' +
                 '</tpl>' +
-                '<tpl if="data.createdBy != undefined && data.createdBy.length">' +
+                '<tpl if="this.isValid(data.createdBy)">' +
                 '<tr><td>Created By:</td><td>{[fm.htmlEncode(values.data.createdBy)]}</td></tr>' +
                 '</tpl>' +
-                '<tpl if="data.authorDisplayName != undefined && data.authorDisplayName.length">' +
+                '<tpl if="this.isValid(data.authorDisplayName)">' +
                 '<tr><td>Author:</td><td>{[fm.htmlEncode(values.data.authorDisplayName)]}</td></tr>' +
                 '</tpl>' +
-                '<tpl if="data.type != undefined && data.type.length">' +
+                '<tpl if="this.isValid(data.type)">' +
                 '<tr><td>Type:</td><td>{[fm.htmlEncode(values.data.type)]}</td></tr>' +
                 '</tpl>' +
-                '<tpl if="data.status != undefined && data.status.length">' +
+                '<tpl if="this.isValid(data.status)">' +
                 '<tr><td>Status:</td><td>{[fm.htmlEncode(values.data.status)]}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="data.refreshDate != undefined">' +
                 '<tr><td valign="top">Data Cut Date:</td><td>{[this.renderDate(values.data.refreshDate)]}</td></tr>' +
                 '</tpl>' +
-                '<tpl if="data.description != undefined && data.description.length">' +
+                '<tpl if="this.isValid(data.description)">' +
                 '<tr><td valign="top">Description:</td><td>{[fm.htmlEncode(values.data.description)]}</td></tr>' +
-                '</tpl>' +
-                '<tpl if="data.thumbnail != undefined && data.thumbnail.length">' +
                 '</tpl>' +
                 '</table>' +
                 '<div class="thumbnail"></div>' +
                 '</div>' +
                 '</tpl>',
                 {
+                    isValid : function(value) {
+                        return Ext4.isDefined(value) && value.length > 0;
+                    },
                     renderCategory : function(cat) {
                         return Ext4.htmlEncode(Ext4.isString(cat) ? cat : cat.label);
                     },
@@ -562,8 +549,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         this.gridPanel = Ext4.create('Ext.tree.Panel', {
             id       : 'data-browser-grid-' + this.webpartId,
-            store    : this.initializeViewStore(),
-            tbar     : this.initSearch(),
+            store    : this.getViewStore(),
+            tbar     : this.getSearchToolbar(),
             border   : false, frame: false,
             layout   : 'fit',
             cls      : 'iScroll', // webkit custom scroll bars
@@ -607,21 +594,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             scope     : this
         });
 
-        this.centerPanel.add(this.gridPanel);
+        this.getCenter().add(this.gridPanel);
     },
 
     initGridColumns : function(visibleColumns) {
 
-        var detailsTpl =
-                '<tpl if="detailsUrl">' +
-                    '<a data-qtip="Click to navigate to the Detail View" href="{detailsUrl}">' +
-                        '<img data-qtip="Details" height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/details.png" alt="Details...">' +
-                   '</a>' +
-                '</tpl>';
-
-        var _columns = [];
-
-        _columns.push({
+        var _columns = [{
             id       : 'edit-column-' + this.webpartId,
             text     : '&nbsp;',
             width    : 40,
@@ -673,7 +651,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             dataIndex: 'categorylabel',
             renderer : Ext4.util.Format.htmlEncode,
             hidden   : true
-        });
+        }];
 
         if (visibleColumns['Type'] && visibleColumns['Type'].checked) {
             _columns.push({
@@ -698,7 +676,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 tdCls    : 'type-column',
                 menuDisabled : true,
                 sortable : false,
-                tpl      : detailsTpl,
+                tpl      : '<tpl if="detailsUrl">' +
+                                '<a data-qtip="Click to navigate to the Detail View" href="{detailsUrl}">' +
+                                    '<img data-qtip="Details" height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/details.png" alt="Details...">' +
+                                '</a>' +
+                            '</tpl>',
                 scope    : this
             });
         }
@@ -778,7 +760,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         return _columns;
     },
 
-    initSearch : function() {
+    getSearchToolbar : function() {
 
         var filterSearch = function() {
             this.searchVal = searchField.getValue();
@@ -796,7 +778,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             width           : 400,
             border: false, frame : false,
             listeners       : {
-                change       : function(cmp, e) {
+                change : function(cmp, e) {
                     filterTask.delay(350);
                 }
             }
@@ -840,28 +822,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         };
     },
 
-    initCustomization : function() {
-
-        var customPanel = Ext4.create('Ext.panel.Panel', {
-            layout : 'fit',
-            border : false, frame : false
-        });
-
-        this.north.setHeight(220);
-        this.north.add(customPanel);
-
-        this.on('enableCustomMode',  this.onEnableCustomMode,  this);
-        this.on('disableCustomMode', this.onDisableCustomMode, this);
-        this.on('enableEditMode', this.onEnableEditMode, this);
-        this.on('disableEditMode', this.onDisableEditMode, this);
-
-        return customPanel;
-    },
-
     onViewLoad : function() {
-        if (this.centerPanel)
-            this.centerPanel.getEl().unmask();
-
+        this.getCenter().getEl().unmask();
         this.hiddenFilter();
     },
 
@@ -907,7 +869,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         this.gridPanel.clearFilter();
         Ext4.defer(this.gridPanel.filterBy, 200, this, [filter, this]);
-//        this.gridPanel.filterBy(filter, this);
     },
 
     isCustomizable : function() {
@@ -929,20 +890,21 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     onEnableCustomMode : function() {
 
         var handler = function(json) {
-            this.north.getEl().unmask();
+            this.getNorth().getEl().unmask();
             this._displayCustomMode(json);
         };
 
         this.customMode = true;
-        this.north.show(null, function() {
-            this.north.getEl().mask('Loading Customize...');
-        }, this);
+        var north = this.getNorth();
+        north.show(null, function() {
+            this.getEl().mask('Loading Customize...');
+        }, north);
         this.getConfiguration(handler, this);
     },
 
     onDisableCustomMode : function() {
         if (this.customPanel && this.customPanel.isVisible()) {
-            this.north.hide();
+            this.getNorth().hide();
         }
 
         this.customMode = false;
@@ -951,10 +913,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     },
 
     edit : function() {
-        if(!this.isCustomizable())
-            return false;
-
-        this.fireEvent((this.editMode ? 'disableEditMode' : 'enableEditMode'), this);
+        if (this.isCustomizable()) {
+            this.fireEvent((this.editMode ? 'disableEditMode' : 'enableEditMode'), this);
+        }
     },
 
     onEnableEditMode : function() {
@@ -1048,7 +1009,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
             this.hiddenFilter();
 
-            this.north.getEl().unmask();
+            this.getNorth().getEl().unmask();
             return;
         }
 
@@ -1169,13 +1130,14 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     var form = formPanel.getForm();
                     if (form.isValid())
                     {
-                        this.north.getEl().mask('Saving...');
+                        this.getNorth().getEl().mask('Saving...');
                         Ext4.Ajax.request({
                             url    : LABKEY.ActionURL.buildURL('project', 'customizeWebPartAsync.api', null, form.getValues()),
                             method : 'POST',
                             success : function() {
-                                this.north.getEl().unmask();
-                                this.north.hide();
+                                var north = this.getNorth();
+                                north.getEl().unmask();
+                                north.hide();
 
                                 // Modify Title
                                 var titleEl = Ext4.query('span[class=labkey-wp-title-text]:first', 'webpart_' + this.webpartId);
@@ -1207,18 +1169,22 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.hiddenFilter();
 
         this.customPanel.add(panel);
-        this.north.getEl().unmask();
+        this.getNorth().getEl().unmask();
     },
 
     _getEditColumn : function() {
         return Ext4.getCmp('edit-column-' + this.webpartId);
     },
 
+    /**
+     * Called when a user clicks to edit a specific data view record.
+     * @param view
+     * @param record
+     */
     onEditClick : function(view, record) {
 
         // grab the map of available fields from the edit info for the view type
         var editInfo = {};
-        var formItems = [];
 
         if (this.editInfo[record.data.dataType])
             editInfo = this.editInfo[record.data.dataType].props;
@@ -1227,17 +1193,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         if (record.data.id == undefined || record.data.id == "") {
             console.warn('ID is required');
         }
-
-        // hidden items
-        formItems.push({
-            xtype : 'hidden',
-            name  : 'id',
-            value : record.data.id
-        },{
-            xtype : 'hidden',
-            name  : 'dataType',
-            value : record.data.dataType
-        });
 
         var buttons = [{
             text: 'Save',
@@ -1303,7 +1258,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         if (choice == "yes")
                         {
                             editWindow.close();
-                            Ext.Ajax.request({
+                            Ext4.Ajax.request({
                                 url     : LABKEY.ActionURL.buildURL("reports", "deleteViews.api"),
                                 scope   : this,
                                 jsonData: {views : record.data},
@@ -1333,7 +1288,15 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             items : [{
                 xtype : 'dvproperties',
                 record          : record,
-                extraItems      : formItems,
+                extraItems      : [{
+                    xtype : 'hidden',
+                    name  : 'id',
+                    value : record.data.id
+                },{
+                    xtype : 'hidden',
+                    name  : 'dataType',
+                    value : record.data.dataType
+                }],
                 dateFormat      : this.dateFormat,
                 visibleFields   : {
                     viewName: editInfo['viewName'],

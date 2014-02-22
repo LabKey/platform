@@ -2974,31 +2974,57 @@ public class ReportsController extends SpringActionController
             Map<Integer, ViewCategory> categories = new HashMap<>();
             TreeSet<ViewCategory> order = new TreeSet<>(t);
 
+            ViewCategoryManager vcm = ViewCategoryManager.getInstance();
             for (DataViewInfo view : views)
             {
-                ViewCategory vc = view.getCategory();
-                if (null != vc)
+                ViewCategory og = view.getCategory();
+
+                if (null != og)
                 {
-                    if (!groups.containsKey(vc.getRowId()))
+                    if (og.getLabel().equalsIgnoreCase("Uncategorized"))
                     {
-                        groups.put(vc.getRowId(), new ArrayList<DataViewInfo>());
+                        // Because 'Uncategorized' is not a real persisted category
+                        int rowId = og.getRowId(); // == 0
+                        if (!groups.containsKey(rowId))
+                            groups.put(rowId, new ArrayList<DataViewInfo>());
+
+                        groups.get(rowId).add(view);
+                        categories.put(rowId, og);
+                        order.add(og);
                     }
-                    groups.get(vc.getRowId()).add(view);
-                    categories.put(vc.getRowId(), vc);
-                    if (null == vc.getParent())
+                    else
                     {
-                        order.add(vc);
-                    }
-                    else if (!categories.containsKey(vc.getParent().getRowId()))
-                    {
-                        // Possible unreferenced parent
-                        vc = vc.getParent();
-                        if (!groups.containsKey(vc.getRowId()))
+                        ViewCategory vc = vcm.getCategory(og.getRowId()); // ask the real authority
+
+                        if (null != vc)
                         {
-                            groups.put(vc.getRowId(), new ArrayList<DataViewInfo>());
+                            int rowId = vc.getRowId();
+                            ViewCategory parent = vc.getParent();
+
+                            if (!groups.containsKey(rowId))
+                                groups.put(rowId, new ArrayList<DataViewInfo>());
+                            groups.get(rowId).add(view);
+                            categories.put(rowId, vc);
+
+                            // if child is handled before parent
+                            if (null != parent)
+                            {
+                                int pid = parent.getRowId();
+                                if (!categories.containsKey(pid))
+                                {
+                                    categories.put(pid, parent);
+
+                                    if (!groups.containsKey(pid))
+                                        groups.put(pid, new ArrayList<DataViewInfo>());
+
+                                    order.add(parent);
+                                }
+                            }
+                            else
+                            {
+                                order.add(vc);
+                            }
                         }
-                        categories.put(vc.getRowId(), vc);
-                        order.add(vc);
                     }
                 }
             }
