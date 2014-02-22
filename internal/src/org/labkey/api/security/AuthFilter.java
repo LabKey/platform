@@ -27,6 +27,7 @@ import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HttpsUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewServlet;
 
 import javax.servlet.Filter;
@@ -107,15 +108,25 @@ public class AuthFilter implements Filter
             {
                 if (AppProps.getInstance().isDevMode())
                 {
-                    String message = HttpsUtil.testSslUrl(url, "");
+                    Pair<String, Integer> sslResult = HttpsUtil.testSslUrl(url, "");
 
-                    if (null != message)
+                    // Non-null indicates that some problem occurred...
+                    if (null != sslResult)
                     {
-                        //noinspection ThrowableInstanceNeverThrown
-                        ConfigurationException ce = new ConfigurationException(message);
-                        ModuleLoader.getInstance().setStartupFailure(ce);
-                        ExceptionUtil.handleException(req, resp, ce, null, true);
-                        return;
+                        String message = sslResult.first;
+                        Integer responseCode = sslResult.second;
+
+                        // No response code means we couldn't connect to SSL, so display a configuration exception.
+                        // Any other reponse (401, 404, etc.) means we were able to connect via SSL and it's just a
+                        // bad URL or unauthorized or something normal. This addresses #19628
+                        if (null == responseCode)
+                        {
+                            //noinspection ThrowableInstanceNeverThrown
+                            ConfigurationException ce = new ConfigurationException(message);
+                            ModuleLoader.getInstance().setStartupFailure(ce);
+                            ExceptionUtil.handleException(req, resp, ce, null, true);
+                            return;
+                        }
                     }
                 }
 

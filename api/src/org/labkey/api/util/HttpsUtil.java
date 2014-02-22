@@ -55,8 +55,8 @@ public class HttpsUtil
     }
 
 
-    // Attempts a connection to the testURL, returning null on success and an error message on failure
-    public static @Nullable String testSslUrl(URL testURL, String advice)
+    // Attempts a connection to the testURL, returning null on success and a Pair with error message and (possibly null) response code on failure
+    public static @Nullable Pair<String, Integer> testSslUrl(URL testURL, String advice)
     {
         try
         {
@@ -65,13 +65,13 @@ public class HttpsUtil
 
             if (connection.getResponseCode() != 200)
             {
-                return "Bad response code, " + connection.getResponseCode() + " when connecting to the SSL port over HTTPS";
+                return new Pair<>("Bad response code, " + connection.getResponseCode() + " when connecting to the SSL port over HTTPS", connection.getResponseCode());
             }
         }
         catch (IOException e)
         {
-            return "Error connecting over HTTPS - Attempted to connect to " + testURL + " and received the following error: " +
-                    (e.getMessage() == null ? e.toString() : e.getMessage()) + ". " + advice;
+            return new Pair<>("Error connecting over HTTPS - Attempted to connect to " + testURL + " and received the following error: " +
+                    (e.getMessage() == null ? e.toString() : e.getMessage()) + ". " + advice, null);
         }
 
         return null;
@@ -107,11 +107,7 @@ public class HttpsUtil
                 sc.init(null, trustAllCerts, new SecureRandom());
                 _socketFactory = sc.getSocketFactory();
             }
-            catch (NoSuchAlgorithmException e)
-            {
-                throw new RuntimeException(e);
-            }
-            catch (KeyManagementException e)
+            catch (NoSuchAlgorithmException | KeyManagementException e)
             {
                 throw new RuntimeException(e);
             }
