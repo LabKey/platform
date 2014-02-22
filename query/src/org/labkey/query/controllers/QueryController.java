@@ -3119,6 +3119,9 @@ public class QueryController extends SpringActionController
 
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaName);
 
+            if (null == schema)
+                throw new NotFoundException("Schema '" + schemaName + "' not found in this folder");
+
             //create a temp query settings object initialized with the posted LabKey SQL
             //this will provide a temporary QueryDefinition to Query
             TempQuerySettings settings = new TempQuerySettings(getViewContext(), sql);

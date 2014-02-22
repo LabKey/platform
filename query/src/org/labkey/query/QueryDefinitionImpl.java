@@ -443,18 +443,19 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 if (table == null)
                 {
                     table = createTable(schema, errors, includeMetadata);
-                    if (table != null)
-                    {
-                        log.debug("Caching table");
-                        _cache.put(key, table);
-                    }
-                }
 
-                if (table != null)
+                    if (null == table)
+                        return null;
+
+                    log.debug("Caching table");
+                    _cache.put(key, table);
+                }
+                else
                 {
                     log.debug("Returning cached table '" + getName() + "', " + (includeMetadata ? "with" : "without") + " metadata");
-                    return table;
                 }
+
+                return table;
             }
             else
             {
