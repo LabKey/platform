@@ -74,7 +74,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
     public ListTable(ListQuerySchema schema, ListDefinition listDef)
     {
-        super(StorageProvisioner.createTableInfo(listDef.getDomain(), schema.getDbSchema()), schema);//, new ContainerFilter.WorkbookAndParent(schema.getUser()));
+        super(StorageProvisioner.createTableInfo(listDef.getDomain(), schema.getDbSchema()), schema);
         setName(listDef.getName());
         setDescription(listDef.getDescription());
         _list = listDef;
