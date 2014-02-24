@@ -1384,7 +1384,7 @@ public class ListManager implements SearchService.DocumentProvider
                 if (kind instanceof ListDomainType)
                 {
                     LOG.warn("Found list that has not been migrated to a hard table: " + domain.getTypeURI());
-                    break;
+                    continue;
                 }
                 if (list.getTable(u).getColumn(FieldKey.fromParts("container")) != null)
                     continue;
