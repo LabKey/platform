@@ -279,6 +279,7 @@ public class ProjectController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public class BeginAction extends SimpleViewAction<PageForm>
     {
         public ModelAndView getView(PageForm form, BindException errors) throws Exception
