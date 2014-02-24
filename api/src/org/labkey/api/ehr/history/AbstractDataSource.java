@@ -17,6 +17,7 @@ package org.labkey.api.ehr.history;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -24,6 +25,7 @@ import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.gwt.client.util.StringUtils;
@@ -137,7 +139,7 @@ abstract public class AbstractDataSource implements HistoryDataSource
         if (redacted && ti.getColumn("qcstate") != null)
             filter.addCondition(FieldKey.fromString("QCState/publicdata"), true, CompareType.EQUAL);
 
-        TableSelector ts = new TableSelector(ti, cols, filter, null);
+        TableSelector ts = new TableSelector(ti, cols, filter, getSort(ti));
         ts.setForDisplay(true);
 
         List<HistoryRow> rows = processRows(ts, redacted, cols);
@@ -151,6 +153,18 @@ abstract public class AbstractDataSource implements HistoryDataSource
         }
 
         return rows;
+    }
+
+    @Nullable
+    protected Sort getSort(TableInfo ti)
+    {
+        //if this table uses formSort, remember when showing results
+        if (ti.getColumn("formSort") != null && ti.getColumn("Id") != null && ti.getColumn("date") != null)
+        {
+            return new Sort("Id,date,formSort");
+        }
+
+        return null;
     }
 
     protected List<HistoryRow> processRows(TableSelector ts, final boolean redacted, final Collection<ColumnInfo> cols)

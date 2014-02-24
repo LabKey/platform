@@ -57,6 +57,7 @@ abstract public class AbstractFormSection implements FormSection
     private String _tabName = null;
     private TEMPLATE_MODE _templateMode = TEMPLATE_MODE.MULTI;
     private boolean _allowBulkAdd = true;
+    private boolean _supportFormSort = false;
 
     private List<String> _configSources = new ArrayList<String>();
 
@@ -92,6 +93,11 @@ abstract public class AbstractFormSection implements FormSection
     protected void setLabel(String label)
     {
         _label = label;
+    }
+
+    public void setSupportFormSort(boolean supportFormSort)
+    {
+        _supportFormSort = supportFormSort;
     }
 
     public String getLabel()
@@ -275,11 +281,17 @@ abstract public class AbstractFormSection implements FormSection
         json.put("configSources", getConfigSources());
         json.put("tbarButtons", getTbarButtons());
         json.put("tbarMoreActionButtons", getTbarMoreActionButtons());
+        json.put("serverStoreSort", getServerSort());
 
         if (_tabName != null)
             json.put("tabName", _tabName);
 
         return json;
+    }
+
+    protected String getServerSort()
+    {
+        return _supportFormSort ? "formSort" : null;
     }
 
     public void setAllowBulkAdd(boolean allowBulkAdd)
