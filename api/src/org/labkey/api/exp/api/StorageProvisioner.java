@@ -537,10 +537,20 @@ public class StorageProvisioner
             c.setName(s.getName());
         }
 
+        HashSet<String> seenProperties = new HashSet<>();
         for (DomainProperty p : domain.getProperties())
         {
             if (kind.hasPropertiesIncludeBaseProperties() && basePropertyNames.contains(p.getName().toLowerCase()))
                 continue;
+
+            if (!seenProperties.add(p.getName()))
+            {
+                // There is more than property descriptor with this name attached to this table. This shouldn't happen, but we've seen
+                // at least one occurance of it in a dev's db, thought to have been caused by in-flux code in 12/2013. The result would
+                // be calls to retrieve metadata would throw an uniformative IllegalStateException on an array index out of bounds. Throwing this
+                // runtimeexception instead gives better diagnostic info.
+                throw new RuntimeException("Duplicate property descriptor name found for: " + tableName + "." + p.getName());
+            }
 
             ColumnInfo c = ti.getColumn(p.getName());
 
