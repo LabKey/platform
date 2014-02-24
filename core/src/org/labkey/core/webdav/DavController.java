@@ -990,9 +990,15 @@ public class DavController extends SpringActionController
         public WebdavStatus doMethod() throws DavException, IOException, RedirectException
         {
             WebdavResource resource = resolvePath();
-            if (null == resource || !resource.exists())
+            if (null == resource)
                 return notFound();
-            boolean isCollection = resource.isCollection();
+
+            Boolean createIntermediates = getBooleanParameter("createIntermediates");
+            if (!resource.exists() && Boolean.TRUE != createIntermediates)
+                return notFound();
+
+            // Assume resource is a collection if we are creating intermediates
+            boolean isCollection = resource.isCollection() || Boolean.TRUE == createIntermediates;
 
             if (isCollection)
             {

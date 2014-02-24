@@ -115,7 +115,7 @@ Ext4.define('File.panel.Upload', {
             items: [{
                 xtype: 'component',
                 cls: 'dropzone dz-clickable',
-                html: "<div class='dz-message' style='text-align:center'><b>Drop files here to upload</b><br><em>(or click to browse...)</em></div>",
+                html: "<div class='dz-message' style='text-align:center'><span style='font-weight: bold'>Drop files here to upload<br><span>(or click to browse...)</span></div>",
                 listeners: {
                     afterrender: function (panel) {
                         this.initDropzone(panel);
@@ -145,14 +145,17 @@ Ext4.define('File.panel.Upload', {
             // LabKey webdav only handles single POST per file
             uploadMultiple: false,
 
-            // LabKey webdav PUT will create intermediate directories, while POST'ing into the parent collection won't.
-            method: 'PUT',
+            params: {
+                // Create any missing intermediate directories
+                // UNDONE: Use allowDirectoryUpload configuration option here
+                'createIntermediates': 'true'
+            },
 
             accept: function (file, done) {
                 console.log("accpet event: ", file);
                 console.log(" -> fullPath: " + file.fullPath);
 
-                // UNDONE: If file.fullPath is not empty, check that the Upload panel is configured to allowsDirectoryUpload
+                // UNDONE: If file.fullPath is not empty, check that the Upload panel is configured to allowDirectoryUpload
                 done();
             }
         });
@@ -196,11 +199,14 @@ Ext4.define('File.panel.Upload', {
                 // Overwrite if explicitly set (in confirmation by user) or if we're uploading multiple files.
                 var overwrite = file.overwrite || this.files.length > 1;
 
-                var uri = this.uploadPanel.concatPaths(cwd, file.fullPath ? file.fullPath : file.name);
+                var uri = this.uploadPanel.fileSystem.concatPaths(cwd, file.fullPath ? file.fullPath : file.name);
 
-                // Save the original uri for use in the 'transfercomplete' event
+                // Save the file's uri for use in the 'transfercomplete' event
                 file.uri = this.uploadPanel.fileSystem.getURI(uri);
-                this.options.url = file.uri + '?overwrite=' + (overwrite ? 'T' : 'F');
+
+                // Folder the file will be POSTed into
+                var folderUri = this.uploadPanel.fileSystem.getParentPath(file.uri)
+                this.options.url = folderUri + '?overwrite=' + (overwrite ? 'T' : 'F');
             }
         });
 
@@ -704,6 +710,9 @@ Ext4.define('File.panel.Upload', {
             } else {
                 msg.push('<p><b>NOTE:</b> Contact your site administrator to enable experimental drag-and-drop file upload.');
             }
+        }
+        else if (!Dropzone.isBrowserSupported()) {
+            msg.push('<p><b>NOTE:</b> Your browser does not support drag-and-drop upload.  Please consider using one of the supported browsers: Chrome 7+, Firefox 4+, IE 10+, Opera 12+ (12 is disabled on mac), Safari 6+.');
         }
 
         Ext4.Msg.show({
