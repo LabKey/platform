@@ -237,7 +237,8 @@ public class QubeQuery
         }
         else if (null != membersDef.membersSet && !membersDef.membersSet.isEmpty())
         {
-            return new _MDX(FN.MemberSet, membersDef.level, membersDef.membersSet.toArray());
+            Level l = null != membersDef.level ? membersDef.level : membersDef.hierarchy.getLevels().get(membersDef.hierarchy.getLevels().size()-1);
+            return new _MDX(FN.MemberSet, l, membersDef.membersSet.toArray());
         }
         else
         {
