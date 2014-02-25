@@ -1536,7 +1536,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     loadReport : function(reportId) {
-
         this.reportLoaded = false;
         Ext4.Ajax.request({
             url     : LABKEY.ActionURL.buildURL('visualization', 'getGenericReport.api'),
@@ -1553,7 +1552,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     loadSavedConfig : function(config) {
         this.allowCustomize = config.editable;
-
         this.schemaName = config.schemaName;
         this.queryName = config.queryName;
         this.renderType = config.renderType;
@@ -1677,6 +1675,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     renderPlot: function(forExport){
+        if (this.viewPanel.isHidden()) {
+            // Don't attempt to render if the view panel isn't visible.
+            return;
+        }
+
         if (!forExport) {
             this.centerPanel.getEl().mask('Rendering Chart...');
             this.clearChartPanel();
