@@ -58,7 +58,7 @@ Ext4.define('LABKEY.ext4.GenericCombo', {
         this.callParent([value, doSelect]);
     },
 
-    getStudyTypeStore : function(comboConfig) {
+    getTypeStore : function(comboConfig) {
 
         // define data models
         var modelName = 'LABKEY.data.' + comboConfig.queryName;
@@ -80,7 +80,7 @@ Ext4.define('LABKEY.ext4.GenericCombo', {
                 type   : 'ajax',
                 url : LABKEY.ActionURL.buildURL('query', 'selectRows.api'),
                 extraParams : {
-                    schemaName  : 'study',
+                    schemaName  : comboConfig.schemaName ? comboConfig.schemaName : 'study',
                     queryName   : comboConfig.queryName
                 },
                 reader : {
@@ -124,11 +124,11 @@ Ext4.define('LABKEY.ext4.GenericStudyCombo', {
     extend  : 'LABKEY.ext4.GenericCombo',
     alias   : 'widget.lk-genericcombo',
 
-    // config must include keyField, displayField and queryName
+    // config must include keyField, displayField and queryName, optionally schemaName
     constructor : function(config){
 
         Ext4.applyIf(config, {
-            store       : this.getStudyTypeStore(config),
+            store       : this.getTypeStore(config),
             valueField  : config.keyField,
             displayField : config.displayField
         });
