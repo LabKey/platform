@@ -547,12 +547,12 @@ public class SurveyMetadataBuilder
         if (column.isLookup())
         {
             TableInfo lookupTableInfo = column.getFk().getLookupTableInfo();
-            String displayField = lookupTableInfo.getTitleColumn();
-            String lookupTableName = lookupTableInfo.getName();
             extConfig.put("xtype", "lk-genericcombo");
-            extConfig.put("queryName", lookupTableName);
-            extConfig.put("keyField", "RowId");
-            extConfig.put("displayField", displayField);
+            extConfig.put("schemaName", lookupTableInfo.getUserSchema().getName());
+            extConfig.put("queryName", lookupTableInfo.getName());
+            List<String> pkColumnNames = lookupTableInfo.getPkColumnNames();
+            extConfig.put("keyField", !pkColumnNames.isEmpty() ? pkColumnNames.get(0) : "RowId");   // We only support 1 PK
+            extConfig.put("displayField", lookupTableInfo.getTitleColumn());
             extConfig.put("emptyText", "Select...");
         }
         else
