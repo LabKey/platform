@@ -24,6 +24,8 @@
 <%@ page import="org.labkey.api.view.template.AppBar" %>
 <%@ page import="org.labkey.api.view.template.AppBarView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.module.FolderType" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -102,7 +104,7 @@
                 <%
                         }
                     }
-                    if(context.hasPermission(getUser(), AdminPermission.class) && getContainer().getFolderType() != org.labkey.api.module.FolderType.NONE)
+                    if(context.hasPermission(getUser(), AdminPermission.class) && tabContainer.getFolderType() != FolderType.NONE)
                     {
                 %>
                         <li class="labkey-app-bar-add-tab" id="addTab">
