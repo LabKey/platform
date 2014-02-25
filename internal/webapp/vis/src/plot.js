@@ -734,17 +734,17 @@ boxPlot.render();
         }
 
         if(this.grid.width == null){
-            error("Unable to create plot, width not specified");
+            error.call(this, "Unable to create plot, width not specified");
             return;
         }
 
         if(this.grid.height == null){
-            error("Unable to create plot, height not specified");
+            error.call(this, "Unable to create plot, height not specified");
             return;
         }
 
         if(this.renderTo == null){
-            error("Unable to create plot, renderTo not specified");
+            error.call(this, "Unable to create plot, renderTo not specified");
             return;
         }
 

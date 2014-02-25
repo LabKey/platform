@@ -211,19 +211,22 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderError = function(msg) {
-        // Clear the canvas first.
-        this.canvas.selectAll('*').remove();
+        // Don't attempt to render an error if we haven't initialized the canvas.
+        if (this.canvas) {
+            // Clear the canvas first.
+            this.canvas.selectAll('*').remove();
 
-        if (!errorMsg) {
-            errorMsg = this.canvas.append('text')
-                    .attr('class', 'vis-error')
-                    .attr('x', plot.grid.width / 2)
-                    .attr('y', plot.grid.height / 2)
-                    .attr('text-anchor', 'middle')
-                    .attr('fill', 'red');
+            if (!errorMsg) {
+                errorMsg = this.canvas.append('text')
+                        .attr('class', 'vis-error')
+                        .attr('x', plot.grid.width / 2)
+                        .attr('y', plot.grid.height / 2)
+                        .attr('text-anchor', 'middle')
+                        .attr('fill', 'red');
+            }
+
+            errorMsg.text(msg);
         }
-
-        errorMsg.text(msg);
     };
 
     var renderXAxis = function() {
