@@ -43,7 +43,9 @@ import org.labkey.api.gwt.client.util.ServiceUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable<List<String>>, DirtyCallback
 {
@@ -211,56 +213,53 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
 
     private boolean validate()
     {
-//        List<String> errors = new ArrayList<String>();
-//        String error = _nameBox.validate();
-//        if (error != null)
-//            errors.add(error);
-//
-//        int numProps = 0;
-//
-//        // Get the errors for each of the PropertiesEditors
-//        for (PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> propeditor : _domainEditors)
-//        {
-//            List<String> domainErrors = propeditor.validate();
-//            if (domainErrors.size() > 0)
-//                errors.addAll(domainErrors);
-//        }
-//
-//        if (_isPlateBased && _assay.getSelectedPlateTemplate() == null)
-//            errors.add("You must select a plate template from the list, or create one first.");
-//
-//        if (_transformScriptTable != null)
-//        {
-//            for (int row = 0; row < _transformScriptTable.getRowCount(); row++)
-//            {
-//                BoundTextBox boundTextBox = getTransformScriptTextBox(row);
-//                if (!boundTextBox.checkValid())
-//                {
-//                    errors.add(boundTextBox.validate());
-//                }
-//            }
-//        }
-//
-//        if (errors.size() > 0)
-//        {
-//            String errorString = "";
-//            for (int i = 0; i < errors.size(); i++)
-//            {
-//                if (i > 0)
-//                    errorString += "\n";
-//                errorString += errors.get(i);
-//            }
-//            Window.alert(errorString);
-//            return false;
-//        }
-//        else
-            return true;
-    }
+        List<String> errors = new ArrayList<String>();
 
-//    private BoundTextBox getTransformScriptTextBox(int row)
-//    {
-//        return (BoundTextBox) _transformScriptTable.getWidget(row, TRANSFORM_SCRIPT_PATH_COLUMN_INDEX);
-//    }
+        // Get the errors for each of the PropertiesEditors
+        for (PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> propeditor : _domainEditors)
+        {
+            List<String> domainErrors = propeditor.validate();
+            if (domainErrors.size() > 0)
+                errors.addAll(domainErrors);
+        }
+
+        // Check for the same name in Specimen and Vial
+        Set<String> specimenFields = new HashSet<String>();
+        for (GWTPropertyDescriptor prop : domainSpecimen.getFields())
+        {
+            specimenFields.add(prop.getName().toLowerCase());
+        }
+
+        Set<String> vialFields = new HashSet<String>();
+        for (GWTPropertyDescriptor prop : domainVial.getFields())
+        {
+            if (!prop.isRequired() && specimenFields.contains(prop.getName().toLowerCase()))
+                errors.add("Vial cannot have a custom field of the same name as a Specimen field: " + prop.getName());
+            else
+                vialFields.add(prop.getName().toLowerCase());       // only add if we aren't already reporting error on that name
+        }
+
+        for (GWTPropertyDescriptor prop : domainSpecimen.getFields())
+        {
+            if (!prop.isRequired() && vialFields.contains(prop.getName().toLowerCase()))
+                errors.add("Specimen cannot have a custom field of the same name as a Vial field: " + prop.getName());
+        }
+
+        if (errors.size() > 0)
+        {
+            String errorString = "";
+            for (int i = 0; i < errors.size(); i++)
+            {
+                if (i > 0)
+                    errorString += "\n";
+                errorString += errors.get(i);
+            }
+            Window.alert(errorString);
+            return false;
+        }
+
+        return true;
+    }
 
     public String getCurrentURL()
     {
