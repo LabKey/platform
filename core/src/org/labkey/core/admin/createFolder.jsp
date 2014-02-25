@@ -254,7 +254,7 @@
                     cls: 'labkey-button',
                     text: 'Cancel',
                     handler: function(btn){
-                        window.location = LABKEY.ActionURL.buildURL('project', 'begin', 'home');
+                        window.history.back();
                     }
                 }],
                 renderModules: function(){
