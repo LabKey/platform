@@ -17,19 +17,19 @@
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
+<%@ page import="org.labkey.api.security.AuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginBean" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginForm" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.security.AuthenticationProvider" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<LoginBean> me = (HttpView<LoginBean>) HttpView.currentView();
@@ -43,11 +43,11 @@
 
     if (agreeOnly)
     {
-        %><form name="login" method="POST" action="<%=buildURL(LoginController.AgreeToTermsAction.class)%>"><%
+        %><form name="login" method="POST" id="loginform" action="<%=buildURL(LoginController.AgreeToTermsAction.class)%>"><%
     }
     else
     {
-        %><form name="login" method="POST" action="<%=buildURL(LoginController.LoginAction.class)%>"><%
+        %><form name="login" method="POST" id="loginform" action="<%=buildURL(LoginController.LoginAction.class)%>"><%
     } %>
     <labkey:csrf/>
     <table><%
@@ -93,7 +93,7 @@
             <input type=hidden name=skipProfile value="1"><%
             }
             %>
-            <%=PageFlowUtil.generateSubmitButton((bean.agreeOnly ? "Agree" : "Sign In"), "", "name=\"SUBMIT\"")%>
+            <%=PageFlowUtil.generateButton((bean.agreeOnly ? "Agree" : "Sign In"), "#", "document.getElementById('loginform').submit();")%>
         </td></tr>
     </table>
     <input type="hidden" id="urlhash" name="urlhash">
