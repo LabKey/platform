@@ -1083,12 +1083,6 @@ in the table tag.  They are necessary so that the borders take precedence correc
     border-left: solid 1px #DDDDDD;
 }
 
-.labkey-has-row-totals tr, .labkey-has-col-totals tr
-{
-    border-top: solid 1px #DDDDDD;
-    border-bottom: solid 1px #DDDDDD;
-}
-
 .labkey-has-row-totals td
 {
     *border-right: 0 none;
