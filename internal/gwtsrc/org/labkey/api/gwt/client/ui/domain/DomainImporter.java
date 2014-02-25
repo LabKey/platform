@@ -407,7 +407,10 @@ public class DomainImporter
             {
                 public void onClick(ClickEvent e)
                 {
-                    handleImport();
+                    if (doColumnsHaveDups())
+                        Window.alert("Columns for import contain duplicate column names. Please change one of the column names in the import data. (Unselecting a column is not sufficient.)");
+                    else
+                        handleImport();
 /*
                     importButton.setEnabled(false);
                     progressBarText = new ProgressBarText("Creating columns...");
@@ -428,6 +431,19 @@ public class DomainImporter
 
             mainPanel.add(buttons);
         }
+    }
+
+    private boolean doColumnsHaveDups()
+    {
+        Set<String> lowercaseNames = new HashSet();
+        for (GWTPropertyDescriptor prop : grid.getColumns(true))        // Issue 19126 (dave): should do getColumns(false), but other problems (yet to be figured out) prevent simple unselecting from letting user import
+        {
+            String lowercaseName = prop.getName().toLowerCase();
+            if (lowercaseNames.contains(lowercaseName))
+                return true;
+            lowercaseNames.add(lowercaseName);
+        }
+        return false;
     }
 
     public void handleImport()

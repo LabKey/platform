@@ -42,6 +42,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.BoundCheckBox;
 import org.labkey.api.gwt.client.ui.CachingLookupService;
 import org.labkey.api.gwt.client.ui.ConceptPicker;
+import org.labkey.api.gwt.client.ui.DirtyCallback;
 import org.labkey.api.gwt.client.ui.DomainProvider;
 import org.labkey.api.gwt.client.ui.LookupServiceAsync;
 import org.labkey.api.gwt.client.ui.PropertyPane;
@@ -163,14 +164,21 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
         for(int columnIndex=0; columnIndex<columns.size(); columnIndex++)
         {
             InferencedColumn column = columns.get(columnIndex);
-            GWTPropertyDescriptor prop = column.getPropertyDescriptor();
+            final GWTPropertyDescriptor prop = column.getPropertyDescriptor();
 
-            _columnMap.put(prop.getName(), (FieldType)prop);
+            String columnMapKey = ((Integer)columnIndex).toString();
+            _columnMap.put(columnMapKey, (FieldType)prop);
 
             // name panel with checkbox to enable/disable import
             HorizontalPanel namePanel = new HorizontalPanel();
-            BooleanProperty include = new BooleanProperty(true);
-            BoundCheckBox includeInImport = new BoundCheckBox("id_import_" + prop.getName(), include, null);
+            final BooleanProperty include = new BooleanProperty(true);
+            BoundCheckBox includeInImport = new BoundCheckBox("id_import_" + columnMapKey, include, new DirtyCallback()
+            {
+                public void setDirty(boolean dirty)
+                {
+                    _importColumnMap.put(prop, include);
+                }
+            });
             _includeWidgetMap.put(prop.getName(), includeInImport);
             
             namePanel.add(includeInImport);
@@ -199,7 +207,7 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
                     }
                 });
                 btn.setToolTip("Click to edit additional properties for this column");
-                btn.setItemId(prop.getName());
+                btn.setItemId(columnMapKey);
                 namePanel.add(btn);
             }
             _grid.setWidget(0, columnIndex, namePanel);
