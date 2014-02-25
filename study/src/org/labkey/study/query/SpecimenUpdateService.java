@@ -50,6 +50,7 @@ import org.labkey.study.model.StudyManager;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -142,7 +143,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        Long rowId = keyFromMap(oldRow);
+        long rowId = keyFromMap(oldRow);
         Specimen specimen = SampleManager.getInstance().getSpecimen(container, user, rowId);
 
         if (null == specimen)
@@ -326,7 +327,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         {
             Map<String, Object> row = rows.get(i);
             Map<String, Object> oldRow = oldKeys.get(i);
-            Long rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
+            long rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
             rowIds.add(rowId);
         }
         List<Specimen> specimens = SampleManager.getInstance().getSpecimens(container, user, rowIds);
@@ -386,7 +387,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        Long rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
+        long rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
         Specimen specimen = SampleManager.getInstance().getSpecimen(container, user, rowId);
         if (specimen == null)
             throw new IllegalArgumentException("No specimen found for rowId: " + rowId);
@@ -428,7 +429,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         }
     }
 
-    private Long keyFromMap(Map<String,Object> map) throws InvalidKeyException
+    private long keyFromMap(Map<String,Object> map) throws InvalidKeyException
     {
         if (null == map)
             throw new InvalidKeyException("No values provided");
@@ -440,10 +441,10 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             rowId = map.get("rowid");
         if (null == rowId)
             throw new InvalidKeyException("No value provided for 'rowId' column");
-        Long rowInteger = (Long)new LongConverter(null).convert(Long.class, rowId);
-        if (null == rowInteger)
-            throw new InvalidKeyException("Unable to convert rowId of '" + rowId + "' to an int");
-        return rowInteger;
+        Long rowLong = (Long)new LongConverter(null).convert(Long.class, rowId);
+        if (null == rowLong)
+            throw new InvalidKeyException("Unable to convert rowId of '" + rowId + "' to a long");
+        return rowLong;
     }
 
     private Map<String, Object> prepareRowMap(Container container, Map<String, Object> row, Specimen specimen,
@@ -505,8 +506,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
     private static Map<String, Object> getLastEventMap(Container container, Specimen specimen)
     {
-        List<Specimen> specimens = new ArrayList<>(1);
-        specimens.add(specimen);
+        List<Specimen> specimens = Collections.singletonList(specimen);
         SpecimenEvent specimenEvent = SampleManager.getInstance().getLastEvent(SampleManager.getInstance().getSpecimenEvents(specimens, false));
         if (null == specimenEvent)
             throw new IllegalStateException("Expected at least one event for specimen.");
