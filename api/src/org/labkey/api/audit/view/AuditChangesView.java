@@ -79,7 +79,7 @@ public class AuditChangesView extends HttpView
             String oldValue = entry.getValue();
             if (oldValue == null)
                 oldValue = "";
-            sb.append(oldValue);
+            sb.append(PageFlowUtil.filter(oldValue));
 
             String newValue = newData.remove(entry.getKey());
             if (newValue == null)
@@ -88,7 +88,7 @@ public class AuditChangesView extends HttpView
             {
                 modified++;
                 sb.append("&nbsp;&raquo;&nbsp;");
-                sb.append(newValue);
+                sb.append(PageFlowUtil.filter(newValue));
             }
             out.write(sb.toString());
             out.write("</td></tr>\n");
@@ -107,7 +107,7 @@ public class AuditChangesView extends HttpView
             String newValue = entry.getValue();
             if (newValue == null)
                 newValue = "";
-            sb.append(newValue);
+            sb.append(PageFlowUtil.filter(newValue));
             out.write(sb.toString());
             out.write("</td></tr>\n");
         }
