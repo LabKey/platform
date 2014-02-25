@@ -99,9 +99,9 @@ public class StudyUnionTableInfo extends VirtualTable
 
             ColumnInfo dayColumn = ti.getColumn("day");
             if (null == dayColumn)
-                dayColumn = ti.getColumn("studyday");
+                dayColumn = ti.getColumn("visitday");
             if (null == dayColumn)
-                dayColumn = ti.getColumn("study_day");
+                dayColumn = ti.getColumn("visit_day");
             if (null != dayColumn && dayColumn.getJdbcType() == JdbcType.INTEGER)
                 sqlf.append(", ").append(dayColumn.getValueSql("D")).append(" AS _visitday");
             else
