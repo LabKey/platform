@@ -287,7 +287,7 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
                 _saveInProgress = false;
                 setDirty(false);
                 _statusLabel.setHTML(STATUS_SUCCESSFUL);
-                show();
+                showAsync();
 
                 if (listener != null)
                 {
@@ -303,13 +303,6 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
     {
         if (validate())
         {
-            List<GWTDomain<GWTPropertyDescriptor>> domains = new ArrayList<GWTDomain<GWTPropertyDescriptor>>();
-
-            for (PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> domainEditor : _domainEditors)
-            {
-                domains.add(domainEditor.getUpdates());
-            }
-
             GWTDomain<GWTPropertyDescriptor> updateEvent = _domainEditors.get(0).getUpdates();
             GWTDomain<GWTPropertyDescriptor> updateVial = _domainEditors.get(1).getUpdates();
             GWTDomain<GWTPropertyDescriptor> updateSpecimen = _domainEditors.get(2).getUpdates();
