@@ -79,9 +79,7 @@ public class SafeFileAppender extends AppenderSkeleton
                 {
                     writer.close();
                 }
-                catch (IOException e)
-                {
-                }
+                catch (IOException ignored) {}
             }
         }
     }

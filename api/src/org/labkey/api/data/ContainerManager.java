@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.junit.Assert;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang3.StringUtils;
@@ -24,6 +23,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
@@ -202,7 +202,7 @@ public class ContainerManager
 
     public static final String WORKBOOK_DBSEQUENCE_NAME = "org.labkey.api.data.Workbooks";
 
-    // TODO: Pass in folder type and transact it with container creation?
+    // TODO: Pass in FolderType (separate from the container type of workbook, etc) and transact it with container creation?
     public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, Container.TYPE type, User user)
     {
         // NOTE: Running outside a tx doesn't seem to be necessary.
@@ -661,7 +661,7 @@ public class ContainerManager
     @NotNull
     public static Container getSharedContainer()
     {
-        return getForPath(SHARED_CONTAINER_PATH);
+        return ensureContainer(SHARED_CONTAINER_PATH);
     }
 
     public static List<Container> getChildren(Container parent)
@@ -1161,6 +1161,11 @@ public class ContainerManager
         if (c.isRoot())
             throw new IllegalArgumentException("can't move root container");
 
+        if (!isRenameable(c))
+        {
+            throw new IllegalArgumentException("Can't move container " + c.getPath());
+        }
+
         if (c.getParent().getId().equals(newParent.getId()))
             return false;
 
@@ -1199,6 +1204,11 @@ public class ContainerManager
     // Lock the class to ensure the old version of this container doesn't sneak into the cache after clearing
     public static void rename(Container c, User user, String name)
     {
+        if (!isRenameable(c))
+        {
+            throw new IllegalArgumentException("Cannot rename container " + c.getPath());
+        }
+
         name = StringUtils.trimToNull(name);
         if (null == name)
             throw new NullPointerException();
@@ -1250,6 +1260,11 @@ public class ContainerManager
     // Delete a container from the database
     public static boolean delete(final Container c, User user)
     {
+        if (!isDeletable(c))
+        {
+            throw new IllegalArgumentException("Cannot delete container: " + c.getPath());
+        }
+
         LOG.debug("Starting container delete for " + c.getContainerNoun(true) + " " + c.getPath());
 
         try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction())

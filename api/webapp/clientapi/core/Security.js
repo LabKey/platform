@@ -496,7 +496,7 @@ LABKEY.Security = new function()
          * @param config A configuration object with the following properties
          * @param {string} config.containerPath The current container path of the container that is going to be moved. Additionally, the container
          * entity id is also valid.
-         * @param {string} config.destinantionParent The container path of destination parent. Additionally, the destination parent entity id
+         * @param {string} config.destinationParent The container path of destination parent. Additionally, the destination parent entity id
          * is also valid.
          * @param {boolean} [config.addAlias] Add alias of current container path to container that is being moved (defaults to True).
          * @param {function} [config.success] A reference to a function to call with the API results. This function will
