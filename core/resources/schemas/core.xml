@@ -18,7 +18,6 @@
  -->
 <ns:tables xsi:schemaLocation="http://labkey.org/data/xml ..\..\..\..\..\schemas\tableInfo.xsd" xmlns:ns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <ns:table tableName="Containers" tableDbType="TABLE">
-    <ns:cacheSize>10000</ns:cacheSize>
     <ns:columns>
       <ns:column columnName="_ts"/>
       <ns:column columnName="RowId"/>
