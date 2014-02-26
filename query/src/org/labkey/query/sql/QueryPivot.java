@@ -40,6 +40,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
@@ -304,6 +305,10 @@ public class QueryPivot extends QueryRelation
             assert !getParseErrors().isEmpty();
             return _pivotValues;
         }
+
+        // We've directly generated SQL instead of using QueryService, so be sure that the listeners
+        // get the context they need before trying to run it
+        QueryProfiler.getInstance().ensureListenerEnvironment();
 
         try (ResultSet rs = new SqlSelector(getSchema().getDbSchema(), sqlPivotValues).getResultSet())
         {
