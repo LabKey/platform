@@ -1425,13 +1425,24 @@ groupByLoop:
         ret.appendComment(comment);
         if (null != _queryText)
         {
+            String queryText = _queryText;
+            boolean truncated = false;
+            if (queryText.length() > 10_000)
+            {
+                queryText = queryText.substring(0,10_000);
+                truncated = true;
+            }
             // Handle any combination of line endings - \n (Unix), \r (Mac), \r\n (Windows), \n\r (nobody)
-            for (String s : _queryText.split("(\n\r?)|(\r\n?)"))
+            for (String s : queryText.split("(\n\r?)|(\r\n?)"))
+            {
                 if (null != StringUtils.trimToNull(s))
                 {
                     // balance quotes because postgres can't parse
                     ret.appendComment("|         " + s + (StringUtils.countMatches(s, "'")%2==0?"":"'"));
                 }
+            }
+            if (truncated)
+                ret.appendComment("|         . . .");
         }
         ret.append(sql);
         ret.appendComment("</" + comment.substring(1));

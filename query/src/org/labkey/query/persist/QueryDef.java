@@ -20,6 +20,7 @@ import org.labkey.api.data.Entity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CacheKey;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.UnexpectedException;
 
 public class QueryDef extends Entity implements Cloneable
@@ -64,6 +65,11 @@ public class QueryDef extends Entity implements Cloneable
         {
             addCondition(Column.queryDefId, id);
         }
+    }
+
+    public QueryDef()
+    {
+        assert MemTracker.getInstance().put(this);
     }
 
     private int _queryDefId;
