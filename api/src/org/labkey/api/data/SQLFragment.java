@@ -263,7 +263,12 @@ public class SQLFragment implements Appendable, CharSequence
             int len = sb.length();
             if (len > 0 && sb.charAt(len-1) != '\n')
                 sb.append('\n');
-            sb.append("\n-- ").append(comment).append('\n');
+            sb.append("\n-- ");
+            if (comment.length() < 1000)
+                sb.append(comment);
+            else
+                sb.append(comment.substring(0,1000)).append("...");
+            sb.append('\n');
         }
         return true;
     }

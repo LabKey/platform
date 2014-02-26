@@ -304,12 +304,19 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
             {
                 rs = executeQuery(conn, _sql, _scrollable, getAsyncRequest(), _factory.getStatementMaxRows());
             }
-            catch (SQLException x)
+            catch (SQLException outer)
             {
-                if (inTransaction || !SqlDialect.isTransactionException(x))
-                    throw x;
+                if (inTransaction || !SqlDialect.isTransactionException(outer))
+                    throw outer;
                 // retry if simple transaction exception
-                rs = executeQuery(conn, _sql, _scrollable, getAsyncRequest(), _factory.getStatementMaxRows());
+                try
+                {
+                    rs = executeQuery(conn, _sql, _scrollable, getAsyncRequest(), _factory.getStatementMaxRows());
+                }
+                catch (SQLException inner)
+                {
+                    throw outer;
+                }
             }
 
             // Just to be safe: if processResultSet() throws SQLException then caller will close the result set; if it

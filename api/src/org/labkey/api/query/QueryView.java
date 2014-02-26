@@ -731,12 +731,12 @@ public class QueryView extends WebPartView<Object>
 
     protected void populateReportButtonBar(ButtonBar bar)
     {
-//        if (getSettings().getAllowChooseQuery())
-//        {
-        MenuButton queryButton = createQueryPickerButton("Query");
-        queryButton.setVisible(getSettings().getAllowChooseQuery());
-        bar.add(queryButton);
-//        }
+        if (getSettings().getAllowChooseQuery())
+        {
+            MenuButton queryButton = createQueryPickerButton("Query");
+            queryButton.setVisible(getSettings().getAllowChooseQuery());
+            bar.add(queryButton);
+        }
 
         if (getSettings().getAllowChooseView())
         {
@@ -751,12 +751,12 @@ public class QueryView extends WebPartView<Object>
 
     protected void populateButtonBar(DataView view, ButtonBar bar, boolean exportAsWebPage)
     {
-//        if (getSettings().getAllowChooseQuery())
-//        {
-        MenuButton queryButton = createQueryPickerButton("Query");
-        queryButton.setVisible(getSettings().getAllowChooseQuery());
-        bar.add(queryButton);
-//        }
+        if (getSettings().getAllowChooseQuery())
+        {
+            MenuButton queryButton = createQueryPickerButton("Query");
+            queryButton.setVisible(getSettings().getAllowChooseQuery());
+            bar.add(queryButton);
+        }
 
         if (getSettings().getAllowChooseView())
         {
