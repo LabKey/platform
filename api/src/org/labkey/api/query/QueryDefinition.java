@@ -90,7 +90,6 @@ public interface QueryDefinition
      */
     @Nullable TableInfo getTable(List<QueryException> errors, boolean includeMetadata);
     @Nullable TableInfo getTable(UserSchema schema, List<QueryException> errors, boolean includeMetadata);
-    @Nullable TableInfo getMainTable();
 
     String getSql();
     String getMetadataXml();
