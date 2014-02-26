@@ -200,6 +200,8 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             }
 
             DataSetDefinition updated = def.createMutable();
+            // Clear the category ID so that it gets regenerated based on the new string - see issue 19649
+            updated.setCategoryId(null);
             BeanUtils.copyProperties(updated, ds);
 
             // Default is no key management
