@@ -83,7 +83,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 @SuppressWarnings({"ThrowableInstanceNeverThrown"})
 public abstract class QueryDefinitionImpl implements QueryDefinition
@@ -542,16 +541,6 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     protected void applyQueryMetadata(UserSchema schema, List<QueryException> errors, TableType xmlTable, Map<String, NamedFiltersType> namedFilters, AbstractTableInfo ret)
     {
         ret.loadFromXML(schema, xmlTable, errors);
-    }
-
-    @Nullable
-    public TableInfo getMainTable()
-    {
-        Query query = getQuery(getSchema());
-        Set<FieldKey> tables = query.getFromTables();
-        if (null==tables || tables.size() != 1)
-            return null;
-        return query.getFromTable(tables.iterator().next());
     }
 
     public String getMetadataXml()
