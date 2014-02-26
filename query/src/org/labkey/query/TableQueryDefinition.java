@@ -32,6 +32,7 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -54,6 +55,8 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     {
         super(schema.getUser(), getQueryDef(schema, tableName));
         _schema = schema;
+
+        assert MemTracker.getInstance().put(this);
     }
 
 
