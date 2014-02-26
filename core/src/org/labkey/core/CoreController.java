@@ -1313,8 +1313,8 @@ public class CoreController extends SpringActionController
 
             props.put("isProject", c.isProject());
 
-            if (ContainerManager.getHomeContainer().equals(c) || ContainerManager.getSharedContainer().equals(c) ||
-                    ContainerManager.getRoot().equals(c))
+            if (c.equals(ContainerManager.getHomeContainer()) || c.equals(ContainerManager.getSharedContainer()) ||
+                    c.equals(ContainerManager.getRoot()))
             {
                 props.put("notModifiable", true);
             }
