@@ -17,6 +17,7 @@ package org.labkey.list.model;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -213,5 +214,11 @@ public abstract class ListDomainKind extends AbstractDomainKind
                 .append(PageFlowUtil.encode(AppProps.getInstance().getDefaultLsidAuthority()))
                 .append(":").append(type).append(".Folder-").append(c.getRowId()).append(":")
                 .append(PageFlowUtil.encode(listName));
+    }
+
+    @Override
+    public DbSchemaType getSchemaType()
+    {
+        return DbSchemaType.Provisioned;
     }
 }
