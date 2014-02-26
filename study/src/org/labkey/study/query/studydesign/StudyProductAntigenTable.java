@@ -80,9 +80,7 @@ public class StudyProductAntigenTable extends DefaultStudyDesignTable
                     if (study != null)
                     {
                         StudyQuerySchema schema = new StudyQuerySchema(study, _userSchema.getUser(), false);
-                        StudyDesignGenesTable result = new StudyDesignGenesTable(schema);
-                        result.setContainerFilter(ContainerFilter.Type.CurrentPlusProject.create(_userSchema.getUser()));
-                        return result;
+                        return new StudyDesignGenesTable(schema);
                     }
                     else
                         return null;
@@ -99,9 +97,7 @@ public class StudyProductAntigenTable extends DefaultStudyDesignTable
                     if (study != null)
                     {
                         StudyQuerySchema schema = new StudyQuerySchema(study, _userSchema.getUser(), false);
-                        StudyDesignSubTypesTable result = new StudyDesignSubTypesTable(schema);
-                        result.setContainerFilter(ContainerFilter.Type.CurrentPlusProject.create(_userSchema.getUser()));
-                        return result;
+                        return new StudyDesignSubTypesTable(schema);
                     }
                     else
                         return null;

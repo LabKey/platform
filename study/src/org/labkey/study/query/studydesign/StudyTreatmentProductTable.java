@@ -90,9 +90,7 @@ public class StudyTreatmentProductTable extends DefaultStudyDesignTable
                     if (study != null)
                     {
                         StudyQuerySchema schema = new StudyQuerySchema(study, _userSchema.getUser(), false);
-                        StudyDesignRoutesTable result = new StudyDesignRoutesTable(schema);
-                        result.setContainerFilter(ContainerFilter.Type.CurrentPlusProject.create(_userSchema.getUser()));
-                        return result;
+                        return new StudyDesignRoutesTable(schema);
                     }
                     else
                         return null;

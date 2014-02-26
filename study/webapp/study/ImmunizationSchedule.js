@@ -630,7 +630,7 @@ Ext4.define('LABKEY.ext4.VaccineDesignDisplayHelper', {
             columns: 'Name,Label',
             filterArray: [LABKEY.Filter.create('Inactive', false)],
             containerFilter: LABKEY.container.type == 'project' ? 'Current' : 'CurrentPlusProject',
-            sort: 'Label',
+            sort: '-Container/Path,Label',
             autoLoad: true,
             listeners: {
                 load: function(store) {

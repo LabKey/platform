@@ -54,9 +54,7 @@ public class AssaySpecimenTable extends BaseStudyTable
         {
             public TableInfo getLookupTableInfo()
             {
-                StudyDesignLabsTable result = new StudyDesignLabsTable(_userSchema);
-                result.setContainerFilter(ContainerFilter.Type.CurrentPlusProject.create(_userSchema.getUser()));
-                return result;
+                return new StudyDesignLabsTable(_userSchema);
             }
         });
         addColumn(labColumn);
@@ -66,9 +64,7 @@ public class AssaySpecimenTable extends BaseStudyTable
         {
             public TableInfo getLookupTableInfo()
             {
-                StudyDesignSampleTypesTable result = new StudyDesignSampleTypesTable(_userSchema);
-                result.setContainerFilter(ContainerFilter.Type.CurrentPlusProject.create(_userSchema.getUser()));
-                return result;
+                return new StudyDesignSampleTypesTable(_userSchema);
             }
         });
         addColumn(sampleTypeColumn);

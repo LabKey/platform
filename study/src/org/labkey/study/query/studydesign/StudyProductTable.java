@@ -66,9 +66,7 @@ public class StudyProductTable extends DefaultStudyDesignTable
                     if (study != null)
                     {
                         StudyQuerySchema schema = new StudyQuerySchema(study, _userSchema.getUser(), false);
-                        StudyDesignImmunogenTypesTable result = new StudyDesignImmunogenTypesTable(schema);
-                        result.setContainerFilter(ContainerFilter.Type.CurrentPlusProject.create(_userSchema.getUser()));
-                        return result;
+                        return new StudyDesignImmunogenTypesTable(schema);
                     }
                     else
                         return null;

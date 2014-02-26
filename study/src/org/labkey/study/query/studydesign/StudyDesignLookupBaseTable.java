@@ -27,6 +27,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -52,7 +53,22 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
         super(schema, tableInfo);
         setDescription("Contains lookup values for dropdown options in the study designer.");
 
-        wrapAllColumns(true);
+        for (ColumnInfo col : getRealTable().getColumns())
+        {
+            if (!col.getName().equalsIgnoreCase("Container"))
+            {
+                ColumnInfo newCol = addWrapColumn(col);
+                if (col.isHidden())
+                    newCol.setHidden(col.isHidden());
+
+                if (newCol.getName().equalsIgnoreCase("CreatedBy") || newCol.getName().equalsIgnoreCase("ModifiedBy"))
+                    UserIdQueryForeignKey.initColumn(schema.getUser(), schema.getContainer(), newCol, true);
+            }
+            else
+                addContainerColumn();
+        }
+
+
         List<FieldKey> defaultColumns = new ArrayList<>(Arrays.asList(
                 FieldKey.fromParts("Name"),
                 FieldKey.fromParts("Label"),
@@ -118,6 +134,8 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
 
         private void validateValues(Map<String, Object> row) throws ValidationException
         {
+            // TODO: add validation that the same key value doesn't already exist at the project level
+
             // Issue 18313
             for (ColumnInfo col : getRealTable().getColumns())
             {
