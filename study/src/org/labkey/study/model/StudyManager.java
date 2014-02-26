@@ -104,7 +104,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyCachable;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
@@ -213,7 +212,7 @@ public class StudyManager
         {
             public List<StudyImpl> get(final Container c, final SimpleFilter filterArg, final String sortString)
             {
-                assert filterArg == null & sortString == null;
+                assert filterArg == null && sortString == null;
                 String cacheId = getCacheId(filterArg);
                 if (sortString != null)
                     cacheId += "; sort = " + sortString;
@@ -223,10 +222,60 @@ public class StudyManager
                     @Override
                     public Object load(String key, Object argument)
                     {
-                        List<? extends StudyCachable> objs = new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT * FROM study.Study WHERE Container = ?", c).getArrayList(StudyImpl.class);
-                        for (StudyCachable obj : objs)
+                        // Bulk-load the study for the current container and its children, instead of issuing separate
+                        // requests for each container. See issue 19632
+                        SQLFragment selectSQL = new SQLFragment("SELECT * FROM study.Study WHERE Container IN (SELECT ? AS Container UNION SELECT EntityId FROM ");
+                        selectSQL.append(CoreSchema.getInstance().getTableInfoContainers(), "c");
+                        selectSQL.append(" WHERE Parent = ?)");
+                        selectSQL.add(c);
+                        selectSQL.add(c);
+                        List<StudyImpl> objs = new SqlSelector(StudySchema.getInstance().getSchema(), selectSQL).getArrayList(StudyImpl.class);
+
+                        // The match, if any, for the container that's being queried directly
+                        StudyImpl result = null;
+                        // Keep track of all of the containers that DON'T have a study so we can cache them as a miss
+                        Set<Container> childrenWithNoStudies = new HashSet<>(ContainerManager.getChildren(c));
+
+                        for (final StudyImpl obj : objs)
+                        {
                             obj.lock();
-                        return objs;
+
+                            if (obj.getContainer().equals(c))
+                            {
+                                result = obj;
+                            }
+                            else
+                            {
+                                // Found a study for this container
+                                childrenWithNoStudies.remove(obj.getContainer());
+
+                                // Cache the hit
+                                StudyCache.get(getTableInfo(), obj.getContainer(), getCacheId(filterArg), new CacheLoader<String, Object>()
+                                {
+                                    @Override
+                                    public Object load(String key, @Nullable Object argument)
+                                    {
+                                        return Collections.singletonList(obj);
+                                    }
+                                });
+                            }
+                        }
+
+                        for (Container studylessChild : childrenWithNoStudies)
+                        {
+                            // Cache the miss
+                            StudyCache.get(getTableInfo(), studylessChild, getCacheId(filterArg), new CacheLoader<String, Object>()
+                            {
+                                @Override
+                                public Object load(String key, @Nullable Object argument)
+                                {
+                                    return Collections.emptyList();
+                                }
+                            });
+                        }
+
+                        // Return the specific hit/miss for the originally queried container
+                        return result == null ? Collections.emptyList() : Collections.singletonList(result);
                     }
                 };
                 return (List<StudyImpl>) StudyCache.get(getTableInfo(), c, cacheId, loader);
@@ -437,14 +486,7 @@ public class StudyManager
     {
         Study oldStudy = getStudy(study.getContainer());
         Date oldStartDate = oldStudy.getStartDate();
-        try
-        {
-            _studyHelper.update(user, study, new Object[] { study.getContainer() });
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        _studyHelper.update(user, study, study.getContainer());
 
         if (oldStudy.getTimepointType() == TimepointType.DATE && !Objects.equals(study.getStartDate(), oldStartDate))
         {
@@ -481,10 +523,6 @@ public class StudyManager
             dataSetDefinition.getStorageTableInfo();
 
             transaction.commit();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
         }
         indexDataset(null, dataSetDefinition);
     }
@@ -699,15 +737,8 @@ public class StudyManager
         if (visit.getChronologicalOrder() == 0 && prevChronologicalOrder > 0)
             visit.setChronologicalOrder(prevChronologicalOrder);
 
-        try
-        {
-            visit = _visitHelper.create(user, visit);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        
+        visit = _visitHelper.create(user, visit);
+
         if (visit.getRowId() == 0)
             throw new VisitCreationException("Visit rowId has not been set properly");
 
@@ -1102,13 +1133,12 @@ public class StudyManager
     }
 
 
-    public void updateVisit(User user, VisitImpl visit) throws SQLException
+    public void updateVisit(User user, VisitImpl visit)
     {
-        Object[] pk = new Object[]{visit.getContainer().getId(), visit.getRowId()};
-        _visitHelper.update(user, visit, pk);
+        _visitHelper.update(user, visit, visit.getContainer().getId(), visit.getRowId());
     }
 
-    public void updateCohort(User user, CohortImpl cohort) throws SQLException
+    public void updateCohort(User user, CohortImpl cohort)
     {
         _cohortHelper.update(user, cohort);
     }

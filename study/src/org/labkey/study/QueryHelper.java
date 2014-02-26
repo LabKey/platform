@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
@@ -82,7 +83,7 @@ public class QueryHelper<K extends StudyCachable>
                 Sort sort = null;
                 if (sortString != null)
                     sort = new Sort(sortString);
-                List<? extends StudyCachable> objs = new TableSelector(getTableInfo(), filter, sort).getArrayList(_objectClass);
+                List<K> objs = new TableSelector(getTableInfo(), filter, sort).getArrayList(_objectClass);
                 // Make both the objects and the list itself immutable so that we don't end up with a corrupted
                 // version in the cache
                 for (StudyCachable obj : objs)
@@ -93,7 +94,7 @@ public class QueryHelper<K extends StudyCachable>
         return (List<K>)StudyCache.get(getTableInfo(), c, cacheId, loader);
     }
 
-    public K get(Container c, double rowId) throws SQLException
+    public K get(Container c, double rowId)
     {
         return get(c, (Object)rowId, "RowId");
     }
@@ -132,33 +133,48 @@ public class QueryHelper<K extends StudyCachable>
         return (K)obj;
     }
 
-    public K create(User user, K obj) throws SQLException
+    public K create(User user, K obj)
     {
         clearCache(obj);
-        return Table.insert(user, getTableInfo(), obj);
+        try
+        {
+            return Table.insert(user, getTableInfo(), obj);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
-    public K update(User user, K obj) throws SQLException
+    public K update(User user, K obj)
     {
-        return update(user, obj, new Object[] { obj.getPrimaryKey() });
+        return update(user, obj, obj.getPrimaryKey());
     }
 
-    public K update(User user, K obj, Object[] pk) throws SQLException
-    {
-        clearCache(obj);
-        return Table.update(user, getTableInfo(), obj, pk);
-    }
-
-    public void delete(K obj, Object rowId, Object rowVersion) throws SQLException
-    {
-        clearCache(obj);
-        Table.delete(getTableInfo(), rowId);
-    }
-
-    public void delete(K obj) throws SQLException
+    public K update(User user, K obj, Object... pk)
     {
         clearCache(obj);
-        Table.delete(getTableInfo(), obj.getPrimaryKey());
+        try
+        {
+            return Table.update(user, getTableInfo(), obj, pk);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    public void delete(K obj)
+    {
+        clearCache(obj);
+        try
+        {
+            Table.delete(getTableInfo(), obj.getPrimaryKey());
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public TableInfo getTableInfo()

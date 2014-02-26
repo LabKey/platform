@@ -392,22 +392,24 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _startDate = startDate;
     }
 
+    @Nullable
     public String getParticipantCohortProperty()
     {
         return _participantCohortProperty;
     }
 
-    public void setParticipantCohortProperty(String participantCohortProperty)
+    public void setParticipantCohortProperty(@Nullable String participantCohortProperty)
     {
         _participantCohortProperty = participantCohortProperty;
     }
 
+    @Nullable
     public Integer getParticipantCohortDataSetId()
     {
         return _participantCohortDataSetId;
     }
 
-    public void setParticipantCohortDataSetId(Integer participantCohortDataSetId)
+    public void setParticipantCohortDataSetId(@Nullable Integer participantCohortDataSetId)
     {
         _participantCohortDataSetId = participantCohortDataSetId;
     }

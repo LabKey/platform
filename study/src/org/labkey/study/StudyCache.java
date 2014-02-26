@@ -49,18 +49,6 @@ public class StudyCache
         DbCache.put(tinfo, getCacheName(c, objectId), cachable, CacheManager.HOUR);
     }
 
-    public static void cache(TableInfo tinfo, Container c, String objectId, StudyCachable[] cachables)
-    {
-        for (StudyCachable cachable : cachables)
-        {
-            if (cachable != null)
-                cachable.lock();
-        }
-        if (!ENABLE_CACHING)
-            return;
-        DbCache.put(tinfo, getCacheName(c, objectId), cachables, CacheManager.HOUR);
-    }
-
     public static void cache(TableInfo tinfo, Container c, Object cacheKey, StudyCachable cachable)
     {
         // We allow caching of null values: 
