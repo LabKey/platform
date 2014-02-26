@@ -32,7 +32,8 @@ public enum Type
     StringType("Text (String)", "xsd:string", "varchar", String.class),
     IntType("Integer", "xsd:int", "integer", Integer.class, Integer.TYPE, Short.class, Short.TYPE, Byte.class, Byte.TYPE),
     LongType("Long", "xsd:long", "bigint", Long.class, long.class),
-    DoubleType("Number (Double)", "xsd:double", "double", Double.class, Double.TYPE, Float.class, Float.TYPE), // Double.TYPE is here because manually created datasets with required doubles return Double.TYPE as Class
+    DoubleType("Number (Double)", "xsd:double", "double", Double.class, Double.TYPE), // Double.TYPE is here because manually created datasets with required doubles return Double.TYPE as Class
+    FloatType("Number (Float)", "xsd:float", "float", Float.class, Float.TYPE),
     DateTimeType("DateTime", "xsd:dateTime", "timestamp", Date.class),
     BooleanType("Boolean", "xsd:boolean", "boolean", Boolean.class, Boolean.TYPE),
     AttachmentType("Attachment", "xsd:attachment", "varchar", String.class, File.class);
