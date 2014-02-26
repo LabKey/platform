@@ -268,22 +268,15 @@ Ext.define('LABKEY.app.controller.State', {
     },
 
     updateState : function() {
-        if (!this._updateState) {
-            this._updateState = new Ext.util.DelayedTask(function() {
-                this.state.add({
-                    activeView: this.activeView,
-                    appVersion: this.appVersion,
-                    viewState: {},
-                    views: this.views,
-                    filters: this.getFilters(true),
-                    selections: this.getSelections(true)
-                });
-                this.state.sync();
-            }, this);
-        }
-
-        // coalesce state updates
-        this._updateState.delay(300);
+        this.state.add({
+            activeView: this.activeView,
+            appVersion: this.appVersion,
+            viewState: {},
+            views: this.views,
+            filters: this.getFilters(true),
+            selections: this.getSelections(true)
+        });
+        this.state.sync();
     },
 
     updateFilterMembers : function(id, members) {
@@ -564,14 +557,14 @@ Ext.define('LABKEY.app.controller.State', {
         }
 
         if (proceed) {
-            var me = this;
             this.onMDXReady(function(mdx){
                 mdx.setNamedFilter('statefilter', olapFilters);
-                if (!skipState)
-                    me.updateState();
+                if (!skipState) {
+                    this.updateState();
+                }
 
                 if (!silent) {
-                    me.fireEvent('filterchange', me.filters);
+                    this.fireEvent('filterchange', this.filters);
                 }
             }, this);
         }
