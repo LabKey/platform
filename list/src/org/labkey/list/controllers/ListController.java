@@ -21,6 +21,8 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.action.Action;
+import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -265,6 +267,7 @@ public class ListController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class)
+    @Action(ActionType.SelectMetaData)
     public class ListEditorServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
