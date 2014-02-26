@@ -24,6 +24,7 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -78,6 +79,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
 
     public QueryForm()
     {
+        assert MemTracker.getInstance().put(this);
     }
 
     protected QueryForm(String schemaName, String queryName)
@@ -87,6 +89,8 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
 
         _bindSchemaName = false;
         _bindQueryName = false;
+
+        assert MemTracker.getInstance().put(this);
     }
 
     protected QueryForm(String schemaName, String queryName, String viewName)
@@ -98,6 +102,8 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         _bindSchemaName = false;
         _bindQueryName = false;
         _bindViewName = false;
+
+        assert MemTracker.getInstance().put(this);
     }
 
     public void setViewContext(ViewContext context)

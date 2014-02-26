@@ -26,6 +26,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.util.HString;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -75,6 +76,8 @@ public class QuerySettings
     protected QuerySettings(String dataRegionName)
     {
         _dataRegionName = dataRegionName;
+
+        assert MemTracker.getInstance().put(this);
     }
 
     /**
@@ -85,6 +88,8 @@ public class QuerySettings
     {
         _dataRegionName = dataRegionName;
         init(getPropertyValues(context));
+
+        assert MemTracker.getInstance().put(this);
     }
 
 
@@ -97,6 +102,8 @@ public class QuerySettings
         _dataRegionName = dataRegionName;
         init(context);
         setQueryName(queryName);
+
+        assert MemTracker.getInstance().put(this);
     }
 
 
@@ -109,6 +116,8 @@ public class QuerySettings
     {
         _dataRegionName = dataRegionName;
         init(params);
+
+        assert MemTracker.getInstance().put(this);
     }
 
 
