@@ -1247,8 +1247,8 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            ensureQueryExists(form);
-
+            // ensureQueryExists() is ridiculously expensive, let's handle the errors lazily in this case
+            // TODO investigate removing other calls to ensureQueryExists()
             _form = form;
 
             QueryView queryView = QueryView.create(form, errors);
@@ -1261,6 +1261,7 @@ public class QueryController extends SpringActionController
             queryView.setShadeAlternatingRows(true);
             queryView.setShowBorders(true);
             setHelpTopic(new HelpTopic("customSQL"));
+            _queryView = queryView;
             return queryView;
         }
 
@@ -1270,18 +1271,15 @@ public class QueryController extends SpringActionController
             TableInfo ti = null;
             try
             {
-                ti = _form.getSchema() == null ? null : _form.getSchema().getTable(_form.getQueryName());
+                if (null != _queryView)
+                ti = _queryView.getTable();
             }
             catch (QueryParseException x)
             {
                 /* */
             }
             String display = ti == null ? _form.getQueryName() : ti.getTitle();
-            ActionURL gridUrl = _form.urlFor(QueryAction.executeQuery);
-            if (gridUrl == null)
-                root.addChild(display);
-            else
-                root.addChild(display, gridUrl);
+            root.addChild(display);
             return root;
         }
     }
@@ -2511,11 +2509,13 @@ public class QueryController extends SpringActionController
     public abstract class QueryViewAction extends SimpleViewAction<QueryForm>
     {
         QueryForm _form;
+        QueryView _queryView;
     }
 
     public abstract class QueryFormAction extends FormViewAction<QueryForm>
     {
         QueryForm _form;
+        QueryView _queryView;
     }
 
     public static class APIQueryForm extends QueryForm

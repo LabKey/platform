@@ -68,6 +68,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
@@ -89,6 +90,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -122,6 +124,9 @@ public class Query
     private ContainerFilter _containerFilter;
     private QueryRelation _queryRoot;
     ArrayList<QParameter> _parameters;
+
+    IdentityHashMap<QuerySchema, HashMap<FieldKey,Pair<QuerySchema,TableInfo>>> _resolveCache = new IdentityHashMap<>();
+
 
     private Query _parent; // only used to avoid recursion for now
 
@@ -601,7 +606,7 @@ public class Query
 	/**
 	 * Resolve a particular table name.  The table name may have schema names (folder.schema.table etc.) prepended to it.
 	 */
-	QueryRelation resolveTable(QuerySchema schema, QNode node, FieldKey key, String alias)
+	QueryRelation resolveTable(QuerySchema currentSchema, QNode node, FieldKey key, String alias)
 	{
         ++_countResolvedTables;
         if (getTotalCountResolved() > 200 || _depth > 20)
@@ -611,16 +616,28 @@ public class Query
             return null;
         }
 
+        // check if we've resolved the exact same table
+        if (null == _resolveCache.get(currentSchema))
+            _resolveCache.put(currentSchema,new HashMap<FieldKey, Pair<QuerySchema, TableInfo>>());
+        Pair<QuerySchema,TableInfo> found = _resolveCache.get(currentSchema).get(key);
+        if (null != found)
+        {
+            TableInfo ti = found.second;
+            if (ti.getContainerFilter() == getContainerFilter() || (ti instanceof ContainerFilterable && ((ContainerFilterable)ti).hasDefaultContainerFilter() && null == getContainerFilter()))
+                return new QueryTable(this, found.first, found.second, alias);
+        }
+
 		List<String> parts = key.getParts();
 		List<String> names = new ArrayList<>(parts.size());
 		for (String part : parts)
 			names.add(FieldKey.decodePart(part));
 
+        QuerySchema resolvedSchema = currentSchema;
 		for (int i = 0; i < parts.size() - 1; i ++)
 		{
 			String name = names.get(i);
-			schema = schema.getSchema(name);
-			if (schema == null)
+            resolvedSchema = resolvedSchema.getSchema(name);
+			if (resolvedSchema == null)
 			{
 				parseError(_parseErrors, "Table " + StringUtils.join(names,".") + " not found.", node);
 				return null;
@@ -631,10 +648,10 @@ public class Query
 
         try
         {
-            if (schema instanceof UserSchema)
-                t  = ((UserSchema)schema)._getTableOrQuery(key.getName(), true, false, _parseErrors);
+            if (resolvedSchema instanceof UserSchema)
+                t  = ((UserSchema)resolvedSchema)._getTableOrQuery(key.getName(), true, false, _parseErrors);
             else
-                t = schema.getTable(key.getName());
+                t = resolvedSchema.getTable(key.getName());
 
             if (t instanceof ContainerFilterable && ((ContainerFilterable)t).supportsContainerFilter() && getContainerFilter() != null)
                 ((ContainerFilterable) t).setContainerFilter(getContainerFilter());
@@ -658,14 +675,15 @@ public class Query
 
         if (t instanceof TableInfo)
         {
-            return new QueryTable(this, schema, (TableInfo)t, alias);
+            _resolveCache.get(currentSchema).put(key,new Pair(resolvedSchema,(TableInfo)t));
+            return new QueryTable(this, resolvedSchema, (TableInfo)t, alias);
         }
 
         if (t instanceof QueryDefinition)
         {
             QueryDefinitionImpl def = (QueryDefinitionImpl)t;
             List<QueryException> tableErrors = new ArrayList<>();
-            Query query = def.getQuery(schema, tableErrors, this, true);
+            Query query = def.getQuery(resolvedSchema, tableErrors, this, true);
 
             if (tableErrors.size() > 0 || query.getParseErrors().size() > 0)
             {
@@ -698,7 +716,7 @@ public class Query
                         parseError(getParseErrors(), "Could not load table: " +  key.getName() + "' has errors", node);
                     return null;
                 }
-                return new QueryTable(this, schema, ti, alias);
+                return new QueryTable(this, resolvedSchema, ti, alias);
             }
 
             // move relation to new outer query

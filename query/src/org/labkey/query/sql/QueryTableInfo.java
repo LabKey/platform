@@ -25,6 +25,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.MemTracker;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -40,6 +41,8 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     {
         super(relation._query.getSchema().getDbSchema(), name);
         _relation = relation;
+
+        assert MemTracker.getInstance().put(this);
     }
 
 

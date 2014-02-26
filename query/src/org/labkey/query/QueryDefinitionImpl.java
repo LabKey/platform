@@ -49,6 +49,7 @@ import org.labkey.api.query.ViewOptions;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -108,6 +109,8 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         _dirty = queryDef.getQueryDefId() == 0;
         if (_dirty)
             _changes = new ArrayList<>();
+
+        assert MemTracker.getInstance().put(this);
     }
 
     public QueryDefinitionImpl(User user, Container container, UserSchema schema, String name)
@@ -125,6 +128,8 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         _queryDef.setContainer(container.getId());
         _dirty = true;
         _changes = new ArrayList<>();
+
+        assert MemTracker.getInstance().put(this);
     }
 
     public boolean canInherit()
