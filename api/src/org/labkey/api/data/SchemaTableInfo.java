@@ -353,14 +353,14 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
 
     @Override
-    public ColumnInfo getColumn(String colName)
+    public ColumnInfo getColumn(@NotNull String colName)
     {
         return getColumnMetaData().getColumn(colName);
     }
 
 
     @Override
-    public ColumnInfo getColumn(FieldKey name)
+    public ColumnInfo getColumn(@NotNull FieldKey name)
     {
         if (null != name.getParent())
             return null;

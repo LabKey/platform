@@ -122,10 +122,10 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     /** Get select list for named (hopefully unique!) column to title column. */
     NamedObjectList getSelectList(String columnName);
 
-    ColumnInfo getColumn(String colName);
+    ColumnInfo getColumn(@NotNull String colName);
 
     // same as getColumn(colName.getName()), does not need to support lookup columns
-    ColumnInfo getColumn(FieldKey colName);
+    ColumnInfo getColumn(@NotNull FieldKey colName);
 
     List<ColumnInfo> getColumns();
 

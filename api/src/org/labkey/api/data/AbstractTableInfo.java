@@ -366,7 +366,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         _hasDefaultTitleColumn = defaultTitleColumn;
     }
 
-    public ColumnInfo getColumn(String name)
+    public ColumnInfo getColumn(@NotNull String name)
     {
         ColumnInfo ret = _columnMap.get(name);
         if (ret != null)
@@ -375,7 +375,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
     }
 
     @Override
-    public ColumnInfo getColumn(FieldKey name)
+    public ColumnInfo getColumn(@NotNull FieldKey name)
     {
         if (null != name.getParent())
             return null;
