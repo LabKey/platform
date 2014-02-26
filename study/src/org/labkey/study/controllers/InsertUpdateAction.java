@@ -132,35 +132,39 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         if (!study.isManualCohortAssignment() && Objects.equals(_ds.getDataSetId(), study.getParticipantCohortDataSetId()))
         {
             final List<? extends Cohort> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), getUser());
-            ColumnInfo cohortCol = datasetTable.getColumn(study.getParticipantCohortProperty());
-            if (cohortCol != null && cohortCol.getSqlTypeInt() == Types.VARCHAR)
+            String participantCohortPropertyName = study.getParticipantCohortProperty();
+            if (participantCohortPropertyName != null)
             {
-                cohortCol.setDisplayColumnFactory(new DisplayColumnFactory()
+                ColumnInfo cohortCol = datasetTable.getColumn(participantCohortPropertyName);
+                if (cohortCol != null && cohortCol.getSqlTypeInt() == Types.VARCHAR)
                 {
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    cohortCol.setDisplayColumnFactory(new DisplayColumnFactory()
                     {
-                        return new DataColumn(colInfo)
+                        public DisplayColumn createRenderer(ColumnInfo colInfo)
                         {
-                            @Override
-                            public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+                            return new DataColumn(colInfo)
                             {
-                                boolean disabledInput = isDisabledInput();
-                                String formFieldName = ctx.getForm().getFormFieldName(getBoundColumn());
-                                out.write("<select name=\"" + formFieldName + "\" " + (disabledInput ? "DISABLED" : "") + ">\n");
-                                if (getBoundColumn().isNullable())
-                                    out.write("\t<option value=\"\">");
-                                for (Cohort cohort : cohorts)
+                                @Override
+                                public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
                                 {
-                                    out.write("\t<option value=\"" + PageFlowUtil.filter(cohort.getLabel()) + "\" " +
-                                            (Objects.equals(value, cohort.getLabel()) ? "SELECTED" : "") + ">");
-                                    out.write(PageFlowUtil.filter(cohort.getLabel()));
-                                    out.write("</option>\n");
+                                    boolean disabledInput = isDisabledInput();
+                                    String formFieldName = ctx.getForm().getFormFieldName(getBoundColumn());
+                                    out.write("<select name=\"" + formFieldName + "\" " + (disabledInput ? "DISABLED" : "") + ">\n");
+                                    if (getBoundColumn().isNullable())
+                                        out.write("\t<option value=\"\">");
+                                    for (Cohort cohort : cohorts)
+                                    {
+                                        out.write("\t<option value=\"" + PageFlowUtil.filter(cohort.getLabel()) + "\" " +
+                                                (Objects.equals(value, cohort.getLabel()) ? "SELECTED" : "") + ">");
+                                        out.write(PageFlowUtil.filter(cohort.getLabel()));
+                                        out.write("</option>\n");
+                                    }
+                                    out.write("</select>");
                                 }
-                                out.write("</select>");
-                            }
-                        };
-                    }
-                });
+                            };
+                        }
+                    });
+                }
             }
         }
 
