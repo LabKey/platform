@@ -55,7 +55,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 
-import javax.servlet.ServletException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -113,14 +112,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
             {
                 public WebPartView getWebPartView(ViewContext parentCtx, Portal.WebPart webPart)
                 {
-                    try
-                    {
-                        return new AnnouncementsController.AnnouncementListWebPart(parentCtx);
-                    }
-                    catch (ServletException e)
-                    {
-                        throw new RuntimeException(e); // TODO: getWebPartView should throw Exception?
-                    }
+                    return new AnnouncementsController.AnnouncementListWebPart(parentCtx);
                 }
             },
             new DiscussionWebPartFactory()));

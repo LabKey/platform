@@ -2328,12 +2328,12 @@ public class AnnouncementsController extends SpringActionController
     {
         private VBox _vbox;
 
-        public AnnouncementListWebPart(ViewContext ctx) throws ServletException
+        public AnnouncementListWebPart(ViewContext ctx)
         {
             this(ctx, false, true);
         }
 
-        private AnnouncementListWebPart(ViewContext ctx, boolean displayAll, boolean asWebPart) throws ServletException
+        private AnnouncementListWebPart(ViewContext ctx, boolean displayAll, boolean asWebPart)
         {
             Container c = ctx.getContainer();
             User user = ctx.getUser();
