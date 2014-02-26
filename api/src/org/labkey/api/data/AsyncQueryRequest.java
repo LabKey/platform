@@ -120,6 +120,9 @@ public class AsyncQueryRequest<T>
         {
             thread.start();
 
+            // Stash the original disconnect exception if the client has dropped off
+            IOException clientDisconnectException = null;
+
             while(true)
             {
                 if (_result == null && _exception == null)
@@ -132,6 +135,12 @@ public class AsyncQueryRequest<T>
                     {
                         throw UnexpectedException.wrap(ie);
                     }
+                }
+
+                if ((_result != null || _exception != null) && clientDisconnectException != null)
+                {
+                    // The client has disconnected, now that we're done with our async work, rethrow the IOException
+                    throw clientDisconnectException;
                 }
 
                 if (_result != null)
@@ -157,7 +166,12 @@ public class AsyncQueryRequest<T>
                     throw new UnexpectedException(_exception);
                 }
 
-                checkCancelled();
+                if (clientDisconnectException == null)
+                {
+                    // Remember if the client has disconnected, but don't break out of this loop until the async
+                    // thread has finished its work and released any resources it holds
+                    clientDisconnectException = checkCancelled();
+                }
             }
         }
         finally
@@ -195,7 +209,8 @@ public class AsyncQueryRequest<T>
         }
     }
 
-    private void checkCancelled() throws IOException
+    /** @return the IOException from failing to write a space to the client, or null if the client is still connected */
+    private IOException checkCancelled()
     {
         try
         {
@@ -205,8 +220,9 @@ public class AsyncQueryRequest<T>
         catch (IOException ioe)
         {
             cancel();
-            throw ioe;
+            return ioe;
         }
+        return null;
     }
 
     public StackTraceElement[] getCreationStackTrace()

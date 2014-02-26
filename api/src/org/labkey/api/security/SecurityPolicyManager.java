@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -47,7 +48,7 @@ import java.util.Set;
 public class SecurityPolicyManager
 {
     private static final CoreSchema core = CoreSchema.getInstance();
-    private static final Cache<String, SecurityPolicy> CACHE = new DatabaseCache<>(core.getSchema().getScope(), 20000, "SecurityPolicies");
+    private static final Cache<String, SecurityPolicy> CACHE = new DatabaseCache<>(core.getSchema().getScope(), CacheManager.UNLIMITED, "SecurityPolicies");
 
     @NotNull
     public static SecurityPolicy getPolicy(@NotNull SecurableResource resource)
