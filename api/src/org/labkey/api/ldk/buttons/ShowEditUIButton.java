@@ -19,6 +19,10 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.ldk.table.SimpleButtonConfigFactory;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.PageFlowUtil;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: bimber
@@ -29,6 +33,8 @@ public class ShowEditUIButton extends SimpleButtonConfigFactory
 {
     protected String _schemaName;
     protected String _queryName;
+    private Map<String, String> _urlParamMap = null;
+
     protected Class<? extends Permission>[] _perms;
 
     public ShowEditUIButton(Module owner, String schemaName, String queryName, Class<? extends Permission>... perms)
@@ -59,9 +65,27 @@ public class ShowEditUIButton extends SimpleButtonConfigFactory
         return true;
     }
 
+    public void setUrlParamMap(Map<String, String> urlParamMap)
+    {
+        _urlParamMap = urlParamMap;
+    }
+
     @Override
     protected String getJsHandler(TableInfo ti)
     {
-        return "window.location = LABKEY.ActionURL.buildURL('ldk', 'updateQuery', null, {schemaName: '" + _schemaName + "', 'query.queryName': '" + _queryName + "'});";
+        String ret = "LDK.Utils.editUIButtonHandler(" + PageFlowUtil.jsString(_schemaName) + "," + PageFlowUtil.jsString(_queryName) + ",{";
+
+        String delim = "";
+        if (_urlParamMap != null)
+        {
+            for (String key : _urlParamMap.keySet())
+            {
+                ret += delim + PageFlowUtil.jsString(key) + ":" + PageFlowUtil.jsString(_urlParamMap.get(key));
+            }
+        }
+
+        ret += "});";
+
+        return ret;
     }
 }

@@ -444,6 +444,7 @@ api/src/org/labkey/api/ehr/buttons/ChangeQCStateButton.java -text
 api/src/org/labkey/api/ehr/buttons/CreateTaskFromIdsButton.java -text
 api/src/org/labkey/api/ehr/buttons/CreateTaskFromRecordsButton.java -text
 api/src/org/labkey/api/ehr/buttons/GoToTaskButton.java -text
+api/src/org/labkey/api/ehr/buttons/MarkCompletedButton.java -text
 api/src/org/labkey/api/ehr/dataentry/AbstractDataEntryForm.java -text
 api/src/org/labkey/api/ehr/dataentry/AbstractFormSection.java -text
 api/src/org/labkey/api/ehr/dataentry/AnimalDetailsFormSection.java -text

@@ -57,7 +57,7 @@ abstract public class AbstractFormSection implements FormSection
     private String _tabName = null;
     private TEMPLATE_MODE _templateMode = TEMPLATE_MODE.MULTI;
     private boolean _allowBulkAdd = true;
-    private boolean _supportFormSort = false;
+    private boolean _supportFormSort = true;
 
     private List<String> _configSources = new ArrayList<String>();
 
