@@ -1275,7 +1275,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
 
         @Override
-        public ColumnInfo getColumn(String name)
+        public ColumnInfo getColumn(@NotNull String name)
         {
             if ("ParticipantId".equalsIgnoreCase(name))
                 return getParticipantColumn();
