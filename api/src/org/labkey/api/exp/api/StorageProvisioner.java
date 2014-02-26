@@ -463,19 +463,44 @@ public class StorageProvisioner
 
 
     /**
-     * return a TableInfo for this domain, creating if necessary
-     * this method DOES NOT cache
+     * Return a TableInfo for this domain, creating if necessary. This method uses the DbSchema caching layer
      *
      * @param parentSchema Schema to attach table to, should NOT be the physical db schema of the storage provider
      */
     @NotNull
+    public static SchemaTableInfo createCachedTableInfo(Domain domain, DbSchema parentSchema)
+    {
+        return createTableInfo(domain, parentSchema, null, true);
+    }
+
+    /**
+     * return a TableInfo for this domain, creating if necessary
+     * this method DOES NOT cache
+     *
+     * @param parentSchema Schema to attach table to, should NOT be the physical db schema of the storage provider
+     * @deprecated usages should be migrated to createCachedTableInfo
+     */
+    @NotNull
     public static SchemaTableInfo createTableInfo(Domain domain, DbSchema parentSchema)
     {
-        return createTableInfo(domain, parentSchema, null);
+        return createTableInfo(domain, parentSchema, null, false);
+    }
+
+    /**
+     * return a TableInfo for this domain, creating if necessary
+     * this method DOES NOT cache
+     *
+     * @param parentSchema Schema to attach table to, should NOT be the physical db schema of the storage provider
+     * @deprecated usages should be migrated to createCachedTableInfo
+     */
+    @NotNull
+    public static SchemaTableInfo createTableInfo(Domain domain, DbSchema parentSchema, @Nullable String title)
+    {
+        return createTableInfo(domain, parentSchema, title, false);
     }
 
     @NotNull
-    public static SchemaTableInfo createTableInfo(Domain domain, DbSchema parentSchema, @Nullable String title)
+    private static SchemaTableInfo createTableInfo(Domain domain, DbSchema parentSchema, @Nullable String title, boolean cache)
     {
         DomainKind kind = domain.getDomainKind();
         if (null == kind)
@@ -492,21 +517,34 @@ public class StorageProvisioner
         if (null == tableName)
             tableName = _create(scope, kind, domain);
 
-        SchemaTableInfo ti =  new SchemaTableInfo(parentSchema, DatabaseTableType.TABLE, tableName, tableName, schemaName + ".\"" + tableName + "\"", title);
-        // TODO: could DataSetDefinition use this mechanism for metadata?
-        if (null != kind.getMetaDataSchemaName())
+        SchemaTableInfo ti;
+        if (cache)
         {
-            ti.setMetaDataSchemaName(schemaName);
-            TableType xmlTable = DbSchema.get(kind.getMetaDataSchemaName()).getTableXmlMap().get(kind.getMetaDataTableName());
-            ti.loadTablePropertiesFromXml(xmlTable, true);
+            assert kind.getSchemaType() == DbSchemaType.Provisioned : "provisioned DomainKinds that are cached must declare a schema type of : DbSchemaType.Provisioned";
+
+            DbSchema schema = scope.getSchema(schemaName, kind.getSchemaType());
+            ProvisionedSchemaOptions options = new ProvisionedSchemaOptions(schema, tableName, domain);
+
+            ti = schema.getTable(options);
         }
         else
         {
-            ti.setMetaDataSchemaName(schemaName);
+            // non-cached legacy version
+            ti =  new SchemaTableInfo(parentSchema, DatabaseTableType.TABLE, tableName, tableName, schemaName + ".\"" + tableName + "\"", title);
+            // TODO: could DataSetDefinition use this mechanism for metadata?
+            if (null != kind.getMetaDataSchemaName())
+            {
+                ti.setMetaDataSchemaName(schemaName);
+                TableType xmlTable = DbSchema.get(kind.getMetaDataSchemaName()).getTableXmlMap().get(kind.getMetaDataTableName());
+                ti.loadTablePropertiesFromXml(xmlTable, true);
+            }
+            else
+            {
+                ti.setMetaDataSchemaName(schemaName);
 
+            }
+            fixupProvisionedDomain(ti, kind, domain, tableName);
         }
-        fixupProvisionedDomain(ti, kind, domain, tableName);
-
         return ti;
     }
 
@@ -1054,6 +1092,21 @@ public class StorageProvisioner
             {
                 return columns;
             }
+        }
+    }
+
+    public static class ProvisionedSchemaOptions extends DbScope.SchemaTableOptions
+    {
+        private Domain _domain;
+
+        public ProvisionedSchemaOptions(DbSchema schema, String tableName, Domain domain)
+        {
+            super(schema, tableName);
+            _domain = domain;
+        }
+        public Domain getDomain()
+        {
+            return _domain;
         }
     }
 

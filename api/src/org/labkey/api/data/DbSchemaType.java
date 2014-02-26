@@ -33,6 +33,14 @@ public enum DbSchemaType
             return scope.loadSchema(rquestedSchemaName, this);
         }
     },
+    Provisioned("provisioned", CacheManager.YEAR)
+    {
+        @Override
+        DbSchema loadSchema(DbScope scope, String requestedSchemaName) throws Exception
+        {
+            return scope.loadSchema(requestedSchemaName, this);
+        }
+    },
     Bare("bare", CacheManager.HOUR)
     {
         @Override

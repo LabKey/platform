@@ -18,6 +18,8 @@ package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -117,8 +119,25 @@ abstract public class DomainKind implements Handler<String>
      */
     abstract public boolean hasNullValues(Domain domain, DomainProperty prop);
 
+    public DbSchemaType getSchemaType()
+    {
+        return DbSchemaType.Module;
+    }
+
     /** ask the domain to clear caches related to this domain */
-    abstract public void invalidate(Domain domain);
+    public void invalidate(Domain domain)
+    {
+        String schemaName = getStorageSchemaName();
+        if (null == schemaName)
+            return;
+        DbSchema schema = getScope().getSchema(schemaName, getSchemaType());
+        String storageTableName = domain.getStorageTableName();
+
+        if (null != storageTableName)
+            schema.getScope().invalidateTable(schema, storageTableName);
+        else
+            schema.getScope().invalidateSchema(schemaName, schema.getType());
+    }
 
     /**
      * Set of hard table names in this schema that are not provision tables

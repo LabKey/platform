@@ -22,6 +22,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -248,8 +249,9 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     }
 
     @Override
-    public void invalidate(Domain domain)
+    public DbSchemaType getSchemaType()
     {
+        return DbSchemaType.Provisioned;
     }
 
     @Override

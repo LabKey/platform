@@ -726,11 +726,10 @@ public class DbScope
 
     // Each scope holds the cache for all its tables.  This makes it easier to 1) configure that cache on a per-scope
     // basis and 2) invalidate schemas and their tables together
-    public SchemaTableInfo getTable(DbSchema schema, String tableName)
+    public <OptionType extends SchemaTableOptions> SchemaTableInfo getTable(OptionType options)
     {
-        return _tableCache.get(schema, tableName);
+        return _tableCache.get(options);
     }
-
 
     // Query the JDBC metadata for a list of all schemas in this database. Not used in the common case, but useful
     // for testing and as a last resort when a requested schema can't be found.
@@ -1385,6 +1384,30 @@ public class DbScope
         }
     }
 
+    /**
+     * Represents options for retrieving schemas from the cache
+     */
+    public static class SchemaTableOptions
+    {
+        private DbSchema _schema;
+        private String _tableName;
+
+        public SchemaTableOptions(DbSchema schema, String tableName)
+        {
+            _schema = schema;
+            _tableName = tableName;
+        }
+
+        public DbSchema getSchema()
+        {
+            return _schema;
+        }
+
+        public String getTableName()
+        {
+            return _tableName;
+        }
+    }
 
     // Test dialects that are in-use; only for tests that require connecting to the database.
     public static class DialectTestCase extends Assert

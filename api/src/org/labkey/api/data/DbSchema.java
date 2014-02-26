@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.api.ProvisionedDbSchema;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.ms2.MS2Service;
@@ -186,6 +187,8 @@ public class DbSchema
 
         if ("labkey".equals(metaDataName))
             return new LabKeyDbSchema(type, scope, metaDataTableNames);
+        else if (type == DbSchemaType.Provisioned)
+            return new ProvisionedDbSchema(metaDataName, type, scope, metaDataTableNames);
         else
             return new DbSchema(metaDataName, type, scope, metaDataTableNames);
     }
@@ -334,40 +337,53 @@ public class DbSchema
     }
 
 
-    @Nullable SchemaTableInfo loadTable(String tableName) throws SQLException
+    @Nullable <OptionType extends DbScope.SchemaTableOptions> SchemaTableInfo loadTable(String tableName, OptionType options) throws SQLException
     {
-        // When querying table metadata we must use the name from the database
-        String metaDataTableName = _metaDataTableNames.get(tableName);
+    // When querying table metadata we must use the name from the database
+    String metaDataTableName = _metaDataTableNames.get(tableName);
 
-        // Didn't find a hard table with that name... maybe it's a query. See #12822
-        if (null == metaDataTableName)
-            return null;
+    // Didn't find a hard table with that name... maybe it's a query. See #12822
+    if (null == metaDataTableName)
+        return null;
 
-        SchemaTableInfo ti = createTableFromDatabaseMetaData(metaDataTableName);
-        TableType xmlTable = _tableXmlMap.get(tableName);
+    SchemaTableInfo ti = createTableFromDatabaseMetaData(metaDataTableName);
+    TableType xmlTable = _tableXmlMap.get(tableName);
 
-        if (null != xmlTable)
+    if (null != xmlTable)
+    {
+        if (null == ti)
         {
-            if (null == ti)
-            {
-                ti = new SchemaTableInfo(this, DatabaseTableType.NOT_IN_DB, xmlTable.getTableName());
-            }
-
-            try
-            {
-                ti.loadTablePropertiesFromXml(xmlTable);
-            }
-            catch (IllegalArgumentException e)
-            {
-                _log.error("Malformed XML in " + ti.getSchema() + "." + xmlTable.getTableName(), e);
-            }
+            ti = new SchemaTableInfo(this, DatabaseTableType.NOT_IN_DB, xmlTable.getTableName());
         }
 
-        if (null != ti)
-            ti.setLocked(true);
-        return ti;
+        try
+        {
+            ti.loadTablePropertiesFromXml(xmlTable);
+        }
+        catch (IllegalArgumentException e)
+        {
+            _log.error("Malformed XML in " + ti.getSchema() + "." + xmlTable.getTableName(), e);
+        }
     }
 
+    if (null != ti)
+    {
+        afterLoadTable(ti, options);
+        ti.setLocked(true);
+    }
+    return ti;
+}
+
+    /**
+     * Perform any post processing on the table specific to the schema type, implementations can override this method
+     * and bind by DbSchemaType
+     * @param ti
+     * @param options
+     * @param <OptionType>
+     */
+    protected <OptionType extends DbScope.SchemaTableOptions> void afterLoadTable(SchemaTableInfo ti, OptionType options)
+    {
+    }
 
     SchemaTableInfo createTableFromDatabaseMetaData(final String tableName) throws SQLException
     {
@@ -514,7 +530,14 @@ public class DbSchema
     public SchemaTableInfo getTable(String tableName)
     {
         // Scope holds cache for all its tables
-        return _scope.getTable(this, tableName);
+        DbScope.SchemaTableOptions options = new DbScope.SchemaTableOptions(this, tableName);
+        return _scope.getTable(options);
+    }
+
+    public <OptionType extends DbScope.SchemaTableOptions> SchemaTableInfo getTable(OptionType options)
+    {
+        // Scope holds cache for all its tables
+        return _scope.getTable(options);
     }
 
     /**

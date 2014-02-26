@@ -122,20 +122,6 @@ public abstract class AbstractDomainKind extends DomainKind
 
 
     @Override
-    public void invalidate(Domain domain)
-    {
-        String schemaName = getStorageSchemaName();
-        if (null == schemaName)
-            return;
-        DbSchema schema = DbSchema.get(schemaName);
-        String storageTableName = domain.getStorageTableName();
-
-        if (null != storageTableName)
-            schema.getScope().invalidateTable(schema, storageTableName);
-    }
-
-
-    @Override
     public boolean hasNullValues(Domain domain, DomainProperty prop)
     {
         SQLFragment allRowsSQL;

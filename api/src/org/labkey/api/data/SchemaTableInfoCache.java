@@ -39,10 +39,10 @@ public class SchemaTableInfoCache
         _blockingCache = new SchemaTableInfoBlockingCache(scope);
     }
 
-    SchemaTableInfo get(@NotNull DbSchema schema, @NotNull String tableName)
+    <OptionType extends DbScope.SchemaTableOptions> SchemaTableInfo get(@NotNull OptionType options)
     {
-        String key = getCacheKey(schema, tableName);
-        return _blockingCache.get(key, new Pair<>(schema, tableName));
+        String key = getCacheKey(options.getSchema(), options.getTableName());
+        return _blockingCache.get(key, options);
     }
 
     void remove(@NotNull DbSchema schema, @NotNull String tableName)
@@ -73,11 +73,9 @@ public class SchemaTableInfoCache
             try
             {
                 @SuppressWarnings({"unchecked"})
-                Pair<DbSchema, String> pair = (Pair<DbSchema, String>)argument;
-                DbSchema schema = pair.first;
-                String tableName = pair.second;
+                DbScope.SchemaTableOptions options = (DbScope.SchemaTableOptions)argument;
 
-                return schema.loadTable(tableName);
+                return options.getSchema().loadTable(options.getTableName(), options);
             }
             catch (Exception e)
             {
@@ -94,9 +92,9 @@ public class SchemaTableInfoCache
             public Long getTimeToLive(String key, Object argument)
             {
                 @SuppressWarnings({"unchecked"})
-                DbSchema schema = ((Pair<DbSchema, String>)argument).first;
+                DbScope.SchemaTableOptions options = (DbScope.SchemaTableOptions)argument;
 
-                return schema.getType().getCacheTimeToLive();
+                return options.getSchema().getType().getCacheTimeToLive();
             }
         };
 
