@@ -629,7 +629,8 @@ public class SpecimenUtils
         }
     }
 
-    public static <T> Set<T> intersect(Set<T> left, Set<T> right)
+    @NotNull
+    public static <T> Set<T> intersect(@NotNull Set<T> left, @NotNull Set<T> right)
     {
         Set<T> intersection = new HashSet<>();
         for (T item : left)
@@ -640,6 +641,7 @@ public class SpecimenUtils
         return intersection;
     }
 
+    @NotNull
     public static Collection<Integer> getPreferredProvidingLocations(Collection<List<Specimen>> specimensBySample)
     {
         Set<Integer> locationIntersection = null;
@@ -660,7 +662,9 @@ public class SpecimenUtils
                     return locationIntersection;
             }
         }
-        return locationIntersection;
+        if (null != locationIntersection)
+            return locationIntersection;
+        return Collections.EMPTY_SET;
     }
 
     public void ensureSpecimenRequestsConfigured(boolean checkExistingStatuses) throws ServletException
