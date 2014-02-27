@@ -1314,12 +1314,12 @@ public class PageFlowUtil
         return generateSubmitButton(text, null);
     }
 
-    public static String generateSubmitButton(String text, @Nullable String onClickScript)
+    public static String generateSubmitButton(String text, @Nullable String onClick)
     {
-        return generateSubmitButton(text, onClickScript, null);
+        return generateSubmitButton(text, onClick, null);
     }
 
-    public static String generateSubmitButton(String text, String onClick, @Nullable String attributes)
+    public static String generateSubmitButton(String text, @Nullable String onClick, @Nullable String attributes)
     {
         return generateSubmitButton(text, onClick, attributes, true);
     }
@@ -1352,9 +1352,10 @@ public class PageFlowUtil
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append("<input type=\"submit\" style=\"display: none;\" id=\"");
+        // include a hidden submit element to allow capturing 'enter' key
+        sb.append("<div class=\"hidden-submit\"><input type=\"submit\" tab-index=\"-1\" id=\"");
         sb.append(id);
-        sb.append("\">");
+        sb.append("\"/></div>");
 
         if (enabled)
             sb.append("<a class=\"labkey-button\"");
