@@ -3005,16 +3005,16 @@ LABKEY.DataRegion._showFlagDialog = function(config)
                     el.dom.src = config.imgSrcFlagged;
                     el.dom.title = comment;
                     if (config.imgClassUnflagged)
-                        (el.removeCls||el.removeClass)(config.imgClassUnflagged);
-                    (el.addCls||el.addClass)(config.imgClassFlagged);
+                        el.removeClass(config.imgClassUnflagged);
+                    el.addClass(config.imgClassFlagged);
                 }
                 else
                 {
                     el.dom.src = config.imgSrcUnflagged;
                     el.dom.title = config.imgTitle;
                     if (config.imgClassFlagged)
-                        (el.removeCls||el.removeClass)(config.imgClassFlagged);
-                    (el.addCls||el.addClass)(config.imgClassUnflagged);
+                        el.removeClass(config.imgClassFlagged);
+                    el.addClass(config.imgClassUnflagged);
                 }
             }
         };
