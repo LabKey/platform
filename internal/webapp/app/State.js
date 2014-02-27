@@ -419,6 +419,10 @@ Ext.define('LABKEY.app.controller.State', {
         return newFilters;
     },
 
+    prependFilter : function(filter, skipState) {
+        this.setFilters([filter].concat(this.filters), skipState);
+    },
+
     loadFilters : function(stateIndex) {
         var previousState =  this.state.getAt(stateIndex);
         if (Ext.isDefined(previousState)) {
