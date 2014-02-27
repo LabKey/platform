@@ -719,7 +719,7 @@ public class ModuleLoader implements Filter
             throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ". LabKey Server requires Java 7.");
 
         if (SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_1_8))
-            _log.warn(("Untested Java runtime version: " + SystemUtils.JAVA_VERSION + ": we currently recommend using Java 7 in all production environments."));
+            _log.warn(("Untested Java runtime version: " + SystemUtils.JAVA_VERSION + ". We currently recommend using Java 7 in all production environments."));
     }
 
     // Returns null if servlet container name is not recognized
