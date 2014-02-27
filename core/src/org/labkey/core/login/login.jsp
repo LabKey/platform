@@ -43,11 +43,11 @@
 
     if (agreeOnly)
     {
-        %><form name="login" method="POST" id="loginform" action="<%=buildURL(LoginController.AgreeToTermsAction.class)%>"><%
+        %><form name="login" method="POST" action="<%=buildURL(LoginController.AgreeToTermsAction.class)%>"><%
     }
     else
     {
-        %><form name="login" method="POST" id="loginform" action="<%=buildURL(LoginController.LoginAction.class)%>"><%
+        %><form name="login" method="POST" action="<%=buildURL(LoginController.LoginAction.class)%>"><%
     } %>
     <labkey:csrf/>
     <table><%
@@ -93,11 +93,10 @@
             <input type=hidden name=skipProfile value="1"><%
             }
             %>
-            <%=PageFlowUtil.generateButton((bean.agreeOnly ? "Agree" : "Sign In"), "#", "document.getElementById('loginform').submit();")%>
+            <%=PageFlowUtil.generateSubmitButton((bean.agreeOnly ? "Agree" : "Sign In"))%>
         </td></tr>
     </table>
     <input type="hidden" id="urlhash" name="urlhash">
-    <input type="submit" style="position: absolute; left: -9999px; width: 1px; height: 1px;">
 </form>
 <%-- this should be controlled by the authentication provider --%>
 <%

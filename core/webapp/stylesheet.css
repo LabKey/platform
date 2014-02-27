@@ -367,6 +367,15 @@ div.labkey-status-info, .labkey-status-info
 
 
 /* ********* Button bars ******** */
+/* Used for hidden submit inputs on forms (e.g. generateSubmitButton)*/
+.hidden-submit {
+    border: 0 none;
+    height: 0;
+    width: 0;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
 
 /* Used for button bars across the site */
 div.labkey-button-bar,

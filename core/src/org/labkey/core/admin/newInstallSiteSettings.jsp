@@ -61,5 +61,4 @@
         <span style="font-size: smaller; font-style: italic;">we strongly recommend this basic level of reporting</span>
     </div>
     <%=generateSubmitButton("Next")%>
-    <input type="submit" style="position: absolute; left: -9999px; width: 1px; height: 1px;">
 </form>
