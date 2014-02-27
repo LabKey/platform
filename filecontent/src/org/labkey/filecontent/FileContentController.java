@@ -456,11 +456,8 @@ public class FileContentController extends SpringActionController
 
         public ModelAndView getView(FileContentForm form, BindException errors) throws Exception
         {
-            FilesWebPart part;
-            if (null == form.getFileSetName())
-                part = new ManageWebPart(getContainer());
-            else
-                part = new ManageWebPart(getContainer(), form.getFileSetName());
+            FilesWebPart part = new FilesWebPart(getContainer(), form.getFileSetName());
+
             if (null != form.getPath())
             {
                 try

@@ -1183,6 +1183,7 @@ Ext4.define('File.panel.Browser', {
             collapseMode : 'mini',
             split : true,
             useArrows : true,
+            border: false,
             listeners : {
                 beforerender : function(t) { this.tree = t; },
                 select : this.onTreeSelect,
@@ -1739,7 +1740,6 @@ Ext4.define('File.panel.Browser', {
             flex : 4,
             region : 'center',
             border: false,
-            style : 'border-top: 1px solid #b4b4b4;',
             viewConfig : {
                 emptyText : '<span style="margin-left: 5px; opacity: 0.3;"><i>No Files Found</i></span>'
             }
@@ -1852,6 +1852,7 @@ Ext4.define('File.panel.Browser', {
             cls : 'upload-files-panel',
             hidden : !this.expandUpload,
             fileSystem : this.fileSystem,
+            style: 'border-bottom: 1px solid #b4b4b4;',
             listeners : {
                 closeUploadPanel : function() {
                     this.onUpload();
@@ -1921,6 +1922,8 @@ Ext4.define('File.panel.Browser', {
             region : 'south',
             minHeight : 100,
             tpl : detailsTpl,
+            border: false,
+            style: 'border-top: 1px solid #b4b4b4;',
             listeners: {
                 afterrender: {
                     fn: function(p) { Ext4.defer(this.detailCheck, 250, this); },

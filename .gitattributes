@@ -1452,7 +1452,6 @@ filecontent/src/org/labkey/filecontent/FileRoot.java -text
 filecontent/src/org/labkey/filecontent/FileRootManager.java -text
 filecontent/src/org/labkey/filecontent/FileSystemAttachmentParent.java -text
 filecontent/src/org/labkey/filecontent/FileWebdavProvider.java -text
-filecontent/src/org/labkey/filecontent/ManageWebPart.java -text
 filecontent/src/org/labkey/filecontent/message/FileContentDigestProvider.java -text
 filecontent/src/org/labkey/filecontent/message/FileEmailConfig.java -text
 filecontent/src/org/labkey/filecontent/message/ShortMessageDigest.java -text

@@ -435,14 +435,12 @@ public class PipelineController extends SpringActionController
 
         public BrowseWebPart(Path startPath)
         {
-            super(getContextContainer());
+            super(getContextContainer(), null);
 
             FilesForm bean = getModelBean();
             ViewContext context = getViewContext();
 
             bean.setDirectory(startPath);
-            //bean.setShowAddressBar(true);
-            //bean.setShowFolderTree(true);
             bean.setFolderTreeCollapsed(false);
             bean.setShowDetails(true);
             bean.setAutoResize(false);
