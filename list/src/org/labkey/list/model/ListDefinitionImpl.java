@@ -16,6 +16,7 @@
 
 package org.labkey.list.model;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -68,6 +69,7 @@ import static org.labkey.api.util.GUID.makeGUID;
 public class ListDefinitionImpl implements ListDefinition
 {
     protected static final String NAMESPACE_PREFIX = "List";
+    private static final Logger LOG = Logger.getLogger(ListDefinitionImpl.class);
 
     static public ListDefinitionImpl of(ListDef def)
     {
@@ -624,6 +626,7 @@ public class ListDefinitionImpl implements ListDefinition
         {
             /* Return a null table -- configuration failed */
             table = null;
+            LOG.error("Failed to construct list table", e);
         }
 
         return table;
@@ -658,7 +661,7 @@ public class ListDefinitionImpl implements ListDefinition
         return urlDetails(pk, getContainer());
     }
 
-    public ActionURL urlDetails(@Nullable Object pk, Container c)              //TODO: workbook touchpoint
+    public ActionURL urlDetails(@Nullable Object pk, Container c)
     {
         ActionURL url = urlFor(ListController.DetailsAction.class, c);
         // Can be null if caller will be filling in pk (e.g., grid edit column)
@@ -674,13 +677,11 @@ public class ListDefinitionImpl implements ListDefinition
         return urlFor(ListController.HistoryAction.class, c);
     }
 
-    // TODO: workbook touchpoint, these temp overloads may go away
     public ActionURL urlShowData()
     {
         return urlShowData(getContainer());
     }
 
-    // TODO: workbook touchpoint, these temp overloads may go away
     public ActionURL urlFor(Class<? extends Controller> actionClass)
     {
         return urlFor(actionClass, getContainer());

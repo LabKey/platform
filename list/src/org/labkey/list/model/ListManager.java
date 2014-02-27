@@ -138,6 +138,18 @@ public class ListManager implements SearchService.DocumentProvider
         return ownLists;
     }
 
+    /**
+     * Utility method now that ListTable is ContainerFilter aware; TableInfo.getSelectName() returns now returns null
+     * @param ti
+     * @return
+     */
+    String getListTableName(TableInfo ti)
+    {
+        if (ti instanceof ListTable)
+            return ((ListTable)ti).getRealTable().getSelectName();
+        else return null;
+    }
+
     public ListDef getList(Container container, int listId)
     {
         SimpleFilter filter = new PkFilter(getListMetadataTable(), new Object[]{container, listId});
@@ -687,11 +699,11 @@ public class ListManager implements SearchService.DocumentProvider
     {
         TableInfo table = list.getTable(User.getSearchUser());
 
-        if (null != table && null != table.getSelectName())
+        if (null != table && null != getListTableName(table))
         {
             // Using EXISTS query should be reasonably efficient.  This form (using case) seems to work on PostgreSQL and SQL Server
             SQLFragment sql = new SQLFragment("SELECT CASE WHEN EXISTS (SELECT 1 FROM ");
-            sql.append(table.getSelectName());
+            sql.append(getListTableName(table));
             sql.append(" WHERE Modified > (SELECT LastIndexed FROM ").append(getListMetadataTable().getSelectName());
             sql.append(" WHERE ListId = ? AND Container = ?");
             sql.add(list.getListId());
@@ -722,7 +734,7 @@ public class ListManager implements SearchService.DocumentProvider
             if (null != keyColumn)
             {
                 String keySelectName = keyColumn.getSelectName();
-                new SqlExecutor(ti.getSchema()).execute("UPDATE " + ti.getSelectName() + " SET LastIndexed = ? WHERE " +
+                new SqlExecutor(ti.getSchema()).execute("UPDATE " + getListTableName(ti) + " SET LastIndexed = ? WHERE " +
                         keySelectName + " = ?", new Timestamp(ms), pk);
             }
         }
@@ -1203,7 +1215,7 @@ public class ListManager implements SearchService.DocumentProvider
     {
         if (dialect.isSqlServer())
         {
-            SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(table.getSelectName()).append(" ON\n");
+            SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(getListTableName(table)).append(" ON\n");
             ModuleUpgrader.getLogger().info(check.toString());
             new SqlExecutor(table.getSchema()).execute(check);
         }
@@ -1230,7 +1242,7 @@ public class ListManager implements SearchService.DocumentProvider
                 }
 
                 SQLFragment keyupdate = new SQLFragment("SELECT setval('").append(sequence).append("'");
-                keyupdate.append(", coalesce((SELECT MAX(").append(dialect.quoteIdentifier(listDef.getKeyName().toLowerCase())).append(")+1 FROM ").append(table.getSelectName());
+                keyupdate.append(", coalesce((SELECT MAX(").append(dialect.quoteIdentifier(listDef.getKeyName().toLowerCase())).append(")+1 FROM ").append(getListTableName(table));
                 keyupdate.append("), 1), false);");
                 ModuleUpgrader.getLogger().info("Post Key Update");
                 ModuleUpgrader.getLogger().info(keyupdate.toString());
@@ -1243,7 +1255,7 @@ public class ListManager implements SearchService.DocumentProvider
         }
         else if (dialect.isSqlServer())
         {
-            SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(table.getSelectName()).append(" OFF");
+            SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(getListTableName(table)).append(" OFF");
             ModuleUpgrader.getLogger().info(check.toString());
             new SqlExecutor(table.getSchema()).execute(check);
         }
@@ -1277,7 +1289,7 @@ public class ListManager implements SearchService.DocumentProvider
 
         SQLFragment fromSQL = QueryService.get().getSelectSQL(fromTable, fromColumns.values(), null, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
 
-        SQLFragment insertInto = new SQLFragment("INSERT INTO ").append(toTable.getSelectName());
+        SQLFragment insertInto = new SQLFragment("INSERT INTO ").append(getListTableName(toTable));
         insertInto.append(" (");
         SQLFragment insertSelect = new SQLFragment("SELECT ");
         String sep = "";
@@ -1383,11 +1395,20 @@ public class ListManager implements SearchService.DocumentProvider
                 DomainKind kind = domain.getDomainKind();
                 if (kind instanceof ListDomainType)
                 {
-                    LOG.warn("Found list that has not been migrated to a hard table: " + domain.getTypeURI());
+                    LOG.error("Found list that has not been migrated to a hard table: " + domain.getTypeURI());
                     continue;
                 }
-                if (list.getTable(u).getColumn(FieldKey.fromParts("container")) != null)
+
+                try
+                {
+                    if (list.getTable(u).getColumn(FieldKey.fromParts("container")) != null)
+                        continue;
+                }
+                catch (Exception e)
+                {
+                    LOG.error("Exception retrieving metadata for list: " + list.getName() + ", " + domain.getStorageTableName(), e);
                     continue;
+                }
 
                 PropertyStorageSpec newContainerSpec =  new PropertyStorageSpec("container", JdbcType.VARCHAR).setEntityId(true).setNullable(false);
                 newContainerSpec.setDefaultValue(list.getContainer().getEntityId());

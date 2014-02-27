@@ -192,19 +192,20 @@ public class ListImporter
                         }
 
                         TableInfo ti = def.getTable(user);
+                        String tableName =  ListManager.get().getListTableName(ti);
 
-                        if (null != ti)
+                        if (null != ti && null != tableName)
                         {
                             try (DbScope.Transaction transaction = ti.getSchema().getScope().ensureTransaction())
                             {
                                 // pre-process
-                                if (supportAI && null != ti.getSelectName())
+                                if (supportAI)
                                 {
                                     SqlDialect dialect = ti.getSqlDialect();
 
                                     if (dialect.isSqlServer())
                                     {
-                                        SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(ti.getSelectName()).append(" ON\n");
+                                        SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(tableName).append(" ON\n");
                                         new SqlExecutor(ti.getSchema()).execute(check);
                                     }
                                 }
@@ -213,7 +214,7 @@ public class ListImporter
                                 for (ValidationException v : batchErrors.getRowErrors())
                                     errors.add(v.getMessage());
 
-                                if (supportAI && null != ti.getSelectName())
+                                if (supportAI)
                                 {
                                     SqlDialect dialect = ti.getSqlDialect();
 
@@ -236,14 +237,14 @@ public class ListImporter
                                             }
 
                                             SQLFragment keyupdate = new SQLFragment("SELECT setval('").append(sequence).append("'");
-                                            keyupdate.append(", coalesce((SELECT MAX(").append(dialect.quoteIdentifier(def.getKeyName().toLowerCase())).append(")+1 FROM ").append(ti.getSelectName());
+                                            keyupdate.append(", coalesce((SELECT MAX(").append(dialect.quoteIdentifier(def.getKeyName().toLowerCase())).append(")+1 FROM ").append(tableName);
                                             keyupdate.append("), 1), false);");
                                             new SqlExecutor(ti.getSchema()).execute(keyupdate);
                                         }
                                     }
                                     else if (dialect.isSqlServer())
                                     {
-                                        SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(ti.getSelectName()).append(" OFF\n");
+                                        SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(tableName).append(" OFF\n");
                                         new SqlExecutor(ti.getSchema()).execute(check);
                                     }
                                 }
@@ -257,9 +258,9 @@ public class ListImporter
                                 {
                                     SqlDialect dialect = ti.getSqlDialect();
 
-                                    if (dialect.isSqlServer() && null != ti.getSelectName())
+                                    if (dialect.isSqlServer())
                                     {
-                                        SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(ti.getSelectName()).append(" OFF\n");
+                                        SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(tableName).append(" OFF\n");
                                         new SqlExecutor(ti.getSchema()).execute(check);
                                     }
                                 }
