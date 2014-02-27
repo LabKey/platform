@@ -16,6 +16,7 @@
 package org.labkey.study.importer;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.study.TimepointType;
 import org.labkey.study.model.StudyManager;
 
 import java.io.IOException;
@@ -28,6 +29,6 @@ import java.util.List;
  */
 public interface VisitMapReader
 {
-    List<VisitMapRecord> getVisitMapRecords() throws VisitMapParseException, IOException;
+    List<VisitMapRecord> getVisitMapRecords(TimepointType timepointType) throws VisitMapParseException, IOException;
     @NotNull List<StudyManager.VisitAlias> getVisitImportAliases();
 }

@@ -20,6 +20,7 @@ import org.labkey.api.iterator.BeanIterator;
 import org.labkey.api.iterator.CloseableFilteredIterator;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.Filter;
 import org.labkey.api.iterator.IteratorUtil;
 import org.labkey.study.model.StudyManager;
@@ -43,7 +44,7 @@ public class DataFaxVisitMapReader implements VisitMapReader
         _content = content;
     }
 
-    public List<VisitMapRecord> getVisitMapRecords() throws IOException, VisitMapParseException
+    public List<VisitMapRecord> getVisitMapRecords(TimepointType timepointType) throws IOException, VisitMapParseException
     {
         String tsv = _content.replace('|','\t');
 

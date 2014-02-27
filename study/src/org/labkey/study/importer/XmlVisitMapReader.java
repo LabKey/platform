@@ -21,6 +21,7 @@ import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.study.model.StudyManager;
@@ -81,7 +82,7 @@ public class XmlVisitMapReader implements VisitMapReader
         }
     }
 
-    public List<VisitMapRecord> getVisitMapRecords() throws VisitMapParseException
+    public List<VisitMapRecord> getVisitMapRecords(TimepointType timepointType) throws VisitMapParseException
     {
         VisitMapDocument.VisitMap.Visit[] visitsXml = _visitMapXml.getVisitArray();
         List<VisitMapRecord> visits = new ArrayList<>(visitsXml.length);
@@ -89,7 +90,8 @@ public class XmlVisitMapReader implements VisitMapReader
         for (VisitMapDocument.VisitMap.Visit visitXml : visitsXml)
         {
             double maxSequenceNum = visitXml.isSetMaxSequenceNum() ? visitXml.getMaxSequenceNum() : visitXml.getSequenceNum();
-            double protocolDay = visitXml.isSetProtocolDay() ? visitXml.getProtocolDay() : visitXml.getSequenceNum();
+            double protocolDay = visitXml.isSetProtocolDay() ? visitXml.getProtocolDay() :
+                    (timepointType == TimepointType.DATE ? (double)Math.round((visitXml.getSequenceNum() + maxSequenceNum)/2) : 0);
 
             List<Integer> required = new ArrayList<>();
             List<Integer> optional = new ArrayList<>();

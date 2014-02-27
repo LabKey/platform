@@ -39,7 +39,7 @@ class VisitMapRecord
 
     private final double _sequenceNumberMin;
     private final double _sequenceNumberMax;
-    private final double _sequenceNumberTarget;
+    private final double _protocolDay;
     private final boolean _showByDefault;
     private final Visit.Type _visitType;
     private final String _visitLabel;
@@ -57,14 +57,14 @@ class VisitMapRecord
     private final int _chronologicalOrder;
     private final String _sequenceNumHandling;
 
-    public VisitMapRecord(double sequenceNumberMin, double sequenceNumberMax, double sequenceNumberTarget,
+    public VisitMapRecord(double sequenceNumberMin, double sequenceNumberMax, double protocolDay,
                           String visitType, String visitLabel, String visitDescription,
                           String cohort, int visitDatePlate, int[] requiredPlates, int[] optionalPlates, boolean showByDefault,
                           int displayOrder, int chronologicalOrder, String sequenceNumHandling)
     {
         _sequenceNumberMin = sequenceNumberMin;
         _sequenceNumberMax = sequenceNumberMax;
-        _sequenceNumberTarget = sequenceNumberTarget;
+        _protocolDay = protocolDay;
         _visitType = getType(visitType);
         _visitLabel = visitLabel;
         _visitDescription = visitDescription;
@@ -98,7 +98,8 @@ class VisitMapRecord
         else
             _sequenceNumberMax = _sequenceNumberMin;
 
-        _sequenceNumberTarget = record.get("sequenceNumberTarget") != null ? (Double)record.get("sequenceNumberTarget") : _sequenceNumberMin;
+        Double protocolDay = (Double)record.get("protocolDay");
+        _protocolDay = null != protocolDay ? protocolDay : 0;
         _visitType = getType((String)record.get("visitType"));
         _visitLabel = (String)record.get("visitLabel");
         _visitDescription = (String)record.get("visitDescription");
@@ -126,7 +127,7 @@ class VisitMapRecord
 
     public double getSequenceNumMin()           { return _sequenceNumberMin; }
     public double getSequenceNumMax()           { return _sequenceNumberMax; }
-    public double getSequenceNumTarget()           { return _sequenceNumberTarget; }
+    public double getProtocolDay()           { return _protocolDay; }
     public int getMissedNotificationPlate() { return _missedNotificationPlate; }
     public int[] getOptionalPlates()        { return _optionalPlates; }
     public int[] getRequiredPlates()        { return _requiredPlates; }

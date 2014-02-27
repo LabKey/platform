@@ -178,7 +178,7 @@ public class VisitMapImporter
 
         try
         {
-            records = reader.getVisitMapRecords();
+            records = reader.getVisitMapRecords(study.getTimepointType());
             aliases = reader.getVisitImportAliases();
         }
         catch (VisitMapParseException x)
@@ -231,7 +231,7 @@ public class VisitMapImporter
             if (visit == null)
             {
                 visit = new VisitImpl(study.getContainer(), record.getSequenceNumMin(), record.getSequenceNumMax(), record.getVisitLabel(), record.getVisitType());
-                visit.setProtocolDay(record.getSequenceNumTarget());
+                visit.setProtocolDay(record.getProtocolDay());
                 visit.setDescription(record.getVisitDescription());
                 visit.setVisitDateDatasetId(record.getVisitDatePlate());
                 visit.setShowByDefault(record.isShowByDefault());
@@ -259,10 +259,10 @@ public class VisitMapImporter
                     visit = _ensureMutable(visit);
                     visit.setSequenceNumMax(record.getSequenceNumMax());
                 }
-                if (visit.getProtocolDay() != record.getSequenceNumTarget())
+                if (visit.getProtocolDay() != record.getProtocolDay())
                 {
                     visit = _ensureMutable(visit);
-                    visit.setProtocolDay(record.getSequenceNumTarget());
+                    visit.setProtocolDay(record.getProtocolDay());
                 }
                 if (visit.isShowByDefault() != record.isShowByDefault())
                 {

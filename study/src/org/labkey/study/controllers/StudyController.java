@@ -1754,8 +1754,6 @@ public class StudyController extends BaseStudyController
             {
                 if (visitMgr.isVisitOverlapping(visitBean))
                     errors.reject(null, "Visit range overlaps an existing visit in this study. Please enter a different range.");
-                else if (visitBean.getProtocolDay() < visitBean.getSequenceNumMin() || visitBean.getProtocolDay() > visitBean.getSequenceNumMax())
-                    errors.reject(null, "Visit protocol day must be within the sequence range. Please enter a different target.");
             }
         }
 
