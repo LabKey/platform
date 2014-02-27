@@ -41,8 +41,6 @@
 
     ActionURL projConfig = urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
     int height = bean.getSize();
-    if(height == 0)
-        height = 350;
 
     if (!bean.isEnabled())
     {
@@ -68,39 +66,27 @@
         white-space: nowrap;
     }
 </style>
-<!-- Set a fixed height for this div so that the whole page doesn't relayout when the file browser renders into it -->
 <div id="<%=h(bean.getContentId())%>"></div>
 <script type="text/javascript">
     Ext4.onReady(function() {
-        var autoResize = <%=bean.isAutoResize()%>;
-        var fileSystem = Ext4.create('File.system.Webdav', {
-            rootPath  : <%=q(bean.getRootPath())%>,
-            rootOffset: <%=q(bean.getRootOffset())%>,
-            rootName : 'fileset'
-        });
-
-        var buttonActions = [];
-
-        <%
-        for (FilesWebPart.FilesForm.actions action  : bean.getButtonConfig()) {
-        %>
-        buttonActions.push('<%=text(action.name())%>');
-        <%
-        }
-        %>
+        var buttonActions = [<% String sep = ""; for(FilesWebPart.FilesForm.actions action  : bean.getButtonConfig()) {%><%=text(sep)%>'<%=text(action.name())%>'<% sep = ","; }%>];
 
         var fb = Ext4.create('File.panel.Browser', {
-            renderTo : <%=q(bean.getContentId())%>,
-            containerPath : <%=q(c.getPath())%>,
+            renderTo: <%=q(bean.getContentId())%>,
+            containerPath: <%=q(c.getPath())%>,
+            fileSystem: Ext4.create('File.system.Webdav', {
+                rootPath: <%=q(bean.getRootPath())%>,
+                rootOffset: <%=q(bean.getRootOffset())%>,
+                rootName: 'fileset'
+            }),
             height: <%= height %>,
             showFolderTree: <%=bean.isShowFolderTree()%>,
             expandFolderTree: <%=!bean.isFolderTreeCollapsed()%>,
             disableGeneralAdminSettings: <%=bean.isDisableGeneralAdminSettings()%>,
             showDetails: <%=bean.isShowDetails()%>,
             expandUpload: <%=bean.isExpandFileUpload()%>,
-            isPipelineRoot : <%=bean.isPipelineRoot()%>,
-            adminUser : <%=c.hasPermission(getUser(), AdminPermission.class)%>,
-            fileSystem: fileSystem,
+            isPipelineRoot: <%=bean.isPipelineRoot()%>,
+            adminUser: <%=c.hasPermission(getUser(), AdminPermission.class)%>,
             tbarItems: buttonActions
             <%
                 if (bean.isShowDetails())
@@ -108,11 +94,7 @@
             %>
             ,listeners: {
                 afterrender: {
-                    fn: function(f) {
-                        var size = Ext4.getBody().getSize();
-                        LABKEY.ext4.Util.resizeToViewport(f, size.width, size.height, 20, null);
-                        f.detailCheck();
-                    },
+                    fn: function(f) { f.detailCheck(); },
                     single: true
                 }
             }
@@ -129,8 +111,12 @@
             fb.detailCheck();
         };
 
-        if (autoResize) {
+        if (<%=bean.isAutoResize()%>) {
             Ext4.EventManager.onWindowResize(_resize);
+            Ext4.defer(function(){
+                var size = Ext4.getBody().getBox();
+                _resize(size.width, size.height);
+            }, 300);
         }
     });
 </script>

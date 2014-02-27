@@ -33,6 +33,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -63,7 +64,6 @@ import java.util.List;
 public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 {
     public static final String PART_NAME = "Files";
-    public static final String EXT3_PART_NAME = "Files (Old)";
     private static final Logger _log = Logger.getLogger(FilesWebPart.class);
 
     private boolean wide = true;
@@ -73,35 +73,17 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     private boolean _isPipelineFiles;       // viewing @pipeline files
 
     private static final String JSP = "/org/labkey/api/files/view/filesWebPart.jsp";
-    private static final String EXT3_JSP = "/org/labkey/api/files/view/fileContent.jsp";
+//    private static final String EXT3_JSP = "/org/labkey/api/files/view/fileContent.jsp";
     private static final String JSP_RIGHT = "/org/labkey/filecontent/view/files.jsp";
 
-
-    public FilesWebPart(Container c)
+    public FilesWebPart(Container c, @Nullable String fileSet)
     {
-        this(c, JSP);
-    }
-
-    public FilesWebPart(Container c, @Nullable String jspPath)
-    {
-        super(jspPath == null ? JSP : jspPath);
+        super(JSP);
         container = c;
         setModelBean(new FilesForm());
         setFileSet(null);
         setTitle(PART_NAME);
         setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c));
-
-        init();
-    }
-
-    protected void init()
-    {
-        createConfig();
-    }
-
-    protected FilesWebPart(Container c, String fileSet, @Nullable String jspPath)
-    {
-        this(c, jspPath);
 
         if (fileSet != null)
         {
@@ -148,13 +130,108 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                 setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("fileSetName", fileSet));
             }
         }
+
         init();
     }
 
-    protected FilesForm createConfig()
+    public FilesWebPart(ViewContext ctx, Portal.WebPart webPartDescriptor)
+    {
+        this(ctx.getContainer(), StringUtils.trimToNull(webPartDescriptor.getPropertyMap().get("fileSet")));
+
+        CustomizeFilesWebPartView.CustomizeWebPartForm form = new CustomizeFilesWebPartView.CustomizeWebPartForm(webPartDescriptor);
+        getModelBean().setFolderTreeCollapsed(!form.isFolderTreeVisible());
+        String rootOffset = form.getRootOffset();
+
+        if (null != rootOffset)
+        {
+            String path = getModelBean().getRootPath();
+            path += path.endsWith("/") ? "" : "/";
+            String offset = rootOffset.replaceAll("^/", "");
+            path += offset;
+            getModelBean().setRootPath(path);
+        }
+
+        String size = webPartDescriptor.getPropertyMap().get("size");
+        if (size != null)
+        {
+            getModelBean().setSize(Integer.parseInt(size));
+        }
+
+        getModelBean().setRootOffset(rootOffset);
+
+
+        setWide(null == webPartDescriptor.getLocation() || HttpView.BODY.equals(webPartDescriptor.getLocation()));
+        setShowAdmin(container.hasPermission(ctx.getUser(), AdminPermission.class));
+
+        if (!isWide())
+        {
+            _path = JSP_RIGHT;
+            _page = JspLoader.createPage((String)null, _path);
+        }
+    }
+
+    protected void init()
+    {
+        // Determine the security policy for this webpart
+        SecurityPolicy policy = SecurityPolicyManager.getPolicy(getSecurableResource());
+        getConfiguredForm(policy);
+    }
+
+    protected List<FilesForm.actions> getConfiguredActions(SecurityPolicy policy)
+    {
+        List<FilesForm.actions> actions = new ArrayList<>();
+        ViewContext context = getViewContext();
+        User user = context.getUser();
+
+        // Navigation actions
+        actions.add(FilesForm.actions.folderTreeToggle);
+        actions.add(FilesForm.actions.parentFolder);
+        actions.add(FilesForm.actions.refresh);
+
+        // Actions not based on the current selection
+        if (policy.hasPermission(user, InsertPermission.class))
+            actions.add(FilesForm.actions.createDirectory);
+
+        // Actions based on the current selection
+        actions.add(FilesForm.actions.download);
+        if (policy.hasPermission(user, DeletePermission.class))
+            actions.add(FilesForm.actions.deletePath);
+
+        if (policy.hasPermission(user, UpdatePermission.class))
+        {
+            actions.add(FilesForm.actions.renamePath);
+            actions.add(FilesForm.actions.movePath);
+        }
+
+        if (policy.hasPermission(user, InsertPermission.class))
+        {
+            actions.add(FilesForm.actions.editFileProps);
+            actions.add(FilesForm.actions.upload);
+        }
+
+        if (canDisplayPipelineActions() && container.hasPermission(user, InsertPermission.class))
+        {
+            actions.add(FilesForm.actions.importData);
+        }
+
+        // users can manage their email notification settings
+        if (!user.isGuest())
+            actions.add(FilesForm.actions.emailPreferences);
+
+        if (container.hasPermission(user, AdminPermission.class))
+        {
+            actions.add(FilesForm.actions.auditLog);
+            actions.add(FilesForm.actions.customize);
+        }
+
+        return actions;
+    }
+
+    protected FilesForm getConfiguredForm(SecurityPolicy policy)
     {
         FilesForm form = getModelBean();
         ViewContext context = getViewContext();
+        User user = context.getUser();
 
         if (form == null)
         {
@@ -174,127 +251,22 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         form.setEnabled(!svc.isFileRootDisabled(getRootContext().getContainer()));
         form.setContentId("fileContent" + System.identityHashCode(this));
 
-        List<FilesForm.actions> actions = new ArrayList<>();
-
-        // Navigation actions
-        actions.add(FilesForm.actions.folderTreeToggle);
-        actions.add(FilesForm.actions.parentFolder);
-        actions.add(FilesForm.actions.refresh);
-
-        // Actions not based on the current selection
-        SecurityPolicy policy = SecurityPolicyManager.getPolicy(getSecurableResource());
-        if (policy.hasPermission(getViewContext().getUser(), InsertPermission.class))
-            actions.add(FilesForm.actions.createDirectory);
-
-        // Actions based on the current selection
-        actions.add(FilesForm.actions.download);
-        if (policy.hasPermission(getViewContext().getUser(), DeletePermission.class))
+        if (policy.hasPermission(user, InsertPermission.class))
         {
-            actions.add(FilesForm.actions.deletePath);
-        }
-
-        if (policy.hasPermission(getViewContext().getUser(), UpdatePermission.class))
-        {
-            actions.add(FilesForm.actions.renamePath);
-            actions.add(FilesForm.actions.movePath);
-        }
-
-        if (policy.hasPermission(getViewContext().getUser(), InsertPermission.class))
-        {
-            actions.add(FilesForm.actions.editFileProps);
-            actions.add(FilesForm.actions.upload);
-
-            FilesAdminOptions options = svc.getAdminOptions(context.getContainer());
+            FilesAdminOptions options = svc.getAdminOptions(container);
             boolean expandUpload = BooleanUtils.toBooleanDefaultIfNull(options.getExpandFileUpload(), true);
-
             form.setExpandFileUpload(expandUpload);
         }
 
         if (canDisplayPipelineActions())
         {
             form.setPipelineRoot(true);
-            if (context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
-            {
-                actions.add(FilesForm.actions.importData);
-            }
-        }
-        // users can manage their email notification settings
-        if (!context.getUser().isGuest())
-            actions.add(FilesForm.actions.emailPreferences);
-
-        if (context.getContainer().hasPermission(context.getUser(), AdminPermission.class))
-        {
-            actions.add(FilesForm.actions.auditLog);
-            actions.add(FilesForm.actions.customize);
         }
 
+        List<FilesForm.actions> actions = getConfiguredActions(policy);
         form.setButtonConfig(actions.toArray(new FilesForm.actions[actions.size()]));
 
         return form;
-    }
-
-    public FilesWebPart(ViewContext ctx, Portal.WebPart webPartDescriptor, boolean isExt4)
-    {
-        this(ctx.getContainer(), StringUtils.trimToNull(webPartDescriptor.getPropertyMap().get("fileSet")), isExt4 ? JSP : EXT3_JSP);
-
-        CustomizeFilesWebPartView.CustomizeWebPartForm form = new CustomizeFilesWebPartView.CustomizeWebPartForm(webPartDescriptor);
-        getModelBean().setFolderTreeCollapsed(!form.isFolderTreeVisible());
-        if (null != form.getRootOffset())
-        {
-            String path = getModelBean().getRootPath();
-            path += getModelBean().getRootPath().endsWith("/") ? "" : "/";
-            String offset = form.getRootOffset().replaceAll("^/", "");
-            path += offset;
-            getModelBean().setRootPath(path);
-        }
-        getModelBean().setRootOffset(form.getRootOffset());
-
-
-        setWide(null == webPartDescriptor.getLocation() || HttpView.BODY.equals(webPartDescriptor.getLocation()));
-        setShowAdmin(container.hasPermission(ctx.getUser(), AdminPermission.class));
-
-
-        if (!isWide())
-        {
-            _path = JSP_RIGHT;
-            _page = JspLoader.createPage((String)null, _path);
-        }
-    }
-
-    public FilesWebPart(ViewContext ctx, Portal.WebPart webPartDescriptor)
-    {
-        this(ctx.getContainer(), StringUtils.trimToNull(webPartDescriptor.getPropertyMap().get("fileSet")), JSP);
-
-        setTitle(PART_NAME);
-
-        CustomizeFilesWebPartView.CustomizeWebPartForm form = new CustomizeFilesWebPartView.CustomizeWebPartForm(webPartDescriptor);
-        getModelBean().setFolderTreeCollapsed(!form.isFolderTreeVisible());
-        if (null != form.getRootOffset())
-        {
-            String path = getModelBean().getRootPath();
-            path += getModelBean().getRootPath().endsWith("/") ? "" : "/";
-            String offset = form.getRootOffset().replaceAll("^/", "");
-            path += offset;
-            getModelBean().setRootPath(path);
-        }
-
-        String size = webPartDescriptor.getPropertyMap().get("size");
-        if (size != null)
-        {
-            getModelBean().setSize(Integer.parseInt(size));
-        }
-
-        getModelBean().setRootOffset(form.getRootOffset());
-
-
-        setWide(null == webPartDescriptor.getLocation() || HttpView.BODY.equals(webPartDescriptor.getLocation()));
-        setShowAdmin(container.hasPermission(ctx.getUser(), AdminPermission.class));
-
-        if (!isWide())
-        {
-            _path = JSP_RIGHT;
-            _page = JspLoader.createPage((String)null, _path);
-        }
     }
 
     @Override
@@ -305,25 +277,22 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         return WebPartFactory.LOCATION_BODY;
     }
 
-    public static String getRootPath(Container c, String davName)
+    public static String getRootPath(Container c, @Nullable String davName)
     {
         return getRootPath(c, davName, null);
     }
 
-    public static String getRootPath(Container c, String davName, String fileset)
+    public static String getRootPath(Container c, @Nullable String davName, @Nullable String fileset)
     {
         String webdavPrefix = AppProps.getInstance().getContextPath() + "/" + WebdavService.getServletPath();
-        String rootPath;
+        String rootPath = webdavPrefix + c.getEncodedPath();
 
         if (davName != null)
         {
+            rootPath += URLEncoder.encode(davName);
             if (fileset != null)
-                rootPath = webdavPrefix + c.getEncodedPath() + URLEncoder.encode(davName) + "/" + fileset;
-            else
-                rootPath = webdavPrefix + c.getEncodedPath() + URLEncoder.encode(davName);
+                rootPath += "/" + fileset;
         }
-        else
-            rootPath = webdavPrefix + c.getEncodedPath();
 
         if (!rootPath.endsWith("/"))
             rootPath += "/";
@@ -333,7 +302,8 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
     protected boolean canDisplayPipelineActions()
     {
-        try {
+        try
+        {
             if (_isPipelineFiles)
                 return true;
 
@@ -419,25 +389,6 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
         {
             return new FilesWebPart(portalCtx, webPart);
-        }
-
-        @Override
-        public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
-        {
-            return new CustomizeFilesWebPartView(webPart);
-        }
-    }
-
-    public static class Ext3Factory extends AlwaysAvailableWebPartFactory
-    {
-        public Ext3Factory(String location)
-        {
-            super(EXT3_PART_NAME, location, true, false);
-        }
-
-        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
-        {
-            return new FilesWebPart(portalCtx, webPart, false);
         }
 
         @Override
