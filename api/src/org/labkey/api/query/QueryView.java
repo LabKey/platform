@@ -330,62 +330,90 @@ public class QueryView extends WebPartView<Object>
     }
 
 
+    /* delay load menu, because it is usually visible==false */
+    private class QueryNavTreeMenuButton extends NavTreeMenuButton
+    {
+        boolean populated = false;
+
+        QueryNavTreeMenuButton(String label)
+        {
+            super(label);
+            setVisible(false);
+        }
+
+        @Override
+        public void setVisible(boolean visible)
+        {
+            if (visible && !populated)
+            {
+                populateMenu();
+                populated = true;
+            }
+            super.setVisible(visible);
+        }
+
+        private void populateMenu()
+        {
+            NavTree menu = getNavTree();
+            String label = getCaption();
+            menu.setId(getDataRegionName() + ".Menu." + label);
+
+            if (getQueryDef() != null && getQueryDef().canEdit(getUser()) && getContainer().equals(getQueryDef().getContainer()))
+            {
+                NavTree editQueryItem;
+                if (getQueryDef().isSqlEditable())
+                    editQueryItem = new NavTree("Edit Source", getSchema().urlFor(QueryAction.sourceQuery, getQueryDef()));
+                else
+                    editQueryItem = new NavTree("View Definition", getSchema().urlFor(QueryAction.schemaBrowser, getQueryDef()));
+                editQueryItem.setId(getDataRegionName() + ":Query:EditSource");
+                addMenuItem(editQueryItem);
+                if (getQueryDef().isMetadataEditable())
+                {
+                    NavTree editMetadataItem = new NavTree("Edit Metadata", getSchema().urlFor(QueryAction.metadataQuery, getQueryDef()));
+                    editMetadataItem.setId(getDataRegionName() + ":Query:EditMetadata");
+                    addMenuItem(editMetadataItem);
+                }
+            }
+            else
+            {
+                addMenuItem("Edit Query", false, true);
+            }
+
+            addSeparator();
+
+            if (getSchema().shouldRenderTableList())
+            {
+                String current = getQueryDef() != null ? getQueryDef().getName() : null;
+                URLHelper target = urlRefreshQuery();
+
+                for (QueryDefinition query : getSchema().getTablesAndQueries(true))
+                {
+                    String name = query.getName();
+                    NavTree item = new NavTree(name, target.clone().replaceParameter(param(QueryParam.queryName), name).getLocalURIString());
+                    item.setId(getDataRegionName() + ":" + label + ":" + name);
+                    // Intentionally don't set the description so we can avoid having to instantiate all of the TableInfos,
+                    // which can be expensive for some schemas
+                    if (name.equals(current))
+                        item.setStrong(true);
+                    item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
+                    addMenuItem(item);
+                }
+            }
+            else
+            {
+                ActionURL schemaBrowserURL = PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(getContainer(), getSchema().getName());
+                addMenuItem("Schema Browser", schemaBrowserURL);
+            }
+        }
+    }
+
+
     public MenuButton createQueryPickerButton(String label)
     {
-        String current = getQueryDef() != null ? getQueryDef().getName() : null;
-
-        URLHelper target = urlRefreshQuery();
-        NavTreeMenuButton button = new NavTreeMenuButton(label);
-        NavTree menu = button.getNavTree();
-        menu.setId(getDataRegionName() + ".Menu." + label);
-
-        if (getQueryDef() != null && getQueryDef().canEdit(getUser()) && getContainer().equals(getQueryDef().getContainer()))
-        {
-            NavTree editQueryItem;
-            if (getQueryDef().isSqlEditable())
-                editQueryItem = new NavTree("Edit Source", getSchema().urlFor(QueryAction.sourceQuery, getQueryDef()));
-            else
-                editQueryItem = new NavTree("View Definition", getSchema().urlFor(QueryAction.schemaBrowser, getQueryDef()));
-            editQueryItem.setId(getDataRegionName() + ":Query:EditSource");
-            button.addMenuItem(editQueryItem);
-            if (getQueryDef().isMetadataEditable())
-            {
-                NavTree editMetadataItem = new NavTree("Edit Metadata", getSchema().urlFor(QueryAction.metadataQuery, getQueryDef()));
-                editMetadataItem.setId(getDataRegionName() + ":Query:EditMetadata");
-                button.addMenuItem(editMetadataItem);
-            }
-        }
-        else
-        {
-            button.addMenuItem("Edit Query", false, true);
-        }
-
-        button.addSeparator();
-
-        if (getSchema().shouldRenderTableList())
-        {
-            for (QueryDefinition query : getSchema().getTablesAndQueries(true))
-            {
-                String name = query.getName();
-                NavTree item = new NavTree(name, target.clone().replaceParameter(param(QueryParam.queryName), name).getLocalURIString());
-                item.setId(getDataRegionName() + ":" + label + ":" + name);
-                // Intentionally don't set the description so we can avoid having to instantiate all of the TableInfos,
-                // which can be expensive for some schemas
-                if (name.equals(current))
-                    item.setStrong(true);
-                item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
-                button.addMenuItem(item);
-            }
-        }
-        else
-        {
-            ActionURL schemaBrowserURL = PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(getContainer(), getSchema().getName());
-            button.addMenuItem("Schema Browser", schemaBrowserURL);
-        }
-
-        button.setVisible(false);
+        NavTreeMenuButton button = new QueryNavTreeMenuButton(label);
         return button;
     }
+
 
     public User getUser()
     {
@@ -731,12 +759,12 @@ public class QueryView extends WebPartView<Object>
 
     protected void populateReportButtonBar(ButtonBar bar)
     {
-        if (getSettings().getAllowChooseQuery())
-        {
+//        if (getSettings().getAllowChooseQuery())
+//        {
             MenuButton queryButton = createQueryPickerButton("Query");
             queryButton.setVisible(getSettings().getAllowChooseQuery());
             bar.add(queryButton);
-        }
+//        }
 
         if (getSettings().getAllowChooseView())
         {
@@ -751,12 +779,12 @@ public class QueryView extends WebPartView<Object>
 
     protected void populateButtonBar(DataView view, ButtonBar bar, boolean exportAsWebPage)
     {
-        if (getSettings().getAllowChooseQuery())
-        {
+//        if (getSettings().getAllowChooseQuery())
+//        {
             MenuButton queryButton = createQueryPickerButton("Query");
             queryButton.setVisible(getSettings().getAllowChooseQuery());
             bar.add(queryButton);
-        }
+//        }
 
         if (getSettings().getAllowChooseView())
         {
