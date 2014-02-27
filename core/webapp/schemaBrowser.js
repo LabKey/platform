@@ -1860,7 +1860,17 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             if (tab.id == 'lk-sb-panel-home')
                 Ext.History.add("#");
             else
-                Ext.History.add(this.historyPrefix + tab.id);
+            {
+                try
+                {
+                    decodeURIComponent(tab.id);
+                    Ext.History.add(this.historyPrefix + tab.id);
+                }
+                catch(err)
+                {
+                    console.log(err); // URIError (ex: assay.Luminex.$ATestAssayLuminex><$S% 1)
+                };
+            }
         }
         this._addHistory = true;
     },
