@@ -612,7 +612,7 @@ public class AdminController extends SpringActionController
             ActionURL loginURL = null;
             if (getUser().isGuest())
             {
-                ActionURL returnURL = form.getReturnActionURL();
+                URLHelper returnURL = form.getReturnURLHelper();
                 if (returnURL != null)
                     loginURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(ContainerManager.getRoot(), returnURL);
                 else

@@ -40,6 +40,7 @@ import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
@@ -556,10 +557,18 @@ public class DavController extends SpringActionController
     private abstract class DavAction implements Controller
     {
         final String method;
+        final boolean allowDuringUpgrade;
 
         protected DavAction(String method)
         {
             this.method = method;
+            this.allowDuringUpgrade = false;
+        }
+
+        protected DavAction(String method, boolean allow)
+        {
+            this.method = method;
+            this.allowDuringUpgrade = allow;
         }
 
         public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception
@@ -587,6 +596,11 @@ public class DavController extends SpringActionController
             {
                 try
                 {
+                    if (!allowDuringUpgrade && (ModuleLoader.getInstance().isUpgradeRequired() || !ModuleLoader.getInstance().isStartupComplete()))
+                    {
+                        throw new DavException(WebdavStatus.SC_SERVICE_UNAVAILABLE, "Server has not completed startup.");
+                    }
+
                     if (_requiresLogin && getUser().isGuest())
                         throw new UnauthorizedException(resolvePath());
 
@@ -676,12 +690,12 @@ public class DavController extends SpringActionController
     {
         public GetAction()
         {
-            super("GET");
+            super("GET", true);
         }
 
         protected GetAction(String method)
         {
-            super(method);
+            super(method, true);
         }
 
         public final WebdavStatus doMethod() throws DavException, IOException
@@ -4172,6 +4186,11 @@ public class DavController extends SpringActionController
     private WebdavStatus serveResource(WebdavResource resource, boolean content)
             throws DavException, IOException
     {
+        boolean isStatic = isStaticContent(resource.getPath());
+
+        if (!isStatic && !ModuleLoader.getInstance().isStartupComplete())
+            throw new DavException(WebdavStatus.SC_SERVICE_UNAVAILABLE, "Server has not completed startup.");
+
         // If the resource is not a collection, and the resource path ends with "/"
         if (resource.getPath().isDirectory())
             return notFound(getURL().getURIString());
@@ -4188,7 +4207,6 @@ public class DavController extends SpringActionController
         if (modified != Long.MIN_VALUE)
             getResponse().setLastModified(modified);
 
-        boolean isStatic = isStaticContent(resource.getPath());
         if (isStatic)
         {
             assert resource.canRead(User.guest,true);
@@ -5145,6 +5163,9 @@ public class DavController extends SpringActionController
 
     WebdavStatus listHtml(WebdavResource resource)
     {
+        if (!ModuleLoader.getInstance().isStartupComplete())
+            throw new RedirectException(getUpgradeMaintenanceRedirect(getRequest(), null));
+
         try
         {
             ListPage page = new ListPage();
