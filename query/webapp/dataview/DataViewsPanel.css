@@ -1,4 +1,8 @@
 /* Grid */
+.dvc .x4-grid-table {
+    border-bottom: 1px solid #C5C5C5;
+}
+
 .dvc .x4-grid-header-ct,
 .dvc .x4-toolbar-default,
 .dvc .x4-column-header,
@@ -7,6 +11,7 @@
 .dvc .x4-column-header-sort-DESC {
     background-image: none;
     background-color: transparent;
+    border-bottom: none !important;
 }
 
 .dvc .x4-grid-cell-inner
@@ -41,10 +46,6 @@
 
 .dvc .x4-grid-row .x4-grid-cell {
     border-right: 1px solid #C5C5C5 !important;
-}
-
-.dvc .x4-grid-row .x4-grid-cell.x4-grid-cell-first {
-    border-right: none !important;
 }
 
 .dvc .x4-grid-view {

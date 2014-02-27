@@ -36,13 +36,14 @@ Ext4.define('File.panel.Browser', {
      * @cfg {Ext4.util.Format.fileSize} fileSize
      */
     sizeRenderer : function(value, metaData, record) {
-        if (record && !record.get("collection"))
-            return Ext4.util.Format.fileSize(value);
+        var render = null;
 
         // Details panel renders a template without a record.
-        if (value)
-            return Ext4.util.Format.fileSize(value);
-        return null;
+        if ((record && !record.get("collection")) || value) {
+             render = Ext4.util.Format.fileSize(value);
+        }
+
+        return render;
     },
 
     /**
@@ -55,28 +56,28 @@ Ext4.define('File.panel.Browser', {
         {
             if (i > 0)
             {
-                result = result + ", ";
+                result += ", ";
             }
-            result = result + Ext4.util.Format.htmlEncode(value[i].message);
+            result += Ext4.util.Format.htmlEncode(value[i].message);
         }
-        result = result + "'>";
+        result += "'>";
         for (i = 0; i < value.length; i++)
         {
             if (i > 0)
             {
-                result = result + ", ";
+                result += ", ";
             }
             if (value[i].href)
             {
-                result = result + "<a href=\'" + value[i].href + "'>";
+                result += "<a href=\'" + value[i].href + "'>";
             }
-            result = result + Ext4.util.Format.htmlEncode(value[i].message);
+            result += Ext4.util.Format.htmlEncode(value[i].message);
             if (value[i].href)
             {
-                result = result + "</a>";
+                result += "</a>";
             }
         }
-        result = result + "</span>";
+        result += "</span>";
         return result;
     },
 
@@ -853,7 +854,9 @@ Ext4.define('File.panel.Browser', {
         {header: "File Extension", flex: 1, dataIndex: 'fileExt',      sortable: true,  hidden: true, height : 20, renderer:Ext4.util.Format.htmlEncode}
         ];
         this.setDefaultColumns(columns);
-        File.panel.Browser._getPipelineConfiguration(this._onExtraColumns, this.containerPath, this);
+        if (!this.isWebDav) {
+            File.panel.Browser._getPipelineConfiguration(this._onExtraColumns, this.containerPath, this);
+        }
 
         return columns;
     },
@@ -1014,7 +1017,12 @@ Ext4.define('File.panel.Browser', {
     },
 
 
-    attachCustomFileProperties : function(){
+    attachCustomFileProperties : function() {
+
+        if (this.isWebDav) {
+            return;
+        }
+
         //Copied array so as not to be include name/Row Id in extra columns
         var extraColumnNames = this.getExtraColumnNames();
 
@@ -1275,7 +1283,7 @@ Ext4.define('File.panel.Browser', {
      * Note: You should probably consider calling configureActions instead
      */
     updateActions : function() {
-        if (this.isPipelineRoot) {
+        if (this.isPipelineRoot && !this.isWebDav) {
             var actionsReady = false;
             var pipelineReady = false;
 
@@ -2436,21 +2444,23 @@ Ext4.define('File.panel.Browser', {
     },
 
     showAdminWindow : function() {
-        if (this.adminWindow && !this.adminWindow.isDestroyed) {
-            this.adminWindow.show();
-        }
-        else {
-            File.panel.Browser._getPipelineConfiguration(function(response) {
-                var json = Ext4.JSON.decode(response.responseText);
-                this.adminWindow = Ext4.create('Ext.window.Window', {
-                    cls: 'data-window',
-                    title: 'Manage File Browser Configuration',
-                    closeAction: 'destroy',
-                    layout: 'fit',
-                    modal: true,
-                    items: [this.getAdminPanelCfg(json)]
-                }).show();
-            }, this.containerPath, this);
+        if (!this.isWebDav) {
+            if (this.adminWindow && !this.adminWindow.isDestroyed) {
+                this.adminWindow.show();
+            }
+            else {
+                File.panel.Browser._getPipelineConfiguration(function(response) {
+                    var json = Ext4.JSON.decode(response.responseText);
+                    this.adminWindow = Ext4.create('Ext.window.Window', {
+                        cls: 'data-window',
+                        title: 'Manage File Browser Configuration',
+                        closeAction: 'destroy',
+                        layout: 'fit',
+                        modal: true,
+                        items: [this.getAdminPanelCfg(json)]
+                    }).show();
+                }, this.containerPath, this);
+            }
         }
     },
 
