@@ -21,8 +21,6 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.view.ActionURL;
 
-import java.util.Map;
-
 /**
  * A ContainerTree subclass that lets its own subclasses know if a container has a pipeline root set.
  * It makes the currently correct assumption that subfolders inherit pipeline roots from their parents if not set.
@@ -31,8 +29,6 @@ import java.util.Map;
  */
 public abstract class PipelineRootContainerTree extends ContainerTree
 {
-    private Map<Container, PipeRoot> _roots = PipelineService.get().getAllPipelineRoots();
-
     public PipelineRootContainerTree(User user, ActionURL url)
     {
         super("/", user, InsertPermission.class, url);
@@ -41,17 +37,7 @@ public abstract class PipelineRootContainerTree extends ContainerTree
     /** Look up the chain until we find one or reach the root */
     private boolean hasPipelineRoot(Container c)
     {
-        do
-        {
-            if (_roots.containsKey(c))
-            {
-                return true;
-            }
-            c = c.getParent();
-        }
-        while (c != null && !c.isRoot());
-
-        return false;
+        return PipelineService.get().hasValidPipelineRoot(c);
     }
 
     protected final void renderCellContents(StringBuilder html, Container c, ActionURL url)
