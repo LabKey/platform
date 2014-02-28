@@ -16,7 +16,6 @@
 
 package org.labkey.api.query;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.BoundMap;
@@ -31,7 +30,6 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.study.DataSetTable;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MemTrackable;
 import org.labkey.api.util.MemTracker;
@@ -353,28 +351,16 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             }
         });
 
-        for (QueryDefinition queryDefinition : queries.values())
-        {
-            String name = queryDefinition.getName();
-            String label = name;
-            try
-            {
-                TableInfo tableInfo = getTable(name);
-                if (null != tableInfo && tableInfo instanceof DataSetTable)
-                    label = tableInfo.getTitle();
-            }
-            catch (QueryParseException e)
-            {
-                // ignore; not found
-            }
-            catch (Exception e)
-            {
-                // ignore; not found
-                Logger.getLogger(this.getClass()).warn("Unexpected expected exception parsing query: " + name);
-            }
-            namesAndLabels.put(name, label);
-        }
+        populateQueryNameToLabelMap(queries, namesAndLabels);
         return namesAndLabels;
+    }
+
+    protected void populateQueryNameToLabelMap(Map<String, QueryDefinition> queries, TreeMap<String, String> namesAndLabels)
+    {
+        for (String queryName : queries.keySet())
+        {
+            namesAndLabels.put(queryName, queryName);
+        }
     }
 
     /**
