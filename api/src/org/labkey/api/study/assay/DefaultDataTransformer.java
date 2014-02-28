@@ -22,6 +22,7 @@ import org.labkey.api.qc.*;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.reports.ExternalScriptEngine;
@@ -52,7 +53,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
 {
     public static final String RUN_INFO_REPLACEMENT = "runInfo";
     public static final String SRC_DIR_REPLACEMENT = "srcDirectory";
-    public static final String R_JESSIONID_REPLACEMENT = "rLabkeySessionId";
+    public static final String R_SESSIONID_REPLACEMENT = "rLabkeySessionId";
 
     public TransformResult transformAndValidate(AssayRunUploadContext<ProviderType> context, ExpRun run) throws ValidationException
     {
@@ -104,6 +105,8 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                     // issue 13643: ensure script dir is initially empty
                     FileUtil.deleteDirectoryContents(scriptDir);
 
+                    final String transformSessionId = SecurityManager.getTransformSessionId();
+
                     try
                     {
                         Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
@@ -120,7 +123,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                         File srcDir = scriptFile.getParentFile();
                         if (srcDir != null && srcDir.exists())
                             paramMap.put(SRC_DIR_REPLACEMENT, srcDir.getAbsolutePath().replaceAll("\\\\", "/"));
-                        paramMap.put(R_JESSIONID_REPLACEMENT, getSessionInfo(context));
+                        paramMap.put(R_SESSIONID_REPLACEMENT, getSessionInfo(context, transformSessionId));
 
                         bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
 
@@ -165,6 +168,8 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                                     parent.delete();
                             }
                         }
+
+                        SecurityManager.removeTransformSessionId(transformSessionId);
                     }
                 }
                 else
@@ -215,7 +220,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
     /**
      * Creates the session information string
      */
-    private String getSessionInfo(AssayRunUploadContext<ProviderType> context)
+    private String getSessionInfo(AssayRunUploadContext<ProviderType> context, String transformSessionId)
     {
         StringBuilder sb = new StringBuilder();
         if (context.getRequest() != null)
@@ -224,6 +229,14 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
             sb.append("labkey.sessionCookieContents = \"");
             sb.append(PageFlowUtil.getCookieValue(context.getRequest().getCookies(), "JSESSIONID", ""));
             sb.append("\"\n");
+        }
+        else
+        {
+            // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
+            SecurityManager.addTransformSessionId(context.getUser(), transformSessionId);
+
+            sb.append("labkey.sessionCookieName = \"" + SecurityManager.TRANSFORM_SESSIONID + "\"\n");
+            sb.append("labkey.sessionCookieContents = \"" + transformSessionId + "\"\n");
         }
         return sb.toString();
     }

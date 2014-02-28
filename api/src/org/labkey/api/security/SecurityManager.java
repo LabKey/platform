@@ -67,6 +67,7 @@ import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MailHelper;
@@ -140,6 +141,9 @@ public class SecurityManager
     private static final String USER_ID_KEY = User.class.getName() + "$userId";
     private static final String IMPERSONATION_CONTEXT_FACTORY_KEY = User.class.getName() + "$ImpersonationContextFactoryKey";
     public static final String AUTHENTICATION_METHOD = "SecurityManager.authenticationMethod";
+
+    public static final String TRANSFORM_SESSIONID = "LabKeyTransformSessionId";  // issue 19748
+    private static final Map<String, Integer> TRANSFORM_SESSIONID_MAP = new HashMap<>();
 
     static
     {
@@ -469,7 +473,35 @@ public class SecurityManager
             }
         }
 
+        if (null == u)
+        {
+            // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
+            String transformSessionId = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSIONID, null);
+            if (transformSessionId != null && TRANSFORM_SESSIONID_MAP.get(transformSessionId) != null)
+            {
+                u = UserManager.getUser(TRANSFORM_SESSIONID_MAP.get(transformSessionId));
+                SecurityManager.setAuthenticatedUser(request, u);
+            }
+        }
+
         return null == u || u.isGuest() ? null : u;
+    }
+
+    public static String getTransformSessionId()
+    {
+        return GUID.makeHash();
+    }
+
+    public static void addTransformSessionId(User user, String token)
+    {
+        if (null != user && null != token)
+            TRANSFORM_SESSIONID_MAP.put(token, user.getUserId());
+    }
+
+    public static void removeTransformSessionId(String token)
+    {
+        if (TRANSFORM_SESSIONID_MAP.containsKey(token))
+            TRANSFORM_SESSIONID_MAP.remove(token);
     }
 
 
