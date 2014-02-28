@@ -71,13 +71,13 @@ public class ExperimentUpgradeCode implements UpgradeCode
         });
     }
 
-    /** Used for 13.31->13.32 **/
+    /** Used for 13.31->14.1 **/
     public void resyncDomainProjects(ModuleContext context)
     {
         /*
             Attempt to repair domain and property descriptors whose projects are incorrect.
             This was a possible state upon moving containers (see #18968). This would leave lists, studies, etc,
-            in an unusable and nondeletable state. Fixing at least lists are necessary for the List 13.30 -> 13.31 upgrade.
+            in an unusable and nondeletable state. Fixing at least lists are necessary for the List 13.30 -> 14.1 upgrade.
          */
 
         List<DomainDescriptor> dds = new TableSelector(OntologyManager.getTinfoDomainDescriptor()).getArrayList(DomainDescriptor.class);

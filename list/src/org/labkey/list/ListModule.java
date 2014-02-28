@@ -181,7 +181,7 @@ public class ListModule extends DefaultModule
             ListManager.get().ensureListDomains();
         }
 
-        /** called at 13.30->13.31 */
+        /** called at 13.30->14.1 */
         public void addContainerColumns(final ModuleContext moduleContext)
         {
             if (moduleContext.isNewInstall())
