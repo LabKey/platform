@@ -26,6 +26,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -78,6 +79,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 public class StudyQuerySchema extends UserSchema
 {
@@ -849,5 +851,16 @@ public class StudyQuerySchema extends UserSchema
     public void setDontAliasColumns(boolean dontAliasColumns)
     {
         _dontAliasColumns = dontAliasColumns;
+    }
+
+    @Override
+    protected void populateQueryNameToLabelMap(Map<String, QueryDefinition> queries, TreeMap<String, String> namesAndLabels)
+    {
+        for (QueryDefinition queryDefinition : queries.values())
+        {
+            String name = queryDefinition.getName();
+            String label = queryDefinition.getTitle();
+            namesAndLabels.put(name, label);
+        }
     }
 }
