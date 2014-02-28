@@ -203,9 +203,9 @@ public abstract class SqlScriptManager
             dialect.runSql(schema, contents, script.getProvider().getUpgradeCode(), moduleContext, conn);
             Logger.getLogger(SqlScriptManager.class).info("finished running script : " + script.getDescription());
         }
-        catch(SQLException e)
+        catch(Throwable t)
         {
-            throw new SqlScriptException(e, script.getDescription());
+            throw new SqlScriptException(t, script.getDescription());
         }
 
         if (script.isValidName())
