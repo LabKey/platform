@@ -29,7 +29,7 @@
 <form action="" method="post">
     <table width="80%">
         <tr>
-            <td>This study is currently <%=demoMode ? "" : "not"%> in demo mode.</td>
+            <td>This study is currently<%=demoMode ? " " : " not "%>in demo mode.</td>
         </tr>
         <tr>
             <td>&nbsp;</td>
