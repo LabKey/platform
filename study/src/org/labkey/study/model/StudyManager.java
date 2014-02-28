@@ -222,19 +222,30 @@ public class StudyManager
                     @Override
                     public Object load(String key, Object argument)
                     {
-                        // Bulk-load the study for the current container and its children, instead of issuing separate
+                        // Bulk-load the study for the current container and its siblings, instead of issuing separate
                         // requests for each container. See issue 19632
-                        SQLFragment selectSQL = new SQLFragment("SELECT * FROM study.Study WHERE Container IN (SELECT ? AS Container UNION SELECT EntityId FROM ");
-                        selectSQL.append(CoreSchema.getInstance().getTableInfoContainers(), "c");
-                        selectSQL.append(" WHERE Parent = ?)");
+                        SQLFragment selectSQL = new SQLFragment("SELECT * FROM study.Study WHERE Container IN (SELECT ? AS EntityId ");
                         selectSQL.add(c);
-                        selectSQL.add(c);
+                        if (c.getParent() != null)
+                        {
+                            selectSQL.append(" UNION SELECT EntityId FROM ");
+                            selectSQL.append(CoreSchema.getInstance().getTableInfoContainers(), "c");
+                            selectSQL.append(" WHERE Parent = ?");
+                            selectSQL.add(c.getParent());
+                        }
+                        selectSQL.append(")");
                         List<StudyImpl> objs = new SqlSelector(StudySchema.getInstance().getSchema(), selectSQL).getArrayList(StudyImpl.class);
 
                         // The match, if any, for the container that's being queried directly
                         StudyImpl result = null;
                         // Keep track of all of the containers that DON'T have a study so we can cache them as a miss
-                        Set<Container> childrenWithNoStudies = new HashSet<>(ContainerManager.getChildren(c));
+                        Set<Container> siblingsWithNoStudies = new HashSet<>();
+                        if (c.getParent() != null)
+                        {
+                            siblingsWithNoStudies.addAll(ContainerManager.getChildren(c.getParent()));
+                            // No need to reprocess the original container
+                            siblingsWithNoStudies.remove(c);
+                        }
 
                         for (final StudyImpl obj : objs)
                         {
@@ -247,7 +258,7 @@ public class StudyManager
                             else
                             {
                                 // Found a study for this container
-                                childrenWithNoStudies.remove(obj.getContainer());
+                                siblingsWithNoStudies.remove(obj.getContainer());
 
                                 // Cache the hit
                                 StudyCache.get(getTableInfo(), obj.getContainer(), getCacheId(filterArg), new CacheLoader<String, Object>()
@@ -261,7 +272,7 @@ public class StudyManager
                             }
                         }
 
-                        for (Container studylessChild : childrenWithNoStudies)
+                        for (Container studylessChild : siblingsWithNoStudies)
                         {
                             // Cache the miss
                             StudyCache.get(getTableInfo(), studylessChild, getCacheId(filterArg), new CacheLoader<String, Object>()
