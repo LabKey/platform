@@ -17,10 +17,14 @@
 package org.labkey.api.assay.dilution;
 
 import org.labkey.api.assay.nab.Luc5Assay;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.WellData;
 import org.labkey.api.study.WellGroup;
@@ -48,7 +52,8 @@ public class DilutionSummary implements Serializable
     private String _lsid;
     private StatsService.CurveFitType _curveFitType;
     protected DilutionMaterialKey _materialKey = null;
-    public static final DilutionMaterialKey BLANK_NAB_MATERIAL = new DilutionMaterialKey("Blank", null, null, null);
+    protected Container _container;
+    public static final DilutionMaterialKey BLANK_NAB_MATERIAL = new DilutionMaterialKey(ContainerManager.getRoot(), "Blank", null, null, null);
 
 
     public DilutionSummary(Luc5Assay assay, WellGroup sampleGroup, String lsid, StatsService.CurveFitType curveFitType)
@@ -66,6 +71,10 @@ public class DilutionSummary implements Serializable
         _firstGroup = sampleGroups.get(0);
         _assay = assay;
         _lsid = lsid;
+
+        ExpRun run = ExperimentService.get().getExpRun(assay.getRunRowId());
+        if (run != null)
+            _container = run.getContainer();
     }
 
     private void ensureSameSample(List<WellGroup> groups)
@@ -97,7 +106,7 @@ public class DilutionSummary implements Serializable
             Double visitId = (Double) firstWellGroup.getProperty(AbstractAssayProvider.VISITID_PROPERTY_NAME);
             String participantId = (String) firstWellGroup.getProperty(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME);
             Date visitDate = (Date) firstWellGroup.getProperty(AbstractAssayProvider.DATE_PROPERTY_NAME);
-            _materialKey = new DilutionMaterialKey(specimenId, participantId, visitId, visitDate);
+            _materialKey = new DilutionMaterialKey(_container, specimenId, participantId, visitId, visitDate);
         }
         return _materialKey;
     }

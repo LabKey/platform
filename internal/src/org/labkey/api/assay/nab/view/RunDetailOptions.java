@@ -32,6 +32,7 @@ public class RunDetailOptions
     {
         Specimen("Specimen ID", true, new String[]{AbstractAssayProvider.SPECIMENID_PROPERTY_NAME}),
         ParticipantVisit("Participant ID / Visit", true, new String[]{AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME, AbstractAssayProvider.VISITID_PROPERTY_NAME}),
+        ParticipantDate("Participant ID / Date", true, new String[]{AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME, AbstractAssayProvider.DATE_PROPERTY_NAME}),
         SpecimenParticipantVisit("Specimen ID / Participant ID / Visit", true, new String[]{AbstractAssayProvider.SPECIMENID_PROPERTY_NAME, AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME, AbstractAssayProvider.VISITID_PROPERTY_NAME}),
         LongFormat("Long Format", false, new String[0]),
         DefaultFormat("Default Format", false, new String[0]);

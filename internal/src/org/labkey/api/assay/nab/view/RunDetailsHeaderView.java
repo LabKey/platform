@@ -242,7 +242,7 @@ public class RunDetailsHeaderView extends AssayHeaderView
                 else
                 {
                     item.setDisabled(true);
-                    item.setTip("This option is disabled because the required information does not exist.");
+                    item.setDescription("This option is disabled because the required information does not exist.");
                 }
 
                 menu.addChild(item);

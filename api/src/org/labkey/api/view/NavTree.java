@@ -524,7 +524,10 @@ public class NavTree implements Collapsible
         return o;
     }
 
-    
+    /**
+     * Renders a navtree instance to a javascript object suitable for consumptions by the rendering library.
+     * Note that description is translated to: tooltip.
+     */
     protected StringBuilder toJS(StringBuilder sb, boolean asMenu)
     {
         String title = getText();
@@ -541,7 +544,7 @@ public class NavTree implements Collapsible
         if (StringUtils.isNotEmpty(getId()))
             sb.append(",id:").append(PageFlowUtil.qh(getId()));
         if (StringUtils.isNotEmpty(getDescription()))
-            sb.append(",description:").append(PageFlowUtil.qh(getDescription()));
+            sb.append(",tooltip:").append(PageFlowUtil.qh(getDescription()));
         if (isSelected())
             sb.append(",checked:true");
         if (null != getImageSrc())
@@ -565,8 +568,6 @@ public class NavTree implements Collapsible
         {
             sb.append(",leaf:true");
         }
-        if (null != getTip())
-            sb.append(",tooltip:").append(PageFlowUtil.qh(getTip()));
         sb.append("}");
         return sb;
     }

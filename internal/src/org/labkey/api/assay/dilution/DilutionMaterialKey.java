@@ -17,6 +17,7 @@ package org.labkey.api.assay.dilution;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.nab.view.RunDetailOptions;
+import org.labkey.api.data.Container;
 import org.labkey.api.util.DateUtil;
 
 import java.util.Date;
@@ -28,13 +29,15 @@ import java.util.Date;
 */
 public class DilutionMaterialKey
 {
+    private Container _container;
     private String _specimenId;
     private String _participantId;
     private Double _visitId;
     private Date _date;
 
-    public DilutionMaterialKey(String specimenId, String participantId, Double visitId, Date date)
+    public DilutionMaterialKey(Container container, String specimenId, String participantId, Double visitId, Date date)
     {
+        _container = container;
         _specimenId = specimenId;
         _participantId = participantId;
         _visitId = visitId;
@@ -61,6 +64,10 @@ public class DilutionMaterialKey
                     return _specimenId;
                 case ParticipantVisit:
                     return _participantId + ", Vst " + _visitId;
+                case ParticipantDate:
+                    if (_date != null)
+                        return _participantId + ", " + DateUtil.formatDate(_container, _date);
+                    break;
                 case SpecimenParticipantVisit:
                     return _specimenId + ", " + _participantId + ", Vst " + _visitId;
 
@@ -83,9 +90,9 @@ public class DilutionMaterialKey
             if (_visitId == null && _date != null)
             {
                 if (_date.getHours() == 0 && _date.getMinutes() == 0 && _date.getSeconds() == 0)
-                    appendAndSeparate(builder, DateUtil.formatDate(_date));
+                    appendAndSeparate(builder, DateUtil.formatDate(_container, _date));
                 else
-                    appendAndSeparate(builder, DateUtil.formatDateTime(_date));
+                    appendAndSeparate(builder, DateUtil.formatDateTime(_container, _date));
             }
             else if (_visitId != null)
                 appendAndSeparate(builder, "Vst " + _visitId);
@@ -96,12 +103,7 @@ public class DilutionMaterialKey
             if (_specimenId != null)
                 return _specimenId;
             else if (_visitId == null && _date != null)
-            {
-                if (_date.getHours() == 0 && _date.getMinutes() == 0 && _date.getSeconds() == 0)
-                    return _participantId + ", " + DateUtil.formatDate(_date);
-                else
-                    return _participantId + ", " + DateUtil.formatDateTime(_date);
-            }
+                return _participantId + ", " + DateUtil.formatDate(_container, _date);
             else
                 return _participantId + ", Vst " + _visitId;
         }
