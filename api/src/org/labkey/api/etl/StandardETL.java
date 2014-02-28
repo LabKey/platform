@@ -232,10 +232,12 @@ public class StandardETL implements DataIteratorBuilder
             else
                 indexConvert = convert.addConvertColumn(pair.target.getName(), pair.indexFrom, pair.indexMv, pair.dp.getPropertyDescriptor(), pair.dp.getPropertyDescriptor().getPropertyType());
 
-            if (null != pair.target && !pair.target.isNullable() && !pair.target.isAutoIncrement())
-                validate.addRequired(indexConvert, false);
-            else if (null != pair.dp && pair.dp.isRequired())
-                validate.addRequired(indexConvert, true);
+            boolean notnull = null != pair.target && !pair.target.isNullable();
+            boolean required = null != pair.dp && pair.dp.isRequired() || null != pair.target && pair.target.isRequired();
+            if ((notnull || required) && !pair.target.isAutoIncrement())
+            {
+                validate.addRequired(indexConvert, !notnull && supportsMV);
+            }
 
             // UNDONE: Issue 17998: add better max length validation everywhere (need to fixup tests for new behavior)
             //validate.addLengthValidator(indexConvert, pair.target);

@@ -106,12 +106,14 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
         RequiredValidator(int index, boolean allowMissingValueIndicators)
         {
             super(index);
+            this.allowMV = allowMissingValueIndicators;
         }
 
         RequiredValidator(int index, boolean allowMissingValueIndicators, String propertyName)
         {
             super(index);
             this.propertyName = propertyName;
+            this.allowMV = allowMissingValueIndicators;
         }
 
         @Override

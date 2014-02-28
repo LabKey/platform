@@ -296,17 +296,6 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
         this.project = proj;
     }
 
-
-    public boolean isRequired()
-    {
-        return !nullable;
-    }
-
-    public void setRequired(boolean required)
-    {
-        this.nullable = !required;
-    }
-
     @Override
     public int getSqlTypeInt()
     {

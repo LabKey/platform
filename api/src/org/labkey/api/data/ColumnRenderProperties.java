@@ -51,6 +51,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     // property descriptors default to nullable, while columninfos do not; PropertyDescriptor overrides this initializer
     // in its constructor:
     protected boolean nullable = false;
+    protected boolean required = false;
     protected String label;
     /** The column's label, without any prefixes from parent lookups */
     protected String shortLabel;
@@ -343,6 +344,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
             return measure;
     }
 
+    /** value must not be null/empty */
     public boolean isNullable()
     {
         return nullable;
@@ -351,6 +353,18 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public void setNullable(boolean nullable)
     {
         this.nullable = nullable;
+    }
+
+    /** value must not be null/empty OR a missing value indicator must be provided */
+    public boolean isRequired()
+    {
+        // !nullable is stricter and implies required
+        return !nullable || required;
+    }
+
+    public void setRequired(boolean required)
+    {
+        this.required = required;
     }
 
     public Set<String> getImportAliasSet()
