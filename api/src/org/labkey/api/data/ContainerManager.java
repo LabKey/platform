@@ -1760,6 +1760,7 @@ public class ContainerManager
         List<ContainerListener> list = getListeners();
 
         for (ContainerListener cl : list)
+        {
             try
             {
                 cl.containerCreated(c, user);
@@ -1768,6 +1769,7 @@ public class ContainerManager
             {
                 LOG.error("fireCreateContainer for " + cl.getClass().getName(), t);
             }
+        }
     }
 
 
