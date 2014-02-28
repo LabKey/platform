@@ -80,7 +80,7 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
             // The following replacements aren't used yet, but are reserved for future use.
             DefaultDataTransformer.RUN_INFO_REPLACEMENT,
             DefaultDataTransformer.SRC_DIR_REPLACEMENT,
-            DefaultDataTransformer.R_JESSIONID_REPLACEMENT
+            DefaultDataTransformer.R_SESSIONID_REPLACEMENT
         );
 
     protected Map<String, JobParamToCommandArgs> _params;
