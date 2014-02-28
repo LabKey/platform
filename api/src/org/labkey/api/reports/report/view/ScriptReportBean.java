@@ -52,7 +52,7 @@ public class ScriptReportBean extends ReportDesignBean
     private boolean _sourceTabVisible;
     private String _thumbnailType;
     private String _knitrFormat;
-    private boolean _useGetDataApi;
+    private Boolean _useGetDataApi;
     private LinkedHashSet<ClientDependency> _clientDependencies;
 
     public ScriptReportBean()
@@ -147,7 +147,8 @@ public class ScriptReportBean extends ReportDesignBean
             if (getKnitrFormat() != null)
                 descriptor.setProperty(ScriptReportDescriptor.Prop.knitrFormat, getKnitrFormat());
 
-            descriptor.setProperty(ScriptReportDescriptor.Prop.useGetDataApi, isUseGetDataApi());
+            if (isUseGetDataApi() != null)
+                descriptor.setProperty(ScriptReportDescriptor.Prop.useGetDataApi, isUseGetDataApi());
 
             assert descriptor instanceof ScriptReportDescriptor;
 
@@ -318,12 +319,12 @@ public class ScriptReportBean extends ReportDesignBean
         _knitrFormat = knitrFormat;
     }
 
-    public boolean isUseGetDataApi()
+    public Boolean isUseGetDataApi()
     {
         return _useGetDataApi;
     }
 
-    public void setUseGetDataApi(boolean useGetDataApi)
+    public void setUseGetDataApi(Boolean useGetDataApi)
     {
         _useGetDataApi = useGetDataApi;
     }
