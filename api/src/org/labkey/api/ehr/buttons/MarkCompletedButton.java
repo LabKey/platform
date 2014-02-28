@@ -21,6 +21,7 @@ import org.labkey.api.ehr.EHRService;
 import org.labkey.api.ehr.security.EHRCompletedUpdatePermission;
 import org.labkey.api.ldk.table.SimpleButtonConfigFactory;
 import org.labkey.api.module.Module;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.template.ClientDependency;
 
@@ -33,6 +34,7 @@ public class MarkCompletedButton extends SimpleButtonConfigFactory
 {
     protected String _schemaName;
     protected String _queryName;
+    private Class<? extends Permission> _perm;
 
     public MarkCompletedButton(Module owner, String schemaName, String queryName)
     {
@@ -41,10 +43,16 @@ public class MarkCompletedButton extends SimpleButtonConfigFactory
 
     public MarkCompletedButton(Module owner, String schemaName, String queryName, String label)
     {
+        this(owner, schemaName, queryName, label, EHRCompletedUpdatePermission.class);
+    }
+
+    public MarkCompletedButton(Module owner, String schemaName, String queryName, String label, Class<? extends Permission> perm)
+    {
         super(owner, label, "");
         setClientDependencies(ClientDependency.fromModuleName("ehr"));
         _schemaName = schemaName;
         _queryName = queryName;
+        _perm = perm;
     }
 
     public boolean isAvailable(TableInfo ti)
@@ -53,7 +61,7 @@ public class MarkCompletedButton extends SimpleButtonConfigFactory
             return false;
 
         if (ti.getUserSchema().getName().equalsIgnoreCase(_schemaName) && ti.getPublicName().equalsIgnoreCase(_queryName))
-            return EHRService.get().hasPermission(ti, EHRCompletedUpdatePermission.class);
+            return EHRService.get().hasPermission(ti, _perm);
 
         return false;
     }

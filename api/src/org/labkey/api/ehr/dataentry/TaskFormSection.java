@@ -35,5 +35,6 @@ public class TaskFormSection extends SimpleFormPanelSection
         super("ehr", "tasks", "Task");
         setConfigSources(Collections.singletonList("Task"));
         setTemplateMode(TEMPLATE_MODE.NONE);
+        setSupportFormSort(false);
     }
 }

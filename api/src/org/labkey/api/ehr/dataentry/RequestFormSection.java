@@ -35,6 +35,7 @@ public class RequestFormSection extends SimpleFormSection
         super("ehr", "requests", "Request", "ehr-formpanel");
         setConfigSources(Collections.singletonList("Task"));
         setTemplateMode(TEMPLATE_MODE.NONE);
+        setSupportFormSort(false);
     }
 
     @Override
