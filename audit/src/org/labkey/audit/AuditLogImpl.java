@@ -335,14 +335,6 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         return null;
     }
 
-    /**
-     * Currently only use for testing new audit providers, eventually this will replace the legacy addEvent method
-     * but only once the migration code is in place.
-     * @param user
-     * @param event
-     * @param <K>
-     * @return
-     */
     private <K extends AuditTypeEvent> K _addEvent(User user, K event)
     {
         try

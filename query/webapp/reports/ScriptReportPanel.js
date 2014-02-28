@@ -382,7 +382,8 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                             boxLabel : 'Use GetData API&nbsp;' +
                             '<span data-qtip="Uses the GetData API to retrieve data. Allows you to pass the data through one or more transforms before retrieving it. ' +
                                         'See the documentation at : www.labkey.org/download/clientapi_docs/javascript-api/symbols/LABKEY.Query.GetData.html"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
-                            checked : this.reportConfig.useGetDataApi}
+                            checked : this.reportConfig.useGetDataApi,
+                            uncheckedValue : false}
                     ]
                 });
             }

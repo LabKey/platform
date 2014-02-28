@@ -103,7 +103,7 @@ public class LogManager
                 Map<String, Object> props = new HashMap<>();
                 factory.toMap(type, props);
 
-                UserSchema schema = AuditLogService.getAuditLogSchema(user, c);
+                UserSchema schema = AuditLogService.getAuditLogSchema(user, c != null ? c : ContainerManager.getRoot());
 
                 if (schema != null)
                 {
@@ -116,29 +116,6 @@ public class LogManager
                         K ret = Table.insert(user, dbTable, type);
 
                         return ret;
-/*
-                        TableViewForm tvf = new TableViewForm(table);
-
-                        tvf.setTypedValues(props, false);
-
-                        Map<String, Object> values = tvf.getTypedColumns();
-                        QueryUpdateService qus = table.getUpdateService();
-                        if (qus == null)
-                            throw new IllegalArgumentException("The query '" + table.getName() + "' in the schema '" + table.getSchema().getName() + "' is not updatable.");
-
-                        Map<String, Object> row;
-
-                        BatchValidationException batchErrors = new BatchValidationException();
-                        List<Map<String, Object>> updated = qus.insertRows(user, c, Collections.singletonList(values), batchErrors, null);
-                        if (batchErrors.hasErrors())
-                            throw batchErrors;
-
-                        assert(updated.size() == 1);
-                        row = updated.get(0);
-
-                        K bean = (K)type.getClass().newInstance();
-                        return (K)factory.fromMap(bean, row);
-*/
                     }
                 }
             }

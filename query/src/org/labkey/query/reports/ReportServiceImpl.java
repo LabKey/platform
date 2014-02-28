@@ -973,21 +973,15 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         }
 
         @Override
-        public void categoryDeleted(final User user, final ViewCategory category) throws Exception
+        public void categoryDeleted(User user, ViewCategory category) throws Exception
         {
             for (Report report : getReportsForCategory(category))
             {
-                final Container c = ContainerManager.getForId(category.getContainerId());
+                Container c = ContainerManager.getForId(category.getContainerId());
                 report.getDescriptor().setCategory(null);
                 
                 if (c != null)
-                {
-                    _instance.saveReport(new ContainerUser()
-                    {
-                        public User getUser() {return user;}
-                        public Container getContainer() {return c;}
-                    }, report.getDescriptor().getReportKey(), report);
-                }
+                    _instance.saveReport(new DefaultContainerUser(c, user), report.getDescriptor().getReportKey(), report, true);
             }
         }
 
