@@ -147,7 +147,7 @@ public class ListManager implements SearchService.DocumentProvider
     {
         if (ti instanceof ListTable)
             return ((ListTable)ti).getRealTable().getSelectName();
-        else return null;
+        else return ti.getSelectName();  // if db is being upgraded from <= 13.1, lists are still SchemaTableInfo instances
     }
 
     public ListDef getList(Container container, int listId)
@@ -1353,7 +1353,7 @@ public class ListManager implements SearchService.DocumentProvider
         new SqlExecutor(schema).execute(audit);
     }
 
-    /** Used for 13.30 -> 13.31 upgrade */
+    /** Used for 13.30 -> 14.1 upgrade */
     public void addContainerColumns(User u)
     {
          /*
@@ -1466,8 +1466,7 @@ public class ListManager implements SearchService.DocumentProvider
 
         private void cleanup() throws Exception
         {
-            //Container c = JunitUtil.getTestContainer();
-            TestContext context = TestContext.get();
+            //TestContext context = TestContext.get();
             ExperimentService.get().deleteAllExpObjInContainer(c, u);
 
         }
@@ -1480,23 +1479,11 @@ public class ListManager implements SearchService.DocumentProvider
         }
 
         @Test
-        public void testSchemaBrowserInOwnFolder() throws Exception
-        {
-
-        }
-
-        @Test
         public void testListServiceInWorkbook() throws Exception
         {
             workbook = setupWorkbook();
             Map<String, ListDefinition> lists = ListService.get().getLists(workbook);
-           // assertTrue("Test List not found in workbook", lists.containsKey(LIST_NAME));
-        }
-
-        @Test
-        public void testSchemaBrowserInWorkbook() throws Exception
-        {
-
+            assertTrue("Test List not found in workbook", lists.containsKey(LIST_NAME));
         }
 
         private Container setupWorkbook()
