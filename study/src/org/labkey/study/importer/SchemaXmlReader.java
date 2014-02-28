@@ -114,6 +114,16 @@ public class SchemaXmlReader implements SchemaReader
                 @Override
                 protected boolean acceptColumn(String columnName, ColumnType columnXml) throws Exception
                 {
+                    // Proper ConceptURI support is not implemented, but we use the 'VisitDate' concept in this isolated spot
+                    // as a marker to indicate which dataset column should be tagged as the visit date column during import:
+                    if (DataSetDefinition.getVisitDateURI().equalsIgnoreCase(columnXml.getConceptURI()))
+                    {
+                        if (info.visitDatePropertyName == null)
+                            info.visitDatePropertyName = columnName;
+                        else
+                            throw new IllegalStateException("Dataset " + datasetName + " has multiple visitdate fields specified: '" + info.visitDatePropertyName + "' and '" + columnName + "'");
+                    }
+
                     // filter out the built-in types
                     if (DataSetDefinition.isDefaultFieldName(columnXml.getColumnName(), study))
                         return false;
@@ -129,16 +139,6 @@ public class SchemaXmlReader implements SchemaReader
                             info.keyManagementType = DataSet.KeyManagementType.RowId;
                         if ("entityid".equalsIgnoreCase(columnXml.getDatatype()))
                             info.keyManagementType = DataSet.KeyManagementType.GUID;
-                    }
-
-                    // Proper ConceptURI support is not implemented, but we use the 'VisitDate' concept in this isolated spot
-                    // as a marker to indicate which dataset column should be tagged as the visit date column during import:
-                    if (DataSetDefinition.getVisitDateURI().equalsIgnoreCase(columnXml.getConceptURI()))
-                    {
-                        if (info.visitDatePropertyName == null)
-                            info.visitDatePropertyName = columnName;
-                        else
-                            throw new IllegalStateException("Dataset " + datasetName + " has multiple visitdate fields specified: '" + info.visitDatePropertyName + "' and '" + columnName + "'");
                     }
 
                     return true;
