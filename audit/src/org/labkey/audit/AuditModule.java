@@ -52,7 +52,7 @@ public class AuditModule extends DefaultModule
 
     public double getVersion()
     {
-        return 13.31;
+        return 14.10;
     }
 
     protected void init()
