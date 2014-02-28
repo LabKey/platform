@@ -38,13 +38,17 @@
         var selectElement = document.getElementById("protocolSelect");
         selectElement.options[0].text = "<New Protocol>";
         allProtocols = {};
+        var defaultProtocolIndex = -1;
         for (var i = 0; i < protocols.length; i++)
         {
             selectElement.options[i + 1] = new Option(protocols[i].name, protocols[i].name, protocols[i].name == defaultProtocolName);
             allProtocols[protocols[i].name] = protocols[i];
+            if (protocols[i].name == defaultProtocolName)
+                defaultProtocolIndex = i + 1;
         }
         if (changeProtocol(defaultProtocolName))
         {
+            selectElement.selectedIndex = defaultProtocolIndex;
             selectElement.focus();
         }
         else

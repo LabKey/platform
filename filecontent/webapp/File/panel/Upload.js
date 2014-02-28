@@ -161,38 +161,20 @@ Ext4.define('File.panel.Upload', {
         });
         this.dropzone.uploadPanel = this;
 
-        this.dropzone.on('drop', function (evt) {
-            console.log("drop event");
-        });
-
-        this.dropzone.on('dragstart', function (evt) {
-            console.log("dragstart event");
-        });
-
-        this.dropzone.on('dragend', function (evt) {
-            console.log("dragend event");
-        });
-
-        this.dropzone.on('dragenter', function (evt) {
-            console.log("dragenter event");
-        });
-
         this.dropzone.on('dragover', function (evt) {
             this.uploadPanel.statusText.setText("Drop files to upload...");
-            console.log("dragover event");
         });
 
         this.dropzone.on('dragleave', function (evt) {
-            console.log("dragleave event");
             this.uploadPanel.statusText.setText("");
         });
 
         this.dropzone.on('addedfile', function (file) {
-            console.log("addedfile event");
+            //console.log("addedfile event");
         });
 
         this.dropzone.on('processing', function (file) {
-            console.log("processing event: ", file);
+            //console.log("processing event: ", file);
             var cwd = this.uploadPanel.getWorkingDirectory('cwd');
             if (cwd)
             {
@@ -210,10 +192,6 @@ Ext4.define('File.panel.Upload', {
             }
         });
 
-        this.dropzone.on('uploadprogress', function (file, progress, bytesSent) {
-            console.log("uploadprogress event: ", file, progress);
-        });
-
         this.dropzone.on('totaluploadprogress', function (progress, totalBytes, totalBytesSent) {
             console.log("totaluploadprogress event: ", progress, totalBytes, totalBytesSent);
             if (progress == 100 && totalBytes == 0 && totalBytesSent == 0) {
@@ -226,13 +204,11 @@ Ext4.define('File.panel.Upload', {
         });
 
         this.dropzone.on('sending', function (file, xhr, formData) {
-            console.log("sending event: ", file);
             this.uploadPanel.setBusy(true);
             this.uploadPanel.statusText.setText('Uploading ' + file.name + '...');
         });
 
         this.dropzone.on('success', function (file, response, evt) {
-            console.log("success event: ", file, response);
 
             // success, bail early
             if (response === "")
@@ -295,25 +271,19 @@ Ext4.define('File.panel.Upload', {
         });
 
         this.dropzone.on('error', function (file, message, xhr) {
-            console.log("error event: ", file, message);
-
             this.uploadPanel.statusText.setText('Error uploading ' + file.name + (message ? (': ' + message) : ''));
             this.uploadPanel.showErrorMsg('Error', message);
         });
 
         this.dropzone.on('complete', function (file) {
-            console.log("complete event: ", file);
         });
 
         this.dropzone.on('canceled', function (file) {
-            console.log("canceled event: ", file);
             this.uploadPanel.statusText.setText('Canceled upload of ' + file.name);
             this.uploadPanel.setBusy(false);
         });
 
         this.dropzone.on('queuecomplete', function () {
-            console.log("queuecomplete event");
-
             this.uploadPanel.setBusy(false);
             this.uploadPanel.hideProgressBar();
 
