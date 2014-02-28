@@ -1353,9 +1353,9 @@ public class PageFlowUtil
         StringBuilder sb = new StringBuilder();
 
         // include a hidden submit element to allow capturing 'enter' key
-        sb.append("<div class=\"hidden-submit\"><input type=\"submit\" tab-index=\"-1\" id=\"");
+        sb.append("<input type=\"submit\" tab-index=\"-1\" style=\"position: absolute; left: -9999px; width: 1px; height: 1px;\" id=\"");
         sb.append(id);
-        sb.append("\"/></div>");
+        sb.append("\"/>");
 
         if (enabled)
             sb.append("<a class=\"labkey-button\"");
