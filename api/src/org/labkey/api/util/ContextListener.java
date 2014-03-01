@@ -25,6 +25,7 @@ import org.springframework.web.context.ContextLoaderListener;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -118,7 +119,14 @@ public class ContextListener implements ServletContextListener
 
     public static void removeStartupListener(StartupListener listener)
     {
-        _startupListeners.remove(listener);
+        for (Iterator<Pair<String, StartupListener>> iter = _startupListeners.iterator(); iter.hasNext(); )
+        {
+            Pair<String, StartupListener> entry = iter.next();
+            if (entry.getValue().equals(listener))
+            {
+                iter.remove();
+            }
+        }
     }
 
     public static ContextLoaderListener getSpringContextListener()
