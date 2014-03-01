@@ -50,19 +50,19 @@ import java.util.Set;
  * Date: 4/18/12
  * Time: 11:35 AM
  */
-public class IlluminaFastqParser
+public class IlluminaFastqParser<SampleIdType>
 {
     private String _outputPrefix;
-    private Map<Integer, Integer> _sampleMap;
+    private Map<Integer, SampleIdType> _sampleMap;
     private File _destinationDir;
     private List<File> _files;
-    private Map<Pair<Integer, Integer>, Pair<File, FastqWriter>> _fileMap;
-    private Map<Pair<Integer, Integer>, Integer> _sequenceTotals;
+    private Map<Pair<SampleIdType, Integer>, Pair<File, FastqWriter>> _fileMap;
+    private Map<Pair<SampleIdType, Integer>, Integer> _sequenceTotals;
     private Set<Integer> _skippedSampleIdx = new HashSet<>();
     private Logger _logger;
     private static FileType FASTQ_FILETYPE = new FileType(Arrays.asList("fastq", "fq"), "fastq", FileType.gzSupportLevel.SUPPORT_GZ);
 
-    public IlluminaFastqParser (@Nullable String outputPrefix, Map<Integer, Integer> sampleMap, Logger logger, List<File> files)
+    public IlluminaFastqParser (@Nullable String outputPrefix, Map<Integer, SampleIdType> sampleMap, Logger logger, List<File> files)
     {
         _outputPrefix = outputPrefix;
         _sampleMap = sampleMap;
@@ -72,7 +72,7 @@ public class IlluminaFastqParser
 
     // NOTE: sampleMap maps the sample index used internally within illumina (ie. the order of this sample in the CSV), to a sampleId used
     // by the callee
-    public IlluminaFastqParser (String outputPrefix, Map<Integer, Integer> sampleMap, Logger logger, String sourcePath, String fastqPrefix)
+    public IlluminaFastqParser (String outputPrefix, Map<Integer, SampleIdType> sampleMap, Logger logger, String sourcePath, String fastqPrefix)
     {
         _outputPrefix = outputPrefix;
         _sampleMap = sampleMap;
@@ -105,7 +105,7 @@ public class IlluminaFastqParser
 
     //this returns a map connecting samples with output FASTQ files.
     // the key of the map is a pair where the first item is the sampleId and the second item indicated whether this file is the forward (1) or reverse (2) reads
-    public Map<Pair<Integer, Integer>, File> parseFastqFiles() throws PipelineJobException
+    public Map<Pair<SampleIdType, Integer>, File> parseFastqFiles() throws PipelineJobException
     {
         _fileMap = new HashMap<>();
         _sequenceTotals = new HashMap<>();
@@ -171,8 +171,8 @@ public class IlluminaFastqParser
             }
         }
 
-        Map<Pair<Integer, Integer>, File> outputs = new HashMap<>();
-        for (Pair<Integer, Integer> key :_fileMap.keySet())
+        Map<Pair<SampleIdType, Integer>, File> outputs = new HashMap<>();
+        for (Pair<SampleIdType, Integer> key :_fileMap.keySet())
         {
             outputs.put(key, _fileMap.get(key).getKey());
         }
@@ -190,7 +190,7 @@ public class IlluminaFastqParser
     {
         if (_sampleMap.containsKey(sampleIdx))
         {
-            Pair<Integer, Integer> key = Pair.of(_sampleMap.get(sampleIdx), pairNumber);
+            Pair<SampleIdType, Integer> key = Pair.of(_sampleMap.get(sampleIdx), pairNumber);
 
             Integer total = _sequenceTotals.get(key);
             if (total == null)
@@ -216,8 +216,8 @@ public class IlluminaFastqParser
 
         // NOTE: sampleIdx is the index of the sample according to the Illumina CSV file, and the number assigned
         // by the illumina barcode callers.  Sample 0 always refers to control reads
-        Integer sampleId = _sampleMap.get(sampleIdx);
-        Pair<Integer, Integer> sampleKey = Pair.of(sampleId, pairNumber);
+        SampleIdType sampleId = _sampleMap.get(sampleIdx);
+        Pair<SampleIdType, Integer> sampleKey = Pair.of(sampleId, pairNumber);
         if (_fileMap.containsKey(sampleKey))
         {
             return _fileMap.get(sampleKey).getValue();
@@ -248,7 +248,7 @@ public class IlluminaFastqParser
         _destinationDir = destinationDir;
     }
 
-    public Map<Pair<Integer, Integer>, Integer> getReadCounts()
+    public Map<Pair<SampleIdType, Integer>, Integer> getReadCounts()
     {
         return _sequenceTotals;
     }
