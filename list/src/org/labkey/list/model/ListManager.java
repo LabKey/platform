@@ -1437,25 +1437,48 @@ public class ListManager implements SearchService.DocumentProvider
 
     public static class TestCase extends Assert
     {
-        private ListDefinition list;
+        private ListDefinitionImpl list;
         private static final String LIST_NAME = "Unit Test list";
-        private static final String WORKBOOK_NAME = "Unit Test Workbook";
+        private static final String WORKBOOK1_NAME = "Unit Test Workbook 1";
+        private static final String WORKBOOK2_NAME = "Unit Test Workbook 2";
+        private static final String FIELD_NAME = "field";
+        private static final String PARENT_LIST_ITEM = "parentItem";
+        private static final String WORKBOOK1_LIST_ITEM = "workbook1Item";
+        private static final String WORKBOOK2_LIST_ITEM = "workbook2Item";
+        private static final Integer PARENT_LI_KEY = 1;
+        private static final Integer WB1_LI_KEY = 2;
+        private static final Integer WB2_LI_KEY = 3;
         private Container c;
         private User u;
-        private Container workbook;
+        private DomainProperty dp;
 
         @Before
         public void setUp() throws Exception
         {
-
             JunitUtil.deleteTestContainer();
             cleanup();
             c = JunitUtil.getTestContainer();
             TestContext context = TestContext.get();
             u = context.getUser();
-            list = ListService.get().createList(c, LIST_NAME, ListDefinition.KeyType.AutoIncrementInteger);
+            list = (ListDefinitionImpl)ListService.get().createList(c, LIST_NAME, ListDefinition.KeyType.AutoIncrementInteger);
             list.setKeyName("Unit test list Key");
+
+            dp = list.getDomain().addProperty();
+            dp.setName(FIELD_NAME);
+            dp.setType(PropertyService.get().getType(c, PropertyType.STRING.getXmlName()));
+            dp.setPropertyURI(ListDomainKind.createPropertyURI(list.getName(), FIELD_NAME, c, list.getKeyType()).toString());
             list.save(u);
+
+            addListItem(c, list, PARENT_LIST_ITEM);
+        }
+
+        private void addListItem(Container scopedContainer, ListDefinition scopedList, String value) throws Exception
+        {
+            List<ListItem> lis = new ArrayList<>();
+            ListItem li = scopedList.createListItem();
+            li.setProperty(dp, value);
+            lis.add(li);
+            list.insertListItems(u, scopedContainer, lis);
         }
 
         @After
@@ -1476,21 +1499,41 @@ public class ListManager implements SearchService.DocumentProvider
         {
             Map<String, ListDefinition> lists = ListService.get().getLists(c);
             assertTrue("Test List not found in own container", lists.containsKey(LIST_NAME));
+            ListItem li = lists.get(LIST_NAME).getListItem(1, u, c);
+            assertTrue("Item not found in own container", li.getProperty(dp).equals(PARENT_LIST_ITEM));
         }
 
         @Test
         public void testListServiceInWorkbook() throws Exception
         {
-            workbook = setupWorkbook();
-            Map<String, ListDefinition> lists = ListService.get().getLists(workbook);
+            Container workbook1 = setupWorkbook(WORKBOOK1_NAME);
+            Container workbook2 = setupWorkbook(WORKBOOK2_NAME);
+            Map<String, ListDefinition> lists = ListService.get().getLists(workbook1);
             assertTrue("Test List not found in workbook", lists.containsKey(LIST_NAME));
+
+            checkListItemScoping(workbook1, workbook2);
+
         }
 
-        private Container setupWorkbook()
+        private Container setupWorkbook(String name)
         {
-            return ContainerManager.createContainer(c, WORKBOOK_NAME, WORKBOOK_NAME, null, Container.TYPE.workbook, u);
+            return ContainerManager.createContainer(c, name, name, null, Container.TYPE.workbook, u);
         }
 
+        private void checkListItemScoping(Container wb1, Container wb2) throws Exception
+        {
+            ListDefinition wbList1 = ListService.get().getLists(wb1).get(LIST_NAME);
+            ListDefinition wbList2 = ListService.get().getLists(wb2).get(LIST_NAME);
+
+            assertTrue("Lists available to each workbook are not the same", wbList1.toString().equals(wbList2.toString()));
+            addListItem(wb1, wbList1, WORKBOOK1_LIST_ITEM);
+            addListItem(wb2, wbList2, WORKBOOK2_LIST_ITEM);
+
+            assertNull("Parent item visible in workbook", wbList1.getListItem(PARENT_LI_KEY, u, wb1));
+            assertNull("Sibling workbook item visible in another workbook", wbList1.getListItem(WB2_LI_KEY, u, wb1));
+            assertTrue("Parent container can not see child workbook item",wbList1.getListItem(WB1_LI_KEY, u, c).getProperty(dp).equals(WORKBOOK1_LIST_ITEM));
+            assertTrue("Workbook can not see its own list item", wbList1.getListItem(WB1_LI_KEY, u, wb1).getProperty(dp).equals(WORKBOOK1_LIST_ITEM));
+        }
         /*
         @Test
         public void testUpgrade() throws Exception
