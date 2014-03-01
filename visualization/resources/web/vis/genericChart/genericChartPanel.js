@@ -1019,6 +1019,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         var userSort = LABKEY.Filter.getSortFromUrl(filterUrl, this.dataRegionName);
 
+        this.currentFilterStr = this.createFilterString(userFilters);
+
         wpConfig = {
             schemaName  : this.schemaName,
             queryName   : this.queryName,
@@ -2287,21 +2289,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!this.chartData)
             return true;
 
-        // check if the user filters have changed
-        if (this.currentFilterStr == null)
-        {
-            this.currentFilterStr = this.createFilterString(queryCfg.filterArray);
-            return true;
-        }
-        else
-        {
-            var filterStr = this.createFilterString(queryCfg.filterArray);
+        var filterStr = this.createFilterString(queryCfg.filterArray);
 
-            if (this.currentFilterStr != filterStr)
-            {
-                this.currentFilterStr = filterStr;
-                return true;
-            }
+        if (this.currentFilterStr != filterStr) {
+            this.currentFilterStr = filterStr;
+            return true;
         }
 
         return false;
