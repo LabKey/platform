@@ -118,7 +118,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         }
         catch (EmptyStackException e)
         {
-            // Basic auth is checked in AuthFilter, so there won't be a ViewContext.in that case.  #11653
+            // Basic auth is checked in AuthFilter, so there won't be a ViewContext in that case. #11653
         }
 
         if (null != ctx)
