@@ -39,6 +39,7 @@ import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.OlapSchemaInfo;
 import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryReportDescriptor;
 import org.labkey.api.reports.report.ModuleRReportDescriptor;
@@ -1263,5 +1264,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public boolean getRequireSitePermission()
     {
         return _requireSitePermission;
+    }
+
+    @Override
+    public OlapSchemaInfo getOlapSchemaInfo()
+    {
+        return null;
     }
 }

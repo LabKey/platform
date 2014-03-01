@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.OlapSchemaInfo;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
@@ -417,5 +418,11 @@ public class MockModule implements Module
     public boolean getRequireSitePermission()
     {
         return false;
+    }
+
+    @Override
+    public OlapSchemaInfo getOlapSchemaInfo()
+    {
+        return null;
     }
 }

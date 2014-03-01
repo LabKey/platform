@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.OlapSchemaInfo;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
@@ -322,4 +323,10 @@ public interface Module extends Comparable<Module>
     public String getResourcePath();
 
     public boolean getRequireSitePermission();
+
+    /**
+     * Enables modules to publish schema information for Olap queries.
+     */
+    @Nullable
+    public OlapSchemaInfo getOlapSchemaInfo();
 }
