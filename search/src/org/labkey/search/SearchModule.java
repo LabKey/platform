@@ -182,7 +182,6 @@ public class SearchModule extends DefaultModule
             {
                 SearchService ss = ServiceRegistry.get(SearchService.class);
                 ss.clearLastIndexed();
-                ContextListener.removeStartupListener(this);
             }
         };
         ContextListener.addStartupListener("Search Service: clear indexes", l);
