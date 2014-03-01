@@ -103,7 +103,7 @@ class EhSimpleCache<K, V> implements SimpleCache<K, V>
     @Override
     public int size()
     {
-        return _cache.getKeysNoDuplicateCheck().size();
+        return (int)_cache.getStatistics().getObjectCount();
     }
 
     @Override
