@@ -15,6 +15,7 @@
  */
 package org.labkey.core.admin;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Level;
@@ -5376,11 +5377,32 @@ public class AdminController extends SpringActionController
     }
 
 
+    public static class ModulesForm
+    {
+        private double[] _ignore = new double[0];  // Module versions to ignore (filter out of the results)
+
+        public double[] getIgnore()
+        {
+            return _ignore;
+        }
+
+        public void setIgnore(double[] ignore)
+        {
+            _ignore = ignore;
+        }
+
+        private Set<Double> getIgnoreSet()
+        {
+            return new HashSet<>(Arrays.asList(ArrayUtils.toObject(_ignore)));
+        }
+    }
+
+
     @AdminConsoleAction
-    public class ModulesAction extends SimpleViewAction
+    public class ModulesAction extends SimpleViewAction<ModulesForm>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(ModulesForm form, BindException errors) throws Exception
         {
             ModuleLoader ml = ModuleLoader.getInstance();
 
@@ -5388,13 +5410,25 @@ public class AdminController extends SpringActionController
             Collection<ModuleContext> knownModules = ml.getAllModuleContexts();
             knownModules.removeAll(unknownModules);
 
-            HttpView known = new ModulesView(knownModules, "Known", "Each of these modules is installed and has a valid module file.", "This message should never appear");
+            String link = "";
+
+            // Option to filter out all modules whose version matches the core version or 0.00, which can be helpful during
+            // the end-of-release consolidation process. Show the link only in dev mode.
+            if (AppProps.getInstance().isDevMode())
+            {
+                String coreVersion = ModuleLoader.getInstance().getCoreModule().getFormattedVersion();
+                ActionURL url = new ActionURL(AdminController.ModulesAction.class, ContainerManager.getRoot());
+                url.addParameter("ignore", "0.00," + coreVersion);
+                link = PageFlowUtil.textLink("Click here to ignore 0.00 and " + coreVersion, url);
+            }
+
+            HttpView known = new ModulesView(knownModules, "Known", PageFlowUtil.filter("Each of these modules is installed and has a valid module file. ") + link, null, form.getIgnoreSet());
             HttpView unknown = new ModulesView(unknownModules, "Unknown",
-                (1 == unknownModules.size() ? "This module" : "Each of these modules") + " has been installed on this server " +
+                PageFlowUtil.filter((1 == unknownModules.size() ? "This module" : "Each of these modules") + " has been installed on this server " +
                 "in the past but the corresponding module file is currently missing or invalid. Possible explanations: the " +
                 "module is no longer being distributed, the module has been renamed, the server location where the module " +
-                "is stored is not accessible, or the module file is corrupted.", "A module is considered \"unknown\" if it was installed on this server " +
-                "in the past but the corresponding module file is currently missing or invalid. This server has no unknown modules.");
+                "is stored is not accessible, or the module file is corrupted."), PageFlowUtil.filter("A module is considered \"unknown\" if it was installed on this server " +
+                "in the past but the corresponding module file is currently missing or invalid. This server has no unknown modules."), Collections.<Double>emptySet());
 
             return new VBox(known, unknown);
         }
@@ -5403,10 +5437,11 @@ public class AdminController extends SpringActionController
         {
             private final Collection<ModuleContext> _contexts;
             private final String _type;
-            private final String _description;
-            private final String _noModulesDescription;
+            private final String _descriptionHtml;
+            private final String _noModulesDescriptionHtml;
+            private final Set<Double> _ignoreVersions;
 
-            private ModulesView(Collection<ModuleContext> contexts, String type, String description, String noModulesDescription)
+            private ModulesView(Collection<ModuleContext> contexts, String type, String descriptionHtml, String noModulesDescriptionHtml, Set<Double> ignoreVersions)
             {
                 List<ModuleContext> sorted = new ArrayList<>(contexts);
                 Collections.sort(sorted, new Comparator<ModuleContext>(){
@@ -5419,8 +5454,9 @@ public class AdminController extends SpringActionController
 
                 _contexts = sorted;
                 _type = type;
-                _description = description;
-                _noModulesDescription = noModulesDescription;
+                _descriptionHtml = descriptionHtml;
+                _noModulesDescriptionHtml = noModulesDescriptionHtml;
+                _ignoreVersions = ignoreVersions;
                 setTitle(_type + " Modules");
             }
 
@@ -5429,17 +5465,20 @@ public class AdminController extends SpringActionController
             {
                 if (_contexts.isEmpty())
                 {
-                    out.println(_noModulesDescription);
+                    out.println(_noModulesDescriptionHtml);
                 }
                 else
                 {
                     out.println("\n<table>");
-                    out.println("<tr><td colspan=\"5\">" + PageFlowUtil.filter(_description) + "</td></tr>");
+                    out.println("<tr><td colspan=\"5\">" + _descriptionHtml + "</td></tr>");
                     out.println("<tr><td colspan=\"5\">&nbsp;</td></tr>");
-                    out.println("<tr><th>Name</th><th>Version</th><th>Class</th><th>Schemas</th><th></th></tr>");
+                    out.println("<tr><th>Name</th><th>Version</th><th>Class</th><th>Source</th><th>Schemas</th><th></th></tr>");
 
                     for (ModuleContext moduleContext : _contexts)
                     {
+                        if (_ignoreVersions.contains(moduleContext.getInstalledVersion()))
+                            continue;
+
                         List<String> schemas = moduleContext.getSchemaList();
                         out.println("  <tr>");
 
@@ -5453,6 +5492,11 @@ public class AdminController extends SpringActionController
 
                         out.print("    <td>");
                         out.print(PageFlowUtil.filter(moduleContext.getClassName()));
+                        out.println("</td>");
+
+                        Module module = ModuleLoader.getInstance().getModule(moduleContext.getName());
+                        out.print("    <td>");
+                        out.print(null != module ? PageFlowUtil.filter(module.getSourcePath()) : "");
                         out.println("</td>");
 
                         out.print("    <td>");
