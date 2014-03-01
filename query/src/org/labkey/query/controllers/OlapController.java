@@ -254,11 +254,12 @@ public class OlapController extends SpringActionController
                 OlapConnection conn = controller.getConnection(sd);
                 stmt = conn.createStatement();
                 String query = form.getQuery();
+                QueryProfiler.getInstance().ensureListenerEnvironment();
                 Logger.getLogger(this.getClass()).debug("\nSTART executeOlapQuery: --------------------------    --------------------------    --------------------------\n" + query);
                 long ms = System.currentTimeMillis();
                 cs = stmt.executeOlapQuery(query);
                 long d = System.currentTimeMillis() - ms;
-                QueryProfiler.getInstance().track(null, "-- MDX\n" + query, null, d, null, true);
+                QueryProfiler.getInstance().track(null, "-- MDX\n" + query + sd.getQueryTag(), null, d, null, true);
                 Logger.getLogger(this.getClass()).debug("\nEND executeOlapQuery: " + DateUtil.formatDuration(d) + " --------------------------    --------------------------    --------------------------\n");
 
                 StringWriter sw = new StringWriter();

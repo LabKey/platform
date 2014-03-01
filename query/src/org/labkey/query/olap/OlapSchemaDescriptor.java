@@ -19,6 +19,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
+import org.labkey.api.query.OlapSchemaInfo;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
@@ -50,6 +51,7 @@ public class OlapSchemaDescriptor
     final String _id;
     final String _name;
     final Resource _resource;
+    final String _queryTag;
 
     public OlapSchemaDescriptor(String id, Module module, Resource resource)
     {
@@ -57,6 +59,16 @@ public class OlapSchemaDescriptor
         _id = id;
         _name = id.substring(id.indexOf("/")+1);
         _resource = resource;
+
+        // See if the module has any extra schema information about Olap queries.  Right now, we
+        // only look for module-specific query tags used for auditing.
+        OlapSchemaInfo olapSchemaInfo = module.getOlapSchemaInfo();
+        _queryTag = (olapSchemaInfo == null) ? "" : olapSchemaInfo.getQueryTag();
+    }
+
+    public String getQueryTag()
+    {
+        return _queryTag;
     }
 
     public String getId()
