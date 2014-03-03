@@ -402,7 +402,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                             '<span data-qtip="Use the default static image for this report"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
                     inputValue : 'NONE', checked : this.reportConfig.thumbnailType == 'NONE'});
 
-                if (this.thumbnailType == 'CUSTOM')
+                if (this.reportConfig.thumbnailType == 'CUSTOM')
                     thumbnails.push({name : 'thumbnailType', boxLabel : 'Keep existing', inputValue : 'CUSTOM', checked : true});
 
                 items.push({
