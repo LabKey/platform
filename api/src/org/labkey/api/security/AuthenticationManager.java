@@ -457,7 +457,7 @@ public class AuthenticationManager
                     user = UserManager.getUser(email);
             }
 
-            String message = " failed to login: " + firstFailure.getFailureReason().getMessage() + ".";
+            String message = " failed to login: " + firstFailure.getFailureReason().getMessage();
 
             if (null != user)
             {
@@ -484,10 +484,10 @@ public class AuthenticationManager
 
 
     // limit one bad login per second averaged out over 60sec
-    static final Cache<Integer,RateLimiter> addrLimiter = CacheManager.getCache(1001,TimeUnit.MINUTES.toMillis(5),"login limiter");
-    static final Cache<Integer,RateLimiter> userLimiter = CacheManager.getCache(1001,TimeUnit.MINUTES.toMillis(5),"user limiter");
-    static final Cache<Integer,RateLimiter> pwdLimiter = CacheManager.getCache(1001,TimeUnit.MINUTES.toMillis(5),"password limiter");
-    static final CacheLoader<Integer,RateLimiter> addrLoader = new CacheLoader<Integer,RateLimiter>()
+    private static final Cache<Integer,RateLimiter> addrLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "login limiter");
+    private static final Cache<Integer,RateLimiter> userLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "user limiter");
+    private static final Cache<Integer,RateLimiter> pwdLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "password limiter");
+    private static final CacheLoader<Integer,RateLimiter> addrLoader = new CacheLoader<Integer,RateLimiter>()
         {
             @Override
             public RateLimiter load(Integer key, @Nullable Object request)

@@ -106,6 +106,8 @@ public abstract interface AuthenticationProvider
         userDoesNotExist(ReportType.onFailure, "user does not exist"),
         badPassword(ReportType.onFailure, "incorrect password"),
         badCredentials(ReportType.onFailure, "invalid credentials"),  // Use for cases where we can't distinguish between userDoesNotExist and badPassword
+        complexity(ReportType.onFailure, "password does not meet the complexity requirements"),
+        expired(ReportType.onFailure, "password has expired"),
         configurationError(ReportType.always, "configuration problem"),
         notApplicable(ReportType.never, "not applicable");
 
