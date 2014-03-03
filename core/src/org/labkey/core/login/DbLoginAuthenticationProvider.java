@@ -19,15 +19,18 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
-import org.labkey.api.security.*;
+import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
@@ -76,8 +79,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         String hash = SecurityManager.getPasswordHash(email);
         User user = UserManager.getUser(email);
 
-        if (null == hash || null == user)
-            return AuthenticationResponse.createFailureResponse(FailureReason.userDoesNotExist);
+        if (null == hash || null == user) return AuthenticationResponse.createFailureResponse(FailureReason.userDoesNotExist);
 
         if (!SecurityManager.matchPassword(password,hash))
             return AuthenticationResponse.createFailureResponse(FailureReason.badPassword);
@@ -89,7 +91,8 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
         if (!rule.isValidForLogin(password, user, messages))
         {
-            email = handleProblem(user, returnURL, "doesn't meet the current complexity requirements");
+            redirectIfPossible(user, returnURL, FailureReason.complexity);
+            return AuthenticationResponse.createFailureResponse(FailureReason.complexity);
         }
         else
         {
@@ -97,19 +100,20 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
             Date lastChanged = SecurityManager.getLastChanged(user);
 
             if (expiration.hasExpired(lastChanged))
-                email = handleProblem(user, returnURL, "has expired");
+            {
+                redirectIfPossible(user, returnURL, FailureReason.expired);
+                return AuthenticationResponse.createFailureResponse(FailureReason.expired);
+            }
         }
 
-        if (null == email)
-            return AuthenticationResponse.createFailureResponse(FailureReason.configurationError);
-        else
-            return AuthenticationResponse.createSuccessResponse(email);
+        return AuthenticationResponse.createSuccessResponse(email);
     }
 
-    private ValidEmail handleProblem(User user, URLHelper returnURL, String description) throws RedirectException
+    // If this appears to be a browser request, then throw a redirect to the change password page. If not, just return.
+    // TODO: Better detection of browser case? TODO: Create audit log entry in redirect case? Right now, complexity and
+    // expiration issues during BASIC auth requests get logged but not the same issues during browser requests.
+    private void redirectIfPossible(User user, URLHelper returnURL, FailureReason reason) throws RedirectException
     {
-        _log.info("Password for " + user.getEmail() + " " + description + ".");
-
         ViewContext ctx = null;
 
         try
@@ -127,21 +131,20 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
             if (null != c)
             {
-                // We have a container and a returnURL, so redirect to password change page
+                // We have a container, so redirect to password change page
 
-                // Fall back plan is the home page.
+                // Fall back plan is the home page
                 if (null == returnURL)
                     returnURL = AppProps.getInstance().getHomePageActionURL();
 
+                _log.info(user.getEmail() + " failed to login: " + reason.getMessage());
+
                 LoginUrls urls = PageFlowUtil.urlProvider(LoginUrls.class);
-                ActionURL changePasswordURL = urls.getChangePasswordURL(c, user, returnURL, "Your password " + description + "; please choose a new password.");
+                ActionURL changePasswordURL = urls.getChangePasswordURL(c, user, returnURL, "Your " + reason.getMessage() + "; please choose a new password.");
 
                 throw new RedirectException(changePasswordURL);
             }
         }
-
-        // TODO: This is not right... shouldn't be throwing Unauthorized from here, plus Tomcat renders it as HTML
-        throw new UnauthorizedException("Your password " + description);
     }
 
     public ActionURL getConfigurationLink()
