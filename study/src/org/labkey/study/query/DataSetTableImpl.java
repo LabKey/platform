@@ -533,7 +533,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
             else
             {
                 // Check the name to prevent infinite recursion
-                if (!name.equalsIgnoreCase("Properties"))
+                if (!"Properties".equalsIgnoreCase(name))
                 {
                     // Try looking for it as a NAb specimen property
                     fieldKey = FieldKey.fromParts("Properties", "SpecimenLsid", "Property", name);
@@ -546,7 +546,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
                 }
             }
         }
-        if (fieldKey == null && !name.equalsIgnoreCase("Properties"))
+        if (fieldKey == null && !"Properties".equalsIgnoreCase((name)))
         {
             fieldKey = FieldKey.fromParts("Properties", name);
         }
