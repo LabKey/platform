@@ -1298,7 +1298,7 @@ public class AdminController extends SpringActionController
             props.save();
 
             //write an audit log event
-            props.writeAuditLogEvent(getViewContext().getUser(), props.getOldProperties());
+            props.writeAuditLogEvent(getContainer(), getViewContext().getUser(), props.getOldProperties());
 
             if (null != level)
                 level.scheduleUpgradeCheck();

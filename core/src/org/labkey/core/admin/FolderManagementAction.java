@@ -274,7 +274,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         Container c = getContainer();
         WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
 
-        if (!ProjectSettingsAction.saveFolderSettings(form, props, getUser(), errors))
+        if (!ProjectSettingsAction.saveFolderSettings(getContainer(), form, props, getUser(), errors))
             return false;
         _successURL = getViewContext().getActionURL();
 

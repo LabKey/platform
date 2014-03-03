@@ -217,7 +217,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         DateParsingMode dateParsingMode = DateParsingMode.fromString(form.getDateParsingMode());
         props.setDateParsingMode(dateParsingMode);
 
-        if (!saveFolderSettings(form, props, getUser(), errors))
+        if (!saveFolderSettings(c, form, props, getUser(), errors))
             return false;
 
         // Bump the look & feel revision so browsers retrieve the new theme stylesheet
@@ -553,7 +553,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
 
     // Validate and populate the folder settings; save & log all changes
-    public static boolean saveFolderSettings(AdminController.DefaultFormatsForm form, WriteableFolderLookAndFeelProperties props, User user, BindException errors)
+    public static boolean saveFolderSettings(Container c, AdminController.DefaultFormatsForm form, WriteableFolderLookAndFeelProperties props, User user, BindException errors)
     {
         String defaultDateFormat = StringUtils.trimToNull(form.getDefaultDateFormat());
         if (null == defaultDateFormat)
@@ -594,7 +594,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         props.save();
 
         //write an audit log event
-        props.writeAuditLogEvent(user, props.getOldProperties());
+        props.writeAuditLogEvent(c, user, props.getOldProperties());
 
         return true;
     }
