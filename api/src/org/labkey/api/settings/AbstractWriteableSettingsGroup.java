@@ -96,7 +96,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
         _properties.remove(name);
     }
 
-    public void writeAuditLogEvent(User user, Map<String,String> oldProps)
+    public void writeAuditLogEvent(Container c, User user, Map<String,String> oldProps)
     {
         String diff = genDiffHtml(oldProps);
 
@@ -104,7 +104,9 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
         {
             AuditLogEvent event = new AuditLogEvent();
             event.setCreatedBy(user);
-            event.setContainerId(ContainerManager.getRoot().getId());
+            event.setContainerId(c.getId());
+            if (c.getProject() != null)
+                event.setProjectId(c.getProject().getId());
             event.setComment("The " + getType() + " were changed (see details).");
             event.setEventType(AUDIT_EVENT_TYPE);
 

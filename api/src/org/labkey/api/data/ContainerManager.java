@@ -434,7 +434,7 @@ public class ContainerManager
 
             WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
 
-            props.writeAuditLogEvent(u, props.getOldProperties());
+            props.writeAuditLogEvent(c, u, props.getOldProperties());
             props.save();
             return true;
     }
