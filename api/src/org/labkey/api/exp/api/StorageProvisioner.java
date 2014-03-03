@@ -87,6 +87,13 @@ public class StorageProvisioner
 {
     private static final Logger log = Logger.getLogger(StorageProvisioner.class);
     private static final CPUTimer create = new CPUTimer("StorageProvisioner.create");
+    private static boolean allowRenameOfColumnsDuringUpgrade = false;
+
+    // this is a bit of hackery to avoid worse hackery. avoid rename of built-in columns check.
+    public static void setAllowRenameOfColumnsDuringUpgrade(boolean b)
+    {
+        allowRenameOfColumnsDuringUpgrade = b;
+    }
 
 
     private static String _create(DbScope scope, DomainKind kind, Domain domain)
@@ -242,7 +249,7 @@ public class StorageProvisioner
             {
                 // apparently this is a case where the domain allows a propertydescriptor to be defined with the same
                 // name as a built-in column. e.g. to allow setting overrides?
-                log.warn("StorageProvisioner ignored property with name of build-in column: " + prop.getPropertyURI());
+                log.warn("StorageProvisioner ignored property with name of built-in column: " + prop.getPropertyURI());
                 continue;
             }
             PropertyStorageSpec spec = kind.getPropertySpec(prop.getPropertyDescriptor(), domain);
@@ -421,13 +428,17 @@ public class StorageProvisioner
                 String oldPropName = rename.getValue().getName();
                 renamePropChange.addColumnRename(oldPropName, prop.getName());
 
-                if (base.contains(oldPropName))
+
+                if (!allowRenameOfColumnsDuringUpgrade)
                 {
-                    throw new IllegalArgumentException("Cannot rename built-in column " + oldPropName);
-                }
-                else if (base.contains(prop.getName()))
-                {
-                    throw new IllegalArgumentException("Cannot rename " + oldPropName + " to built-in column name " + prop.getName());
+                    if (base.contains(oldPropName))
+                    {
+                        throw new IllegalArgumentException("Cannot rename built-in column " + oldPropName);
+                    }
+                    else if (base.contains(prop.getName()))
+                    {
+                        throw new IllegalArgumentException("Cannot rename " + oldPropName + " to built-in column name " + prop.getName());
+                    }
                 }
 
                 // Rename the MV column if it already exists. We'll handle removing it later if the new version
