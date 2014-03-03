@@ -418,6 +418,14 @@ public class OntologyManager
                             }
                         }
                     }
+
+                    // issue 19391: data from R uses "Inf" to represent infinity
+                    if (JdbcType.DOUBLE.equals(col.getJdbcType()))
+                    {
+                        value = "Inf".equals(value) ? "Infinity" : value;
+                        value = "-Inf".equals(value) ? "-Infinity" : value;
+                    }
+
                     try
                     {
                         String key = col.getName();

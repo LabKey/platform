@@ -65,9 +65,11 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
             return result;
         }
 
+        Map<DomainProperty, String> batchProperties;
         Map<DomainProperty, String> runProperties;
         try
         {
+            batchProperties = context.getBatchProperties();
             runProperties = context.getRunProperties();
         }
         catch (ExperimentException e)
@@ -111,7 +113,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                     {
                         Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
                         String script = sb.toString();
-                        Pair<File, Set<File>> files = dataHandler.createTransformationRunInfo(context, run, scriptDir, runProperties, context.getBatchProperties());
+                        Pair<File, Set<File>> files = dataHandler.createTransformationRunInfo(context, run, scriptDir, runProperties, batchProperties);
                         File runInfo = files.getKey();
 
                         bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, scriptDir.getAbsolutePath());
@@ -141,11 +143,18 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
 
                         // process any output from the transformation script
                         result = dataHandler.processTransformationOutput(context, runInfo, run, rewrittenScriptFile, result, files.getValue());
+
+                        // Propagate any transformed batch properties on to the next script
+                        if (result.getBatchProperties() != null && !result.getBatchProperties().isEmpty())
+                        {
+                            batchProperties = result.getBatchProperties();
+                        }
+                        // Propagate any transformed run properties on to the next script
                         if (result.getRunProperties() != null && !result.getRunProperties().isEmpty())
                         {
-                            // Propagate any transformed run properties on to the next script
                             runProperties = result.getRunProperties();
                         }
+
                         context.setTransformResult(result);
                     }
                     catch (ValidationException e)

@@ -668,10 +668,9 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
                     // merge the transformed props with the props in the upload form
                     Map<DomainProperty, String> runProps = new HashMap<>();
-                    Map<DomainProperty, String> batchProps = new HashMap<>();
                     boolean runPropTransformed = false;
-                    boolean batchPropTransformed = false;
-                    for (Map.Entry<DomainProperty, String> entry : getRunProperties(context).entrySet())
+                    Map<DomainProperty, String> runProperties = result.getRunProperties().size() > 0 ? result.getRunProperties() : getRunProperties(context);
+                    for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
                     {
                         String propName = entry.getKey().getName();
                         if (transformedProps.containsKey(propName))
@@ -683,7 +682,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                             runProps.put(entry.getKey(), entry.getValue());
                     }
 
-                    for (Map.Entry<DomainProperty, String> entry : context.getBatchProperties().entrySet())
+                    Map<DomainProperty, String> batchProps = new HashMap<>();
+                    boolean batchPropTransformed = false;
+                    Map<DomainProperty, String> batchProperties = result.getBatchProperties().size() > 0 ? result.getBatchProperties() : context.getBatchProperties();
+                    for (Map.Entry<DomainProperty, String> entry : batchProperties.entrySet())
                     {
                         String propName = entry.getKey().getName();
                         if (transformedProps.containsKey(propName))
