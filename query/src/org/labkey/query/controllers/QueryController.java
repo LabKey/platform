@@ -987,6 +987,7 @@ public class QueryController extends SpringActionController
     // CONSIDER : deleting this action after the SQL editor UI changes are finalized, keep in mind that built-in views
     // use this view as well via the edit metadata page.
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectMetaData)  // Note: This action deals with just meta data; it AJAXes data into place using GetWebPartAction
     public class SourceQueryAction extends SimpleViewAction<SourceForm>
     {
         public SourceForm _form;

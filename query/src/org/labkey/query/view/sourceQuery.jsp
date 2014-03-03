@@ -16,14 +16,14 @@
  */
 %>
 <%@ page import="org.labkey.api.query.QueryAction"%>
-<%@ page import="org.labkey.api.util.HelpTopic"%>
+<%@ page import="org.labkey.api.query.QueryDefinition"%>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
-<%@ page import="org.labkey.api.query.QueryDefinition" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 

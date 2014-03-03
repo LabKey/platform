@@ -2517,6 +2517,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public class RenderQueryReport extends SimpleViewAction<ReportDesignBean>
     {
         String _reportName;
