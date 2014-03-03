@@ -90,9 +90,8 @@ public class ThumbnailServiceImpl implements ThumbnailService
         if (null == provider.getEntityId())
             return;
 
-        deleteThumbnail(provider, type);
-
         Thumbnail thumbnail = provider.generateDynamicThumbnail(context);
+        deleteThumbnail(provider, type);
 
         if (null != thumbnail)
         {
