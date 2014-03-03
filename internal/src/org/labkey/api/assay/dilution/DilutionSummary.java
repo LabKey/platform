@@ -72,9 +72,17 @@ public class DilutionSummary implements Serializable
         _assay = assay;
         _lsid = lsid;
 
-        ExpRun run = ExperimentService.get().getExpRun(assay.getRunRowId());
-        if (run != null)
-            _container = run.getContainer();
+        if (assay.getRunRowId() != null)
+        {
+            ExpRun run = ExperimentService.get().getExpRun(assay.getRunRowId());
+            if (run != null)
+                _container = run.getContainer();
+        }
+        else
+        {
+            // legacy nab assay instances do not use the run row id
+            _container = ContainerManager.getRoot();
+        }
     }
 
     private void ensureSameSample(List<WellGroup> groups)
