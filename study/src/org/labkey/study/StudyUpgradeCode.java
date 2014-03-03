@@ -38,7 +38,9 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -545,7 +547,7 @@ public class StudyUpgradeCode implements UpgradeCode
 
     /* upgrade provisioned dataset domains to always include data and container */
 
-    public void migrateProvisionedDatasetTables141(final ModuleContext context)
+    public void migrateProvisionedDatasetTables141(final ModuleContext context) throws ChangePropertyDescriptorException
     {
         if (context.isNewInstall())
             return;
@@ -564,39 +566,64 @@ public class StudyUpgradeCode implements UpgradeCode
             for (DataSetDefinition def : study.getDataSets())
             {
                 migrateDatasetStorage(def);
-                StudyManager.getInstance().uncache(def);
+                uncacheDef(def);
             }
         }
 
         DbScope.getLabkeyScope().invalidateSchema("studydataset", DbSchemaType.Module);
     }
 
+    void uncacheDef(DataSetDefinition def)
+    {
+        TableInfo t = def.getStorageTableInfo();
+        t.getSchema().getScope().invalidateTable(DbSchema.get("studydataset"),t.getName());
+        StudyManager.getInstance().uncache(def);
+    }
 
-    private void migrateDatasetStorage(DataSetDefinition def)
+    private void migrateDatasetStorage(DataSetDefinition def) throws ChangePropertyDescriptorException
     {
         TableInfo t = def.getStorageTableInfo();
         ColumnInfo dt = t.getColumn("date");
-        if (null != dt && dt.getJdbcType() != JdbcType.TIMESTAMP)
-            throw new IllegalStateException("Column named 'Date' is of type " + dt.getJdbcType());
-        ColumnInfo ct = t.getColumn("container");
-        if (null != ct && ct.getJdbcType() != JdbcType.GUID && ct.getJdbcType() != JdbcType.VARCHAR)
-            throw new IllegalStateException("Column named 'Container' is of type " + ct.getJdbcType());
 
-        if (null == dt)
+        if (null == dt || dt.getJdbcType() != JdbcType.TIMESTAMP)
         {
+            if (null != dt)
+                renameColumnWithTheNameOfWhichIDoNotApprove(def, dt);
             new SqlExecutor(t.getSchema()).execute("ALTER TABLE " + t.getSelectName() + " ADD Date " + t.getSqlDialect().getDefaultDateTimeDataType());
         }
 
-        if (null == ct)
+        ColumnInfo ct = t.getColumn("container");
+        if (null == ct || (ct.getJdbcType() != JdbcType.GUID && ct.getJdbcType() != JdbcType.VARCHAR))
         {
+            // I don't really expect this to happen, creating a container column in a dataset in 13.3 causes all kinds of bad
+            if (null != ct)
+                renameColumnWithTheNameOfWhichIDoNotApprove(def,ct);
             new SqlExecutor(t.getSchema()).execute("ALTER TABLE " + t.getSelectName() + " ADD Container " + t.getSqlDialect().getGuidType());
-            new SqlExecutor(t.getSchema()).execute("UPDATE " + t.getSelectName() + " SET Container = ?", def.getContainer());
-            if (t.getSqlDialect().isSqlServer())
-                new SqlExecutor(t.getSchema()).execute("ALTER TABLE " + t.getSelectName() + " ALTER COLUMN Container " + t.getSqlDialect().getGuidType() + " NOT NULL");
-            else
-                new SqlExecutor(t.getSchema()).execute("ALTER TABLE " + t.getSelectName() + " ALTER COLUMN Container SET NOT NULL");
+        }
+        new SqlExecutor(t.getSchema()).execute("UPDATE " + t.getSelectName() + " SET Container = ?", def.getContainer());
+        if (t.getSqlDialect().isSqlServer())
+            new SqlExecutor(t.getSchema()).execute("ALTER TABLE " + t.getSelectName() + " ALTER COLUMN Container " + t.getSqlDialect().getGuidType() + " NOT NULL");
+        else
+            new SqlExecutor(t.getSchema()).execute("ALTER TABLE " + t.getSelectName() + " ALTER COLUMN Container SET NOT NULL");
+    }
+
+
+    void renameColumnWithTheNameOfWhichIDoNotApprove(DataSetDefinition def, ColumnInfo columnInfo) throws ChangePropertyDescriptorException
+    {
+        try
+        {
+            StorageProvisioner.setAllowRenameOfColumnsDuringUpgrade(true);
+            Domain d = def.getDomain();
+            DomainProperty dp = d.getPropertyByName(columnInfo.getName());
+            dp.setName(columnInfo.getName() + "_" + columnInfo.getJdbcType().getJavaClass().getSimpleName());
+            d.save(null);
+        }
+        finally
+        {
+            StorageProvisioner.setAllowRenameOfColumnsDuringUpgrade(false);
         }
     }
+
 
     // Splits DrawTimeStamp into DrawDate and DrawTime in SpecimenEvent and Specimen tables
     @SuppressWarnings({"UnusedDeclaration"})
