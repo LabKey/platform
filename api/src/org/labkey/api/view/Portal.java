@@ -820,9 +820,8 @@ public class Portal
         if(null != page)
             pageId = page.getPageId();
 
-        // First, sort the webPart array.  Sorting will mutate newParts array in place, so create a copy of the array.
-        WebPart[] newPartsCopy = Arrays.copyOf(newParts, newParts.length);
-        Arrays.sort(newPartsCopy, new Comparator<WebPart>()
+        // make sure indexes are unique
+        Arrays.sort(newParts, new Comparator<WebPart>()
         {
             public int compare(WebPart w1, WebPart w2)
             {
@@ -830,17 +829,13 @@ public class Portal
             }
         });
 
-        // Next, ensure a unique index and set the pageId and container of the parts.
-        // NOTE: A copy of the WebPart is created -- the original webPart is a shared object and shouldn't be mutated.
         for (int i = 0; i < newParts.length; i++)
         {
-            WebPart part = new WebPart(newPartsCopy[i]);
+            WebPart part = newParts[i];
             part.index = i + 1;
             part.pageId = pageId;
             part.container = c;
-            newPartsCopy[i] = part;
         }
-        newParts = newPartsCopy;
 
         try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
         {

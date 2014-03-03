@@ -124,6 +124,11 @@ public class DefaultFolderType implements FolderType
         List<Portal.WebPart> required = getRequiredWebParts();
         List<Portal.WebPart> defaultParts = getPreferredWebParts();
 
+        // Issue 19673: Create copies of the required and preferred webparts -- don't mutate the shared WebPart instances.
+        // TODO: Ideally FolderType would use WebPartFactory instead of holding on to WebPart instances.
+        required = copyWebParts(required);
+        defaultParts = copyWebParts(required);
+
         //Just to be sure, make sure required web parts are set correctly
         if (null != required)
             for (Portal.WebPart part : required)
@@ -277,6 +282,21 @@ public class DefaultFolderType implements FolderType
                 return part;
 
         return null;
+    }
+
+    /**
+     * Create a List of copied WebParts.
+     */
+    protected List<WebPart> copyWebParts(List<WebPart> parts)
+    {
+        if (parts == null || parts.isEmpty())
+            return Collections.emptyList();
+
+        List<WebPart> newParts = new ArrayList<>(parts.size());
+        for (WebPart part : parts)
+            newParts.add(new WebPart(part));
+
+        return newParts;
     }
 
     public boolean getForceAssayUploadIntoWorkbooks()
