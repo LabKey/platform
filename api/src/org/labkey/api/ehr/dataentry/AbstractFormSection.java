@@ -337,6 +337,7 @@ abstract public class AbstractFormSection implements FormSection
         defaultButtons.add("BULKEDIT");
         defaultButtons.add("GUESSPROJECT");
         defaultButtons.add("REFRESH");
+        defaultButtons.add("COPY_IDS");
 
         return defaultButtons;
     }

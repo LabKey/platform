@@ -26,10 +26,12 @@ import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * User: bimber
@@ -69,7 +71,7 @@ abstract public class AbstractListDemographicsProvider extends AbstractDemograph
         if (records == null)
             records = new ArrayList<>();
 
-        Map<String, Object> record = new HashMap<>();
+        Map<String, Object> record = new TreeMap<>();
         for  (FieldKey key : cols.keySet())
         {
             if ("Id".equalsIgnoreCase(key.toString()))
@@ -84,6 +86,24 @@ abstract public class AbstractListDemographicsProvider extends AbstractDemograph
             record.put(key.toString(), val);
         }
         records.add(record);
+
+        //NOTE: records are ordered to allow validation
+        if (getSort() == null)
+        {
+            Collections.sort(records, new Comparator<Map<String, Object>>()
+            {
+                @Override
+                public int compare(Map<String, Object> o1, Map<String, Object> o2)
+                {
+                    if (o1 == null)
+                        return -1;
+                    else if (o2 == null)
+                        return 1;
+
+                    return o1.toString().compareTo(o2.toString());
+                }
+            });
+        }
 
         map.put(_propName, records);
     }

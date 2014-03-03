@@ -23,6 +23,7 @@ import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.Module;
@@ -81,7 +82,7 @@ abstract public class AbstractDemographicsProvider implements DemographicsProvid
 
         SimpleFilter filter = getFilter(ids);
         final Map<FieldKey, ColumnInfo> cols = getColumns(ti);
-        TableSelector ts = new TableSelector(ti, cols.values(), filter, null);
+        TableSelector ts = new TableSelector(ti, cols.values(), filter, getSort());
         ts.setForDisplay(true);
 
         ts.forEach(new Selector.ForEachBlock<ResultSet>()
@@ -140,6 +141,12 @@ abstract public class AbstractDemographicsProvider implements DemographicsProvid
         }
     }
 
+    public Collection<FieldKey> getSkippedFieldKeys()
+    {
+        return null;
+    }
+
+    @Override
     public Set<String> getKeys()
     {
         Set<String> ret = new HashSet<>();
@@ -152,6 +159,11 @@ abstract public class AbstractDemographicsProvider implements DemographicsProvid
         ret.add("objectid");
 
         return ret;
+    }
+
+    protected Sort getSort()
+    {
+        return null;
     }
 
     protected Map<FieldKey, ColumnInfo> getColumns(TableInfo ti)

@@ -16,6 +16,7 @@
 package org.labkey.api.ehr.demographics;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 
 import java.util.Collection;
@@ -42,4 +43,6 @@ public interface DemographicsProvider
 
     // returns the top-level keys used by this provider
     public Set<String> getKeys();
+
+    public Collection<FieldKey> getSkippedFieldKeys();
 }
