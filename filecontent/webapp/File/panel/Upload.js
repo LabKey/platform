@@ -664,9 +664,11 @@ Ext4.define('File.panel.Upload', {
         var url = this.getCurrentWebdavURL();
 
         var msg = [
-            '<p><b>TBD HELP TEXT</b></p>',
-            '<p>This folder is accessible via the WebDAV URL:</p>',
-            '<input style="font-family:monospace" type="text" readonly maxlength=10 size=' + url.length + ' value="' + (url) + '">',
+            '<p>',
+            'You can also use WebDav to transfer files to and from this folder using the Mac Finder, ' +
+            'Windows Explorer or file transfer programs like <a target=_blank href="http://cyberduck.io/">CyberDuck</a>. The WebDav URL for this folder is:',
+            '</p>',
+            '<textarea style="font-family:monospace" readonly wrap="hard" cols="62" rows="3" size=' + url.length + '>' + Ext4.util.Format.htmlEncode(url) + '</textarea>',
             '<p>For more information on transferring files, please see the',
             '<a target="_blank" href="https://www.labkey.org/wiki/home/Documentation/page.view?name=fileUpload">file upload</a>',
             'help documentation.</p>'
