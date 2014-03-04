@@ -127,7 +127,7 @@ public class DefaultFolderType implements FolderType
         // Issue 19673: Create copies of the required and preferred webparts -- don't mutate the shared WebPart instances.
         // TODO: Ideally FolderType would use WebPartFactory instead of holding on to WebPart instances.
         required = copyWebParts(required);
-        defaultParts = copyWebParts(required);
+        defaultParts = copyWebParts(defaultParts);
 
         //Just to be sure, make sure required web parts are set correctly
         if (null != required)
