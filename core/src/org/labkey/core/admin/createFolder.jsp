@@ -26,6 +26,7 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.LinkedList" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -40,6 +41,7 @@
     JspView<AdminController.ManageFoldersForm> me = (JspView<AdminController.ManageFoldersForm>) HttpView.currentView();
     AdminController.ManageFoldersForm form = me.getModelBean();
     boolean userHasEnableRestrictedModulesPermission = getContainer().hasEnableRestrictedModules(getUser());
+    boolean isContainerRoot = getContainer().isRoot();
 
     String name = form.getName();
     String folderTypeName = form.getFolderType() != null ? form.getFolderType() : "Collaboration"; //default to Collaboration
@@ -78,13 +80,15 @@
         <%="var selectedTemplateFolder = '" + form.getTemplateSourceId() + "';"%>
         <%="var selectedTemplateWriters = '" + templateWriterTypes + "';"%>
         var userHasEnableRestrictedModulesPermission = <%=userHasEnableRestrictedModulesPermission%>;
+        var isParentRoot = <%=isContainerRoot%>;
+        var dataspaceName = "<%=text(StudyService.DATASPACE_FOLDERTYPE_NAME)%>";
 
         request.add(LABKEY.Security.getFolderTypes, {
             success: function(data){
                 var keys = Ext4.Object.getKeys(data);
                 folderTypes = [];
                 Ext4.each(keys, function(k){
-                    if (userHasEnableRestrictedModulesPermission || !data[k].hasRestrictedModule)
+                    if ((userHasEnableRestrictedModulesPermission || !data[k].hasRestrictedModule) && (isParentRoot || data[k].name != dataspaceName))
                         folderTypes.push(data[k]);
                 });
                 folderTypes = folderTypes.sort(function(a,b){

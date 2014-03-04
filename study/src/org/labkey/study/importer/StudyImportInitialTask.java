@@ -66,6 +66,9 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
     public static void doImport(PipelineJob job, StudyImportContext ctx, BindException errors, String originalFileName) throws PipelineJobException
     {
+        if (ctx.getContainer().isDataspace())
+            throw new PipelineJobException("Can't import study into a Dataspace folder.");
+
         SpecimenTablesTemplate previousTablesTemplate = null;
         try
         {

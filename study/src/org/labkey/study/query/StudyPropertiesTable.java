@@ -145,7 +145,7 @@ public class StudyPropertiesTable extends BaseStudyTable
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
         if (UpdatePermission.class == perm || ReadPermission.class.equals(perm))
             return super.canReadOrIsAdminPermission(user, perm);

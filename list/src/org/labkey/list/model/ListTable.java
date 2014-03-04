@@ -349,7 +349,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         return _list;
     }
 
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
         return _list.getContainer().hasPermission(user, perm);
     }

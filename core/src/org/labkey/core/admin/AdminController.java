@@ -4385,7 +4385,7 @@ public class AdminController extends SpringActionController
 
                         String[] modules = form.getActiveModules();
 
-                        if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
+                        if (null == StringUtils.trimToNull(folderType) || FolderType.NONE.getName().equals(folderType))
                         {
                             if (null == modules || modules.length == 0)
                             {
@@ -4397,7 +4397,7 @@ public class AdminController extends SpringActionController
                         c = ContainerManager.createContainer(parent, folderName, null, null, Container.TYPE.normal, getUser());
                         c.setFolderType(type, getUser());
 
-                        if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
+                        if (null == StringUtils.trimToNull(folderType) || FolderType.NONE.getName().equals(folderType))
                         {
                             Set<Module> activeModules = new HashSet<>();
                             for (String moduleName : modules)

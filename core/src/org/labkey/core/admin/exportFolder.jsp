@@ -63,7 +63,7 @@ String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : 
             for (FolderWriter writer : writers)
             {
                 String parent = writer.getSelectionText();
-                if (null != parent && writer.show(c))
+                if (null != parent && writer.show(c) && !(c.isDataspace() && "Study".equals(parent)))
                 {
                     boolean checked = writer.includeInType(form.getExportType());
                     %>formItems.push({xtype: "checkbox", hideLabel: true, boxLabel: "<%=parent%>", name: "types", itemId: "<%=parent%>", inputValue: "<%=parent%>", checked: <%=checked%>, objectType: "parent"});<%
@@ -83,10 +83,11 @@ String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : 
                             }
                         }
                     }
+
+                    // if there is a study writer shown, set a boolean variable so we know whether or not the show the study related options
+                    if ("Study".equals(parent))
+                        showStudyOptions = true;
                 }
-                // if there is a study writer shown, set a boolean variable so we know whether or not the show the study related options
-                if ("Study".equals(parent) && writer.show(c))
-                    showStudyOptions = true;
             }
 %>
         formItems.push({xtype: "spacer", height: 20, hidden: <%=!showStudyOptions%>});

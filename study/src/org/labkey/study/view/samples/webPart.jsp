@@ -94,7 +94,7 @@
         if (resp.groupings.length == 0 || resp.groupings[0].values.length == 0)
         {
             var html = '<i>No specimens found.</i>';
-            <% if (isAdmin) {%>
+            <% if (isAdmin && !c.isDataspace()) {%>
                 var importUrl = LABKEY.ActionURL.buildURL('study-samples', 'showUploadSpecimens', LABKEY.ActionURL.getContainer());
                 html += '<p><a href="' + importUrl + '">Import Specimens</a></p>';
             <% } %>
@@ -329,6 +329,10 @@
                         </a>
                     </td>
                 </tr>
+<%
+        if (!c.isDataspace())
+        {
+%>
                 <tr style="display:none">
                     <td style="padding-left:1em">
                         <table class="labkey-nav-tree-child">
@@ -341,6 +345,9 @@
                         </table>
                     </td>
                 </tr>
+<%
+        }
+%>
                 <tr style="display:none">
                     <td style="padding-left:1em">
                         <table class="labkey-nav-tree-child">

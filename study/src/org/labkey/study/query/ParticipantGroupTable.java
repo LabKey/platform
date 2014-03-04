@@ -61,7 +61,7 @@ public class ParticipantGroupTable extends BaseStudyTable
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
         if (perm.equals(DeletePermission.class))
             return getContainer().hasPermission(user, perm);

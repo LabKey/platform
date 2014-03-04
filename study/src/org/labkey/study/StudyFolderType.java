@@ -52,11 +52,16 @@ public class StudyFolderType extends MultiPortalFolderType
 
     StudyFolderType(StudyModule module)
     {
-        super(NAME,
+        this(NAME,
                 "Manage human and animal studies involving long-term observations at distributed sites. " +
                         "Use specimen repository for samples. Design and manage specialized assays. " +
                         "Analyze, visualize and share results.",
-                null,
+                module);
+    }
+
+    StudyFolderType(String name, String description, StudyModule module)
+    {
+        super(name, description, null,
                 Arrays.asList(StudyModule.manageStudyPartFactory.createWebPart()),
                 getActiveModulesForOwnedFolder(module), module);
 

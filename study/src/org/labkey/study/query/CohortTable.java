@@ -105,7 +105,7 @@ public class CohortTable extends BaseStudyTable
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
         if (!(user instanceof User) || !StudyManager.getInstance().showCohorts(_userSchema.getContainer(), (User)user))
             return false;

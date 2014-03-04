@@ -466,7 +466,7 @@ public class StudyManager
         return result.toArray(new Study[result.size()]);
     }
 
-    public StudyImpl createStudy(User user, StudyImpl study) throws SQLException
+    public StudyImpl createStudy(User user, StudyImpl study)
     {
         Container container = study.getContainer();
         assert null != container;

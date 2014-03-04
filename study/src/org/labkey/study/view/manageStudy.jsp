@@ -379,7 +379,7 @@
     %>
 </table><br>
 <%
-    if (c.hasPermission(user, AdminPermission.class))
+    if (c.hasPermission(user, AdminPermission.class) && !c.isDataspace())
     {
 %>
 <%=generateButton("Export Study", urlProvider(AdminUrls.class).getExportFolderURL(c).addParameter("exportType", "study"))%>

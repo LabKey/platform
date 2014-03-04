@@ -121,7 +121,7 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
         return _userSchema.getContainer().hasPermission(user, perm);
     }

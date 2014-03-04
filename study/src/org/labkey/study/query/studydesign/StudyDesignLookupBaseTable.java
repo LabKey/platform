@@ -87,7 +87,7 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
         // Only admins are allowed to insert into these tables at the project level
         if (getContainer().isProject())

@@ -238,9 +238,9 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
-        return !getMustCheckPermissions() || super.hasPermission(user, perm);
+        return !getMustCheckPermissions() || super.hasPermissionOverridable(user, perm);
     }
 
     public static SimpleFilter authorizeAndGetProjectMemberFilter(@NotNull Container c, @NotNull User u, String userIdColumnName) throws UnauthorizedException

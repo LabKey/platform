@@ -812,7 +812,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
         DataSet def = getDatasetDefinition();
         if (ReadPermission.class.isAssignableFrom(perm))

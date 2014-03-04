@@ -95,7 +95,7 @@ public class StudyObjectiveTable extends BaseStudyTable
 
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
         return getContainer().hasPermission(user, perm);
     }

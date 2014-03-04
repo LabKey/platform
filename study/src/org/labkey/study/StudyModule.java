@@ -506,6 +506,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         ModuleLoader.getInstance().registerFolderType(this, new StudyFolderType(this));
         ModuleLoader.getInstance().registerFolderType(this, new AssayFolderType(this));
+
+        if (null != ModuleLoader.getInstance().getModule("Experiment"))
+            ModuleLoader.getInstance().registerFolderType(this, new DataspaceStudyFolderType(this));
     }
 
     private static class ReportsWebPartFactory extends BaseWebPartFactory

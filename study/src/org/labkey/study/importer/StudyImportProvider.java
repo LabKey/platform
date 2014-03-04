@@ -47,6 +47,9 @@ public class StudyImportProvider extends PipelineProvider
         if (!context.getContainer().hasPermission(context.getUser(), AdminPermission.class))
             return;
 
+        if (context.getContainer().isDataspace())
+            return;         // Cannot import study into Dataspace container
+
         String label = (null == StudyManager.getInstance().getStudy(context.getContainer()) ? "Import Study" : "Reload Study");
         String actionId = createActionId(StudyController.ImportStudyFromPipelineAction.class, null);
         addAction(actionId, StudyController.ImportStudyFromPipelineAction.class, label, directory, directory.listFiles(new StudyImportFilter()), false, false, includeAll);
