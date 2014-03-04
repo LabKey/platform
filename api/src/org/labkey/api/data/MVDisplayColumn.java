@@ -41,10 +41,10 @@ public class MVDisplayColumn extends DataColumn
     public String getMvIndicator(RenderContext ctx)
     {
         Object mvIndicatorObject = mvIndicatorColumn.getValue(ctx);
+        if (null == mvIndicatorObject)
+            mvIndicatorObject = ctx.get("quf_" + mvIndicatorColumn.getName());
         if (mvIndicatorObject != null)
-        {
             return mvIndicatorObject.toString();
-        }
         return null;
     }
 
