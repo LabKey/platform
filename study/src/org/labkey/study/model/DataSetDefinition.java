@@ -1025,12 +1025,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    private void _hideColumn(ColumnInfo col)
-    {
-        col.setHidden(true);
-        col.setShownInInsertView(false);
-        col.setShownInUpdateView(false);
-    }
+//    private void _hideColumn(ColumnInfo col)
+//    {
+//        col.setHidden(true);
+//        col.setShownInInsertView(false);
+//        col.setShownInUpdateView(false);
+//    }
 
     private void _showColumn(ColumnInfo col)
     {
@@ -1157,9 +1157,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             {
                 ColumnInfo column = getStorageColumn("Date");
                 ColumnInfo visitDateCol = newDatasetColumnInfo(this, column, getVisitDateURI());
-                if (study.getTimepointType().isVisitBased())
-                    _hideColumn(visitDateCol);
-                else
+                if (!study.getTimepointType().isVisitBased())
                     visitDateCol.setNullable(false);
                 addColumn(visitDateCol);
             }
@@ -1299,6 +1297,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 //            try
 //            {
 //                TableInfo studyData = schema.getTable(StudyQuerySchema.STUDY_DATA_TABLE_NAME);
+//                return studyData.getButtonBarConfig();
 //                return studyData.getButtonBarConfig();
 //            }
 //            catch (UnauthorizedException e)

@@ -279,7 +279,10 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
                 ColumnInfo col = addWrapColumn(baseColumn);
 
                 // When copying a column, the hidden bit is not propagated, so we need to do it manually
-                if (baseColumn.isHidden() || !isVisibleByDefault(baseColumn))
+                if (baseColumn.isHidden())
+                    col.setHidden(true);
+                // "Date" is not in default column-list, but shouldn't automatcially be hidden either
+                if (!isVisibleByDefault(baseColumn) && !"Date".equalsIgnoreCase(baseColumn.getName()))
                     col.setHidden(true);
 
                 String propertyURI = col.getPropertyURI();
@@ -753,6 +756,13 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
         if ((_dsd.getKeyManagementType() != DataSet.KeyManagementType.None || _dsd.isAssayData()) &&
                 col.getName().equals(_dsd.getKeyPropertyName()))
             return false;
+        // for backwards compatibility "Date" is not in default visible columns for visit-based study
+        if ("Date".equalsIgnoreCase(col.getName()) && _dsd.getStudy().getTimepointType() == TimepointType.VISIT)
+        {
+            // if there is a property desceriptor, treat like a regular column, otherwise not visible
+            if (null == _dsd.getDomain() || null == _dsd.getDomain().getPropertyByName("Date"))
+                return false;
+        }
         return (!col.isHidden() && !col.isUnselectable() && !defaultHiddenCols.contains(col.getName()));
     }
 
