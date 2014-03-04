@@ -115,7 +115,9 @@ Ext4.define('File.panel.Upload', {
             items: [{
                 xtype: 'component',
                 cls: 'dropzone dz-clickable',
-                html: "<div class='dz-message' style='text-align:center'><span style='font-weight: bold'>Drop files here to upload<br><span>(or click to browse...)</span></div>",
+                html: "<div class='dz-message' style='text-align:center'><span style='font-weight: bold'>" +
+                        (Ext4.isChrome ? "Drag and Drop Files or Folders" : "Drag and Drop Files") +
+                        "<br><span>(or click to browse...)</span></div>",
                 listeners: {
                     afterrender: function (panel) {
                         this.initDropzone(panel);
