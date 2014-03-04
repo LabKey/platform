@@ -58,6 +58,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
@@ -312,9 +313,13 @@ public class ContainerManager
         if (folderType.equals(oldType))
             return;
 
-        // Check for any containers that need to be moved into container tabs
         List<String> errorStrings = new ArrayList<>();
-        if (folderType.hasContainerTabs())
+
+        if (!c.isProject() && StudyService.DATASPACE_FOLDERTYPE_NAME.equalsIgnoreCase(folderType.getName()))
+            errorStrings.add("Cannot set a subfolder to Dataspace.");
+
+        // Check for any containers that need to be moved into container tabs
+        if (errorStrings.isEmpty() && folderType.hasContainerTabs())
         {
             List<Container> childTabFoldersNonMatchingTypes = new ArrayList<>();
             List<Container> containersBecomingTabs = findAndCheckContainersMatchingTabs(c, folderType, childTabFoldersNonMatchingTypes, errorStrings);
@@ -2117,7 +2122,8 @@ public class ContainerManager
             List<FolderType> folderTypes = new ArrayList<>(ModuleLoader.getInstance().getAllFolderTypes());
             for (FolderType folderType : folderTypes)
             {
-                testOneFolderType(folderType);
+                if (!StudyService.DATASPACE_FOLDERTYPE_NAME.equalsIgnoreCase(folderType.getName()))     // Dataspace can't be subfolder
+                    testOneFolderType(folderType);
             }
         }
 

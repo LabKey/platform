@@ -225,7 +225,7 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
         // Allow read, but not insert, update, or delete.
         return perm.equals(ReadPermission.class) && getContainer().hasPermission(user, perm);

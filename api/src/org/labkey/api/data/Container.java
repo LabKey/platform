@@ -1394,6 +1394,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return false;
     }
 
+    public boolean isDataspace()
+    {
+        return StudyService.DATASPACE_FOLDERTYPE_NAME.equalsIgnoreCase(getFolderType().getName());
+    }
+
     public static boolean userCanAccessModule(Module module, boolean userHasEnableRestrictedModules)
     {
         return userHasEnableRestrictedModules || !module.getRequireSitePermission();

@@ -48,6 +48,9 @@ public class FolderExportContext extends AbstractFolderContext
     public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, boolean includeSubfolders, boolean removeProtected, boolean shiftDates, boolean alternateIds, boolean maskClinic, LoggerGetter logger)
     {
         super(user, c, getFolderDocument(), logger, null);
+
+        if (c.isDataspace() && dataTypes.contains("Study"))
+            throw new IllegalStateException("Cannot export study from Dataspace folder.");
         _dataTypes = dataTypes;
         _format = format;
         _includeSubfolders = includeSubfolders;

@@ -61,6 +61,7 @@ public class StudyService
     public static String SPECIMEN_TOOLS_WEBPART_NAME = "Specimen Tools";
     public static String DATA_TOOLS_WEBPART_NAME = "Study Data Tools";
 
+    public static final String DATASPACE_FOLDERTYPE_NAME = "Dataspace";
 
     public interface Service
     {

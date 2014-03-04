@@ -29,6 +29,8 @@ import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -558,4 +560,18 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     {
         return _userSchema;
     }
+
+    @Override
+    public final boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        if (getContainer().isDataspace())
+            return false;
+        return hasPermissionOverridable(user, perm);
+    }
+
+    protected boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        return false;
+    }
+
 }
