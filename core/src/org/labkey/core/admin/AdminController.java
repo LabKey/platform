@@ -5890,6 +5890,10 @@ public class AdminController extends SpringActionController
                     errors.reject(ERROR_MSG, "A tab name must be specified.");
                     return;
                 }
+
+                // Note: The name, which shows up on the url, is trimmed to 50 characters. The caption, which is derived
+                // from the name, and is editable, is allowed to be 64 characters, so we only error if passed something
+                // longer than 64 characters.
                 if (name.length() > 64)
                 {
                     errors.reject(ERROR_MSG, "Tab name cannot be longer than 64 characters.");
@@ -5948,6 +5952,8 @@ public class AdminController extends SpringActionController
             String name = form.getTabName();
             String caption = form.getTabName();
 
+            // The name, which shows up on the url, is trimmed to 50 characters. The caption, which is derived from the
+            // name, and is editable, is allowed to be 64 characters.
             if (name.length() > 50)
                 name = name.substring(0, 50).trim();
 
