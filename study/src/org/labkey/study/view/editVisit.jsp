@@ -133,9 +133,7 @@
                         for (CohortImpl cohort : cohorts)
                         {
                     %>
-                        <option value="<%= cohort.getRowId()%>"<%=selected(visit.getCohortId() != null && visit.getCohortId() == cohort.getRowId())%>>
-                            <%= h(cohort.getLabel())%>
-                        </option>
+                        <option value="<%= cohort.getRowId()%>"<%=selected(visit.getCohortId() != null && visit.getCohortId() == cohort.getRowId())%>><%= h(cohort.getLabel())%></option>
                     <%
                         }
                     %>
