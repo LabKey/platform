@@ -7,6 +7,7 @@ Ext4.define('LABKEY.Security.ImpersonateUserPanel', {
     extend: 'Ext.window.Window',
 
     modal: true,
+    border: false,
     width: 500,
     layout: 'fit',
     closeAction: 'destroy',

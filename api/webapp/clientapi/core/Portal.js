@@ -262,6 +262,8 @@ LABKEY.Portal = new function()
             var nameTextField = Ext4.create('Ext.form.field.Text', {
                 xtype: 'textfield',
                 fieldLabel: 'Name',
+                labelWidth: 50,
+                width: 250,
                 name: 'tabName',
                 value: name ? name : '',
                 maxLength: 64,
@@ -282,6 +284,7 @@ LABKEY.Portal = new function()
                 title: title,
                 closeAction: 'destroy',
                 modal: true,
+                border: false,
                 items: [{
                     xtype: 'panel',
                     border: false,
