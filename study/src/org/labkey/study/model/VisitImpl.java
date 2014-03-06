@@ -26,6 +26,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.Transient;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.Cohort;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.study.StudySchema;
 
@@ -308,5 +309,10 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
             assert !_readableProperties.remove("parentResource");
             assert !_readableProperties.remove("policy");
         }
+    }
+
+    public static double calcDefaultProtocolDay(TimepointType timepointType, double sequenceMin, double sequenceMax)
+    {
+        return (timepointType == TimepointType.DATE ? (double)Math.round((sequenceMin + sequenceMax)/2) : 0);
     }
 }

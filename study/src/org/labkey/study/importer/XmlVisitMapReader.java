@@ -25,6 +25,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.xml.DatasetType;
 import org.labkey.study.xml.VisitMapDocument;
 import org.labkey.study.xml.VisitMapDocument.VisitMap.ImportAliases;
@@ -91,7 +92,7 @@ public class XmlVisitMapReader implements VisitMapReader
         {
             double maxSequenceNum = visitXml.isSetMaxSequenceNum() ? visitXml.getMaxSequenceNum() : visitXml.getSequenceNum();
             double protocolDay = visitXml.isSetProtocolDay() ? visitXml.getProtocolDay() :
-                    (timepointType == TimepointType.DATE ? (double)Math.round((visitXml.getSequenceNum() + maxSequenceNum)/2) : 0);
+                                    VisitImpl.calcDefaultProtocolDay(timepointType, visitXml.getSequenceNum(), maxSequenceNum);
 
             List<Integer> required = new ArrayList<>();
             List<Integer> optional = new ArrayList<>();
