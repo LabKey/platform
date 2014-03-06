@@ -42,13 +42,9 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class ResultsImpl implements Results
 {
@@ -162,130 +158,20 @@ public class ResultsImpl implements Results
         return _fieldMap;
     }
 
+    @Override
+    @NotNull
+    public Map<FieldKey, Integer> getFieldIndexMap()
+    {
+        return _fieldIndexMap;
+    }
+
     // Need a FieldKey->value map in some cases (FieldKeyStringExpression, e.g.). Create a fake map that grabs values
     // directly from the ResultSet based on the fieldIndexMap. Maybe there's a better way...
     @Override
     @NotNull
     public Map<FieldKey, Object> getFieldKeyRowMap()
     {
-        return new FieldKeyRowMap();
-    }
-
-    private class FieldKeyRowMap implements Map<FieldKey, Object>
-    {
-        @Override
-        public int size()
-        {
-            return _fieldIndexMap.size();
-        }
-
-        @Override
-        public boolean isEmpty()
-        {
-            return _fieldIndexMap.isEmpty();
-        }
-
-        @Override
-        public boolean containsKey(Object key)
-        {
-            return _fieldIndexMap.containsKey(key);
-        }
-
-        @Override
-        public boolean containsValue(Object value)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Object get(Object key)
-        {
-            try
-            {
-                return getObject((FieldKey) key);
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-
-        @Override
-        public Object put(FieldKey key, Object value)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Object remove(Object key)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putAll(Map<? extends FieldKey, ? extends Object> m)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void clear()
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Set<FieldKey> keySet()
-        {
-            return _fieldIndexMap.keySet();
-        }
-
-        @Override
-        public Collection<Object> values()
-        {
-            List<Object> list = new LinkedList<>();
-
-            for (FieldKey key : _fieldIndexMap.keySet())
-                list.add(get(key));
-
-            return list;
-        }
-
-        @Override
-        public Set<Map.Entry<FieldKey, Object>> entrySet()
-        {
-            HashSet<Map.Entry<FieldKey, Object>> map = new HashSet<>(_fieldIndexMap.size());
-
-            for (FieldKey key : _fieldIndexMap.keySet())
-                map.add(new Entry(key));
-
-            return map;
-        }
-
-        private class Entry implements Map.Entry<FieldKey, Object>
-        {
-            private final FieldKey _key;
-
-            private Entry(FieldKey key)
-            {
-                _key = key;
-            }
-
-            public FieldKey getKey()
-            {
-                return _key;
-            }
-
-            public Object getValue()
-            {
-                return get(_key);
-            }
-
-            public Object setValue(Object v)
-            {
-                throw new UnsupportedOperationException();
-            }
-        }
+        return new FieldKeyRowMap(this);
     }
 
     @Override

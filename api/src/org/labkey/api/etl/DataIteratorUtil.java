@@ -41,6 +41,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -51,6 +52,28 @@ import java.util.Map;
  */
 public class DataIteratorUtil
 {
+    public static Map<FieldKey, ColumnInfo> createFieldKeyMap(DataIterator di)
+    {
+        Map<FieldKey, ColumnInfo> map = new LinkedHashMap<>();
+        for (int i=1 ; i<=di.getColumnCount() ; ++i)
+        {
+            ColumnInfo col = di.getColumnInfo(i);
+            map.put(col.getFieldKey(), col);
+        }
+        return map;
+    }
+
+    public static Map<FieldKey, Integer> createFieldIndexMap(DataIterator di)
+    {
+        Map<FieldKey, Integer> map = new LinkedHashMap<>();
+        for (int i=1 ; i<=di.getColumnCount() ; ++i)
+        {
+            ColumnInfo col = di.getColumnInfo(i);
+            map.put(col.getFieldKey(), i);
+        }
+        return map;
+    }
+
     public static Map<String,Integer> createColumnNameMap(DataIterator di)
     {
         Map<String,Integer> map = new CaseInsensitiveHashMap<>();

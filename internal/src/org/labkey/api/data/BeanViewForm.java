@@ -64,19 +64,7 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
                 factory.fromMap(bean, getStrings());
                 return bean;
             }
-            catch (IllegalAccessException x)
-            {
-                throw new RuntimeException(x);
-            }
-            catch (InvocationTargetException x)
-            {
-                throw new RuntimeException(x);
-            }
-            catch (InstantiationException x)
-            {
-                throw new RuntimeException(x);
-            }
-            catch (NoSuchMethodException x)
+            catch (ReflectiveOperationException x)
             {
                 throw new RuntimeException(x);
             }

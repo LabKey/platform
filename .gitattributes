@@ -246,6 +246,7 @@ api/src/org/labkey/api/data/CrosstabMember.java -text
 api/src/org/labkey/api/data/CrosstabSettings.java -text
 api/src/org/labkey/api/data/CrosstabTable.java -text
 api/src/org/labkey/api/data/CrosstabTableInfo.java -text
+api/src/org/labkey/api/data/DataIteratorResultsImpl.java -text
 api/src/org/labkey/api/data/DataRegionSelection.java -text
 api/src/org/labkey/api/data/DatabaseCache.java -text
 api/src/org/labkey/api/data/DatabaseTableType.java -text
@@ -270,6 +271,7 @@ api/src/org/labkey/api/data/ExecutingSelector.java -text
 api/src/org/labkey/api/data/ExpDataFileConverter.java -text
 api/src/org/labkey/api/data/ExportWriter.java -text
 api/src/org/labkey/api/data/ExternalSchemaCustomizer.java -text
+api/src/org/labkey/api/data/FieldKeyRowMap.java -text
 api/src/org/labkey/api/data/FileSqlScriptProvider.java -text
 api/src/org/labkey/api/data/Filter.java -text
 api/src/org/labkey/api/data/FilterInfo.java -text
