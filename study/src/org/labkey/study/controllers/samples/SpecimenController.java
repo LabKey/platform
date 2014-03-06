@@ -4321,7 +4321,7 @@ public class SpecimenController extends BaseStudyController
                 int[] rowIds = new int[rowIdStrings.length];
                 for (int i = 0; i < rowIdStrings.length; i++)
                     rowIds[i] = Integer.parseInt(rowIdStrings[i]);
-                updateRequestStatusOrder(getContainer(), rowIds);
+                updateRequestStatusOrder(getContainer(), rowIds, false);
             }
             return true;
         }
@@ -4332,7 +4332,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    private void updateRequestStatusOrder(Container container, int[] rowIds) throws SQLException
+    private void updateRequestStatusOrder(Container container, int[] rowIds, boolean fixedRowIncluded) throws SQLException
     {
         // get a map of id to status objects before starting our updates; this prevents us from
         // blowing then repopulating the cache with each update:
@@ -4340,11 +4340,12 @@ public class SpecimenController extends BaseStudyController
         for (int i = 0; i < rowIds.length; i++)
         {
             int rowId = rowIds[i];
+            int statusOrder = fixedRowIncluded ? i : i + 1;     // One caller doesn't have the first (fixed) status
             SampleRequestStatus status = idToStatus.get(rowId);
-            if (status != null && !status.isSystemStatus() && status.getSortOrder() != i)
+            if (status != null && !status.isSystemStatus() && status.getSortOrder() != statusOrder)
             {
                 status = status.createMutable();
-                status.setSortOrder(i);
+                status.setSortOrder(statusOrder);
                 SampleManager.getInstance().updateRequestStatus(getUser(), status);
             }
         }
@@ -4541,7 +4542,7 @@ public class SpecimenController extends BaseStudyController
                     if (remainingStatus.getRowId() != form.getId())
                         remainingIds[idx++] = remainingStatus.getRowId();
                 }
-                updateRequestStatusOrder(getContainer(), remainingIds);
+                updateRequestStatusOrder(getContainer(), remainingIds, true);
             }
             return true;
         }

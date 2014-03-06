@@ -48,15 +48,9 @@ function showSystemRows(value)
 <form action="<%=h(buildURL(SpecimenController.ManageStatusesAction.class))%>" name="manageStatuses" method="POST">
 <table width="600px">
     <tr>
-        <td class="labkey-form-label" style="padding-top:4px;padding-bottom:4px;">Allowing users to build up specimen requests over multiple
-            searches is generally more convenient, but requires the administrator to watch for abandoned unsubmitted requests.</td>
-    </tr>
-    <tr><td><input type="checkbox" name="useShoppingCart"<%=checked(settings.isUseShoppingCart())%> onclick='showSystemRows(this.checked);'>
-        Allow requests to be built over multiple searches before submission</td></tr>
-    <tr>
         <td class="labkey-form-label" style="padding-top:4px;padding-bottom:4px;">The specimen request administrator moves requests through states for
             organization and to communicate request progress to end-users.  All submitted requests will
-            start in step number 1.</td>
+            start in step number 1, which cannot be removed.</td>
     </tr>
     <tr>
         <td>
@@ -131,13 +125,33 @@ function showSystemRows(value)
                 <td>&nbsp;</td>
                 <td colspan="3">
                     <%= generateSubmitButton("Save")%>&nbsp;
-                    <%= text(buttonImg("Done", "document.manageStatuses.nextPage.value=''; return true;"))%>
-                    <%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, study.getContainer()))%>&nbsp;
                     <%= text(buttonImg("Change Order", "document.manageStatuses.nextPage.value='" + new ActionURL(SpecimenController.ManageStatusOrderAction.class, getContainer()).getLocalURIString() + "'; return true;"))%>
                     <input type="hidden" name="nextPage" value="<%=h(new ActionURL(SpecimenController.ManageStatusesAction.class, getContainer()).getLocalURIString())%>">
                 </td>
             </tr>
         </table>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="4">&nbsp;</td>
+    </tr>
+    <tr>
+        <td class="labkey-form-label" style="padding-top:4px;padding-bottom:4px;">Allowing users to build up specimen requests over multiple
+            searches is generally more convenient, but requires the administrator to watch for abandoned unsubmitted requests.</td>
+    </tr>
+    <tr>
+        <td>
+            <input type="checkbox" name="useShoppingCart"<%=checked(settings.isUseShoppingCart())%> onclick='showSystemRows(this.checked);'>
+            Allow requests to be built over multiple searches before submission
+        </td>
+    </tr>
+    <tr>
+        <td>&nbsp;</td>
+    </tr>
+    <tr>
+        <td>
+            <%= text(buttonImg("Done", "document.manageStatuses.nextPage.value=''; return true;"))%>
+            <%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, study.getContainer()))%>&nbsp;
         </td>
     </tr>
 </table>
