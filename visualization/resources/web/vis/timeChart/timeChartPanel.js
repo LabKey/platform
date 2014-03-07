@@ -1014,6 +1014,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         LABKEY.vis.TimeChartHelper.generateAcrossChartAxisRanges(this.chartInfo, this.chartData, seriesList, this.SUBJECT.nounSingular);
 
+        LABKEY.vis.TimeChartHelper.generateNumberFormats(this.chartInfo, this.chartData, this.defaultNumberFormat);
+
         // remove any existing charts, remove items from the exportMenu button
         this.chart.removeAll();
         this.chart.removeListener('resize', this.resizeCharts);

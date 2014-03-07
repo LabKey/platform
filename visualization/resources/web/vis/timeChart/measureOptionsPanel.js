@@ -620,6 +620,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
     showMeasureSelectionWindow: function() {
         this.addMeasureButton.disable();
         var win = Ext4.create('LABKEY.ext4.MeasuresDialog', {
+            cls: 'data-window',
             allColumns: false,
             multiSelect : false,
             closeAction:'hide',

@@ -503,7 +503,7 @@ LABKEY.vis.TimeChartHelper = new function() {
             {
                 schemaName : firstMeasure.dateOptions ? firstMeasure.dateOptions.dateCol.schemaName : firstMeasure.measure.schemaName,
                 queryName : firstMeasure.dateOptions ? firstMeasure.dateOptions.dateCol.queryName : firstMeasure.measure.queryName,
-                name : (nounSingular || studyNounSingular) + "Visit/Visit"
+                name : (nounSingular || studyNounSingular) + (isDateBased ? "Visit/Visit" : "Visit/Visit/SequenceNumMin")
             }
         ];
     };
@@ -945,49 +945,7 @@ LABKEY.vis.TimeChartHelper = new function() {
             return newVisitMap;
         };
 
-        var getNumberFormats = function(fields, defaultNumberFormat) {
-            for (var i = 0; i < config.chartInfo.axis.length; i++)
-            {
-                var axis = config.chartInfo.axis[i];
-                if (axis.side)
-                {
-                    // Find the first measure with the matching side that has a numberFormat.
-                    for (var j = 0; j < config.chartInfo.measures.length; j++)
-                    {
-                        var measure = config.chartInfo.measures[j].measure;
-
-                        if (chartData.numberFormats[axis.side])
-                            break;
-
-                        if (measure.yAxis == axis.side)
-                        {
-                            var metaDataName = measure.alias;
-                            for (var k = 0; k < fields.length; k++)
-                            {
-                                var field = fields[k];
-                                if (field.name == metaDataName)
-                                {
-                                    if (field.extFormatFn)
-                                    {
-                                        chartData.numberFormats[axis.side] = eval(field.extFormatFn);
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if (!chartData.numberFormats[axis.side])
-                    {
-                        // If after all the searching we still don't have a numberformat use the default number format.
-                        chartData.numberFormats[axis.side] = defaultNumberFormat;
-                    }
-                }
-            }
-        };
-
         var successCallback = function(response, dataType) {
-            getNumberFormats(response.metaData.fields, config.defaultNumberFormat);
 
             // make sure each measure/dimension has at least some data, and get a list of which visits are in the data response
             // also keep track of which measure/dimensions have negative values (for log scale)
@@ -1025,6 +983,8 @@ LABKEY.vis.TimeChartHelper = new function() {
             response.visitMap = trimVisitMapDomain(response.visitMap, visitsInData);
 
             chartData[dataType] = response;
+
+            generateNumberFormats(config.chartInfo, chartData, config.defaultNumberFormat);
 
             // if we have all request data back, return the result
             counter--;
@@ -1081,6 +1041,54 @@ LABKEY.vis.TimeChartHelper = new function() {
                 filterUrl: config.chartInfo.filterUrl,
                 filterQuery: config.chartInfo.filterQuery
             });
+        }
+    };
+
+    /**
+     * Generate the number format functions for the left and right y-axis and attach them to the chart data object
+     * @param {Object} config The chart configuration object that defines the selected measures, axis info, subjects/groups, etc.
+     * * @param {Object} data The data object, from getChartData.
+     */
+    var generateNumberFormats = function(config, data, defaultNumberFormat) {
+        var fields = data.individual ? data.individual.metaData.fields : data.aggregate.metaData.fields;
+
+        for (var i = 0; i < config.axis.length; i++)
+        {
+            var axis = config.axis[i];
+            if (axis.side)
+            {
+                // Find the first measure with the matching side that has a numberFormat.
+                for (var j = 0; j < config.measures.length; j++)
+                {
+                    var measure = config.measures[j].measure;
+
+                    if (data.numberFormats[axis.side])
+                        break;
+
+                    if (measure.yAxis == axis.side)
+                    {
+                        var metaDataName = measure.alias;
+                        for (var k = 0; k < fields.length; k++)
+                        {
+                            var field = fields[k];
+                            if (field.name == metaDataName)
+                            {
+                                if (field.extFormatFn)
+                                {
+                                    data.numberFormats[axis.side] = eval(field.extFormatFn);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (!data.numberFormats[axis.side])
+                {
+                    // If after all the searching we still don't have a numberformat use the default number format.
+                    data.numberFormats[axis.side] = defaultNumberFormat;
+                }
+            }
         }
     };
 
@@ -1244,6 +1252,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         generateScales : generateScales,
         generateSeriesList : generateSeriesList,
         generateTickMap : generateTickMap,
+        generateNumberFormats : generateNumberFormats,
         getAxisIndex : getAxisIndex,
         getChartData : getChartData,
         validateChartConfig : validateChartConfig,
