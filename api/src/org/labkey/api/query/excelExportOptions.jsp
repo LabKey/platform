@@ -56,7 +56,7 @@
     <% } %>
     <tr>
         <td colspan="2">
-            <%=generateButton("Export to Excel", model.getXlsURL(), onClickScript) %>
+            <%= button("Export to Excel").href(model.getXlsURL()).onClick(onClickScript) %>
         </td>
     </tr>
 </table>

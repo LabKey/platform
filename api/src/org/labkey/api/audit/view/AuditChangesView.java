@@ -120,7 +120,7 @@ public class AuditChangesView extends HttpView
         if (_returnUrl != null)
         {
             out.write("<tr><td>");
-            out.write(PageFlowUtil.generateButton("Done", _returnUrl));
+            out.write(PageFlowUtil.button("Done").href(_returnUrl).toString());
             out.write("</td></tr>");
         }
         out.write("</table>\n");

@@ -40,18 +40,18 @@
     writePropertyValues(out, propertyValues);
 
     %>
-<br><%=generateSubmitButton(confirmAction.getConfirmText())%>&nbsp;<%
+<br><%= button(confirmAction.getConfirmText()).submit(true) %>&nbsp;<%
     if (null != cancelUrl)
     {
-        %><%=generateButton(confirmAction.getCancelText(), cancelUrl)%><%
+        %><%= button(confirmAction.getCancelText()).href(cancelUrl) %><%
     }
     else if (confirmAction.isPopupConfirmation())
     {
-        %><%=PageFlowUtil.generateSubmitButton(confirmAction.getCancelText(), "window.close(); return false;")%><%
+        %><%= button(confirmAction.getCancelText()).submit(true).onClick("window.close(); return false;") %><%
     }
     else
     {
-        %><%=PageFlowUtil.generateSubmitButton(confirmAction.getCancelText(), "window.history.back(); return false;")%><%
+        %><%= generateBackButton(confirmAction.getCancelText()) %><%
     }
 %></form>
 <%!

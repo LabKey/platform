@@ -43,7 +43,7 @@ public class ButtonTag extends SimpleTagBase
             String attributes = "";
             if (null != _target)
                 attributes = "target='" + h(_target) + "'";
-            out.write(PageFlowUtil.generateButton(_text, _href, _onclick, attributes));
+            out.write(PageFlowUtil.button(_text).href(_href).onClick(_onclick).attributes(attributes).toString());
         }
         else
         {
@@ -79,7 +79,7 @@ public class ButtonTag extends SimpleTagBase
                 attributes.append(h(_id));
                 attributes.append("\"");
             }
-            out.write(PageFlowUtil.generateSubmitButton(_text, onClickScript, attributes.toString()));
+            out.write(PageFlowUtil.button(_text).submit(true).onClick(onClickScript).attributes(attributes.toString()).toString());
         }
     }
 

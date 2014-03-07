@@ -67,7 +67,7 @@
     </tr>
     <tr>
         <td colspan=2>
-            <%=PageFlowUtil.generateButton("Export to Text", "", onClickScript, "rel=\"nofollow\"") %>
+            <%= PageFlowUtil.button("Export to Text").onClick(onClickScript).attributes("rel=\"nofollow\"") %>
         </td>
     </tr>
 </table>

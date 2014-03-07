@@ -101,6 +101,6 @@
         </tr>
 
         <tr><td></td></tr>
-        <tr><td></td><td><%=generateSubmitButton("Submit")%></td></tr>
+        <tr><td></td><td><%= button("Submit").submit(true) %></td></tr>
     </table>
 </form>

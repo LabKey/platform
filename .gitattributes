@@ -1461,6 +1461,7 @@ api/src/org/labkey/api/thumbnail/Thumbnail.java -text
 api/src/org/labkey/api/thumbnail/ThumbnailOutputStream.java -text
 api/src/org/labkey/api/thumbnail/ThumbnailService.java -text
 api/src/org/labkey/api/util/BreakpointThread.java -text
+api/src/org/labkey/api/util/Button.java -text
 api/src/org/labkey/api/util/ButtonBarRenderer.java -text
 api/src/org/labkey/api/util/CPUTimer.java -text
 api/src/org/labkey/api/util/CSRFException.java -text

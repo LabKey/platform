@@ -268,8 +268,8 @@ public abstract class AbstractDataRegion extends DisplayElement
                 headerMessage.append("&nbsp;=&nbsp;");
                 headerMessage.append(PageFlowUtil.filter(entry.getValue()));
             }
-            headerMessage.append("&nbsp;&nbsp;").append(PageFlowUtil.generateButtonHtml("Clear All", "#", "LABKEY.DataRegions[" +
-                    PageFlowUtil.jsString(getName()) + "].clearAllParameters(); return false;", null));
+            headerMessage.append("&nbsp;&nbsp;").append(PageFlowUtil.button("Clear All").href("#")
+                    .onClick("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].clearAllParameters(); return false;"));
             sectionSeparator = "<br/><br/>";
         }
 
@@ -278,8 +278,8 @@ public abstract class AbstractDataRegion extends DisplayElement
             headerMessage.append(sectionSeparator);
             headerMessage.append("<span class='labkey-strong'>Filter:</span>&nbsp;");
             headerMessage.append(PageFlowUtil.filter(filterDescription)).append("&nbsp;&nbsp;");
-            headerMessage.append(PageFlowUtil.generateButtonHtml("Clear All", "#", "LABKEY.DataRegions[" +
-                    PageFlowUtil.jsString(getName()) + "].clearAllFilters(); return false;", null));
+            headerMessage.append(PageFlowUtil.button("Clear All").href("#")
+                    .onClick("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].clearAllFilters(); return false;"));
         }
     }
 

@@ -43,7 +43,7 @@
             } %>
         </select>
         </td><td>
-        <%=generateSubmitButton("Add")%>
+        <%= button("Add").submit(true) %>
         </td></tr></table>
        </form>
     </td>
@@ -63,7 +63,7 @@
             } %>
         </select>
         </td><td>
-            <%=generateSubmitButton("Add")%>
+            <%= button("Add").submit(true) %>
         </td></tr></table>
         </form>
     </td>

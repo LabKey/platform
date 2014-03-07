@@ -25,6 +25,7 @@ import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.Button;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HString;
@@ -342,48 +343,9 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return new _HtmlString(PageFlowUtil.generateBackButton(text));
     }
 
-    /**
-     * Consider: is there any way to name this method in such a way as to
-     * make the order of parameters unambiguous?
-     */
-    @Deprecated // use actionClass or ActionURL variants
-    public String generateButton(String text, String href)
+    public Button.ButtonBuilder button(String text)
     {
-        return PageFlowUtil.generateButton(text, href);
-    }
-
-    public String generateButton(String text, HString href)
-    {
-        return PageFlowUtil.generateButton(text, href.getSource());
-    }
-
-    public String generateButton(String text, Class<? extends Controller> actionClass)
-    {
-        return PageFlowUtil.generateButton(text, new ActionURL(actionClass, getContainer()));
-    }
-
-    /**
-     * Consider: is there any way to name this method in such a way as to
-     * make the order of parameters unambiguous?
-     */
-    public String generateButton(String text, String href, String onClickScript)
-    {
-        return PageFlowUtil.generateButton(text, href, onClickScript);
-    }
-
-    public String generateButton(String text, URLHelper href)
-    {
-        return PageFlowUtil.generateButton(text, href);
-    }
-
-    public String generateButton(String text, URLHelper href, String onClickScript)
-    {
-        return PageFlowUtil.generateButton(text, href, onClickScript);
-    }
-
-    public _HtmlString generateSubmitButton(String text)
-    {
-        return new _HtmlString(PageFlowUtil.generateSubmitButton(text));
+        return PageFlowUtil.button(text);
     }
 
     public _HtmlString generateReturnUrlFormField(URLHelper returnURL)
@@ -403,7 +365,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
 
     public String buttonImg(String text, String onClickScript)
     {
-        return PageFlowUtil.generateSubmitButton(text, onClickScript);
+        return PageFlowUtil.button(text).onClick(onClickScript).toString();
     }
     
     public _HtmlString helpPopup(String helpText)

@@ -78,8 +78,8 @@
                 ActionURL deleteUrl = PageFlowUtil.urlProvider(NabUrls.class).urlDeleteRun(c);
                 deleteUrl.addParameter("rowId", bean.getRunId());
     %>
-    <%=generateButton("Delete Run", deleteUrl, "return confirm('Permanently delete this run?')")%>
-    <%=generateButton("Delete and Re-Import", rerunURL)%>
+    <%= button("Delete Run").href(deleteUrl).onClick("return confirm('Permanently delete this run?')") %>
+    <%= button("Delete and Re-Import").href(rerunURL) %>
     <%
             }
     %>

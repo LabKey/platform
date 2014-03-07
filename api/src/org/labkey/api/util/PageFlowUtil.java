@@ -1221,28 +1221,10 @@ public class PageFlowUtil
         return sb.toString();
     }
 
-
-    // Generates JavaScript that redirects to a new location when Enter is pressed.  Use this on pages that have
-    // button links but don't submit a form.
-    public static String generateRedirectOnEnter(ActionURL url)
+    public static Button.ButtonBuilder button(String text)
     {
-        return "\n<script type=\"text/javascript\">\n" +
-                "document.onkeydown = keyListener;\n" +
-                "function keyListener(e)" +
-                "{\n" +
-                "   if (!e)\n" +
-                "   {\n" +
-                "      //for IE\n" +
-                "      e = window.event;\n" +
-                "   }\n" +
-                "   if (13 == e.keyCode)\n" +
-                "   {\n" +
-                "      document.location = \"" + PageFlowUtil.filter(url) + "\";\n" +
-                "   }\n" +
-                "}\n" +
-                "</script>\n";
+        return new Button.ButtonBuilder(text);
     }
-
 
     public static String generateBackButton()
     {
@@ -1251,127 +1233,7 @@ public class PageFlowUtil
 
     public static String generateBackButton(String text)
     {
-        return generateButton(text, "#", "window.history.back(); return false;");
-    }
-
-    /*
-     * Renders a span wrapped in a link (<a>)
-     * Consider: is there any way to name this method in such a way as to
-     * make the order of parameters unambiguous?
-     */
-    public static String generateButton(String text, String href)
-    {
-        return generateButton(text, href, null);
-    }
-
-    public static String generateButton(String text, String href, @Nullable String onClick)
-    {
-        return generateButton(text, href, onClick, "");
-    }
-
-    public static String generateButton(String text, String href, String onClick, String attributes)
-    {
-        return generateButtonHtml(filter(text), href, onClick, attributes);
-    }
-
-    public static String generateButtonHtml(String html, String href, String onClick, String attributes)
-    {
-        return "<a class=\"labkey-button\" href=\"" + filter(href) + "\"" +
-                " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
-                (attributes != null ? " " + attributes : "") +
-                "><span>" + html + "</span></a>";
-    }
-
-    public static String generateButton(String text, URLHelper href)
-    {
-        return generateButton(text, href, null);
-    }
-
-    public static String generateButton(String text, URLHelper href, @Nullable String onClick)
-    {
-        // 11525 : NPE caused by generateButton.
-        if (href == null)
-            return generateButton(text, "", onClick);
-        return generateButton(text, href.toString(), onClick);
-    }
-
-    public static String generateButton(String text, URLHelper href, @Nullable String onClick, Map<String, String> attributes)
-    {
-        return generateButton(text, href, onClick, getAttributes(attributes));
-    }
-
-    public static String generateButton(String text, URLHelper href, @Nullable String onClick, String attributes)
-    {
-        // 11525 : NPE caused by generateButton.
-        if (href == null)
-            return generateButton(text, "", onClick, attributes);
-        return generateButton(text, href.toString(), onClick, attributes);
-    }
-
-    /* Renders an input of type submit wrapped in a span */
-    public static String generateSubmitButton(String text)
-    {
-        return generateSubmitButton(text, null);
-    }
-
-    public static String generateSubmitButton(String text, @Nullable String onClick)
-    {
-        return generateSubmitButton(text, onClick, null);
-    }
-
-    public static String generateSubmitButton(String text, @Nullable String onClick, @Nullable String attributes)
-    {
-        return generateSubmitButton(text, onClick, attributes, true);
-    }
-
-    public static String generateSubmitButton(String text, @Nullable String onClick, @Nullable String attributes, boolean enabled)
-    {
-        return generateSubmitButton(text, onClick, attributes, enabled, false);
-    }
-
-    public static String generateSubmitButton(String text, @Nullable String onClick, @Nullable String attributes, boolean enabled, boolean disableOnClick)
-    {
-        String id = GUID.makeGUID();
-        char quote = getUsedQuoteSymbol(onClick); // we're modifying the javascript, so need to use whatever quoting the caller used
-
-        String checkDisabled = "if (this.className.indexOf(" + quote + "labkey-disabled-button" + quote + ") != -1) return false; ";
-        String submitCode = "submitForm(document.getElementById(" + quote + id + quote + ").form); return false;";
-
-        String onClickMethod;
-
-        if (disableOnClick)
-        {
-            String replaceClass = "Ext.get(this).replaceClass(" + quote + "labkey-button" + quote + ", " + quote + "labkey-disabled-button" + quote + ");";
-            onClick = onClick != null ? onClick + ";" + replaceClass : replaceClass;
-        }
-
-        if (onClick == null || "".equals(onClick))
-            onClickMethod = checkDisabled + submitCode;
-        else
-            onClickMethod = checkDisabled + "this.form = document.getElementById(" + quote + id + quote + ").form; if (isTrueOrUndefined(function() {" + onClick + "}.call(this))) " +  submitCode;
-
-        StringBuilder sb = new StringBuilder();
-
-        // include a hidden submit element to allow capturing 'enter' key
-        sb.append("<input type=\"submit\" tab-index=\"-1\" style=\"position: absolute; left: -9999px; width: 1px; height: 1px;\" id=\"");
-        sb.append(id);
-        sb.append("\"/>");
-
-        if (enabled)
-            sb.append("<a class=\"labkey-button\"");
-        else
-            sb.append("<a class=\"labkey-disabled-button\"");
-
-        sb.append(" href=\"#\"");
-
-        sb.append(" onclick=\"").append(filter(onClickMethod)).append("\"");
-
-        if (attributes != null)
-            sb.append(" ").append(" ").append(attributes);
-
-        sb.append("><span>").append(filter(text)).append("</span></a>");
-
-        return sb.toString();
+        return button(text).href("#").onClick("window.history.back(); return false;").toString();
     }
 
     /* Renders a span and a drop down arrow image wrapped in a link */
@@ -1424,12 +1286,6 @@ public class PageFlowUtil
     public static String generateDisabledButton(String text)
     {
         return "<a class=\"labkey-disabled-button\" disabled><span>" + filter(text) + "</span></a>";
-    }
-
-    /* Renders a lightly colored inactive button */
-    public static String generateDisabledSubmitButton(String text, String onClick, String attributes)
-    {
-        return generateSubmitButton(text, onClick, attributes, false);
     }
 
     /**

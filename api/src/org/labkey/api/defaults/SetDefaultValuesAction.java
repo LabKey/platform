@@ -151,7 +151,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         if (properties.length == 0)
         {
             return new HtmlView("No fields are defined for this table.<br><br>" + 
-                    PageFlowUtil.generateButton("Cancel", new ActionURL(domainIdForm.getReturnUrl())));
+                    PageFlowUtil.button("Cancel").href(new ActionURL(domainIdForm.getReturnUrl())));
         }
 
 

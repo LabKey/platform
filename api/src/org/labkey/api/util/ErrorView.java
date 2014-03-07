@@ -144,7 +144,7 @@ class ErrorView extends HttpView
 
             if (_popup)
             {
-                out.print(PageFlowUtil.generateButton("Close", "#", "window.close(); return false;"));
+                out.print(PageFlowUtil.button("Close").href("#").onClick("window.close(); return false;"));
                 out.println("<br>");
             }
             else
@@ -173,7 +173,7 @@ class ErrorView extends HttpView
     {
         if (_includeHomeButton)
         {
-            out.print(PageFlowUtil.generateButton("Home", AppProps.getInstance().getHomePageActionURL()));
+            out.print(PageFlowUtil.button("Home").href(AppProps.getInstance().getHomePageActionURL()));
             out.print("&nbsp;");
         }
         if (_includeBackButton)
@@ -184,13 +184,13 @@ class ErrorView extends HttpView
         if (_includeFolderButton && !c.isRoot())
         {
             ActionURL folderURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
-            out.print(PageFlowUtil.generateButton("Folder", folderURL));
+            out.print(PageFlowUtil.button("Folder").href(folderURL));
             out.print("&nbsp;");
         }
         if (_includeStopImpersonatingButton)
         {
             ActionURL logoutURL = PageFlowUtil.urlProvider(LoginUrls.class).getLogoutURL(c, getViewContext().getActionURL());
-            out.print(PageFlowUtil.generateButton("Stop Impersonating", logoutURL));
+            out.print(PageFlowUtil.button("Stop Impersonating").href(logoutURL));
         }
 
         out.println("<br>");

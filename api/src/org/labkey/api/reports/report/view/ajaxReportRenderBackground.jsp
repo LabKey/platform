@@ -156,7 +156,7 @@
     if (!autoRefresh)
     {
 %>
-    <tr><td><%=generateButton("Start Job", "javascript:void(0)", "javascript:startJob()")%></td></tr>
+    <tr><td><%= button("Start Job").href("javascript:void(0)").onClick("javascript:startJob()") %></td></tr>
     <tr><td colspan="2">&nbsp;</td></tr><%
     } %>
 </table>

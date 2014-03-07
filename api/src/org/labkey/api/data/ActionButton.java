@@ -421,19 +421,27 @@ public class ActionButton extends DisplayElement implements Cloneable
                 onClickScript.append(getScript(ctx));
 
             attributes.append("name='").append(getActionName(ctx)).append("'");
-            out.write(PageFlowUtil.generateSubmitButton(getCaption(ctx), onClickScript.toString(), attributes.toString()));
+            out.write(PageFlowUtil.button(getCaption(ctx)).submit(true).onClick(onClickScript.toString()).attributes(attributes.toString()).toString());
         }
         else if (_actionType.equals(Action.LINK))
         {
             if (_target != null)
                 attributes.append(" target=\"").append(PageFlowUtil.filter(_target)).append("\"");
-            out.write(PageFlowUtil.generateButton(getCaption(ctx), getURL(ctx), _script == null ? "" : getScript(ctx),
-                    attributes.toString()));
+            Button.ButtonBuilder button = PageFlowUtil.button(getCaption(ctx)).href(getURL(ctx)).attributes(attributes.toString());
+            if (_script != null)
+                button.onClick(getScript(ctx));
+            out.write(button.toString());
         }
         else
         {
-            out.write(PageFlowUtil.generateButton(getCaption(ctx), "javascript:void(0);",
-                    (_appendScript ? renderDefaultScript(ctx) : "") + getScript(ctx), attributes.toString()));
+            Button.ButtonBuilder button = PageFlowUtil.button(getCaption(ctx))
+                    .href("javascript:void(0);")
+                    .attributes(attributes.toString());
+            if (_appendScript)
+                button.onClick(renderDefaultScript(ctx) + getScript(ctx));
+            else
+                button.onClick(getScript(ctx));
+            out.write(button.toString());
         }
     }
 

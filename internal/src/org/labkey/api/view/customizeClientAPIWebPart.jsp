@@ -62,10 +62,10 @@
         </tr>
     <tr>
         <td>
-            <%=generateSubmitButton("Save & Close")%>
-            <%=generateButton("Preview", "", "preview()")%>
-            <%=generateButton("Reset", "", "reset()")%>
-            <%=generateButton("Cancel", getContainer().getStartURL(getUser()))%>
+            <%= button("Save & Close").submit(true) %>
+            <%= button("Preview").onClick("preview();") %>
+            <%= button("Reset").onClick("reset();") %>
+            <%= button("Cancel").href(getContainer().getStartURL(getUser())) %>
         </td>
     </tr>
 </table>

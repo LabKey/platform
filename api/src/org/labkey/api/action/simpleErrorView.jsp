@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -28,7 +27,7 @@
     if (includeButtons)
     {
 %><br><br>
-<%=PageFlowUtil.generateSubmitButton("Back", "window.history.back(); return false;")%>
-<%=generateButton("Home", AppProps.getInstance().getHomePageActionURL())%><%
+<%= generateBackButton() %>
+<%= button("Home").href(AppProps.getInstance().getHomePageActionURL()) %><%
     }
 %>
