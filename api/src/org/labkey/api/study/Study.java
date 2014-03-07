@@ -49,7 +49,7 @@ public interface Study extends StudyEntity
 
     List<? extends Cohort> getCohorts(User user);
 
-    List<? extends AssaySpecimenConfig> getAssaySpecimenConfigs();
+    List<? extends AssaySpecimenConfig> getAssaySpecimenConfigs(String sortCol);
 
     List<? extends Visit> getVisitsForAssaySchedule();
 
