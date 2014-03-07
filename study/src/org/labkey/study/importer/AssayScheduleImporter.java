@@ -76,7 +76,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                 // study design tables
                 ctx.getLogger().info("Importing study design data tables");
                 List<TableInfo> studyDesignTables = new ArrayList<>();
-
+                studyDesignTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME));
                 studyDesignTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME));
                 studyDesignTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME));
 

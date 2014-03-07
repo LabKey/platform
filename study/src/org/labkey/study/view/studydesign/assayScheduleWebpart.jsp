@@ -62,7 +62,7 @@
 <%
     if (study != null)
     {
-        List<AssaySpecimenConfigImpl> assaySpecimenConfigs = study.getAssaySpecimenConfigs();
+        List<AssaySpecimenConfigImpl> assaySpecimenConfigs = study.getAssaySpecimenConfigs("AssayName");
         List<VisitImpl> visits = study.getVisitsForAssaySchedule();
 
         if (assaySpecimenConfigs.size() == 0)
@@ -131,9 +131,10 @@
                     locationLabel = location != null ? location.getLabel() : "";
                 }
 
+                String assayLabel = StudyManager.getInstance().getStudyDesignAssayLabelByName(c, assaySpecimen.getAssayName());
 %>
                 <tr>
-                    <td class="assay-row-padded-view"><%=h(assaySpecimen.getAssayName())%>
+                    <td class="assay-row-padded-view"><%=h(assayLabel != null ? assayLabel : assaySpecimen.getAssayName())%>
                         <%=(assaySpecimen.getDescription() != null ? PageFlowUtil.helpPopup("Description", assaySpecimen.getDescription()) : "")%>
                     </td>
                     <td class="assay-row-padded-view"><%=h(locationLabel)%></td>

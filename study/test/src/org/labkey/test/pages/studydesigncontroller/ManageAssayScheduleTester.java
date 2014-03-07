@@ -46,7 +46,7 @@ public class ManageAssayScheduleTester
 
         _test.click(insertNewConfigButton);
         _test.waitForElement(addAssayConfigWindow);
-        if (name != null) _test.setFormElement(Locator.name("AssayName"), name);
+        if (name != null) _test._ext4Helper.selectComboBoxItem(Ext4HelperWD.Locators.formItemWithInputNamed("AssayName"), true, name);
         if (description != null) _test.setFormElement(Locator.name("Description"), description);
         if (lab != null) _test._ext4Helper.selectComboBoxItem(Ext4HelperWD.Locators.formItemWithInputNamed("Lab"), true, lab);
         if (sampleType != null) _test._ext4Helper.selectComboBoxItem(Ext4HelperWD.Locators.formItemWithInputNamed("SampleType"), true, sampleType);

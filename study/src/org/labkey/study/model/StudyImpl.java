@@ -278,9 +278,9 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
-    public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs()
+    public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(String sortCol)
     {
-        return StudyManager.getInstance().getAssaySpecimenConfigs(getContainer());
+        return StudyManager.getInstance().getAssaySpecimenConfigs(getContainer(), sortCol);
     }
 
     @Override

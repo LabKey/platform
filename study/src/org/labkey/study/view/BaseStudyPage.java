@@ -63,7 +63,7 @@ public abstract class BaseStudyPage extends JspBase
 
     protected List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs()
     {
-        return getStudy().getAssaySpecimenConfigs();
+        return getStudy().getAssaySpecimenConfigs("AssayName");
     }
 
     protected List<ProductImpl> getStudyProducts(User user, String role)

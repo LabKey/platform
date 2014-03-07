@@ -1243,9 +1243,9 @@ public class StudyManager
         _locationHelper.update(user, location);
     }
 
-    public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(Container container)
+    public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(Container container, String sortCol)
     {
-        return _assaySpecimenHelper.get(container, "RowId");
+        return _assaySpecimenHelper.get(container, sortCol);
     }
 
     public List<VisitImpl> getVisitsForAssaySchedule(Container container)
@@ -1286,6 +1286,11 @@ public class StudyManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("VisitId"), rowId);
         Table.delete(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(), filter);
+    }
+
+    public String getStudyDesignAssayLabelByName(Container container, String name)
+    {
+        return getStudyDesignLabelByName(container, StudySchema.getInstance().getTableInfoStudyDesignAssays(), name);
     }
 
     public String getStudyDesignLabLabelByName(Container container, String name)
@@ -5078,7 +5083,7 @@ public class StudyManager
             List<VisitImpl> visits = _manager.getVisitsForAssaySchedule(_container);
             assertEquals("Unexpected assay schedule visit count", 2, visits.size());
 
-            for (AssaySpecimenConfigImpl assay : _manager.getAssaySpecimenConfigs(_container))
+            for (AssaySpecimenConfigImpl assay : _manager.getAssaySpecimenConfigs(_container, "RowId"))
             {
                 List<Integer> visitIds = _manager.getAssaySpecimenVisitIds(_container, assay);
                 for (VisitImpl visit : _visits)
@@ -5094,7 +5099,7 @@ public class StudyManager
 
         private void verifyAssayConfigurations()
         {
-            List<AssaySpecimenConfigImpl> assays = _manager.getAssaySpecimenConfigs(_container);
+            List<AssaySpecimenConfigImpl> assays = _manager.getAssaySpecimenConfigs(_container, "RowId");
             assertEquals("Unexpected assay configuration count", 2, assays.size());
 
             for (AssaySpecimenConfigImpl assay : assays)

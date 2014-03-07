@@ -72,7 +72,7 @@ public class AssayScheduleWriter extends DefaultStudyDesignWriter implements Int
 
         // export the study design tables (no need to export tableinfo's as these are non-extensible)
         Set<TableInfo> designTables = new HashSet<>();
-
+        designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME));
         designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME));
         designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME));
 

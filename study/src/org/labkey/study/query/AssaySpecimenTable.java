@@ -26,6 +26,7 @@ import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.study.StudySchema;
+import org.labkey.study.query.studydesign.StudyDesignAssaysTable;
 import org.labkey.study.query.studydesign.StudyDesignLabsTable;
 import org.labkey.study.query.studydesign.StudyDesignSampleTypesTable;
 
@@ -41,7 +42,17 @@ public class AssaySpecimenTable extends BaseStudyTable
         setName(StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
 
         addWrapColumn(_rootTable.getColumn("RowId"));
-        addWrapColumn(_rootTable.getColumn("AssayName"));
+
+        ColumnInfo assayColumn = new AliasedColumn(this, "AssayName", _rootTable.getColumn("AssayName"));
+        assayColumn.setFk(new LookupForeignKey("Name")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return new StudyDesignAssaysTable(_userSchema);
+            }
+        });
+        addColumn(assayColumn);
+
         addWrapColumn(_rootTable.getColumn("Description"));
         addWrapLocationColumn("LocationId", "LocationId");
         addWrapColumn(_rootTable.getColumn("Source"));

@@ -276,6 +276,10 @@
             text: 'Project',
             menu: {
                 items: [{
+                    text: 'Assays',
+                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignAssays'}),
+                    hrefTarget: '_blank'  // issue 19493
+                },{
                     text: 'Labs',
                     href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignLabs'}),
                     hrefTarget: '_blank'  // issue 19493
@@ -292,11 +296,15 @@
         text: 'Folder',
         menu: {
             items: [{
+                text: 'Assays',
+                href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignAssays'}),
+                hrefTarget: '_blank'  // issue 19493
+            },{
                 text: 'Labs',
                 href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignLabs'}),
                 hrefTarget: '_blank'  // issue 19493
             },{
-                text: 'SampleTypes',
+                text: 'Sample Types',
                 href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignSampleTypes'}),
                 hrefTarget: '_blank'  // issue 19493
             }]
@@ -368,11 +376,17 @@ function showUpdateConfigurationDialog(grid, record, item, index)
         var formItem;
         if (column.editor)
         {
-            // lab and sample type lookups should use container filter of CurrentPlusProject
+            // assay, lab, and sample type lookups should use container filter of CurrentPlusProject
             if (column.dataIndex == "Lab" || column.dataIndex == "SampleType")
             {
                 var displayField = column.dataIndex == "SampleType" ? "Name" : "Label";
-                formItem = new LABKEY.ext4.VaccineDesignDisplayHelper().getStudyDesignFieldEditor(column.dataIndex, 'StudyDesign' + column.dataIndex + 's', false, column.header, true, displayField);
+                var lookupTableName = 'StudyDesign' + column.dataIndex + 's';
+                formItem = new LABKEY.ext4.VaccineDesignDisplayHelper().getStudyDesignFieldEditor(column.dataIndex, lookupTableName, false, column.header, true, displayField);
+            }
+            else if (column.dataIndex == "AssayName")
+            {
+                formItem = new LABKEY.ext4.VaccineDesignDisplayHelper().getStudyDesignFieldEditor(column.dataIndex, "StudyDesignAssays", false, column.header, true, "Label");
+                formItem.editable = true; // Rho use case
             }
             else
             {
@@ -392,6 +406,8 @@ function showUpdateConfigurationDialog(grid, record, item, index)
         cls: 'data-window',
         border: false,
         modal: true,
+        minWidth: 310,  // for intermittent selenium test failure
+        minHeight: 210,
         bodyStyle: 'padding: 5px;',
         title: record ? 'Edit Assay Configuration' : ' Add Assay Configuration',
         items: [{
@@ -647,7 +663,7 @@ Enter assay schedule information in the grids below.
 <div style="width: 810px;">
     <ul>
         <li <%=form.isUseAlternateLookupFields() ? "style='display:none;'" : ""%>>
-            Configure dropdown options for labs and sample types at the project level to be shared across study designs or within this folder for
+            Configure dropdown options for assays, labs, and sample types at the project level to be shared across study designs or within this folder for
             study specific properties: <span id='config-dropdown-menu'></span>
         </li>
         <li>Use the "Insert New" button in the assay configurations grid to add a new assay.</li>
