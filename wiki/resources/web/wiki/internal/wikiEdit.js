@@ -618,7 +618,8 @@ function textContainsNonVisualElements(content)
     // look for form, script tag
     // used to also block pre tag, but tinymc3.4 handles <pre> properly, so removed from blacklist
     return  null != bodyText.match(/<script[\s>]/) ||
-            null != bodyText.match(/<form[\s>]/)
+            null != bodyText.match(/<form[\s>]/) ||
+            null != bodyText.match(/<style[\s>]/)
 
 }
 

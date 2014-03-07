@@ -419,7 +419,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         }
 
         aggregatedSQL.append(groupByAndSelectSQL);
-        aggregatedSQL.append(", COUNT(*) AS AggregateCount");
+        aggregatedSQL.append(", COUNT(*) AS AggregateCount \n");
         for (IVisualizationSourceQuery query : queries)
         {
             // Get all of the columns selected for all of the measures, even if they've been pivoted out into separate
@@ -432,6 +432,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                     aggregatedSQL.append(", AVG(x.\"" + alias + "\") AS \"" + alias + "\"");
                     aggregatedSQL.append(", STDDEV(x.\"" + alias + "\") AS \"" + alias + "_STDDEV\"");
                     aggregatedSQL.append(", STDERR(x.\"" + alias + "\") AS \"" + alias + "_STDERR\"");
+                    aggregatedSQL.append("\n");
                 }
             }
         }

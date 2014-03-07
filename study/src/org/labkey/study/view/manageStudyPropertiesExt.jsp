@@ -509,6 +509,7 @@ function renderFormPanel(data, editable){
         // stupid date conversion...
         if (items[i].xtype == 'datefield')
         {
+            items[i].format = LABKEY.extDateInputFormat;
             items[i].value = (value != null && value != '') ? new Date(value) : '';
             items[i].listeners = {
                 render : {

@@ -194,9 +194,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             showRecordSelectors     : false,
             showSurroundingBorder   : false,
             showPagination          : true,
-            parameters  : {
-                quickChartDisabled : true
-            },
+            quickChartDisabled      : true,
             buttonBar   : {
                 includeStandardButton: false,
                 items: [LABKEY.QueryWebPart.standardButtons.exportRows, LABKEY.QueryWebPart.standardButtons.pageSize]

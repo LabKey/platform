@@ -456,6 +456,11 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
             }
         };
         wrappedColumn.copyAttributesFrom(columnInfo);
+
+        // When copying a column, the hidden bit is not propagated, so we need to do it manually
+        if (columnInfo.isHidden())
+            wrappedColumn.setHidden(true);
+
         ForeignKey fk = wrappedColumn.getFk();
         if (fk != null && fk instanceof SpecimenForeignKey)
             ((SpecimenForeignKey) fk).setTargetStudyOverride(_dsd.getContainer());
@@ -844,9 +849,9 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
     }
 
     @Override
-    public Map<FieldKey, ColumnInfo> getExtendedColumns(boolean hidden)
+    public Map<FieldKey, ColumnInfo> getExtendedColumns(boolean includeHidden)
     {
-        Map<FieldKey, ColumnInfo> columns = super.getExtendedColumns(hidden);
+        Map<FieldKey, ColumnInfo> columns = super.getExtendedColumns(includeHidden);
 
         if (_dsd.isAssayData())
         {
@@ -854,7 +859,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
             if (assayResultTable != null)
             {
                 columns = new LinkedHashMap<>(columns);
-                columns.putAll(assayResultTable.getExtendedColumns(hidden));
+                columns.putAll(assayResultTable.getExtendedColumns(includeHidden));
             }
         }
 
