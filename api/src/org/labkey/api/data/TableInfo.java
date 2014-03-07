@@ -148,10 +148,10 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      * For other tables, the extended column set could include some columns
      * from lookup tables.
      *
-     * @param hidden Include hidden columns.
+     * @param includeHidden Include hidden columns.
      * @return All columns.
      */
-    Map<FieldKey, ColumnInfo> getExtendedColumns(boolean hidden);
+    Map<FieldKey, ColumnInfo> getExtendedColumns(boolean includeHidden);
 
     List<FieldKey> getDefaultVisibleColumns();
 

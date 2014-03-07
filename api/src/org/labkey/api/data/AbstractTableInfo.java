@@ -692,11 +692,11 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
     }
 
     @Override
-    public Map<FieldKey, ColumnInfo> getExtendedColumns(boolean hidden)
+    public Map<FieldKey, ColumnInfo> getExtendedColumns(boolean includeHidden)
     {
         List<ColumnInfo> columns = getColumns();
         LinkedHashMap<FieldKey, ColumnInfo> ret = new LinkedHashMap<>(columns.size());
-        if (hidden)
+        if (includeHidden)
         {
             for (ColumnInfo col : columns)
                 ret.put(col.getFieldKey(), col);

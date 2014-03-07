@@ -26,7 +26,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 
-import java.lang.ref.WeakReference;
 import java.util.List;
 
 /**
@@ -39,7 +38,7 @@ public class ViewCategory extends Entity implements Comparable
     private int _rowId;
     private String _label;
     private int _displayOrder;
-    private transient WeakReference<ViewCategory> _parent;
+    private Integer _parentId;
 
     public ViewCategory()
     {
@@ -49,7 +48,7 @@ public class ViewCategory extends Entity implements Comparable
     {
         _label = label;
         if (parent != null)
-            _parent = new WeakReference<>(parent);
+            _parentId = parent.getRowId();
     }
 
     public boolean isNew()
@@ -102,15 +101,17 @@ public class ViewCategory extends Entity implements Comparable
         return container.hasPermission(user, ReadPermission.class);
     }
 
+    @Nullable
     public ViewCategory getParent()
     {
-        ViewCategory parent = _parent == null ? null : _parent.get();
-        return parent;
+        if (_parentId != null)
+            return ViewCategoryManager.getInstance().getCategory(_parentId);
+        return null;
     }
 
     public void setParent(ViewCategory parent)
     {
-        _parent = new WeakReference<>(parent);
+        _parentId = parent != null ? parent.getRowId() : null;
     }
 
     public List<ViewCategory> getSubcategories()
