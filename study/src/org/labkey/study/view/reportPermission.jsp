@@ -141,10 +141,10 @@
         }
         %>
     </table>
-    <%=generateSubmitButton("Save")%>
+    <%= button("Save").submit(true) %>
     <span id="selectionButtons">
-        <%=PageFlowUtil.generateButton("Select All", "#", "setSelection(true); return false;")%>
-        <%=PageFlowUtil.generateButton("Select None", "#", "setSelection(false); return false;")%>
+        <%= PageFlowUtil.button("Select All").href("#").onClick("setSelection(true); return false;") %>
+        <%= PageFlowUtil.button("Select None").href("#").onClick("setSelection(false); return false;") %>
     </span>
 <%--
     <input type=hidden name=reportId value="<%=bean.getDescriptor().getReportId()%>">

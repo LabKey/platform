@@ -165,7 +165,7 @@
     </table>
     <% } %>
 
-    <tr><td><%=generateSubmitButton("Save")%></td></tr>
+    <tr><td><%= button("Save").submit(true) %></td></tr>
 
     <%
         WebPartView.endTitleFrame(out);

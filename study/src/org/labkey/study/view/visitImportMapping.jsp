@@ -48,7 +48,7 @@
         %>
         <tr><td>&nbsp;</td></tr>
         <tr>
-            <td colspan="2"><%=generateButton((hasCustomMapping ? "Replace" : "Import") + " Custom Mapping", StudyController.ImportVisitAliasesAction.class)%><%=text(hasCustomMapping ? "&nbsp;" + generateButton("Clear Custom Mapping", StudyController.ClearVisitAliasesAction.class) : "")%></td>
+            <td colspan="2"><%= button((hasCustomMapping ? "Replace" : "Import") + " Custom Mapping").href(StudyController.ImportVisitAliasesAction.class, getContainer()) %><%=text(hasCustomMapping ? "&nbsp;" + button("Clear Custom Mapping").href(StudyController.ClearVisitAliasesAction.class, getContainer()) : "")%></td>
         </tr>
         <tr><td colspan="2">&nbsp;</td></tr>
         <tr><th colspan="2" align="left">Standard Mapping</th></tr>
@@ -91,7 +91,7 @@
         %>
         <tr><td>&nbsp;</td></tr>
         <tr>
-            <td colspan="2"><%=generateButton("Done", ManageVisitsAction.class)%></td>
+            <td colspan="2"><%= button("Done").href(ManageVisitsAction.class, getContainer()) %></td>
         </tr>
     </table>
 </form>

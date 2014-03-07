@@ -39,17 +39,17 @@
         if (c.hasPermission(getUser(), InsertPermission.class))
         {
     %>
-            <%=generateButton("New " + names.singularName.getSource(), new ActionURL(IssuesController.InsertAction.class, c))%>&nbsp;&nbsp;&nbsp;
+            <%= button("New " + names.singularName.getSource()).href(new ActionURL(IssuesController.InsertAction.class, c)) %>&nbsp;&nbsp;&nbsp;
     <%
         }
     %><input type="text" size="5" name="issueId"/>
-        <%=PageFlowUtil.generateSubmitButton("Jump to " + names.singularName.getSource(), "", "align=\"top\" vspace=\"2\"")%></form></td>
+        <%= button("Jump to " + names.singularName.getSource()).submit(true).attributes("align=\"top\" vspace=\"2\"") %></form></td>
     <td width=100%>&nbsp;</td>
     <td align="right" nowrap>
         <form action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>" method="get">
             <input type="text" size="30" name="q" value="">
             <input type="hidden" name="template" value="<%=h(IssuesController.IssueSearchResultTemplate.NAME)%>">
-            <%=PageFlowUtil.generateSubmitButton("Search", "", "align=\"top\" vspace=\"2\"")%>
+            <%= button("Search").submit(true).attributes("align=\"top\" vspace=\"2\"")%>
         </form>
     </td>
 </tr></table>

@@ -149,7 +149,7 @@
                         %>
                         <tr>
                             <td>&nbsp;</td>
-                            <td><%=PageFlowUtil.generateButton("Add", "#", "addRowToTable();")%>
+                            <td><%= PageFlowUtil.button("Add").href("#").onClick("addRowToTable();") %>
                             </td>
                             <td>&nbsp;</td>
                         </tr>
@@ -158,7 +158,7 @@
             </td>
         </tr>
     </table>
-    <%=PageFlowUtil.generateSubmitButton("Save", "return validate();")%>
+    <%= button("Save").submit(true).onClick("return validate();") %>
 </form>
 <script type="text/javascript">
 

@@ -39,7 +39,7 @@
 <labkey:errors/>
 
 <form action="<%=h(buildURL(StudyController.ImportAction.class))%>" method=POST>
-    <%=generateSubmitButton("Import Data")%>
+    <%= button("Import Data").submit(true) %>
     <%=generateBackButton("Cancel")%>
     <table width="100%">
     <tr><td class=labkey-form-label width=150>Type URI</td><td><%=h(form.getTypeURI())%><input type=hidden name="typeURI" value="<%=h(form.getTypeURI())%>"></td></tr>

@@ -78,14 +78,14 @@
         <%
             if (!bean.isEdit())
             {
-                out.println(PageFlowUtil.generateSubmitButton("Edit Dataset Definition", "this.form.action.value='" + StudyController.StudySnapshotForm.EDIT_DATASET + "'"));
+                out.println(button("Edit Dataset Definition").submit(true).onClick("this.form.action.value='" + StudyController.StudySnapshotForm.EDIT_DATASET + "'"));
                 out.print("&nbsp;");
             }
 
-            out.println(generateSubmitButton(bean.isEdit() ? "Save" : "Create Snapshot"));
+            out.println(button(bean.isEdit() ? "Save" : "Create Snapshot").submit(true));
             out.print("&nbsp;");
 
-            out.println(PageFlowUtil.generateSubmitButton(bean.isEdit() ? "Done" : "Cancel", "this.form.action.value='" + StudyController.StudySnapshotForm.CANCEL + "'"));
+            out.println(button(bean.isEdit() ? "Done" : "Cancel").submit(true).onClick("this.form.action.value='" + StudyController.StudySnapshotForm.CANCEL + "'"));
 
         %>
     </table>

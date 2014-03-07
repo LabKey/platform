@@ -151,6 +151,6 @@ Paste data in the area below
     }
 %>
     <p>
-    <%=generateSubmitButton("Submit")%> <%=buttonImg("Cancel", "window.history.back();return false;")%>
+    <%= button("Submit").submit(true) %> <%=buttonImg("Cancel", "window.history.back();return false;")%>
 </form>
 

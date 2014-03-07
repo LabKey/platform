@@ -74,7 +74,7 @@
         %></a><%
     }
 }
-%></b></td><td align="right"><%=generateButton("Standard View","?listing=ext")%>&nbsp;<%
+%></b></td><td align="right"><%= button("Standard View").href("?listing=ext") %>&nbsp;<%
     if (user.isGuest())
     {
         %><a href="<%=h(listpage.loginURL)%>">Sign In</a><%
@@ -175,8 +175,8 @@ This is a WebDav enabled directory.<br>
     }
 %>
 <%
-if (supportsDavMount) {%><%=generateButton("davmount","?davmount")%><br><%}
-if (supportsDavScheme) {%><%=generateButton("dav", href.replace("http:","dav:"))%><br><%}
-if (supportsWebdavScheme) {%><%=generateButton("webdav", href.replace("http:","webdav:"))%><br><%}
+if (supportsDavMount) {%><%= button("davmount").href("?davmount") %><br><%}
+if (supportsDavScheme) {%><%= button("dav").href(href.replace("http:","dav:")) %><br><%}
+if (supportsWebdavScheme) {%><%= button("webdav").href(href.replace("http:","webdav:")) %><br><%}
 %>
 <!--<%=h(request.getHeader("user-agent"))%>-->

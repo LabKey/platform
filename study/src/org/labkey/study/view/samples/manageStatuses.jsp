@@ -124,7 +124,7 @@ function showSystemRows(value)
                 <th>&nbsp;</th>
                 <td>&nbsp;</td>
                 <td colspan="3">
-                    <%= generateSubmitButton("Save")%>&nbsp;
+                    <%= button("Save").submit(true) %>&nbsp;
                     <%= text(buttonImg("Change Order", "document.manageStatuses.nextPage.value='" + new ActionURL(SpecimenController.ManageStatusOrderAction.class, getContainer()).getLocalURIString() + "'; return true;"))%>
                     <input type="hidden" name="nextPage" value="<%=h(new ActionURL(SpecimenController.ManageStatusesAction.class, getContainer()).getLocalURIString())%>">
                 </td>
@@ -151,7 +151,7 @@ function showSystemRows(value)
     <tr>
         <td>
             <%= text(buttonImg("Done", "document.manageStatuses.nextPage.value=''; return true;"))%>
-            <%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, study.getContainer()))%>&nbsp;
+            <%= button("Cancel").href(new ActionURL(StudyController.ManageStudyAction.class, study.getContainer())) %>&nbsp;
         </td>
     </tr>
 </table>

@@ -42,7 +42,7 @@
 </select>
 </p>
 <p>
-    <%= generateButton("Cancel", "javascript:back()")%>
-    <%= generateSubmitButton("Select") %>
+    <%= generateBackButton() %>
+    <%= button("Select").submit(true) %>
 </p>
 </form>

@@ -45,7 +45,7 @@
             <td>&nbsp;</td>
         </tr>
         <tr>
-            <td><%=generateSubmitButton("Submit")%>&nbsp;<%=generateButton("Cancel", ShowVisitImportMappingAction.class)%></td>
+            <td><%= button("Submit").submit(true) %>&nbsp;<%= button("Cancel").href(ShowVisitImportMappingAction.class, getContainer()) %></td>
         </tr>
     </table>
 </form>

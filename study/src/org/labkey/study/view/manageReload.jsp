@@ -71,11 +71,11 @@
         </tr>
         <tr>
             <td width=200>&nbsp;</td>
-            <td><%=allowReload ? PageFlowUtil.generateButton("Attempt Reload Now", buildURL(StudyController.CheckForReload.class, "ui=1"), null, "id=\"reloadNow\"") :
-                                 PageFlowUtil.generateButton("Attempt Reload Now", "javascript:void(0);", null, "id=\"reloadNow\"")%></td>
+            <td><%=allowReload ? PageFlowUtil.button("Attempt Reload Now").href(buildURL(StudyController.CheckForReload.class, "ui=1")).attributes("id=\"reloadNow\"") :
+                                 PageFlowUtil.button("Attempt Reload Now").href("javascript:void(0);").attributes("id=\"reloadNow\"") %></td>
         </tr>
         <tr>
-            <td><%=generateSubmitButton("Update")%>&nbsp;<%=generateButton("Cancel", StudyController.ManageStudyAction.class)%></td>
+            <td><%= button("Update").submit(true) %>&nbsp;<%= button("Cancel").href(StudyController.ManageStudyAction.class, getContainer()) %></td>
         </tr>
     </table>
 </form>

@@ -32,8 +32,8 @@ Browse for file and then click submit<br>
   <input type="hidden" name="entityId" value="<%= entityId %>" /><br>
   <table>
     <tr>
-      <td><%=generateSubmitButton("Submit")%></td>
-      <td><%=generateButton("Cancel", "", "window.close();")%></td>
+      <td><%= button("Submit").submit(true) %></td>
+      <td><%= button("Cancel").onClick("window.close();") %></td>
       <td style="padding-left:5px;"><label id="filename"></label></td>
     </tr>
   </table>

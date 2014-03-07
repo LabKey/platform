@@ -59,7 +59,7 @@ ExperimentController.ExportBean bean = me.getModelBean();
     </tr>
     <tr>
         <td/>
-        <td><%= PageFlowUtil.generateSubmitButton("Export", "return verifySelected(this.form, '" + bean.getPostURL() + "', 'POST', 'runs');") %></td>
+        <td><%= button("Export").submit(true).onClick("return verifySelected(this.form, '" + bean.getPostURL() + "', 'POST', 'runs');") %></td>
     </tr>
 </table>
 

@@ -24,4 +24,4 @@
     ActionURL homeURL = AppProps.getInstance().getHomePageActionURL();
 %>
 <%=message%><br><br>
-<%=generateButton("Home", homeURL)%>
+<%= button("Home").href(homeURL) %>

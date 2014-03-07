@@ -25,4 +25,4 @@
     List<Person> people = (List<Person>) (HttpView.currentModel());
 %>
 This folder contains <%= people.size() %> people.<br>
-<%= generateButton("View Grid", new ActionURL(DemoController.BeginAction.class, getContainer())) %>
+<%= button("View Grid").href(new ActionURL(DemoController.BeginAction.class, getContainer())) %>

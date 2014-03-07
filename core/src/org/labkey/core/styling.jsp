@@ -97,17 +97,17 @@
         <td></td>
     </tr>
     <tr>
-        <td><%=generateButton("Generated Button", "#")%></td>
+        <td><%=button("Generated Button").href("#")%></td>
         <td></td>
         <td></td>
     </tr>
     <tr>
-        <td><%= generateSubmitButton("Generated Submit Button")%></td>
+        <td><%= button("Generated Submit Button").submit(true) %></td>
         <td></td>
         <td></td>
     </tr>
     <tr>
-        <td><%= generateButton("Gen Left", "#")%><%= generateButton("Gen Right", "#")%></td>
+        <td><%= button("Gen Left").href("#") %><%= button("Gen Right").href("#") %></td>
         <td></td>
         <td></td>
     </tr>
@@ -119,9 +119,9 @@
     <tr>
         <td>
             <table>
-                <tr><td><%=generateButton("Button", "#")%></td></tr>
-                <tr><td><%=generateButton("Button", "#")%></td></tr>
-                <tr><td><%=generateButton("Button", "#")%></td></tr>
+                <tr><td><%= button("Button").href("#") %></td></tr>
+                <tr><td><%= button("Button").href("#") %></td></tr>
+                <tr><td><%= button("Button").href("#") %></td></tr>
             </table>
         </td>
         <td>Stacked generated buttons.</td>
@@ -154,7 +154,7 @@
         <td>
             <div class="labkey-button-bar">
                 <span><%= PageFlowUtil.generateDropDownButton("Button Bar Drop Down", "#", "")%></span>
-                <span><%= PageFlowUtil.generateButton("Button Bar Button", "#")%></span>
+                <span><%= PageFlowUtil.button("Button Bar Button").href("#") %></span>
             </div>
         </td>
         <td></td>
@@ -165,7 +165,7 @@
             <div class="labkey-button-bar">
                 <span><%= PageFlowUtil.generateDropDownButton("labkey-disabled-button", "#", "", java.util.Collections.singletonMap("id", "dis-drop-1"))%></span>
                 <span><%= PageFlowUtil.generateDropDownButton("Enabled Drop", "#", "")%></span>
-                <span><%= PageFlowUtil.generateButton("Button", "#")%></span>
+                <span><%= PageFlowUtil.button("Button").href("#") %></span>
             </div>
         </td>
         <td></td>

@@ -165,9 +165,9 @@
                     <tr>
                         <th>&nbsp;</th>
                         <td>
-                            <%= generateSubmitButton("Save Changes and Send Notifications") %>&nbsp;
-                            <%= PageFlowUtil.generateSubmitButton("Delete Requirement", "this.form.action='" + deleteURL + "'")%>&nbsp;
-                            <%= generateButton("Cancel", buildURL(SpecimenController.ManageRequestAction.class, "id=" + requirement.getRequestId()))%>
+                            <%= button("Save Changes and Send Notifications").submit(true) %>&nbsp;
+                            <%= button("Delete Requirement").submit(true).onClick("this.form.action='" + deleteURL + "'") %>&nbsp;
+                            <%= button("Cancel").href(buildURL(SpecimenController.ManageRequestAction.class, "id=" + requirement.getRequestId())) %>
                         </td>
                     </tr>
                 </table>

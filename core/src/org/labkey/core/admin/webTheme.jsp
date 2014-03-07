@@ -156,16 +156,16 @@ if (null != webThemeErrors) { %>
         <%
         if (!isBuiltInTheme)
         {%>
-        <%=PageFlowUtil.generateSubmitButton("Save", "", "id=\"saveButton\" name=\"Define\"")%>&nbsp;
+        <%= button("Save").submit(true).attributes("id=\"saveButton\" name=\"Define\"") %>&nbsp;
             <%
             if (selectedTheme != null && bean.themes.size() > 1)
             {%>
-                <%=PageFlowUtil.generateSubmitButton("Delete", "var sure = confirm('Are you sure you want to delete the theme named " + request.getParameter("themeName") + "?'); if (sure) document.themeForm.action = 'deleteWebTheme.view'; return sure;", "name=\"Delete\"")%>&nbsp;
+                <%= button("Delete").submit(true).onClick("var sure = confirm('Are you sure you want to delete the theme named " + request.getParameter("themeName") + "?'); if (sure) document.themeForm.action = 'deleteWebTheme.view'; return sure;").attributes("name=\"Delete\"") %>&nbsp;
             <%}
         }
         else
             {%>
-            <%=generateButton("Done", urlProvider(AdminUrls.class).getProjectSettingsURL(getContainer()))%>
+            <%= button("Done").href(urlProvider(AdminUrls.class).getProjectSettingsURL(getContainer())) %>
            <%}%>
     </td>
 </tr>

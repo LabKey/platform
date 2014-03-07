@@ -209,7 +209,7 @@ public class PermissionsDetailsView extends WebPartView
             renderGroupTableRow(guestsGroup, policy, out, "Guests");
 
         out.println("</table>");
-        out.println(PageFlowUtil.generateSubmitButton("Update"));
+        out.println(PageFlowUtil.button("Update").submit(true));
         out.println("<input name=objectId type=hidden value=\"" + _c.getId() + "\">");
         out.println("<input name=view type=hidden value=\"" + _view + "\">");
         out.println("</form><br>");

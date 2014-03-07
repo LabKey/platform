@@ -87,5 +87,5 @@ Any user with READ access to this folder may view some summary data.  However, a
         %></tr><%
     }
     %></table>
-    <%=PageFlowUtil.generateSubmitButton("Update", "", "id=\"groupUpdateButton\"")%>
+    <%= button("Update").submit(true).attributes("id=\"groupUpdateButton\"") %>
     </form>

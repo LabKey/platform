@@ -102,8 +102,8 @@
         <tr>
             <th>&nbsp;</th>
             <td>
-                <%= generateSubmitButton("Save Changes and Send Notifications")%>&nbsp;
-                <%= generateButton("Cancel", buildURL(SpecimenController.ManageRequestAction.class, "id=" + bean.getSampleRequest().getRowId()))%>
+                <%= button("Save Changes and Send Notifications").submit(true) %>&nbsp;
+                <%= button("Cancel").href(buildURL(SpecimenController.ManageRequestAction.class, "id=" + bean.getSampleRequest().getRowId())) %>
             </td>
         </tr>
     </table>

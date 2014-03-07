@@ -235,8 +235,8 @@
     <tr>
         <td/>
         <td>
-            <%=generateSubmitButton("Submit")%>
-            <%=generateButton("Clear", "", "javascript:clearValues()")%></td>
+            <%= button("Submit").submit(true) %>
+            <%= button("Clear").onClick("javascript:clearValues()") %></td>
     </tr>
 
 </table>

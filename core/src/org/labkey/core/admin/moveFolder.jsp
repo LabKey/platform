@@ -71,7 +71,7 @@
 %>
 <table class="button-bar">
     <tr>
-        <td><%=PageFlowUtil.generateButton("Confirm Move", "#", "action('confirmmove');", "id=\"confirm-move-btn\" style=\"display: none;\"")%></td>
+        <td><%= PageFlowUtil.button("Confirm Move").href("#").onClick("action('confirmmove');").attributes("id=\"confirm-move-btn\" style=\"display: none;\"") %></td>
         <td><%=generateBackButton("Cancel")%></td>
     </tr>
 </table>

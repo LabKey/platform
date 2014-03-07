@@ -74,10 +74,9 @@
     }
 
     String specimenSearchButton = manager.hasEditRequestPermissions(user, bean.getSampleRequest()) ?
-        generateButton("Specimen Search", buildURL(ShowSearchAction.class) + "showVials=true", null) : "";
+        button("Specimen Search").href(buildURL(ShowSearchAction.class) + "showVials=true").toString() : "";
     String importVialIdsButton = manager.hasEditRequestPermissions(user, bean.getSampleRequest()) ?
-        generateButton("Upload Specimen Ids", buildURL(SpecimenController.ImportVialIdsAction.class,
-                "id=" + bean.getSampleRequest().getRowId()), null) : "";
+        button("Upload Specimen Ids").href(buildURL(SpecimenController.ImportVialIdsAction.class, "id=" + bean.getSampleRequest().getRowId())).toString() : "";
 
     Map<String, Container> folders = new HashMap<>();
     for (Container child : ContainerManager.getChildren(c))
@@ -246,9 +245,9 @@
                     {
                 %>
                 <br>You may remove these specimens from this request if they are not expected to be re-added to the database.<br>
-                <%= generateButton("Delete missing specimens",
-                        buildURL(SpecimenController.DeleteMissingRequestSpecimensAction.class, "id=" + bean.getSampleRequest().getRowId()),
-                        "return confirm('Delete missing specimens?  This action cannot be undone.')")%><%
+                <%= button("Delete missing specimens")
+                        .href(buildURL(SpecimenController.DeleteMissingRequestSpecimensAction.class, "id=" + bean.getSampleRequest().getRowId()))
+                        .onClick("return confirm('Delete missing specimens?  This action cannot be undone.')") %><%
                     }
                 %>
             </td>
@@ -329,8 +328,9 @@
             {
 %>
                 Request processing will begin after the request has been submitted.<br><br>
-                <%= generateButton("Submit Request", buildURL(SpecimenController.SubmitRequestAction.class) + "id=" + bean.getSampleRequest().getRowId(),
-                        "return confirm('" + SpecimenController.ManageRequestBean.SUBMISSION_WARNING + "')")%>
+                <%= button("Submit Request")
+                        .href(buildURL(SpecimenController.SubmitRequestAction.class) + "id=" + bean.getSampleRequest().getRowId())
+                        .onClick("return confirm('" + SpecimenController.ManageRequestBean.SUBMISSION_WARNING + "')") %>
 <%
             }
             else
@@ -344,17 +344,18 @@
 
             if (AppProps.getInstance().isExperimentalFeatureEnabled(CreateChildStudyAction.CREATE_SPECIMEN_STUDY))
             {
-%>              <%=generateButton("Create Study", "javascript:void(0)", "showNewStudyWizard()")%>
+%>              <%= button("Create Study").href("javascript:void(0)").onClick("showNewStudyWizard();") %>
 <%
             }
 %>
-                <%= generateButton("Cancel Request", buildURL(SpecimenController.DeleteRequestAction.class, "id=" + bean.getSampleRequest().getRowId()),
-                        "return confirm('" + SpecimenController.ManageRequestBean.CANCELLATION_WARNING + "')")%>
+                <%= button("Cancel Request")
+                        .href(buildURL(SpecimenController.DeleteRequestAction.class, "id=" + bean.getSampleRequest().getRowId()))
+                        .onClick("return confirm('" + SpecimenController.ManageRequestBean.CANCELLATION_WARNING + "')") %>
 <%
             if (bean.getReturnUrl() != null)
             {
 %>
-                <%= generateButton("Return to Specimen View", bean.getReturnUrl())%>
+                <%= button("Return to Specimen View").href(bean.getReturnUrl()) %>
 <%
             }
 %>

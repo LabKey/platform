@@ -41,5 +41,5 @@
             </td>
         </tr>
     </table>
-    <%=generateSubmitButton("Save")%>
+    <%= button("Save").submit(true) %>
 </form>

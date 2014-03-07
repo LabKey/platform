@@ -55,8 +55,8 @@
     <tr><td colspan="2">&nbsp;</td></tr>
     <tr>
         <td colspan=2>
-            <%=generateSubmitButton("Save")%>
-            <%=generateButton(bean.reshow ? "Done" : "Cancel", urlProvider(LoginUrls.class).getConfigureURL())%>
+            <%= button("Save").submit(true) %>
+            <%= button(bean.reshow ? "Done" : "Cancel").href(urlProvider(LoginUrls.class).getConfigureURL()) %>
         </td>
     </tr>
     <tr><td colspan="2">&nbsp;</td></tr>

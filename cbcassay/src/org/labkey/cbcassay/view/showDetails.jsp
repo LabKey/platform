@@ -91,6 +91,6 @@
 </table>
 
 <% if (canEdit) { %>
-    <%=generateButton("Edit", CBCAssayProvider.getResultUpdateUrl(getViewContext()))%>
+    <%= button("Edit").href(CBCAssayProvider.getResultUpdateUrl(getViewContext())) %>
 <% } %>
 

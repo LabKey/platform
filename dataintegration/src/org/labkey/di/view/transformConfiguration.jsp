@@ -202,14 +202,14 @@ for (ScheduledPipelineJobDescriptor descriptor : descriptorsMap.values())
         <td><%=h(descriptor.getScheduleDescription())%></td>
         <td><input type=checkbox onchange="onEnabledChanged(this,<%=q(descriptor.getId())%>)" <%=checked(configuration.isEnabled())%>></td>
         <td><input type=checkbox onchange="onVerboseLoggingChanged(this,<%=q(descriptor.getId())%>)" <%=checked(configuration.isVerboseLogging())%>></td>
-        <td><%=generateButton("run now", "#", "onRunNowClicked(this," + q(descriptor.getId()) + "); return false;")%></td><%
+        <td><%= button("run now").href("#").onClick("onRunNowClicked(this," + q(descriptor.getId()) + "); return false;") %></td><%
         if (configuration.getTransformState().contentEquals("{}"))
         {
             %><td><%=PageFlowUtil.generateDisabledButton("reset state")%></td><%
         }
         else
         {
-            %><td><%=generateButton("reset state", "#", "onResetStateClicked(this," + q(descriptor.getId()) + "); return false;")%></td><%
+            %><td><%= button("reset state").href("#").onClick("onResetStateClicked(this," + q(descriptor.getId()) + "); return false;") %></td><%
         }
         %></tr><%
     }

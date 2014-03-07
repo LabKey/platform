@@ -53,7 +53,7 @@
 <tr>
     <td>
         <%=generateReturnUrlFormField(bean.returnURL)%>
-        <%=generateSubmitButton("Set")%>
+        <%= button("Set").submit(true) %>
     </td>
 </tr>
 </table>

@@ -92,8 +92,8 @@
     %>
     <tr>
         <td>
-            <%=generateSubmitButton("Submit")%>
-            <%=generateButton("Cancel", c.getStartURL(getUser()))%>
+            <%= button("Submit").submit(true) %>
+            <%= button("Cancel").href(c.getStartURL(getUser())) %>
         </td>
     </tr>
 </table>

@@ -43,6 +43,6 @@ AdminController.FolderTypesBean bean = (AdminController.FolderTypesBean) HttpVie
             </tr>
         <% } %>
     </table>
-    <%= PageFlowUtil.generateSubmitButton("Save") %>
+    <%= button("Save").submit(true) %>
     <%= PageFlowUtil.generateBackButton("Cancel") %>
 </form>

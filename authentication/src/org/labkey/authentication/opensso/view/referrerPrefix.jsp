@@ -33,8 +33,8 @@
         <tr><td class="labkey-form-label">URL prefix</td><td><input type="text" name="prefix" value="<%=h(bean.getPrefix())%>" style="width:400px;"></td></tr>
         <tr><td colspan="2">&nbsp;</td></tr>
         <tr><td colspan="2">
-            <%=generateSubmitButton("Save")%>
-            <%=generateButton("Cancel", OpenSSOController.getCurrentSettingsURL())%>
+            <%= button("Save").submit(true) %>
+            <%= button("Cancel").href(OpenSSOController.getCurrentSettingsURL()) %>
         </td></tr>
     </table><br>
 </form>

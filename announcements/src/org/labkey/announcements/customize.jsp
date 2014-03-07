@@ -102,8 +102,8 @@
         <td><table><tr><td><input type="checkbox" name="includeGroups"<%=checked(settings.includeGroups())%>></td></tr></table></td>
     </tr>
     <tr>
-        <td colspan=2><%=generateSubmitButton("Save")%>
-        <%=generateButton("Cancel", bean.returnURL)%></td>
+        <td colspan=2><%= button("Save").submit(true) %>
+        <%= button("Cancel").href(bean.returnURL) %></td>
     </tr>
 </table>
 </form>

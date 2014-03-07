@@ -128,8 +128,8 @@
     </tr>
     <tr>
         <td colspan="2">
-            <%= generateSubmitButton("Next") %>
-            <%= generateButton("Cancel", bean.getReturnURL())%>
+            <%= button("Next").submit(true) %>
+            <%= button("Cancel").href(bean.getReturnURL()) %>
         </td>
     </tr>
 </table>

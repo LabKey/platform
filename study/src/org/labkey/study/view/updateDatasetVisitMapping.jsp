@@ -58,7 +58,7 @@
 %>
 
 <form action="<%=h(updateDatasetURL.getLocalURIString())%>" method="POST">
-<%=generateSubmitButton("Save")%>&nbsp;<%= text(this.generateButton("Cancel", buildURL(StudyController.DatasetDetailsAction.class, "id=" + dataset.getDataSetId())))%>
+<%= button("Save").submit(true) %>&nbsp;<%= text(button("Cancel").href(buildURL(StudyController.DatasetDetailsAction.class, "id=" + dataset.getDataSetId())).toString()) %>
 <% WebPartView.startTitleFrame(out, "Dataset Properties", null, "100%", null); %>
     <table>
         <tr>
@@ -150,5 +150,5 @@
         </tr>
     </table>
 <% WebPartView.endTitleFrame(out); %>
-<%= this.generateSubmitButton("Save")%>&nbsp;<%= text(this.generateButton("Cancel", buildURL(StudyController.DatasetDetailsAction.class), "id=" + dataset.getDataSetId()))%>
+<%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(buildURL(StudyController.DatasetDetailsAction.class, "id=" + dataset.getDataSetId())) %>
 </form>

@@ -71,12 +71,12 @@
         <%
             if (bean.isUpgrade()) {
         %>
-            <td><%=generateSubmitButton("Next")%></td>
+            <td><%= button("Next").submit(true) %></td>
         <%
             } else {
         %>
-            <td><%=generateSubmitButton("Save")%>&nbsp;
-                <%=generateButton("Cancel", urlProvider(AdminUrls.class).getAdminConsoleURL())%>
+            <td><%= button("Save").submit(true) %>&nbsp;
+                <%= button("Cancel").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) %>
             </td>
         <%
             }

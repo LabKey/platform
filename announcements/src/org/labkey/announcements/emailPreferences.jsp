@@ -36,6 +36,6 @@
 
     <br><input type=hidden name="srcUrl" value="<%=h(srcURL)%>"/>
     <br><input type=hidden name="srcIdentifier" value="<%=h(srcIdentifier)%>"/>
-    <%=generateSubmitButton("Update")%>
-    <%=generateButton((message == null ? "Cancel" : "Done"), srcURL)%>
+    <%= button("Update").submit(true) %>
+    <%= button((message == null ? "Cancel" : "Done")).href(srcURL) %>
 </form>

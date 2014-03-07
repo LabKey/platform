@@ -39,7 +39,7 @@
             <input type="text" name="search" style="width:100%">
         </td>
         <td width="1%">
-            <%=generateButton("Search", "javascript:{}", "submitSearch();")%>
+            <%= button("Search").href("javascript:{}").onClick("submitSearch();") %>
         </td>
     </tr>
 </table>

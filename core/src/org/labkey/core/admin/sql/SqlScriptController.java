@@ -335,7 +335,7 @@ public class SqlScriptController extends SpringActionController
             formHtml.append(includeSingleScripts ? " checked" : "");
             formHtml.append("/>Include single scripts</td></tr>\n");
             formHtml.append("    <tr><td colspan=2>");
-            formHtml.append(PageFlowUtil.generateSubmitButton("Update"));
+            formHtml.append(PageFlowUtil.button("Update").submit(true));
             formHtml.append("</td></tr>\n");
             formHtml.append("  </table>\n");
             formHtml.append("</form><br>\n");
@@ -568,8 +568,8 @@ public class SqlScriptController extends SpringActionController
             html.append("</pre>\n");
 
             html.append("<form method=\"post\">");
-            html.append(PageFlowUtil.generateSubmitButton("Save to " + consolidator.getFilename()));
-            html.append(PageFlowUtil.generateButton("Back", getSuccessURL(form)));
+            html.append(PageFlowUtil.button("Save to " + consolidator.getFilename()).submit(true));
+            html.append(PageFlowUtil.button("Back").href(getSuccessURL(form)));
             html.append("</form>");
 
             return new HtmlView(html.toString());
@@ -833,7 +833,7 @@ public class SqlScriptController extends SpringActionController
             ActionURL url = new ActionURL(ReorderScriptAction.class, getViewContext().getContainer());
             url.addParameter("moduleName", script.getProvider().getProviderName());
             url.addParameter("filename", script.getDescription());
-            out.println(PageFlowUtil.generateButton("Reorder Script", url));
+            out.println(PageFlowUtil.button("Reorder Script").href(url));
         }
     }
 
@@ -895,12 +895,12 @@ public class SqlScriptController extends SpringActionController
             ActionURL reorderUrl = new ActionURL(SaveReorderedScriptAction.class, getViewContext().getContainer());
             reorderUrl.addParameter("moduleName", script.getProvider().getProviderName());
             reorderUrl.addParameter("filename", script.getDescription());
-            out.println(PageFlowUtil.generateButton("Save Reordered Script to " + script.getDescription(), reorderUrl));
+            out.println(PageFlowUtil.button("Save Reordered Script to " + script.getDescription()).href(reorderUrl));
 
             ActionURL backUrl = new ActionURL(ScriptAction.class, getViewContext().getContainer());
             backUrl.addParameter("moduleName", script.getProvider().getProviderName());
             backUrl.addParameter("filename", script.getDescription());
-            out.println(PageFlowUtil.generateButton("Back", backUrl));
+            out.println(PageFlowUtil.button("Back").href(backUrl));
         }
     }
 

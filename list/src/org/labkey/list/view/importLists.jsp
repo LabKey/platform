@@ -38,7 +38,7 @@ list templates.<%
 </td></tr>
 <tr><td><input type="file" name="listZip" size="50"></td></tr>
 <tr>
-    <td><%=generateSubmitButton("Import List Archive")%></td>
+    <td><%= button("Import List Archive").submit(true) %></td>
 </tr>
 
 </table>

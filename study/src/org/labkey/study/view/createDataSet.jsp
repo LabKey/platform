@@ -51,7 +51,7 @@
         <tr>
             <td>&nbsp;</td>
             <td>
-                <%= this.generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", StudyController.ManageTypesAction.class)%>
+                <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(StudyController.ManageTypesAction.class, getContainer()) %>
             </td>
         </tr>
     </table>

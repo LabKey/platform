@@ -441,7 +441,7 @@ public class SecurityController extends SpringActionController
         }
 
         ActionURL startURL = c.getFolderType().getStartURL(c, getUser());
-        projectViews.addView(new HtmlView(PageFlowUtil.generateButton("Done", startURL)));
+        projectViews.addView(new HtmlView(PageFlowUtil.button("Done").href(startURL).toString()));
         if(c.isRoot())
             body.addView(projectViews);
         else
@@ -1621,7 +1621,7 @@ public class SecurityController extends SpringActionController
             }
 
             sbReset.append("</p>");
-            sbReset.append(PageFlowUtil.generateButton("Done", form.getReturnURLHelper()));
+            sbReset.append(PageFlowUtil.button("Done").href(form.getReturnURLHelper()));
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             return new HtmlView(sbReset.toString());
         }

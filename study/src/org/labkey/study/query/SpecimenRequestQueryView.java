@@ -100,7 +100,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
             if (_extraLinks != null)
             {
                 for (NavTree link : _extraLinks)
-                    content.append(PageFlowUtil.generateButton(link.getText(), link.getHref())).append(" ");
+                    content.append(PageFlowUtil.button(link.getText()).href(link.getHref())).append(" ");
             }
 
             if (_showOptionLinks)
@@ -123,15 +123,15 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
                         String submitLink = (new ActionURL(SpecimenController.SubmitRequestAction.class, ctx.getContainer())).toString() + "id=${requestId}";
                         String cancelLink = (new ActionURL(SpecimenController.DeleteRequestAction.class, ctx.getContainer())).toString() + "id=${requestId}";
 
-                        content.append(PageFlowUtil.generateButton("Submit", submitLink,
-                                "return confirm('" + SpecimenController.ManageRequestBean.SUBMISSION_WARNING + "')")).append(" ");
-                        content.append(PageFlowUtil.generateButton("Cancel", cancelLink,
-                                "return confirm('" + SpecimenController.ManageRequestBean.CANCELLATION_WARNING + "')")).append(" ");
+                        content.append(PageFlowUtil.button("Submit").href(submitLink)
+                                .onClick("return confirm('" + SpecimenController.ManageRequestBean.SUBMISSION_WARNING + "')")).append(" ");
+                        content.append(PageFlowUtil.button("Cancel").href(cancelLink)
+                                .onClick("return confirm('" + SpecimenController.ManageRequestBean.CANCELLATION_WARNING + "')")).append(" ");
                     }
                 }
 
                 String detailsLink = (new ActionURL(SpecimenController.ManageRequestAction.class, ctx.getContainer())).toString() + "id=${requestId}";
-                content.append(PageFlowUtil.generateButton("Details", detailsLink));
+                content.append(PageFlowUtil.button("Details").href(detailsLink));
             }
             content.append("</div>");
             setDisplayHtml(content.toString());

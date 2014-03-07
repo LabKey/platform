@@ -46,7 +46,7 @@
     {
         %><tr><td>You cannot delete the home project.</td></tr>
         <tr><td>
-            <%=generateButton("OK", urlProvider(AdminUrls.class).getManageFoldersURL(c))%>
+            <%= button("OK").href(urlProvider(AdminUrls.class).getManageFoldersURL(c)) %>
         </td></tr>
         </table><%
 
@@ -60,7 +60,7 @@
         %><tr><td>This <%=h(containerType)%> has <%=h(childrenDescription)%>s, but you don't have admininistrative permissions to all the <%=h(childrenDescription)%>s.</td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td>
-            <%=generateButton("Back", urlProvider(AdminUrls.class).getManageFoldersURL(c))%>
+            <%= button("Back").href(urlProvider(AdminUrls.class).getManageFoldersURL(c)) %>
         </td></tr>
         </table><%
 
@@ -110,8 +110,8 @@
 
         <table><tr>
             <td><form action="<%=h(buildURL(AdminController.DeleteFolderAction.class))%><%=text(recurse ? "recurse=1" : "")%>" method="post">
-                <%=generateSubmitButton("Delete")%></form></td>
-            <td><%=generateButton("Cancel", urlProvider(AdminUrls.class).getManageFoldersURL(c))%></td>
+                <%= button("Delete").submit(true) %></form></td>
+            <td><%= button("Cancel").href(urlProvider(AdminUrls.class).getManageFoldersURL(c)) %></td>
         </tr></table><%
     }
     else
@@ -126,8 +126,8 @@
 
 <table>
     <tr>
-        <td><%=generateButton("Delete All Folders", buildURL(AdminController.DeleteFolderAction.class) + "recurse=1")%></td>
-        <td><%=generateButton("Cancel", urlProvider(AdminUrls.class).getManageFoldersURL(c))%></td>
+        <td><%= button("Delete All Folders").href(buildURL(AdminController.DeleteFolderAction.class) + "recurse=1") %></td>
+        <td><%= button("Cancel").href(urlProvider(AdminUrls.class).getManageFoldersURL(c)) %></td>
     </tr>
 </table><%
     }  %>

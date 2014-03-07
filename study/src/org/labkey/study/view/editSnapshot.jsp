@@ -64,15 +64,13 @@
     <table>
         <tr><td>&nbsp;</td></tr>
         <tr>
-            <td><%=generateSubmitButton("Update Snapshot")%></td>
+            <td><%= button("Update Snapshot").submit(true) %></td>
 <%      if (def != null && dsDef != null) { %>
-<%--
-            <td><%=generateButton("Edit Query Source", bean.getSchema().urlFor(QueryAction.sourceQuery, def.getQueryDefinition()))%></td>
---%>
-            <td><%=generateButton(historyLabel, context.cloneActionURL().replaceParameter("showHistory", String.valueOf(!showHistory)))%></td>
-            <td><%=generateButton(datasetLabel, context.cloneActionURL().replaceParameter("showDataset", String.valueOf(!showDataset)))%></td>
-            <td><%=generateButton("Delete Snapshot", deleteSnapshotURL.addParameter("id", dsDef.getDataSetId()),
-                    "return confirm('Are you sure you want to delete this snapshot?  All related data will also be deleted.')")%></td>
+            <td><%= button(historyLabel).href(context.cloneActionURL().replaceParameter("showHistory", String.valueOf(!showHistory))) %></td>
+            <td><%= button(datasetLabel).href(context.cloneActionURL().replaceParameter("showDataset", String.valueOf(!showDataset))) %></td>
+            <td><%= button("Delete Snapshot")
+                    .href(deleteSnapshotURL.addParameter("id", dsDef.getDataSetId()))
+                    .onClick("return confirm('Are you sure you want to delete this snapshot?  All related data will also be deleted.')") %></td>
 <%      } %>
         </tr>
     </table>

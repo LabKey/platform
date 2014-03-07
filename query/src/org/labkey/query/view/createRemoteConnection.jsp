@@ -69,7 +69,7 @@
         <td><input id="container" type="text" name="container" size="50" value="<%=h(container)%>"></td>
     </tr>
 </table>
-    <%= generateSubmitButton("save")%>
-    <%= generateButton("cancel", QueryController.ManageRemoteConnectionsAction.class) %>
+    <%= button("save").submit(true) %>
+    <%= button("cancel").href(QueryController.ManageRemoteConnectionsAction.class, getContainer()) %>
     <input type="text" name="connectionName"  value="<%=h(name)%>" hidden><br>
 </form>

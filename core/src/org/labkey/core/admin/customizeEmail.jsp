@@ -75,10 +75,10 @@
         <tr><td class="labkey-form-label">Message:</td><td><textarea id="emailMessage" name="emailMessage" style="width:100%" rows="20"><%=h(bean.getEmailMessage())%></textarea></td></tr>
         <tr>
             <td></td><td>
-            <%=generateSubmitButton("Save")%>
-            <%=generateButton("Cancel", bean.getReturnURLHelper(urlProvider(AdminUrls.class).getAdminConsoleURL()))%>
-            <%=PageFlowUtil.generateSubmitButton("Reset to Default Template", "this.form.action='deleteCustomEmail.view'", "id='siteResetButton' style='display: none;'")%>
-            <%=PageFlowUtil.generateSubmitButton("Delete Folder-Level Template", "this.form.action='deleteCustomEmail.view'", "id='folderResetButton' style='display: none;'")%>
+            <%= button("Save").submit(true) %>
+            <%= button("Cancel").href(bean.getReturnURLHelper(urlProvider(AdminUrls.class).getAdminConsoleURL())) %>
+            <%= button("Reset to Default Template").submit(true).onClick("this.form.action='deleteCustomEmail.view';").attributes("id='siteResetButton' style='display: none;'")%>
+            <%= button("Delete Folder-Level Template").submit(true).onClick("this.form.action='deleteCustomEmail.view';").attributes("id='folderResetButton' style='display: none;'")%>
         </tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td colspan="2"><hr></td></tr>

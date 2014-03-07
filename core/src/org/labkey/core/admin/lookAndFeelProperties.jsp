@@ -254,7 +254,10 @@
 </tr>
 
 <tr>
-    <td><%=PageFlowUtil.generateSubmitButton("Save", "_form.setClean()")%>&nbsp;<%=PageFlowUtil.generateButton("Reset", new AdminController.AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c), "return confirmReset();")%></td>
+    <td><%= button("Save").submit(true).onClick("_form.setClean();") %>&nbsp;<%= PageFlowUtil.button("Reset")
+            .href(new AdminController.AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c))
+            .onClick("return confirmReset();") %>
+    </td>
 </tr>
 <tr>
     <td>&nbsp;</td>

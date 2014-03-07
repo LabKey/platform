@@ -100,7 +100,7 @@
     <td>Replace with: <input type="file" name="customStylesheet" size="25"></td>
 </tr>
 <tr>
-    <td><%=PageFlowUtil.generateSubmitButton("Save", "_form.setClean();")%></td>
+    <td><%= button("Save").submit(true).onClick("_form.setClean();") %></td>
 </tr>
 <tr>
     <td>&nbsp;</td>

@@ -431,8 +431,8 @@ public class AssayController extends SpringActionController
             HtmlView fileTree = new HtmlView("<table><tr><td><b>Select destination folder:</b></td></tr>" +
                     tree.render().toString() + "</table>");
             HtmlView bbar = new HtmlView(
-                    PageFlowUtil.generateButton("Cancel", new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())) + " " +
-                    (form.getContainer().hasPermission(getUser(), InsertPermission.class) ? PageFlowUtil.generateButton("Copy to Current Folder", copyHereURL) : ""));
+                    PageFlowUtil.button("Cancel").href(new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())) + " " +
+                    (form.getContainer().hasPermission(getUser(), InsertPermission.class) ? PageFlowUtil.button("Copy to Current Folder").href(copyHereURL) : ""));
             setHelpTopic(new HelpTopic("manageAssayDesign"));
             return new VBox(bbar, fileTree, bbar);
         }

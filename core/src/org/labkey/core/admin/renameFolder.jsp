@@ -49,8 +49,8 @@
     </table>
     <table>
         <tr>
-            <td><%=generateSubmitButton("Rename")%></td>
-            <td><%=generateButton("Cancel", urlProvider(AdminUrls.class).getManageFoldersURL(c))%></td>
+            <td><%= button("Rename").submit(true) %></td>
+            <td><%= button("Cancel").href(urlProvider(AdminUrls.class).getManageFoldersURL(c)) %></td>
         </tr>
     </table>
 </form>

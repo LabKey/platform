@@ -60,5 +60,5 @@
         <input type="checkbox" id="allowReporting" name="allowReporting"<%=checked(bean.isAllowReporting())%>> Allow reporting
         <span style="font-size: smaller; font-style: italic;">we strongly recommend this basic level of reporting</span>
     </div>
-    <%=generateSubmitButton("Next")%>
+    <%= button("Next").submit(true) %>
 </form>

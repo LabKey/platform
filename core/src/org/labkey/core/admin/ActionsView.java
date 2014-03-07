@@ -41,7 +41,7 @@ class ActionsView extends HttpView
     protected void renderInternal(Object model, PrintWriter out) throws Exception
     {
         if (!_summary)
-            out.println(PageFlowUtil.generateButton("Export", new ActionURL(AdminController.ExportActionsAction.class, ContainerManager.getRoot())));
+            out.println(PageFlowUtil.button("Export").href(new ActionURL(AdminController.ExportActionsAction.class, ContainerManager.getRoot())));
 
         Map<String, Map<String, Map<String, SpringActionController.ActionStats>>> modules = ActionsHelper.getActionStatistics();
 

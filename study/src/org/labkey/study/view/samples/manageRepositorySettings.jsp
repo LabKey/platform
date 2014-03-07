@@ -79,7 +79,7 @@
     </div>
     <br/>
     <div>
-        <%= generateSubmitButton("Submit")%>&nbsp;<%= generateButton("Back", buildURL(SpecimenController.ManageRepositorySettingsAction.class), "window.history.back();return false;")%>
+        <%= button("Submit").submit(true) %>&nbsp;<%= button("Back").href(buildURL(SpecimenController.ManageRepositorySettingsAction.class)).onClick("window.history.back();return false;") %>
     </div>
 </form>
 <%
@@ -88,7 +88,7 @@
    {
 %>
 <p>Specimen repository and request settings are not available for ancillary or published studies.</p>
-<%= generateButton("Back", buildURL(SpecimenController.ManageRepositorySettingsAction.class), "window.history.back();return false;")%>
+<%= button("Back").href(buildURL(SpecimenController.ManageRepositorySettingsAction.class)).onClick("window.history.back();return false;") %>
 <%
    }
 %>

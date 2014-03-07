@@ -247,15 +247,15 @@ else
     </table>
     <table>
         <tr>
-            <td><%=generateSubmitButton("Save")%></td>
-            <td><%=generateButton("Set all to Read", "#", "return setAllSelections('Read');")%></td><%
+            <td><%= button("Save").submit(true) %></td>
+            <td><%= button("Set all to Read").href("#").onClick("return setAllSelections('Read');") %></td><%
             if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
             {
             %>
-                <td><%=generateButton("Set all to Edit", "#", "return setAllSelections('Edit');")%></td><%
+                <td><%= button("Set all to Edit").href("#").onClick("return setAllSelections('Edit');") %></td><%
             }
             %>
-            <td><%=generateButton("Clear All", "#", "return setAllSelections('None');")%></td>
+            <td><%= button("Clear All").href("#").onClick("return setAllSelections('None');") %></td>
         </tr></table>
 </form>
 

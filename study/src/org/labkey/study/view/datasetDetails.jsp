@@ -82,16 +82,15 @@ if (permissions.contains(AdminPermission.class))
     %>
     <br>
 <%  if (dataset.getType().equals(org.labkey.api.study.DataSet.TYPE_STANDARD)) { %>
-        <%=generateButton("View Data", viewDatasetURL)%>
+        <%= button("View Data").href(viewDatasetURL) %>
 <%  }
     if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
-        &nbsp;<%=generateButton("Edit Associated " + visitManager.getPluralLabel(), updateDatasetURL)%>
+        &nbsp;<%= button("Edit Associated " + visitManager.getPluralLabel()).href(updateDatasetURL) %>
 <%  } %>
-    &nbsp;<%=generateButton("Manage Datasets", manageTypesURL)%><%
+    &nbsp;<%= button("Manage Datasets").href(manageTypesURL) %><%
     if (!isSharedDataset)
     {
-        %>&nbsp;<%=generateButton("Delete Dataset", deleteDatasetURL,
-        "return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')")%><%
+        %>&nbsp;<%= button("Delete Dataset").href(deleteDatasetURL).onClick("return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')")%><%
     }
 %>
 &nbsp;<a class="labkey-button" onClick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; truncateTable();"> <span>Delete All Rows</span></a>
@@ -105,9 +104,9 @@ if (permissions.contains(UpdatePermission.class) && !isSharedDataset)
     ActionURL editTypeURL = new ActionURL(StudyController.EditTypeAction.class, c);
     editTypeURL.addParameter("datasetId", dataset.getDataSetId());
 
-    %>&nbsp;<%=generateButton("Show Import History", showHistoryURL)%>
+    %>&nbsp;<%= button("Show Import History").href(showHistoryURL) %>
 <%  if (dataset.getType().equals(org.labkey.api.study.DataSet.TYPE_STANDARD)) { %>
-        &nbsp;<%=generateButton("Edit Definition", editTypeURL)%>
+        &nbsp;<%= button("Edit Definition").href(editTypeURL) %>
 <%  }
     else if(dataset.getType().equals(org.labkey.api.study.DataSet.TYPE_PLACEHOLDER))
     {

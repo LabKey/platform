@@ -191,7 +191,7 @@
     </tr>
     <tr>
         <th>&nbsp;</th>
-        <td><%= generateSubmitButton("Send Email")%> <%= generateButton("Cancel", buildURL(SpecimenController.ManageRequestAction.class) + "id=" + bean.getSampleRequest().getRowId())%></td>
+        <td><%= button("Send Email").submit(true) %> <%= button("Cancel").href(buildURL(SpecimenController.ManageRequestAction.class) + "id=" + bean.getSampleRequest().getRowId()) %></td>
     </tr>
 </table>
 </form>

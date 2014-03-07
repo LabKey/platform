@@ -200,7 +200,7 @@ if (settings.hasExpires())
     <td colspan=3 align=left>
       <table>
         <tr>
-          <td><%=PageFlowUtil.generateSubmitButton("Submit", null, "id=submitButton", true, true)%>
+          <td><%= button("Submit").submit(true).attributes("id=submitButton").disableOnClick(true) %>
              &nbsp;<%=generateBackButton("Cancel")%></td>
         </tr>
       </table>

@@ -237,7 +237,7 @@
     </table>
     <table>
         <tr>
-            <td><%= generateSubmitButton("Save")%>&nbsp;<%= generateButton("Delete visit", buildURL(StudyController.ConfirmDeleteVisitAction.class, "id="+visit.getRowId()))%>&nbsp;<%= generateButton("Cancel", StudyController.ManageVisitsAction.class)%></td>
+            <td><%= button("Save").submit(true) %>&nbsp;<%= button("Delete visit").href(buildURL(StudyController.ConfirmDeleteVisitAction.class, "id="+visit.getRowId())) %>&nbsp;<%= button("Cancel").href(StudyController.ManageVisitsAction.class, getContainer()) %></td>
         </tr>
     </table>
 </form>

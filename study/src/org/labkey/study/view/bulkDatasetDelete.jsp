@@ -63,13 +63,13 @@
         
 %>
 </table>
-<%=PageFlowUtil.generateSubmitButton("Delete Selected",
+<%= button("Delete Selected").submit(true).onClick(
         "if (confirm('Delete selected datasets?')){" +
             "Ext.get(this).replaceClass('labkey-button', 'labkey-disabled-button');" +
             "return true;" +
         "} " +
             "else return false;")%>
-<%=generateButton("Cancel", cancelURL)%>
+<%= button("Cancel").href(cancelURL) %>
 
 </form>
 

@@ -30,5 +30,5 @@ VisitMap data can be imported to quickly define a study.  VisitMap data generall
 <form action="<%=h(buildURL(StudyController.UploadVisitMapAction.class))%>" method="post">
     Paste VisitMap content here:<br>
     <textarea name="content" cols="80" rows="30"></textarea><br>
-    <%= generateSubmitButton("Import")%>&nbsp;<%= generateButton("Cancel", StudyController.ManageVisitsAction.class)%>
+    <%= button("Import").submit(true) %>&nbsp;<%= button("Cancel").href(StudyController.ManageVisitsAction.class, getContainer()) %>
 </form>

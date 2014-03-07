@@ -37,7 +37,7 @@
                         <option value="individual">Individual</option>
                         <option value="none">None</option>
                     </select></td>
-                    <td><%=PageFlowUtil.generateButton("Set folder default", "javascript:void(0)", "onSetFolderDefault();")%></td>
+                    <td><%= PageFlowUtil.button("Set folder default").href("javascript:void(0)").onClick("onSetFolderDefault();") %></td>
                 </tr>
                 <tr>
                     <td><span class="labkey-strong">Configure Selected Users</span></td>
@@ -47,7 +47,7 @@
                         <option value="individual">Individual</option>
                         <option value="none">None</option>
                     </select></td>
-                    <td><%=PageFlowUtil.generateSubmitButton("Configure selected users", null, "labkey-requires-selection=\"users\"")%></td>
+                    <td><%= button("Configure selected users").submit(true).attributes("labkey-requires-selection=\"users\"") %></td>
                 </tr>
             </table>
         </td>

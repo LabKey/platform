@@ -95,7 +95,7 @@
     %>
         <input type="hidden" name="_dc" value="<%=Math.round(1000 * Math.random())%>">
         <input type="text" size="<%=form.getTextBoxWidth()%>" id="query" name="q" value="<%=h(StringUtils.trim(StringUtils.join(q, " ")))%>"></td>
-        <td><div style="margin: 2px 0; float: left;"><%=generateSubmitButton("Search")%></div><%
+        <td><div style="margin: 2px 0; float: left;"><%= button("Search").submit(true) %></div><%
 
     if (form.getIncludeHelpLink())
     {

@@ -138,7 +138,7 @@ For more information about the schema definition format, see <%=helpLink("Datase
             <td><textarea name=tsv rows=25 cols=80><%=h(bean.getTsv())%></textarea></td>
         </tr>
         <tr>
-            <td><%= generateSubmitButton("Submit")%>&nbsp;<%= generateButton("Cancel", StudyController.ManageTypesAction.class)%></td>
+            <td><%= button("Submit").submit(true) %>&nbsp;<%= button("Cancel").href(StudyController.ManageTypesAction.class, getContainer()) %></td>
         </tr>
     </table>
 </form>

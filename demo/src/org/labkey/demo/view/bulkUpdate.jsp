@@ -77,7 +77,7 @@
                 }
             %>
         </table>
-        <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", DemoController.BeginAction.class) %>
+        <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(DemoController.BeginAction.class, getContainer()) %>
     </form>
 <%
     }
@@ -85,7 +85,7 @@
     {
 %>
     <span>There is no data to update.</span><br>
-    <%= generateButton("Grid View", DemoController.BeginAction.class) %>
+    <%= button("Grid View").href(DemoController.BeginAction.class, getContainer()) %>
 <%
     }
 %>

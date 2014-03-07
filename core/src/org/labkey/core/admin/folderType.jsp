@@ -290,7 +290,6 @@ function checkChangedType()
     %>
                 </table>
                 <input type="hidden" name="wizard" value="<%=h(form.isWizard())%>">
-                <%/* =generateSubmitButton((form.isWizard() ? "Next" : "Update Folder"))*/%>
                 <div id="UpdateFolderButtonDiv"/>
     <%WebPartView.endTitleFrame(out);%>
     </td>

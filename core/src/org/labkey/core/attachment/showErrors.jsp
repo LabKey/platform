@@ -23,4 +23,4 @@
 %>
 <%=formatMissedErrors("form")%>
 <%=null != me.errorHtml ? me.errorHtml : ""%>
-<br><br><%=generateButton("Continue", me.returnURL)%>
+<br><br><%= button("Continue").href(me.returnURL) %>

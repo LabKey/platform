@@ -83,7 +83,7 @@
         {
 %>
             To change the set of groups/cohorts and edit the immunization schedule, click the edit button below.<br/>
-            <%=generateButton("Edit", StudyDesignController.ManageImmunizationsAction.class)%>
+            <%= button("Edit").href(StudyDesignController.ManageImmunizationsAction.class, getContainer()) %>
 <%
         }
 

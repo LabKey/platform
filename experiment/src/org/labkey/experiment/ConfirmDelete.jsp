@@ -39,7 +39,7 @@
 <% if (bean.getObjects().isEmpty())
 {
     %><p>There are no selected objects to delete.</p>
-    <%= text(bean.getReturnUrl() == null || bean.getReturnUrl().isEmpty() ? generateButton("OK", buildURL(ExperimentController.BeginAction.class)) : generateButton("OK", bean.getReturnUrl()))%><%
+    <%= text(bean.getReturnUrl() == null || bean.getReturnUrl().isEmpty() ? button("OK").href(buildURL(ExperimentController.BeginAction.class)).toString() : button("OK").href(bean.getReturnUrl()).toString())%><%
 }
 else
 { %>
@@ -178,8 +178,8 @@ else
         <input type="hidden" name="forceDelete" value="true"/>
         <% if (bean.getRunsWithoutPermission().isEmpty() && bean.getNoPermissionExtras().isEmpty() )
         { %>
-            <%= generateSubmitButton("Confirm Delete") %>
+            <%= button("Confirm Delete").submit(true) %>
         <% } %>
-        <%= text(bean.getReturnUrl() == null || bean.getReturnUrl().isEmpty()? generateButton("Cancel", buildURL(ExperimentController.BeginAction.class)) : generateButton("Cancel", bean.getReturnUrl()))%>
+        <%= text(bean.getReturnUrl() == null || bean.getReturnUrl().isEmpty()? button("Cancel").href(buildURL(ExperimentController.BeginAction.class)).toString() : button("Cancel").href(bean.getReturnUrl()).toString())%>
     </form>
 <% } %>

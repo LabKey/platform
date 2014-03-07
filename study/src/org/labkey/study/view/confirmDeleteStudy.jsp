@@ -48,5 +48,5 @@ for (String s : summaries)
     <br>
     Check the box below to confirm that you want to delete this study. <br>
 <input type=checkbox name=confirm id=deleteStudyConfirm value=true> Confirm Delete<br><br>
-<%=generateSubmitButton("Delete")%> <%=generateButton("Cancel", StudyController.ManageStudyAction.class)%>
+<%= button("Delete").submit(true) %> <%= button("Cancel").href(StudyController.ManageStudyAction.class, getContainer()) %>
 </form>

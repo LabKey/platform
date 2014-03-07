@@ -44,6 +44,6 @@ for(String username : bean.removenames)
 If you delete your own user account from the Administrators group, you will no longer <br>
 have administrative privileges. Are you sure that you want to continue?
 <br><br>
-<%=generateSubmitButton("Delete This Account")%>&nbsp;
-<%=PageFlowUtil.generateSubmitButton("Cancel", "javascript:window.history.back(); return false;")%>
+<%= button("Delete This Account").submit(true) %>&nbsp;
+<%= generateBackButton("Cancel") %>
 </form>

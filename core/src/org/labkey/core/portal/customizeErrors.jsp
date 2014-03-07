@@ -25,5 +25,5 @@
 %>
 <labkey:errors/>
 <p>
-    <%=generateButton("Back to Portal", new ActionURL(ProjectController.BeginAction.class, c))%>
+    <%= button("Back to Portal").href(new ActionURL(ProjectController.BeginAction.class, c)) %>
 </p>

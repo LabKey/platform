@@ -91,7 +91,7 @@
     }
     %><tr><td style="padding-left: 15px; padding-top: 8px;"><input type="checkbox" name="validateQueries" checked value="true">&nbsp;Validate Imported Queries</td></tr>
     <tr>
-        <td><%=generateSubmitButton("Import Study From Local Zip Archive")%></td>
+        <td><%= button("Import Study From Local Zip Archive").submit(true) %></td>
 
 <% } else if(requestOrigin.equals("Reload")){%>
     <tr><td class="labkey-announcement-title" align=left><span>Reload Study From Local Zip Archive</span></td></tr>
@@ -105,7 +105,7 @@
     }
     %><tr><td style="padding-left: 15px; padding-top: 8px;"><input type="checkbox" name="validateQueries" checked value="true">&nbsp;Validate Imported Queries</td></tr>
     <tr>
-        <td><%=generateSubmitButton("Reload Study From Local Zip Archive")%></td>
+        <td><%= button("Reload Study From Local Zip Archive").submit(true) %></td>
 
 <% } else { %>
 
@@ -116,7 +116,7 @@
     <tr><td><input type="file" name="folderZip" size="50"></td></tr>
     <tr><td style="padding-left: 15px; padding-top: 8px;"><input type="checkbox" name="validateQueries" checked value="true">&nbsp;Validate Imported Queries</td></tr>
     <tr>
-        <td><%=generateSubmitButton("Import Folder From Local Zip Archive")%></td>
+        <td><%= button("Import Folder From Local Zip Archive").submit(true) %></td>
 <% } %>
 </tr>
 <tr><td>&nbsp;</td></tr>
@@ -129,7 +129,7 @@
             button below, navigate to a zip archive or a study.xml file, and click the "Import Data" button.
         </td></tr>
     <tr>
-        <td><%=generateButton("Import Study Using Pipeline", urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline"))%></td>
+        <td><%= button("Import Study Using Pipeline").href(urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline")) %></td>
     </tr>
 
 <% } else if(requestOrigin.equals("Reload")) { %>
@@ -140,7 +140,7 @@
         button below, navigate to a zip archive or a study.xml file, and click the "Import Data" button.
     </td></tr>
     <tr>
-        <td><%=generateButton("Reload Folder Using Pipeline", urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline"))%></td>
+        <td><%= button("Reload Folder Using Pipeline").href(urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline")) %></td>
     </tr>
 
 <% } else { %>
@@ -151,7 +151,7 @@
         button below, navigate to a zip archive or a folder.xml file, and click the "Import Data" button.
     </td></tr>
     <tr>
-        <td><%=generateButton("Import Folder Using Pipeline", urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline"))%></td>
+        <td><%= button("Import Folder Using Pipeline").href(urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline")) %></td>
     </tr>
 <% } %>
 

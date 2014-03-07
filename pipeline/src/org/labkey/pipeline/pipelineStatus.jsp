@@ -54,7 +54,7 @@ private Object outputJob(String status, PipelineJob job,
     if (status.equals("pending") && canCancel)
     {
         ret.append("<td>");
-        ret.append(generateButton("cancel", buildURL(PipelineController.CancelJobAction.class, "jobId=" + job.getJobGUID() + (isAllContainers ? "&allcontainers=1" : ""))));
+        ret.append(button("cancel").href(buildURL(PipelineController.CancelJobAction.class, "jobId=" + job.getJobGUID() + (isAllContainers ? "&allcontainers=1" : ""))));
         ret.append("</td>");
     }
     return ret;
@@ -102,4 +102,4 @@ private Object outputJob(String status, PipelineJob job,
         } %>
         </table><%
     } %>
-    <%=generateButton("Grid", StatusController.urlShowList(ContainerManager.getRoot(), false))%>
+    <%= button("Grid").href(StatusController.urlShowList(ContainerManager.getRoot(), false)) %>

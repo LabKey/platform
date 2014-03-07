@@ -22,14 +22,11 @@
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportDesignBean" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Date" %>
-<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ReportDesignBean> me = (JspView<ReportDesignBean>) HttpView.currentView();
@@ -49,11 +46,9 @@
 
     ActionURL vewReportURL = report.getRunReportURL(context);
     ActionURL editReportURL = report.getEditReportURL(context, getActionURL());
-    Map<String, String> reportURLAttributes =  report.getRunReportTarget() != null ?
-            Collections.singletonMap("target", report.getRunReportTarget()) :
-            Collections.<String, String>emptyMap();
+    String reportURLAttributes = report.getRunReportTarget() != null ? "target=\"" + report.getRunReportTarget() + "\"": "";
 
-    ActionURL thumbnailUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(bean.getContainer(), report);
+    ActionURL thumbnailUrl = urlProvider(ReportUrls.class).urlThumbnail(bean.getContainer(), report);
     String type = report.getTypeDescription();
     String category = "";
     String status = "";
@@ -228,8 +223,8 @@
 
     <tr>
         <td colspan="2">
-            <%=PageFlowUtil.generateButton("View Report", vewReportURL, null, reportURLAttributes)%>
-            <%=report.canEdit(getUser(), getContainer()) ? PageFlowUtil.generateButton("Edit Report", editReportURL) : ""%>
+            <%= button("View Report").href(vewReportURL).attributes(reportURLAttributes) %>
+            <%= report.canEdit(getUser(), getContainer()) ? button("Edit Report").href(editReportURL) : ""%>
         </td>
     </tr>
 </table>

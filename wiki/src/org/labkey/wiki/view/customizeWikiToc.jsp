@@ -64,8 +64,8 @@
      </tr>
 <tr>
     <td colspan=2 align="right">
-        <%=generateSubmitButton("Submit")%>
-        <%=generateButton("Cancel", getContainer().getStartURL(getUser()))%>
+        <%= button("Submit").submit(true) %>
+        <%= button("Cancel").href(getContainer().getStartURL(getUser())) %>
     </td>
 </tr>
 </table>

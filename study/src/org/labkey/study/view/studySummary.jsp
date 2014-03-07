@@ -44,16 +44,16 @@
         if (c.hasPermission(user, AdminPermission.class))
         {
             ActionURL createURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
-            out.println(generateButton("Create Study", createURL));
+            out.println(button("Create Study").href(createURL));
 
             if (PipelineService.get().hasValidPipelineRoot(c))
             {
-                out.println(generateButton("Import Study", urlProvider(AdminUrls.class).getImportFolderURL(c).addParameter("origin", "Study")));
+                out.println(button("Import Study").href(urlProvider(AdminUrls.class).getImportFolderURL(c).addParameter("origin", "Study")));
             }
             else if (PipelineService.get().canModifyPipelineRoot(user, c))
             {
                 ActionURL pipelineURL = urlProvider(PipelineUrls.class).urlSetup(c);
-                out.println(generateButton("Pipeline Setup", pipelineURL));
+                out.println(button("Pipeline Setup").href(pipelineURL));
             }
         }
         else

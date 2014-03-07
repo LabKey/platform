@@ -53,7 +53,7 @@ message to the address specified in the 'To' text box containing the content spe
         </tr>
         <tr>
             <td colspan="2" style="text-align:right">
-                <%=generateSubmitButton("Send")%>
+                <%= button("Send").submit(true) %>
             </td>
         </tr>
     </table>

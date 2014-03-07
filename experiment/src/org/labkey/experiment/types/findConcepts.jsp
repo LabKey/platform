@@ -64,7 +64,7 @@ for (found in foundSemanticTypes)
 		}
 	%></select></td></tr>
 	<tr><td class="labkey-form-label">Concept</td><td><input name="concept" style="width:320;" value="<%=h(form.getConcept())%>"></td></tr>
-	<tr><td><%=generateSubmitButton("Search")%></td><td></td></tr>
+	<tr><td><%= button("Search").submit(true) %></td><td></td></tr>
 </table>
 </form>
 <p/>
@@ -111,7 +111,7 @@ else
 			<tr><th valign=top align=right nowrap>Parent Concept</th><td><%=h(row.get("ConceptURI"))%></td></tr>
 			<tr><th valign=top align=right nowrap>Description</th><td><%=h(description)%></td></tr>
 		</table>
-        <%=PageFlowUtil.generateButton("select", "", "javascript:select(" + PageFlowUtil.jsString(uri) + ")")%><%
+        <%=PageFlowUtil.button("select").onClick("javascript:select(" + PageFlowUtil.jsString(uri) + ")")%><%
 		}
 
 	%><p/><b>Search Results</b><hr size=1><%

@@ -132,7 +132,7 @@ is uploaded along with the data. This form allows you to define a range of seque
             <td>&nbsp;</td>
             <td>
                 <input type="hidden" name="returnUrl" value="<%= returnURL %>">
-                <%= this.generateSubmitButton("Save")%>&nbsp;<%=generateButton("Cancel", returnURL)%>
+                <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(returnURL) %>
             </td>
         </tr>
     </table>

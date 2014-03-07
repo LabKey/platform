@@ -153,8 +153,8 @@ function orderModule(listName, hiddenElName, down)
                 <input type="hidden" name="displayOrder" value="<%= orderedList %>">
             </td>
             <td align="center" valign="center">
-                <%=PageFlowUtil.generateButton("Move Up", "#", "return orderModule('displayOrderItems', 'displayOrder', 0);")%><br><br>
-                <%=PageFlowUtil.generateButton("Move Down", "#", "return orderModule('displayOrderItems', 'displayOrder', 1);")%>
+                <%= PageFlowUtil.button("Move Up").href("#").onClick("return orderModule('displayOrderItems', 'displayOrder', 0);") %><br><br>
+                <%= PageFlowUtil.button("Move Down").href("#").onClick("return orderModule('displayOrderItems', 'displayOrder', 1);") %>
             </td>
 
             <td>
@@ -186,10 +186,10 @@ function orderModule(listName, hiddenElName, down)
                 <input type="hidden" name="returnUrl" value="<%= returnURL %>">
             </td>
             <td align="center" valign="center">
-                <%=PageFlowUtil.generateButton("Move Up", "#", "return orderModule('chronologicalOrderItems', 'chronologicalOrder', 0)")%><br><br>
-                <%=PageFlowUtil.generateButton("Move Down", "#", "return orderModule('chronologicalOrderItems', 'chronologicalOrder', 1)")%>
+                <%= PageFlowUtil.button("Move Up").href("#").onClick("return orderModule('chronologicalOrderItems', 'chronologicalOrder', 0)") %><br><br>
+                <%= PageFlowUtil.button("Move Down").href("#").onClick("return orderModule('chronologicalOrderItems', 'chronologicalOrder', 1)") %>
             </td>
         </tr>
     </table>
-    <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", returnURL) %>
+    <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(returnURL) %>
 </form>

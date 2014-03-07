@@ -107,16 +107,16 @@
 <table width=99%;>
     <tr>
         <td width="50%" align="left"  nowrap="true">
-            <%=PageFlowUtil.generateSubmitButton("Save & Close", "onFinish();", "id='wiki-button-finish'")%>
-            <%=PageFlowUtil.generateSubmitButton(saveButtonCaption, "onSave();", "id='wiki-button-save'")%>
-            <%=PageFlowUtil.generateSubmitButton("Cancel", "onCancel();")%>
+            <%= button("Save & Close").submit(true).onClick("onFinish();").attributes("id='wiki-button-finish'") %>
+            <%= button(saveButtonCaption).submit(true).onClick("onSave();").attributes("id='wiki-button-save'") %>
+            <%= button("Cancel").submit(true).onClick("onCancel();") %>
         </td>
         <td width="50%" align="right" nowrap="true">
             <% if (model.canUserDelete()) { %>
-                <%=PageFlowUtil.generateDisabledSubmitButton("Delete Page", "return false;", "id=\"" + ID_PREFIX + "button-delete\"")%>
+                <%= button("Delete Page").submit(true).onClick("return false;").attributes("id=\"" + ID_PREFIX + "button-delete\"").enabled(false) %>
             <% } %>
-            <%=PageFlowUtil.generateSubmitButton("Convert To...", "showConvertWindow()", "id=\"" + ID_PREFIX + "button-change-format\"")%>
-            <%=PageFlowUtil.generateSubmitButton("Show Page Tree", "showHideToc()", "id=\"" + ID_PREFIX + "button-toc\"")%>
+            <%= button("Convert To...").submit(true).onClick("showConvertWindow()").attributes("id=\"" + ID_PREFIX + "button-change-format\"") %>
+            <%= button("Show Page Tree").submit(true).onClick("showHideToc()").attributes("id=\"" + ID_PREFIX + "button-toc\"") %>
         </td>
     </tr>
 </table>
@@ -324,8 +324,8 @@
         </tr>
         <tr>
             <td style="text-align: right">
-                <%=PageFlowUtil.generateSubmitButton("Convert", "convertFormat()")%>
-                <%=PageFlowUtil.generateSubmitButton("Cancel", "cancelConvertFormat()")%>
+                <%= button("Convert").submit(true).onClick("convertFormat()") %>
+                <%= button("Cancel").submit(true).onClick("cancelConvertFormat()") %>
             </td>
         </tr>
     </table>

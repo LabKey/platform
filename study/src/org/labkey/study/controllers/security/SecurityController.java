@@ -763,7 +763,7 @@ public class SecurityController extends SpringActionController
         {
             ActionURL urlStudy = new ActionURL(BeginAction.class, getViewContext().getContainer());
             out.print("<p>Permissions for datasets in a Study are managed separately.<br/>");
-            out.print(PageFlowUtil.generateButton("Study Security", urlStudy));
+            out.print(PageFlowUtil.button("Study Security").href(urlStudy));
             out.print("<br/>&nbsp;</p>");
         }
     }

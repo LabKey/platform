@@ -29,7 +29,7 @@
     </tr>
     <tr>
         <td>
-            <%=generateButton("Export to XAR", url) %>
+            <%= button("Export to XAR").href(url) %>
         </td>
     </tr>
 </table>

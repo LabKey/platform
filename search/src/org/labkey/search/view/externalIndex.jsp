@@ -71,12 +71,12 @@ if (null != ss)
             {
             %>
             <tr><td colspan="2">
-                <%=generateSubmitButton("Set")%>
+                <%= button("Set").submit(true) %>
                 <% if (props.hasExternalIndex())
                 { %>
-                <%=generateButton("Clear", ClearExternalIndexAction.class)%>
-                <%=generateButton("Update Index", SwapExternalIndexAction.class)%>
-                <%=generateButton("Set Permissions", PermissionsAction.class)%>
+                <%= button("Clear").href(ClearExternalIndexAction.class, getContainer()) %>
+                <%= button("Update Index").href(SwapExternalIndexAction.class, getContainer()) %>
+                <%= button("Set Permissions").href(PermissionsAction.class, getContainer()) %>
                 <% } %>
             </td></tr><%
             }

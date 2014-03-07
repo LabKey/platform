@@ -49,8 +49,8 @@
                     separator = "\r\n";
                     sb.append(path);
                 }%><%= sb.toString() %></textarea><br><br>
-            <%= generateSubmitButton("Save Aliases") %>
-            <%= generateButton("Cancel", urlProvider(AdminUrls.class).getManageFoldersURL(getContainer())) %>
+            <%= button("Save Aliases").submit(true) %>
+            <%= button("Cancel").href(urlProvider(AdminUrls.class).getManageFoldersURL(getContainer())) %>
         </form>
         </td>
     </tr>

@@ -105,12 +105,12 @@
         </td>
 --%>
         <td>&nbsp;</td>
-        <td><%=generateSubmitButton((confirm ? "Overwrite" : "Save"))%>
+        <td><%= button(confirm ? "Overwrite" : "Save").submit(true) %>
 <%
     if (confirm)
     {
 %>
-        &nbsp;<%=generateButton("Cancel", bean.getReturnActionURL())%>
+        &nbsp;<%= button("Cancel").href(bean.getReturnActionURL()) %>
 <%
     } 
 %>

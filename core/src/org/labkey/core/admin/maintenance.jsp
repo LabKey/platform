@@ -30,7 +30,7 @@
 <%=text(bean.content)%>
 
 <% if (bean.loginURL != null) { %>
-<p><%= generateButton("Site Admin Login", bean.loginURL) %></p>
+<p><%= button("Site Admin Login").href(bean.loginURL) %></p>
 <% } %>
 
 <script>

@@ -86,7 +86,7 @@
         %>
         <tr>
             <td />
-            <td><%= generateSubmitButton("Next" )%><%= generateButton("Cancel", new ActionURL(AssayController.BeginAction.class, getContainer())) %></td>
+            <td><%= button("Next" ).submit(true) %><%= button("Cancel").href(new ActionURL(AssayController.BeginAction.class, getContainer())) %></td>
         </tr>
     </table>
 </form>

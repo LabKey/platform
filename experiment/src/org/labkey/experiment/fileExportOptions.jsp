@@ -84,6 +84,6 @@ String guid = GUID.makeGUID();
     </tr>
 
     <tr>
-        <td colspan="2"><%= PageFlowUtil.generateSubmitButton("Export As ZIP", "return validateFileExportOptions('" + guid + "', this.form, '" + bean.getPostURL() + "');") %></td>
+        <td colspan="2"><%= button("Export As ZIP").submit(true).onClick("return validateFileExportOptions('" + guid + "', this.form, '" + bean.getPostURL() + "');") %></td>
     </tr>
 </table>

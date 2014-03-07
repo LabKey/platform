@@ -54,7 +54,7 @@
     {
         ActionURL actionURL = new ActionURL(AssayController.BeginAction.class, proj);
 %>
-<%=generateButton("Manage Assays", actionURL)%>
+<%= button("Manage Assays").href(actionURL) %>
 <%
     }
 %>

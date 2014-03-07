@@ -102,7 +102,7 @@ if (selectedDataset != null)
 }
 %>
 </table>
-<%=generateSubmitButton("Submit")%>
+<%= button("Submit").submit(true) %>
 </form>
 <span class=labkey-error><%=h(error==null ? "" : error)%></span>
 <script type="text/javascript">

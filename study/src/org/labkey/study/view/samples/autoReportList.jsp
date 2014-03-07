@@ -109,7 +109,7 @@ This folder does not contain a study.
             <div class="<%=rowClass%>">
                 <div style="text-align:right"><span class="labkey-strong"><%= h(factory.getLabel())%></span>
                     <%=textLink("show options", "#", "return showOrHide('" + showHideSuffix + "')", "showOptionsLink" + showHideSuffix)%>
-                    <%= generateSubmitButton("View") %>
+                    <%= button("View").submit(true) %>
                 </div>
             </div>
         <%
@@ -299,7 +299,7 @@ This folder does not contain a study.
                         <%= buttonImg("Refresh",  "document['" + formName + "']['excelExport'].value=false;") %>
                         <%= buttonImg("Print View", "document['" + formName + "']['_print'].value=1; document['" + formName + "']['excelExport'].value=false;") %>
                         <%= bean.hasReports() ? buttonImg("Export to Excel", "document['" + formName + "']['excelExport'].value=true;") :
-                                PageFlowUtil.generateDisabledSubmitButton("Export to Excel", "document['" + formName + "']['excelExport'].value=true;", "") %>
+                                button("Export to Excel").submit(true).onClick("document['" + formName + "']['excelExport'].value=true;").enabled(false) %>
                         </td>
                     </tr>
                 <%

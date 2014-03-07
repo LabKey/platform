@@ -61,7 +61,7 @@
             <td>&nbsp;</td>
         </tr>
         <tr>
-            <td><input type="hidden" name="mode" value="<%=!demoMode%>"><%=generateSubmitButton((demoMode ? "Leave" : "Enter") + " Demo Mode")%>&nbsp;<%=generateButton("Done", ManageStudyAction.class)%></td>
+            <td><input type="hidden" name="mode" value="<%=!demoMode%>"><%= button((demoMode ? "Leave" : "Enter") + " Demo Mode").submit(true) %>&nbsp;<%= button("Done").href(ManageStudyAction.class, getContainer()) %></td>
         </tr>
     </table>
 </form>

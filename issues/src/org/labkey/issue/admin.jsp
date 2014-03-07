@@ -51,8 +51,8 @@
 <br>
 <table>
 <tr><td>
-    <%=generateButton("Back to " + bean.entryTypeNames.pluralName.getSource(), buildURL(ListAction.class) + DataRegion.LAST_FILTER_PARAM + "=true")%>
-    <%=generateButton("Customize Email Template", urlProvider(AdminUrls.class).getCustomizeEmailURL(c, IssueUpdateEmailTemplate.class, getActionURL()))%>
+    <%= button("Back to " + bean.entryTypeNames.pluralName.getSource()).href(buildURL(ListAction.class) + DataRegion.LAST_FILTER_PARAM + "=true") %>
+    <%= button("Customize Email Template").href(urlProvider(AdminUrls.class).getCustomizeEmailURL(c, IssueUpdateEmailTemplate.class, getActionURL())) %>
 </td></tr>
 <tr><td>&nbsp;</td></tr>
 <%=formatMissedErrorsInTable("form", 1)%>
@@ -171,7 +171,7 @@
                 </td>
             </tr>
             <tr>
-                <td><%=generateSubmitButton("Update")%></td>
+                <td><%= button("Update").submit(true) %></td>
             </tr>
         </table>
     </td>

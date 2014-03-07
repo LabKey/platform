@@ -101,7 +101,7 @@
 
     %>
         <tr>
-            <td style="padding-top: 10px;"><%=PageFlowUtil.generateSubmitButton("Save", "return validateForm();")%><%=generateButton("Cancel", new AdminController.AdminUrlsImpl().getAdminConsoleURL())%></td>
+            <td style="padding-top: 10px;"><%= button("Save").submit(true).onClick("return validateForm();") %><%= button("Cancel").href(new AdminController.AdminUrlsImpl().getAdminConsoleURL()) %></td>
         </tr>
     </table>
 </form>

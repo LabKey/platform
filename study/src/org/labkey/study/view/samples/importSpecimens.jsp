@@ -112,7 +112,7 @@
         %>
         <p>
 
-        <%= generateSubmitButton("Start Import")%>
+        <%= button("Start Import").submit(true) %>
     </form>
 <%
         }

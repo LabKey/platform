@@ -28,9 +28,11 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.Button;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -638,6 +640,189 @@ public class TestController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ButtonAction extends SimpleViewAction<ButtonForm>
+    {
+        @Override
+        public ModelAndView getView(ButtonForm form, BindException errors) throws Exception
+        {
+            if (isPost())
+            {
+                Button.ButtonBuilder button = PageFlowUtil.button(form.getText())
+                        .textAsHTML(form.isHtml())
+                        .href(form.getHref())
+                        .enabled(form.isEnabled())
+                        .disableOnClick(form.isDisableonclick())
+                        .submit(form.isButtonsubmit())
+                        .onClick(form.getOnclick());
+
+                String attr = "";
+                if (form.getAttrkey1() != null)
+                    attr += form.getAttrkey1() + "=" + form.getAttrvalue1();
+                if (form.getAttrkey2() != null)
+                    attr += form.getAttrkey2() + "=" + form.getAttrvalue2();
+                if (!"".equals(attr))
+                    button.attributes(attr);
+
+                form.setBuiltButton(button);
+            }
+            else
+            {
+                // default values
+                form.setText("button text");
+                form.setEnabled(true);
+                form.setOnclick("alert('Button Testing');");
+                form.setAttrkey1("target");
+                form.setAttrvalue1("_blank");
+            }
+
+            return new JspView("/org/labkey/core/test/buttons.jsp", form);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    public static class ButtonForm
+    {
+        private String _text;
+        private String _href;
+        private String _onclick;
+        private String _attrkey1;
+        private String _attrkey2;
+        private String _attrvalue1;
+        private String _attrvalue2;
+        private boolean _disableonclick;
+        private boolean _html;
+        private boolean _enabled;
+        private boolean _buttonsubmit;
+        private Button.ButtonBuilder builtButton;
+
+
+        public Button.ButtonBuilder getBuiltButton()
+        {
+            return builtButton;
+        }
+
+        public void setBuiltButton(Button.ButtonBuilder builtButton)
+        {
+            this.builtButton = builtButton;
+        }
+
+        public String getAttrkey1()
+        {
+            return _attrkey1;
+        }
+
+        public void setAttrkey1(String attrkey1)
+        {
+            _attrkey1 = attrkey1;
+        }
+
+        public String getAttrkey2()
+        {
+            return _attrkey2;
+        }
+
+        public void setAttrkey2(String attrkey2)
+        {
+            _attrkey2 = attrkey2;
+        }
+
+        public String getAttrvalue1()
+        {
+            return _attrvalue1;
+        }
+
+        public void setAttrvalue1(String attrvalue1)
+        {
+            _attrvalue1 = attrvalue1;
+        }
+
+        public String getAttrvalue2()
+        {
+            return _attrvalue2;
+        }
+
+        public void setAttrvalue2(String attrvalue2)
+        {
+            _attrvalue2 = attrvalue2;
+        }
+
+        public String getOnclick()
+        {
+            return _onclick;
+        }
+
+        public void setOnclick(String onclick)
+        {
+            _onclick = onclick;
+        }
+
+        public boolean isButtonsubmit()
+        {
+            return _buttonsubmit;
+        }
+
+        public void setButtonsubmit(boolean buttonsubmit)
+        {
+            _buttonsubmit = buttonsubmit;
+        }
+
+        public boolean isEnabled()
+        {
+            return _enabled;
+        }
+
+        public void setEnabled(boolean enabled)
+        {
+            _enabled = enabled;
+        }
+
+        public boolean isDisableonclick()
+        {
+            return _disableonclick;
+        }
+
+        public void setDisableonclick(boolean disableonclick)
+        {
+            _disableonclick = disableonclick;
+        }
+
+        public String getHref()
+        {
+            return _href;
+        }
+
+        public void setHref(String href)
+        {
+            _href = href;
+        }
+
+        public boolean isHtml()
+        {
+            return _html;
+        }
+
+        public void setHtml(boolean html)
+        {
+            _html = html;
+        }
+
+        public String getText()
+        {
+            return _text;
+        }
+
+        public void setText(String text)
+        {
+            _text = text;
         }
     }
 }

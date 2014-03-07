@@ -129,14 +129,14 @@ function validateForm(form)
         }
     %>
 </table>
-<br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit", null, "id=submitButton", true, true)%>&nbsp;<%
+<br>&nbsp;<%= button("Submit").submit(true).attributes("id=submitButton").disableOnClick(true) %>&nbsp;<%
 if (null != cancelURL)
 {
-    %><%=generateButton("Cancel", cancelURL)%><%
+    %><%= button("Cancel").href(cancelURL) %><%
 }
 else
 {
-    %><%=PageFlowUtil.generateSubmitButton("Cancel", "javascript:window.history.back(); return false;")%>
+    %><%= generateBackButton("Cancel") %>
     <%
 }
 %>

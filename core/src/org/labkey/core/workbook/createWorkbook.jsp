@@ -127,8 +127,8 @@
         <% } %>
         <tr>
             <td colspan="2" class="cwb-button-bar">
-                <%=generateButton("Cancel", container.getStartURL(getUser()))%>
-                <%=PageFlowUtil.generateSubmitButton("Create Workbook", null, null, true, true)%>
+                <%= button("Cancel").href(container.getStartURL(getUser())) %>
+                <%= button("Create Workbook").submit(true).disableOnClick(true) %>
             </td>
         </tr>
     </table>

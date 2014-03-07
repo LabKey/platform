@@ -47,15 +47,15 @@ for (StorageProvisioner.ProvisioningReport.ColumnStatus st : report.getColumns()
 <%
     if (null != show)
     {
-        %><td><%=generateButton("View data",show)%></td><%
+        %><td><%= button("View data").href(show) %></td><%
     }
     if (null != edit)
     {
-        %><td><%=generateButton("Edit definition",edit)%></td><%
+        %><td><%= button("Edit definition").href(edit) %></td><%
     }
     if (hasFix)
     {
-        %><td><form method=POST><%=generateSubmitButton("Fix!")%></form></td><%
+        %><td><form method=POST><%= button("Fix!").submit(true) %></form></td><%
     }
 %></tr></table></td></tr></table>
 <labkey:errors/>

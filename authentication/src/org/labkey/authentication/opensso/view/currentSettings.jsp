@@ -39,5 +39,5 @@
     }
 %>
 </table><br>
-<%=generateButton("Modify Settings", OpenSSOController.getConfigureURL())%>
-<%=generateButton("Done", urlProvider(LoginUrls.class).getConfigureURL())%>
+<%= button("Modify Settings").href(OpenSSOController.getConfigureURL()) %>
+<%= button("Done").href(urlProvider(LoginUrls.class).getConfigureURL()) %>

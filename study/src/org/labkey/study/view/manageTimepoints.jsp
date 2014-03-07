@@ -94,7 +94,7 @@
         </tr>
         <tr>
             <td>&nbsp;</td>
-            <td><%= generateSubmitButton("Update")%>&nbsp;<%= generateButton("Back", "#", "window.history.back();return false;")%></td>
+            <td><%= button("Update").submit(true) %>&nbsp;<%= generateBackButton() %></td>
         </tr>
     </table>
 </form>

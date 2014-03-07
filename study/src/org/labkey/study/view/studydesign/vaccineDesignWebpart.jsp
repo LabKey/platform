@@ -65,7 +65,7 @@
         {
 %>
             To change the set of immunogens and adjuvants, click the edit button below.<br/>
-            <%=generateButton("Edit", StudyDesignController.ManageStudyProductsAction.class)%>
+            <%= button("Edit").href(StudyDesignController.ManageStudyProductsAction.class, getContainer()) %>
 <%
         }
 %>

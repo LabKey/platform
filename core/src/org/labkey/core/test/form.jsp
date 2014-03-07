@@ -71,7 +71,7 @@
 %>
     </table>
     <%=formatMissedErrors("form")%><br>
-    <%=PageFlowUtil.generateSubmitButton("Submit", "name=\"submit\"")%>
+    <%= button("Submit").submit(true) %>
 </form>
 <%--
 

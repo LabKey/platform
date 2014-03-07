@@ -44,8 +44,8 @@
         <tr>
             <td></td>
             <td style="height:50">
-            <%=PageFlowUtil.generateSubmitButton("Submit", "", "name=\"reset\"")%>
-            <%=generateButton("Cancel", urlProvider(LoginUrls.class).getLoginURL(doneURL))%>
+            <%= button("Submit").submit(true).attributes("name=\"reset\"")%>
+            <%= button("Cancel").href(urlProvider(LoginUrls.class).getLoginURL(doneURL)) %>
             </td>
         </tr>
     </table>

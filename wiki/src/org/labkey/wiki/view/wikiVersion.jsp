@@ -69,7 +69,7 @@ else
         if (fOutputMakeCurrent)
         {
             %><tr><td align=right colspan="2"><form method=POST action="<%=h(bean.makeCurrentURL)%>">
-                <%=generateSubmitButton("Make Current")%></form></td></tr><%
+                <%= button("Make Current").submit(true) %></form></td></tr><%
         }%>
 
        <tr><td colspan=2 class="labkey-title-area-line"></td></tr>

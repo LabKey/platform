@@ -44,8 +44,8 @@
     <td colspan="3">&nbsp;</td>
 </tr>
 <tr>
-    <td colspan="3"><%=generateSubmitButton("Save")%>&nbsp;
-        <%=generateButton(bean.reshow ? "Done" : "Cancel", bean.returnURL)%></td>
+    <td colspan="3"><%= button("Save").submit(true) %>&nbsp;
+        <%= button(bean.reshow ? "Done" : "Cancel").href(bean.returnURL) %></td>
 </tr>
 </table>
 </form>

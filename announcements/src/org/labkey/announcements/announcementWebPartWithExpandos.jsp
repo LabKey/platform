@@ -172,7 +172,7 @@ TD.message-short .message-less, TD.message-short .message-more
             <div style="text-align: left"><%
             if (null != bean.insertURL)
             {
-        %><%= generateButton("New", bean.insertURL)%><%
+        %><%= button("New").href(bean.insertURL) %><%
             }
 %></div>
             <div style="padding-top: 5px;">Showing: <%=h(bean.filterText)%></div>

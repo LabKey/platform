@@ -39,7 +39,7 @@
         </div>
     </form>
     <div class="section">
-        <%= generateButton("Refresh Menu Bar", refreshURL) %>
+        <%= button("Refresh Menu Bar").href(refreshURL) %>
     </div>
     <div class="section"><% include(me.getView("menubar"), out); %></div>
 </div>

@@ -102,11 +102,11 @@ function orderModule(down)
                 </select>
             </td>
             <td align="center" valign="center">
-                <%=PageFlowUtil.generateSubmitButton("Move Up", "return orderModule(0)")%><br><br>
-                <%=PageFlowUtil.generateSubmitButton("Move Down", "return orderModule(1)")%>
+                <%= button("Move Up").submit(true).onClick("return orderModule(0)") %><br><br>
+                <%= button("Move Down").submit(true).onClick("return orderModule(1)") %>
             </td>
         </tr>
     </table>
     <input type="hidden" name="order" value="">
-    <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", SpecimenController.ManageStatusesAction.class) %>
+    <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(SpecimenController.ManageStatusesAction.class, getContainer()) %>
 </form>

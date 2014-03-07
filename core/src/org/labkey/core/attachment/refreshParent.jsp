@@ -30,7 +30,7 @@ if (window.opener && window.opener != window)
 if (null != message)
     {
     %><%= message %>
-        <%=PageFlowUtil.generateButton("Continue", "#continue", "window.close();")%>
+        <%= PageFlowUtil.button("Continue").href("#continue").onClick("window.close();") %>
 <%
     }
 else

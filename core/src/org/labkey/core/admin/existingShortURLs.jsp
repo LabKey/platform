@@ -36,8 +36,8 @@
         <tr>
             <td><%= h(shortURLRecord.getShortURL())%></td>
             <td><%= textLink("test", shortURLRecord.renderShortURL()) %></td>
-            <td><form method="post"><input type="text" name="fullURL" value="<%= h(shortURLRecord.getFullURL())%>" size="40"/> <%= generateSubmitButton("Update") %><input type="hidden" name="shortURL" value="<%= h(shortURLRecord.getShortURL())%>" /></form></td>
-            <td><form method="post"><input type="hidden" name="delete" value="true" /><%= generateSubmitButton("Delete")%><input type="hidden" name="shortURL" value="<%= h(shortURLRecord.getShortURL())%>" /></form></td>
+            <td><form method="post"><input type="text" name="fullURL" value="<%= h(shortURLRecord.getFullURL())%>" size="40"/> <%= button("Update").submit(true) %><input type="hidden" name="shortURL" value="<%= h(shortURLRecord.getShortURL())%>" /></form></td>
+            <td><form method="post"><input type="hidden" name="delete" value="true" /><%= button("Delete").submit(true) %><input type="hidden" name="shortURL" value="<%= h(shortURLRecord.getShortURL())%>" /></form></td>
         </tr>
     <% } %>
 </table>

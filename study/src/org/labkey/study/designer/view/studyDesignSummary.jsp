@@ -40,7 +40,7 @@
     if (null == study)
     {      %>
     No study is active in the current container.<br>
-    <%=generateButton("Create Study", new ActionURL(StudyController.ManageStudyPropertiesAction.class, c))%>
+    <%= button("Create Study").href(new ActionURL(StudyController.ManageStudyPropertiesAction.class, c)) %>
 <%
         return;
     }

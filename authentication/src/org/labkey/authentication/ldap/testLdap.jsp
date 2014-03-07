@@ -48,8 +48,8 @@ client browser.
     <tr><td>Use SASL Authentication:</td><td><input id="SASL" type="checkbox" name="SASL"<%=checked(form.getSASL())%>></td></tr>
     <tr><td colspan=2 align=center style="height:50">
         <%=generateReturnUrlFormField(form)%>
-        <%=generateSubmitButton("Test")%>
-        <%=generateButton("Done", form.getReturnURLHelper())%>
+        <%= button("Test").submit(true) %>
+        <%= button("Done").href(form.getReturnURLHelper()) %>
     </td></tr>
 </table>
 </form>

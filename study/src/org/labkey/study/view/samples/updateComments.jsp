@@ -117,7 +117,7 @@
         </tr>
         <tr>
             <td>
-                <%= generateSubmitButton("Save Changes") %>
+                <%= button("Save Changes").submit(true) %>
                 <%
                     if (!StringUtils.isBlank(bean.getCurrentComment()) && copyButton != null)
                     {
@@ -125,7 +125,7 @@
                         menu.render(out);
                     }
                 %>
-                <%= generateButton("Cancel", new ActionURL(bean.getReferrer()))%>
+                <%= button("Cancel").href(new ActionURL(bean.getReferrer())) %>
             </td>
         </tr>
     </table>

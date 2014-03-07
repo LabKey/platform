@@ -1103,12 +1103,12 @@ public class ReportsController extends BaseStudyController
             }
             out.write("</select></td>");
 
-            out.write("<td>" + PageFlowUtil.generateSubmitButton("Save"));
+            out.write("<td>" + PageFlowUtil.button("Save").submit(true));
             out.write("</form>");
 
             if (confirm)
             {
-                out.write("&nbsp;" + PageFlowUtil.generateButton("Cancel", srcURL));
+                out.write("&nbsp;" + PageFlowUtil.button("Cancel").href(srcURL));
             }
             out.write("</td></tr></table>");
         }

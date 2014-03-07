@@ -382,11 +382,11 @@
     if (c.hasPermission(user, AdminPermission.class) && !c.isDataspace())
     {
 %>
-<%=generateButton("Export Study", urlProvider(AdminUrls.class).getExportFolderURL(c).addParameter("exportType", "study"))%>
-<%=generateButton("Reload Study", urlProvider(AdminUrls.class).getImportFolderURL(c).addParameter("origin", "Reload"))%>
-<%=generateButton("Delete Study", StudyController.DeleteStudyAction.class)%>
-<%=generateButton("Create Ancillary Study", "javascript:void(0)", "showNewStudyWizard()")%>
-<%=generateButton("Publish Study", "javascript:void(0)", "showPublishStudyWizard()")%>
+<%= button("Export Study").href(urlProvider(AdminUrls.class).getExportFolderURL(c).addParameter("exportType", "study")) %>
+<%= button("Reload Study").href(urlProvider(AdminUrls.class).getImportFolderURL(c).addParameter("origin", "Reload")) %>
+<%= button("Delete Study").href(StudyController.DeleteStudyAction.class, getContainer()) %>
+<%= button("Create Ancillary Study").href("javascript:void(0)").onClick("showNewStudyWizard()") %>
+<%= button("Publish Study").href("javascript:void(0)").onClick("showPublishStudyWizard()") %>
 <%
     }
 %>

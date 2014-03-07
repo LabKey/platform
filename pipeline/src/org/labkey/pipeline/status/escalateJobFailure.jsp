@@ -74,8 +74,8 @@
         <tr><td>Subject:</td><td width="600"><input id="escalationSubject" name="escalationSubject" style="width:100%" value="<%=defaultSubject%>"></td></tr>
         <tr><td>Message:</td><td><textarea id="escalationMessage" name="escalationMessage" style="width:100%" rows="10"></textarea></td></tr>
         <tr>
-            <td></td><td><%=generateSubmitButton("Send")%>
-            <%=generateButton("Cancel", cancelUrl)%></td>
+            <td></td><td><%= button("Send").submit(true) %>
+            <%= button("Cancel").href(cancelUrl) %></td>
         </tr>
     </table>
 </form>

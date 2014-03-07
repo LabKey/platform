@@ -182,8 +182,8 @@
     </table>
     <table>
         <tr>
-            <td><%=generateSubmitButton("Update")%>
-            <%=PageFlowUtil.generateSubmitButton("Reset to Default", "this.form.action='resetEmailNotification.view'")%></td>
+            <td><%= button("Update").submit(true) %>
+            <%= button("Reset to Default").submit(true).onClick("this.form.action='resetEmailNotification.view'") %></td>
         </tr>
         <tr><td></td></tr>
     </table>

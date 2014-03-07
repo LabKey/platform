@@ -3642,7 +3642,7 @@ public class ExperimentController extends SpringActionController
             String html = message + "<form action=\"" + getViewContext().cloneActionURL().setAction(ResolveLSIDAction.class) + "\">" +
                     " Lsid <input type=text name=lsid value=\"" +
                     (form.getLsid() == null ? "" : PageFlowUtil.filter(form.getLsid())) + "\">" +
-                    PageFlowUtil.generateSubmitButton("Go", "", "size=\"60\"") + "</form>";
+                    PageFlowUtil.button("Go").submit(true).attributes("size=\"60\"") + "</form>";
 
             return new HtmlView("Enter LSID", html);
         }

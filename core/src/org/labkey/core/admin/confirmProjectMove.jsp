@@ -42,6 +42,6 @@ This action cannot be undone.
     <input type="hidden" name="addAlias" value="<%=h(f.isAddAlias())%>">
     <input type="hidden" name="target" value="<%=h(f.getTarget())%>">
     <input type="hidden" name="confirmed" value="1">
-    <%=generateSubmitButton("Confirm Move")%>
-    <%=generateButton("Cancel", cancelURL)%>
+    <%= button("Confirm Move").submit(true) %>
+    <%= button("Cancel").href(cancelURL) %>
 </form>

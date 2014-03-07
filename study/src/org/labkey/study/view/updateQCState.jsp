@@ -68,8 +68,8 @@
         </tr>
         <tr>
             <td>&nbsp;</td>
-            <td><%= generateSubmitButton("Update Status") %> <%= generateButton("Cancel", new ActionURL(StudyController.DatasetAction.class,
-                    container).addParameter(DataSetDefinition.DATASETKEY, bean.getDatasetId()))%></td>
+            <td><%= button("Update Status").submit(true) %> <%= button("Cancel").href(new ActionURL(StudyController.DatasetAction.class,
+                    container).addParameter(DataSetDefinition.DATASETKEY, bean.getDatasetId())) %></td>
         </tr>
     </table>
 </form>

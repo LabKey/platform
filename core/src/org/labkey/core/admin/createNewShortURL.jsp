@@ -48,7 +48,7 @@
         </tr>
         <tr>
             <td></td>
-            <td><%= generateSubmitButton("Submit") %></td>
+            <td><%= button("Submit").submit(true) %></td>
         </tr>
     </table>
 </form>

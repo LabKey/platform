@@ -30,7 +30,7 @@
     <tr><td>You must configure a valid pipeline root before <%=description%>.</td></tr>
     <tr>
         <td>
-            <%=generateButton("Pipeline Setup", urlProvider(PipelineUrls.class).urlSetup(c))%>&nbsp;<%=generateButton("Cancel", StudyController.ManageStudyAction.class)%>
+            <%= button("Pipeline Setup").href(urlProvider(PipelineUrls.class).urlSetup(c)) %>&nbsp;<%= button("Cancel").href(StudyController.ManageStudyAction.class, getContainer()) %>
         </td>
     </tr>
 </table>

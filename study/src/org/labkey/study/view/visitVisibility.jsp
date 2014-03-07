@@ -95,5 +95,5 @@
         }
     %>
     </table>
-    <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", StudyController.ManageVisitsAction.class)%>
+    <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(StudyController.ManageVisitsAction.class, getContainer()) %>
 </form>

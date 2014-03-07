@@ -114,13 +114,13 @@ function orderModule(down)
                 </select>
             </td>
             <td align="center" valign="center">
-                <%=PageFlowUtil.generateSubmitButton("Move Up", "return orderModule(0)")%><br><br>
-                <%=PageFlowUtil.generateSubmitButton("Move Down", "return orderModule(1)")%>
+                <%= button("Move Up").submit(true).onClick("return orderModule(0)") %><br><br>
+                <%= button("Move Down").submit(true).onClick("return orderModule(1)") %>
             </td>
         </tr>
     </table>
     <input type="hidden" name="order" value="">
-    <%= generateSubmitButton("Save") %>
-    <%= generateButton("Cancel", StudyController.ManageTypesAction.class) %>
-    <%= generateButton("Reset Order", "#", "if (confirm('Resetting will order the datasets by category, and then by their ID numbers within each category.  This cannot be undone.  Continue?')) return submitReset(); else return false;") %>
+    <%= button("Save").submit(true) %>
+    <%= button("Cancel").href(StudyController.ManageTypesAction.class, getContainer()) %>
+    <%= button("Reset Order").href("#").onClick("if (confirm('Resetting will order the datasets by category, and then by their ID numbers within each category.  This cannot be undone.  Continue?')) return submitReset(); else return false;") %>
 </form>

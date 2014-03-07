@@ -52,5 +52,5 @@ Specifically it should be a tab-delimited text file with no column headers, and 
 <!--<tr><td class=labkey-form-label>Short prefix<br><small>e.g NCI_Thesaurus</small></td><td><input name="prefix" value=""></td></tr> -->
 <tr><td class=labkey-form-label>Upload File</td><td><input type=file name=thesaurus></td></tr>
 </table>
-    <%=generateSubmitButton("Submit")%>
+    <%= button("Submit").submit(true) %>
 </form>

@@ -106,8 +106,8 @@ the vaccine study.
             </td>
         </tr>
     </table>
-    <%=generateButton("Back", "javascript:window.history.back();")%>
-    <%=generateSubmitButton("Next")%>&nbsp;&nbsp;<%=generateButton("Cancel", cancelUrl)%>
+    <%=generateBackButton()%>
+    <%= button("Next").submit(true) %>&nbsp;&nbsp;<%= button("Cancel").href(cancelUrl) %>
 
 <%
 }
@@ -144,11 +144,11 @@ Each study needs specimen ids for the specimens included in the study. To upload
     <textarea class="labkey-bordered" rows="20" cols="80" name="specimenTSV"><%=h(form.getSpecimenTSV())%></textarea>
         <input type="hidden" value="false"  name="ignoreWarnings">
     <br>
-    <%=generateButton("Back", "javascript:window.history.back();")%>
+    <%= generateBackButton() %>
         <% if (form.isContainsWarnings())  {%>
-            <%=PageFlowUtil.generateSubmitButton("Ignore Warnings and Continue", "form.ignoreWarnings.value = 'true';form.submit();")%>
+            <%= button("Ignore Warnings and Continue").submit(true).onClick("form.ignoreWarnings.value = 'true';form.submit();") %>
         <%}%>
-        <%=generateSubmitButton("Next")%>&nbsp;&nbsp;<%=generateButton("Cancel", cancelUrl)%>
+        <%= button("Next").submit(true) %>&nbsp;&nbsp;<%= button("Cancel").href(cancelUrl) %>
 <br><%
 %>
 <input type="hidden" name="uploadSpecimens" value="true"> <br>
@@ -162,11 +162,11 @@ Paste a tab-delimited dataset copied from the workbook downloaded in the previou
 <textarea class="labkey-bordered" rows="20" cols="80" name="specimenTSV"><%=h(form.getSpecimenTSV())%></textarea>
     <input type="hidden" value="false"  name="ignoreWarnings">
 <br>
-<%=generateButton("Back", "javascript:window.history.back();")%>
+<%= generateBackButton() %>
     <% if (form.isContainsWarnings())  {%>
-        <%=PageFlowUtil.generateSubmitButton("Ignore Warnings and Continue", "form.ignoreWarnings.value = 'true';form.submit();")%>
+        <%= button("Ignore Warnings and Continue").submit(true).onClick("form.ignoreWarnings.value = 'true';form.submit();")%>
     <%}%>
-    <%=generateSubmitButton("Next")%>&nbsp;&nbsp;<%=generateButton("Cancel", cancelUrl)%>
+    <%= button("Next").submit(true) %>&nbsp;&nbsp;<%= button("Cancel").href(cancelUrl) %>
 <%
 }
 if (form.getWizardStep() != DesignerController.WizardStep.UPLOAD_SAMPLES &&
@@ -207,11 +207,11 @@ if (form.getWizardStep() == DesignerController.WizardStep.SHOW_PARTICIPANTS)
     The correct number of participants should be supplied for each cohort.<br>
     <textarea rows="20" cols="60" name="participantTSV"><%=h(form.getParticipantTSV())%></textarea>
     <input type="hidden" name="ignoreWarnings" value="false"><br>
-    <%=generateButton("Back", "javascript:window.history.back();")%>
+    <%= generateBackButton() %>
     <% if (form.isContainsWarnings())  {%>
-        <%=PageFlowUtil.generateSubmitButton("Ignore Warnings and Continue", "form.ignoreWarnings.value = 'true';form.submit();")%>
+        <%= button("Ignore Warnings and Continue").submit(true).onClick("form.ignoreWarnings.value = 'true';form.submit();") %>
     <%}%>
-    <%=generateSubmitButton("Next")%>&nbsp;&nbsp;<%=generateButton("Cancel", cancelUrl)%>
+    <%= button("Next").submit(true) %>&nbsp;&nbsp;<%= button("Cancel").href(cancelUrl) %>
 <%
 }
 if (form.getWizardStep() == DesignerController.WizardStep.UPLOAD_PARTICIPANTS)
@@ -226,10 +226,10 @@ if (form.getWizardStep() == DesignerController.WizardStep.UPLOAD_PARTICIPANTS)
     Other columns may be added. The correct number of participants should be supplied for each cohort.<br>
     <textarea rows="20" cols="60" name="participantTSV"><%=h(form.getParticipantTSV())%></textarea>
     <input type="hidden" name="ignoreWarnings" value="false"><br>
-    <%=generateButton("Back", "javascript:window.history.back();")%>     <% if (form.isContainsWarnings())  {%>
-        <%=PageFlowUtil.generateSubmitButton("Ignore Warnings and Continue", "form.ignoreWarnings.value = 'true';form.submit();")%>
+    <%= generateBackButton() %>     <% if (form.isContainsWarnings())  {%>
+        <%= button("Ignore Warnings and Continue").submit(true).onClick("form.ignoreWarnings.value = 'true';form.submit();") %>
     <%}%>
-    <%=generateSubmitButton("Next")%>&nbsp;&nbsp;<%=generateButton("Cancel", cancelUrl)%><%
+    <%= button("Next").submit(true) %>&nbsp;&nbsp;<%= button("Cancel").href(cancelUrl) %><%
 }
 if (form.getWizardStep() == DesignerController.WizardStep.CONFIRM)
 {
@@ -250,8 +250,8 @@ You are about to create a study folder with the following settings:
     <li><b>Specimens: </b><%=h(DesignerController.getSpecimens().size())%> </li>
 </ul>
 <br>
-<%=generateButton("Back", "javascript:window.history.back();")%>
-    <%=generateSubmitButton("Finish")%>&nbsp;&nbsp;<%=generateButton("Cancel", cancelUrl)%>
+<%= generateBackButton() %>
+    <%= button("Finish").submit(true) %>&nbsp;&nbsp;<%= button("Cancel").href(cancelUrl) %>
 <%
 }
 

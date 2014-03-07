@@ -74,7 +74,7 @@
         doneUrl.addParameter(StudyController.DATASET_VIEW_NAME_PARAMETER_NAME, defaultView);
 %>
         <tr><td>&nbsp;</td></tr>
-        <tr><td><%=generateButton("Done", doneUrl)%></td></tr>
+        <tr><td><%= button("Done").href(doneUrl) %></td></tr>
 </table>
 
 <%!

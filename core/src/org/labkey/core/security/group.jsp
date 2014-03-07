@@ -134,8 +134,8 @@ if (!bean.group.isDevelopers())
 {
 %>
     <br/>
-    <%if (!bean.group.isSystemGroup()){%><%=generateButton("Rename Group", buildURL(SecurityApiActions.RenameGroupAction.class,"id=" + bean.group.getUserId()))%><%}%>
-    <%=generateButton("View Permissions", urlProvider(SecurityUrls.class).getGroupPermissionURL(c, bean.group.getUserId()))%>
+    <%if (!bean.group.isSystemGroup()){%><%= button("Rename Group").href(buildURL(SecurityApiActions.RenameGroupAction.class)).attributes("id=" + bean.group.getUserId()) %><%}%>
+    <%= button("View Permissions").href(urlProvider(SecurityUrls.class).getGroupPermissionURL(c, bean.group.getUserId())) %>
 <%
 }
 
@@ -242,12 +242,12 @@ else
     %><div style="padding:5px;"><%
     if (bean.redundantMembers.size() > 0)
     {
-        %><%=PageFlowUtil.generateSubmitButton("Select Redundant Members", "return selectAllForRemoval(true);")%><%
+        %><%= button("Select Redundant Members").submit(true).onClick("return selectAllForRemoval(true);") %><%
     }
     %>
-    <%=PageFlowUtil.generateSubmitButton("Select All", "return selectAllCheckboxes(this.form, true);")%>
-    <%=PageFlowUtil.generateSubmitButton("Clear All", "return selectAllCheckboxes(this.form, false);")%>
-    <%= generateButton("Export All to Excel", urlGroup)%>
+    <%= button("Select All").submit(true).onClick("return selectAllCheckboxes(this.form, true);") %>
+    <%= button("Clear All").submit(true).onClick("return selectAllCheckboxes(this.form, false);") %>
+    <%= button("Export All to Excel").href(urlGroup) %>
     </div><%
 }
 %><br>
@@ -263,7 +263,7 @@ if (null != bean.ldapDomain && bean.ldapDomain.length() != 0 && !org.labkey.api.
 <span style="font-weight:bold">Include a message</span> with the new user mail (optional):<br>
     <textarea rows="8" cols="60" name="mailPrefix"></textarea><br>
 <input type="hidden" name="group" value="<%= bean.groupName %>">
-<%=PageFlowUtil.generateSubmitButton("Update Group Membership", "return confirmRemoveUsers();")%>
+<%= button("Update Group Membership").submit(true).onClick("return confirmRemoveUsers();") %>
 </div>
 </form>
 <%
@@ -275,7 +275,7 @@ if (!bean.isSystemGroup)
         %>
         <form action="<%=h(buildURL(SecurityController.StandardDeleteGroupAction.class))%>" method="POST">
         <labkey:csrf/>
-        <%=PageFlowUtil.generateSubmitButton("Delete Empty Group", "return confirm('Permanently delete group " + bean.groupName + "?')")%>
+        <%= button("Delete Empty Group").submit(true).onClick("return confirm('Permanently delete group " + bean.groupName + "?')") %>
         <input type="hidden" name="group" value="<%= bean.groupName %>">
         </form>
         <%

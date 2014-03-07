@@ -190,7 +190,7 @@ function setDefaults()
                         if (hasReturnURL)
                         {
                             %>
-                            <%= generateSubmitButton((shoppingCart ? "Create" : "Submit") + " and Return to Specimens")%>
+                            <%= button((shoppingCart ? "Create" : "Submit") + " and Return to Specimens").submit(true) %>
                             <%
                         }
                      %>
@@ -199,7 +199,7 @@ function setDefaults()
                 <%
                     }
                 %>
-                <%= text(hasReturnURL ? generateButton("Cancel", bean.getReturnUrl()) : generateButton("Cancel", SpecimenController.ViewRequestsAction.class))%>
+                <%= text(hasReturnURL ? button("Cancel").href(bean.getReturnUrl()).toString() : button("Cancel").href(SpecimenController.ViewRequestsAction.class, getContainer()).toString()) %>
             </td>
         </tr>
 

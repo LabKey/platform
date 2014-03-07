@@ -157,8 +157,8 @@
 %>
             </select></td>
             <td align="center" valign="center">
-              <%=PageFlowUtil.generateSubmitButton("Move Up", "return orderModule('siblings', 0, 'siblingOrder')")%><br><br>
-              <%=PageFlowUtil.generateSubmitButton("Move Down", "return orderModule('siblings', 1, 'siblingOrder')")%>
+              <%= button("Move Up").submit(true).onClick("return orderModule('siblings', 0, 'siblingOrder')") %><br><br>
+              <%= button("Move Down").submit(true).onClick("return orderModule('siblings', 1, 'siblingOrder')") %>
             </td>
           </tr>
         </table>
@@ -185,8 +185,8 @@
             </select>
           </td>
           <td align="center" valign="center">
-            <%=PageFlowUtil.generateSubmitButton("Move Up", "return orderModule('children', 0, 'childOrder')")%><br><br>
-            <%=PageFlowUtil.generateSubmitButton("Move Down", "return orderModule('children', 1, 'childOrder')")%>
+            <%= button("Move Up").submit(true).onClick("return orderModule('children', 0, 'childOrder')")%><br><br>
+            <%= button("Move Down").submit(true).onClick("return orderModule('children', 1, 'childOrder')")%>
           </td>
         </tr>
       </table>
@@ -202,9 +202,9 @@
 <input type="hidden" name="originalName" value="<%= wiki.getName() %>">
 <input type="hidden" name="rowId" value="<%= wiki.getRowId() %>">
 <input type="hidden" name="nextAction" value="">
-<%=PageFlowUtil.generateSubmitButton("Save", "document.manage.nextAction.value = 'page'; return true;", "title=\"Save Changes\"")%>
-<%=PageFlowUtil.generateButton("Delete", new ActionURL(WikiController.DeleteAction.class, c).addParameter("name", wiki.getName()))%>
-<%=PageFlowUtil.generateSubmitButton("Edit Content", "document.manage.nextAction.value = 'editWiki'; return true;", "title=\"Edit Content and Attachments\"")%>
+<%= button("Save").submit(true).onClick("document.manage.nextAction.value = 'page'; return true;").attributes("title=\"Save Changes\"")%>
+<%= PageFlowUtil.button("Delete").href(new ActionURL(WikiController.DeleteAction.class, c).addParameter("name", wiki.getName())) %>
+<%= button("Edit Content").submit(true).onClick("document.manage.nextAction.value = 'editWiki'; return true;").attributes("title=\"Edit Content and Attachments\"")%>
 
 <script type="text/javascript">
     existingWikiPages = [<% for (HString name : bean.pageNames) out.print(PageFlowUtil.jsString(name) + ","); %>];

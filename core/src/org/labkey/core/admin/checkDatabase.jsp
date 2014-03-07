@@ -36,11 +36,11 @@
     <table>
         <tr class="labkey-wp-header"><th colspan=2 align=center>Database Tools</th></tr>
         <tr><td>Check table consistency:&nbsp;</td>
-        <td> <%=generateButton("Do Database Check", new ActionURL(AdminController.DoCheckAction.class, ContainerManager.getRoot()))%>&nbsp;</td></tr>
+        <td> <%= button("Do Database Check").href(new ActionURL(AdminController.DoCheckAction.class, ContainerManager.getRoot())) %>&nbsp;</td></tr>
         <tr><td>&nbsp;</td><td></td></tr>
         <tr><td>Validate domains match hard tables:&nbsp;<br/>
         (Runs in background as pipeline job)</td>
-        <td> <%=generateButton("Validate", new ActionURL(AdminController.ValidateDomainsAction.class, ContainerManager.getRoot()))%>&nbsp;</td></tr>
+        <td> <%= button("Validate").href(new ActionURL(AdminController.ValidateDomainsAction.class, ContainerManager.getRoot())) %>&nbsp;</td></tr>
         <tr><td>&nbsp;</td><td></td></tr>
         <tr><td>Get schema xml doc:&nbsp;</td>
             <td>
@@ -57,8 +57,8 @@
                     %>
                 </select><br>
             </td></tr>
-        <tr><td></td><td><%=generateSubmitButton("Get Schema Xml") %>
-        <%=generateButton("Cancel", urlProvider(AdminUrls.class).getAdminConsoleURL())%>  </td></tr>
+        <tr><td></td><td><%= button("Get Schema Xml").submit(true) %>
+        <%= button("Cancel").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) %>  </td></tr>
         <tr><td></td><td></td></tr>
     </table>
 </form><br/><br/>

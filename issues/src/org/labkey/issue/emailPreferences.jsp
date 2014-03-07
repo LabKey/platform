@@ -64,14 +64,14 @@
     <input type="checkbox" value="8" name="emailPreference"<%=checked((emailPrefs & IssueManager.NOTIFY_SELF_SPAM) != 0)%>>
     Send me email notifications when I create or modify <%=h(indefArticle)%> <%=h(names.singularName)%><br>
     <br>
-    <%=generateSubmitButton("Update")%><%
+    <%= button("Update").submit(true) %><%
     if (issueId > 0)
     {
-        %><%= generateButton("Back to " + names.singularName.getSource(), IssuesController.issueURL(c, IssuesController.DetailsAction.class).addParameter("issueId", bean.getIssueId())) %><%
+        %><%= button("Back to " + names.singularName.getSource()).href(IssuesController.issueURL(c, IssuesController.DetailsAction.class).addParameter("issueId", bean.getIssueId())) %><%
     }
     else
     {
-        %><%= generateButton("View Grid", IssuesController.issueURL(c, IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true")) %><%
+        %><%= button("View Grid").href(IssuesController.issueURL(c, IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true")) %><%
     }
 %>
 </form>

@@ -44,6 +44,6 @@ public class CreateIssueDisplayColumn extends DataColumn
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
         _saveButton.render(ctx, out);
-        out.write("\t" + PageFlowUtil.generateButton("Create Issue", "javascript:document.forms.CreateIssue.elements['assignedTo'].value = document.forms.ExceptionStackTrace.elements['assignedTo'].value; document.forms.CreateIssue.submit()"));
+        out.write("\t" + PageFlowUtil.button("Create Issue").href("javascript:document.forms.CreateIssue.elements['assignedTo'].value = document.forms.ExceptionStackTrace.elements['assignedTo'].value; document.forms.CreateIssue.submit()"));
     }
 }

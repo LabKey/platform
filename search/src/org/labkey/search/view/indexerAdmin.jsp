@@ -53,7 +53,7 @@ else
             </tr>
             <tr><td colspan="2">Note: Changing the primary index path requires re-indexing all data, which can be very expensive.</td></tr>
             <tr><td><input type="hidden" name="path" value="1"></td></tr>
-            <tr><td colspan="2" width="500"><%=generateSubmitButton("Set Path")%></td></tr>
+            <tr><td colspan="2" width="500"><%= button("Set Path").submit(true) %></td></tr>
         </table>
     </form></p>
 
@@ -68,7 +68,7 @@ else
         {
         %>
         <tr><td><input type="hidden" name="pause" value="1"></td></tr>
-        <tr><td><%=generateSubmitButton("Pause Crawler")%></td></tr><%
+        <tr><td><%= button("Pause Crawler").submit(true) %></td></tr><%
         }
     }
     else
@@ -79,7 +79,7 @@ else
         {
         %>
         <tr><td><input type="hidden" name="start" value="1"></td></tr>
-        <tr><td><%=generateSubmitButton("Start Crawler")%></td></tr><%
+        <tr><td><%= button("Start Crawler").submit(true) %></td></tr><%
         }
     }
     %>
@@ -92,7 +92,7 @@ else
         <table>
             <tr><td>Deleting the search index isn't usually necessary; it causes re-indexing of all data, which can be very expensive.</td></tr>
             <tr><td><input type="hidden" name="delete" value="1"></td></tr>
-            <tr><td><%=generateSubmitButton("Delete Index")%></td></tr>
+            <tr><td><%= button("Delete Index").submit(true) %></td></tr>
         </table>
     </form></p><%
     }

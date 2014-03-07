@@ -66,7 +66,7 @@
                 %>
                 </select>
             <%=generateReturnUrlFormField(returnURL)%>
-            <%=generateSubmitButton("Impersonate")%>
+            <%= button("Impersonate").submit(true) %>
             </td></tr><%
             }
             %>

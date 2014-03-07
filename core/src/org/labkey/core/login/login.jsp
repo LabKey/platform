@@ -29,7 +29,6 @@
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginBean" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginForm" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<LoginBean> me = (HttpView<LoginBean>) HttpView.currentView();
@@ -93,7 +92,7 @@
             <input type=hidden name=skipProfile value="1"><%
             }
             %>
-            <%=PageFlowUtil.generateSubmitButton((bean.agreeOnly ? "Agree" : "Sign In"))%>
+            <%= button((bean.agreeOnly ? "Agree" : "Sign In")).submit(true) %>
         </td></tr>
     </table>
     <input type="hidden" id="urlhash" name="urlhash">

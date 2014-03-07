@@ -253,14 +253,14 @@ if (!bean.isResponse && !bean.print)
             url.replaceParameter("discussion.id",""+ announcementModel.getRowId());
             url.replaceParameter("discussion.reply","1");
             %>
-        <%=generateButton("Respond", url)%>&nbsp;<%
+        <%= button("Respond").href(url) %>&nbsp;<%
         }
         else
         {
             ActionURL respond = announcementURL(c, RespondAction.class, "parentId", announcementModel.getEntityId());
             respond.addReturnURL(bean.currentURL);
             %>
-        <%=generateButton("Respond", respond)%>&nbsp;<%
+        <%= button("Respond").href(respond) %>&nbsp;<%
         }
     }
     if (bean.perm.allowDeleteMessage(announcementModel))
@@ -277,7 +277,7 @@ if (!bean.isResponse && !bean.print)
             deleteThread.addReturnURL(bean.messagesURL);
         }
         %>
-        <%=generateButton("Delete " + settings.getConversationName(), deleteThread)%>&nbsp;<%
+        <%= button("Delete " + settings.getConversationName()).href(deleteThread) %>&nbsp;<%
     }
 }
 %>

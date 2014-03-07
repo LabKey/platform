@@ -122,7 +122,7 @@
 
     <table>
         <tr>
-            <td align="right" valign="top"><%=PageFlowUtil.generateSubmitButton("Save", null, "name=\"" + bean.getAction() + "\"", true, true)%><%= generateButton("Cancel", cancelURL)%></td>
+            <td align="right" valign="top"><%= button("Save").submit(true).attributes("name=\"" + bean.getAction() + "\"").disableOnClick(true) %><%= button("Cancel").href(cancelURL) %></td>
         </tr>
         <tr>
 <%
@@ -260,7 +260,7 @@
                 <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;" tabindex="1"><%=h(bean.getBody())%></textarea>
             </td></tr>
         <tr>
-            <td align="right" valign="top"><%=PageFlowUtil.generateSubmitButton("Save", null, "tabindex=\"5\" name=\"" + bean.getAction() + "\"", true, true)%><%= PageFlowUtil.generateButton("Cancel", cancelURL, null, "tabIndex=\"5\"")%></td>
+            <td align="right" valign="top"><%= button("Save").submit(true).attributes("tabindex=\"5\" name=\"" + bean.getAction() + "\"").disableOnClick(true) %><%= PageFlowUtil.button("Cancel").href(cancelURL).attributes("tabIndex=\"5\"") %></td>
         </tr>
     </table>
 

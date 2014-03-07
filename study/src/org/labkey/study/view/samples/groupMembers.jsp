@@ -86,7 +86,7 @@
         <%
             }
         %>
-        <%= generateSubmitButton("Update Members") %>
+        <%= button("Update Members").submit(true) %>
     </div>
 </form>
 </span>

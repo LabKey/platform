@@ -119,11 +119,11 @@
             <td>
                 <labkey:button text="Add Users" />
                 <% if (form.getReturnURLHelper() == null) { %>
-                <%=generateButton("Done", new ActionURL(UserController.ShowUsersAction.class, getContainer()))%>
+                <%= button("Done").href(new ActionURL(UserController.ShowUsersAction.class, getContainer())) %>
                 <% }
                    else {
                 %>
-                <%=generateButton("Done", form.getReturnURLHelper())%>
+                <%= button("Done").href(form.getReturnURLHelper()) %>
                 <% } %>
                 <%=generateReturnUrlFormField(form)%>
             </td>

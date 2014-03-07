@@ -137,12 +137,12 @@ function toggleItemSelector()
                 </select>
             </td>
             <td>
-                <%=PageFlowUtil.generateSubmitButton("Move Up", "return orderModule(0)")%><br><br>
-                <%=PageFlowUtil.generateSubmitButton("Move Down", "return orderModule(1)")%>
+                <%= button("Move Up").submit(true).onClick("return orderModule(0)") %><br><br>
+                <%= button("Move Down").submit(true).onClick("return orderModule(1)") %>
             </td>
         </tr>
     </table>
 </p>
     <input type="hidden" name="order" value="">
-    <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", reorderingProjects ? urlProvider(AdminUrls.class).getAdminConsoleURL() : urlProvider(AdminUrls.class).getManageFoldersURL(getContainer())) %>
+    <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(reorderingProjects ? urlProvider(AdminUrls.class).getAdminConsoleURL() : urlProvider(AdminUrls.class).getManageFoldersURL(getContainer())) %>
 </form>

@@ -33,7 +33,7 @@
 <labkey:errors/><br>
 <form action="<%=h(buildURL(StudyController.ManageQCStatesAction.class))%>" name="manageQCStates" method="POST">
 <%= buttonImg("Done", "document.manageQCStates.reshowPage.value='false'; return true;")%>
-<%= generateButton("Cancel", cancelUrl.getLocalURIString()) %>
+<%= button("Cancel").href(cancelUrl.getLocalURIString()) %>
 <input type="hidden" name="reshowPage" value="true">
 <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
 <table width="800px">
@@ -94,10 +94,11 @@
             <tr>
                 <td>&nbsp;</td>
                 <td colspan="4">
-                    <%= generateSubmitButton("Save")%>
-                    <%= generateButton("Delete Unused QC States", baseDeleteStateURL.clone().addParameter("all", "true"),
-                            "return confirm('Delete all unused QC states?  No additional study data will be deleted.')")%>
-                    <%= generateButton("Cancel", cancelUrl) %>
+                    <%= button("Save").submit(true) %>
+                    <%= button("Delete Unused QC States")
+                            .href(baseDeleteStateURL.clone().addParameter("all", "true"))
+                            .onClick("return confirm('Delete all unused QC states?  No additional study data will be deleted.')") %>
+                    <%= button("Cancel").href(cancelUrl) %>
                 </td>
             </tr>
         </table>

@@ -243,8 +243,8 @@ function restoreDefaultPage()
         <table>
             <tr>
                 <td align="left">
-                    <%=PageFlowUtil.generateSubmitButton("Submit", "", "name=\"Submit\" id=\"btnSubmit\"")%>
-                    <%=generateButton("Cancel", getContainer().getStartURL(getUser()))%>
+                    <%= button("Submit").submit(true).attributes("name=\"Submit\" id=\"btnSubmit\"") %>
+                    <%= button("Cancel").href(getContainer().getStartURL(getUser())) %>
                 </td>
             </tr>
         </table>

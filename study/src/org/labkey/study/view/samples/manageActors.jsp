@@ -127,9 +127,9 @@
         <tr>
             <td>&nbsp;</td>
             <td>
-                <%= generateSubmitButton("Save") %>&nbsp;
+                <%= button("Save").submit(true) %>&nbsp;
                 <%= text(buttonImg("Done", "document.manageActors.nextPage.value=''; return true;")) %>
-                <%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, study.getContainer()))%>&nbsp;
+                <%= button("Cancel").href(new ActionURL(StudyController.ManageStudyAction.class, study.getContainer())) %>&nbsp;
                 <%= text(buttonImg("Change Order", "document.manageActors.nextPage.value=" + q(new ActionURL(SpecimenController.ManageActorOrderAction.class, study.getContainer()).getLocalURIString()) + "; return true;"))%>
                 <input type="hidden" name="nextPage" value="<%=new ActionURL(SpecimenController.ManageActorsAction.class, study.getContainer()) %>">
             </td>

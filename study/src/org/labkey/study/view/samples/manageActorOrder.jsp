@@ -17,10 +17,9 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.model.StudyImpl"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController"%>
 <%@ page import="org.labkey.study.model.SampleRequestActor"%>
-<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
+<%@ page import="org.labkey.study.model.StudyImpl"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -98,11 +97,11 @@ function orderModule(down)
                 </select>
             </td>
             <td align="center" valign="center">
-                <%=PageFlowUtil.generateSubmitButton("Move Up", "return orderModule(0)")%><br><br>
-                <%=PageFlowUtil.generateSubmitButton("Move Down", "return orderModule(1)")%>
+                <%= button("Move Up").submit(true).onClick("return orderModule(0)") %><br><br>
+                <%= button("Move Down").submit(true).onClick("return orderModule(1)") %>
             </td>
         </tr>
     </table>
     <input type="hidden" name="order" value="">
-    <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", SpecimenController.ManageActorsAction.class) %>
+    <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(SpecimenController.ManageActorsAction.class, getContainer()) %>
 </form>

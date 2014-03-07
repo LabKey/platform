@@ -78,12 +78,12 @@ for (LocationImpl location : locations)
         <tr><th class="labkey-form-label">Report name</th><td><input style="width:250;" type=text id=label name=label value=""></td></tr><%
     } %>
 </table>
-<%=generateSubmitButton("Export")%>
+<%= button("Export").submit(true) %>
         <% if (isAdmin)
         {   %>
             <input type=hidden name=reportType value="<%=text(ExportExcelReport.TYPE)%>">
             <input type=hidden id=params name=params value="locationId=-1">
-            <%=PageFlowUtil.generateSubmitButton("Save", "this.form.action='saveReport.view'")%>
+            <%= button("Save").submit(true).onClick("this.form.action='saveReport.view'") %>
 
         <script type="text/javascript">
         var sites = {};

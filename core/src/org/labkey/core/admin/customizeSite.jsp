@@ -102,7 +102,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <%}%>
 <tr>
-    <td><%=generateSubmitButton("Save")%></td>
+    <td><%= button("Save").submit(true) %></td>
 </tr>
 </table>
 
@@ -343,7 +343,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td><%=generateSubmitButton("Save")%></td>
+    <td><%= button("Save").submit(true) %></td>
 </tr>
 </table>
 </form>

@@ -48,8 +48,8 @@
             %><input type="hidden" name="userId" value="<%=user.getUserId()%>"/><%
         }
     %>
-    <%=generateSubmitButton(bean.isActivate() ? "Re-activate" : "Deactivate")%>
-    <%=generateButton("Cancel", bean.getRedirUrl())%>
+    <%= button(bean.isActivate() ? "Re-activate" : "Deactivate").submit(true) %>
+    <%= button("Cancel").href(bean.getRedirUrl()) %>
 </form>
 <% if (bean.isActivate()) { %>
 <p><b>Note:</b> Re-activated users will be able to login normally, and all their previous

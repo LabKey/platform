@@ -2239,7 +2239,7 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(QueriesForm form, BindException errors) throws Exception
         {
-            String buttonHTML = PageFlowUtil.generateButton("Reset All Statistics", getResetQueryStatisticsURL()) + "&nbsp;" + PageFlowUtil.generateButton("Export", getExportQueriesURL());
+            String buttonHTML = PageFlowUtil.button("Reset All Statistics").href(getResetQueryStatisticsURL()) + "&nbsp;" + PageFlowUtil.button("Export").href(getExportQueriesURL());
 
             return QueryProfiler.getInstance().getReportView(form.getStat(), buttonHTML, new QueryProfiler.ActionURLFactory() {
                 public ActionURL getActionURL(String name)

@@ -38,8 +38,8 @@ Note that only the latest version of each wiki page is copied.
 
 <table>
     <tr>
-        <td><%=generateSubmitButton("Copy Pages")%></td>
-        <td><%=generateButton("Cancel", bean.cancelURL)%></td>
+        <td><%= button("Copy Pages").submit(true) %></td>
+        <td><%= button("Cancel").href(bean.cancelURL) %></td>
     </tr>
 </table>
 </form>

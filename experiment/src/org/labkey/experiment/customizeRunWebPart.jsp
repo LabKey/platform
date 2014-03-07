@@ -41,8 +41,8 @@
         </tr>
         <tr>
             <td colspan=2 align="right">
-                <%=generateSubmitButton("Submit")%>
-                <%=generateButton("Cancel", ExperimentController.BeginAction.class)%>
+                <%= button("Submit").submit(true) %>
+                <%= button("Cancel").href(ExperimentController.BeginAction.class, getContainer()) %>
             </td>
         </tr>
     </table>

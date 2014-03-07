@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <form action="<%=h(buildURL(SecurityController.ExportSecurityPolicyAction.class))%>">
     Export Policy As XML File:
     <p></p>
-    <%=PageFlowUtil.generateSubmitButton("Export")%>
+    <%= button("Export").submit(true) %>
 </form>
 <p></p>
 <hr>
@@ -33,5 +32,5 @@
     <input type="file" name="fileUpload"/>
 
     <p></p>
-    <%=PageFlowUtil.generateSubmitButton("Import")%>
+    <%= button("Import").submit(true) %>
 </form>

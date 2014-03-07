@@ -233,8 +233,8 @@ function setElementDisplayByCheckbox(checkbox, element)
         <tr>
             <th>&nbsp;</th>
             <td>
-                <%= generateSubmitButton("Save") %>&nbsp;
-                <%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, container))%>
+                <%= button("Save").submit(true) %>&nbsp;
+                <%= button("Cancel").href(new ActionURL(StudyController.ManageStudyAction.class, container)) %>
             </td>
         </tr>
 

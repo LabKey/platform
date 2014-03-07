@@ -85,7 +85,7 @@
 <td align="center">
     <form method="POST" name="add<%=h(kwp.type.getColumnName())%>" action="<%=h(buildURL(IssuesController.AddKeywordAction.class))%>">
     <input name="keyword" value=""><br>
-        <%=generateSubmitButton("Add " + kwp.name)%><br>
+        <%= button("Add " + kwp.name).submit(true) %><br>
     <input type="hidden" name="type" value="<%=kwp.type.getOrdinal()%>">
     </form>
 </td><%

@@ -49,7 +49,7 @@
             </td>
         </tr>
         <tr>
-            <td colspan=5><%=generateSubmitButton("Next")%>&nbsp;<%= generateButton("Cancel", StudyController.ManageTypesAction.class) %></td>
+            <td colspan=5><%= button("Next").submit(true) %>&nbsp;<%= button("Cancel").href(StudyController.ManageTypesAction.class, getContainer()) %></td>
         </tr>
     </table>
 </form>

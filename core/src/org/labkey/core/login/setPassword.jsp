@@ -93,6 +93,6 @@
             }
         %>
         </div>
-    <div style="padding-top: 1em;"><%=PageFlowUtil.generateSubmitButton(bean.buttonText, "", "name=\"set\"")%><%=text(bean.cancellable ? generateButton("Cancel", bean.form.getReturnURLHelper()) : "")%></div><%
+    <div style="padding-top: 1em;"><%= button(bean.buttonText).submit(true).attributes("name=\"set\"") %><%=text(bean.cancellable ? button("Cancel").href(bean.form.getReturnURLHelper()).toString() : "")%></div><%
     } %>
 </form>
