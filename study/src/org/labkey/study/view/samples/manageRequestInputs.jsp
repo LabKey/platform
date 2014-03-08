@@ -199,7 +199,7 @@
         }
     %>
     </table>
-    <%= buttonImg("Add New Input", "return addRow()")%>
+    <%= button("Add New Input").submit(true).onClick("return addRow();") %>
     <%= button("Save").submit(true) %>
     <%= button("Cancel").href(new ActionURL(StudyController.ManageStudyAction.class, bean.getContainer())) %>
 </form>

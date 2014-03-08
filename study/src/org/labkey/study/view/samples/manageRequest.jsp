@@ -503,7 +503,7 @@
                                 </select>
                             </td>
                             <td colspan="2"><input type="text" name="newDescription" size="50"></td>
-                            <td><%= text(buttonImg("Add Requirement", "if (validateNewRequirement()) document.addRequirementForm.submit(); return false;"))%></td>
+                            <td><%= button("Add Requirement").submit(true).onClick("if (validateNewRequirement()) document.addRequirementForm.submit(); return false;") %></td>
                         </tr>
                         <%
                             }

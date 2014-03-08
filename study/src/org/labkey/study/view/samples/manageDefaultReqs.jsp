@@ -96,7 +96,7 @@ function verifyNewRequirement(prefix)
                         </select>
                     </td>
                     <td><input type="text" id="originatorDescription" name="originatorDescription" size="50"></td>
-                    <td><%= buttonImg("Add Requirement", "return verifyNewRequirement('originator');")%></td>
+                    <td><%= button("Add Requirement").submit(true).onClick("return verifyNewRequirement('originator');") %></td>
                 </tr>
             </table>
         </td>
@@ -143,7 +143,7 @@ function verifyNewRequirement(prefix)
                         </select>
                     </td>
                     <td><input type="text" id="providerDescription" name="providerDescription" size="50"></td>
-                    <td><%= buttonImg("Add Requirement", "return verifyNewRequirement('provider');")%></td>
+                    <td><%= button("Add Requirement").submit(true).onClick("return verifyNewRequirement('provider');") %></td>
                 </tr>
             </table>
         </td>
@@ -189,7 +189,7 @@ function verifyNewRequirement(prefix)
                             </select>
                         </td>
                         <td><input type="text" id="receiverDescription" name="receiverDescription" size="50"></td>
-                        <td><%= buttonImg("Add Requirement", "return verifyNewRequirement('receiver');")%></td>
+                        <td><%= button("Add Requirement").submit(true).onClick("return verifyNewRequirement('receiver');") %></td>
                     </tr>
                 </table>
             </td>
@@ -235,7 +235,7 @@ function verifyNewRequirement(prefix)
                             </select>
                         </td>
                         <td><input type="text" id="generalDescription" name="generalDescription" size="50"></td>
-                        <td><%= buttonImg("Add Requirement", "return verifyNewRequirement('general');")%></td>
+                        <td><%= button("Add Requirement").submit(true).onClick("return verifyNewRequirement('general');") %></td>
                     </tr>
                 </table>
             </td>

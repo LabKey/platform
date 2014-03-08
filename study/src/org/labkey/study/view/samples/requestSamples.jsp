@@ -182,7 +182,7 @@ function setDefaults()
                     if (hasExtendedRequestView)
                     {
                         %>
-                        <%= text(buttonImg("Save & Continue", "document.CreateSampleRequest." + SpecimenController.CreateSampleRequestForm.PARAMS.extendedRequestUrl.name() + ".value='true'; return true;"))%>
+                        <%= button("Save & Continue").submit(true).onClick("document.CreateSampleRequest." + SpecimenController.CreateSampleRequestForm.PARAMS.extendedRequestUrl.name() + ".value='true'; return true;") %>
                         <%
                     }
                     else
@@ -194,8 +194,8 @@ function setDefaults()
                             <%
                         }
                      %>
-                     <%= text(buttonImg((shoppingCart ? "Create" : "Submit") + " and View Details",
-                            "document.CreateSampleRequest." + SpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name() + ".value='true'; return true;"))%>
+                     <%= button((shoppingCart ? "Create" : "Submit") + " and View Details").submit(true)
+                             .onClick("document.CreateSampleRequest." + SpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name() + ".value='true'; return true;") %>
                 <%
                     }
                 %>

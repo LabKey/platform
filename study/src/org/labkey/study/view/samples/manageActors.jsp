@@ -128,9 +128,9 @@
             <td>&nbsp;</td>
             <td>
                 <%= button("Save").submit(true) %>&nbsp;
-                <%= text(buttonImg("Done", "document.manageActors.nextPage.value=''; return true;")) %>
+                <%= button("Done").submit(true).onClick("document.manageActors.nextPage.value=''; return true;") %>
                 <%= button("Cancel").href(new ActionURL(StudyController.ManageStudyAction.class, study.getContainer())) %>&nbsp;
-                <%= text(buttonImg("Change Order", "document.manageActors.nextPage.value=" + q(new ActionURL(SpecimenController.ManageActorOrderAction.class, study.getContainer()).getLocalURIString()) + "; return true;"))%>
+                <%= button("Change Order").submit(true).onClick("document.manageActors.nextPage.value=" + q(new ActionURL(SpecimenController.ManageActorOrderAction.class, study.getContainer()).getLocalURIString()) + "; return true;") %>
                 <input type="hidden" name="nextPage" value="<%=new ActionURL(SpecimenController.ManageActorsAction.class, study.getContainer()) %>">
             </td>
             <td>&nbsp;</td>

@@ -129,7 +129,7 @@
     <tr>
         <td></td>
         <td>
-            <%= text(buttonImg("Create View", "return verifyLabel();")) %>
+            <%= button("Create View").submit(true).onClick("return verifyLabel();") %>
             <br>After creating the new view, you will have the chance to customize its appearance.
         </td>
     </tr>

@@ -32,7 +32,7 @@
 %>
 <labkey:errors/><br>
 <form action="<%=h(buildURL(StudyController.ManageQCStatesAction.class))%>" name="manageQCStates" method="POST">
-<%= buttonImg("Done", "document.manageQCStates.reshowPage.value='false'; return true;")%>
+<%= button("Done").submit(true).onClick("document.manageQCStates.reshowPage.value='false'; return true;") %>
 <%= button("Cancel").href(cancelUrl.getLocalURIString()) %>
 <input type="hidden" name="reshowPage" value="true">
 <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">

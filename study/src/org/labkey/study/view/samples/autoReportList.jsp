@@ -296,9 +296,9 @@ This folder does not contain a study.
                 %>
                     <tr>
                         <td colspan="2">
-                        <%= buttonImg("Refresh",  "document['" + formName + "']['excelExport'].value=false;") %>
-                        <%= buttonImg("Print View", "document['" + formName + "']['_print'].value=1; document['" + formName + "']['excelExport'].value=false;") %>
-                        <%= bean.hasReports() ? buttonImg("Export to Excel", "document['" + formName + "']['excelExport'].value=true;") :
+                        <%= button("Refresh").submit(true).onClick("document['" + formName + "']['excelExport'].value=false;") %>
+                        <%= button("Print View").submit(true).onClick("document['" + formName + "']['_print'].value=1; document['" + formName + "']['excelExport'].value=false;") %>
+                        <%= bean.hasReports() ? button("Export to Excel").submit(true).onClick("document['" + formName + "']['excelExport'].value=true;") :
                                 button("Export to Excel").submit(true).onClick("document['" + formName + "']['excelExport'].value=true;").enabled(false) %>
                         </td>
                     </tr>

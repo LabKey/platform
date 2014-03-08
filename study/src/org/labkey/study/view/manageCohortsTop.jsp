@@ -165,8 +165,8 @@
         <tr>
             <td>&nbsp;</td>
             <td>
-                <%= buttonImg("Update Assignments", "document.manageCohorts.updateParticipants.value='true'; return true;")%>
-                <%= buttonImg("Clear Assignments", "if (confirm('Are you sure you want to clear cohort information for all " + h(subjectNounPlural) + "?')) { document.manageCohorts.clearParticipants.value='true'; return true; } else return false;")%>
+                <%= button("Update Assignments").submit(true).onClick("document.manageCohorts.updateParticipants.value='true'; return true;") %>
+                <%= button("Clear Assignments").submit(true).onClick("if (confirm('Are you sure you want to clear cohort information for all " + h(subjectNounPlural) + "?')) { document.manageCohorts.clearParticipants.value='true'; return true; } else return false;") %>
             </td>
         </tr>
     </table>
