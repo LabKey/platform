@@ -538,17 +538,17 @@ Ext.define('LABKEY.app.controller.State', {
                         // have a subgroup
                         for (var i=0; i < _g.length; i++) {
                             ff = _g[i].data ? _g[i].data : _g[i];
-                            olapFilters.push(LABKEY.app.controller.Filter.getOlapFilter(ff));
+                            olapFilters.push(LABKEY.app.model.Filter.getOlapFilter(ff));
                         }
                     }
                     else {
                         ff = grpFilters[g].data ? grpFilters[g].data : grpFilters[g];
-                        olapFilters.push(LABKEY.app.controller.Filter.getOlapFilter(ff));
+                        olapFilters.push(LABKEY.app.model.Filter.getOlapFilter(ff));
                     }
                 }
             }
             else {
-                olapFilters.push(LABKEY.app.controller.Filter.getOlapFilter(this.filters[f].data));
+                olapFilters.push(LABKEY.app.model.Filter.getOlapFilter(this.filters[f].data));
             }
         }
 
@@ -639,7 +639,7 @@ Ext.define('LABKEY.app.controller.State', {
                     if (!oldFilters[i].isGroup() && !opFilters[n].isGroup()) {
 
                         if (oldFilters[i].getHierarchy() == opFilters[n].getHierarchy()) {
-                            oldFilters[i].set('operator', LABKEY.app.controller.Filter.lookupOperator(opFilters[n].data));
+                            oldFilters[i].set('operator', LABKEY.app.model.Filter.lookupOperator(opFilters[n].data));
                         }
                     }
                 }
