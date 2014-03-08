@@ -175,10 +175,8 @@
     reportConfig.put("thumbnailType", bean.getThumbnailType());
 
     reportConfig.put("studyOptions", (report instanceof RReport) && (StudyService.get().getStudy(c) != null));
-/*
-    reportConfig.put("filterParam", );
-    reportConfig.put("cached", );
-*/
+    reportConfig.put("filterParam", bean.getFilterParam());
+    reportConfig.put("cached", bean.isCached());
 
     reportConfig.put("helpHtml", helpHtml);
 
