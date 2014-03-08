@@ -350,12 +350,12 @@ var brushScatter = new LABKEY.vis.Plot({
     clipRect: false,
     legendPos: 'none',
     brushing: {
-        brushstart: function(event, data, extent, layerSelections) {
+        brushstart: function(event, data, extent, plot, layerSelections) {
             selectionMade = true;
         },
-        brush: function(event, data, extent, layerSelections) {
+        brush: function(event, data, extent, plot, layerSelections) {
             var points = layerSelections[0].selectAll('.point path');
-            var colorScale = brushScatter.scales.color.scale;
+            var colorScale = plot.scales.color.scale;
             var colorAcc = function(d) {
                 var x = d.x, y = d.y;
                 d.isSelected = (x > extent[0][0] && x < extent[1][0] && y > extent[0][1] && y < extent[1][1])
@@ -390,9 +390,9 @@ var brushScatter = new LABKEY.vis.Plot({
                     .attr('stroke-width', strokeWidthAcc)
                     .attr('fill-opacity', opacityAcc);
         },
-        brushend: function(event, data, extent, layerSelections) {
+        brushend: function(event, data, extent, plot, layerSelections) {
         },
-        brushclear: function(event, data, layerSelections) {
+        brushclear: function(event, data, plot, layerSelections) {
             layerSelections[0].selectAll('.point path').attr('fill-opacity', 1);
             selectionMade = false;
         }
@@ -442,6 +442,11 @@ var brushScatter = new LABKEY.vis.Plot({
                 points.attr('fill', fillAcc)
                         .attr('stroke-width', strokeWidthAcc)
                         .attr('stroke', strokeColorAcc);
+
+                points.each(function(d){
+                    var node = this.parentNode;
+                    if (pointData.ptid === d.ptid) {node.parentNode.appendChild(node);}
+                });
             },
             mouseOutFn: function(event, pointData, layerSel) {
                 if (selectionMade) {return;}
@@ -464,6 +469,90 @@ var brushScatter = new LABKEY.vis.Plot({
             scaleType: 'discrete',
             range: LABKEY.vis.Scale.DataspaceShape()
         }
+    }
+});
+
+var lineLayerSel = null;
+var mouseEventPlot = new LABKEY.vis.Plot({
+    rendererType: 'd3',
+    renderTo: 'mouseEvents',
+    width: 900,
+    height: 500,
+    legendPos: 'none',
+    data: dateData,
+    tickColor: '#FF33CC',
+    borderColor: '#FF33CC',
+    gridLineColor: '#FF99FF',
+    tickTextColor: '#33AA61',
+    gridLineWidth: 1,
+    borderWidth: 3,
+    tickWidth: 1,
+    tickLength: 10,
+    labels: {main: {value: 'Mouse Events Plot'}},
+    layers: [new LABKEY.vis.Layer({
+        geom: new LABKEY.vis.Geom.Point({
+            color: '#FF4499'
+        })
+    })],
+    aes: {
+        x: function(row){return row.x},
+        y: function(row){return row.y},
+        color: function(row){return row.ptid},
+        mouseOverFn: function(event, pointData, layerSel){
+            var subjectData = [], path,
+                    xScale = mouseEventPlot.scales.x.scale,
+                    yScale = mouseEventPlot.scales.yLeft.scale,
+                    xAcc = function(d){
+                        return xScale(mouseEventPlot.aes.x.getValue(d));
+                    },
+                    yAcc = function(d){
+                        return yScale(mouseEventPlot.aes.yLeft.getValue(d));
+                    },
+                    opacityFn = function(d){
+                        return d.ptid == pointData.ptid ? 1 : .4;
+                    };
+
+            for (var i = 0; i < dateData.length; i++) {
+                if (dateData[i].ptid === pointData.ptid) {
+                    subjectData.push(dateData[i]);
+                }
+            }
+
+            if (!lineLayerSel) {
+                lineLayerSel = d3.select('#mouseEvents svg').append('g').attr('class', 'line-layer');
+            }
+
+            path = LABKEY.vis.makePath(subjectData, xAcc, yAcc);
+            lineLayerSel.append('path').attr('class', 'user-line')
+                    .attr('d', path)
+                    .attr('stroke', '#666666')
+                    .attr('stroke-width', 1)
+                    .attr('stroke-opacity',.5)
+                    .attr('fill', 'none');
+
+            layerSel.selectAll('.point path').attr('fill-opacity', opacityFn).attr('stroke-opacity', opacityFn);
+
+            layerSel.selectAll('.point path').each(function(d){
+                if(d.ptid == pointData.ptid) {
+                    var node = this.parentNode;
+                    node.parentNode.appendChild(node);
+                }
+            });
+
+        },
+        mouseOutFn: function(event, pointData, layerSel){
+            lineLayerSel.selectAll('path').remove();
+            layerSel.selectAll('.point path').attr('fill-opacity', 1).attr('stroke-opacity', 1);
+        }
+    },
+    scales: {
+        x: {
+            tickFormat: function(v){
+                var d = new Date(v);
+                return d.toDateString();
+            }
+        },
+        y: {domain: [0, 120]}
     }
 });
 
@@ -590,6 +679,7 @@ discreteScatter.render();
 scatterPlot.render();
 colorScatter.render();
 brushScatter.render();
+mouseEventPlot.render();
 errorPlot.render();
 statFnPlot.render();
 console.log(new Date().getTime() - start);

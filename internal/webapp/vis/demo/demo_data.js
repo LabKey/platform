@@ -84,3 +84,23 @@ scatterData.push({
     z: 150,
     isSelected: false
 });
+
+var dateData = [];
+
+for (var i = 0; i < 15; i++) {
+    dateData.push({
+        ptid: 1,
+        y: 60 + (40 * Math.random()),
+        x: new Date(2014, 3, i)
+    });
+    dateData.push({
+        ptid: 2,
+        y: 40 + (40 * Math.random()),
+        x: new Date(2014, 3, i)
+    });
+    dateData.push({
+        ptid: 3,
+        y: 20 + (40 * Math.random()),
+        x: new Date(2014, 3, i)
+    });
+}

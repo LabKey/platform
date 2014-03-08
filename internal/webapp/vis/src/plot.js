@@ -699,8 +699,8 @@ boxPlot.render();
 
         this.renderTo = config.renderTo ? config.renderTo : null; // The id of the DOM element to render the plot to, required.
         this.grid = {
-            width: config.width ? config.width : null, // height of the grid where shapes/lines/etc gets plotted.
-            height: config.height ? config.height: null // widht of the grid.
+            width: config.hasOwnProperty('width') ? config.width : null, // height of the grid where shapes/lines/etc gets plotted.
+            height: config.hasOwnProperty('height') ? config.height: null // widht of the grid.
         };
         this.originalScales = config.scales ? config.scales : {}; // The scales specified by the user.
         this.scales = copyUserScales(this.originalScales); // The scales used internally.
@@ -709,13 +709,21 @@ boxPlot.render();
         this.labels = config.labels ? config.labels : {};
         this.data = config.data ? config.data : null; // An array of rows, required. Each row could have several pieces of data. (e.g. {subjectId: '249534596', hemoglobin: '350', CD4:'1400', day:'120'})
         this.layers = config.layers ? config.layers : []; // An array of layers, required. (e.g. a layer for a CD4 line chart over time, and a layer for a Hemoglobin line chart over time).
-        this.bgColor = config.bgColor ? config.bgColor : null;
-        this.gridColor = config.gridColor ? config.gridColor : null;
-        this.gridLineColor = config.gridLineColor ? config.gridLineColor : null;
         this.clipRect = config.clipRect ? config.clipRect : false;
         this.legendPos = config.legendPos;
         this.throwErrors = config.throwErrors || false; // Allows the configuration to specify whether chart errors should be thrown or logged (default).
         this.brushing = ('brushing' in config && config.brushing != null && config.brushing != undefined) ? config.brushing : null;
+
+        this.bgColor = config.bgColor ? config.bgColor : null;
+        this.gridColor = config.gridColor ? config.gridColor : null;
+        this.gridLineColor = config.gridLineColor ? config.gridLineColor : null;
+        this.tickColor = config.tickColor ? config.tickColor : null;
+        this.borderColor = config.borderColor ? config.borderColor : null;
+        this.tickTextColor = config.tickTextColor ? config.tickTextColor : null;
+        this.tickLength = config.hasOwnProperty('tickLength') ? config.tickLength : null;
+        this.tickWidth = config.hasOwnProperty('tickWidth') ? config.tickWidth : null;
+        this.gridLineWidth = config.hasOwnProperty('gridLineWidth') ? config.gridLineWidth : null;
+        this.borderWidth = config.hasOwnProperty('borderWidth') ? config.borderWidth : null;
 
         // Stash the user's margins so when we re-configure margins during re-renders or setAes we don't forget the user's settings.
         var allAes = [], margins = {}, userMargins = config.margins ? config.margins : {};

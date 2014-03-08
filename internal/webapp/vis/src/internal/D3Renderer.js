@@ -11,8 +11,10 @@ if (!LABKEY.vis.internal) {
 LABKEY.vis.internal.Axis = function() {
     // This emulates a lot of the d3.svg.axis() functionality, but adds in the ability for us to have tickHovers,
     // different colored tick & gridlines, etc.
-    var scale, orientation, tickFormat = function(v) {return v}, tickHover, ticks, tickSize, tickPadding, gridLineColor,
-            axisSel = null, tickSel, textSel, gridLineSel, borderSel, grid;
+    var scale, orientation, tickFormat = function(v) {return v}, tickHover, ticks, axisSel, tickSel, textSel,
+            gridLineSel, borderSel, grid;
+    var tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD', borderColor = '#000000';
+    var tickPadding = 0, tickLength = 8, tickWidth = 1, gridLineWidth = 1, borderWidth = 1;
 
     var axis = function(selection) {
         var data, textAnchor, textXFn, textYFn, gridLineFn, tickFn, border, gridLineData, hasOverlap, bBoxA, bBoxB, i,
@@ -28,8 +30,8 @@ LABKEY.vis.internal.Axis = function() {
         if (orientation == 'left') {
             textAnchor = 'end';
             textYFn = function(v) {return Math.floor(scale(v)) + .5;};
-            textXFn = function() {return grid.leftEdge - tickSize - 2 - tickPadding};
-            tickFn = function(v) {v = Math.floor(scale(v)) + .5; return 'M' + grid.leftEdge + ',' + v + 'L' + (grid.leftEdge - tickSize) + ',' + v + 'Z';};
+            textXFn = function() {return grid.leftEdge - tickLength - 2 - tickPadding};
+            tickFn = function(v) {v = Math.floor(scale(v)) + .5; return 'M' + grid.leftEdge + ',' + v + 'L' + (grid.leftEdge - tickLength) + ',' + v + 'Z';};
             gridLineFn = function(v) {v = Math.floor(scale(v)) + .5; return 'M' + grid.rightEdge + ',' + v + 'L' + grid.leftEdge + ',' + v + 'Z';};
             border = 'M' + (Math.floor(grid.leftEdge) + .5) + ',' + (grid.bottomEdge + 1) + 'L' + (Math.floor(grid.leftEdge) + .5) + ',' + grid.topEdge + 'Z';
             // Don't overlap gridlines with x axis border.
@@ -39,8 +41,8 @@ LABKEY.vis.internal.Axis = function() {
         } else if (orientation == 'right') {
             textAnchor = 'start';
             textYFn = function(v) {return Math.floor(scale(v)) + .5;};
-            textXFn = function() {return grid.rightEdge + tickSize + 2 + tickPadding};
-            tickFn = function(v) {v = Math.floor(scale(v)) + .5; return 'M' + grid.rightEdge + ',' + v + 'L' + (grid.rightEdge + tickSize) + ',' + v + 'Z';};
+            textXFn = function() {return grid.rightEdge + tickLength + 2 + tickPadding};
+            tickFn = function(v) {v = Math.floor(scale(v)) + .5; return 'M' + grid.rightEdge + ',' + v + 'L' + (grid.rightEdge + tickLength) + ',' + v + 'Z';};
             gridLineFn = function(v) {v = Math.floor(scale(v)) + .5; return 'M' + grid.rightEdge + ',' + v + 'L' + (grid.leftEdge + 1) + ',' + v + 'Z';};
             border = 'M' + (Math.floor(grid.rightEdge) + .5) + ',' + (grid.bottomEdge + 1) + 'L' + (Math.floor(grid.rightEdge) + .5) + ',' + grid.topEdge + 'Z';
             // Don't overlap gridlines with x axis border.
@@ -52,8 +54,8 @@ LABKEY.vis.internal.Axis = function() {
             orientation = 'bottom';
             textAnchor = 'middle';
             textXFn = function(v) {return (Math.floor(scale(v)) +.5);};
-            textYFn = function() {return grid.bottomEdge + tickSize + 2 + tickPadding};
-            tickFn = function(v) {v = (Math.floor(scale(v)) +.5); return 'M' + v + ',' + grid.bottomEdge + 'L' + v + ',' + (grid.bottomEdge + tickSize) + 'Z';};
+            textYFn = function() {return grid.bottomEdge + tickLength + 2 + tickPadding};
+            tickFn = function(v) {v = (Math.floor(scale(v)) +.5); return 'M' + v + ',' + grid.bottomEdge + 'L' + v + ',' + (grid.bottomEdge + tickLength) + 'Z';};
             gridLineFn = function(v) {v = (Math.floor(scale(v)) +.5); return 'M' + v + ',' + grid.bottomEdge + 'L' + v + ',' + grid.topEdge + 'Z';};
             border = 'M' + grid.leftEdge + ',' + (Math.floor(grid.bottomEdge) + .5) + 'L' + grid.rightEdge + ',' + (Math.floor(grid.bottomEdge) + .5) + 'Z';
             // Don't overlap gridlines with y-left axis border.
@@ -78,17 +80,23 @@ LABKEY.vis.internal.Axis = function() {
             textSel = axisSel.append('g').attr('class', 'tick-text');
         }
 
-        if (tickSize && tickSize > 0) {
+        if (tickLength > 0) {
             tickEls = tickSel.selectAll('path').data(data);
             tickEls.exit().remove();
             tickEls.enter().append('path');
-            tickEls.attr('d', tickFn).attr('stroke', '#000000');
+            tickEls.attr('d', tickFn)
+                    .attr('stroke', tickColor)
+                    .attr('stroke-width', tickWidth);
         }
 
-        gridLineEls = gridLineSel.selectAll('path').data(gridLineData);
-        gridLineEls.exit().remove();
-        gridLineEls.enter().append('path');
-        gridLineEls.attr('d', gridLineFn).attr('stroke', gridLineColor);
+        if (gridLineWidth > 0) {
+            gridLineEls = gridLineSel.selectAll('path').data(gridLineData);
+            gridLineEls.exit().remove();
+            gridLineEls.enter().append('path');
+            gridLineEls.attr('d', gridLineFn)
+                    .attr('stroke', gridLineColor)
+                    .attr('stroke-width', gridLineWidth);
+        }
 
         textAnchors = textSel.selectAll('a').data(data);
         textAnchors.exit().remove();
@@ -98,6 +106,7 @@ LABKEY.vis.internal.Axis = function() {
                 .attr('x', textXFn)
                 .attr('y', textYFn)
                 .attr('text-anchor', textAnchor)
+                .attr('fill', tickTextColor)
                 .style('font', '10px arial, verdana, helvetica, sans-serif');
 
         if (orientation == 'bottom') {
@@ -125,20 +134,73 @@ LABKEY.vis.internal.Axis = function() {
 
         borderSel.selectAll('path').remove();
         borderSel.append('path')
-                .attr('stroke', '#000000')
+                .attr('stroke', borderColor)
+                .attr('stroke-width', borderWidth)
                 .attr('d', border);
     };
 
-    axis.ticks = function(t) {ticks = t; return axis;};
+    // Grid is a reference to the plot's grid object that stores the grid dimensions and positions of edges.
+    axis.grid = function(g) {grid = g; return axis;};
     axis.scale = function(s) {scale = s; return axis;};
     axis.orient = function(o) {orientation = o; return axis;};
+    axis.ticks = function(t) {ticks = t; return axis;};
     axis.tickFormat = function(f) {tickFormat = f; return axis;};
     axis.tickHover = function(h) {tickHover = h; return axis;};
-    axis.tickSize = function(s) {tickSize = s; return axis;};
-    axis.tickPadding = function(p) {tickPadding = p; return axis;};
-    axis.gridLineColor = function(c) {gridLineColor = c; return axis;};
-    // This is a reference to the plot's grid object that stores the grid dimensions and positions of edges.
-    axis.grid = function(g) {grid = g; return axis;};
+
+    axis.tickPadding = function(p) {
+        if (p !== null && p !== undefined) {
+            tickPadding = p;
+        }
+        return axis;
+    };
+    axis.tickColor = function(c) {
+        if (c !== undefined && c !== null) {
+            tickColor = c;
+        }
+        return axis;
+    };
+    axis.tickWidth = function(w) {
+        if (w !== undefined && w !== null) {
+            tickWidth = w;
+        }
+        return axis;
+    };
+    axis.tickLength = function(len) {
+        if (len !== undefined && len !== null) {
+            tickLength = len;
+        }
+        return axis;
+    };
+    axis.gridLineColor = function(c) {
+        if (c !== undefined && c !== null) {
+            gridLineColor = c;
+        }
+        return axis;
+    };
+    axis.gridLineWidth = function(w) {
+        if (w !== undefined && w !== null) {
+            gridLineWidth = w;
+        }
+        return axis;
+    };
+    axis.borderColor = function(c) {
+        if (c !== undefined && c !== null) {
+            borderColor = c;
+        }
+        return axis;
+    };
+    axis.borderWidth = function (w) {
+        if (w !== undefined && w !== null) {
+            borderWidth = w;
+        }
+        return axis;
+    };
+    axis.tickTextColor = function(c) {
+        if (c !== undefined && c !== null) {
+            tickTextColor = c;
+        }
+        return axis;
+    };
 
     return axis;
 };
@@ -229,17 +291,25 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
+    var configureAxis = function(ax){
+        ax.grid(plot.grid)
+            .gridLineColor(plot.gridLineColor)
+            .gridLineWidth(plot.gridLineWidth)
+            .tickColor(plot.tickColor)
+            .tickLength(plot.tickLength)
+            .tickWidth(plot.tickWidth)
+            .borderColor(plot.borderColor)
+            .borderWidth(plot.borderWidth)
+            .tickTextColor(plot.tickTextColor)
+    };
+
     var renderXAxis = function() {
         if (!xAxis) {
             xAxis = LABKEY.vis.internal.Axis().orient('bottom');
         }
 
-        xAxis.scale(plot.scales.x.scale)
-                .grid(plot.grid)
-                .tickSize(8)
-                .tickPadding(10)
-                .ticks(7)
-                .gridLineColor(plot.gridLineColor ? plot.gridLineColor : '#dddddd');
+        xAxis.scale(plot.scales.x.scale).tickPadding(10).ticks(7);
+        configureAxis(xAxis);
 
         if (plot.scales.x.tickFormat) {
             xAxis.tickFormat(plot.scales.x.tickFormat);
@@ -258,12 +328,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
 
         if (plot.scales.yLeft && plot.scales.yLeft.scale) {
-            leftAxis.scale(plot.scales.yLeft.scale)
-                    .grid(plot.grid)
-                    .tickSize(8)
-                    .tickPadding(0)
-                    .ticks(10)
-                    .gridLineColor(plot.gridLineColor ? plot.gridLineColor : '#dddddd');
+            leftAxis.scale(plot.scales.yLeft.scale).ticks(10);
+            configureAxis(leftAxis);
 
             if (plot.scales.yLeft.tickFormat) {
                 leftAxis.tickFormat(plot.scales.yLeft.tickFormat);
@@ -282,12 +348,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             rightAxis = LABKEY.vis.internal.Axis().orient('right');
         }
         if (plot.scales.yRight && plot.scales.yRight.scale) {
-            rightAxis.scale(plot.scales.yRight.scale)
-                    .grid(plot.grid)
-                    .tickSize(8)
-                    .tickPadding(0)
-                    .ticks(10)
-                    .gridLineColor(plot.gridLineColor ? plot.gridLineColor : '#dddddd');
+            rightAxis.scale(plot.scales.yRight.scale).ticks(10);
+            configureAxis(rightAxis);
 
             if (plot.scales.yRight.tickFormat) {
                 rightAxis.tickFormat(plot.scales.yRight.tickFormat);
@@ -550,7 +612,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
             brush.on('brushstart', function(handle){
                 if (plot.brushing.brushstart) {
-                    plot.brushing.brushstart(d3.event, getAllData(), brush.extent(), getAllLayerSelections());
+                    plot.brushing.brushstart(d3.event, getAllData(), brush.extent(), plot, getAllLayerSelections());
                 }
             });
 
@@ -570,7 +632,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 }
 
                 if (plot.brushing.brush !== null) {
-                    plot.brushing.brush(event, getAllData(), brush.extent(), getAllLayerSelections());
+                    plot.brushing.brush(event, getAllData(), brush.extent(), plot, getAllLayerSelections());
                 }
             });
 
@@ -586,11 +648,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     yHandleBrush.clear();
                     yHandleBrush(yHandleSel);
                     if (plot.brushing.brushclear) {
-                        plot.brushing.brushclear(event, allData, getAllLayerSelections());
+                        plot.brushing.brushclear(event, allData, plot, getAllLayerSelections());
                     }
                 } else {
                     if (plot.brushing.brushend) {
-                        plot.brushing.brushend(event, allData, extent, getAllLayerSelections());
+                        plot.brushing.brushend(event, allData, extent, plot, getAllLayerSelections());
                     }
                 }
             });
