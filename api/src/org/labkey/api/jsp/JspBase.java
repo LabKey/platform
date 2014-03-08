@@ -362,11 +362,6 @@ abstract public class JspBase extends JspContext implements HasViewContext
     {
         HttpView.currentView().include(view, writer);
     }
-
-    public String buttonImg(String text, String onClickScript)
-    {
-        return PageFlowUtil.button(text).onClick(onClickScript).toString();
-    }
     
     public _HtmlString helpPopup(String helpText)
     {
