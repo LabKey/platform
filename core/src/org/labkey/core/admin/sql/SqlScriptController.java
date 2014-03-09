@@ -22,6 +22,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -54,6 +55,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -294,32 +296,52 @@ public class SqlScriptController extends SpringActionController
     }
 
 
+    private static List<ScriptConsolidator> getConsolidators(double fromVersion, double toVersion, boolean includeSingleScripts) throws SqlScriptException
+    {
+        List<Module> modules = ModuleLoader.getInstance().getModules();
+        List<ScriptConsolidator> consolidators = new ArrayList<>();
+
+        for (Module module : modules)
+        {
+            FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
+            Collection<DbSchema> schemas = provider.getSchemas();
+
+            for (DbSchema schema : schemas)
+            {
+                ScriptConsolidator consolidator = new ScriptConsolidator(provider, schema, fromVersion, toVersion);
+                List<SqlScript> scripts = consolidator.getScripts();
+
+                if (!scripts.isEmpty())
+                {
+                    if (scripts.size() > 1)
+                    {
+                        consolidators.add(consolidator);
+                    }
+
+                    if (includeSingleScripts)
+                    {
+                        String filename = consolidator.getFilename();
+
+                        // Skip if the single script in this range is the consolidation script
+                        if (!scripts.get(0).getDescription().equals(filename))
+                            consolidators.add(consolidator);
+                    }
+                }
+            }
+        }
+
+        return consolidators;
+    }
+
+
     @RequiresSiteAdmin
     public class ConsolidateScriptsAction extends SimpleViewAction<ConsolidateForm>
     {
         public ModelAndView getView(ConsolidateForm form, BindException errors) throws Exception
         {
-            List<Module> modules = ModuleLoader.getInstance().getModules();
-            List<ScriptConsolidator> consolidators = new ArrayList<>();
-
             double fromVersion = form.getFromVersion();
             double toVersion = form.getToVersion();
             boolean includeSingleScripts = form.getIncludeSingleScripts();
-
-            for (Module module : modules)
-            {
-                FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
-                Collection<DbSchema> schemas = provider.getSchemas();
-
-                for (DbSchema schema : schemas)
-                {
-                    ScriptConsolidator consolidator = new ScriptConsolidator(provider, schema, fromVersion, toVersion);
-                    List<SqlScript> scripts = consolidator.getScripts();
-
-                    if (!scripts.isEmpty() && (includeSingleScripts || scripts.size() > 1))
-                        consolidators.add(consolidator);
-                }
-            }
 
             StringBuilder formHtml = new StringBuilder();
 
@@ -340,15 +362,13 @@ public class SqlScriptController extends SpringActionController
             formHtml.append("  </table>\n");
             formHtml.append("</form><br>\n");
 
+            List<ScriptConsolidator> consolidators = getConsolidators(fromVersion, toVersion, includeSingleScripts);
             StringBuilder html = new StringBuilder();
 
             for (ScriptConsolidator consolidator : consolidators)
             {
                 List<SqlScript> scripts = consolidator.getScripts();
                 String filename = consolidator.getFilename();
-
-                if (1 == scripts.size() && scripts.get(0).getDescription().equals(filename))
-                    continue;  // No consolidation to do on this schema
 
                 html.append("<b>Schema ").append(consolidator.getSchemaName()).append("</b><br>\n");
 
@@ -363,6 +383,9 @@ public class SqlScriptController extends SpringActionController
 
             if (0 == html.length())
                 html.append("No schemas require consolidation in this range");
+            else
+                html.append(PageFlowUtil.textLink("Create batch file from current settings", getConsolidateBatchActionURL(form), null, null, Collections.singletonMap("target", "batchFile")));
+
 
             html.insert(0, formHtml);
 
@@ -374,6 +397,55 @@ public class SqlScriptController extends SpringActionController
             new ScriptsAction().appendNavTrail(root);
             root.addChild("Consolidate Scripts");
             return root;
+        }
+    }
+
+
+    private ActionURL getConsolidateBatchActionURL(ConsolidateForm form)
+    {
+        ActionURL url = new ActionURL(ConsolidateBatchAction.class, getContainer());
+        url.addParameter("fromVersion", Double.toString(form.getFromVersion()));
+        url.addParameter("toVersion", Double.toString(form.getToVersion()));
+        url.addParameter("includeSingleScripts", Boolean.toString(form.getIncludeSingleScripts()));
+
+        return url;
+    }
+
+
+    @RequiresSiteAdmin
+    public class ConsolidateBatchAction extends ExportAction<ConsolidateForm>
+    {
+        @Override
+        public void export(ConsolidateForm form, HttpServletResponse response, BindException errors) throws Exception
+        {
+            response.setContentType("text/plain");
+            PrintWriter out = response.getWriter();
+
+            double fromVersion = form.getFromVersion();
+            double toVersion = form.getToVersion();
+            boolean includeSingleScripts = form.getIncludeSingleScripts();
+
+            List<ScriptConsolidator> consolidators = getConsolidators(fromVersion, toVersion, includeSingleScripts);
+
+            out.write(":: This command line script primes each script directory for upcoming script consolidations. Using svn copy\n");
+            out.write(":: ensures that the SVN history and creation date of the first script is preserves in the consolidated script.\n");
+            out.write(":: The file is then deleted, because the consolidate action will recreate it and provide the actual content.\n\n");
+
+            for (ScriptConsolidator consolidator : consolidators)
+            {
+                SqlScript firstScript = consolidator.getScripts().get(0);
+                File scriptDir = ((FileSqlScriptProvider)firstScript.getProvider()).getScriptDirectory(firstScript.getSchema().getSqlDialect());
+
+                // TODO: Detect and skip git modules
+
+                String firstFilename = firstScript.getDescription();
+
+                String consolidatedFilename = consolidator.getFilename();
+
+                out.write("cd " + scriptDir + "\n");
+                out.write("svn copy " + firstFilename + " " + consolidatedFilename + "\n");
+                out.write("del " + consolidatedFilename + "\n\n");
+            }
         }
     }
 
@@ -654,7 +726,7 @@ public class SqlScriptController extends SpringActionController
                     {
                         allFiles.remove(script.getDescription());
 
-                        if (null != previous && (previous.getSchemaName().equals(script.getSchemaName()) && previous.getFromVersion() == script.getFromVersion()))
+                        if (null != previous && (previous.getSchema().equals(script.getSchema()) && previous.getFromVersion() == script.getFromVersion()))
                         {
                             // Save the script so we can render them in order
                             orphanedScripts.add(previous);
@@ -925,7 +997,7 @@ public class SqlScriptController extends SpringActionController
             });
 
             // Update this array after each release and each bump of ModuleLoader.EARLIEST_UPGRADE_VERSION
-            double[] fromVersions = new double[]{0.00, 11.2, 11.3, 12.1, 12.2, 12.3, 13.1, 13.2};
+            double[] fromVersions = new double[]{0.00, 12.1, 12.2, 12.3, 13.1, 13.2, 13.3, 14.1};
             double toVersion = form.getToVersion();
 
             for (Module module : modules)
