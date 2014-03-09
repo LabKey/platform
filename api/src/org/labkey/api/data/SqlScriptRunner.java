@@ -136,9 +136,6 @@ public class SqlScriptRunner
 
     public interface SqlScript extends Comparable<SqlScript>
     {
-        @Deprecated
-        public String getSchemaName();
-
         public DbSchema getSchema();
         public double getFromVersion();
         public double getToVersion();

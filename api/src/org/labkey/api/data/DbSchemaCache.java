@@ -101,7 +101,7 @@ public class DbSchemaCache
             try
             {
                 SchemaDetails details = (SchemaDetails)schemaDetails;
-                return details.getType().loadSchema(_scope, details.getRequestedSchemaName());
+                return _scope.loadSchema(details.getRequestedSchemaName(), details.getType());
             }
             catch (Exception e)
             {

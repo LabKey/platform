@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013 LabKey Corporation
+ * Copyright (c) 2011-2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheTimeChooser;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.cache.Wrapper;
-import org.labkey.api.util.Pair;
 
 /*
 * User: adam

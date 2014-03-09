@@ -632,21 +632,21 @@ public class DbScope
 
 
     @NotNull
-    // Load meta data from database
-    protected DbSchema loadBareSchema(String schemaName, DbSchemaType type) throws SQLException
+    // Load meta data from database and overlay schema.xml, if DbSchemaType requires it
+    protected DbSchema loadSchema(String schemaName, DbSchemaType type) throws SQLException, IOException, XmlException
     {
         LOG.info("Loading DbSchema \"" + getDisplayName() + "." + schemaName + "\" (" + type.name() + ")");
 
-        // Load from database meta data
-        return DbSchema.createFromMetaData(this, schemaName, type);
+        DbSchema schema = DbSchema.createFromMetaData(this, schemaName, type);
+
+        if (type.applyXmlMetaData())
+            applyMetaDataXML(schema, schemaName);
+
+        return schema;
     }
 
-
-    @NotNull
-    // Load meta data from database and overlay schema.xml
-    protected DbSchema loadSchema(String schemaName, DbSchemaType type) throws SQLException, IOException, XmlException
+    private void applyMetaDataXML(DbSchema schema, String schemaName) throws IOException, XmlException
     {
-        DbSchema schema = loadBareSchema(schemaName, type);
 
         // Use the canonical schema name, not the requested name (which could differ in casing)
         Resource resource = schema.getSchemaResource();
@@ -675,14 +675,12 @@ public class DbScope
                 schema.setTablesDocument(tablesDoc);
             }
         }
-
-        return schema;
     }
 
 
-    public static class DbSchemaResource extends AbstractResource
+    private static class DbSchemaResource extends AbstractResource
     {
-        protected DbSchemaResource(DbSchema schema)
+        private DbSchemaResource(DbSchema schema)
         {
             // CONSIDER: create a ResourceResolver based on DbScope
             super(new Path(schema.getName()), null);

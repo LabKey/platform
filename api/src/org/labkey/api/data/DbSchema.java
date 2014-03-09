@@ -574,6 +574,28 @@ public class DbSchema
         return "DbSchema " + getDisplayName();
     }
 
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DbSchema dbSchema = (DbSchema) o;
+
+        if (!getDisplayName().equals(dbSchema.getDisplayName())) return false;
+        if (_type != dbSchema._type) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = getDisplayName().hashCode();
+        result = 31 * result + _type.hashCode();
+        return result;
+    }
+
     public Map<String, TableType> getTableXmlMap()
     {
         return _tableXmlMap;

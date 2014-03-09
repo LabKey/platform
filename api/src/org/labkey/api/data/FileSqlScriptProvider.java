@@ -320,11 +320,6 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             return _schema;
         }
 
-        public String getSchemaName()
-        {
-            return _schemaName;
-        }
-
         public double getFromVersion()
         {
             return _fromVersion;
@@ -378,9 +373,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
             FileSqlScript that = (FileSqlScript) o;
 
-            if (_fileName != null ? !_fileName.equals(that._fileName) : that._fileName != null) return false;
-
-            return true;
+            return !(_fileName != null ? !_fileName.equals(that._fileName) : that._fileName != null);
         }
 
         public int hashCode()
@@ -395,7 +388,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
         public int compareTo(@NotNull SqlScript script)
         {
-            int schemaCompare = getSchemaName().compareToIgnoreCase(script.getSchemaName());
+            int schemaCompare = getSchema().getDisplayName().compareTo(script.getSchema().getDisplayName());
 
             if (0 != schemaCompare)
                 return schemaCompare;

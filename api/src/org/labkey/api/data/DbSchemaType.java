@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 LabKey Corporation
+ * Copyright (c) 2013-2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,55 +25,34 @@ import org.labkey.api.cache.CacheManager;
 public enum DbSchemaType
 {
     // TODO: Create Uncached type?  Might make sense for non-external schema usages of Bare
-    Module("module", CacheManager.YEAR)
+    Module("module", CacheManager.YEAR, true),
+    Provisioned("provisioned", CacheManager.YEAR, false),
+    Bare("bare", CacheManager.HOUR, false),
+    All("", 0, false)
     {
-        @Override
-        DbSchema loadSchema(DbScope scope, String rquestedSchemaName) throws Exception
-        {
-            return scope.loadSchema(rquestedSchemaName, this);
-        }
-    },
-    Provisioned("provisioned", CacheManager.YEAR)
-    {
-        @Override
-        DbSchema loadSchema(DbScope scope, String requestedSchemaName) throws Exception
-        {
-            return scope.loadSchema(requestedSchemaName, this);
-        }
-    },
-    Bare("bare", CacheManager.HOUR)
-    {
-        @Override
-        DbSchema loadSchema(DbScope scope, String rquestedSchemaName) throws Exception
-        {
-            return scope.loadBareSchema(rquestedSchemaName, this);
-        }
-    },
-    All("", 0)
-    {
-        @Override
-        DbSchema loadSchema(DbScope scope, String rquestedSchemaName) throws Exception
-        {
-            throw new IllegalStateException("Should not be loading a schema of this type");
-        }
-
         @Override
         protected long getCacheTimeToLive()
         {
             throw new IllegalStateException("Should not be caching a schema of this type");
         }
+
+        @Override
+        boolean applyXmlMetaData()
+        {
+            throw new IllegalStateException("Should not be caching a schema of this type");
+        }
     };
 
-    private final String _cacheKeyPostFix;
+    private final String _cacheKeyPostFix;  // Postfix makes it easy for All type to remove all versions of a schema from the cache
     private final long _cacheTimeToLive;
+    private final boolean _applyXmlMetaData;
 
-    DbSchemaType(String cacheKeyPostFix, long cacheTimeToLive)
+    DbSchemaType(String cacheKeyPostFix, long cacheTimeToLive, boolean applyXmlMetaData)
     {
         _cacheKeyPostFix = cacheKeyPostFix;
         _cacheTimeToLive = cacheTimeToLive;
+        _applyXmlMetaData = applyXmlMetaData;
     }
-
-    abstract DbSchema loadSchema(DbScope scope, String requestedSchemaName) throws Exception;
 
     String getCacheKey(String schemaName)
     {
@@ -83,5 +62,10 @@ public enum DbSchemaType
     long getCacheTimeToLive()
     {
         return _cacheTimeToLive;
+    }
+
+    boolean applyXmlMetaData()
+    {
+        return _applyXmlMetaData;
     }
 }
