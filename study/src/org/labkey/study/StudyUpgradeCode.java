@@ -19,7 +19,6 @@ import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -39,7 +38,6 @@ import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -51,7 +49,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
@@ -77,7 +74,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -91,44 +87,6 @@ import java.util.Set;
 public class StudyUpgradeCode implements UpgradeCode
 {
     private static final Logger _log = Logger.getLogger(StudyUpgradeCode.class);
-
-    // invoked by study-11.32-11.33.sql
-    @SuppressWarnings({"UnusedDeclaration"})
-    @DeferredUpgrade
-    public void migrateReportProperties(ModuleContext context)
-    {
-        if (!context.isNewInstall())
-        {
-            try
-            {
-                for (Report report : ReportService.get().getReports(new SimpleFilter()))
-                {
-                    ReportDescriptor descriptor = report.getDescriptor();
-
-                    String author = descriptor.getProperty("author");
-                    if (author != null && NumberUtils.isDigits(author))
-                    {
-                        Container c = ContainerManager.getForId(report.getContainerId());
-                        ensureProperties(c, context.getUpgradeUser());
-
-                        ReportPropsManager.get().setPropertyValue(report.getEntityId(), c, "author", NumberUtils.createInteger(author));
-                    }
-
-                    if (descriptor.getProperty("status") != null)
-                    {
-                        Container c = ContainerManager.getForId(report.getContainerId());
-                        ensureProperties(c, context.getUpgradeUser());
-
-                        ReportPropsManager.get().setPropertyValue(report.getEntityId(), c, "status", descriptor.getProperty("status"));
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                _log.error("An error occurred upgrading report properties: ", e);
-            }
-        }
-    }
 
     // invoked by study-12.10-12.11.sql
     @SuppressWarnings({"UnusedDeclaration"})
@@ -210,19 +168,6 @@ public class StudyUpgradeCode implements UpgradeCode
         finally
         {
             scope.releaseConnection(con);
-        }
-    }
-
-    private Map<Container, Boolean> _propertyMap = new HashMap<>();
-
-    private void ensureProperties(Container container, User user) throws Exception
-    {
-        if (!_propertyMap.containsKey(container))
-        {
-            ReportPropsManager.get().ensureProperty(container, user, "status", "Status", PropertyType.STRING);
-            ReportPropsManager.get().ensureProperty(container, user, "author", "Author", PropertyType.INTEGER);
-
-            _propertyMap.put(container, true);
         }
     }
 

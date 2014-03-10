@@ -237,7 +237,7 @@ public class SqlScriptController extends SpringActionController
             // and don't run during bootstrap.
             if (AppProps.getInstance().isDevMode())
             {
-                for (String name : new String[]{"luminex-11.31-12.10.sql", "query-12.301-13.10.sql"})
+                for (String name : new String[]{"query-12.301-13.10.sql"})
                 {
                     if (-1 == html.indexOf(name))
                         html.insert(0, "<span class=\"labkey-error\">Warning: " + PageFlowUtil.filter(name) + " did not appear!</span><br>\n");
