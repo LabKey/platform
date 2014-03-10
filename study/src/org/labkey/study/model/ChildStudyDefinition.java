@@ -52,7 +52,6 @@ public class ChildStudyDefinition
     private Integer _requestId;  // RowId of a specimen request
     private String[] _specimenIds = null;  // List of globally unique specimen IDs
     private List<Specimen> _specimens = null;
-    private String _investigator;
 
     public String getName()
     {
@@ -289,16 +288,6 @@ public class ChildStudyDefinition
     public void setSpecimens(List<Specimen> specimens)
     {
         _specimens = specimens;
-    }
-
-    public String getInvestigator()
-    {
-        return _investigator;
-    }
-
-    public void setInvestigator(String investigator)
-    {
-        _investigator = investigator;
     }
 
     public String getMode()

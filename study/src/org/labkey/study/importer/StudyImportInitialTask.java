@@ -139,6 +139,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             }
 
             ctx.getLogger().info("Loading top-level study properties");
+            // TODO: This set of study property imports should be moved to its own importer process method so that it can be reused (see CreateChildStudyAction.createNewStudy)
             // TODO: Change these props and save only if values have changed
             study = study.createMutable();
 
