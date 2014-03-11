@@ -52,10 +52,12 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.query.CustomView;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -98,10 +100,10 @@ import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.SvgThumbnailGenerator;
 import org.labkey.api.visualization.VisualizationReportDescriptor;
 import org.labkey.api.visualization.VisualizationUrls;
-import org.labkey.visualization.sql.StudyVisualizationProvider;
-import org.labkey.visualization.sql.VisualizationProvider;
+import org.labkey.api.visualization.SQLGenerationException;
+import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.visualization.sql.VisualizationSQLGenerator;
-import org.labkey.visualization.sql.VisualizationSourceColumn;
+import org.labkey.api.visualization.VisualizationSourceColumn;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -356,31 +358,26 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    public static Map<String, ? extends VisualizationProvider> createVisualizationProviders()
+    public Map<String, ? extends VisualizationProvider> createVisualizationProviders()
     {
-        return Collections.singletonMap("study", new StudyVisualizationProvider());
-    }
-
-    public static VisualizationProvider createVisualizationProvider(String schemaName)
-    {
-        if ("study".equalsIgnoreCase(schemaName))
-            return new StudyVisualizationProvider();
-        else
-            throw new IllegalArgumentException("No visualization provider registered for schema: " + schemaName);
-    }
-
-    public enum QueryType {
-        builtIn,
-        custom,
-        datasets,
-        all,
+        Map<String, VisualizationProvider> result = new HashMap<>();
+        DefaultSchema defaultSchema = DefaultSchema.get(getUser(), getContainer());
+        for (QuerySchema querySchema : defaultSchema.getSchemas())
+        {
+            VisualizationProvider provider = querySchema.createVisualizationProvider();
+            if (provider != null)
+            {
+                result.put(querySchema.getName(), provider);
+            }
+        }
+        return result;
     }
 
     public static class MeasureFilter
     {
         private String _schema;
         private String _query;
-        private QueryType _queryType = QueryType.all;
+        private VisualizationProvider.QueryType _queryType = VisualizationProvider.QueryType.all;
 
         public MeasureFilter(String filter)
         {
@@ -399,7 +396,7 @@ public class VisualizationController extends SpringActionController
                 _query = parts[1];
 
             if (parts.length >= 3)
-                _queryType = QueryType.valueOf(parts[2]);
+                _queryType = VisualizationProvider.QueryType.valueOf(parts[2]);
         }
 
         public String getSchema()
@@ -412,7 +409,7 @@ public class VisualizationController extends SpringActionController
             return _query;
         }
 
-        public QueryType getQueryType()
+        public VisualizationProvider.QueryType getQueryType()
         {
             return _queryType;
         }
@@ -449,10 +446,16 @@ public class VisualizationController extends SpringActionController
                 for (String filter : form.getFilters())
                 {
                     MeasureFilter mf = new MeasureFilter(filter);
-                    VisualizationProvider provider = createVisualizationProvider(mf.getSchema());
+                    UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), mf.getSchema());
+                    if (schema == null)
+                    {
+                        errors.reject(ERROR_MSG, "No measure schema found for " + mf.getSchema());
+                        return null;
+                    }
+                    VisualizationProvider provider = schema.createVisualizationProvider();
                     if (provider == null)
                     {
-                        errors.reject(ERROR_MSG, "No measure provider found for schema " + mf.getSchema());
+                        errors.reject(ERROR_MSG, "No measure provider found for schema " + schema.getSchemaPath());
                         return null;
                     }
 
@@ -486,9 +489,9 @@ public class VisualizationController extends SpringActionController
                 for (VisualizationProvider provider : createVisualizationProviders().values())
                 {
                     if (form.isDateMeasures())
-                        measures.putAll(provider.getDateMeasures(getViewContext(), QueryType.all));
+                        measures.putAll(provider.getDateMeasures(getViewContext(), VisualizationProvider.QueryType.all));
                     else
-                        measures.putAll(provider.getMeasures(getViewContext(), QueryType.all));
+                        measures.putAll(provider.getMeasures(getViewContext(), VisualizationProvider.QueryType.all));
                 }
             }
 
@@ -572,10 +575,16 @@ public class VisualizationController extends SpringActionController
             ApiSimpleResponse resp = new ApiSimpleResponse();
             if (form.getSchemaName() != null && form.getQueryName() != null)
             {
-                VisualizationProvider provider = createVisualizationProvider(form.getSchemaName());
+                UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
+                if (schema == null)
+                {
+                    errors.reject(ERROR_MSG, "No measure schema found for " + form.getSchemaName());
+                    return null;
+                }
+                VisualizationProvider provider = schema.createVisualizationProvider();
                 if (provider == null)
                 {
-                    errors.reject(ERROR_MSG, "No measure provider found for schema " + form.getSchemaName());
+                    errors.reject(ERROR_MSG, "No measure provider found for schema " + schema.getSchemaPath());
                     return null;
                 }
                 Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> dimensions = provider.getDimensions(getViewContext(), form.getQueryName());
@@ -776,7 +785,7 @@ public class VisualizationController extends SpringActionController
             {
                 sql = sqlGenerator.getSQL();
             }
-            catch (VisualizationSQLGenerator.GenerationException e)
+            catch (SQLGenerationException e)
             {
                 errors.reject(ERROR_MSG, e.getMessage());
                 _log.warn("Unable to generate visualization SQL. " + e.getMessage());
@@ -862,10 +871,16 @@ public class VisualizationController extends SpringActionController
                 for (String filter : form.getFilters())
                 {
                     MeasureFilter mf = new MeasureFilter(filter);
-                    VisualizationProvider provider = createVisualizationProvider(mf.getSchema());
+                    UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), mf.getSchema());
+                    if (schema == null)
+                    {
+                        errors.reject(ERROR_MSG, "No measure schema found for " + form.getSchemaName());
+                        return null;
+                    }
+                    VisualizationProvider provider = schema.createVisualizationProvider();
                     if (provider == null)
                     {
-                        errors.reject(ERROR_MSG, "No measure provider found for schema " + mf.getSchema());
+                        errors.reject(ERROR_MSG, "No measure provider found for schema " + schema.getSchemaPath());
                         return null;
                     }
                     measures.putAll(provider.getZeroDateMeasures(getViewContext(), mf.getQueryType()));
@@ -875,7 +890,7 @@ public class VisualizationController extends SpringActionController
             {
                 // get all tables in this container
                 for (VisualizationProvider provider : createVisualizationProviders().values())
-                    measures.putAll(provider.getZeroDateMeasures(getViewContext(), QueryType.all));
+                    measures.putAll(provider.getZeroDateMeasures(getViewContext(), VisualizationProvider.QueryType.all));
             }
 
             List<Map<String, Object>> measuresJSON = getColumnResponse(measures);

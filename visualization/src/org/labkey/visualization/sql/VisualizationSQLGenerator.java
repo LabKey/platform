@@ -27,12 +27,20 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.visualization.IVisualizationSourceQuery;
+import org.labkey.api.visualization.SQLGenerationException;
+import org.labkey.api.visualization.VisualizationAggregateColumn;
+import org.labkey.api.visualization.VisualizationIntervalColumn;
+import org.labkey.api.visualization.VisualizationProvider;
+import org.labkey.api.visualization.VisualizationSourceColumn;
+import org.labkey.api.visualization.VisualizationSourceQuery;
 import org.labkey.visualization.VisualizationController;
 
 import java.util.*;
@@ -43,18 +51,6 @@ import java.util.*;
  */
 public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 {
-    public static class GenerationException extends Exception
-    {
-        public GenerationException(String message)
-        {
-            super(message);
-        }
-
-        public GenerationException(String message, Throwable cause)
-        {
-            super(message, cause);
-        }
-    }
 
     private Map<String, VisualizationSourceQuery> _sourceQueries = new LinkedHashMap<>();
     private Map<String, VisualizationIntervalColumn> _intervals = new HashMap<>();
@@ -77,23 +73,26 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         return _viewContext;
     }
 
-    public static enum ChartType
-    {
-        TIME_DATEBASED,
-        TIME_VISITBASED
-    }
-
 
     private Map<String, VisualizationProvider> _providers = new CaseInsensitiveHashMap<>();
 
-    public VisualizationProvider ensureVisualizationProvider(String schema, ChartType type)
+    public VisualizationProvider ensureVisualizationProvider(String schemaName, VisualizationProvider.ChartType type)
     {
-        VisualizationProvider provider = _providers.get(schema);
+        VisualizationProvider provider = _providers.get(schemaName);
         if (provider == null)
         {
-            provider = VisualizationController.createVisualizationProvider(schema);
+            UserSchema userSchema = QueryService.get().getUserSchema(_viewContext.getUser(), _viewContext.getContainer(), schemaName);
+            if (userSchema == null)
+            {
+                throw new IllegalArgumentException("No such schema: " + schemaName);
+            }
+            provider = userSchema.createVisualizationProvider();
+            if (provider == null)
+            {
+                throw new IllegalArgumentException("No provider available for schema: " + userSchema.getSchemaPath());
+            }
             provider.configure(type);
-            _providers.put(schema, provider);
+            _providers.put(schemaName, provider);
         }
         else
         {
@@ -160,13 +159,13 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                 }
 
                 Object timeAxis = measureInfo.get("time");
-                ChartType type;
+                VisualizationProvider.ChartType type;
                 if (timeAxis instanceof String)
                 {
                     if ("date".equalsIgnoreCase((String) timeAxis))
-                        type = ChartType.TIME_DATEBASED;
+                        type = VisualizationProvider.ChartType.TIME_DATEBASED;
                     else if ("visit".equalsIgnoreCase((String) timeAxis))
-                        type = ChartType.TIME_VISITBASED;
+                        type = VisualizationProvider.ChartType.TIME_VISITBASED;
                     else
                         throw new IllegalArgumentException("Unknown time value: " + timeAxis);
                 }
@@ -333,7 +332,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         return query;
     }
 
-    public String getSQL() throws VisualizationSQLGenerator.GenerationException
+    public String getSQL() throws SQLGenerationException
     {
         Set<IVisualizationSourceQuery> outerJoinQueries = new LinkedHashSet<>();
         Set<VisualizationSourceQuery> innerJoinQueries = new LinkedHashSet<>();
@@ -388,7 +387,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     }
 
     private String wrapInGroupBy(IVisualizationSourceQuery joinQuery, List<IVisualizationSourceQuery> queries, String sql)
-            throws GenerationException
+            throws SQLGenerationException
     {
         Map<String, Set<VisualizationSourceColumn>> columnAliases = getColumnMapping(_columnFactory, queries);
 
@@ -494,7 +493,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
     public String getSQL(IVisualizationSourceQuery parentQuery, VisualizationSourceColumn.Factory factory,
                                 Collection<IVisualizationSourceQuery> queries, List<VisualizationIntervalColumn> intervals,
-                                String joinOperator, boolean includeOrderBys, boolean hasRowLimit) throws VisualizationSQLGenerator.GenerationException
+                                String joinOperator, boolean includeOrderBys, boolean hasRowLimit) throws SQLGenerationException
     {
         // Reorder the queries in case one can join to the other, but not the reverse. For example,
         // we can join from a standard particiapnt visit/date dataset to a demographic dataset, but not the reverse.

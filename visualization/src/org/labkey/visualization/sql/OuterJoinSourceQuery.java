@@ -18,6 +18,12 @@ package org.labkey.visualization.sql;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
+import org.labkey.api.visualization.IVisualizationSourceQuery;
+import org.labkey.api.visualization.SQLGenerationException;
+import org.labkey.api.visualization.VisualizationAggregateColumn;
+import org.labkey.api.visualization.VisualizationIntervalColumn;
+import org.labkey.api.visualization.VisualizationSourceColumn;
+import org.labkey.api.visualization.VisualizationSourceQuery;
 
 import java.util.*;
 
@@ -53,7 +59,7 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
     }
 
     @Override
-    public String getSQL(VisualizationSourceColumn.Factory factory) throws VisualizationSQLGenerator.GenerationException
+    public String getSQL(VisualizationSourceColumn.Factory factory) throws SQLGenerationException
     {
         return _generator.getSQL(this, factory, _queries, Collections.<VisualizationIntervalColumn>emptyList(), "FULL OUTER JOIN", false, _hasRowLimit);
     }

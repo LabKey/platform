@@ -3876,6 +3876,7 @@ study/src/org/labkey/study/visitmanager/AbsoluteDateVisitManager.java -text
 study/src/org/labkey/study/visitmanager/RelativeDateVisitManager.java -text
 study/src/org/labkey/study/visitmanager/SequenceVisitManager.java -text
 study/src/org/labkey/study/visitmanager/VisitManager.java -text
+study/src/org/labkey/study/visualization/StudyVisualizationProvider.java -text
 study/src/org/labkey/study/writer/AbstractContext.java -text
 study/src/org/labkey/study/writer/AbstractSpecimenWriter.java -text
 study/src/org/labkey/study/writer/AssayDatasetWriter.java -text
@@ -4255,15 +4256,8 @@ visualization/src/org/labkey/visualization/report/VisualizationUIProvider.java -
 visualization/src/org/labkey/visualization/report/box_plot.png -text
 visualization/src/org/labkey/visualization/report/scatter_plot.png -text
 visualization/src/org/labkey/visualization/report/timechart.png -text
-visualization/src/org/labkey/visualization/sql/IVisualizationSourceQuery.java -text
 visualization/src/org/labkey/visualization/sql/OuterJoinSourceQuery.java -text
-visualization/src/org/labkey/visualization/sql/StudyVisualizationProvider.java -text
-visualization/src/org/labkey/visualization/sql/VisualizationAggregateColumn.java -text
-visualization/src/org/labkey/visualization/sql/VisualizationIntervalColumn.java -text
-visualization/src/org/labkey/visualization/sql/VisualizationProvider.java -text
 visualization/src/org/labkey/visualization/sql/VisualizationSQLGenerator.java -text
-visualization/src/org/labkey/visualization/sql/VisualizationSourceColumn.java -text
-visualization/src/org/labkey/visualization/sql/VisualizationSourceQuery.java -text
 visualization/src/org/labkey/visualization/views/genericChartWizard.jsp -text
 visualization/src/org/labkey/visualization/views/timeChartWizard.jsp -text
 visualization/webapp/visualization/report/box_plot.gif -text

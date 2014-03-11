@@ -17,7 +17,6 @@
 package org.labkey.visualization;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.reports.ReportService;

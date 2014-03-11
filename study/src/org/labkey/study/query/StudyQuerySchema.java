@@ -43,6 +43,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
@@ -69,6 +70,7 @@ import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
 import org.labkey.study.query.studydesign.StudyTreatmentProductTable;
 import org.labkey.study.query.studydesign.StudyTreatmentTable;
 import org.labkey.study.query.studydesign.StudyTreatmentVisitMapTable;
+import org.labkey.study.visualization.StudyVisualizationProvider;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
@@ -825,6 +827,12 @@ public class StudyQuerySchema extends UserSchema
         return null;
     }
 
+    @Nullable
+    @Override
+    public VisualizationProvider createVisualizationProvider()
+    {
+        return new StudyVisualizationProvider();
+    }
 
     @Override
     public NavTree getSchemaBrowserLinks(User user)

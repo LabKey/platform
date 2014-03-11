@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.visualization.sql;
+package org.labkey.study.visualization;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.ColumnInfo;
@@ -26,7 +26,11 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
-import org.labkey.visualization.VisualizationController;
+import org.labkey.api.visualization.IVisualizationSourceQuery;
+import org.labkey.api.visualization.VisualizationIntervalColumn;
+import org.labkey.api.visualization.VisualizationProvider;
+import org.labkey.api.visualization.VisualizationSourceColumn;
+import org.labkey.api.visualization.VisualizationSourceQuery;
 
 import java.util.*;
 
@@ -44,7 +48,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
     @Override
     public void addExtraSelectColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery query)
     {
-        if (getType() == VisualizationSQLGenerator.ChartType.TIME_VISITBASED)
+        if (getType() == ChartType.TIME_VISITBASED)
         {
             // add the visit, label, and display order to the select list
             String subjectNounSingular = StudyService.get().getSubjectNounSingular(query.getContainer());
@@ -83,7 +87,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
         Container container = joinQuery.getContainer();
         String subjectColumnName = StudyService.get().getSubjectNounSingular(container);
 
-        if (getType() == VisualizationSQLGenerator.ChartType.TIME_VISITBASED)
+        if (getType() == ChartType.TIME_VISITBASED)
         {
             for (String s : Arrays.asList("Visit/Visit","Visit/Visit/DisplayOrder","Visit/Visit/Label"))
             {
@@ -147,7 +151,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
     private VisualizationSourceColumn getVisitJoinColumn(VisualizationSourceColumn.Factory factory, IVisualizationSourceQuery query, String subjectNounSingular)
     {
         String colName = subjectNounSingular + "Visit/";
-        colName += (getType() == VisualizationSQLGenerator.ChartType.TIME_VISITBASED ? "sequencenum" : "VisitDate");
+        colName += (getType() == ChartType.TIME_VISITBASED ? "sequencenum" : "VisitDate");
         return factory.create(query.getSchema(), query.getQueryName(), colName, true);
     }
 
@@ -231,7 +235,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
     }
 
     @Override
-    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getZeroDateMeasures(ViewContext context, VisualizationController.QueryType queryType)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getZeroDateMeasures(ViewContext context, QueryType queryType)
     {
         // For studies, valid zero date columns are found in demographic datasets only:
         Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = new HashMap<>();
@@ -281,9 +285,9 @@ public class StudyVisualizationProvider extends VisualizationProvider
     }
 
     @Override
-    protected Map<QueryDefinition, TableInfo> getQueryDefinitions(ViewContext context, VisualizationController.QueryType queryType, ColumnMatchType matchType)
+    protected Map<QueryDefinition, TableInfo> getQueryDefinitions(ViewContext context, QueryType queryType, ColumnMatchType matchType)
     {
-        if (queryType == VisualizationController.QueryType.datasets)
+        if (queryType == QueryType.datasets)
         {
             Map<QueryDefinition, TableInfo> queries = new HashMap<>();
             Study study = StudyService.get().getStudy(context.getContainer());
@@ -299,9 +303,9 @@ public class StudyVisualizationProvider extends VisualizationProvider
     /**
      * All columns for a study if builtIn types were requested would be constrained to datasets only
      */
-    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getAllColumns(ViewContext context, VisualizationController.QueryType queryType, boolean showHidden)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getAllColumns(ViewContext context, QueryType queryType, boolean showHidden)
     {
-        if (queryType == VisualizationController.QueryType.builtIn || queryType == VisualizationController.QueryType.datasets)
+        if (queryType == QueryType.builtIn || queryType == QueryType.datasets)
         {
             Map<QueryDefinition, TableInfo> queries = new HashMap<>();
             Study study = StudyService.get().getStudy(context.getContainer());
@@ -310,7 +314,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
             {
                 addDatasetQueryDefinitions(context, schema, study, queries);
 
-                if (queryType == VisualizationController.QueryType.builtIn)
+                if (queryType == QueryType.builtIn)
                 {
                     for (String name : schema.getTableAndQueryNames(true))
                     {
