@@ -26,8 +26,11 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    String delimGUID = GUID.makeGUID();
-    String quoteGUID = GUID.makeGUID();
+    String guid = GUID.makeGUID();
+    String delimGUID = "delim_" + guid;
+    String quoteGUID = "quote_" + guid;
+    String exportSelectedId = "exportSelected_" + guid;
+    String exportButtonId = "export_" + guid;
 
     Map<String, String> delimiterMap = new LinkedHashMap<>();
     delimiterMap.put(TSVWriter.DELIM.TAB.name(), TSVWriter.DELIM.TAB.text);
@@ -40,19 +43,13 @@
     quoteMap.put(TSVWriter.QUOTE.SINGLE.name(), "Single (" + TSVWriter.QUOTE.SINGLE.quoteChar + ")");
 
     QueryView.TextExportOptionsBean model = (QueryView.TextExportOptionsBean)HttpView.currentModel();
-    ActionURL url = model.getTsvURL();
-    String dataRegionName = model.getDataRegionName();
-    String onClickScript = "window.location='" + url + "&delim=' + document.getElementById('" + delimGUID + "').value + " +
-            "'&quote=' + document.getElementById('" + quoteGUID + "').value;" +
-            "LABKEY.DataRegions['"  + dataRegionName +"'].addMessage({html:'<div class=\"labkey-message\"><strong>" +
-            "Text export started.</strong></div>', part: 'textExport', hideButtonPanel: true, duration:5000}); " +
-            "return false;";
+    boolean hasSelected = model.hasSelected(getViewContext());
 %>
 <table class="labkey-export-tab-contents">
     <tr>
         <td>Separator:</td>
         <td>
-            <select id="<%=delimGUID%>" name="delim">
+            <select id="<%=text(delimGUID)%>" name="delim">
                 <labkey:options value="<%=TSVWriter.DELIM.TAB%>" map="<%=delimiterMap%>" />
             </select>
         </td>
@@ -60,14 +57,90 @@
     <tr>
         <td>Quote:</td>
         <td>
-            <select id="<%=quoteGUID%>" name="quote">
+            <select id="<%=text(quoteGUID)%>" name="quote">
                 <labkey:options value="<%=TSVWriter.QUOTE.DOUBLE%>" map="<%=quoteMap%>" />
             </select>
         </td>
     </tr>
+    <tr><td colspan="2"></td></tr>
+    <tr>
+        <td valign="center" colspan="2">
+            <input type="checkbox" id="<%=h(exportSelectedId)%>" value="exportSelected" <%=checked(hasSelected)%> <%=disabled(!hasSelected)%>/>
+            <label class="<%=text(hasSelected ? "" : "labkey-disabled")%>" id="<%=h(exportSelectedId + "_label")%>" for="<%=h(exportSelectedId)%>">Export selected rows</label>
+        </td>
+    </tr>
     <tr>
         <td colspan=2>
-            <%= PageFlowUtil.button("Export to Text").onClick(onClickScript).attributes("rel=\"nofollow\"") %>
+            <%= button("Export to Text").id(exportButtonId) %>
         </td>
     </tr>
 </table>
+<script>
+Ext.onReady(function () {
+    var delimEl = document.getElementById("<%=h(delimGUID)%>");
+    var quoteEl = document.getElementById("<%=h(quoteGUID)%>");
+
+    var exportSelectedEl = document.getElementById("<%=h(exportSelectedId)%>");
+    var exportSelectedLabelEl = document.getElementById("<%=h(exportSelectedId + "_label")%>");
+
+    <%-- CONSIDER: Add a universal export function to LABKEY.DataRegion clientapi --%>
+    function doTsvExport()
+    {
+        var dr = LABKEY.DataRegions[<%=PageFlowUtil.jsString(model.getDataRegionName())%>];
+
+        var selectedParam = '<%=text(QueryView.DATAREGIONNAME_DEFAULT)%>.showRows=SELECTED';
+        var url = <%=PageFlowUtil.jsString(model.getTsvURL().toString())%>;
+        if (exportSelectedEl.checked) {
+          if (url.indexOf('<%=text(QueryView.DATAREGIONNAME_DEFAULT)%>.showRows=ALL') == -1) {
+            url = url+'&'+selectedParam;
+          } else {
+            url = url.replace('<%=text(QueryView.DATAREGIONNAME_DEFAULT)%>.showRows=ALL', selectedParam);
+          }
+          url = url+'&<%=text(QueryView.DATAREGIONNAME_DEFAULT)%>.selectionKey=' + dr.selectionKey;
+        }
+
+        url = url + '&delim=' + delimEl.value + '&quote=' + quoteEl.value;
+
+        dr.addMessage({
+            html: '<div class=\"labkey-message\"><strong>Text export started.</strong></div>',
+            part: 'excelExport', hideButtonPanel: true, duration:5000
+        });
+
+        window.location = url;
+        return false;
+    }
+
+    function enableExportSelected()
+    {
+        if (exportSelectedEl.disabled) {
+            exportSelectedEl.checked = true;
+            exportSelectedEl.disabled = false;
+            exportSelectedLabelEl.className = "";
+        }
+    }
+
+    function disableExportSelected()
+    {
+        exportSelectedEl.checked = false;
+        exportSelectedEl.disabled = true;
+        exportSelectedLabelEl.className = "labkey-disabled";
+    }
+
+    var exportButtonEl = document.getElementById("<%=h(exportButtonId)%>");
+    if (exportButtonEl.addEventListener)
+        exportButtonEl.addEventListener('click', doTsvExport, false);
+    else if (exportButtonEl.attachEvent)
+        exportButtonEl.addEventListener('onclick', doTsvExport);
+
+    Ext.ComponentMgr.onAvailable(<%=PageFlowUtil.jsString(model.getDataRegionName())%>, function (dr) {
+        dr.on('selectchange', function (dr, selectedCount) {
+            if (selectedCount > 0) {
+                enableExportSelected();
+            } else {
+                disableExportSelected();
+            }
+        });
+    });
+});
+</script>
+

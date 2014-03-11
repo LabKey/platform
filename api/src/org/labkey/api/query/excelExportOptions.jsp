@@ -19,25 +19,18 @@
 <%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.util.GUID" %>
+<%@ page import="org.json.JSONObject" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     QueryView.ExcelExportOptionsBean model = (QueryView.ExcelExportOptionsBean) HttpView.currentModel();
-    String xlsxGUID = GUID.makeGUID();
-    String xlsGUID = GUID.makeGUID();
-    // Sometimes the GET URL gets too long, so use a POST instead. We have to create a separate <form> since we might
-    // already be inside a form for the DataRegion itself.
-    String onClickScript = "var formText; " +
-            "if (document.getElementById('" + xlsGUID + "').checked) { formText = " + PageFlowUtil.jsString(model.convertToForm(model.getXlsURL())) + ";} " +
-            "else if (document.getElementById('" + xlsxGUID + "').checked) { formText = " + PageFlowUtil.jsString(model.convertToForm(model.getXlsxURL())) + ";} " +
-            // Excel Web Query doesn't work with POSTs, so always do it as a GET.  It also is not supported for all tables
-            (model.getIqyURL() == null ? "" :
-                "else { window.location = " + PageFlowUtil.jsString(model.getIqyURL().toString()) + "; return false; } "
-            ) +
-            "LABKEY.DataRegions['" + model.getDataRegionName() + "'].addMessage({html:'<div class=\"labkey-message\"><strong>" +
-            "Excel export started.</strong></div>', part: 'excelExport', hideButtonPanel: true, duration:5000}); " +
-            "var newForm = LABKEY.ExtAdapter.DomHelper.append(document.getElementsByTagName('body')[0], formText); " +
-            "newForm.submit();" +
-            "return false;";
+    String guid = GUID.makeGUID();
+    String xlsxGUID = "xlsx_" + guid;
+    String xlsGUID = "xls_" + guid;
+    String iqyGUID = "iqy_" + guid;
+    String exportSelectedId = "exportSelected_" + guid;
+    String exportButtonId = "export_" + guid;
+
+    boolean hasSelected = model.hasSelected(getViewContext());
 %>
 <table class="labkey-export-tab-contents">
     <tr>
@@ -50,14 +43,115 @@
     </tr>
     <% if (model.getIqyURL() != null) { %>
         <tr>
-            <td valign="center"><input type="radio" id="excelWebQuery" name="excelExportType" /></td>
-            <td valign="center"><label for="excelWebQuery">Refreshable Web Query (.iqy)</label></td>
+            <td valign="center"><input type="radio" id="<%=h(iqyGUID)%>" name="excelExportType"/></td>
+            <td valign="center"><label for="<%=h(iqyGUID)%>">Refreshable Web Query (.iqy)</label></td>
         </tr>
     <% } %>
+    <tr><td colspan="2"></td></tr>
+    <tr>
+        <td valign="center"><input type="checkbox" id="<%=h(exportSelectedId)%>" value="exportSelected" <%=checked(hasSelected)%> <%=disabled(!hasSelected)%>/></td>
+        <td valign="center"><label class="<%=text(hasSelected ? "" : "labkey-disabled")%>" id="<%=h(exportSelectedId + "_label")%>" for="<%=h(exportSelectedId)%>">Export selected rows</label></td>
+    </tr>
     <tr>
         <td colspan="2">
-            <%= button("Export to Excel").href(model.getXlsURL()).onClick(onClickScript) %>
+            <%= button("Export to Excel").id(exportButtonId) %>
         </td>
     </tr>
 </table>
+
+<script type="text/javascript">
+Ext.onReady(function () {
+    var xlsExportEl = document.getElementById("<%=h(xlsGUID)%>");
+    var xlsxExportEl = document.getElementById("<%=h(xlsxGUID)%>");
+    var iqyExportEl = document.getElementById("<%=h(iqyGUID)%>");
+
+    var exportSelectedEl = document.getElementById("<%=h(exportSelectedId)%>");
+    var exportSelectedLabelEl = document.getElementById("<%=h(exportSelectedId + "_label")%>");
+
+    <%-- CONSIDER: Add a universal export function to LABKEY.DataRegion clientapi --%>
+    function doExcelExport()
+    {
+        var dr = LABKEY.DataRegions[<%=PageFlowUtil.jsString(model.getDataRegionName())%>];
+        var exportUrl;
+        var exportParams;
+
+        if (xlsxExportEl.checked) {
+            exportUrl = <%=PageFlowUtil.jsString(model.getXlsxURL().getFullParsedPath().toString())%>;
+            exportParams = <%=text( new JSONObject(model.getXlsxURL().getParameterMap()).toString(2) )%>;
+        }
+        else if (xlsExportEl.checked) {
+            exportUrl = <%=PageFlowUtil.jsString(model.getXlsURL().getFullParsedPath().toString())%>;
+            exportParams = <%=text( new JSONObject(model.getXlsURL().getParameterMap()).toString(2) )%>;
+        <% if (model.getIqyURL() != null) { %>
+        } else if (iqyExportEl.checked) {
+            <%-- Excel Web Query doesn't work with POSTs, so always do it as a GET.  It also is not supported for all tables. --%>
+            window.location = <%=PageFlowUtil.jsString(model.getIqyURL().toString())%>;
+            return false;
+        <% } %>
+        }
+
+        if (!exportSelectedEl.disabled && exportSelectedEl.checked) {
+            // Replace 'showRows=ALL' parameter with 'showRows=SELECTED'
+            exportParams['<%=text(QueryView.DATAREGIONNAME_DEFAULT)%>.showRows'] = 'SELECTED';
+            exportParams['<%=text(QueryView.DATAREGIONNAME_DEFAULT)%>.selectionKey'] = dr.selectionKey;
+        }
+
+        dr.addMessage({
+            html: '<div class=\"labkey-message\"><strong>Excel export started.</strong></div>',
+            part: 'excelExport', hideButtonPanel: true, duration:5000
+        });
+
+        <%-- Sometimes the GET URL gets too long, so use a POST instead. We have to create a separate <form> since we might --%>
+        <%-- already be inside a form for the DataRegion itself. --%>
+        var newForm = document.createElement('form');
+        LABKEY.Ajax.request({
+            url: exportUrl,
+            method: 'POST',
+            form: newForm,
+            isUpload: true,
+            params: exportParams,
+            callback: function (options, success, response) {
+                if (!success) {
+                    dr.showErrorMessage("Error exporting to Excel.");
+                }
+            }
+        });
+
+        return false;
+    }
+
+    function enableExportSelected()
+    {
+        if (exportSelectedEl.disabled) {
+            exportSelectedEl.checked = true;
+            exportSelectedEl.disabled = false;
+            exportSelectedLabelEl.className = "";
+        }
+    }
+
+    // TODO: disable exportSelectedEl when iqy is chosen
+    function disableExportSelected()
+    {
+        exportSelectedEl.checked = false;
+        exportSelectedEl.disabled = true;
+        exportSelectedLabelEl.className = "labkey-disabled";
+    }
+
+    var exportButtonEl = document.getElementById("<%=h(exportButtonId)%>");
+    if (exportButtonEl.addEventListener)
+        exportButtonEl.addEventListener('click', doExcelExport, false);
+    else if (exportButtonEl.attachEvent)
+        exportButtonEl.addEventListener('onclick', doExcelExport);
+
+    Ext.ComponentMgr.onAvailable(<%=PageFlowUtil.jsString(model.getDataRegionName())%>, function (dr) {
+        dr.on('selectchange', function (dr, selectedCount) {
+            if (selectedCount > 0) {
+                enableExportSelected();
+            } else {
+                disableExportSelected();
+            }
+        });
+    });
+});
+</script>
 

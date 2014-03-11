@@ -19,6 +19,7 @@ public class Button
     private String text; // required
     private String href;
     private String onClick;
+    private String id;
     private String attributes;
     private boolean disableOnClick;
     private boolean enabled = true;
@@ -31,6 +32,7 @@ public class Button
         this.textAsHTML = builder.textAsHTML;
         this.href = builder.href;
         this.onClick = builder.onClick;
+        this.id = builder.id;
         this.attributes = builder.attributes;
         this.disableOnClick = builder.disableOnClick;
         this.enabled = builder.enabled;
@@ -55,6 +57,11 @@ public class Button
     public String getOnClick()
     {
         return onClick;
+    }
+
+    public String getId()
+    {
+        return id;
     }
 
     public String getAttributes()
@@ -123,17 +130,22 @@ public class Button
     public String toString()
     {
         StringBuilder sb = new StringBuilder();
-        String id = GUID.makeGUID();
+        String submitId = GUID.makeGUID();
 
         if (isSubmit())
         {
             sb.append("<input type=\"submit\" tab-index=\"-1\" style=\"position: absolute; left: -9999px; width: 1px; height: 1px;\" ");
-            sb.append("id=\"").append(id).append("\"/>");
+            sb.append("id=\"").append(submitId).append("\"/>");
         }
 
         // enabled
-        sb.append("<a class=\"").append(isEnabled() ? CLS : DISABLEDCLS).append("\"");
+        sb.append("<a class=\"").append(isEnabled() ? CLS : DISABLEDCLS).append("\" ");
         //-- enabled
+
+        // id
+        if (getId() != null)
+            sb.append("id=\"").append(PageFlowUtil.filter(getId())).append("\" ");
+        // -- id
 
         // href
         if (getHref() != null)
@@ -141,7 +153,7 @@ public class Button
         //-- href
 
         // onclick
-        sb.append("onClick=\"").append(PageFlowUtil.filter(generateOnClick(id))).append("\" ");
+        sb.append("onClick=\"").append(PageFlowUtil.filter(generateOnClick(submitId))).append("\" ");
         //-- onclick
 
         // attributes
@@ -157,6 +169,7 @@ public class Button
     }
 
     public static class ButtonBuilder {
+        private String id;
         private String text;
         private String href;
         private String onClick;
@@ -204,6 +217,12 @@ public class Button
         public ButtonBuilder onClick(String onClick)
         {
             this.onClick = onClick;
+            return this;
+        }
+
+        public ButtonBuilder id(String id)
+        {
+            this.id = id;
             return this;
         }
 

@@ -543,6 +543,7 @@ public class QueryView extends WebPartView<Object>
                         }
                     }
                 }
+                // NOTE: Default export will export all rows, but the user may choose to export ShowRows.SELECTED in the export panel
                 ret.deleteParameter(DATAREGIONNAME_DEFAULT + ".maxRows");
                 ret.replaceParameter(DATAREGIONNAME_DEFAULT + ".showRows", ShowRows.ALL.toString());
                 break;
@@ -888,19 +889,47 @@ public class QueryView extends WebPartView<Object>
         _linkTarget = linkTarget;
     }
 
-    public static class ExcelExportOptionsBean
+    public abstract static class ExportOptionsBean
+    {
+        private final String _dataRegionName;
+        private final String _selectionKey;
+
+        protected ExportOptionsBean(String dataRegionName, String selectionKey)
+        {
+            _dataRegionName = dataRegionName;
+            _selectionKey = selectionKey;
+        }
+
+        public String getDataRegionName()
+        {
+            return _dataRegionName;
+        }
+
+        public String getSelectionKey()
+        {
+            return _selectionKey;
+        }
+
+        public boolean hasSelected(ViewContext context)
+        {
+            Set<String> selected = DataRegionSelection.getSelected(context, _selectionKey, true, false);
+            return !selected.isEmpty();
+        }
+
+    }
+
+    public static class ExcelExportOptionsBean extends ExportOptionsBean
     {
         private final ActionURL _xlsURL;
         private final ActionURL _xlsxURL;
         private final ActionURL _iqyURL;
-        private final String _dataRegionName;
 
-        public ExcelExportOptionsBean(ActionURL xlsURL, ActionURL xlsxURL, ActionURL iqyURL, String dataRegionName)
+        public ExcelExportOptionsBean(String dataRegionName, String selectionKey, ActionURL xlsURL, ActionURL xlsxURL, ActionURL iqyURL)
         {
+            super(dataRegionName, selectionKey);
             _xlsURL = xlsURL;
             _xlsxURL = xlsxURL;
             _iqyURL = iqyURL;
-            _dataRegionName = dataRegionName;
         }
 
         public ActionURL getXlsxURL()
@@ -918,34 +947,16 @@ public class QueryView extends WebPartView<Object>
             return _xlsURL;
         }
 
-        public String getDataRegionName()
-        {
-            return _dataRegionName;
-        }
-
-        public String convertToForm(ActionURL url)
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.append("<form method='POST' action='" + PageFlowUtil.encodePath(url.getFullParsedPath().toString()) + "' >");
-            for (Pair<String, String> param : url.getParameters())
-            {
-                sb.append("<input name=\"" + PageFlowUtil.filter(param.first) + "\" type=\"hidden\" value=\"" + PageFlowUtil.filter(param.second) + "\" />");
-            }
-            sb.append("</form>");
-
-            return sb.toString();
-        }
     }
 
-    public static class TextExportOptionsBean
+    public static class TextExportOptionsBean extends ExportOptionsBean
     {
         private final ActionURL _tsvURL;
-        private final String _dataRegionName;
 
-        public TextExportOptionsBean(ActionURL tsvURL, String dataRegionName)
+        public TextExportOptionsBean(String dataRegionName, String selectionKey, ActionURL tsvURL)
         {
+            super(dataRegionName, selectionKey);
             _tsvURL = tsvURL;
-            _dataRegionName = dataRegionName;
         }
 
         public ActionURL getTsvURL()
@@ -953,20 +964,16 @@ public class QueryView extends WebPartView<Object>
             return _tsvURL;
         }
 
-        public String getDataRegionName()
-        {
-            return _dataRegionName;
-        }
     }
 
     public PanelButton createExportButton(boolean exportAsWebPage)
     {
         PanelButton exportButton = new PanelButton("Export", getDataRegionName());
         ExcelExportOptionsBean excelBean = new ExcelExportOptionsBean(
-                urlFor(QueryAction.exportRowsExcel),
+                getDataRegionName(), getSettings().getSelectionKey(), urlFor(QueryAction.exportRowsExcel),
                 urlFor(QueryAction.exportRowsXLSX),
-                _allowExportExternalQuery ? urlFor(QueryAction.excelWebQueryDefinition) : null,
-                getDataRegionName());
+                _allowExportExternalQuery ? urlFor(QueryAction.excelWebQueryDefinition) : null
+        );
         exportButton.addSubPanel("Excel", new JspView<>("/org/labkey/api/query/excelExportOptions.jsp", excelBean));
 
         ActionURL tsvURL = urlFor(QueryAction.exportRowsTsv);
@@ -974,7 +981,7 @@ public class QueryView extends WebPartView<Object>
         {
             tsvURL.replaceParameter("exportAsWebPage", "true");
         }
-        TextExportOptionsBean textBean = new TextExportOptionsBean(tsvURL, getDataRegionName());
+        TextExportOptionsBean textBean = new TextExportOptionsBean(getDataRegionName(), getSettings().getSelectionKey(), tsvURL);
         exportButton.addSubPanel("Text", new JspView<>("/org/labkey/api/query/textExportOptions.jsp", textBean));
 
         if (_allowExportExternalQuery)
@@ -1899,7 +1906,7 @@ public class QueryView extends WebPartView<Object>
         _initializeButtonBar = false;
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
-        getSettings().setShowRows(ShowRows.ALL);
+        //getSettings().setShowRows(ShowRows.ALL);
         rgn.setAllowAsync(false);
         rgn.setShowPagination(false);
         RenderContext rc = view.getRenderContext();
@@ -2070,8 +2077,13 @@ public class QueryView extends WebPartView<Object>
 
     protected RenderContext configureForExcelExport(ExcelWriter.ExcelDocumentType docType, DataView view, DataRegion rgn)
     {
-        getSettings().setShowRows(ShowRows.PAGINATED);
-        getSettings().setMaxRows(docType.getMaxRows());
+        if (getSettings().getShowRows() == ShowRows.ALL)
+        {
+            // Limit the rows returned based on the document type.
+            // The maxRows setting isn't used unless showRows is PAGINATED.
+            getSettings().setShowRows(ShowRows.PAGINATED);
+            getSettings().setMaxRows(docType.getMaxRows());
+        }
         getSettings().setOffset(Table.NO_OFFSET);
         rgn.setAllowAsync(false);
         RenderContext rc = view.getRenderContext();
