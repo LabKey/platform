@@ -42,7 +42,7 @@ Ext.define('LABKEY.app.controller.State', {
             model : 'LABKEY.app.model.State'
         });
 
-        this.viewController = this.application.getController('Connector');
+        this.viewController = this._getViewController();
         this.views = {};
         if (this.preventRedundantHistory) {
             this.lastAppState = '';
@@ -63,6 +63,10 @@ Ext.define('LABKEY.app.controller.State', {
         }
 
         this.state.load();
+    },
+
+    _getViewController : function() {
+        console.error('Failed to register a view controller.');
     },
 
     /**
