@@ -444,8 +444,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 brush.clear();
                 brush(brushSel);
                 brush.on('brush')();
-                brush.on('brushend')();
             }
+
+            brush.on('brushend')();
         };
 
         yBrushStart = function() {
@@ -486,8 +487,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 brush.clear();
                 brush(brushSel);
                 brush.on('brush')();
-                brush.on('brushend')();
             }
+
+            brush.on('brushend')();
         };
 
         xHandleSel.attr('transform', 'translate(0,' + plot.grid.bottomEdge + ')');
