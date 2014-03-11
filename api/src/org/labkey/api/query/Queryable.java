@@ -21,6 +21,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * Marker to indicate that a static final field can be accessed via a LabKey SQL using the JavaConstant() function.
  * User: matthew
  * Date: 9/17/13
  * Time: 4:47 PM

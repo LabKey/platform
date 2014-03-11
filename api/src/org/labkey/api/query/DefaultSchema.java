@@ -27,6 +27,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.visualization.VisualizationProvider;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -311,4 +312,9 @@ final public class DefaultSchema extends AbstractSchema
         return visitor.visitDefaultSchema(this, path, param);
     }
 
+    @Override
+    public VisualizationProvider createVisualizationProvider()
+    {
+        return null;
+    }
 }

@@ -45,7 +45,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
@@ -61,8 +60,8 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.visualization.GenericChartReport;
-import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.visualization.TimeChartReport;
+import org.labkey.api.writer.ContainerUser;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -760,12 +759,9 @@ public class QueryView extends WebPartView<Object>
 
     protected void populateReportButtonBar(ButtonBar bar)
     {
-//        if (getSettings().getAllowChooseQuery())
-//        {
-            MenuButton queryButton = createQueryPickerButton("Query");
-            queryButton.setVisible(getSettings().getAllowChooseQuery());
-            bar.add(queryButton);
-//        }
+        MenuButton queryButton = createQueryPickerButton("Query");
+        queryButton.setVisible(getSettings().getAllowChooseQuery());
+        bar.add(queryButton);
 
         if (getSettings().getAllowChooseView())
         {
@@ -780,12 +776,9 @@ public class QueryView extends WebPartView<Object>
 
     protected void populateButtonBar(DataView view, ButtonBar bar, boolean exportAsWebPage)
     {
-//        if (getSettings().getAllowChooseQuery())
-//        {
-            MenuButton queryButton = createQueryPickerButton("Query");
-            queryButton.setVisible(getSettings().getAllowChooseQuery());
-            bar.add(queryButton);
-//        }
+        MenuButton queryButton = createQueryPickerButton("Query");
+        queryButton.setVisible(getSettings().getAllowChooseQuery());
+        bar.add(queryButton);
 
         if (getSettings().getAllowChooseView())
         {

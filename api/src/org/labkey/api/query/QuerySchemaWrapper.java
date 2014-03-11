@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.visualization.VisualizationProvider;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -118,6 +119,12 @@ public class QuerySchemaWrapper implements QuerySchema
     public String getDescription()
     {
         return "Contains data tables from the '" + _schema.getName() + "' database schema.";
+    }
+
+    @Override
+    public VisualizationProvider createVisualizationProvider()
+    {
+        return null;
     }
 
     @Override

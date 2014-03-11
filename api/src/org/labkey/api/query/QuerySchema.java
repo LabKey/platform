@@ -20,9 +20,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.visualization.VisualizationProvider;
 
 import java.util.Collection;
 import java.util.Set;
@@ -59,4 +59,8 @@ public interface QuerySchema extends SchemaTreeNode
     public NavTree getSchemaBrowserLinks(User user);
 
     boolean isHidden();
+
+    /** @return the VisualizationProvider to be used for queries in this schema, or null if it's not supported */
+    @Nullable
+    VisualizationProvider createVisualizationProvider();
 }

@@ -1644,10 +1644,17 @@ api/src/org/labkey/api/view/template/menuBar.jsp -text
 api/src/org/labkey/api/view/template/wizardTemplate.jsp -text
 api/src/org/labkey/api/visualization/GenericChartReport.java -text
 api/src/org/labkey/api/visualization/GenericChartReportDescriptor.java -text
+api/src/org/labkey/api/visualization/IVisualizationSourceQuery.java -text
+api/src/org/labkey/api/visualization/SQLGenerationException.java -text
 api/src/org/labkey/api/visualization/SvgThumbnailGenerator.java -text
 api/src/org/labkey/api/visualization/TimeChartReport.java -text
 api/src/org/labkey/api/visualization/TimeChartReportDescriptor.java -text
+api/src/org/labkey/api/visualization/VisualizationAggregateColumn.java -text
+api/src/org/labkey/api/visualization/VisualizationIntervalColumn.java -text
+api/src/org/labkey/api/visualization/VisualizationProvider.java -text
 api/src/org/labkey/api/visualization/VisualizationReportDescriptor.java -text
+api/src/org/labkey/api/visualization/VisualizationSourceColumn.java -text
+api/src/org/labkey/api/visualization/VisualizationSourceQuery.java -text
 api/src/org/labkey/api/visualization/VisualizationUrls.java -text
 api/src/org/labkey/api/webdav/AbstractDocumentResource.java -text
 api/src/org/labkey/api/webdav/AbstractWebdavResource.java -text
