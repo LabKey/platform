@@ -19,6 +19,7 @@ package org.labkey.study.query;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -144,6 +145,15 @@ public class StudyQuerySchema extends UserSchema
         super(SCHEMA_NAME, SCHEMA_DESCRIPTION, user, c, StudySchema.getInstance().getSchema());
         _study = null;
         _mustCheckPermissions = true;
+    }
+
+
+    public static StudyQuerySchema createSchema(StudyImpl study, User user, boolean mustCheckPermissions)
+    {
+        if (study.isDataspaceStudy())
+            return new DataspaceQuerySchema(study, user, mustCheckPermissions);
+        else
+            return new StudyQuerySchema(study, user, mustCheckPermissions);
     }
 
 
@@ -859,6 +869,24 @@ public class StudyQuerySchema extends UserSchema
     public void setDontAliasColumns(boolean dontAliasColumns)
     {
         _dontAliasColumns = dontAliasColumns;
+    }
+
+
+    /** for tables that support container filter, should they turn on support or not */
+    public boolean allowSetContainerFilter()
+    {
+        return true;
+    }
+
+    /** for tables that support container filter, the default container filter in this study */
+    ContainerFilter getDefaultContainerFilter()
+    {
+        return ContainerFilter.CURRENT;
+    }
+
+    public boolean isDataspace()
+    {
+        return false;
     }
 
     @Override

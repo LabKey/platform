@@ -405,7 +405,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     {
         if (_parameters.getBaseCustomViewName() == null)
             return null;
-        StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(_container), _parameters.getUser(), true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(_container), _parameters.getUser(), true);
         QueryDefinition def = QueryService.get().createQueryDefForTable(schema, "SpecimenDetail");
         String customViewName = _parameters.getBaseCustomViewName();
         if (SpecimenVisitReportParameters.DEFAULT_VIEW_ID.equals(customViewName))

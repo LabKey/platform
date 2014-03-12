@@ -55,7 +55,7 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
-        StudyQuerySchema querySchema = new StudyQuerySchema(study, user, true);
+        StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, user, true);
         TableInfo queryTableInfo = querySchema.getTable("StudyProperties");
         Map<String, Object> result = new TableSelector(queryTableInfo).getObject(container.getId(), Map.class);
         return result;

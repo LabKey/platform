@@ -517,7 +517,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
             for (DataSetDefinition def : _datasets)
             {
                 BindException datasetErrors = new NullSafeBindException(def, "dataset");
-                StudyQuerySchema schema = new StudyQuerySchema(getSourceStudy(), user, true);
+                StudyQuerySchema schema = StudyQuerySchema.createSchema(getSourceStudy(), user, true);
                 TableInfo table = def.getTableInfo(user);
                 QueryDefinition queryDef = QueryService.get().createQueryDefForTable(schema, table.getName());
 

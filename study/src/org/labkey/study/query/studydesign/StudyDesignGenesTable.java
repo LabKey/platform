@@ -15,6 +15,7 @@
  */
 package org.labkey.study.query.studydesign;
 
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.StudyQuerySchema;
 
@@ -28,5 +29,11 @@ public class StudyDesignGenesTable extends StudyDesignLookupBaseTable
     {
         super(schema, StudySchema.getInstance().getTableInfoStudyDesignGenes());
         setName("StudyDesignGenes");
+    }
+
+    public StudyDesignGenesTable(StudyQuerySchema schema, ContainerFilter filter)
+    {
+        this(schema);
+        _setContainerFilter(filter);
     }
 }

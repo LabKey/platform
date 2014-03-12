@@ -37,7 +37,7 @@
 
     StudyManager manager = StudyManager.getInstance();
     VisitManager visitManager = manager.getVisitManager(study);
-    Map<VisitMapKey, VisitManager.VisitStatistics> summaryMap = visitManager.getVisitSummary(null, null, Collections.singleton(VisitStatistic.RowCount), true);
+    Map<VisitMapKey, VisitManager.VisitStatistics> summaryMap = visitManager.getVisitSummary(me.getViewContext().getUser(), null, null, Collections.singleton(VisitStatistic.RowCount), true);
     int datasetRowCount = 0;
 
     for (Map.Entry<VisitMapKey, VisitManager.VisitStatistics> e : summaryMap.entrySet())

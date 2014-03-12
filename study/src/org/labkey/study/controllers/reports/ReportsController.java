@@ -900,7 +900,7 @@ public class ReportsController extends BaseStudyController
         private List<String> getTableAndQueryNames(ViewContext context) throws IllegalStateException
         {
             StudyImpl study = getStudyThrowIfNull(context.getContainer());
-            StudyQuerySchema studySchema = new StudyQuerySchema(study, context.getUser(), true);
+            StudyQuerySchema studySchema = StudyQuerySchema.createSchema(study, context.getUser(), true);
             return studySchema.getTableAndQueryNames(true);
         }
 

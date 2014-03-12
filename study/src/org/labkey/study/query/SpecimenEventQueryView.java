@@ -41,7 +41,7 @@ public class SpecimenEventQueryView extends BaseStudyQueryView
     public static SpecimenEventQueryView createView(ViewContext context, Specimen specimen)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
-        StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(study, context.getUser(), true);
         String queryName = "SpecimenEvent";
         QuerySettings qs = schema.getSettings(context, queryName, queryName);
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("VialId"), specimen.getRowId());

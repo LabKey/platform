@@ -65,7 +65,13 @@ public class AssaySpecimenTable extends BaseStudyTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new StudyDesignLabsTable(_userSchema);
+                ContainerFilter cf;
+                if (_userSchema.isDataspace())
+                    cf = ContainerFilter.Type.Project.create(_userSchema.getUser());
+                else
+                    cf = ContainerFilter.Type.Current.create(_userSchema.getUser());
+                StudyDesignLabsTable result = new StudyDesignLabsTable(_userSchema, cf);
+                return result;
             }
         });
         addColumn(labColumn);
@@ -75,7 +81,13 @@ public class AssaySpecimenTable extends BaseStudyTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new StudyDesignSampleTypesTable(_userSchema);
+                ContainerFilter cf;
+                if (_userSchema.isDataspace())
+                    cf = ContainerFilter.Type.Project.create(_userSchema.getUser());
+                else
+                    cf = ContainerFilter.Type.Current.create(_userSchema.getUser()); // TODO, this doesn't seem right
+                StudyDesignSampleTypesTable result = new StudyDesignSampleTypesTable(_userSchema, cf);
+                return result;
             }
         });
         addColumn(sampleTypeColumn);

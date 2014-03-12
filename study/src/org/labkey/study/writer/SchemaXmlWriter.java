@@ -73,7 +73,7 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportCo
         TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
         TablesType tablesXml = tablesDoc.addNewTables();
 
-        StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
 
         for (DataSetDefinition def : definitions)
         {

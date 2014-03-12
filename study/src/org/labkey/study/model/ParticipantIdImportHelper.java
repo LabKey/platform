@@ -124,7 +124,7 @@ public class ParticipantIdImportHelper
     protected HashSet<String> generatePtidHashSet(StudyImpl studyImpl)
     {
         HashSet<String> ptids = new HashSet<>();
-        StudyQuerySchema studySchema = new StudyQuerySchema(studyImpl, _user, true);
+        StudyQuerySchema studySchema = StudyQuerySchema.createSchema(studyImpl, _user, true);
         TableInfo ptidTableInfo = studySchema.getTable(studyImpl.getSubjectNounSingular());
         Map<String, Object>[] tmp_rows = new TableSelector(ptidTableInfo, ImmutableSet.of(studyImpl.getSubjectColumnName()), null, null).getMapArray();
         for (Map<String, Object> row : tmp_rows)

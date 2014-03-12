@@ -70,7 +70,7 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, ImportCo
     {
         writer.println(TYPE_NAME_COLUMN + "\t" + LABEL_COLUMN + "\t" + TYPE_ID_COLUMN + "\thidden\tproperty\tlabel\trangeuri\trequired\tformat\tconcepturi\tmvenabled\tkey\tautokey");
 
-        StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
 
         for (DataSetDefinition def : definitions)
         {

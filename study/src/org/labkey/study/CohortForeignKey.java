@@ -19,7 +19,9 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.gwt.client.util.StringUtils;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.CohortTable;
 import org.labkey.study.query.StudyQuerySchema;
@@ -41,10 +43,6 @@ public class CohortForeignKey extends LookupForeignKey
         this(schema, StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser()), null);
     }
 
-    public CohortForeignKey(StudyQuerySchema schema, boolean showCohorts)
-    {
-        this(schema, StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser()), null);
-    }
 
     public CohortForeignKey(StudyQuerySchema schema, boolean showCohorts, String labelCaption)
     {
@@ -52,6 +50,7 @@ public class CohortForeignKey extends LookupForeignKey
         _schema = schema;
         _showCohorts = showCohorts;
         _labelCaption = labelCaption;
+//        addJoin(new FieldKey(null,"Folder"), "Folder", false);
     }
 
 

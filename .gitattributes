@@ -3574,6 +3574,8 @@ study/src/org/labkey/study/query/DataSetQueryView.java -text
 study/src/org/labkey/study/query/DataSetTableImpl.java -text
 study/src/org/labkey/study/query/DataSetsTable.java -text
 study/src/org/labkey/study/query/DatasetUpdateService.java -text
+study/src/org/labkey/study/query/DataspaceContainerFilter.java -text
+study/src/org/labkey/study/query/DataspaceQuerySchema.java -text
 study/src/org/labkey/study/query/DerivativeTypeTable.java -text
 study/src/org/labkey/study/query/ExtensibleObjectQueryView.java -text
 study/src/org/labkey/study/query/LocationSpecimenListTable.java -text

@@ -60,7 +60,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
             VirtualFile vf = root.getDir(dirType.getDir());
             if (vf != null)
             {
-                StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
+                StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
 
                 // assay specimen table
                 ctx.getLogger().info("Importing assay schedule tables");

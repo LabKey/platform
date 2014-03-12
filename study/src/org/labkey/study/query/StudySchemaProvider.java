@@ -45,6 +45,6 @@ public class StudySchemaProvider extends DefaultSchema.SchemaProvider
         {
             return StudyQuerySchema.createSchemaWithoutStudy(container, schema.getUser());
         }
-        return new StudyQuerySchema(study, schema.getUser(), true);
+        return StudyQuerySchema.createSchema(study, schema.getUser(), true);
     }
 }

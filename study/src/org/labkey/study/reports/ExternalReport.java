@@ -303,7 +303,7 @@ public class ExternalReport extends AbstractReport
             throw new IllegalArgumentException("only ReadPermission supported");
         StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
         //boolean mustCheckUserPermissions = mustCheckDatasetPermissions(user, perm);
-        return new StudyQuerySchema(study, user, false);
+        return StudyQuerySchema.createSchema(study, user, false);
     }
 
     private String getFilePrefix()

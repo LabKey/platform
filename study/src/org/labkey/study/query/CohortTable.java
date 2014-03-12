@@ -44,6 +44,9 @@ public class CohortTable extends BaseStudyTable
     {
         super(schema, StudySchema.getInstance().getTableInfoCohort());
 
+        addFolderColumn();
+        addStudyColumn();
+
         ColumnInfo labelColumn = addWrapColumn(_rootTable.getColumn("Label"));
         labelColumn.setNullable(false);
 

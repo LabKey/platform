@@ -469,7 +469,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
                                                 boolean participantVisitFiltered, CohortFilter cohortFilter, boolean requireSequenceNum)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
-        StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(study, context.getUser(), true);
         String queryName = viewType.getQueryName();
         QuerySettings qs = schema.getSettings(context, queryName, queryName);
         return createView(context, qs, filter, sort, viewType, participantVisitFiltered, cohortFilter, requireSequenceNum);
@@ -479,7 +479,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
                                                 boolean participantVisitFiltered, CohortFilter cohortFilter, boolean requireSequenceNum)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
-        StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(study, context.getUser(), true);
         String viewName = viewType.getViewName();
         if (qs.getViewName() == null && viewName != null)
             qs.setViewName(viewName);
@@ -662,7 +662,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
     public static SQLFragment getBaseRequestedEnrollmentSql(Container container, User user, boolean isCompleteRequestsOnly)
     {
-        StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), user, true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(container), user, true);
         TableInfo tableInfoSpecimenDetail = schema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
         if (null == tableInfoSpecimenDetail)
             throw new IllegalStateException("SpecimenDetail table not found.");

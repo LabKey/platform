@@ -42,7 +42,7 @@ public class ExtensibleObjectQueryView extends QueryView
         ViewContext context,
         boolean allowEditing)
     {
-        super(new StudyQuerySchema(study, user, true));
+        super(StudyQuerySchema.createSchema(study, user, true));
         this.allowEditing = allowEditing;
         setShadeAlternatingRows(true);
         setShowBorders(true);

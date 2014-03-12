@@ -494,7 +494,7 @@ public class StudyServiceImpl implements StudyService.Service
             {
                 // Don't enforce permissions for the current user - we still want to tell them if the data
                 // has been copied even if they can't see the dataset.
-                UserSchema schema = new StudyQuerySchema(dataset.getStudy(), user, false);
+                UserSchema schema = StudyQuerySchema.createSchema(dataset.getStudy(), user, false);
                 TableInfo tableInfo = schema.getTable(dataset.getName());
                 AssayProvider provider = AssayService.get().getProvider(entry.getKey());
                 if (provider != null)
@@ -732,7 +732,7 @@ public class StudyServiceImpl implements StudyService.Service
                 Study s = StudyManager.getInstance().getStudy(c);
                 StudyQuerySchema schema = schemaDefault;
                 if (null != s)
-                    schema = new StudyQuerySchema((StudyImpl)s, user, false);
+                    schema = StudyQuerySchema.createSchema((StudyImpl)s, user, false);
                 SimpleSpecimenTable t = new SimpleSpecimenTable(schema, true);
                 t.setPublic(false);
                 tables.add(t);
@@ -768,7 +768,7 @@ public class StudyServiceImpl implements StudyService.Service
                 Study s = StudyManager.getInstance().getStudy(c);
                 StudyQuerySchema schema = schemaDefault;
                 if (null != s)
-                    schema = new StudyQuerySchema((StudyImpl)s, user, false);
+                    schema = StudyQuerySchema.createSchema((StudyImpl)s, user, false);
                 VialTable t = new VialTable(schema);
                 t.setPublic(false);
                 tables.add(t);
@@ -802,7 +802,7 @@ public class StudyServiceImpl implements StudyService.Service
                 Study s = StudyManager.getInstance().getStudy(c);
                 StudyQuerySchema schema = schemaDefault;
                 if (null != s)
-                    schema = new StudyQuerySchema((StudyImpl)s, user, false);
+                    schema = StudyQuerySchema.createSchema((StudyImpl)s, user, false);
                 SpecimenDetailTable t = new SpecimenDetailTable(schema);
                 t.setPublic(false);
                 tables.add(t);
@@ -838,7 +838,7 @@ public class StudyServiceImpl implements StudyService.Service
                 Study s = StudyManager.getInstance().getStudy(c);
                 StudyQuerySchema schema = schemaDefault;
                 if (null != s)
-                    schema = new StudyQuerySchema((StudyImpl)s, user, false);
+                    schema = StudyQuerySchema.createSchema((StudyImpl)s, user, false);
                 SpecimenWrapTable t = new SpecimenWrapTable(schema);
                 t.setPublic(false);
                 tables.add(t);
@@ -875,7 +875,7 @@ public class StudyServiceImpl implements StudyService.Service
                 Study s = StudyManager.getInstance().getStudy(c);
                 StudyQuerySchema schema = schemaDefault;
                 if (null != s)
-                    schema = new StudyQuerySchema((StudyImpl)s, user, false);
+                    schema = StudyQuerySchema.createSchema((StudyImpl)s, user, false);
                 SpecimenSummaryTable t = new SpecimenSummaryTable(schema);
                 t.setPublic(false);
                 tables.add(t);

@@ -15,6 +15,7 @@
  */
 package org.labkey.study.query.studydesign;
 
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.StudyQuerySchema;
 
@@ -29,5 +30,11 @@ public class StudyDesignImmunogenTypesTable extends StudyDesignLookupBaseTable
     {
         super(schema, StudySchema.getInstance().getTableInfoStudyDesignImmunogenTypes());
         setName("StudyDesignImmunogenTypes");
+    }
+
+    public StudyDesignImmunogenTypesTable(StudyQuerySchema schema, ContainerFilter filter)
+    {
+        this(schema);
+        _setContainerFilter(filter);
     }
 }

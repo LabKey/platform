@@ -54,7 +54,7 @@ import org.labkey.study.model.StudyManager;
 
 import java.util.Set;
 
-public class ParticipantTable extends FilteredTable<StudyQuerySchema>
+public class ParticipantTable extends BaseStudyTable
 {
     public static final String ALIASES_COLUMN_NAME = "Aliases";
     private static final String LINKED_IDS_COLUMN_NAME = "LinkedIDs";
@@ -66,7 +66,7 @@ public class ParticipantTable extends FilteredTable<StudyQuerySchema>
 
     public ParticipantTable(StudyQuerySchema schema, boolean hideDataSets)
     {
-        super(StudySchema.getInstance().getTableInfoParticipant(), schema);
+        super(schema, StudySchema.getInstance().getTableInfoParticipant());
         setName(StudyService.get().getSubjectTableName(schema.getContainer()));
 
         _study = StudyManager.getInstance().getStudy(schema.getContainer());
@@ -100,11 +100,7 @@ public class ParticipantTable extends FilteredTable<StudyQuerySchema>
         addColumn(datasetColumn);
         datasetColumn.setHidden(hideDataSets);
 
-        ColumnInfo containerCol = new AliasedColumn(this, "Container", _rootTable.getColumn("Container"));
-        containerCol = ContainerForeignKey.initColumn(containerCol, _userSchema);
-        containerCol.setHidden(true);
-        addColumn(containerCol);
-
+        addContainerColumn();
 
         ColumnInfo currentCohortColumn;
         boolean showCohorts = StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser());
@@ -265,8 +261,9 @@ public class ParticipantTable extends FilteredTable<StudyQuerySchema>
     @Override
     public ContainerContext getContainerContext()
     {
-        return _userSchema.getContainer();
+        return new ContainerContext.FieldKeyContext(new FieldKey(null,"Container"));
     }
+
 
     @Override
     protected ColumnInfo resolveColumn(String name)

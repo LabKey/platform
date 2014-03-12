@@ -153,7 +153,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
     public static SpecimenRequestQueryView createView(ViewContext context, @Nullable SimpleFilter filter)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
-        StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(study, context.getUser(), true);
         String queryName = "SpecimenRequest";
         QuerySettings qs = schema.getSettings(context, queryName, queryName);
 

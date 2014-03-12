@@ -39,6 +39,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -76,9 +77,16 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         this(schema, realTable, includeSourceStudyData, false);
     }
 
+
     public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, boolean includeSourceStudyData, boolean skipPermissionChecks)
     {
-        super(realTable, schema, includeSourceStudyData ? new ContainerFilter.StudyAndSourceStudy(schema.getUser(), skipPermissionChecks) : null);
+        super(realTable, schema);
+
+        if (includeSourceStudyData && null != schema._study && !schema._study.isDataspaceStudy())
+            _setContainerFilter(new ContainerFilter.StudyAndSourceStudy(schema.getUser(), skipPermissionChecks));
+        else
+            _setContainerFilter(schema.getDefaultContainerFilter());
+
         if (!includeSourceStudyData && skipPermissionChecks)
             throw new IllegalArgumentException("Skipping permission checks only applies when including source study data");
         if (includeSourceStudyData && getParticipantColumnName() != null)
@@ -124,10 +132,12 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         }
     }
 
+
     protected String getParticipantColumnName()
     {
         return null;
     }
+
 
     protected ColumnInfo addWrapParticipantColumn(String rootTableColumnName)
     {
@@ -201,7 +211,8 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             public TableInfo getLookupTableInfo()
             {
                 LocationTable result = new LocationTable(_userSchema);
-                result.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
+                if (_userSchema.allowSetContainerFilter())
+                    result.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
                 return result;
             }
         });
@@ -248,7 +259,8 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                     result = new AdditiveTypeTable(_userSchema);
                 else
                     throw new IllegalStateException(rootTableColumnName + " is not recognized as a valid specimen type column.");
-                result.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
+                if (_userSchema.allowSetContainerFilter())
+                    result.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
                 return result;
             }
         };
@@ -293,7 +305,8 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             public TableInfo getLookupTableInfo()
             {
                 VisitTable visitTable = new VisitTable(_userSchema);
-                visitTable.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
+                if (_userSchema.allowSetContainerFilter())
+                    visitTable.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
                 return visitTable;
             }
         };
@@ -767,5 +780,69 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             }
             addColumn(column);
         }
+    }
+
+
+    // UNDONE: a lot of study tables already use addContainerColumns()
+
+    protected ColumnInfo addFolderColumn()
+    {
+        ColumnInfo folder = new AliasedColumn(this, "Folder", _rootTable.getColumn("Container"));
+        ContainerForeignKey.initColumn(folder,getUserSchema());
+        folder.setHidden(true);
+        addColumn(folder);
+        return folder;
+    }
+
+
+    protected ColumnInfo addStudyColumn()
+    {
+        ColumnInfo study = new AliasedColumn(this, "Study", _rootTable.getColumn("Container"));
+
+//      NOTE: QFK doesn't seem to support container joins
+//      study.setFk(new QueryForeignKey("study", getUserSchema().getContainer(), null, getUserSchema().getUser(), "studyproperties", "Container", "Label", false));
+        study.setFk(new LookupForeignKey()
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                return getUserSchema().getTable("studyproperties");
+            }
+        });
+        study.setHidden(true);
+        addColumn(study);
+        return study;
+    }
+
+
+    @Override
+    public boolean supportsContainerFilter()
+    {
+        if (!_userSchema.allowSetContainerFilter())
+            return false;
+        return super.supportsContainerFilter();
+    }
+
+
+    @NotNull
+    public ContainerFilter getDefaultContainerFilter()
+    {
+        return getUserSchema().getDefaultContainerFilter();
+    }
+
+
+
+    // for testing/breakpoints
+
+    @Override
+    public void setContainerFilter(@NotNull ContainerFilter filter)
+    {
+        super.setContainerFilter(filter);
+    }
+
+    @Override
+    public ContainerFilter getContainerFilter()
+    {
+        return super.getContainerFilter();
     }
 }

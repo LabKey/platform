@@ -152,7 +152,7 @@ public class SampleSearchBean
         DisplayColumnInfo visitInfo = new DisplayColumnInfo(true, true);
         visitInfo.setOrderBy("DisplayOrder");
         _defaultDetailCols.put("Visit", visitInfo);
-        StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(_container), context.getUser(), true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(_container), context.getUser(), true);
         TableInfo simpleSpecimenTable = schema.createTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
 
         DisplayColumnInfo participantColInfo = new DisplayColumnInfo(true, true, true, DemoMode.isDemoMode(context), simpleSpecimenTable);

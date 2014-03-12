@@ -63,6 +63,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.study.DataspaceStudyFolderType;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudyModule;
 import org.labkey.study.controllers.StudyController;
@@ -512,7 +513,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     public int getNumExtendedProperties(User user)
     {
-        StudyQuerySchema schema = new StudyQuerySchema(this, user, true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(this, user, true);
         String domainURI = DOMAIN_INFO.getDomainURI(schema.getContainer());
         Domain domain = PropertyService.get().getDomain(schema.getContainer(), domainURI);
 
@@ -954,7 +955,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
         try
         {
-            StudyQuerySchema sqs = new StudyQuerySchema(this, User.getSearchUser(), false);
+            StudyQuerySchema sqs = StudyQuerySchema.createSchema(this, User.getSearchUser(), false);
             TableInfo sp = sqs.getTable("StudyProperties");
             if (null != sp)
             {
@@ -1118,6 +1119,15 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public void setShareDatasetDefinitions(Boolean shareDatasetDefinitions)
     {
         _shareDatasetDefinitions = Boolean.TRUE == shareDatasetDefinitions;
+    }
+
+
+    @Override
+    public boolean isDataspaceStudy()
+    {
+        if (!AppProps.getInstance().isExperimentalFeatureEnabled(StudyModule.EXPERIMENTALFEATURE_SHARED_DATASET))
+            return false;
+        return getContainer().getFolderType() instanceof DataspaceStudyFolderType;
     }
 
 

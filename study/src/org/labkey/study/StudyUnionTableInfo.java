@@ -45,6 +45,7 @@ public class StudyUnionTableInfo extends VirtualTable
     StudyImpl _study;
 
     final public static String[] COLUMN_NAMES = {
+            "container",
             "participantid",
             "lsid",
             "sequencenum",
@@ -62,12 +63,19 @@ public class StudyUnionTableInfo extends VirtualTable
     final Set<String> unionColumns = new HashSet<>(Arrays.asList(COLUMN_NAMES));
     SQLFragment unionSql;
     private User _user;
+    boolean _crossContainer = false;
 
     public StudyUnionTableInfo(StudyImpl study, Collection<DataSetDefinition> defs, User user)
+    {
+        this(study,defs,user,false);
+    }
+
+    public StudyUnionTableInfo(StudyImpl study, Collection<DataSetDefinition> defs, User user, boolean crossContainer)
     {
         super(StudySchema.getInstance().getSchema(), "StudyData");
         _study = study;
         _user = user;
+        _crossContainer = crossContainer;
         init(defs);
     }
 
@@ -153,7 +161,7 @@ public class StudyUnionTableInfo extends VirtualTable
             }
 
             sqlf.append(" FROM " + ti.getSelectName() + " D");
-            if ( def.isShared())
+            if (def.isShared() && !_crossContainer)
             {
                 sqlf.append(" WHERE container=?");
                 sqlf.add(def.getContainer());
@@ -173,6 +181,8 @@ public class StudyUnionTableInfo extends VirtualTable
                     sqlf.append("CAST(NULL as VARCHAR)");
                 else if ("_visitdate".equalsIgnoreCase(column) || "modified".equalsIgnoreCase(column) || "created".equalsIgnoreCase(column))
                     sqlf.append("CAST(NULL AS " + getSchema().getSqlDialect().getDefaultDateTimeDataType() + ")");
+                else if ("container".equalsIgnoreCase(column))
+                    sqlf.append("CAST('" + _study.getContainer().getId()+ "' AS " + getSqlDialect().getGuidType() + ")");
                 else
                     sqlf.append(" NULL");
                 sqlf.append(" AS " + column);

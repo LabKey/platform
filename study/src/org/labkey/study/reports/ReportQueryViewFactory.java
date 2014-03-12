@@ -127,7 +127,7 @@ public class ReportQueryViewFactory
         boolean mustCheckUserPermissions = mustCheckDatasetPermissions(context.getUser(), descriptor);
 
         if (study != null)
-            return new StudyQuerySchema(study, context.getUser(), mustCheckUserPermissions);
+            return StudyQuerySchema.createSchema(study, context.getUser(), mustCheckUserPermissions);
         return null;
     }
 

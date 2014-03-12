@@ -79,8 +79,14 @@ public class StudyProductAntigenTable extends DefaultStudyDesignTable
                     StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
                     if (study != null)
                     {
-                        StudyQuerySchema schema = new StudyQuerySchema(study, _userSchema.getUser(), false);
-                        return new StudyDesignGenesTable(schema);
+                        StudyQuerySchema schema = StudyQuerySchema.createSchema(study, _userSchema.getUser(), false);
+                        ContainerFilter cf;
+                        if (schema.isDataspace())
+                            cf = ContainerFilter.Type.Project.create(_userSchema.getUser());
+                        else
+                            cf = ContainerFilter.Type.Current.create(_userSchema.getUser());
+                        StudyDesignGenesTable result = new StudyDesignGenesTable(schema, cf);
+                        return result;
                     }
                     else
                         return null;
@@ -96,8 +102,14 @@ public class StudyProductAntigenTable extends DefaultStudyDesignTable
                     StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
                     if (study != null)
                     {
-                        StudyQuerySchema schema = new StudyQuerySchema(study, _userSchema.getUser(), false);
-                        return new StudyDesignSubTypesTable(schema);
+                        StudyQuerySchema schema = StudyQuerySchema.createSchema(study, _userSchema.getUser(), false);
+                        ContainerFilter cf;
+                        if (schema.isDataspace())
+                            cf = ContainerFilter.Type.Project.create(_userSchema.getUser());
+                        else
+                            cf = ContainerFilter.Type.Current.create(_userSchema.getUser());
+                        StudyDesignSubTypesTable result = new StudyDesignSubTypesTable(schema, cf);
+                        return result;
                     }
                     else
                         return null;

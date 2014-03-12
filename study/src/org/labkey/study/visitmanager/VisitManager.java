@@ -173,9 +173,9 @@ public abstract class VisitManager
 
     // Produce appropriate SQL for getVisitSummary().  The SQL must select dataset ID, sequence number, and then the specified statistics;
     // it also needs to filter by cohort and qcstates.  Tables providing the statistics must be aliased using the provided alias.
-    protected abstract SQLFragment getVisitSummarySql(CohortFilter cohortFilter, QCStateSet qcStates, String stats, String alias, boolean showAll, boolean useVisitId);
+    protected abstract SQLFragment getVisitSummarySql(User user, CohortFilter cohortFilter, QCStateSet qcStates, String stats, String alias, boolean showAll, boolean useVisitId);
 
-    public Map<VisitMapKey, VisitStatistics> getVisitSummary(CohortFilter cohortFilter, QCStateSet qcStates, Set<VisitStatistic> stats, boolean showAll) throws SQLException
+    public Map<VisitMapKey, VisitStatistics> getVisitSummary(User user, CohortFilter cohortFilter, QCStateSet qcStates, Set<VisitStatistic> stats, boolean showAll) throws SQLException
     {
         String alias = "SD";
         StringBuilder statsSql = new StringBuilder();
@@ -192,7 +192,7 @@ public abstract class VisitManager
         VisitMapKey key = null;
         VisitStatistics statistics = new VisitStatistics();
 
-        SQLFragment sql = getVisitSummarySql(cohortFilter, qcStates, statsSql.toString(), alias, showAll, useVisitId);
+        SQLFragment sql = getVisitSummarySql(user, cohortFilter, qcStates, statsSql.toString(), alias, showAll, useVisitId);
 
         try (ResultSet rows = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false, false))
         {
@@ -620,7 +620,7 @@ public abstract class VisitManager
         // reasons.
         if (study.isAncillaryStudy())       // TODO: maybe we can always use SimpleSpecimen
         {
-            StudyQuerySchema studyQuerySchema = new StudyQuerySchema(study, null, false);
+            StudyQuerySchema studyQuerySchema = StudyQuerySchema.createSchema(study, null, false);
             studyQuerySchema.setDontAliasColumns(true);
             return studyQuerySchema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
         }

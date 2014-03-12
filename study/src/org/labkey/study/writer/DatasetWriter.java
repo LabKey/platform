@@ -176,7 +176,7 @@ public class DatasetWriter implements InternalStudyWriter
                 "default.importAllMatches=TRUE");
         writer.close();
 
-        StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
 
         // Write out all the dataset .tsv files
         for (DataSetDefinition def : datasets)

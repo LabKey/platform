@@ -480,7 +480,7 @@ public class SpecimenController extends BaseStudyController
             StudyImpl study = getStudy(context.getContainer());
             if (null == study)
                 throw new NotFoundException("No study exists in this folder.");
-            StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
+            StudyQuerySchema schema = StudyQuerySchema.createSchema(study, context.getUser(), true);
 
             TableInfo otherTableInfo = schema.getTable(otherTable);
 
@@ -5170,7 +5170,7 @@ public class SpecimenController extends BaseStudyController
 
             if (def != null)
             {
-                StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
+                StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser(), true);
                 DataSetQuerySettings qs = (DataSetQuerySettings)querySchema.getSettings(getViewContext(), DataSetQueryView.DATAREGION, def.getName());
                 qs.setUseQCSet(false);
 

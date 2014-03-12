@@ -34,6 +34,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.DataSetTableImpl;
+import org.labkey.study.query.DataspaceContainerFilter;
 
 import java.sql.SQLException;
 import java.util.Calendar;
@@ -64,13 +65,17 @@ public class RelativeDateVisitManager extends VisitManager
     
 
     @Override
-    protected SQLFragment getVisitSummarySql(CohortFilter cohortFilter, QCStateSet qcStates, String statsSql, String alias, boolean showAll, boolean useVisitId)
+    protected SQLFragment getVisitSummarySql(User user, CohortFilter cohortFilter, QCStateSet qcStates, String statsSql, String alias, boolean showAll, boolean useVisitId)
     {
         TableInfo studyData = showAll ?
-                StudySchema.getInstance().getTableInfoStudyData(getStudy(), null) :
-                StudySchema.getInstance().getTableInfoStudyDataVisible(getStudy(), null);
+                StudySchema.getInstance().getTableInfoStudyData(getStudy(), user) :
+                StudySchema.getInstance().getTableInfoStudyDataVisible(getStudy(), user);
         TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
         TableInfo participantTable = StudySchema.getInstance().getTableInfoParticipant();
+
+        SQLFragment studyDataContainerFilter = new SQLFragment(alias + ".container=?", _study.getContainer());
+        if (_study.isDataspaceStudy())
+            studyDataContainerFilter = new DataspaceContainerFilter(user).getSQLFragment(studyData.getSchema(), new SQLFragment(alias+".container"),getStudy().getContainer());
 
         SQLFragment sql = new SQLFragment();
         sql.appendComment("<RelativeDateVisitManager.getVisitSummarySql>", participantTable.getSqlDialect());
@@ -86,10 +91,11 @@ public class RelativeDateVisitManager extends VisitManager
             sql.append("SELECT ").append(keyCols).append(statsSql);
             sql.append("\nFROM ").append(studyData.getFromSQL(alias))
                 .append(" JOIN ").append(participantVisit.getFromSQL("PV")).append(" ON ").append(alias)
-                .append(".ParticipantId = PV.ParticipantId AND ").append(alias).append(".SequenceNum = PV.SequenceNum AND ? = PV.Container");
-            sql.add(getStudy().getContainer());
+                .append(".ParticipantId = PV.ParticipantId AND ").append(alias).append(".SequenceNum = PV.SequenceNum AND ").append(alias).append(".container = PV.Container");
+            sql.append("\nWHERE ");
+            sql.append(studyDataContainerFilter);
             if (null != qcStates)
-                sql.append("\nWHERE ").append(qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME));
+                sql.append(" AND ").append(qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME));
             sql.append("\nGROUP BY ").append(keyCols);
             sql.append("\nORDER BY 1, 2");
         }
@@ -104,12 +110,11 @@ public class RelativeDateVisitManager extends VisitManager
                     sql.append("SELECT ").append(keyCols).append(statsSql);
                     sql.append("\nFROM ").append(studyData.getFromSQL(alias))
                         .append("\nJOIN ").append(participantVisit.getFromSQL("PV")).append(" ON (").append(alias)
-                        .append(".ParticipantId = PV.ParticipantId AND ").append(alias).append(".SequenceNum = PV.SequenceNum AND ? = PV.Container)\n" + "JOIN ")
-                        .append(participantTable.getFromSQL("P")).append(" ON (").append(alias).append(".ParticipantId = P.ParticipantId AND ? = P.Container)\n");
-                    sql.add(getStudy().getContainer());
-                    sql.add(getStudy().getContainer());
-                    sql.append("\nWHERE P.")
-                        .append(cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId")
+                        .append(".ParticipantId = PV.ParticipantId AND ").append(alias).append(".SequenceNum = PV.SequenceNum AND ").append(alias).append(".container = PV.Container)\n" + "JOIN ")
+                        .append(participantTable.getFromSQL("P")).append(" ON (").append(alias).append(".ParticipantId = P.ParticipantId AND ").append(alias).append(".container = P.Container)\n");
+                    sql.append("\nWHERE ")
+                        .append(studyDataContainerFilter)
+                        .append(" AND P.").append(cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId")
                         .append(" = ?\n").append(qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME) + "\n" : "");
                     sql.add(cohortFilter.getCohortId());
                     sql.append("\nGROUP BY ").append(keyCols);

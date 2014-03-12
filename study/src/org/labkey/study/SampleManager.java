@@ -1475,7 +1475,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public SpecimenTypeSummary getSpecimenTypeSummary(Container container)
     {
-        StudyQuerySchema studyQuerySchema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), null, false);
+        StudyQuerySchema studyQuerySchema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(container), null, false);
         TableInfo tableInfoSpecimenWrap = studyQuerySchema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
         if (null == tableInfoSpecimenWrap)
             throw new IllegalStateException("SpecimenDetail table not found.");
@@ -1514,7 +1514,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         SQLFragment sqlPtidFilter = new SQLFragment();
         if (study.isAncillaryStudy())
         {
-/*            StudyQuerySchema sourceStudySchema = new StudyQuerySchema(study.getSourceStudy(), null, false);
+/*            StudyQuerySchema sourceStudySchema = StudyQuerySchema.createSchema(study.getSourceStudy(), null, false);
             SpecimenWrapTable sourceStudyTableInfo = (SpecimenWrapTable)sourceStudySchema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
             tableInfoSpecimenWrap.setUnionTable(sourceStudyTableInfo);
 
@@ -2000,7 +2000,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public List<VisitImpl> getVisitsWithSpecimens(Container container, User user, CohortImpl cohort)
     {
-        StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), user, true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(container), user, true);
         TableInfo tinfo = schema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
 
         FieldKey visitKey = FieldKey.fromParts("Visit");
@@ -2239,7 +2239,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                                                                    CustomView baseView, SimpleFilter specimenDetailFilter,
                                                                    SpecimenTypeLevel level)
     {
-        StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), user, true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(container), user, true);
         TableInfo tinfo = schema.getTable(StudyQuerySchema.SPECIMEN_DETAIL_TABLE_NAME);
 
         Map<String, SpecimenTypeBeanProperty> aliasToTypeProperty = new LinkedHashMap<>();
@@ -2404,7 +2404,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public Set<LocationImpl> getEnrollmentSitesWithRequests(Container container, User user)
     {
-        StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), user, true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(container), user, true);
         TableInfo tableInfoSpecimenDetail = schema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
         if (null == tableInfoSpecimenDetail)
             throw new IllegalStateException("SpecimenDetail table not found.");
@@ -2433,7 +2433,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public Set<LocationImpl> getEnrollmentSitesWithSpecimens(Container container, User user)
     {
-        StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), user, true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(container), user, true);
         TableInfo tableInfoSpecimenDetail = schema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
         if (null == tableInfoSpecimenDetail)
             throw new IllegalStateException("SpecimenDetail table not found.");
@@ -3004,7 +3004,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         if (study == null)
             return null;
 
-        StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), user, true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(container), user, true);
         TableInfo tableInfo = schema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
         String cacheKey = getGroupedValuesCacheKey(container);
         Map<String, Map<String, Object>> groupedValues;
@@ -3274,7 +3274,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                     StudyImpl study = StudyManager.getInstance().getStudy(container);
                     if (null == study)
                         return null;
-                    StudyQuerySchema schema = new StudyQuerySchema(study, user, true);
+                    StudyQuerySchema schema = StudyQuerySchema.createSchema(study, user, true);
                     return schema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
                 }
             }, Specimen.class);
@@ -3283,7 +3283,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         return queryHelper.get(container, filter);
         */
         StudyImpl study = StudyManager.getInstance().getStudy(container);
-        StudyQuerySchema schema = new StudyQuerySchema(study, user, true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(study, user, true);
         TableInfo specimenTable = schema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
         return new TableSelector(specimenTable, filter, null);
     }

@@ -77,7 +77,7 @@ public class SpecimenTable extends AbstractSpecimenTable
 //                if (study.getContainer().hasPermission(user, ReadPermission.class))
                 if (study.getContainer().hasPermission(user, ReadPermission.class) && study.getContainer().getId() != getContainer().getId())
                 {
-                    StudyQuerySchema studyQuerySchema = new StudyQuerySchema((StudyImpl)study, user, false);
+                    StudyQuerySchema studyQuerySchema = StudyQuerySchema.createSchema((StudyImpl)study, user, false);
                     SpecimenTable table = new SpecimenTable(studyQuerySchema, skipPermissionChecks, false);
                     _studySpecimenTables.add(table);
                 }

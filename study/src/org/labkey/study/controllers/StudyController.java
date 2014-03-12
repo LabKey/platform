@@ -115,6 +115,7 @@ import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.FileStream;
@@ -124,6 +125,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ActionURL;
@@ -376,7 +378,7 @@ public class StudyController extends BaseStudyController
             {
                 // Check if a dataset, query or table exists with the same name
                 StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
-                StudyQuerySchema studySchema = new StudyQuerySchema(study, getUser(), true);
+                StudyQuerySchema studySchema = StudyQuerySchema.createSchema(study, getUser(), true);
                 if (null != studySchema.getDataSetDefinitionByName(form.getTypeName())
                         || studySchema.getTableNames().contains(form.getTypeName())
                         || QueryService.get().getQueryDef(getUser(), getContainer(), "study", form.getTypeName()) != null)
@@ -603,7 +605,7 @@ public class StudyController extends BaseStudyController
                 bean.cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), DataSetQueryView.DATAREGION);
 
             VisitManager visitManager = StudyManager.getInstance().getVisitManager(bean.study);
-            bean.visitMapSummary = visitManager.getVisitSummary(bean.cohortFilter, bean.qcStates, bean.stats, bean.showAll);
+            bean.visitMapSummary = visitManager.getVisitSummary(getUser(), bean.cohortFilter, bean.qcStates, bean.stats, bean.showAll);
 
             return new StudyJspView<>(_study, "overview.jsp", bean, errors);
         }
@@ -2142,7 +2144,7 @@ public class StudyController extends BaseStudyController
                 return;
 
             User user = getUser();
-            TableInfo t = new StudyQuerySchema(_study, user, true).createDatasetTableInternal(_def);
+            TableInfo t = StudyQuerySchema.createSchema(_study, user, true).createDatasetTableInternal(_def);
             setTarget(t);
 
             if (!t.hasPermission(user, InsertPermission.class) && getUser().isGuest())
@@ -2413,7 +2415,7 @@ public class StudyController extends BaseStudyController
 
             if (def != null)
             {
-                final StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
+                final StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser(), true);
                 DataSetQuerySettings qs = (DataSetQuerySettings)querySchema.getSettings(context, DataSetQueryView.DATAREGION, def.getName());
 
                 if (!def.canRead(getUser()))
@@ -2602,7 +2604,7 @@ public class StudyController extends BaseStudyController
                 for (String lsid : lsids)
                     keys.add(Collections.<String, Object>singletonMap("lsid", lsid));
 
-                StudyQuerySchema schema = new StudyQuerySchema(study, getUser(), true);
+                StudyQuerySchema schema = StudyQuerySchema.createSchema(study, getUser(), true);
                 TableInfo datasetTable = schema.createDatasetTableInternal((DataSetDefinition) dataset);
 
                 QueryUpdateService qus = datasetTable.getUpdateService();
@@ -2720,7 +2722,13 @@ public class StudyController extends BaseStudyController
         {
             String subjectColName = StudyService.get().getSubjectColumnName(def.getContainer());
             if (subjectColName.equalsIgnoreCase(col.getName()))
-                col.setURLExpression(new DetailsURL(base, "participantId", col.getColumnInfo().getFieldKey()));
+            {
+                StringExpression old = col.getURLExpression();
+                ContainerContext cc = null != old && old instanceof DetailsURL ? ((DetailsURL)old).getContainerContext() : null;
+                DetailsURL dets = new DetailsURL(base, "participantId", col.getColumnInfo().getFieldKey());
+                dets.setContainerContext(null != cc ? cc : getContainer());
+                col.setURLExpression(dets);
+            }
         }
     }
 
@@ -2912,7 +2920,7 @@ public class StudyController extends BaseStudyController
                     return Collections.emptyList();
             }
 
-            StudyQuerySchema querySchema = new StudyQuerySchema(study, context.getUser(), true);
+            StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, context.getUser(), true);
             QuerySettings qs = querySchema.getSettings(context, DataSetQueryView.DATAREGION, def.getName());
             qs.setViewName(viewName);
 
@@ -3437,7 +3445,7 @@ public class StudyController extends BaseStudyController
             if (lsids == null || lsids.isEmpty())
                 return new HtmlView("No data rows selected.  " + PageFlowUtil.textLink("back", "javascript:back()"));
 
-            StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
+            StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser(), true);
             DataSetQuerySettings qs = new DataSetQuerySettings(getViewContext().getBindPropertyValues(), DataSetQueryView.DATAREGION);
 
             qs.setSchemaName(querySchema.getSchemaName());
@@ -6291,7 +6299,7 @@ public class StudyController extends BaseStudyController
                 throw new NotFoundException("No LSID specified");
             }
 
-            StudyQuerySchema schema = new StudyQuerySchema(study, getUser(), true);
+            StudyQuerySchema schema = StudyQuerySchema.createSchema(study, getUser(), true);
 
             QueryDefinition queryDef = QueryService.get().createQueryDefForTable(schema, dataset.getName());
             assert queryDef != null : "Dataset was found but couldn't get a corresponding TableInfo";

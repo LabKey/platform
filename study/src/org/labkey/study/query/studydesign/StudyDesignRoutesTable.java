@@ -15,6 +15,7 @@
  */
 package org.labkey.study.query.studydesign;
 
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.StudyQuerySchema;
 
@@ -28,5 +29,11 @@ public class StudyDesignRoutesTable extends StudyDesignLookupBaseTable
     {
         super(schema, StudySchema.getInstance().getTableInfoStudyDesignRoutes());
         setName("StudyDesignRoutes");
+    }
+
+    public StudyDesignRoutesTable(StudyQuerySchema schema, ContainerFilter filter)
+    {
+        this(schema);
+        _setContainerFilter(filter);
     }
 }

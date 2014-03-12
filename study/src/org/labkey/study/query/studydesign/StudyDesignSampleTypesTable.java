@@ -15,6 +15,7 @@
  */
 package org.labkey.study.query.studydesign;
 
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.StudyQuerySchema;
@@ -42,5 +43,11 @@ public class StudyDesignSampleTypesTable extends StudyDesignLookupBaseTable
         ));
         setDefaultVisibleColumns(defaultColumns);
 
+    }
+
+    public StudyDesignSampleTypesTable(StudyQuerySchema schema, ContainerFilter filter)
+    {
+        this(schema);
+        _setContainerFilter(filter);
     }
 }

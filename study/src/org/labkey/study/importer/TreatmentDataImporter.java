@@ -70,7 +70,7 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
             if (vf != null)
             {
                 // import the product table
-                StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
+                StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
 
                 // add the treatment specific tables
                 ctx.getLogger().info("Importing treatment data tables");

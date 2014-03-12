@@ -3630,7 +3630,7 @@ public class StudyManager
     // Return a source->alias map for the specified participant
     public Map<String, String> getAliasMap(StudyImpl study, User user, String ptid)
     {
-        @Nullable final TableInfo aliasTable = new StudyQuerySchema(study, user, true).getParticipantAliasesTable();
+        @Nullable final TableInfo aliasTable = StudyQuerySchema.createSchema(study, user, true).getParticipantAliasesTable();
 
         if (null == aliasTable)
             return Collections.emptyMap();
@@ -3721,7 +3721,7 @@ public class StudyManager
 
         body.append(searchTitle).append("\n");
 
-        StudyQuerySchema schema = new StudyQuerySchema(dsd.getStudy(), User.getSearchUser(), false);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(dsd.getStudy(), User.getSearchUser(), false);
         TableInfo tableInfo = schema.createDatasetTableInternal(dsd);
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, tableInfo.getDefaultVisibleColumns());
         String sep = "";
@@ -4301,7 +4301,7 @@ public class StudyManager
 
         private void _testDatsetUpdateService(StudyImpl study) throws Throwable
         {
-            StudyQuerySchema ss = new StudyQuerySchema(study, _context.getUser(), false);
+            StudyQuerySchema ss = StudyQuerySchema.createSchema(study, _context.getUser(), false);
             DataSet def = createDataset(study, "A", false);
             TableInfo tt = ss.getTable(def.getName());
             QueryUpdateService qus = tt.getUpdateService();
@@ -4470,7 +4470,7 @@ public class StudyManager
         {
             int sequenceNum = 0;
 
-            StudyQuerySchema ss = new StudyQuerySchema((StudyImpl) study, _context.getUser(), false);
+            StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser(), false);
             DataSet def = createDataset(study, "GU", DatasetType.OPTIONAL_GUID);
             TableInfo tt = ss.getTable(def.getName());
 
@@ -4510,7 +4510,7 @@ public class StudyManager
         {
             int sequenceNum = 0;
 
-            StudyQuerySchema ss = new StudyQuerySchema((StudyImpl) study, _context.getUser(), false);
+            StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser(), false);
             DataSet def = createDataset(study, "B", false);
             TableInfo tt = ss.getTable(def.getName());
 
@@ -4677,7 +4677,7 @@ public class StudyManager
 
         private void _testImportDemographicDatasetData(Study study) throws Throwable
         {
-            StudyQuerySchema ss = new StudyQuerySchema((StudyImpl) study, _context.getUser(), false);
+            StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser(), false);
             DataSet def = createDataset(study, "Dem", true);
             TableInfo tt = ss.getTable(def.getName());
 
@@ -4757,7 +4757,7 @@ public class StudyManager
             try
             {
                 // create a dataset
-                StudyQuerySchema ss = new StudyQuerySchema((StudyImpl) study, _context.getUser(), false);
+                StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser(), false);
                 DataSet def = createDataset(study, "DS", false);
                 TableInfo datasetTI = ss.getTable(def.getName());
                 QueryUpdateService qus = datasetTI.getUpdateService();

@@ -754,7 +754,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             }
             else
             {
-                StudyQuerySchema querySchema = new StudyQuerySchema(study, user, true);
+                StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, user, true);
                 TableInfo queryTableInfo = querySchema.getTable(dsd.getName());
                 if (null == queryTableInfo)
                     throw new UnauthorizedException("Can not update dataset: " + dsd.getName());

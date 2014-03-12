@@ -92,7 +92,7 @@ import java.util.Map;
 import java.util.Set;
 
 /** Wraps a DatasetSchemaTableInfo and makes it Query-ized. Represents a single dataset's data */
-public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements DataSetTable
+public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
 {
     public static final String QCSTATE_ID_COLNAME = "QCState";
     public static final String QCSTATE_LABEL_COLNAME = "QCStateLabel";
@@ -104,7 +104,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
 
     public DataSetTableImpl(final StudyQuerySchema schema, DataSetDefinition dsd)
     {
-        super(dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions(), true), schema);
+        super(schema, dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions(), true));
         String nameLabel = dsd.getName();
         if (!dsd.getLabel().equalsIgnoreCase(dsd.getName()))
             nameLabel += " (" + dsd.getLabel() + ")";
@@ -157,25 +157,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
                     }
                 });
 
-                column.setFk(new LookupForeignKey(subjectColName)
-                {
-                    @Override
-                    public TableInfo getLookupTableInfo()
-                    {
-                        // Ideally we could just ask the schema for the ParticipantTable (e.g., _schema.getTable(...)),
-                        // but we need to pass arguments to ParticipantTable constructor to hide datasets.
-                        TableInfo table = new ParticipantTable(_userSchema, true);
-                        table.overlayMetadata(StudyService.get().getSubjectTableName(_userSchema.getContainer()), schema, new ArrayList<QueryException>());
-                        ((ParticipantTable)table).afterConstruct();
-                        return table;
-                    }
-
-                    @Override
-                    public StringExpression getURL(ColumnInfo parent)
-                    {
-                        return super.getURL(parent, true);
-                    }
-                });
+                column.setFk(new ParticipantForeignKey());
 
                 if (DemoMode.isDemoMode(schema.getContainer(), schema.getUser()))
                 {
@@ -441,7 +423,11 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
                 defaultVisibleCols.add(new FieldKey(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Comments.toString()));
             }
         }
+
+        addFolderColumn();
+        addStudyColumn();
     }
+
 
     /** Wrap a column in our underlying assay data table with one that puts it in the dataset table */
     private ExprColumn wrapAssayColumn(final ColumnInfo columnInfo)
@@ -669,7 +655,12 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
     @Override
     public ContainerContext getContainerContext()
     {
-        return _dsd != null ? _dsd.getContainer() : null;
+        if (null == _dsd)
+            return null;
+        if (_dsd.isShared())
+            return new ContainerContext.FieldKeyContext(new FieldKey(null,"Folder"));
+        else
+            return _dsd.getContainer();
     }
 
     @Override
@@ -864,5 +855,32 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
         }
 
         return columns;
+    }
+
+
+    class ParticipantForeignKey extends LookupForeignKey
+    {
+        ParticipantForeignKey()
+        {
+            super(StudyService.get().getSubjectColumnName(_userSchema.getContainer()));
+            addJoin(new FieldKey(null,"Folder"),"Container",false);
+        }
+
+        @Override
+        public TableInfo getLookupTableInfo()
+        {
+            // Ideally we could just ask the schema for the ParticipantTable (e.g., _schema.getTable(...)),
+            // but we need to pass arguments to ParticipantTable constructor to hide datasets.
+            TableInfo table = new ParticipantTable(_userSchema, true);
+            table.overlayMetadata(StudyService.get().getSubjectTableName(_userSchema.getContainer()), _userSchema, new ArrayList<QueryException>());
+            ((ParticipantTable)table).afterConstruct();
+            return table;
+        }
+
+        @Override
+        public StringExpression getURL(ColumnInfo parent)
+        {
+            return super.getURL(parent, true);
+        }
     }
 }

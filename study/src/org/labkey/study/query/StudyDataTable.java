@@ -39,11 +39,11 @@ import java.util.Set;
  * Provides a Query-ized TableInfo that contains every row from every dataset in the study.
  * Eventually merge with StudyUnionTableInfo.
  */
-public class StudyDataTable extends FilteredTable<StudyQuerySchema>
+public class StudyDataTable extends BaseStudyTable
 {
     public StudyDataTable(StudyQuerySchema schema)
     {
-        super(StudySchema.getInstance().getTableInfoStudyData(schema.getStudy(), schema.getUser()), schema);
+        super(schema, StudySchema.getInstance().getTableInfoStudyData(schema.getStudy(), schema.getUser()));
 
         List<FieldKey> defaultColumns = new LinkedList<>();
 
@@ -56,6 +56,9 @@ public class StudyDataTable extends FilteredTable<StudyQuerySchema>
         });
         addColumn(datasetColumn);
         defaultColumns.add(FieldKey.fromParts("DataSet"));
+
+        addFolderColumn();
+        addStudyColumn();
 
         String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
         ColumnInfo participantIdColumn = new AliasedColumn(this, subjectColName, _rootTable.getColumn("participantid"));

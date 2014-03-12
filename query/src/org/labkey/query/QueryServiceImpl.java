@@ -1814,8 +1814,7 @@ public class QueryServiceImpl extends QueryService
             t.appendComment("<QueryServiceImpl.getSelectSQL(" + AliasManager.makeLegalName(table.getName(), dialect) + ")>", dialect);
             t.append(ret);
             t.appendComment("</QueryServiceImpl.getSelectSQL()>", dialect);
-            String s = _prettyPrint(t.getSQL());
-            ret = new SQLFragment(s, ret.getParams());
+            ret = SQLFragment.prettyPrint(t);
         }
 
 	    return ret;
@@ -1877,36 +1876,6 @@ public class QueryServiceImpl extends QueryService
     {
         QueryManager.get().removeCustomViewListener(listener);
     }
-
-    private String _prettyPrint(String s)
-    {
-        StringBuilder sb = new StringBuilder(s.length() + 200);
-        String[] lines = StringUtils.split(s, '\n');
-        int indent = 0;
-
-        for (String line : lines)
-        {
-            String t = line.trim();
-
-            if (t.length() == 0)
-                continue;
-
-            if (t.startsWith("-- </"))
-                indent = Math.max(0,indent-1);
-
-            for (int i=0 ; i<indent ; i++)
-                sb.append('\t');
-
-            sb.append(line);
-            sb.append('\n');
-
-            if (t.startsWith("-- <") && !t.startsWith("-- </"))
-                indent++;
-        }
-
-        return sb.toString();
-    }
-
 
     private static class QAliasedColumn extends AliasedColumn
     {

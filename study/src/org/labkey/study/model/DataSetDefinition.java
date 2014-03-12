@@ -1252,7 +1252,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             {
                 public TableInfo getLookupTableInfo()
                 {
-                    StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(_container), user, true);
+                    StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(_container), user, true);
                     return schema.getTable("Datasets");
                 }
             };
@@ -1293,7 +1293,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
 //            // If no button config was found for this dataset, fall back to the button config on StudyData.  This
 //            // lets users configure buttons that should appear on all datasets.
-//            StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(_container), _user, true);
+//            StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(_container), _user, true);
 //            try
 //            {
 //                TableInfo studyData = schema.getTable(StudyQuerySchema.STUDY_DATA_TABLE_NAME);
@@ -2887,7 +2887,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     {
         // Unfortunately we need to use two tableinfos: one to get the column names with correct casing,
         // and one to get the data.  We should eventually be able to convert to using Query completely.
-        StudyQuerySchema querySchema = new StudyQuerySchema(getStudy(), u, true);
+        StudyQuerySchema querySchema = StudyQuerySchema.createSchema(getStudy(), u, true);
         TableInfo queryTableInfo = querySchema.createDatasetTableInternal(this);
 
         TableInfo tInfo = getTableInfo(u, true);
