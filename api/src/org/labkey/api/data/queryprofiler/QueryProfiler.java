@@ -32,7 +32,6 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -64,10 +63,10 @@ public class QueryProfiler
 
     private static final QueryProfiler INSTANCE = new QueryProfiler();
 
-    private BlockingQueue<Query> _queue = new LinkedBlockingQueue<>(1000);
-    private Map<String, QueryTracker> _queries = new ReferenceMap<>(ReferenceMap.HARD, ReferenceMap.WEAK);
+    private final BlockingQueue<Query> _queue = new LinkedBlockingQueue<>(1000);
+    private final Map<String, QueryTracker> _queries = new ReferenceMap<>(ReferenceMap.HARD, ReferenceMap.WEAK);
     private final Object _lock = new Object();
-    /* package */ Collection<QueryTrackerSet> _trackerSets = new ArrayList<>();
+    private final Collection<QueryTrackerSet> _trackerSets = new ArrayList<>();
 
     // All access to these guarded by LOCK
     private long _requestQueryCount;
@@ -79,7 +78,7 @@ public class QueryProfiler
     private long _upTimeAtLastReset;
     private boolean _hasBeenReset = false;
 
-    private List<Pair<String, DatabaseQueryListener>> _listeners = new CopyOnWriteArrayList<>();
+    private final List<DatabaseQueryListener> _listeners = new CopyOnWriteArrayList<>();
 
     public static QueryProfiler getInstance()
     {
@@ -88,9 +87,9 @@ public class QueryProfiler
 
     private QueryProfiler()
     {
-        _trackerSets.add(new InvocationQueryTrackerSet());
+        getTrackerSets().add(new InvocationQueryTrackerSet());
 
-        _trackerSets.add(new QueryTrackerSet("Total", "highest cumulative execution time", false, true, new QueryTrackerComparator()
+        getTrackerSets().add(new QueryTrackerSet("Total", "highest cumulative execution time", false, true, new QueryTrackerComparator()
         {
             long getPrimaryStatisticValue(QueryTracker qt)
             {
@@ -103,7 +102,7 @@ public class QueryProfiler
             }
         }));
 
-        _trackerSets.add(new QueryTrackerSet("Avg", "highest average execution time", false, true, new QueryTrackerComparator()
+        getTrackerSets().add(new QueryTrackerSet("Avg", "highest average execution time", false, true, new QueryTrackerComparator()
         {
             long getPrimaryStatisticValue(QueryTracker qt)
             {
@@ -116,7 +115,7 @@ public class QueryProfiler
             }
         }));
 
-        _trackerSets.add(new QueryTrackerSet("Max", "highest maximum execution time", false, true, new QueryTrackerComparator()
+        getTrackerSets().add(new QueryTrackerSet("Max", "highest maximum execution time", false, true, new QueryTrackerComparator()
         {
             long getPrimaryStatisticValue(QueryTracker qt)
             {
@@ -129,7 +128,7 @@ public class QueryProfiler
             }
         }));
 
-        _trackerSets.add(new QueryTrackerSet("Last", "most recent invocation time", false, true, new QueryTrackerComparator()
+        getTrackerSets().add(new QueryTrackerSet("Last", "most recent invocation time", false, true, new QueryTrackerComparator()
         {
             long getPrimaryStatisticValue(QueryTracker qt)
             {
@@ -150,7 +149,7 @@ public class QueryProfiler
 
         // Not displayed, but gives new queries some time to get above one of the other thresholds.  Without this,
         // the first N unique queries would dominate the statistics.
-        _trackerSets.add(new QueryTrackerSet("First", "first invocation time", true, false, new QueryTrackerComparator()
+        getTrackerSets().add(new QueryTrackerSet("First", "first invocation time", true, false, new QueryTrackerComparator()
         {
             long getPrimaryStatisticValue(QueryTracker qt)
             {
@@ -182,9 +181,9 @@ public class QueryProfiler
 
     }
 
-    public void addListener(String substring, DatabaseQueryListener listener)
+    public void addListener(DatabaseQueryListener listener)
     {
-        _listeners.add(new Pair<>(substring, listener));
+        _listeners.add(listener);
     }
 
     public void track(@Nullable DbScope scope, String sql, @Nullable List<Object> parameters, long elapsed, @Nullable StackTraceElement[] stackTrace, boolean requestThread)
@@ -192,9 +191,9 @@ public class QueryProfiler
         if (null == stackTrace)
             stackTrace = Thread.currentThread().getStackTrace();
 
-        for (Pair<String, DatabaseQueryListener> listener : _listeners)
+        for (DatabaseQueryListener listener : _listeners)
         {
-            if (sql.contains(listener.getKey()))
+            if (listener.matches(sql))
             {
                 Map<DatabaseQueryListener, Object> listenersEnvironment = (Map)QueryService.get().getEnvironment(QueryService.Environment.LISTENER_ENVIRONMENTS);
                 Object listenerEnvironment;
@@ -205,9 +204,9 @@ public class QueryProfiler
                 }
                 else
                 {
-                    listenerEnvironment = listenersEnvironment.get(listener.getValue());
+                    listenerEnvironment = listenersEnvironment.get(listener);
                 }
-                listener.getValue().queryInvoked(scope, sql,
+                listener.queryInvoked(scope, sql,
                         (User) QueryService.get().getEnvironment(QueryService.Environment.USER),
                         (Container)QueryService.get().getEnvironment(QueryService.Environment.CONTAINER), listenerEnvironment);
             }
@@ -221,7 +220,7 @@ public class QueryProfiler
     {
         synchronized (_lock)
         {
-            for (QueryTrackerSet set : _trackerSets)
+            for (QueryTrackerSet set : getTrackerSets())
                 set.clear();
 
             _queries.clear();
@@ -251,7 +250,7 @@ public class QueryProfiler
 
     public HttpView getReportView(String statName, String buttonHTML, ActionURLFactory captionURLFactory, ActionURLFactory stackTraceURLFactory)
     {
-        for (QueryTrackerSet set : _trackerSets)
+        for (QueryTrackerSet set : getTrackerSets())
         {
             if (set.getCaption().equals(statName))
             {
@@ -424,16 +423,21 @@ public class QueryProfiler
      */
     public void ensureListenerEnvironment()
     {
+        // The environment is stored in a ThreadLocal, so there's no need for synchronization on the get/set combination
         if (QueryService.get().getEnvironment(QueryService.Environment.LISTENER_ENVIRONMENTS) == null)
         {
             Map<DatabaseQueryListener, Object> listenerEnvironment = new HashMap<>();
-            for (Pair<String, DatabaseQueryListener> entry : _listeners)
+            for (DatabaseQueryListener listener : _listeners)
             {
-                DatabaseQueryListener listener = entry.getValue();
                 listenerEnvironment.put(listener, listener.getEnvironment());
             }
             QueryService.get().setEnvironment(QueryService.Environment.LISTENER_ENVIRONMENTS, listenerEnvironment);
         }
+    }
+
+    public Collection<QueryTrackerSet> getTrackerSets()
+    {
+        return _trackerSets;
     }
 
     public static class QueryStatTsvWriter extends TSVWriter
@@ -452,7 +456,7 @@ public class QueryProfiler
             // Don't update anything while we're rendering the report or vice versa
             synchronized (getInstance()._lock)
             {
-                for (QueryTrackerSet set : getInstance()._trackerSets)
+                for (QueryTrackerSet set : getInstance().getTrackerSets())
                     if (set.shouldDisplay())
                         export.addAll(set);
 
@@ -522,19 +526,19 @@ public class QueryProfiler
 
                             _uniqueQueryCountEstimate++;
 
-                            for (QueryTrackerSet set : _trackerSets)
+                            for (QueryTrackerSet set : getTrackerSets())
                                 set.add(tracker);
 
                             _queries.put(query.getSql(), tracker);
                         }
                         else
                         {
-                            for (QueryTrackerSet set : _trackerSets)
+                            for (QueryTrackerSet set : getTrackerSets())
                                 set.beforeUpdate(tracker);
 
                             tracker.addInvocation(query.getElapsed(), query.getStackTrace());
 
-                            for (QueryTrackerSet set : _trackerSets)
+                            for (QueryTrackerSet set : getTrackerSets())
                                 set.update(tracker);
 
                             // Save the parameters of the longest running query
@@ -551,7 +555,7 @@ public class QueryProfiler
         }
 
         // stupid tomcat won't let me construct one of these at shutdown, so stash one statically
-        private final QueryProfiler.QueryStatTsvWriter shutdownWriter = new QueryProfiler.QueryStatTsvWriter();
+        private final QueryStatTsvWriter shutdownWriter = new QueryStatTsvWriter();
 
 
         public void shutdownPre(ServletContextEvent servletContextEvent)

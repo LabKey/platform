@@ -28,7 +28,10 @@ import org.labkey.api.security.User;
  */
 public interface DatabaseQueryListener<T>
 {
-    /** Called when a query that matches the pattern is actually run against the database */
+    /** @return whether this listener cares about the query */
+    public boolean matches(String sql);
+
+    /** Called when a matching query is run against the database. */
     public void queryInvoked(DbScope scope, String sql, User user, Container container, @Nullable T environment);
 
     /** @return a custom context, which will be provided if and when the queryInvoked() method is called. This will be called

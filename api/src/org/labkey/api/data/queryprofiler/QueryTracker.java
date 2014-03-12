@@ -245,7 +245,7 @@ class QueryTracker
     {
         sb.append("  <tr>");
 
-        for (QueryTrackerSet set : QueryProfiler.getInstance()._trackerSets)
+        for (QueryTrackerSet set : QueryProfiler.getInstance().getTrackerSets())
             if (set.shouldDisplay())
                 appendColumnHeader(set.getCaption(), set == currentSet, sb, factory);
 
@@ -281,7 +281,7 @@ class QueryTracker
     {
         String tab = "";
 
-        for (QueryTrackerSet set : QueryProfiler.getInstance()._trackerSets)
+        for (QueryTrackerSet set : QueryProfiler.getInstance().getTrackerSets())
         {
             if (set.shouldDisplay())
             {
@@ -302,7 +302,7 @@ class QueryTracker
         StringBuilder row = new StringBuilder();
         row.append("  <tr class=\"").append(className).append("\">");
 
-        for (QueryTrackerSet set : QueryProfiler.getInstance()._trackerSets)
+        for (QueryTrackerSet set : QueryProfiler.getInstance().getTrackerSets())
             if (set.shouldDisplay())
                 row.append("<td valign=top align=right>").append(((QueryTrackerComparator) set.comparator()).getFormattedPrimaryStatistic(this)).append("</td>");
 
@@ -319,7 +319,7 @@ class QueryTracker
         StringBuilder row = new StringBuilder();
         String tab = "";
 
-        for (QueryTrackerSet set : QueryProfiler.getInstance()._trackerSets)
+        for (QueryTrackerSet set : QueryProfiler.getInstance().getTrackerSets())
         {
             if (set.shouldDisplay())
             {
