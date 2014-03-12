@@ -16,6 +16,10 @@
 
 package org.labkey.api.security;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.security.roles.Role;
 
 import java.security.Principal;
@@ -27,7 +31,7 @@ import java.util.Set;
  * Date: Sep 20, 2006
  * Time: 1:28:26 PM
  */
-public abstract class UserPrincipal implements Principal, Serializable
+public abstract class UserPrincipal implements Principal, Parameter.JdbcParameterValue, Serializable
 {
     private String _name;
     private int _userId = 0;
@@ -124,5 +128,19 @@ public abstract class UserPrincipal implements Principal, Serializable
     public int hashCode()
     {
         return getUserId();
+    }
+
+    @Nullable
+    @Override
+    public Object getJdbcParameterValue()
+    {
+        return getUserId();
+    }
+
+    @NotNull
+    @Override
+    public JdbcType getJdbcParameterType()
+    {
+        return JdbcType.INTEGER;
     }
 }

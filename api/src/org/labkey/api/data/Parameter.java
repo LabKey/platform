@@ -18,22 +18,17 @@ package org.labkey.api.data;
 
 import com.google.common.primitives.Ints;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.arrays.IntegerArray;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StatementWrapper;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.StringExpression;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
@@ -72,7 +67,15 @@ public class Parameter
 {
     private static Logger LOG = Logger.getLogger(Parameter.class);
 
-    public static class TypedValue
+    public interface JdbcParameterValue
+    {
+        @Nullable
+        Object getJdbcParameterValue();
+        @NotNull
+        JdbcType getJdbcParameterType();
+    }
+
+    public static class TypedValue implements JdbcParameterValue
     {
         Object _value;
         JdbcType _type;
@@ -81,6 +84,18 @@ public class Parameter
         {
             this._value = value;
             this._type = type;
+        }
+
+        @Override
+        public Object getJdbcParameterValue()
+        {
+            return _value;
+        }
+
+        @Override @NotNull
+        public JdbcType getJdbcParameterType()
+        {
+            return _type;
         }
 
         public String toString()
@@ -225,10 +240,8 @@ public class Parameter
         JdbcType type = _type;
         if (null == type)
         {
-            if (in instanceof TypedValue)
-                type = ((TypedValue)in)._type;
-            else if (in instanceof StringExpression)
-                type = JdbcType.VARCHAR;
+            if (in instanceof JdbcParameterValue)
+                type = ((JdbcParameterValue)in).getJdbcParameterType();
         }
 
         Object value = getValueToBind(in, type);
@@ -334,8 +347,13 @@ public class Parameter
             value = decl.getDefault();
         }
 
-        if (value instanceof TypedValue)
-            value = ((TypedValue)value)._value;
+        if (value instanceof JdbcParameterValue)
+        {
+            value = ((JdbcParameterValue)value).getJdbcParameterValue();
+            // don't really want this to happen, but value could get double wrapped
+            if (value instanceof JdbcParameterValue)
+                value = ((JdbcParameterValue)value).getJdbcParameterValue();
+        }
 
         if (value == null)
             return null;
@@ -353,24 +371,12 @@ public class Parameter
             return value;
         else if (value instanceof GregorianCalendar)
             return new java.sql.Timestamp(((java.util.GregorianCalendar) value).getTimeInMillis());
-        else if (value instanceof HString)
-            return ((HString)value).getSource();
         else if (value.getClass() == java.lang.Character.class || value instanceof CharSequence)
             return value.toString();
-        else if (value instanceof StringExpression)
-            return ((StringExpression)value).getSource();
-        else if (value.getClass() == Container.class)
-            return ((Container) value).getId();
         else if (value instanceof Enum && type != null && type.isNumeric())
             return ((Enum)value).ordinal();
         else if (value instanceof Enum)
             return ((Enum)value).name();
-        else if (value instanceof UserPrincipal)
-            return ((UserPrincipal)value).getUserId();
-        else if (value instanceof Role)
-            return ((Role)value).getUniqueName();
-        else if (value instanceof GUID)
-            return value.toString();
         else if (value instanceof Class)
             return (((Class) value).getName());
 
@@ -754,9 +760,6 @@ public class Parameter
             if (null != _onClose)
                 _onClose.run();
         }
-
-
-
 
 
         String _debugSql;

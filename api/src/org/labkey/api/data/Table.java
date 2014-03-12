@@ -813,7 +813,10 @@ public class Table
 //                    throw new SQLException("The column '" + column.getName() + "' has a maximum length of " + column.getScale() + " but the value '" + value + "' is " + value.toString().length() + " characters long.");
 //                }
                 valueSQL.append('?');
-                parameters.add(new Parameter.TypedValue(value, column.getJdbcType()));
+                if (value instanceof Parameter.JdbcParameterValue)
+                    parameters.add(value);
+                else
+                    parameters.add(new Parameter.TypedValue(value, column.getJdbcType()));
             }
             comma = ", ";
         }
@@ -988,7 +991,10 @@ public class Table
 //                }
 
                 setSQL.append("=?");
-                parametersSet.add(new Parameter.TypedValue(value, column.getJdbcType()));
+                if (value instanceof Parameter.JdbcParameterValue)
+                    parametersSet.add(value);
+                else
+                    parametersSet.add(new Parameter.TypedValue(value, column.getJdbcType()));
             }
 
             comma = ", ";

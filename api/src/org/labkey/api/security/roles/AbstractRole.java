@@ -16,7 +16,9 @@
 package org.labkey.api.security.roles;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.SecurableResource;
@@ -148,5 +150,19 @@ public abstract class AbstractRole implements Role
     protected void addExcludedPrincipal(UserPrincipal principal)
     {
         _excludedPrincipals.add(principal);
+    }
+
+    @Nullable
+    @Override
+    public Object getJdbcParameterValue()
+    {
+        return getUniqueName();
+    }
+
+    @NotNull
+    @Override
+    public JdbcType getJdbcParameterType()
+    {
+        return JdbcType.VARCHAR;
     }
 }

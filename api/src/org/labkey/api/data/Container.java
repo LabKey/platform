@@ -79,7 +79,8 @@ import java.util.Set;
  *
  * CONSIDER: extend org.labkey.api.data.Entity
  */
-public class Container implements Serializable, Comparable<Container>, SecurableResource, ContainerContext, HasPermission
+public class Container implements Serializable, Comparable<Container>, SecurableResource, ContainerContext, HasPermission,
+        Parameter.JdbcParameterValue
 {
     private GUID _id;
     private Path _path;
@@ -1410,5 +1411,19 @@ public class Container implements Serializable, Comparable<Container>, Securable
             if (module.getRequireSitePermission())
                 return true;
         return false;
+    }
+
+    @Nullable
+    @Override
+    public Object getJdbcParameterValue()
+    {
+        return getId();
+    }
+
+    @NotNull
+    @Override
+    public JdbcType getJdbcParameterType()
+    {
+        return JdbcType.VARCHAR;
     }
 }

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.labkey.api.data.Parameter;
 import org.labkey.api.query.FieldKey;
 
 import java.util.Map;
@@ -27,7 +28,7 @@ import java.util.Set;
  * Date: Sep 16, 2009
  * Time: 12:14:49 PM
  */
-public interface StringExpression extends Cloneable
+public interface StringExpression extends Cloneable, Parameter.JdbcParameterValue
 {
     public StringExpression clone();
 

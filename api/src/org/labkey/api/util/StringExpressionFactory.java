@@ -25,6 +25,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DetailsURL;
@@ -568,6 +569,20 @@ public class StringExpressionFactory
                 copy._parsedExpression.add(new ConstantPart(value));
             }
             return copy;
+        }
+
+        @Nullable
+        @Override
+        public Object getJdbcParameterValue()
+        {
+            return getSource();
+        }
+
+        @NotNull
+        @Override
+        public JdbcType getJdbcParameterType()
+        {
+            return JdbcType.VARCHAR;
         }
     }
 

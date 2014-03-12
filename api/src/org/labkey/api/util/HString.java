@@ -17,9 +17,13 @@ package org.labkey.api.util;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.view.ViewServlet;
 
 import java.util.Locale;
@@ -37,7 +41,7 @@ import java.util.Locale;
  * The HString base class will html encode (PageFlowUtil.filter()) tainted data.  Subclasses may just return "".
  */
 
-public class HString implements java.io.Serializable, Comparable<HString>, CharSequence, Taintable
+public class HString implements java.io.Serializable, Comparable<HString>, CharSequence, Taintable, Parameter.JdbcParameterValue
 {
     public static HString EMPTY = new HString("",false)
     {
@@ -557,6 +561,23 @@ public class HString implements java.io.Serializable, Comparable<HString>, CharS
     {
         if (!ViewServlet.validChars(s))
             throw new ConversionException("Invalid characters in string");
+    }
+
+
+    @Nullable
+    @Override
+    public Object getJdbcParameterValue()
+    {
+        String s = getSource();
+        return StringUtils.isEmpty(s) ? null : s;
+    }
+
+
+    @NotNull
+    @Override
+    public JdbcType getJdbcParameterType()
+    {
+        return JdbcType.VARCHAR;
     }
 
 

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security.roles;
 
+import org.labkey.api.data.Parameter;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
@@ -33,7 +34,7 @@ import java.util.Set;
 /**
  * Represents a security role, which is a set of permissions with a name and description
  */
-public interface Role
+public interface Role extends Parameter.JdbcParameterValue
 {
     /**
      * Returns a unique name for this role. Typically, this is the

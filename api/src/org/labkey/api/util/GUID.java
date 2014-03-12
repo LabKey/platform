@@ -15,6 +15,10 @@
  */
 package org.labkey.api.util;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.security.Crypt;
 
 import java.io.BufferedReader;
@@ -58,7 +62,7 @@ import java.util.regex.Pattern;
 
 
 @SuppressWarnings({"UnnecessarySemicolon"})
-public class GUID implements Serializable
+public class GUID implements Serializable, Parameter.JdbcParameterValue
 {
     private static final int version  =       0x00001000;
     private static final int reserved =       0x00008000;
@@ -294,6 +298,20 @@ public class GUID implements Serializable
     public String toStringNoDashes()
     {
         return _str.replace("-", "");
+    }
+
+    @Nullable
+    @Override
+    public Object getJdbcParameterValue()
+    {
+        return _str;
+    }
+
+    @NotNull
+    @Override
+    public JdbcType getJdbcParameterType()
+    {
+        return JdbcType.GUID;
     }
 }
 
