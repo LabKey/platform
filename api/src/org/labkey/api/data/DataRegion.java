@@ -1785,6 +1785,7 @@ public class DataRegion extends AbstractDataRegion
         TableInfo t = viewForm.getTable();
         ApiQueryResponse json = new ApiQueryResponse();
         ApiJsonWriter jsonOut = new ApiJsonWriter(out);
+        prepareDisplayColumns(ctx.getContainer());
         json.initialize(ctx, this, t, _displayColumns);
 
         out.write("<script type='text/javascript'>\n");
@@ -2386,7 +2387,7 @@ public class DataRegion extends AbstractDataRegion
     // This is the chance for one-time DisplayColumn setup that requires the current context. At the moment, all
     // we do is override the date & number formats to reflect the folder defaults. TODO: A more general approach would be
     // to push this into DisplayColumn itself, e.g., prepare(Container c).
-    protected void prepareDisplayColumns(Container c)
+    public void prepareDisplayColumns(Container c)
     {
         final String defaultDate = DateUtil.getDateFormatString(c);
         final String defaultDateTime = DateUtil.getDateTimeFormatString(c);

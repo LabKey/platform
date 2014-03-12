@@ -125,8 +125,7 @@ public class JsonWriter
         boolean nullable = cinfo != null && cinfo.isNullable();
         props.put("isNullable", nullable);
         props.put("nullable", nullable);
-        if (includeDomainFormat)
-            props.put("required", !nullable);
+        props.put("required", cinfo != null && cinfo.isRequired());
         boolean readOnly = cinfo != null && cinfo.isReadOnly();
         props.put("isReadOnly", readOnly);
         props.put("readOnly", readOnly);
@@ -175,9 +174,10 @@ public class JsonWriter
             {
                 props.put("tsvFormat", cinfo.getTsvFormatString());
             }
-            if (cinfo.getFormat() != null)
+            // DisplayColumn should have the correct format (respecting folder default and translating "DateTime", etc.)
+            if (dc.getFormatString() != null)
             {
-                String format = cinfo.getFormat();
+                String format = dc.getFormatString();
                 props.put("format", format);
                 if (includeDomainFormat)
                     props.put("formatString", format);

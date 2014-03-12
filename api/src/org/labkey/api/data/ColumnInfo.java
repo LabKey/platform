@@ -296,6 +296,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         // and the remaining
         setUserEditable(col.isUserEditable());
         setNullable(col.isNullable());
+        setRequired(col.isRequiredSet());
         setAutoIncrement(col.isAutoIncrement());
         setScale(col.getScale());
         this.sqlTypeName = col.sqlTypeName;
@@ -1971,5 +1972,13 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         checkLocked();
         _calculated = calculated;
+    }
+
+
+    // If true, you can't use this column when auto-generationg LabKey SQL, it is not selected in the underlying query
+    // only query can set this true
+    public boolean isAdditionalQueryColumn()
+    {
+        return false;
     }
 }

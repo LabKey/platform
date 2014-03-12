@@ -53,7 +53,11 @@ Ext4.define('LABKEY.Security.ImpersonateUserPanel', {
             labelWidth: 50,
             queryMode: 'local',
             typeAhead: true,
-            forceSelection: true
+            forceSelection: true,
+            tpl: Ext4.create('Ext.XTemplate',
+                '<tpl for=".">',
+                    '<div class="x4-boundlist-item">{displayName:htmlEncode}</div>',
+                '</tpl>')
         });
 
         return {

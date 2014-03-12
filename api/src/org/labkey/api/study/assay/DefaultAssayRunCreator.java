@@ -327,8 +327,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 }
             }
 
-            transaction.commit();
-
             AssayService.get().ensureUniqueBatchName(batch, context.getProtocol(), context.getUser());
 
             List<String> copyErrors = AssayPublishService.get().autoCopyResults(context.getProtocol(), run, context.getUser(), context.getContainer());
@@ -343,6 +341,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 throw new ExperimentException(errorMessage.toString());
             }
 
+            transaction.commit();
             return batch;
         }
     }

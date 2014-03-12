@@ -2237,8 +2237,10 @@ public class QueryView extends WebPartView<Object>
                     rgn.addColumn(pkCol);
             }
 
+            RenderContext ctx = view.getRenderContext();
             rgn.setAllowAsync(false);
-            response.initialize(view.getRenderContext(), rgn, table, response.isIncludeDetailsColumn() ? rgn.getDisplayColumns() : getExportColumns(rgn.getDisplayColumns()));
+            rgn.prepareDisplayColumns(ctx.getContainer());
+            response.initialize(ctx, rgn, table, response.isIncludeDetailsColumn() ? rgn.getDisplayColumns() : getExportColumns(rgn.getDisplayColumns()));
         }
         else
         {

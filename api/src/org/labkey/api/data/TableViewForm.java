@@ -407,15 +407,17 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                 {
                     ColumnInfo col = getColumnByFormFieldName(propName);
 
-                    if (null == col || col.isNullable())
+                    if (null == col || !col.isRequired())
+                    {
                         values.put(propName, null);
+                    }
                     else
                     {
                         boolean isError = true;
 
                         // if the column is mv-enabled and a mv indicator has been specified, don't flag the required
                         // error
-                        if (col.isMvEnabled())
+                        if (col.isMvEnabled() && col.isNullable())
                         {
                             ColumnInfo mvCol = _tinfo.getColumn(col.getMvColumnName());
                             if (mvCol != null)

@@ -398,8 +398,9 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
             }
         }
 
-        /** These are not part of Ext.Grid.Column, don't know why they are hear (MAB) */
-        extGridColumn.put("required", colInfo != null && !colInfo.isNullable());
+        /** These are not part of Ext.Grid.Column, don't know why they are here (MAB) */
+        // TODO ext grids doesn't understand missing values, so treat required as !nullable
+        extGridColumn.put("required", colInfo != null && (!colInfo.isNullable() || colInfo.isRequired()));
         if (colInfo != null && isEditable(dc) && null != colInfo.getDefaultValue())
             extGridColumn.put("defaultValue", colInfo.getDefaultValue());
         if (colInfo != null)

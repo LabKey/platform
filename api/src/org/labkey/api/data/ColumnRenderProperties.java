@@ -80,6 +80,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         to.setInputLength(getInputLength());
         to.setInputRows(getInputRows());
         to.nullable = nullable;
+        to.required = required;
         to.displayWidth = displayWidth;
         to.format = format;
         to.excelFormatString = excelFormatString;
@@ -360,6 +361,12 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     {
         // !nullable is stricter and implies required
         return !nullable || required;
+    }
+
+    /** Returns the 'raw' value of required which is useful for copying attributes.  see isRequired() */
+    public boolean isRequiredSet()
+    {
+        return required;
     }
 
     public void setRequired(boolean required)

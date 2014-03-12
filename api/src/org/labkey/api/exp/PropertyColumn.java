@@ -82,7 +82,8 @@ public class PropertyColumn extends LookupColumn
         // ColumnRenderProperties
         pd.copyTo(to);
 
-        to.setNullable(!pd.isRequired());
+        to.setRequired(pd.isRequired());
+        to.setNullable(pd.isNullable());
         to.setHidden(pd.isHidden());
         String description = pd.getDescription();
         if (null == description && null != pd.getConceptURI())

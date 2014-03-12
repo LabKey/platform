@@ -193,7 +193,7 @@ public enum PropertyType
                     throw new UnsupportedOperationException();
                 }
             },    /** Stored as a path to a file on the server's file system */
-    FILE_LINK("http://cpas.fhcrc.org/exp/xml#fileLink", "FileLink", 's', JdbcType.VARCHAR, 100, "file", Cell.CELL_TYPE_STRING, File.class)
+    FILE_LINK("http://cpas.fhcrc.org/exp/xml#fileLink", "FileLink", 's', JdbcType.VARCHAR, 400, "file", Cell.CELL_TYPE_STRING, File.class)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {

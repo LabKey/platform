@@ -70,6 +70,8 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     private final boolean _devMode =AppProps.getInstance().isDevMode();
     protected String _debugViewDescription = null;
 
+    private static final Logger LOG = Logger.getLogger(WebPartView.class);
+
     public boolean isEmpty()
     {
         return _isEmpty;
@@ -104,7 +106,15 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         getViewContext().getResponse().setContentType(ApiJsonWriter.CONTENT_TYPE_JSON);
         MockHttpServletResponse mr = new MockHttpResponseWithRealPassthrough(getViewContext().getResponse());
         mr.setCharacterEncoding("UTF-8");
-        render(request, mr);
+        try
+        {
+            render(request, mr);
+        }
+        catch (MockHttpResponseWithRealPassthrough.SizeLimitExceededException e)
+        {
+            LOG.warn("Failed in renderToApiResponse() - " + e.getMessage() + " for URL " + getViewContext().getActionURL());
+            throw e;
+        }
 
         if (mr.getStatus() != HttpServletResponse.SC_OK)
         {
