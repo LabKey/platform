@@ -381,7 +381,8 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     @NotNull
     public SQLFragment getFromSQL(String alias)
     {
-        if (getFilter().getWhereSQL(_rootTable).length() == 0)
+        SQLFragment where = getFilter().getSQLFragment(_rootTable.getSqlDialect());
+        if (where.isEmpty())
             return getFromTable().getFromSQL(alias);
 
         // SELECT
@@ -423,10 +424,10 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
         return result;
     }
 
-    public ColumnInfo addWrapColumn(ColumnInfo column)
+    public ColumnInfo addWrapColumn(String name, ColumnInfo column)
     {
         assert column.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
-        ColumnInfo ret = new AliasedColumn(this, column.getName(), column);
+        ColumnInfo ret = new AliasedColumn(this, name, column);
         // Use getColumnNameSet() instead of getColumn() because we don't want to go through the resolveColumn()
         // codepath, which is potentially expensive and doesn't reflect the "real" columns that are part of this table
         if (column.isKeyField() && getColumnNameSet().contains(column.getName()))
@@ -435,6 +436,11 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
         }
         addColumn(ret);
         return ret;
+    }
+
+    public ColumnInfo addWrapColumn(ColumnInfo column)
+    {
+        return addWrapColumn(column.getName(), column);
     }
 
 
@@ -462,6 +468,17 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
             throw new IllegalArgumentException("filter cannot be null");
         if (!supportsContainerFilter())
             throw new IllegalArgumentException("container filter is not supported by " + this.getClass().getSimpleName());
+        _setContainerFilter(filter);
+    }
+
+
+    /**
+     * ignores supportsContainerFilter(), allows subclasses to set container filter w/o suppporting
+     * external, "public" setting of filter.
+     */
+    protected void _setContainerFilter(@NotNull ContainerFilter filter)
+    {
+        checkLocked();
         _containerFilter = filter;
         applyContainerFilter(_containerFilter);
         if (getRealTable().supportsContainerFilter() && getRealTable() instanceof ContainerFilterable)
@@ -470,10 +487,12 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
         }
     }
 
+
     protected String getContainerFilterColumn()
     {
         return "Container";
     }
+
 
     protected void applyContainerFilter(ContainerFilter filter)
     {
@@ -498,8 +517,13 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     public ContainerFilter getContainerFilter()
     {
         if (_containerFilter == null)
-            return ContainerFilter.CURRENT;
+            return getDefaultContainerFilter();
         return _containerFilter;
+    }
+
+    protected ContainerFilter getDefaultContainerFilter()
+    {
+        return ContainerFilter.CURRENT;
     }
 
     /**

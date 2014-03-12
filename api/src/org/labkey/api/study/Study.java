@@ -131,4 +131,6 @@ public interface Study extends StudyEntity
 
     // "is" prefix doesn't work with "Boolean", use get
     Boolean getShareDatasetDefinitions();
+
+    boolean isDataspaceStudy();
 }

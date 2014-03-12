@@ -168,7 +168,8 @@ public class MultiValuedLookupColumn extends LookupColumn
         {
             for (SQLFragment fragment : joins.values())
             {
-                strJoin.append(StringUtils.replace(fragment.toString(), "\n\t", "\n\t\t"));
+//                strJoin.append(StringUtils.replace(fragment.toString(), "\n\t", "\n\t\t"));
+                strJoin.append(fragment);
             }
         }
 

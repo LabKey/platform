@@ -375,6 +375,11 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
             _containerContext = cc;
     }
 
+    public ContainerContext getContainerContext()
+    {
+        return _containerContext;
+    }
+
     public ActionURL getActionURL()
     {
         if (null == _parsedUrl)

@@ -344,7 +344,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             String vialSubqueryAlias = baseAlias + VIAL_SUBQUERY_SUFFIX;
 
 
-            // TODO the SFK should really be attached to the PK instead of the spceimenid
+            // TODO the SFK should really be attached to the PK instead of the specimenid
             // As it is, there is no completely correct strategy for finding the join columns
             //
             // Try to work backward from the given specimen lookup column

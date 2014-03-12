@@ -52,7 +52,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
     @Override
     public FieldKey getContainerFieldKey()
     {
-        return FieldKey.fromParts("ID");
+        return FieldKey.fromParts("EntityId");
     }
 
     private void init(ActionURL url)

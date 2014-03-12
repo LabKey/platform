@@ -128,7 +128,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
             {
                 Pair<String, Boolean> pair = entry.getValue();
                 ColumnInfo lookupColumn = table.getColumn(pair.first);
-                assert lookupColumn != null : "Couldn't find additional lookup column of name '" + entry.getValue() + "' in " + table;
+                assert lookupColumn != null : "Couldn't find additional lookup column of name '" + pair.first + "' in " + table;
 
                 // Get the possibly remapped foreign key column
                 FieldKey foreignKey = getRemappedField(entry.getKey());

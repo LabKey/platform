@@ -135,11 +135,11 @@ public abstract class ContainerFilter
         SecurityLogger.indent("ContainerFilter");
         Collection<String> ids = getIds(container);
         SecurityLogger.outdent();
-        return getSQLFragment(schema, containerColumnSQL, ids, useJDBCParameters, allowNulls);
+        return getSQLFragment(schema, container, containerColumnSQL, ids, useJDBCParameters, allowNulls);
     }
 
     // instances of ContainerFilterWithUser will call this getSQLFragment after GetIds with a specific permission to check against the user
-    protected SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Collection<String> ids, boolean useJDBCParameters, boolean allowNulls)
+    protected SQLFragment getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, Collection<String> ids, boolean useJDBCParameters, boolean allowNulls)
     {
         if (ids == null)
         {
@@ -169,36 +169,57 @@ public abstract class ContainerFilter
                 return new SQLFragment(containerColumnSQL).append("=").append("'").append(first.getId()).append("'");
         }
 
-        SQLFragment result = new SQLFragment(containerColumnSQL);
-        result.append(" IN (SELECT c.EntityId FROM ");
-        result.append(CoreSchema.getInstance().getTableInfoContainers(), "c");
-        result.append(" INNER JOIN (SELECT CAST(x.Id AS ");
-        result.append(schema.getSqlDialect().getGuidType());
-        result.append(") AS Id FROM (");
+        SQLFragment select = new SQLFragment("SELECT c.EntityId FROM ");
+        select.append(CoreSchema.getInstance().getTableInfoContainers(), "c");
+        select.append(" INNER JOIN (SELECT CAST(x.Id AS ");
+        select.append(schema.getSqlDialect().getGuidType());
+        select.append(") AS Id FROM (");
         String separator = "";
         for (String containerId : ids)
         {
-            result.append(separator);
+            select.append(separator);
             separator = " UNION\n\t\t";
-            result.append("SELECT ");
+            select.append("SELECT ");
             // Need to add casts to make Postgres happy
             if (useJDBCParameters)
             {
-                result.append("?");
-                result.add(containerId);
+                select.append("?");
+                select.add(containerId);
             }
             else
             {
-                result.append("'");
-                result.append(containerId);
-                result.append("'");
+                select.append("'");
+                select.append(containerId);
+                select.append("'");
             }
-            result.append(" AS Id");
+            select.append(" AS Id");
         }
         // Filter based on the container's ID, or the container is a child of the ID and of type workbook
-        result.append(") x) x ON c.EntityId = x.Id OR (c.Parent = x.Id AND c.Type = 'workbook'))");
-        return result;
+        select.append(") x) x ON c.EntityId = x.Id OR (c.Parent = x.Id AND c.Type = 'workbook')");
+
+
+        boolean useCTE = false;
+        if (useCTE)
+        {
+            SQLFragment result = new SQLFragment(containerColumnSQL);
+            String shortName = null != this.getType() ? this.getType().name() : this.getClass().getSimpleName();
+            String cteKey = this.getClass().getName()+":"+ container.getId();
+            String token = result.addCommonTableExpression(cteKey, "cte" + shortName + System.identityHashCode(this), select);
+            result.append(" IN (SELECT entityId");
+            result.append(" FROM ").append(token);
+            result.append(")");
+            return result;
+        }
+        else
+        {
+            SQLFragment result = new SQLFragment(containerColumnSQL);
+            result.append(" IN (");
+            result.append(select);
+            result.append(")");
+            return result;
+        }
     }
+
 
     public enum Type
     {
@@ -249,6 +270,13 @@ public abstract class ContainerFilter
             public ContainerFilter create(User user)
             {
                 return new CurrentAndParents(user);
+            }
+        },
+        Project("Project folder")
+        {
+            public ContainerFilter create(User user)
+            {
+                return new Project(user);
             }
         },
         CurrentPlusProjectAndShared("Current folder, project, and Shared project")
@@ -361,7 +389,7 @@ public abstract class ContainerFilter
             SecurityLogger.indent("ContainerFilter");
             Collection<String> ids = getIds(container, permission);
             SecurityLogger.outdent();
-            return getSQLFragment(schema, containerColumnSQL, ids, useJDBCParameters, allowNulls);
+            return getSQLFragment(schema, container, containerColumnSQL, ids, useJDBCParameters, allowNulls);
         }
 
         public abstract Collection<String> getIds(Container currentContainer, Class<? extends Permission> permission);
@@ -478,6 +506,7 @@ public abstract class ContainerFilter
             return Type.CurrentAndSubfolders;
         }
     }
+
 
     public static class CurrentPlusProject extends ContainerFilterWithUser
     {
@@ -691,6 +720,28 @@ public abstract class ContainerFilter
         public Type getType()
         {
             return Type.StudyAndSourceStudy;
+        }
+    }
+
+    public static class Project extends ContainerFilterWithUser
+    {
+        public Project(User user)
+        {
+            super(user);
+        }
+
+        @Override
+        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> permission)
+        {
+            Container project = currentContainer.getProject();
+            if (null == project || !project.hasPermission(_user, permission))
+                return Collections.emptyList();
+            return Collections.singleton(project.getId());
+        }
+
+        public Type getType()
+        {
+            return Type.Project;
         }
     }
 
