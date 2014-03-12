@@ -70,7 +70,7 @@ ALTER TABLE study.Study ADD COLUMN AssayPlan TEXT;
 
 -- new fields to add to existing visit table, default SequenceNumTarget to SequenceNumMin
 ALTER TABLE study.Visit ADD COLUMN SequenceNumTarget NUMERIC(15,4) NOT NULL DEFAULT 0;
-UPDATE study.Visit SET SequenceNumTarget = SequenceNumMin;
+-- UPDATE study.Visit SET SequenceNumTarget = SequenceNumMin;  #19819: leave upgraded visits defaulting to 0
 
 -- new fields to add to the existing site/location table
 ALTER TABLE study.Site ADD COLUMN Description VARCHAR(500);
