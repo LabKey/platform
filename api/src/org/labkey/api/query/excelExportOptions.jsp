@@ -104,6 +104,7 @@ Ext.onReady(function () {
         <%-- Sometimes the GET URL gets too long, so use a POST instead. We have to create a separate <form> since we might --%>
         <%-- already be inside a form for the DataRegion itself. --%>
         var newForm = document.createElement('form');
+        document.body.appendChild(newForm);
         LABKEY.Ajax.request({
             url: exportUrl,
             method: 'POST',
@@ -114,6 +115,7 @@ Ext.onReady(function () {
                 if (!success) {
                     dr.showErrorMessage("Error exporting to Excel.");
                 }
+                document.form.removeChild(newForm);
             }
         });
 
