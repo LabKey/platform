@@ -16,6 +16,8 @@
 package org.labkey.api.security.permissions;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.SecurableResource;
@@ -138,5 +140,19 @@ public abstract class AbstractPermission implements Permission
     public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
     {
         return true;
+    }
+
+    @Nullable
+    @Override
+    public Object getJdbcParameterValue()
+    {
+        return getUniqueName();
+    }
+
+    @NotNull
+    @Override
+    public JdbcType getJdbcParameterType()
+    {
+        return JdbcType.VARCHAR;
     }
 }
