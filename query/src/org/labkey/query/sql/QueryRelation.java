@@ -231,10 +231,13 @@ public abstract class QueryRelation
      */
     public abstract static class RelationColumn
     {
+        boolean _suggestedColumn = false;
+
         public abstract FieldKey getFieldKey();     // field key does NOT include table name/alias
         abstract String getAlias();
         abstract QueryRelation getTable();
         abstract boolean isHidden();
+
 
         @NotNull
         public abstract JdbcType getJdbcType();
@@ -327,6 +330,12 @@ public abstract class QueryRelation
         public SQLFragment getValueSql(String tableAlias)
         {
             return new SQLFragment(tableAlias + "." + getParentTable().getSqlDialect().makeLegalIdentifier(getAlias()));
+        }
+
+        @Override
+        public boolean isAdditionalQueryColumn()
+        {
+            return _column._suggestedColumn;
         }
     }
 

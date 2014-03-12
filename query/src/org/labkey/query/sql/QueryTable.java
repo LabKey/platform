@@ -351,7 +351,6 @@ public class QueryTable extends QueryRelation
         TableColumn _parent;
         ForeignKey _foreignKey;
         String _alias;
-        boolean _suggestedColumn = false;
 
         TableColumn(FieldKey key, ColumnInfo col, TableColumn parent, ForeignKey foreignKey)
         {
@@ -483,8 +482,23 @@ public class QueryTable extends QueryRelation
         // or foreignKey.getTable().getContainerColumn()
         // or column.getContainerColumnFieldKey()
 
-        addSuggestedColumn(suggested, new FieldKey(sibling.getFieldKey().getParent(), "container"));
-        addSuggestedColumn(suggested, new FieldKey(sibling.getFieldKey().getParent(), "folder"));
+        // if this isn't a lookup, then let's just _tableInfo what the container column is
+        if (null == sibling.getFieldKey().getParent() && _tableInfo instanceof AbstractTableInfo)
+        {
+            FieldKey k = ((AbstractTableInfo)_tableInfo).getContainerFieldKey();
+            if (null != k)
+            {
+                addSuggestedColumn(suggested, k);
+                return;
+            }
+        }
+
+        FieldKey fkContainer = new FieldKey(sibling.getFieldKey().getParent(), "container");
+        FieldKey fkFolder = new FieldKey(sibling.getFieldKey().getParent(), "folder");
+        if (null != _resolve(fkFolder))
+            addSuggestedColumn(suggested, fkFolder);
+        else
+            addSuggestedColumn(suggested, fkContainer);
     }
 
 

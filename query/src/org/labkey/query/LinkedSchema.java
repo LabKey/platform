@@ -372,6 +372,8 @@ public class LinkedSchema extends ExternalSchema
         String columnSep = "";
         for (ColumnInfo col : sourceTable.getColumns())
         {
+            if (col.isAdditionalQueryColumn())
+                continue;
             sql.append(columnSep);
             sql.append("\"").append(col.getName()).append("\"");
             if (col.isHidden())

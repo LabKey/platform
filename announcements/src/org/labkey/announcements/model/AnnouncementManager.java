@@ -627,10 +627,26 @@ public class AnnouncementManager
             String option = props.get("defaultEmailOption");
 
             if (option != null)
-                return Integer.parseInt(option);
+                return validate(Integer.parseInt(option));
             else
                 throw new IllegalStateException("Invalid stored property value.");
         }
+    }
+
+    private static final Set<Integer> VALID_OPTIONS = PageFlowUtil.set(
+        EMAIL_PREFERENCE_NONE,
+        EMAIL_PREFERENCE_ALL,
+        EMAIL_PREFERENCE_MINE,
+        EMAIL_PREFERENCE_ALL + EMAIL_NOTIFICATION_TYPE_DIGEST,
+        EMAIL_PREFERENCE_MINE + EMAIL_NOTIFICATION_TYPE_DIGEST
+    );
+
+    private static int validate(int option)
+    {
+        if (VALID_OPTIONS.contains(option))
+            return option;
+        else
+            return EMAIL_PREFERENCE_NONE;
     }
 
     private static final String MESSAGE_BOARD_SETTINGS = "messageBoardSettings";

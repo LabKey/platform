@@ -1395,7 +1395,9 @@ public class ListManager implements SearchService.DocumentProvider
                 DomainKind kind = domain.getDomainKind();
                 if (kind instanceof ListDomainType)
                 {
-                    LOG.error("Found list that has not been migrated to a hard table: " + domain.getTypeURI());
+                    String fullListPath = list.getContainer().getPath() + " " + list.getName();
+                    LOG.warn("Found list that was not migrated to a hard table: " + domain.getTypeURI() + " " + fullListPath);
+                    LOG.warn("This list has not been functional since the 13.2 upgrade. Please contact LabKey for assistance in deleting it.");
                     continue;
                 }
 

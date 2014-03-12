@@ -1688,6 +1688,7 @@ groupByLoop:
             {
                 QField field = new QField(s, null);
                 SelectColumn selectColumn = new SelectColumn(field, true);
+                selectColumn._suggestedColumn = true;
                 selectColumn._selected = true;
                 this._columns.put(selectColumn.getFieldKey(), selectColumn);
                 ret.add(selectColumn);

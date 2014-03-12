@@ -112,13 +112,17 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 // This is one of the domainURI's with multiple domain descriptor records. From investigation on labkey.org,
                 // it appears that the one with the correct project is actually the bad record that should be moved aside,
                 // as it isn't properly wired to any property descriptors (and therefore the columns in the corresponding storage table are incorrect)
+                // Correction: it seems in some cases specimentables do get wired correctly to a second set of property descriptors. However, we still don't
+                // know which is the correct domain.
                 if (!moveConflictingDomain(conflictingDomain))
                 {
-                    String listMsg = "list".equals(conflictingDomain.getStorageSchemaName()) ? " and it is a list. This will block the list schema upgrade." : "";
-                    LOG.error("Can't fix conflicting domainid: " + conflictingDomain.getDomainId() + listMsg);
+                    String fullURIPathAndName = conflictingDomain.getDomainURI() + " " + conflictingDomain.getContainer().getPath() + ", " + conflictingDomain.getName();
+                    String listMsg = "list".equals(conflictingDomain.getStorageSchemaName()) ? " and it is a list." : "";
+                    LOG.error("Can't fix conflicting domainid: " + conflictingDomain.getDomainId() + " for object " + fullURIPathAndName + listMsg);
+                    LOG.error("This is not a result of the 14.1 upgrade. This object was likely damaged by an earlier folder move, and the containing folder should probably be deleted.");
                     // Send this to mothership so we can see if this situation exists in the wild and do something about it if this was domain descriptor
                     // for a list.
-                    ExceptionUtil.logExceptionToMothership(null, new Exception("Error resyncing domain for uri: " + conflictingDomain.getDomainURI()));
+                    ExceptionUtil.logExceptionToMothership(null, new Exception("Error resyncing domain for uri: " + fullURIPathAndName));
                     continue;
                 }
             }
@@ -166,6 +170,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
         Collection<Integer> propIds = getPropertyIds(conflictingDomain);
         // On labkey.org, this conflcting record has 0 matching records in exp.propertyDomain for all but one case.
         // If some other server in the wild is different, we don't know how to handle it.
+        // Correction: it seems in some cases specimentables do get wired correctly to a second set of property descriptors. However, we still don't
+        // know which is the correct domain.
         if (propIds.size() == 0)
         {
             conflictingDomain.setDomainURI(conflictingDomain.getDomainURI() + "_BAD");

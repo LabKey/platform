@@ -989,6 +989,7 @@ public class SecurityController extends SpringActionController
             SimpleFilter filter = new SimpleFilter();
             filter.addInClause(FieldKey.fromParts("UserId"), userIds);
             ctx.setBaseFilter(filter);
+            rgn.prepareDisplayColumns(c);
             ExcelWriter ew = new ExcelWriter(rgn.getResultSet(ctx), rgn.getDisplayColumns())
             {
                 @Override
