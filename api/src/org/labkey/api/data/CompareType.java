@@ -44,7 +44,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -531,7 +531,7 @@ public enum CompareType
 
     private static Set<String> parseParams(Object value)
     {
-        Set<String> values = new HashSet<>();
+        Set<String> values = new LinkedHashSet<>();
         if (value != null && !value.toString().trim().equals(""))
         {
             String[] st = value.toString().split(";", -1);
