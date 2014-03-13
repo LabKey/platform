@@ -668,10 +668,6 @@ public class UserController extends SpringActionController
         @Override
         protected ModelAndView getHtmlView(ShowUsersForm form, BindException errors) throws Exception
         {
-            Container c = getContainer();
-
-            ImpersonateView impersonateView = new ImpersonateView(c, getUser(), false);
-
             VBox users = new VBox();
             users.setTitle("Users");
             users.setFrame(WebPartView.FrameType.PORTAL);
@@ -681,15 +677,7 @@ public class UserController extends SpringActionController
             users.addView(toggleInactiveView);
             users.addView(createQueryView(form, errors, false, "Users"));
 
-            // Folder admins can't impersonate
-            if (impersonateView.hasUsers() && (getUser().isSiteAdmin() || isProjectAdmin()))
-            {
-                return new VBox(impersonateView, users);
-            }
-            else
-            {
-                return users;
-            }
+            return users;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2011,84 +1999,19 @@ public class UserController extends SpringActionController
     }
 
 
-    public static class ImpersonateUserBean
-    {
-        public final List<String> emails;
-        public final String title;
-        public final String messageHtml;
-        public final boolean isAdminConsole;
+/*
+    Keep these instructions. TODO: Move into ImpersonateUserPanel.js and display appropriate message in dialog
 
-        public ImpersonateUserBean(Container c, User user, boolean isAdminConsole)
-        {
-            this.isAdminConsole = isAdminConsole;
+    "As a project administrator, you can impersonate any project user within this project. While impersonating,
+        "you will not be able to navigate outside the project and you will not inherit any of the user's site-level "
+        "roles (e.g., Site Administrator, Developer)."
 
-            if (c.isRoot())
-            {
-                emails = UserManager.getActiveUserEmails();
-                // Can't impersonate yourself, so remove current user
-                emails.remove(user.getEmail());
-                messageHtml = null;
-                title = isAdminConsole ? "Impersonate User" : null;
+    if (user.isSiteAdmin())
+        "As a site administrator, you can impersonate any user on the site. You can access all the user's projects " +
+        "and you inherit the user's site-level roles and can access every folder and project where the user has the "
+        "user's projects. This provides a more complete picture of the user's experience on the site."
 
-                // TODO: Temporary test to validate new method
-                Collection<User> validUsers = ImpersonateUserContextFactory.getValidImpersonationUsers(null, user);
-                assert emails.size() == validUsers.size();
-            }
-            else
-            {
-                // Filter to project users
-                List<User> projectUsers = SecurityManager.getProjectUsers(c);
-                emails = new ArrayList<>(projectUsers.size());
-
-                // Can't impersonate yourself, so remove current user
-                for (User member : projectUsers)
-                    if (!user.equals(member))
-                        emails.add(member.getEmail());
-
-                Collections.sort(emails);
-
-                String instructions = PageFlowUtil.filter("While impersonating within this project, you will not be " +
-                    "able to navigate outside the project and you will not inherit any of the user's site-level roles " +
-                    "(e.g., Site Administrator, Developer).");
-
-                if (user.isSiteAdmin())
-                    instructions += "<br><br>" + PageFlowUtil.filter("As a site administrator, you can also impersonate " +
-                        "from the Admin Console; when impersonating from there, you can access all the user's projects " +
-                        "and you inherit the user's site-level roles.  This provides a more complete picture of the user's " +
-                        "experience on the site .");
-
-                messageHtml = instructions + "<br><br>";
-                title = "Impersonate User Within Project " + c.getProject().getName();
-
-                // TODO: Temporary test to validate new method
-                Collection<User> validUsers = ImpersonateUserContextFactory.getValidImpersonationUsers(c.getProject(), user);
-                assert emails.size() == validUsers.size();
-            }
-        }
-    }
-
-
-    public static class ImpersonateView extends JspView<ImpersonateUserBean>
-    {
-        public ImpersonateView(Container c, User user, boolean isAdminConsole)
-        {
-            super("/org/labkey/core/user/impersonate.jsp", new ImpersonateUserBean(c, user, isAdminConsole));
-
-            if (!isAdminConsole)
-            {
-                if (c.isRoot())
-                    setTitle("Impersonate User");
-                else
-                    setTitle("Impersonate User Within Project " + c.getProject().getName());
-            }
-        }
-
-        public boolean hasUsers()
-        {
-            return !getModelBean().emails.isEmpty();
-        }
-    }
-
+*/
 
     public static class ImpersonateUserForm extends ReturnUrlForm
     {

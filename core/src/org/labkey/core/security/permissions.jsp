@@ -186,25 +186,6 @@ Ext4.onReady(function(){
 </script>
 
 <%--
-    IMPERSONATE
---%>
-<%
-    if (user.isSiteAdmin() || project != null && project.hasPermission(user, AdminPermission.class))
-    {
-        UserController.ImpersonateView impersonateView = new UserController.ImpersonateView(user.isSiteAdmin() ? root : null!=project ? project : c, user, false);
-        if (impersonateView.hasUsers())
-        {
-            %>
-            <div id="impersonateFrame" class="x4-hide-display"><%
-            impersonateView.setFrame(WebPartView.FrameType.NONE);
-            me.include(impersonateView,out);
-            %></div><%
-        }
-    }
-%>
-
-
-<%--
     MODULE SECURITY
 --%>
 

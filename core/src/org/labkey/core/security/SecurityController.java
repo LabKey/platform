@@ -425,30 +425,26 @@ public class SecurityController extends SpringActionController
 
         HBox body = new HBox();
         VBox projectViews = new VBox();
+
         //don't display folder tree if we are in root
         if (!project.isRoot())
         {
             projectViews.addView(new ContainersView(project));
         }
 
-        // Display groups only if user has permissions in this project (or the root)
-        if (project.hasPermission(getUser(), AdminPermission.class))
-        {
-            UserController.ImpersonateView impersonateView = new UserController.ImpersonateView(project, getUser(), false);
-
-            if (impersonateView.hasUsers())
-                projectViews.addView(impersonateView);
-        }
-
         ActionURL startURL = c.getFolderType().getStartURL(c, getUser());
         projectViews.addView(new HtmlView(PageFlowUtil.button("Done").href(startURL).toString()));
-        if(c.isRoot())
+
+        if (c.isRoot())
+        {
             body.addView(projectViews);
+        }
         else
         {
             body.addView(projectViews, "60%");
             body.addView(new PermissionsDetailsView(c, "container"), "40%");
         }
+
         if (wizard)
         {
             VBox outer = new VBox();

@@ -131,30 +131,5 @@
         </tr><%
         }%>
     </table>
-</td><td>
-
-<table><%
-
-        if (getUser().isSiteAdmin())
-        {
-        %>
-        <tr><td colspan="2"><%
-            include(new UserController.ImpersonateView(c, getUser(), true), out);
-        %>
-        </td></tr><%
-        }
-        %>
-
-        <tr><td colspan="2"><b>Active Users in the Last Hour</b></td></tr><%
-
-        for (Pair<String, Long> pair : bean.active)
-        {
-            %><tr><td><%=h(pair.getKey())%></td><td><%=pair.getValue()%> minutes ago</td></tr><%
-        }
-
-    %>
-</table>
-
-
 </td>
 </tr></table>
