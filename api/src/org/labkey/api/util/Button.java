@@ -168,7 +168,8 @@ public class Button
         return sb.toString();
     }
 
-    public static class ButtonBuilder {
+    public static class ButtonBuilder
+    {
         private String id;
         private String text;
         private String href;
@@ -184,31 +185,31 @@ public class Button
             this.text = text;
         }
 
-        public ButtonBuilder href(String href)
+        public ButtonBuilder href(@NotNull String href)
         {
             this.href = href;
             return this;
         }
 
-        public ButtonBuilder href(URLHelper href)
+        public ButtonBuilder href(@NotNull URLHelper href)
         {
             this.href = href.toString();
             return this;
         }
 
-        public ButtonBuilder href(HString href)
+        public ButtonBuilder href(@NotNull HString href)
         {
             this.href = href.toString();
             return this;
         }
 
-        public ButtonBuilder href(ReturnURLString returnHref)
+        public ButtonBuilder href(@NotNull ReturnURLString returnHref)
         {
             this.href = returnHref.toString();
             return this;
         }
 
-        public ButtonBuilder href(Class<? extends Controller> actionClass, Container container)
+        public ButtonBuilder href(@NotNull Class<? extends Controller> actionClass, Container container)
         {
             this.href = new ActionURL(actionClass, container).toString();
             return this;
