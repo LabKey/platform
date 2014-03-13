@@ -1025,7 +1025,8 @@ public class SqlScriptController extends SpringActionController
                 }
             }
 
-            double previousVersion = -1;
+            double previousRoundedVersion = -1;
+            List<SqlScript> batch = Collections.emptyList();
 
             StringBuilder html = new StringBuilder("SQL scripts that will never run when upgrading from any of the following versions: ");
             html.append(ArrayUtils.toString(fromVersions)).append("<br>");
@@ -1034,16 +1035,29 @@ public class SqlScriptController extends SpringActionController
             {
                 double roundedVersion = Math.floor(script.getFromVersion() * 10);
 
-                if (previousVersion < roundedVersion)
+                if (previousRoundedVersion < roundedVersion)
                 {
-                    html.append("<br>");
-                    previousVersion = roundedVersion;
+                    appendBatch(html, batch);
+                    previousRoundedVersion = roundedVersion;
+                    batch = new ArrayList<>();
                 }
 
-                html.append(script).append("<br>");
+                batch.add(script);
             }
 
+            appendBatch(html, batch);
+
             return new HtmlView(html.toString());
+        }
+
+        private void appendBatch(StringBuilder html, List<SqlScript> batch)
+        {
+            Collections.sort(batch);
+
+            for (SqlScript sqlScript : batch)
+                html.append(sqlScript).append("<br>");
+
+            html.append("<br>");
         }
 
         public NavTree appendNavTrail(NavTree root)
