@@ -1901,7 +1901,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
 
             // For now, just specify null for sequence num index... we'll add it below
-            it.setSpecialOutputColumns(indexPTID, null, indexVisitDate, indexKeyProperty);
+            it.setSpecialOutputColumns(translatedIndexPTID, null, indexVisitDate, indexKeyProperty);
             it.setTimepointType(timetype);
 
             /* NOTE: these columns must be added in dependency order

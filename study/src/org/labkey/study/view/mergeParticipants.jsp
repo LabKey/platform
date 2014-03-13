@@ -491,7 +491,7 @@
             var statusEl = document.getElementById('mergeResults-div');
             if (isError)
             {
-                statusEl.innerHTML = "<span style='color:red;padding-top: 8px; font-weight: bold;'>" + Ext4.util.Format.htmlEncode(message) + "<br/></span>";
+                statusEl.innerHTML = "<span style='color:red;padding-top: 8px; font-weight: bold;'>" + Ext4.util.Format.nl2br(Ext4.util.Format.htmlEncode(message)) + "<br/></span>";
                 globalError = true;
             }
             else
@@ -549,7 +549,17 @@
                     aliasSourceField.setValue("");
                     resetPreview(true, false);
                     if (response.errorCount > 0)
-                        updateMergeResults("Error merging: " + response.result[0].errors.exception, true);
+                    {
+                        var plural = response.errorCount > 1 ? "s" : "";
+                        var errMsg = "";
+                        for (var i in response.result)
+                        {
+                            var result = response.result[i];
+                            if (result.hasOwnProperty('errors'))
+                                errMsg = errMsg + result.queryName + ": " + result.errors.exception + "\n";
+                        }
+                        updateMergeResults("Error" + plural + " merging: \n" + errMsg, true);
+                    }
                     else
                         updateMergeResults("Successfully merged " + jsSubjectNounColumnName + " from " + oldId + " to " + newId, false);
                 },
