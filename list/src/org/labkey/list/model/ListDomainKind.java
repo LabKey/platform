@@ -34,9 +34,9 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -54,18 +54,13 @@ public abstract class ListDomainKind extends AbstractDomainKind
 
     static
     {
-        PropertyStorageSpec[] props =
-        {
-            new PropertyStorageSpec("created", JdbcType.TIMESTAMP),
-            new PropertyStorageSpec("modified", JdbcType.TIMESTAMP),
-            new PropertyStorageSpec("createdBy", JdbcType.INTEGER),
-            new PropertyStorageSpec("modifiedBy", JdbcType.INTEGER),
-            new PropertyStorageSpec("entityId", JdbcType.VARCHAR).setEntityId(true).setNullable(false),
-            new PropertyStorageSpec("lastIndexed", JdbcType.TIMESTAMP),
-            new PropertyStorageSpec("container", JdbcType.VARCHAR).setEntityId(true).setNullable(false)
-        };
-
-        BASE_PROPERTIES = new HashSet<>(Arrays.asList(props));
+        BASE_PROPERTIES = PageFlowUtil.set(new PropertyStorageSpec("entityId", JdbcType.VARCHAR).setEntityId(true).setNullable(false),
+                new PropertyStorageSpec("created", JdbcType.TIMESTAMP),
+                new PropertyStorageSpec("createdBy", JdbcType.INTEGER),
+                new PropertyStorageSpec("modified", JdbcType.TIMESTAMP),
+                new PropertyStorageSpec("modifiedBy", JdbcType.INTEGER),
+                new PropertyStorageSpec("lastIndexed", JdbcType.TIMESTAMP),
+                new PropertyStorageSpec("container", JdbcType.VARCHAR).setEntityId(true).setNullable(false));
     }
 
     public void setListDefinition(ListDefinitionImpl list)
@@ -145,7 +140,12 @@ public abstract class ListDomainKind extends AbstractDomainKind
     @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
-        return PageFlowUtil.set("EntityId", "Created", "CreatedBy", "Modified", "ModifiedBy", "LastIndexed", "Container");
+        Set<String> properties = new LinkedHashSet<>();
+        for (PropertyStorageSpec pss : BASE_PROPERTIES)
+        {
+            properties.add(pss.getName());
+        }
+        return Collections.unmodifiableSet(properties);
     }
 
     @Override

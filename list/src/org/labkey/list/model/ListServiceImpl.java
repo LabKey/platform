@@ -47,7 +47,7 @@ public class ListServiceImpl implements ListService.Interface
     public boolean hasLists(Container container)
     {
         Collection<ListDef> lists = ListManager.get().getLists(container);
-        return lists.size() > 0;
+        return !lists.isEmpty();
     }
 
     public ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType)
