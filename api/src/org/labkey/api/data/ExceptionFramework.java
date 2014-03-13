@@ -15,7 +15,6 @@
  */
 package org.labkey.api.data;
 
-import org.jetbrains.annotations.Nullable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
 import org.springframework.jdbc.support.SQLExceptionTranslator;
@@ -32,7 +31,7 @@ public enum ExceptionFramework
     Spring
         {
             @Override
-            DataAccessException translate(DbScope scope, String task, @Nullable String sql, SQLException e)
+            DataAccessException translate(DbScope scope, String task, SQLException e)
             {
                 SQLExceptionTranslator translator = new SQLErrorCodeSQLExceptionTranslator(scope.getDataSource());
                 return translator.translate(task, null, e);
@@ -41,12 +40,11 @@ public enum ExceptionFramework
     JDBC
         {
             @Override
-            RuntimeSQLException translate(DbScope scope, String task, @Nullable String SQL, SQLException e)
+            RuntimeSQLException translate(DbScope scope, String task, SQLException e)
             {
                 return new RuntimeSQLException(e);
             }
         };
 
-    // TODO: Remove SQL parameter? Generally, we don't want SQL going into the exception message (for users to see), we want to decorate
-    abstract RuntimeException translate(DbScope scope, String task, @Nullable String SQL, SQLException e);
+    abstract RuntimeException translate(DbScope scope, String task, SQLException e);
 }

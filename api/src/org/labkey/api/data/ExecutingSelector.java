@@ -413,7 +413,7 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
         {
             Table.logException(_sql, conn, e, getLogLevel());
             ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.DialectSQL, _sql.getSQL(), false);
-            throw getExceptionFramework().translate(getScope(), "ExecutingSelector", _sql.getSQL(), e);
+            throw getExceptionFramework().translate(getScope(), "ExecutingSelector", e);
         }
     }
 }

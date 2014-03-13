@@ -70,9 +70,8 @@ public class SqlExecutor extends JdbcCommand
         return execute(sql, resultsExecutor, handler);
     }
 
-    // Provides the ability to execute a SQL statement that returns multiple result sets. The method prepares the
-    // statement, passes it into the StatementHandler for execution and result set handling, and then closes
-    // the statement.
+    // Provides the ability to execute a SQL statement that returns multiple result sets. The method prepares the statement,
+    // passes it into the StatementHandler for execution and result set handling, and then closes the statement.
     public <T> T executeWithMultipleResults(SQLFragment sql, StatementHandler<T> handler)
     {
         StatementHandlingStatementExecutor<T> statementExecutor = new StatementHandlingStatementExecutor<>();
@@ -91,7 +90,8 @@ public class SqlExecutor extends JdbcCommand
         catch(SQLException e)
         {
             Table.logException(sql, conn, e, getLogLevel());
-            throw getExceptionFramework().translate(getScope(), "SqlExecutor.execute()", sql.getSQL(), e);
+            // TODO: Decorate exception with sql.getSQL()?
+            throw getExceptionFramework().translate(getScope(), "SqlExecutor.execute()", e);
         }
         finally
         {
@@ -150,7 +150,7 @@ public class SqlExecutor extends JdbcCommand
             List<Object> parameters = sqlFragment.getParams();
             String sql = sqlFragment.getSQL();
 
-            try (PreparedStatement stmt =  conn.prepareStatement(sql))
+            try (PreparedStatement stmt = conn.prepareStatement(sql))
             {
                 Table.setParameters(stmt, parameters);
 

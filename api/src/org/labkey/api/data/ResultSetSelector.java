@@ -74,7 +74,7 @@ public class ResultSetSelector extends BaseSelector
             @Override
             public void handleSqlException(SQLException e, @Nullable Connection conn)
             {
-                throw getExceptionFramework().translate(getScope(), "ResultSetSelector", "Unknown SQL", e);
+                throw getExceptionFramework().translate(getScope(), "ResultSetSelector", e);
             }
         };
     }
