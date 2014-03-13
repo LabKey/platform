@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ public class HtmlDisplayColumnFactory implements DisplayColumnFactory
             setHtmlFiltered(false);
         }
 
+        @NotNull
         @Override
         public String getFormattedValue(RenderContext ctx)
         {

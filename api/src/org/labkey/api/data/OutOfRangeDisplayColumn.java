@@ -104,16 +104,19 @@ public class OutOfRangeDisplayColumn extends DataColumn
         return result.toString();
     }
 
+    @Override
     public Object getDisplayValue(RenderContext ctx)
     {
         return getFormattedValue(ctx);
     }
 
+    @Override
     public String getTsvFormattedValue(RenderContext ctx)
     {
         return getFormattedValue(ctx);
     }
 
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         String value = getFormattedValue(ctx);
@@ -128,6 +131,7 @@ public class OutOfRangeDisplayColumn extends DataColumn
         }
     }
 
+    @Override
     public void addQueryColumns(Set<ColumnInfo> columns)
     {
         super.addQueryColumns(columns);

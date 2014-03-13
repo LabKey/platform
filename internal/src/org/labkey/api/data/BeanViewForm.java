@@ -17,12 +17,11 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.beanutils.DynaBean;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.DynaBean;
 
-import java.util.Map;
 import java.util.HashMap;
-import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
 
 
 public class BeanViewForm<K> extends TableViewForm implements DynaBean

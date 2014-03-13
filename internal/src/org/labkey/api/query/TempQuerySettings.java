@@ -26,8 +26,7 @@ import org.labkey.api.view.ViewContext;
  */
 
 /**
- * This class may be used ot create a QuerySettings from a given SQL statement,
- * schema name, and container.
+ * This class is used to create a QuerySettings from a given SQL statement, schema name, and container.
  */
 public class TempQuerySettings extends QuerySettings
 {

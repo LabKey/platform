@@ -526,10 +526,10 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         if (xmlTable.isSetCacheSize())
             _cacheSize = xmlTable.getCacheSize();
 
-        if(xmlTable.getImportMessage() != null)
+        if (xmlTable.getImportMessage() != null)
             setImportMessage(xmlTable.getImportMessage());
 
-        if(xmlTable.getImportTemplates() != null)
+        if (xmlTable.getImportTemplates() != null)
             setImportTemplates(xmlTable.getImportTemplates().getTemplateArray());
 
         if (xmlTable.isSetGridUrl())
@@ -989,11 +989,11 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         //RenderContext rc = new RenderContext(ctx);
         Map<String, Container> renderCtx = Collections.singletonMap("container", ctx.getContainer());
 
-        if(_importTemplates != null)
+        if (_importTemplates != null)
         {
             for (Pair<String, StringExpression> pair : _importTemplates)
             {
-                if(pair.second instanceof DetailsURL)
+                if (pair.second instanceof DetailsURL)
                     templates.add(Pair.of(pair.first, ((DetailsURL)pair.second).copy(ctx.getContainer()).getActionURL().toString()));
                 else if (pair.second instanceof StringExpressionFactory.URLStringExpression)
                     templates.add(Pair.of(pair.first, ((StringExpressionFactory.URLStringExpression)pair.second).eval(renderCtx)));
@@ -1004,7 +1004,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         {
             URLHelper url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
             url.addParameter("captionType", ExcelWriter.CaptionType.Name.name());
-            if(url != null)
+            if (url != null)
                 templates.add(Pair.of("Download Template", url.toString()));
         }
 
