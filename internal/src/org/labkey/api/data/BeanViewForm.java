@@ -57,7 +57,7 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
 
                 K bean;
                 if (_oldValues instanceof Map && !(_wrappedClass.isAssignableFrom(_oldValues.getClass())))
-                    bean = factory.fromMap((Map) _oldValues);
+                    bean = factory.fromMap((Map<String, ?>) _oldValues);
                 else
                     bean = (K) BeanUtils.cloneBean(_oldValues);
 
