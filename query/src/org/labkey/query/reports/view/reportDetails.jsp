@@ -224,7 +224,7 @@
     <tr>
         <td colspan="2">
             <%= button("View Report").href(vewReportURL).attributes(reportURLAttributes) %>
-            <%= report.canEdit(getUser(), getContainer()) ? button("Edit Report").href(editReportURL) : ""%>
+            <%= report.canEdit(getUser(), getContainer()) && (editReportURL != null) ? button("Edit Report").href(editReportURL) : ""%>
         </td>
     </tr>
 </table>
