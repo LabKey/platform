@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseSelector.ResultSetHandler;
 import org.labkey.api.data.BaseSelector.StatementHandler;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.util.ExceptionUtil;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -90,7 +91,8 @@ public class SqlExecutor extends JdbcCommand
         catch(SQLException e)
         {
             Table.logException(sql, conn, e, getLogLevel());
-            // TODO: Decorate exception with sql.getSQL()?
+            // StatementWrapper will have decorated the exception already, but not with the parameter substituted version
+            ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.DialectSQL, sql.toString(), true);
             throw getExceptionFramework().translate(getScope(), "SqlExecutor.execute()", e);
         }
         finally

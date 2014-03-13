@@ -412,7 +412,7 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
         public void handleSqlException(SQLException e, @Nullable Connection conn)
         {
             Table.logException(_sql, conn, e, getLogLevel());
-            ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.DialectSQL, _sql.getSQL(), false);
+            ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.DialectSQL, _sql.toString(), false);
             throw getExceptionFramework().translate(getScope(), "ExecutingSelector", e);
         }
     }
