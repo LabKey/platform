@@ -33,8 +33,8 @@ import java.io.IOException;
  */
 public class MapArrayExcelWriter extends ExcelWriter
 {
-    List<Map<String,Object>> maps;
-    int currentRow = 0;
+    private final List<Map<String,Object>> maps;
+    private int currentRow = 0;
 
     public MapArrayExcelWriter(List<Map<String, Object>> maps, ColumnDescriptor[] cols)
     {
@@ -75,12 +75,14 @@ public class MapArrayExcelWriter extends ExcelWriter
 
         }
 
+        @Override
         public Object getValue(RenderContext ctx)
         {
             //Ignore the context.
             return maps.get(currentRow).get(getName());
         }
 
+        @Override
         public Class getValueClass()
         {
             return valueClass; 
@@ -88,46 +90,55 @@ public class MapArrayExcelWriter extends ExcelWriter
 
 
         //NOTE: Methods beyond here are unimplemented, just abstract in base class!
+        @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }
 
+        @Override
         public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }
 
+        @Override
         public void renderTitle(RenderContext ctx, Writer out) throws IOException
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }
 
+        @Override
         public boolean isSortable()
         {
             return false;
         }
 
+        @Override
         public boolean isFilterable()
         {
             return false;
         }
 
+        @Override
         public boolean isEditable()
         {
             return false;
         }
 
+        @Override
         public void renderSortHandler(RenderContext ctx, Writer out, Sort.SortDirection sort) throws IOException
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }
 
+        @Override
         public void renderFilterOnClick(RenderContext ctx, Writer out) throws IOException
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }
 
+        @Override
         public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
         {
             throw new UnsupportedOperationException("This is for excel only.");
@@ -151,20 +162,19 @@ public class MapArrayExcelWriter extends ExcelWriter
             return null;
         }
 
+        @Override
         public boolean isQueryColumn()
         {
             return false;
         }
 
-        public void addQueryColumns(Set<ColumnInfo> columns)
-        {
-        }
-
+        @Override
         public ColumnInfo getColumnInfo()
         {
             return null;
         }
 
+        @Override
         public void render(RenderContext ctx, Writer out) throws IOException
         {
             throw new UnsupportedOperationException("This is for excel only.");
