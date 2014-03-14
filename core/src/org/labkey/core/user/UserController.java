@@ -24,6 +24,7 @@ import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -49,7 +50,6 @@ import org.labkey.api.data.UrlColumn;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
@@ -81,6 +81,7 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.impersonation.ImpersonateRoleContextFactory;
 import org.labkey.api.security.impersonation.ImpersonateUserContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContext;
+import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -1979,7 +1980,7 @@ public class UserController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             User currentUser = getUser();
-            Container project = currentUser.isSiteAdmin() ? null : getContainer().getProject();  // TODO: Param for project vs. site
+            Container project = currentUser.isSiteAdmin() ? null : getContainer().getProject();
             Collection<User> users = ImpersonateUserContextFactory.getValidImpersonationUsers(project, getUser());
 
             Collection<Map<String, Object>> responseUsers = new LinkedList<>();
@@ -1999,36 +2000,10 @@ public class UserController extends SpringActionController
     }
 
 
-/*
-    Keep these instructions. TODO: Move into ImpersonateUserPanel.js and display appropriate message in dialog
-
-    "As a project administrator, you can impersonate any project user within this project. While impersonating,
-        "you will not be able to navigate outside the project and you will not inherit any of the user's site-level "
-        "roles (e.g., Site Administrator, Developer)."
-
-    if (user.isSiteAdmin())
-        "As a site administrator, you can impersonate any user on the site. You can access all the user's projects " +
-        "and you inherit the user's site-level roles and can access every folder and project where the user has the "
-        "user's projects. This provides a more complete picture of the user's experience on the site."
-
-*/
-
+    // Need returnUrl because we stash the current URL in session and return to it after impersonation is complete
     public static class ImpersonateUserForm extends ReturnUrlForm
     {
-        private String _email;
         private Integer _userId;
-        private boolean _stayOnCurrentPage = false;
-
-        public String getEmail()
-        {
-            return _email;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setEmail(String email)
-        {
-            _email = email;
-        }
 
         public Integer getUserId()
         {
@@ -2039,59 +2014,52 @@ public class UserController extends SpringActionController
         {
             _userId = userId;
         }
-
-        public boolean isStayOnCurrentPage()
-        {
-            return _stayOnCurrentPage;
-        }
-
-        public void setStayOnCurrentPage(boolean stayOnCurrentPage)
-        {
-            _stayOnCurrentPage = stayOnCurrentPage;
-        }
     }
 
 
     @RequiresPermissionClass(AdminPermission.class) @CSRF
-    public class ImpersonateUserAction extends SimpleRedirectAction<ImpersonateUserForm>
+    public class ImpersonateUserAction extends MutatingApiAction<ImpersonateUserForm>
     {
-        public ActionURL getRedirectURL(ImpersonateUserForm form) throws Exception
+        @Override
+        public ApiResponse execute(ImpersonateUserForm form, BindException errors) throws Exception
+        {
+            String error = impersonate(form);
+
+            if (null != error)
+            {
+                errors.reject(null, error);
+                return null;
+            }
+
+            return new ApiSimpleResponse("success", true);
+        }
+
+        // Non-null return value means send back an error message
+        private @Nullable String impersonate(ImpersonateUserForm form)
         {
             if (getUser().isImpersonated())
-                throw new UnauthorizedException("Can't impersonate; you're already impersonating");
+                return "Can't impersonate; you're already impersonating";
 
-            // User ID and email are both supported; check for user ID first
-            final User impersonatedUser;
             Integer userId = form.getUserId();
 
-            if (null != userId)
-            {
-                impersonatedUser = UserManager.getUser(userId);
-            }
-            else
-            {
-                String rawEmail = form.getEmail();
-                ValidEmail email = new ValidEmail(rawEmail);
-                impersonatedUser = UserManager.getUser(email);
-            }
+            if (null == userId)
+                return "Must specify a user ID";
+
+            User impersonatedUser = UserManager.getUser(userId);
 
             if (null == impersonatedUser)
-                throw new NotFoundException("User doesn't exist");
+                return "User doesn't exist";
 
-            SecurityManager.impersonateUser(getViewContext(), impersonatedUser, form.getReturnURLHelper());
-            Container c = getContainer();
+            try
+            {
+                SecurityManager.impersonateUser(getViewContext(), impersonatedUser, form.getReturnURLHelper());
+            }
+            catch (UnauthorizedImpersonationException uie)
+            {
+                return uie.getMessage();
+            }
 
-            if (form.isStayOnCurrentPage())
-            {
-                return form.getReturnActionURL();
-            }
-            else
-            {
-                if (c.isRoot())
-                    return AppProps.getInstance().getHomePageActionURL();
-                else
-                    return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
-            }
+            return null;
         }
     }
 
