@@ -282,6 +282,7 @@ Ext.define('LABKEY.app.controller.View', {
      * @private
      * Default show view method used to set the active view for the center region.
      * @param xtype
+     * @param context
      */
     _showView : function(xtype, context) {
 

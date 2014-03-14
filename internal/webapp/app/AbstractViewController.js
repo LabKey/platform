@@ -65,10 +65,9 @@ Ext.define('LABKEY.app.controller.AbstractViewController', {
     /**
      * Called up to one time per xtype that is registered by a controller.
      * @param xtype
-     * @param config
      * @param context
      */
-    createView : function(xtype, config, context) {
+    createView : function(xtype, context) {
         console.error('createView must implemented by subclasses of AbstractViewController:', this.$className);
     },
 
