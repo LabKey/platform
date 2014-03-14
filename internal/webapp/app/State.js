@@ -43,6 +43,9 @@ Ext.define('LABKEY.app.controller.State', {
         });
 
         this.viewController = this._getViewController();
+
+        this.viewController.on('afterchangeview', this.updateView, this)
+
         this.views = {};
         if (this.preventRedundantHistory) {
             this.lastAppState = '';
@@ -225,7 +228,7 @@ Ext.define('LABKEY.app.controller.State', {
             document.title = title || this.defaultTitle;
             var appState = viewname;
             if (viewstate && viewstate.length > 0) {
-                appState = viewstate.join('/').toLowerCase();
+                appState += '/' + viewstate.join('/').toLowerCase();
             }
 
             if (!this.POP_STATE && this.preventRedundantHistory && (this.lastAppState != appState)) {

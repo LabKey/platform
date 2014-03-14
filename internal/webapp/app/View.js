@@ -32,8 +32,6 @@ Ext.define('LABKEY.app.controller.View', {
             //
             this.allowAnimations = false; //!Ext.isDefined(params['transition']);
         }
-
-        this.stateController = this.getController('State');
     },
 
     /**
@@ -239,13 +237,11 @@ Ext.define('LABKEY.app.controller.View', {
         }
         this.CREATE_VIEW = false;
 
-        this.stateController.updateView(newViewXtype, newViewContext, viewTitle, skipState);
-
         this.activeView = newViewXtype;
 
         this.inTransition = false;
 
-        this.fireEvent('afterchangeview', this.activeView, context);
+        this.fireEvent('afterchangeview', this.activeView, context, viewTitle, skipState);
     },
 
     /**
