@@ -8006,7 +8006,7 @@ internal/webapp/FileUploadField.css -text
 internal/webapp/FileUploadField.js -text
 internal/webapp/GuidedTip.css -text
 internal/webapp/GuidedTip.js -text
-internal/webapp/ImpersonateUserPanel.js -text
+internal/webapp/Impersonate.js -text
 internal/webapp/StatusBar.js -text
 internal/webapp/TemplateHelper.js -text
 internal/webapp/TemplateHelper_test.js -text

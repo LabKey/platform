@@ -1492,20 +1492,20 @@ LABKEY.Security = new function()
         showImpersonateUser: function(){
             var display = function() {
                 Ext4.onReady(function() {
-                    Ext4.create('LABKEY.Security.ImpersonateUserPanel', {
+                    Ext4.create('LABKEY.Security.ImpersonateUser', {
                         autoShow: true
                     });
                 });
             };
 
-            if (LABKEY.Security.ImpersonateUserPanel)
+            if (LABKEY.Security.ImpersonateUser)
             {
                 display();
             }
             else
             {
                 LABKEY.requiresExt4Sandbox(true, function() {
-                    LABKEY.requiresScript('ImpersonateUserPanel.js', true, display, this);
+                    LABKEY.requiresScript('Impersonate.js', true, display, this);
                 }, this);
             }
         }

@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-Ext4.define('LABKEY.Security.ImpersonateUserPanel', {
+Ext4.define('LABKEY.Security.ImpersonateUser', {
     extend: 'Ext.window.Window',
 
     modal: true,
@@ -37,8 +37,15 @@ Ext4.define('LABKEY.Security.ImpersonateUserPanel', {
     },
 
     getPanel: function(){
+        var instructions = LABKEY.Security.currentUser.isSystemAdmin ?
+            "As a site administrator, you can impersonate any user on the site." :
+
+            "As a project administrator, you can impersonate any project user within this project. While impersonating, " +
+            "you will not be able to navigate outside the project and will not inherit any of the user's site-level " +
+            "roles (e.g., Site Administrator, Developer).";
+
         var divContainer = Ext4.create('Ext.container.Container', {
-            html: "<div>Select a user and click the 'Impersonate' button</div>",
+            html: "<div>" + instructions + "<br><br>Select a user from the list below and click the 'Impersonate' button</div>",
             margin: '0 0 15 0'
         });
 
@@ -100,11 +107,24 @@ Ext4.define('LABKEY.Security.ImpersonateUserPanel', {
             return;
 
         var userId = this.impersonateCombo.getValue();
-
-        window.location = LABKEY.ActionURL.buildURL('user', 'impersonateUser', null, {
-            userId: userId,
-            returnUrl: window.location,
-            stayOnCurrentPage: true
+        Ext4.Ajax.request({
+            url: LABKEY.ActionURL.buildURL('user', 'impersonateUser'),
+            method: 'POST',
+            params: {
+                userId: userId
+            },
+            scope: this,
+            success: function(response){
+                location.reload();
+            },
+            failure: function(response){
+                var jsonResp = LABKEY.ExtAdapter.decode(response.responseText);
+                if (jsonResp && jsonResp.errors)
+                {
+                    var errorHTML = jsonResp.errors[0].message;
+                    LABKEY.ExtAdapter.Msg.alert('Error', errorHTML);
+                }
+            }
         });
     },
 
