@@ -13,13 +13,21 @@ Ext.define('LABKEY.app.controller.View', {
     extend : 'Ext.app.Controller',
 
     /**
+     * This map keys of known 'xtype's of views that will be managed by the application. The map values are
+     * the associated functions for either showing or hiding that view 'type'. If these are not provided then a
+     * default show/hide method is provided.
+     */
+    actions: {
+        hide: {},
+        show: {}
+    },
+
+    /**
      * This is a map of all the views for the Connector Application.
      * It's purpose is to be able to register views and then use them throughout the application lifetime
      * NOTE: This is different from Ext.app.Controller.getView() because it returns an instance of a view
      */
     viewMap: {},
-
-    tabMap: {},
 
     controllerMap: {},
 
@@ -285,13 +293,13 @@ Ext.define('LABKEY.app.controller.View', {
         var center = this.getCenter();
 
         if (center) {
-            if (!this.viewMap[xtype] || !this.tabMap[xtype]) {
+            if (!this.viewMap[xtype]) {
                 this.viewMap[xtype] = this.createView(xtype, context);
                 center.add(this.viewMap[xtype]);
             }
 
             var pre = center.getActiveTab();
-            var post = this.tabMap[xtype];
+            var post = this.viewMap[xtype];
 
             if (this.allowAnimations && pre) {
                 var me = this;
