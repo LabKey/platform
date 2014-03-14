@@ -260,12 +260,16 @@ Ext.define('LABKEY.app.controller.View', {
             hide : undefined
         };
 
-        if (oldViewXtype) {
+        if (this.actions && oldViewXtype) {
             actions.hide = this.actions.hide[oldViewXtype];
         }
 
         if (newViewXtype) {
-            actions.show = this.actions.show[newViewXtype];
+
+            if (this.actions) {
+                actions.show = this.actions.show[newViewXtype];
+            }
+
             if (!actions.show) {
                 actions.show = {fn: this._showView, scope: this};
             }
