@@ -179,7 +179,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     
     public ColumnInfo(ResultSetMetaData rsmd, int col) throws SQLException
     {
-        this.fieldKey = new FieldKey(null, rsmd.getColumnName(col));
+        this.fieldKey = new FieldKey(null, rsmd.getColumnLabel(col));
         this.setSqlTypeName(rsmd.getColumnTypeName(col));
         this.jdbcType = JdbcType.valueOf(rsmd.getColumnType(col));
     }

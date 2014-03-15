@@ -75,7 +75,7 @@ public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Ser
 
         for (int i = 1; i <= count; i++)
         {
-            String propName = md.getColumnName(i);
+            String propName = md.getColumnLabel(i);
 
             if (propName.length() > 0 && Character.isUpperCase(propName.charAt(0)))
                 propName = Introspector.decapitalize(propName);

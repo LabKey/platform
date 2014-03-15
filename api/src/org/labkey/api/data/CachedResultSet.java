@@ -106,9 +106,10 @@ public class CachedResultSet implements ResultSet, TableResultSet
 
             for (int col = _md.getColumnCount(); col >= 1; col--)
             {
-                String colName = _md.getColumnName(col).toLowerCase();
-                assert !_columns.containsKey(colName) : "Duplicate column name: " + colName;
-                _columns.put(colName, col);
+                // Use getColumnLabel() (not getColumnName()) to better match JDBC 4.0 and to work on MySQL, #19869
+                String colLabel = _md.getColumnLabel(col).toLowerCase();
+                assert !_columns.containsKey(colLabel) : "Duplicate column label: " + colLabel;
+                _columns.put(colLabel, col);
             }
         }
         catch (SQLException x)
@@ -582,11 +583,11 @@ public class CachedResultSet implements ResultSet, TableResultSet
     }
 
 
-    public int findColumn(String columnName) throws SQLException
+    public int findColumn(String columnLabel) throws SQLException
     {
-        Integer i = _columns.get(columnName.toLowerCase());
+        Integer i = _columns.get(columnLabel.toLowerCase());
         if (null == i)
-            throw new SQLException("No such column: " + columnName);
+            throw new SQLException("No such column: " + columnLabel);
         return i;
     }
 

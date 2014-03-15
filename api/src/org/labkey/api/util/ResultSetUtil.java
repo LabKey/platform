@@ -234,9 +234,9 @@ public class ResultSetUtil
 
         for (int i = 1; i <= columnCount; i++)
         {
-            String name = md.getColumnName(i);
-            String legalName = legalJsName(name);
-            cols[i] = new ExportCol(legalName+":", i==columnCount?"":",");
+            String label = md.getColumnLabel(i);
+            String legalLabel = legalJsName(label);
+            cols[i] = new ExportCol(legalLabel + ":", i == columnCount ? "" : ",");
         }
 
         ExportResultSet export = new ExportResultSet()
@@ -302,7 +302,7 @@ public class ResultSetUtil
         {
             String name = md.getColumnName(i);
             String legalName = legalXMLName(name);
-            cols[i] = new ExportCol("<"+legalName+">", "</" + legalName + ">");
+            cols[i] = new ExportCol("<" + legalName + ">", "</" + legalName + ">");
         }
 
         String startRow = "<" + typeName + ">";
@@ -455,19 +455,18 @@ public class ResultSetUtil
             m.put("s", null);
             maps.add(m);
 
-            ResultSet rs = CachedResultSets.create(new TestMetaData(), false, maps, true);
-
-            StringWriter swXML = new StringWriter(1000);
-            rs.beforeFirst();
-            exportAsXML(swXML, rs, null, null);
+            try (ResultSet rs = CachedResultSets.create(new TestMetaData(), false, maps, true))
+            {
+                StringWriter swXML = new StringWriter(1000);
+                rs.beforeFirst();
+                exportAsXML(swXML, rs, null, null);
 //            System.out.println(swXML);
 
-            StringWriter swJS = new StringWriter(1000);
-            rs.beforeFirst();
-            exportAsJSON(swJS, rs);
+                StringWriter swJS = new StringWriter(1000);
+                rs.beforeFirst();
+                exportAsJSON(swJS, rs);
 //            System.out.println(swJS);
-
-            rs.close();
+            }
         }
         
         private class TestMetaData extends ResultSetMetaDataImpl
@@ -475,10 +474,10 @@ public class ResultSetUtil
             TestMetaData()
             {
                 ColumnMetaData colInt = new ColumnMetaData();
-                colInt.columnName = "int";
+                colInt.columnName = colInt.columnLabel = "int";
                 addColumn(colInt);
                 ColumnMetaData colS = new ColumnMetaData();
-                colS.columnName = "s";
+                colS.columnName = colS.columnLabel = "s";
                 addColumn(colS);
             }
         }

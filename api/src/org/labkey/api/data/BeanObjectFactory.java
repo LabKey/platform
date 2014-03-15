@@ -211,7 +211,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
         String[] properties = new String[count + 1];
         for (int i = 1; i <= count; i++)
         {
-            String prop = md.getColumnName(i);
+            String prop = md.getColumnLabel(i);
 
             prop = propMap.get(prop); //Map to correct casing...
             if (null != prop)

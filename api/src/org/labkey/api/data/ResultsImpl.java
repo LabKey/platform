@@ -67,9 +67,9 @@ public class ResultsImpl implements Results
 
             for (int i = 1; i <= count; i++)
             {
-                String name = rsmd.getColumnName(i);
+                String label = rsmd.getColumnLabel(i);
                 ColumnInfo col = new ColumnInfo(rsmd, i);
-                col.setAlias(name);
+                col.setAlias(label);
                 _fieldMap.put(col.getFieldKey(), col);
                 _fieldIndexMap.put(col.getFieldKey(), i);
             }
