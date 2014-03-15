@@ -226,9 +226,12 @@ Ext.define('LABKEY.app.controller.State', {
 
         if (Ext.supports.History) {
             document.title = title || this.defaultTitle;
-            var appState = viewname;
+            var appState;
             if (viewstate && viewstate.length > 0) {
-                appState += '/' + viewstate.join('/').toLowerCase();
+                appState = viewstate.join('/').toLowerCase();
+            }
+            else {
+                appState = viewname;
             }
 
             if (!this.POP_STATE && this.preventRedundantHistory && (this.lastAppState != appState)) {

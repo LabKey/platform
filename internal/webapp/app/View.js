@@ -249,7 +249,7 @@ Ext.define('LABKEY.app.controller.View', {
 
         this.inTransition = false;
 
-        this.fireEvent('afterchangeview', this.activeView, context, viewTitle, skipState);
+        this.fireEvent('afterchangeview', this.activeView, newViewContext, viewTitle, skipState);
     },
 
     /**
