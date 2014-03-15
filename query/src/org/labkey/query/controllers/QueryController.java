@@ -1493,7 +1493,7 @@ public class QueryController extends SpringActionController
                 for (int i = 1; i <= columnCount; i++)
                 {
                     out.print("<th>");
-                    out.print(PageFlowUtil.filter(md.getColumnName(i)));
+                    out.print(PageFlowUtil.filter(md.getColumnLabel(i)));
                     out.print("</th>");
                 }
 
