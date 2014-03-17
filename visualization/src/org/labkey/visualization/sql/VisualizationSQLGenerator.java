@@ -291,7 +291,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                     throw new IllegalArgumentException("Cross-schema joins are not yet supported.  Attempt to join " +
                             query.getDisplayName() + " to " + joinTarget.getDisplayName());
                 }
-                VisualizationProvider provider = getVisualizationProvider(query.getSchemaName());
+                VisualizationProvider<?> provider = getVisualizationProvider(query.getSchemaName());
                 List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> joinConditions = new ArrayList<>();
                 for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> join : provider.getJoinColumns(_columnFactory, query, joinTarget, false))
                 {
@@ -452,7 +452,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             aggregatedSQL.append(groupByQuery.getSQLAlias());
             separator = "";
             aggregatedSQL.append(" ON ");
-            VisualizationProvider provider = getVisualizationProvider(groupByQuery.getSchemaName());
+            VisualizationProvider<?> provider = getVisualizationProvider(groupByQuery.getSchemaName());
             for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> pair : provider.getJoinColumns(_columnFactory, groupByQuery, joinQuery, true))
             {
                 aggregatedSQL.append(separator);
