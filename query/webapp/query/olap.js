@@ -672,6 +672,12 @@ Ext4.define('LABKEY.query.olap.MDX', {
         return this.getDimension(name);
     },
 
+    clearNamedFilter : function(name) {
+        if (this._filter[name]) {
+            delete this._filter[name];
+        }
+    },
+
     setNamedFilter : function(name, filter)
     {
         this._filter[name] = filter;
