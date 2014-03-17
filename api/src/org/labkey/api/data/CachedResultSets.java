@@ -103,6 +103,7 @@ public class CachedResultSets
         {
             ResultSetMetaDataImpl.ColumnMetaData col = new ResultSetMetaDataImpl.ColumnMetaData();
             col.columnName = columnName;
+            col.columnLabel = columnName;
             md.addColumn(col);
         }
 
