@@ -4067,9 +4067,6 @@ public class StudyManager
             return null;
         if (study.getContainer().isProject())
             return null;
-        // TODO: only enabled for date-based studies at the moment
-        if (study.getTimepointType() != TimepointType.DATE)
-            return null;
         Container p = study.getContainer().getProject();
         if (null == p)
             return null;

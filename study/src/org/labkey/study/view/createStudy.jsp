@@ -130,7 +130,7 @@
         </tr>
         <tr>
             <td>&nbsp;</td>
-            <td align="left"><p><br>Enable sharing of dataset definitions created in this project-level study.  For now, this feature only works with date-based studies.
+            <td align="left"><p><br>Enable sharing of dataset definitions created in this project-level study.
                 This is meant for development and testing purposes only.  You have been warned.</p></td>
         </tr>
 <%}%>

@@ -1363,7 +1363,7 @@ public class StudyController extends BaseStudyController
             study.setAllowReqLocClinic(form.isAllowReqLocClinic());
             study.setAllowReqLocSal(form.isAllowReqLocSal());
             study.setAllowReqLocEndpoint(form.isAllowReqLocEndpoint());
-            if (study.getTimepointType() != TimepointType.VISIT && c.isProject())
+            if (c.isProject())
                 study.setShareDatasetDefinitions(form.isShareDatasets());
 
             study = StudyManager.getInstance().createStudy(user, study);

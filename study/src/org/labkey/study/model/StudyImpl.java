@@ -1111,8 +1111,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     {
         return _shareDatasetDefinitions &&
             AppProps.getInstance().isExperimentalFeatureEnabled(StudyModule.EXPERIMENTALFEATURE_SHARED_DATASET) &&
-            getContainer().isProject() &&
-            !getTimepointType().isVisitBased();
+            getContainer().isProject();
     }
 
 
