@@ -107,7 +107,7 @@ class ErrorView extends HttpView
         // need the theme to apply style to ext-based body element
         WebTheme theme = null == c ? WebTheme.DEFAULT : WebThemeManager.getTheme(c);
 
-        //NOTE: BaseSeleniumWebTest requires errors to start with error number and include word "Error" in title
+        //NOTE: Selenium tests expect errors to start with error number and include word "Error" in title
         out.println("<title>" + PageFlowUtil.filter(_renderer.getTitle()) + "</title>");
         out.println("</head><body style=\"margin:40px; background-color:#" + theme.getLinkColor() + "\">");
         _renderer.renderStart(out);

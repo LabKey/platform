@@ -1574,7 +1574,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
 
     private final void beforeExecute()
     {
-        // see Crawler.java in and BaseSeleniumWebTest.java
+        // Crawler.java and BaseWebDriverTest.java use "8(" as attempted injection string
         if (_debugSql.contains("\"8(\"") && !_debugSql.contains("\"\"8(\"\"")) // 18196
             throw new IllegalArgumentException("SQL injection test failed: " + _debugSql);
         _msStart = System.currentTimeMillis();
