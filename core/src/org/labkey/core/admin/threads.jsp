@@ -15,38 +15,33 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="java.util.Date" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.ThreadsBean> me = (HttpView<AdminController.ThreadsBean>) HttpView.currentView();
     AdminController.ThreadsBean bean = me.getModelBean();
 %>
-<p><b>Currently Running Threads</b></p>
+<p><strong>Threads as of <%= h(DateUtil.formatDateTime(new Date(), "yyyy-MM-dd HH:mm:ss.SSS")) %></strong></p>
 <%
 for (Thread t : bean.threads)
 {
     try
     {
-    %><a href="#<%=h(t.getName())%>"><b><%= t.getName() %></b></a> (<%= t.getState() %>)<%
+    %><a href="#<%=h(t.getName())%>"><strong><%= h(t.getName()) %></strong></a> (<%= t.getState() %>)<%
     Set<Integer> values = bean.spids.get(t);
     if (values.size() > 0)
     {
-        %><font class="labkey-error">DB Connection SPID(s): <%
-        String separator = "";
-        for (Integer value : values)
-        { %>
-            <%= separator %> <%= value %>
-            <%
-            separator = ", ";
-        }
-        %></font><%
+        %><span class="labkey-error">DB Connection SPID(s): <%= h(StringUtils.join(values, ",")) %></span><%
     }
     }
     catch (Exception x)
     {
-        %><b class=labkey-error><%=x.getMessage()%></b><%
+        %><strong class=labkey-error><%=h(x)%></strong><%
     }
     %><br/><%
 }
@@ -57,27 +52,22 @@ for (Thread t : bean.threads)
 {
     try
     {
-        %><a name="<%= t.getName() %>"></a><%
-        %><pre><%= t.getName() %> (<%= t.getState() %>)<%="\n"%><%
+        %><a name="<%= h(t.getName()) %>"></a><%
+        %><pre><%= h(t.getName()) %> (<%= t.getState() %>)<%=text("\n")%><%
         Set<Integer> values = bean.spids.get(t);
         if (values.size() > 0)
         {
-            %>  DB Connection SPID(s): <%
-            String separator = "";
-            for (Integer value : values)
-            { %><%= separator %><%= value %><%
-                separator = ", ";
-            }
+            %>  DB Connection SPID(s): <%= h(StringUtils.join(values, ", "))%> <%
         }
 
         for (StackTraceElement e : bean.stackTraces.get(t))
         {
-            %><%= "    at " + e  + "\n" %><%
+            %><%= h("    at " + e  + "\n") %><%
         }
     }
     catch (Exception x)
     {
-        %><b class=labkey-error><%=(x.getMessage()!=null?x.getMessage():x.toString()) + "\n"%></b><%
+        %><strong class=labkey-error><%=h((x.getMessage()!=null?x.getMessage():x.toString()) + "\n")%></strong><%
     }
     %></pre><%
 }
