@@ -32,13 +32,15 @@ public class StatusChangeRequest implements Serializable, StatusRequest
     private String _statusInfo;
     private String _jobId;
     private TaskId _activeTaskId;
+    private String _hostName;
 
-    public StatusChangeRequest(PipelineJob job, String status, String statusInfo)
+    public StatusChangeRequest(PipelineJob job, String status, String statusInfo, String hostName)
     {
         _status = status;
         _statusInfo = statusInfo;
         _jobId = job.getJobGUID();
         _activeTaskId = job.getActiveTaskId();
+        _hostName = hostName;
     }
 
     public void performRequest() throws SQLException
@@ -49,6 +51,7 @@ public class StatusChangeRequest implements Serializable, StatusRequest
         {
             file.setStatus(_status);
             file.setInfo(_statusInfo);
+            file.setActiveHostName(_hostName);
             file.beforeUpdate(null, file);
             PipelineStatusManager.updateStatusFile(file);
         }

@@ -60,7 +60,6 @@ import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.api.ScriptTaskFactory;
-import org.labkey.pipeline.api.SimpleTaskFactory;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesSiteSettings;
 import org.labkey.pipeline.api.properties.GlobusClientPropertiesImpl;
 import org.labkey.pipeline.importer.FolderImportProvider;
@@ -101,7 +100,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
     public double getVersion()
     {
-        return 14.10;
+        return 14.11;
     }
 
     protected void init()
@@ -304,7 +303,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             else if (!queue.isLocal() && queue instanceof EPipelineQueueImpl)
             {
                 // Restart jobs that have been dropped from the queue and are supposed to run on the web server
-                new RemoteServerStartup().getRequeueRequest(((EPipelineQueueImpl) queue).getJMSFactory(), TaskJmsSelectorFilter.getAllLocalLocations()).performRequest();
+                new RemoteServerStartup().getRequeueRequest(((EPipelineQueueImpl) queue).getJMSFactory(), TaskJmsSelectorFilter.getAllLocalLocations(), null).performRequest();
             }
         }
 

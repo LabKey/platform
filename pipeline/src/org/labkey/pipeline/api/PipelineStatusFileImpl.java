@@ -62,6 +62,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     protected String _filePath;
     protected String _email;
     private boolean _hadError;
+    private String _activeHostName;
 
     private static final int MAX_STATUS_LENGTH = 100;
     private static final int MAX_INFO_LEN = 1024;
@@ -207,6 +208,11 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
                 _jobStore = curSF._jobStore;
             if (_activeTaskId == null || _activeTaskId.length() == 0)
                 _activeTaskId = curSF._activeTaskId;
+        }
+
+        if (!isActive())
+        {
+            _activeHostName = null;
         }
     }
 
@@ -397,5 +403,15 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     public void setHadError(boolean hadError)
     {
         this._hadError = hadError;
+    }
+
+    public String getActiveHostName()
+    {
+        return _activeHostName;
+    }
+
+    public void setActiveHostName(String activeHostName)
+    {
+        _activeHostName = activeHostName;
     }
 }

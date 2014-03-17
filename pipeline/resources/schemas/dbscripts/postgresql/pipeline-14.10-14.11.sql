@@ -1,0 +1,1 @@
+ALTER TABLE pipeline.StatusFiles ADD ActiveHostName VARCHAR(255) NULL;

@@ -16,7 +16,11 @@
 
 package org.labkey.pipeline.api.properties;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.pipeline.PipelineJobService;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /**
  * <code>RemoteServerPropertiesImpl</code> used for Spring configuration.
@@ -25,6 +29,7 @@ public class RemoteServerPropertiesImpl implements PipelineJobService.RemoteServ
 {
     private String _location;
     private String _muleConfig;
+    private String _hostName;
 
     public String getLocation()
     {
@@ -44,5 +49,27 @@ public class RemoteServerPropertiesImpl implements PipelineJobService.RemoteServ
     public void setMuleConfig(String muleConfig)
     {
         _muleConfig = muleConfig;
+    }
+
+    public String getHostName()
+    {
+        if (StringUtils.isBlank(_hostName))
+        {
+            try
+            {
+                _hostName = InetAddress.getLocalHost().getHostName();
+            }
+            catch (UnknownHostException e)
+            {
+                throw new IllegalArgumentException("Exception resolving local host for remote pipeline server properties", e);
+            }
+        }
+
+        return _hostName;
+    }
+
+    public void setHostName(String hostName)
+    {
+         _hostName = hostName;
     }
 }

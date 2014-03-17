@@ -29,6 +29,12 @@ import org.mule.umo.UMOEvent;
 public class JMSStatusWriter implements PipelineStatusFile.StatusWriter
 {
     public static final String STATUS_QUEUE_NAME = "StatusQueue";
+    private String hostName;
+
+    public void setHostName(String hostName)
+    {
+        this.hostName = hostName;
+    }
 
     public boolean setStatus(PipelineJob job, String status, String statusInfo, boolean allowInsert) throws Exception
     {
@@ -39,7 +45,7 @@ public class JMSStatusWriter implements PipelineStatusFile.StatusWriter
             return true;
         }
 
-        final StatusChangeRequest s = new StatusChangeRequest(job, status, statusInfo);
+        final StatusChangeRequest s = new StatusChangeRequest(job, status, statusInfo, hostName);
 
         // Mule uses ThreadLocals to store the current event. Writing this status to the JMS queue will replace the
         // event, so we need to grab the current one so that we can restore it after queuing up the new status

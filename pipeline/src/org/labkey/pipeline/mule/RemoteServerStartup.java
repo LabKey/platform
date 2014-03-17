@@ -72,6 +72,8 @@ public class RemoteServerStartup extends AbstractPipelineStartup
         if (muleConfig == null)
             muleConfig = "org/labkey/pipeline/mule/config/remoteMuleConfig.xml";
 
+        ( (JMSStatusWriter)PipelineJobServiceImpl.get().getStatusWriter()).setHostName(props.getHostName());
+
         LabKeySpringContainerContext.setContext(factories.get(PipelineService.MODULE_NAME));
 
         // Hack - wait a little bit for Mule to connect to the JMS server
@@ -117,6 +119,7 @@ public class RemoteServerStartup extends AbstractPipelineStartup
             throw new java.lang.IllegalStateException("No remoteServerProperties registered with the PipelineJobService.");
         }
         String location = remoteProps.getLocation();
+        String hostName = remoteProps.getHostName();
 
         // Figure out where to talk to the JMS queue
         Object bean = beanFactory.getBean("activeMqConnectionFactory");
@@ -129,13 +132,13 @@ public class RemoteServerStartup extends AbstractPipelineStartup
             throw new IllegalStateException("The activeMqConnectionFactory bean in the pipeline module's bean factory was expected to be a " + ConnectionFactory.class.getName() + " but was a " + bean.getClass().getName());
         }
 
-        return getRequeueRequest((ConnectionFactory)bean, Collections.singleton(location));
+        return getRequeueRequest((ConnectionFactory)bean, Collections.singleton(location), hostName);
     }
 
     /**
      * Browse the JMS queue to grab all the tasks currently assigned to this location and build up a set of JobIds.
      */
-    public RequeueLostJobsRequest getRequeueRequest(ConnectionFactory connectionFactory, Collection<String> locations)
+    public RequeueLostJobsRequest getRequeueRequest(ConnectionFactory connectionFactory, Collection<String> locations, String hostName)
     {
         Set<String> ids = new HashSet<>();
         Connection conn = null;
@@ -167,7 +170,7 @@ public class RemoteServerStartup extends AbstractPipelineStartup
         {
             if (conn != null) { try { conn.close(); } catch (JMSException ignored) {} }
         }
-        return new RequeueLostJobsRequest(locations, ids);
+        return new RequeueLostJobsRequest(locations, ids, hostName);
     }
 
 }

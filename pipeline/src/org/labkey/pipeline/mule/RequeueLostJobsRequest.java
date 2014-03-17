@@ -36,11 +36,14 @@ public class RequeueLostJobsRequest implements StatusRequest
 
     private Collection<String> _locations;
     private Collection<String> _jobIds;
+    private String _hostName;
+    private static final Object _lock = new Object();
 
-    public RequeueLostJobsRequest(Collection<String> locations, Collection<String> jobIds)
+    public RequeueLostJobsRequest(Collection<String> locations, Collection<String> jobIds, String hostName)
     {
         _locations = locations;
         _jobIds = jobIds;
+        _hostName = hostName;
     }
 
     public void performRequest()
@@ -59,21 +62,24 @@ public class RequeueLostJobsRequest implements StatusRequest
             {
                 for (String location : _locations)
                 {
-                    _log.info("Requeueing jobs for location " + location);
-                    for (PipelineStatusFileImpl sf : PipelineStatusManager.getStatusFilesForLocation(location, true))
+                    synchronized(_lock)
                     {
-                        if (!_jobIds.contains(sf.getJobId()) && sf.getJobStore() != null)
+                        _log.info("Requeueing jobs for location " + location);
+                        for (PipelineStatusFileImpl sf : PipelineStatusManager.getStatusFilesForLocation(location, true))
                         {
-                            try
+                            if (!_jobIds.contains(sf.getJobId()) && sf.getJobStore() != null && (sf.getActiveHostName() == null || sf.getActiveHostName().equals(_hostName)))
                             {
-                                PipelineJobService.get().getJobStore().retry(sf);
-                            }
-                            catch (IOException | NoSuchJobException e)
-                            {
-                                PipelineJobService.get().getJobStore().fromXML(sf.getJobStore()).error("Failed to requeue job", e);
+                                try
+                                {
+                                    PipelineJobService.get().getJobStore().retry(sf);
+                                }
+                                catch (IOException | NoSuchJobException e)
+                                {
+                                    PipelineJobService.get().getJobStore().fromXML(sf.getJobStore()).error("Failed to requeue job", e);
+                                }
                             }
                         }
-                    }
+                   }
                 }
             }
         }.start();

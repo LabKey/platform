@@ -1855,6 +1855,7 @@ pipeline/resources/schemas/dbscripts/postgresql/obsolete/pipeline-9.21-9.22.sql 
 pipeline/resources/schemas/dbscripts/postgresql/obsolete/pipeline-9.30-10.10.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/obsolete/pipeline-9.30-9.31.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-0.00-10.30.sql -text
+pipeline/resources/schemas/dbscripts/postgresql/pipeline-14.10-14.11.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.58.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.64.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.63-0.64.sql -text
@@ -1901,6 +1902,7 @@ pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-9.21-9.22.sql -
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-9.30-10.10.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-9.30-9.31.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-0.00-10.30.sql -text
+pipeline/resources/schemas/dbscripts/sqlserver/pipeline-14.10-14.11.sql -text
 pipeline/schemas/pipelineTasks.xsd -text
 pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
 pipeline/src/org/labkey/pipeline/PipelineCommandTestCase.java -text
