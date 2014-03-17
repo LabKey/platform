@@ -29,6 +29,7 @@ import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SimpleSqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -132,6 +133,12 @@ public class MySqlDialect extends SimpleSqlDialect
         return new MySqlColumnMetaDataReader(rsCols);
     }
 
+    @Override
+    public String[] getTableTypes()
+    {
+        return new String[]{"TABLE", "VIEW", "SYSTEM TABLE"};
+    }
+
     private static class MySqlColumnMetaDataReader extends ColumnMetaDataReader
     {
         private MySqlColumnMetaDataReader(ResultSet rsCols)
@@ -227,10 +234,12 @@ public class MySqlDialect extends SimpleSqlDialect
         return ret;
     }
 
+    private static final Set<String> SYSTEM_SCHEMAS = PageFlowUtil.set("information_schema", "performance_schema", "mysql");
+
     @Override
     public boolean isSystemSchema(String schemaName)
     {
-        return "INFORMATION_SCHEMA".equalsIgnoreCase(schemaName);
+        return SYSTEM_SCHEMAS.contains(schemaName);
     }
 
     // TODO: MySQL has a lot of settings we should check (ANSI_QUOTES, NO_BACKSLASH_ESCAPES, etc.)
