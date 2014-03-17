@@ -435,6 +435,7 @@ public class VisualizationController extends SpringActionController
     }
 
 
+    @Action(ActionType.SelectMetaData)
     @RequiresPermissionClass(ReadPermission.class)
     public class GetMeasuresAction<Form extends MeasuresForm> extends ApiAction<Form>
     {
@@ -567,6 +568,7 @@ public class VisualizationController extends SpringActionController
         }
     }
 
+    @Action(ActionType.SelectMetaData)
     @RequiresPermissionClass(ReadPermission.class)
     public class GetDimensionsAction extends GetMeasuresAction<DimensionsForm>
     {
@@ -600,6 +602,7 @@ public class VisualizationController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public class GetDimensionValues extends GetMeasuresAction<DimensionValuesForm>
     {
         public ApiResponse execute(DimensionValuesForm form, BindException errors) throws Exception
