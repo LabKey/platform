@@ -472,7 +472,7 @@ public class VisualizationController extends SpringActionController
                         if (mf.getQuery() != null)
                             measures.putAll(provider.getAllColumns(getViewContext(), mf.getQuery(), form.isShowHidden()));
                         else
-                            measures.putAll(provider.getAllColumns(getViewContext(), mf.getQueryType(), form.isShowHidden()));
+                            measures.putAll(provider.getAllColumns(mf.getQueryType(), form.isShowHidden()));
                     }
                     else
                     {

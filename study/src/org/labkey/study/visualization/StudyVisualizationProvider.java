@@ -31,6 +31,7 @@ import org.labkey.api.visualization.VisualizationIntervalColumn;
 import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.api.visualization.VisualizationSourceColumn;
 import org.labkey.api.visualization.VisualizationSourceQuery;
+import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.*;
 
@@ -38,11 +39,11 @@ import java.util.*;
  * User: brittp
  * Date: Jan 26, 2011 5:10:03 PM
  */
-public class StudyVisualizationProvider extends VisualizationProvider
+public class StudyVisualizationProvider extends VisualizationProvider<StudyQuerySchema>
 {
-    public StudyVisualizationProvider()
+    public StudyVisualizationProvider(StudyQuerySchema schema)
     {
-        super("study");
+        super(schema);
     }
 
     @Override
@@ -174,12 +175,12 @@ public class StudyVisualizationProvider extends VisualizationProvider
             return super.isValid(table, query, type);
     }
 
-    protected Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMatchingColumns(Container container, Map<QueryDefinition, TableInfo> queries, ColumnMatchType type)
+    protected Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMatchingColumns(Map<QueryDefinition, TableInfo> queries, ColumnMatchType type)
     {
-        Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> matches = super.getMatchingColumns(container, queries, type);
+        Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> matches = super.getMatchingColumns(queries, type);
         if (type == ColumnMatchType.DATETIME_COLS)
         {
-            Study study = StudyService.get().getStudy(container);
+            Study study = StudyService.get().getStudy(getSchema().getContainer());
             // for visit based studies, we will look for the participantVisit.VisitDate column and
             // if found, return that as a date measure
             if (study != null && study.getTimepointType().isVisitBased())
@@ -187,7 +188,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
                 for (Map.Entry<QueryDefinition, TableInfo> entry : queries.entrySet())
                 {
                     QueryDefinition queryDefinition = entry.getKey();
-                    String visitColName = StudyService.get().getSubjectVisitColumnName(container);
+                    String visitColName = StudyService.get().getSubjectVisitColumnName(getSchema().getContainer());
                     ColumnInfo visitCol = entry.getValue().getColumn(visitColName);
                     if (visitCol != null)
                     {
@@ -208,8 +209,8 @@ public class StudyVisualizationProvider extends VisualizationProvider
         else if (type == ColumnMatchType.All_VISIBLE)
         {
             List<Pair<FieldKey, ColumnInfo>> colsToRemove = new ArrayList<>();
-            String subjectColName = StudyService.get().getSubjectColumnName(container);
-            String visitColName = StudyService.get().getSubjectVisitColumnName(container);
+            String subjectColName = StudyService.get().getSubjectColumnName(getSchema().getContainer());
+            String visitColName = StudyService.get().getSubjectVisitColumnName(getSchema().getContainer());
 
             // for studies we want to exclude the subject and visit columns
             for (Pair<FieldKey, ColumnInfo> pair : matches.keySet())
@@ -242,12 +243,11 @@ public class StudyVisualizationProvider extends VisualizationProvider
         Study study = StudyService.get().getStudy(context.getContainer());
         if (study != null)
         {
-            UserSchema schema = getUserSchema(context.getContainer(), context.getUser());
             for (DataSet ds : study.getDataSets())
             {
                 if (ds.isDemographicData() && ds.isShowByDefault())
                 {
-                    Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, ds.getName(), ColumnMatchType.DATETIME_COLS, false);
+                    Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(ds.getName(), ColumnMatchType.DATETIME_COLS, false);
                     if (entry != null)
                     {
                         QueryDefinition query = entry.getKey();
@@ -285,44 +285,42 @@ public class StudyVisualizationProvider extends VisualizationProvider
     }
 
     @Override
-    protected Map<QueryDefinition, TableInfo> getQueryDefinitions(ViewContext context, QueryType queryType, ColumnMatchType matchType)
+    protected Map<QueryDefinition, TableInfo> getQueryDefinitions(QueryType queryType, ColumnMatchType matchType)
     {
         if (queryType == QueryType.datasets)
         {
             Map<QueryDefinition, TableInfo> queries = new HashMap<>();
-            Study study = StudyService.get().getStudy(context.getContainer());
-            UserSchema schema = getUserSchema(context.getContainer(), context.getUser());
-            addDatasetQueryDefinitions(context, schema, study, queries);
+            Study study = StudyService.get().getStudy(getSchema().getContainer());
+            addDatasetQueryDefinitions(study, queries);
             return queries;
         }
         else
-            return super.getQueryDefinitions(context, queryType, matchType);
+            return super.getQueryDefinitions(queryType, matchType);
     }
 
     @Override
     /**
      * All columns for a study if builtIn types were requested would be constrained to datasets only
      */
-    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getAllColumns(ViewContext context, QueryType queryType, boolean showHidden)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getAllColumns(QueryType queryType, boolean showHidden)
     {
         if (queryType == QueryType.builtIn || queryType == QueryType.datasets)
         {
             Map<QueryDefinition, TableInfo> queries = new HashMap<>();
-            Study study = StudyService.get().getStudy(context.getContainer());
-            UserSchema schema = getUserSchema(context.getContainer(), context.getUser());
+            Study study = StudyService.get().getStudy(getSchema().getContainer());
             if (study != null)
             {
-                addDatasetQueryDefinitions(context, schema, study, queries);
+                addDatasetQueryDefinitions(study, queries);
 
                 if (queryType == QueryType.builtIn)
                 {
-                    for (String name : schema.getTableAndQueryNames(true))
+                    for (String name : getSchema().getTableAndQueryNames(true))
                     {
                         if (!StringUtils.startsWithIgnoreCase(name, "Primary Type Vial Counts") &&
                             !StringUtils.startsWithIgnoreCase(name, "Primary/Derivative Type Vial Counts") &&
                             !StringUtils.startsWithIgnoreCase(name, "Vial Counts by Requesting Location"))
                             continue;
-                        Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, name, ColumnMatchType.All_VISIBLE, false);
+                        Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(name, ColumnMatchType.All_VISIBLE, false);
                         if (entry != null)
                         {
                             queries.put(entry.getKey(), entry.getValue());
@@ -330,13 +328,13 @@ public class StudyVisualizationProvider extends VisualizationProvider
                     }
                 }
             }
-            return getMatchingColumns(context.getContainer(), queries, showHidden ? ColumnMatchType.All : ColumnMatchType.All_VISIBLE);
+            return getMatchingColumns(queries, showHidden ? ColumnMatchType.All : ColumnMatchType.All_VISIBLE);
         }
         else
-            return super.getAllColumns(context, queryType, showHidden);
+            return super.getAllColumns(queryType, showHidden);
     }
 
-    private void addDatasetQueryDefinitions(ViewContext context, UserSchema schema, Study study, Map<QueryDefinition, TableInfo> queries)
+    private void addDatasetQueryDefinitions(Study study, Map<QueryDefinition, TableInfo> queries)
     {
         if (study != null)
         {
@@ -344,7 +342,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
             {
                 if (ds.isShowByDefault())
                 {
-                    Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, ds.getName(), ColumnMatchType.All_VISIBLE, false);
+                    Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(ds.getName(), ColumnMatchType.All_VISIBLE, false);
                     if (entry != null)
                     {
                         queries.put(entry.getKey(), entry.getValue());

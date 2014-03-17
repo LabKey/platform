@@ -841,7 +841,7 @@ public class StudyQuerySchema extends UserSchema
     @Override
     public VisualizationProvider createVisualizationProvider()
     {
-        return new StudyVisualizationProvider();
+        return new StudyVisualizationProvider(this);
     }
 
     @Override
