@@ -41,6 +41,7 @@ public class RserveScriptEngine extends RScriptEngine
     public static final String TEMP_ROOT = "rserve.script.engine.tempRoot";
     public static final String R_SESSION = "rserve.script.engine.session";
     public static final String PIPELINE_ROOT = "rserve.script.engine.pipelineRoot";
+    public static final String PROJECT_PIPELINE_ROOT = "rserve.script.engine.projectPipelineRoot";
 
     public RserveScriptEngine(ExternalScriptEngineDefinition def)
     {
@@ -211,6 +212,13 @@ public class RserveScriptEngine extends RScriptEngine
         File f = (File) getBindings(ScriptContext.ENGINE_SCOPE).get(RserveScriptEngine.PIPELINE_ROOT);
         if (!StringUtils.isEmpty(_def.getPipelineShare()) && f != null)
         {
+            // TODO: RServe currently only configures site-wide pipeline share.
+            // TODO: We check that the current folder pipeline root is either equal to or is under the project's pipeline root.
+            // TODO: This could fail if the project pipeline root isn't the same as the RServe script engine settings pipeline share
+            File projectRoot = (File) getBindings(ScriptContext.ENGINE_SCOPE).get(RserveScriptEngine.PROJECT_PIPELINE_ROOT);
+            if (projectRoot != null)
+                f = projectRoot;
+
             String pipelineRoot = RReport.getLocalPath(f);
             return localPath.replaceAll(pipelineRoot, _def.getPipelineShare());
         }
