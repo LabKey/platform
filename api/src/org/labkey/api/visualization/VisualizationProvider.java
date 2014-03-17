@@ -18,18 +18,26 @@ package org.labkey.api.visualization;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.*;
-import org.labkey.api.security.User;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
  * Date: Jan 27, 2011 10:51:03 AM
  */
-public abstract class VisualizationProvider
+public abstract class VisualizationProvider<SchemaType extends UserSchema>
 {
     private ChartType _type;
 
@@ -88,34 +96,30 @@ public abstract class VisualizationProvider
         public abstract boolean match(ColumnInfo col);
     }
 
-    private String _schemaName;
+    private final SchemaType _schema;
 
-    public VisualizationProvider(String userSchemaName)
+    public VisualizationProvider(SchemaType schema)
     {
-        _schemaName = userSchemaName;
+        _schema = schema;
     }
 
-    protected UserSchema getUserSchema(Container container, User user)
+    public SchemaType getSchema()
     {
-        UserSchema schema = QueryService.get().getUserSchema(user, container, _schemaName);
-        if (schema == null)
-            throw new IllegalStateException("No schema found with name " + _schemaName);
-        return schema;
+        return _schema;
     }
 
-    protected Pair<QueryDefinition, TableInfo> getQueryDefinition(ViewContext context, ColumnMatchType matchType, String queryName)
+    protected Pair<QueryDefinition, TableInfo> getQueryDefinition(ColumnMatchType matchType, String queryName)
     {
-        UserSchema schema = getUserSchema(context.getContainer(), context.getUser());
-        return getTableAndQueryDef(context, schema, queryName, matchType, !schema.getTableNames().contains(queryName));
+        return getTableAndQueryDef(queryName, matchType, !_schema.getTableNames().contains(queryName));
     }
 
-    protected Pair<QueryDefinition, TableInfo> getTableAndQueryDef(ViewContext context, UserSchema schema, String queryName, ColumnMatchType matchType, boolean customQuery)
+    protected Pair<QueryDefinition, TableInfo> getTableAndQueryDef(String queryName, ColumnMatchType matchType, boolean customQuery)
     {
         QueryDefinition queryDef;
         if (customQuery)
-            queryDef = QueryService.get().getQueryDef(context.getUser(), context.getContainer(), _schemaName, queryName);
+            queryDef = QueryService.get().getQueryDef(_schema.getUser(), _schema.getContainer(), _schema.getSchemaName(), queryName);
         else
-            queryDef = QueryService.get().createQueryDefForTable(schema, queryName);
+            queryDef = QueryService.get().createQueryDefForTable(_schema, queryName);
         if (queryDef != null && !queryDef.isHidden())
         {
             List<QueryException> errors = new ArrayList<>();
@@ -129,20 +133,19 @@ public abstract class VisualizationProvider
         return null;
     }
 
-    protected Map<QueryDefinition, TableInfo> getQueryDefinitions(ViewContext context, QueryType queryType, ColumnMatchType matchType)
+    protected Map<QueryDefinition, TableInfo> getQueryDefinitions(QueryType queryType, ColumnMatchType matchType)
     {
         Map<QueryDefinition, TableInfo> queries = new HashMap<>();
-        UserSchema schema = getUserSchema(context.getContainer(), context.getUser());
         if (queryType == QueryType.all || queryType == QueryType.custom)
         {
-            Map<String, QueryDefinition> queryDefMap = schema.getQueryDefs();
+            Map<String, QueryDefinition> queryDefMap = _schema.getQueryDefs();
             for (Map.Entry<String, QueryDefinition> entry : queryDefMap.entrySet())
             {
                 QueryDefinition qdef = entry.getValue();
                 if (!qdef.isHidden())
                 {
                     List<QueryException> errors = new ArrayList<>();
-                    TableInfo table = qdef.getTable(schema, errors, true);
+                    TableInfo table = qdef.getTable(_schema, errors, true);
                     // Ignore specific errors- failed queries won't produce a table
                     if (table != null && isValid(table, qdef, matchType))
                         queries.put(qdef, table);
@@ -153,9 +156,9 @@ public abstract class VisualizationProvider
         // built in tables
         if (queryType == QueryType.all || queryType == QueryType.builtIn)
         {
-            for (String name : getTableNames(schema))
+            for (String name : getTableNames(_schema))
             {
-                Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, name, matchType, false);
+                Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(name, matchType, false);
                 if (entry != null)
                     queries.put(entry.getKey(), entry.getValue());
             }
@@ -174,7 +177,7 @@ public abstract class VisualizationProvider
         return true;
     }
 
-    protected Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMatchingColumns(Container container, Map<QueryDefinition, TableInfo> queries, ColumnMatchType columnMatchType)
+    protected Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMatchingColumns(Map<QueryDefinition, TableInfo> queries, ColumnMatchType columnMatchType)
     {
         Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> matches = new HashMap<>();
         for (Map.Entry<QueryDefinition, TableInfo> entry : queries.entrySet())
@@ -220,39 +223,39 @@ public abstract class VisualizationProvider
         return _type;
     }
 
-    protected Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMatchingColumns(ViewContext context, ColumnMatchType matchType, String queryName)
+    protected Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMatchingColumns(ColumnMatchType matchType, String queryName)
     {
-        Pair<QueryDefinition, TableInfo> queryDef = getQueryDefinition(context, matchType, queryName);
+        Pair<QueryDefinition, TableInfo> queryDef = getQueryDefinition(matchType, queryName);
         if (queryDef != null)
-            return getMatchingColumns(context.getContainer(), Collections.singletonMap(queryDef.getKey(), queryDef.getValue()), matchType);
+            return getMatchingColumns(Collections.singletonMap(queryDef.getKey(), queryDef.getValue()), matchType);
         else
             return Collections.emptyMap();
     }
 
-    protected Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMatchingColumns(ViewContext context, QueryType queryType, ColumnMatchType matchType)
+    protected Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMatchingColumns(QueryType queryType, ColumnMatchType matchType)
     {
-        Map<QueryDefinition, TableInfo> queries = getQueryDefinitions(context, queryType, matchType);
-        return getMatchingColumns(context.getContainer(), queries, matchType);
+        Map<QueryDefinition, TableInfo> queries = getQueryDefinitions(queryType, matchType);
+        return getMatchingColumns(queries, matchType);
     }
 
     public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMeasures(ViewContext context, QueryType queryType)
     {
-        return getMatchingColumns(context, queryType, ColumnMatchType.CONFIGURED_MEASURES);
+        return getMatchingColumns(queryType, ColumnMatchType.CONFIGURED_MEASURES);
     }
 
     public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMeasures(ViewContext context, String queryName)
     {
-        return getMatchingColumns(context, ColumnMatchType.CONFIGURED_MEASURES, queryName);
+        return getMatchingColumns(ColumnMatchType.CONFIGURED_MEASURES, queryName);
     }
 
     public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDateMeasures(ViewContext context, QueryType queryType)
     {
-        return getMatchingColumns(context, queryType, ColumnMatchType.DATETIME_COLS);
+        return getMatchingColumns(queryType, ColumnMatchType.DATETIME_COLS);
     }
 
     public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDateMeasures(ViewContext context, String queryName)
     {
-        return getMatchingColumns(context, ColumnMatchType.DATETIME_COLS, queryName);
+        return getMatchingColumns(ColumnMatchType.DATETIME_COLS, queryName);
     }
 
     public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getZeroDateMeasures(ViewContext context, QueryType queryType)
@@ -263,17 +266,17 @@ public abstract class VisualizationProvider
 
     public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDimensions(ViewContext context, String queryName)
     {
-        return getMatchingColumns(context, ColumnMatchType.CONFIGURED_DIMENSIONS, queryName);
+        return getMatchingColumns(ColumnMatchType.CONFIGURED_DIMENSIONS, queryName);
     }
 
     public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getAllColumns(ViewContext context, String queryName, boolean hiddenColumns)
     {
-        return getMatchingColumns(context, hiddenColumns ? ColumnMatchType.All : ColumnMatchType.All_VISIBLE, queryName);
+        return getMatchingColumns(hiddenColumns ? ColumnMatchType.All : ColumnMatchType.All_VISIBLE, queryName);
     }
 
-    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getAllColumns(ViewContext context, QueryType queryType, boolean hiddenColumns)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getAllColumns(QueryType queryType, boolean hiddenColumns)
     {
-        return getMatchingColumns(context, queryType, hiddenColumns ? ColumnMatchType.All : ColumnMatchType.All_VISIBLE);
+        return getMatchingColumns(queryType, hiddenColumns ? ColumnMatchType.All : ColumnMatchType.All_VISIBLE);
     }
 
     public static enum ChartType
