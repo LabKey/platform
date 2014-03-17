@@ -115,5 +115,7 @@ public interface PipelineStatusFile
     PipelineJob createJobInstance();
 
     void save();
+
+    String getActiveHostName();
 }
 

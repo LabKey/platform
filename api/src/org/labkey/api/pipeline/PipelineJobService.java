@@ -77,6 +77,7 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
     {
         String getLocation();
         String getMuleConfig();
+        String getHostName();
     }
 
     /**
