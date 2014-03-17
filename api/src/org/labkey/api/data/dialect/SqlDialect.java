@@ -1186,6 +1186,12 @@ public abstract class SqlDialect
     }
 
 
+    // Return the interesting table types for this dialect. Types array is passed to DatabaseMetaData.getTables().
+    public String[] getTableTypes()
+    {
+        return new String[]{"TABLE", "VIEW"};
+    }
+
     public abstract boolean canShowExecutionPlan();
     protected abstract Collection<String> getQueryExecutionPlan(DbScope scope, SQLFragment sql);
 
@@ -1215,7 +1221,7 @@ public abstract class SqlDialect
     public abstract ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, TableInfo table);
     public abstract PkMetaDataReader getPkMetaDataReader(ResultSet rs);
 
-    /* Procedure / function related methods & */
+    /* Procedure- / function-related methods */
 
     public boolean isProcedureSupportsInlineResults()
     {
@@ -1226,7 +1232,7 @@ public abstract class SqlDialect
     {
         direction,
         datatype,
-        required;
+        required
     }
 
     public final class ParameterInfo

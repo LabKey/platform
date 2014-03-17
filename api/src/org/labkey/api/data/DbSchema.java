@@ -37,7 +37,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.data.xml.TableType;
@@ -274,16 +273,11 @@ public class DbSchema
                 conn = _scope.getConnection();
                 DatabaseMetaData dbmd = conn.getMetaData();
 
-                String[] types = {"TABLE", "VIEW",};
+                String[] types = dialect.getTableTypes();
 
-                ResultSet rs;
-
-                if (dialect.treatCatalogsAsSchemas())
-                    rs = dbmd.getTables(_requestedSchemaName, null, _tableNamePattern, types);
-                else
-                    rs = dbmd.getTables(dbName, _requestedSchemaName, _tableNamePattern, types);
-
-                try
+                try (ResultSet rs = dialect.treatCatalogsAsSchemas() ?
+                        dbmd.getTables(_requestedSchemaName, null, _tableNamePattern, types) :
+                        dbmd.getTables(dbName, _requestedSchemaName, _tableNamePattern, types))
                 {
                     while (rs.next())
                     {
@@ -308,10 +302,6 @@ public class DbSchema
 
                         handleTable(tableName, rs, dbmd);
                     }
-                }
-                finally
-                {
-                    ResultSetUtil.close(rs);
                 }
             }
             catch (SQLException e)
@@ -410,7 +400,8 @@ public class DbSchema
         protected void handleTable(String name, ResultSet rs, DatabaseMetaData dbmd) throws SQLException
         {
             assert _tableName.equalsIgnoreCase(name);
-            DatabaseTableType tableType = DatabaseTableType.valueOf(DatabaseTableType.class, rs.getString("TABLE_TYPE"));
+            String typeName = rs.getString("TABLE_TYPE");
+            DatabaseTableType tableType = DatabaseTableType.get(typeName);
             _ti = new SchemaTableInfo(DbSchema.this, tableType, _tableName);
             String description = rs.getString("REMARKS");
             if (null != description && !"No comments".equals(description))  // Consider: Move "No comments" exclusion to SAS dialect?
