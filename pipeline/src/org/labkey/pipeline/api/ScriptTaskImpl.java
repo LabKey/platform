@@ -184,7 +184,30 @@ public class ScriptTaskImpl extends CommandTaskImpl
 
             // UNDONE: Need ability to map to more than one remote pipeline path?  For now, assume everything is under the remote's pipeline root setting
             PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(getJob().getContainer());
-            bindings.put(RserveScriptEngine.PIPELINE_ROOT, pipelineRoot.getRootPath());
+            File pipelineRootPath = pipelineRoot.getRootPath();
+            getJob().info("folder pipeline root: " + pipelineRootPath);
+            bindings.put(RserveScriptEngine.PIPELINE_ROOT, pipelineRootPath);
+
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+            {
+                // TODO: RServe currently only configures site-wide pipeline share.
+                // TODO: We check that the current folder pipeline root is either equal to or is under the project's pipeline root.
+                // TODO: This could fail if the project pipeline root isn't the same as the RServe script engine settings pipeline share
+                PipeRoot projectPipeRoot = PipelineService.get().getPipelineRootSetting(getJob().getContainer().getProject());
+                File projectRootPath = projectPipeRoot.getRootPath();
+                getJob().info("project pipeline root: " + projectRootPath);
+                if (projectRootPath != pipelineRootPath)
+                {
+                    if (pipelineRootPath.getPath().startsWith(projectRootPath.getPath()))
+                    {
+                        bindings.put(RserveScriptEngine.PROJECT_PIPELINE_ROOT, projectRootPath);
+                    }
+                    else
+                    {
+                        getJob().warn("RServe doesn't support folder pipeline roots that aren't under the site pipeline root");
+                    }
+                }
+            }
 
             // NOTE: Local path to the script file doesn't need to be rewritten as a remote path
             if (scriptFile != null)
@@ -273,7 +296,9 @@ public class ScriptTaskImpl extends CommandTaskImpl
             }
 
             RserveScriptEngine rengine = (RserveScriptEngine) _engine;
-            return rengine.getRemotePipelinePath(path);
+            String ret = rengine.getRemotePipelinePath(path);
+            getJob().debug("rewritePath: " + path + " -> " + ret);
+            return ret;
         }
         else
         {
