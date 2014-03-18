@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoWriter;
@@ -50,6 +51,7 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
 {
     private static final String DEFAULT_DIRECTORY = "treatmentData";
     public static final String SELECTION_TEXT = "Treatment Data";
+    public static final String SCHEMA_FILENAME = "treatment_metadata.xml";
 
     @Nullable
     @Override
@@ -76,6 +78,8 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
         treatmentTables.add(schema.getTable(StudyQuerySchema.TREATMENT_TABLE_NAME));
         treatmentTables.add(schema.getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME));
 
+        // write the table infos and data rows
+        writeTableInfos(ctx, vf, treatmentTables, SCHEMA_FILENAME);
         writeTableData(ctx, vf, treatmentTables, null);
 
         // for the TreatmentVisitMap table, export the visit sequence num & cohort label instead of the ID
@@ -84,16 +88,15 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
         // export the study design tables (no need to export tableinfo's as these are non-extensible)
         Set<TableInfo> designTables = new HashSet<>();
 
-        // study designs also can have data stored at both the project and folder level although for the
-        // initial implementation we will only export/import from/to current folder
-        // ContainerFilter containerFilter = new ContainerFilter.CurrentPlusProject(ctx.getUser());
+        // study designs can have lookup data stored at both the project and folder level
+        ContainerFilter containerFilter = new ContainerFilter.CurrentPlusProject(ctx.getUser());
 
         designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME));
         designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_ROUTES_TABLE_NAME));
         designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME));
         designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_SUB_TYPES_TABLE_NAME));
 
-        writeTableData(ctx, vf, designTables, null);
+        writeTableData(ctx, vf, designTables, containerFilter);
     }
 
     private void writeTreatmentVisitMap(StudyExportContext ctx, VirtualFile vf) throws Exception

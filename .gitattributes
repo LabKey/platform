@@ -3903,6 +3903,8 @@ study/src/org/labkey/study/writer/SpecimenSettingsWriter.java -text
 study/src/org/labkey/study/writer/SpecimenWriter.java -text
 study/src/org/labkey/study/writer/StandardSpecimenWriter.java -text
 study/src/org/labkey/study/writer/StudyExportContext.java -text
+study/src/org/labkey/study/writer/StudyPropertiesImporter.java -text
+study/src/org/labkey/study/writer/StudyPropertiesWriter.java -text
 study/src/org/labkey/study/writer/StudySerializationRegistryImpl.java -text
 study/src/org/labkey/study/writer/StudyViewsWriter.java -text
 study/src/org/labkey/study/writer/StudyWriter.java -text

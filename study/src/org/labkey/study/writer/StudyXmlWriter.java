@@ -19,6 +19,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.xml.ExportDirType;
 import org.labkey.study.xml.SecurityType;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.TimepointType;
@@ -38,6 +39,8 @@ import java.util.Calendar;
 //  writers are done modifying the StudyDocument.  Locking the StudyDocument after writing it out helps ensure this ordering.
 class StudyXmlWriter implements InternalStudyWriter
 {
+    private static final String PROPERTIES_DIRECTORY = "properties";
+
     public String getSelectionText()
     {
         return null;
@@ -100,10 +103,16 @@ class StudyXmlWriter implements InternalStudyWriter
 
         studyXml.setSecurityType(SecurityType.Enum.forString(study.getSecurityType().name()));
 
+        ExportDirType dir = studyXml.addNewProperties();
+        dir.setDir(PROPERTIES_DIRECTORY);
+
         // Save the study.xml file.  This gets called last, after all other writers have populated the other sections.
         vf.saveXmlBean("study.xml", ctx.getDocument());
 
         ctx.lockDocument();
+
+        // export the study objectives and personnel tables
+        new StudyPropertiesWriter().writeExtendedStudyProperties(study, ctx, vf.getDir(PROPERTIES_DIRECTORY));
     }
 
     public static StudyDocument getStudyDocument()

@@ -23,9 +23,9 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.writer.TreatmentDataWriter;
 import org.labkey.study.xml.ExportDirType;
 import org.springframework.validation.BindException;
 
@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Created by klum on 1/22/14.
@@ -69,6 +68,9 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
             VirtualFile vf = root.getDir(dirType.getDir());
             if (vf != null)
             {
+                // import any custom treatment table properties
+                importTableinfo(ctx, vf, TreatmentDataWriter.SCHEMA_FILENAME);
+
                 // import the product table
                 StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
 
@@ -106,7 +108,7 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                 for (TableInfo table : studyDesignTables)
                 {
                     deleteData(ctx, table);
-                    importTableData(ctx, vf, table, null, null);
+                    importTableData(ctx, vf, table, null, new PreserveExistingProjectData(ctx.getUser(), table, "Name"));
                 }
             }
             else

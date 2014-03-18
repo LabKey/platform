@@ -16,6 +16,7 @@
 package org.labkey.study.writer;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -24,12 +25,16 @@ import org.labkey.api.data.Results;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoWriter;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
+import org.labkey.study.query.SpecimenTablesProvider;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -37,6 +42,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -119,7 +125,19 @@ public abstract class DefaultStudyDesignWriter
         {
             TableType tableXml = tablesXml.addNewTable();
 
-            TableInfoWriter writer = new TreatementTableWriter(ctx.getContainer(), tinfo, tinfo.getColumns());
+            Domain domain = tinfo.getDomain();
+            List<ColumnInfo> columns = new ArrayList();
+            Map<String, DomainProperty> propertyMap = new CaseInsensitiveHashMap<>();
+
+            for (DomainProperty prop : domain.getProperties())
+                propertyMap.put(prop.getName(), prop);
+
+            for (ColumnInfo col : tinfo.getColumns())
+            {
+                if (!col.isKeyField() && propertyMap.containsKey(col.getName()))
+                    columns.add(col);
+            }
+            TableInfoWriter writer = new TreatementTableWriter(ctx.getContainer(), tinfo, domain, columns);
             writer.writeTable(tableXml);
         }
         vf.saveXmlBean(schemaFileName, tablesDoc);
@@ -127,9 +145,37 @@ public abstract class DefaultStudyDesignWriter
 
     private static class TreatementTableWriter extends TableInfoWriter
     {
-        public TreatementTableWriter(Container c, TableInfo tinfo, Collection<ColumnInfo> columns)
+        private final Map<String, DomainProperty> _properties = new CaseInsensitiveHashMap<>();
+        private Domain _domain;
+
+        protected TreatementTableWriter(Container c, TableInfo ti, Domain domain, Collection<ColumnInfo> columns)
         {
-            super(c, tinfo, columns);
+            super(c, ti, columns);
+            _domain = domain;
+
+            for (DomainProperty prop : _domain.getProperties())
+                _properties.put(prop.getName(), prop);
+        }
+
+        @Override  // No reason to ever export list PropertyURIs
+        protected String getPropertyURI(ColumnInfo column)
+        {
+            return null;
+        }
+
+        @Override
+        public void writeColumn(ColumnInfo column, ColumnType columnXml)
+        {
+            super.writeColumn(column, columnXml);
+
+            // Since the specimen tables only return a SchemaTableInfo, the column names will be decapitalized,
+            // to preserve casing we defer to the DomainProperty names. This is mostly cosmetic
+            if (_properties.containsKey(column.getName()))
+            {
+                DomainProperty dp = _properties.get(column.getName());
+                if (dp.getName() != null)
+                    columnXml.setColumnName(dp.getName());
+            }
         }
     }
 }

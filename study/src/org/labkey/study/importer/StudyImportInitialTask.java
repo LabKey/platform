@@ -32,6 +32,7 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.writer.StudyPropertiesImporter;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
@@ -208,6 +209,9 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             StudyManager.getInstance().updateStudy(ctx.getUser(), study);
 
             VirtualFile vf = ctx.getRoot();
+
+            // study.objective and study.personnel tables
+            new StudyPropertiesImporter().importExtendedStudyProperties(ctx, vf);
 
             new MissingValueImporterFactory().create().process(job, ctx, vf);
             new QcStatesImporter().process(ctx, vf, errors);

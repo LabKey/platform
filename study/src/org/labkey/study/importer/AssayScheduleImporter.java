@@ -83,7 +83,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                 for (TableInfo table : studyDesignTables)
                 {
                     deleteData(ctx, table);
-                    importTableData(ctx, vf, table, null, null);
+                    importTableData(ctx, vf, table, null, new PreserveExistingProjectData(ctx.getUser(), table, "Name"));
                 }
             }
             else
