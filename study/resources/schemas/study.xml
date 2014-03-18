@@ -1618,15 +1618,39 @@
       <ns:columns>
           <ns:column columnName="Name"/>
           <ns:column columnName="Label"/>
-          <ns:column columnName="Description"/>
-          <ns:column columnName="Inactive">
-              <ns:description>Whether or not to show this records in the lookup drop-down for newly created study designs.</ns:description>
-          </ns:column>
           <ns:column columnName="CreatedBy"/>
           <ns:column columnName="Created"/>
           <ns:column columnName="ModifiedBy"/>
           <ns:column columnName="Modified"/>
           <ns:column columnName="Container"/>
+          <ns:column columnName="Description">
+              <ns:description>Description of the assay.</ns:description>
+          </ns:column>
+          <ns:column columnName="Inactive">
+              <ns:description>Whether or not to show this records in the lookup drop-down for newly created study designs.</ns:description>
+          </ns:column>
+          <ns:column columnName="Target">
+              <ns:description>Target of this specific assay. For example, "Antibody", "T-Cell", or "Humoral".</ns:description>
+          </ns:column>
+          <ns:column columnName="Methodology">
+              <ns:description>Experimental procedure followed; usually just the LabKey assay type.  For example, "NAb", "Elispot", or "ICS".</ns:description>
+          </ns:column>
+          <ns:column columnName="Category">
+              <ns:description>Type of experiment that the assay represents.  For example, "Immunogenicity", "Epidemiology", or "Cell Engineering".</ns:description>
+          </ns:column>
+          <ns:column columnName="TargetFunction">
+              <ns:description>What is being measured.  For example, "Neutralization", "Activation", or "Inhibition".</ns:description>
+          </ns:column>
+          <ns:column columnName="LeadContributor"/>
+          <ns:column columnName="Contact">
+              <ns:description>Email address for the main point of contact for questions about this assay.</ns:description>
+          </ns:column>
+          <ns:column columnName="Summary">
+              <ns:description>Shorter version of the full description, usable in a table of contents view.</ns:description>
+          </ns:column>
+          <ns:column columnName="Keywords">
+              <ns:description>The set of key words submitted with the associated paper.</ns:description>
+          </ns:column>
       </ns:columns>
   </ns:table>
   <ns:table tableName="StudyDesignGenes" tableDbType="TABLE">
@@ -1669,6 +1693,18 @@
           <ns:column columnName="ModifiedBy"/>
           <ns:column columnName="Modified"/>
           <ns:column columnName="Container"/>
+          <ns:column columnName="Description">
+              <ns:description>Description of the lab, primary goals, focus, notable discoveries.</ns:description>
+          </ns:column>
+          <ns:column columnName="PI">
+              <ns:description>Email address for the principal investigator for the lab.</ns:description>
+          </ns:column>
+          <ns:column columnName="Summary">
+              <ns:description>Shorter version of the full description, usable in a table of contents view.</ns:description>
+          </ns:column>
+          <ns:column columnName="Institution">
+              <ns:description>The institution at which the lab is based and/or affiliated with.  For example, "University of Washington", "Rho".</ns:description>
+          </ns:column>
       </ns:columns>
   </ns:table>
   <ns:table tableName="StudyDesignRoutes" tableDbType="TABLE">
