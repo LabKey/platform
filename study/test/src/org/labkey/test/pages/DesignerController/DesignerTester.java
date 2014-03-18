@@ -17,7 +17,7 @@ package org.labkey.test.pages.DesignerController;
 
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
-import org.labkey.test.BaseSeleniumWebTest;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.openqa.selenium.WebElement;
@@ -93,7 +93,7 @@ public class DesignerTester
 
     public void setDescription(String description)
     {
-        _test.fireEvent(Locator.xpath("//div[contains(text(), 'Click to edit description')]"), BaseSeleniumWebTest.SeleniumEvent.focus);
+        _test.fireEvent(Locator.xpath("//div[contains(text(), 'Click to edit description')]"), BaseWebDriverTest.SeleniumEvent.focus);
         _test.setFormElement(Locator.name("protocolDescription"), description);
     }
 
@@ -111,7 +111,7 @@ public class DesignerTester
     {
         Locator immunogenNameField = Locators.immunogenGridRow().index(immunogenRowNumber - 1).append("/td[2]/input");
         _test.setFormElement(immunogenNameField, name);
-        _test.fireEvent(immunogenNameField, BaseSeleniumWebTest.SeleniumEvent.change);
+        _test.fireEvent(immunogenNameField, BaseWebDriverTest.SeleniumEvent.change);
     }
 
     public void setImmunogenType(int immunogenRowNumber, String type)
@@ -124,7 +124,7 @@ public class DesignerTester
     {
         Locator immunogenRouteField = Locators.immunogenGridRow().index(immunogenRowNumber - 1).append("/td[4]/input");
         _test.setFormElement(immunogenRouteField, doseAndUnits);
-        _test.fireEvent(immunogenRouteField, BaseSeleniumWebTest.SeleniumEvent.change);
+        _test.fireEvent(immunogenRouteField, BaseWebDriverTest.SeleniumEvent.change);
     }
 
     public void setImmunogenRoute(int immunogenRowNumber, String route)
@@ -153,14 +153,14 @@ public class DesignerTester
     {
         Locator adjuvantNameField = Locators.adjuvantGridRow().index(adjuvantRowNumber - 1).append("/td[2]/input");
         _test.setFormElement(adjuvantNameField, name);
-        _test.fireEvent(adjuvantNameField, BaseSeleniumWebTest.SeleniumEvent.change);
+        _test.fireEvent(adjuvantNameField, BaseWebDriverTest.SeleniumEvent.change);
     }
 
     public void setAdjuvantDoseAndUnits(int adjuvantRowNumber, String doseAndUnits)
     {
         Locator adjuvantRouteField = Locators.adjuvantGridRow().index(adjuvantRowNumber - 1).append("/td[3]/input");
         _test.setFormElement(adjuvantRouteField, doseAndUnits);
-        _test.fireEvent(adjuvantRouteField, BaseSeleniumWebTest.SeleniumEvent.change);
+        _test.fireEvent(adjuvantRouteField, BaseWebDriverTest.SeleniumEvent.change);
     }
 
     public void setAdjuvantRoute(int adjuvantRowNumber, String route)
@@ -194,7 +194,7 @@ public class DesignerTester
     {
         Locator immunizationGroupCountField = Locators.immunizationGridRow().index(groupRowNumber - 1).append("/td[3]/input");
         _test.setFormElementJS(immunizationGroupCountField, count);
-        _test.fireEvent(immunizationGroupCountField, BaseSeleniumWebTest.SeleniumEvent.change);
+        _test.fireEvent(immunizationGroupCountField, BaseWebDriverTest.SeleniumEvent.change);
     }
 
     public void addImmunizationTimepoint(String timepoint)
@@ -227,7 +227,7 @@ public class DesignerTester
 
     public void setAssayPlan(String description)
     {
-        _test.fireEvent(Locator.xpath("//div[contains(text(), 'Click to type assay plan here')]"), BaseSeleniumWebTest.SeleniumEvent.focus);
+        _test.fireEvent(Locator.xpath("//div[contains(text(), 'Click to type assay plan here')]"), BaseWebDriverTest.SeleniumEvent.focus);
         _test.setFormElement(Locator.name("assayPlan"), description);
     }
 
