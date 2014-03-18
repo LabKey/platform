@@ -720,7 +720,7 @@ public class StudyServiceImpl implements StudyService.Service
         Map<TableInfo, SQLFragment> filterFragmentMap = new HashMap<>();
         if (null == containers || containers.isEmpty())
         {
-            // TODO: what if current container doesn't have a vial table?  use template?
+            // TODO: what if current container doesn't have a specimen table?  use template?
             SimpleSpecimenTable t = new SimpleSpecimenTable(schemaDefault, true);
             t.setPublic(false);
             return t;
@@ -907,6 +907,7 @@ public class StudyServiceImpl implements StudyService.Service
         mandatory.add("primarytype");       // alias for primarytypeid
         mandatory.add("derivativetype");    // alias for derivativetypeid
         mandatory.add("additivetype");      // alias for additivetypeid
+        mandatory.add("visit");
 
         // scan all tables for all columns
         Map<String,ColumnInfo> unionColumns = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String,ColumnInfo>());
