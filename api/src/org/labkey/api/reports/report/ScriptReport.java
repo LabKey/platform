@@ -138,11 +138,6 @@ public abstract class ScriptReport extends AbstractReport
         // otherwise, use viewAndUpdate, which means show the view tab first, but let developers edit the source
         Mode  mode = (TAB_SOURCE.equals(tabId) ? Mode.update : (webpart ? Mode.view : Mode.viewAndUpdate));
 
-        if (hasClientDependencies())
-        {
-
-        }
-
         return new AjaxRunScriptReportView(this, mode);
     }
 

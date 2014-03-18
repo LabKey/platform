@@ -167,6 +167,7 @@
 
     reportConfig.put("knitrOptions", report instanceof RReport);
     reportConfig.put("knitrFormat", knitrFormat);
+    reportConfig.put("scriptDependencies", bean.getScriptDependencies());
 
     reportConfig.put("javascriptOptions", report instanceof JavaScriptReport);
     reportConfig.put("useGetDataApi", useGetDataApi);

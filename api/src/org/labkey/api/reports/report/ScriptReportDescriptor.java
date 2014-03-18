@@ -16,8 +16,6 @@
 
 package org.labkey.api.reports.report;
 
-import org.labkey.api.view.template.ClientDependency;
-
 import java.util.*;
 
 /*
@@ -33,6 +31,7 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
     {
         script,
         scriptExtension,
+        scriptDependencies,
         includedReports,
         runInBackground,
         sourceTabVisible,
@@ -52,6 +51,16 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
             return (List<String>)reports;
 
         return Collections.emptyList();
+    }
+
+    public String getScriptDependencies()
+    {
+        return (String) _props.get(Prop.scriptDependencies.toString());
+    }
+
+    public void setScriptDependencies(String scriptDependencies)
+    {
+        _props.put(Prop.scriptDependencies.toString(), scriptDependencies);
     }
 
     public boolean isArrayType(String prop)

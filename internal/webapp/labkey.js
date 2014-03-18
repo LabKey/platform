@@ -306,7 +306,8 @@ if (typeof LABKEY == "undefined")
             if (file.indexOf('/') == 0)
                 file = file.substring(1);
 
-            var fullPath = configs.contextPath + "/" + file;
+            // Support both LabKey and external CSS files
+            var fullPath = file.substr(0, 4) != "http" ? configs.contextPath + "/" + file + '?' + configs.hash : file;
 
             if (_requestedCssFiles[fullPath])
                 return;
@@ -314,7 +315,7 @@ if (typeof LABKEY == "undefined")
             addElemToHead("link", {
                 type: "text/css",
                 rel: "stylesheet",
-                href: fullPath + "?" + configs.hash
+                href: fullPath
             });
 
             _requestedCssFiles[fullPath] = 1;

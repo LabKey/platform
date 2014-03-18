@@ -15,22 +15,13 @@
  */
 package org.labkey.api.reports.report;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
-import org.labkey.query.xml.QueryReportDescriptorType;
-import org.labkey.query.xml.ReportDescriptorType;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -45,15 +36,11 @@ public class ModuleQueryReportDescriptor extends QueryReportDescriptor implement
 
     private Module _module;
     private Path _reportPath;
-    private Resource _sourceFile;
-    private long _sourceLastModified = 0;
-    private String _schemaName = null;
-    private String _queryName = null;
+    private ModuleQueryReportResource _resource = null;
 
     public ModuleQueryReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath, Container container, User user)
     {
         _module = module;
-        _sourceFile = sourceFile;
         _reportPath = reportPath;
 
         String name = sourceFile.getName().substring(0, sourceFile.getName().length() -
@@ -63,6 +50,7 @@ public class ModuleQueryReportDescriptor extends QueryReportDescriptor implement
         setReportName(name);
         setDescriptorType(TYPE);
         setReportType(getDefaultReportType(reportKey));
+        _resource = new ModuleQueryReportResource(this, sourceFile);
         loadMetaData(container, user);
     }
 
@@ -73,61 +61,20 @@ public class ModuleQueryReportDescriptor extends QueryReportDescriptor implement
 
     public boolean isStale()
     {
-        //check if either source or meta-data files have changed
-        //meta-data file is optional so make sure it exists before checking
-        return (_sourceLastModified != 0 && _sourceFile.getLastModified() != _sourceLastModified);
+        return _resource.isStale();
     }
 
     protected void loadMetaData(Container container, User user)
     {
-        try
-        {
-            String xml = getFileContents(_sourceFile);
-            ReportDescriptorType d = setDescriptorFromXML(container, user, xml);
-            if (d.getReportType() != null)
-            {
-                if (d.getReportType().getQuery() == null)
-                {
-                    throw new XmlException("Metadata for a Query Report must have a ReportType of Query.");
-                }
-
-                List<Pair<String,String>> props = createPropsFromXML(xml);
-
-                // parse out the query report specific schema elements
-                QueryReportDescriptorType queryReportDescriptorType = d.getReportType().getQuery();
-                String queryName = queryReportDescriptorType.getQueryName();
-                if (null != queryName)
-                    props.add(new Pair<>(Prop.queryName.name(), queryName));
-                String schemaName = queryReportDescriptorType.getSchemaName();
-                if (null != schemaName)
-                    props.add(new Pair<>(Prop.schemaName.name(), schemaName));
-                String viewName = queryReportDescriptorType.getViewName();
-                if (null != viewName)
-                    props.add(new Pair<>(Prop.viewName.name(), viewName));
-
-                setProperties(props);
-            }
-
-            _sourceLastModified = _sourceFile.getLastModified();
-        }
-        catch(IOException e)
-        {
-            Logger.getLogger(ModuleQueryReportDescriptor.class).warn("Unable to load query report metadata from file "
-                    + _sourceFile.getPath(), e);
-        }
-        catch(XmlException e)
-        {
-            Logger.getLogger(ModuleQueryReportDescriptor.class).warn("Unable to load query report metadata from file "
-                    + _sourceFile.getPath(), e);
-        }
-        }
+        _resource.loadMetaData(container, user);
+    }
 
     @Override
     public String getProperty(ReportDescriptor.ReportProperty prop)
     {
         //if the key = script, ensure we have it
         if (prop.equals(ScriptReportDescriptor.Prop.script))
-            ensureScriptCurrent();
+            _resource.ensureScriptCurrent();
 
         return super.getProperty(prop);
     }
@@ -137,7 +84,7 @@ public class ModuleQueryReportDescriptor extends QueryReportDescriptor implement
     {
         //if the key = script, ensure we have it
         if (key.equalsIgnoreCase(ScriptReportDescriptor.Prop.script.name()))
-            ensureScriptCurrent();
+            _resource.ensureScriptCurrent();
 
         return super.getProperty(key);
     }
@@ -145,37 +92,8 @@ public class ModuleQueryReportDescriptor extends QueryReportDescriptor implement
     @Override
     public Map<String, Object> getProperties()
     {
-        ensureScriptCurrent();
+        _resource.ensureScriptCurrent();
         return super.getProperties();
-    }
-
-    protected void ensureScriptCurrent()
-    {
-        if (_sourceFile.exists() && _sourceFile.getLastModified() != _sourceLastModified)
-        {
-            try
-            {
-                String script = getFileContents(_sourceFile);
-                if (null != script)
-                {
-                    setProperty(ScriptReportDescriptor.Prop.script, script);
-                    _sourceLastModified = _sourceFile.getLastModified();
-                }
-            }
-            catch(IOException e)
-            {
-                Logger.getLogger(ModuleRReportDescriptor.class).warn("Unable to load report script from source file "
-                        + _sourceFile.getPath(), e);
-            }
-        }
-    }
-
-    protected String getFileContents(Resource file) throws IOException
-    {
-        try (InputStream is = file.getInputStream())
-        {
-            return IOUtils.toString(is);
-        }
     }
 
     @Override
@@ -193,12 +111,7 @@ public class ModuleQueryReportDescriptor extends QueryReportDescriptor implement
     @Override
     public Resource getSourceFile()
     {
-        return _sourceFile;
-    }
-
-    public long getSourceLastModified()
-    {
-        return _sourceLastModified;
+        return _resource.getSourceFile();
     }
 
     @NotNull

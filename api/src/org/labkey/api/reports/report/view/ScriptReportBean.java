@@ -54,6 +54,7 @@ public class ScriptReportBean extends ReportDesignBean
     private String _knitrFormat;
     private Boolean _useGetDataApi;
     private LinkedHashSet<ClientDependency> _clientDependencies;
+    private String _scriptDependencies;
 
     public ScriptReportBean()
     {
@@ -96,6 +97,16 @@ public class ScriptReportBean extends ReportDesignBean
     public void setClientDependencies(LinkedHashSet<ClientDependency> clientDependencies)
     {
         _clientDependencies = clientDependencies;
+    }
+
+    public String getScriptDependencies()
+    {
+        return _scriptDependencies;
+    }
+
+    public void setScriptDependencies(String scriptDependencies)
+    {
+        _scriptDependencies = scriptDependencies;
     }
 
     public boolean isRunInBackground()
@@ -153,6 +164,8 @@ public class ScriptReportBean extends ReportDesignBean
             assert descriptor instanceof ScriptReportDescriptor;
 
             ((ScriptReportDescriptor)descriptor).setIncludedReports(_includedReports);
+
+            ((ScriptReportDescriptor)descriptor).setScriptDependencies(getScriptDependencies());
         }
 
         return report;
@@ -205,6 +218,7 @@ public class ScriptReportBean extends ReportDesignBean
 
         setIncludedReports(srDescriptor.getIncludedReports());
         setClientDependencies(srDescriptor.getClientDependencies());
+        setScriptDependencies(srDescriptor.getScriptDependencies());
 
         if (ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), descriptor.getResourceContainer(), "thumbnailType") != null)
             setThumbnailType(ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), descriptor.getResourceContainer(), "thumbnailType").toString());

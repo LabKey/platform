@@ -15,9 +15,6 @@
  */
 package org.labkey.api.reports.report;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -27,8 +24,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
 import org.labkey.query.xml.ReportDescriptorType;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Map;
 
 /**
@@ -42,15 +37,12 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
 
     protected Module _module;
     protected Path _reportPath;
-    protected Resource _sourceFile;
-    protected Resource _metaDataFile;
-    protected long _sourceLastModified = 0;
-    protected long _metaDataLastModified = 0;
+
+    protected ModuleReportResource _resource;
 
     public ModuleJavaScriptReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath, Container container, User user)
     {
         _module = module;
-        _sourceFile = sourceFile;
         _reportPath = reportPath;
 
         String name = sourceFile.getName().substring(0, sourceFile.getName().length() -
@@ -60,9 +52,13 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
         setReportName(name);
         setDescriptorType(TYPE);
         setReportType(getDefaultReportType(reportKey));
-        Resource dir = sourceFile.parent();
-        _metaDataFile = dir.find(getReportName() + REPORT_METADATA_EXTENSION);
+        _resource = getModuleReportResource(sourceFile);
         loadMetaData(container, user);
+    }
+
+    public ModuleReportResource getModuleReportResource(Resource sourceFile)
+    {
+        return new ModuleReportResource(this, sourceFile);
     }
 
     public String getDefaultReportType(String reportKey)
@@ -73,37 +69,13 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
     @Override
     public boolean isStale()
     {
-        //check if either source or meta-data files have changed
-        //meta-data file is optional so make sure it exists before checking
-        return (_sourceLastModified != 0 && _sourceFile.getLastModified() != _sourceLastModified)
-                || (_metaDataLastModified != 0 && _metaDataFile.exists() && _metaDataFile.getLastModified() != _metaDataLastModified);
+        return _resource.isStale();
     }
 
     @Nullable
     protected ReportDescriptorType loadMetaData(Container container, User user)
     {
-        ReportDescriptorType d = null;
-        if (null != _metaDataFile && _metaDataFile.isFile())
-        {
-            try
-            {
-                String xml = getFileContents(_metaDataFile);
-                d = setDescriptorFromXML(container, user, xml);
-
-                _metaDataLastModified = _metaDataFile.getLastModified();
-            }
-            catch(IOException e)
-            {
-                Logger.getLogger(ModuleJavaScriptReportDescriptor.class).warn("Unable to load report metadata from file "
-                        + _metaDataFile.getPath(), e);
-            }
-            catch(XmlException e)
-            {
-                Logger.getLogger(ModuleQueryReportDescriptor.class).warn("Unable to load query report metadata from file "
-                        + _sourceFile.getPath(), e);
-            }
-        }
-        return d;
+        return _resource.loadMetaData(container, user);
     }
 
     @Override
@@ -111,7 +83,7 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
     {
         //if the key = script, ensure we have it
         if (prop.equals(ScriptReportDescriptor.Prop.script))
-            ensureScriptCurrent();
+            _resource.ensureScriptCurrent();
 
         return super.getProperty(prop);
     }
@@ -121,7 +93,7 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
     {
         //if the key = script, ensure we have it
         if (key.equalsIgnoreCase(ScriptReportDescriptor.Prop.script.name()))
-            ensureScriptCurrent();
+            _resource.ensureScriptCurrent();
 
         return super.getProperty(key);
     }
@@ -129,37 +101,8 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
     @Override
     public Map<String, Object> getProperties()
     {
-        ensureScriptCurrent();
+        _resource.ensureScriptCurrent();
         return super.getProperties();
-    }
-
-    protected void ensureScriptCurrent()
-    {
-        if (_sourceFile.exists() && _sourceFile.getLastModified() != _sourceLastModified)
-        {
-            try
-            {
-                String script = getFileContents(_sourceFile);
-                if (null != script)
-                {
-                    setProperty(ScriptReportDescriptor.Prop.script, script);
-                    _sourceLastModified = _sourceFile.getLastModified();
-                }
-            }
-            catch(IOException e)
-            {
-                Logger.getLogger(ModuleRReportDescriptor.class).warn("Unable to load report script from source file "
-                        + _sourceFile.getPath(), e);
-            }
-        }
-    }
-
-    protected String getFileContents(Resource file) throws IOException
-    {
-        try (InputStream is = file.getInputStream())
-        {
-            return IOUtils.toString(is);
-        }
     }
 
     @Override
@@ -177,7 +120,7 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
     @Override
     public Resource getSourceFile()
     {
-        return _sourceFile;
+        return _resource.getSourceFile();
     }
 
     @NotNull
@@ -210,6 +153,6 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
     @Override
     public Resource getMetaDataFile()
     {
-        return _metaDataFile;
+        return _resource.getMetaDataFile();
     }
 }
