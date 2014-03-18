@@ -351,18 +351,29 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                         {name : 'knitrFormat',
                             inputValue : 'None',
                             boxLabel : 'None&nbsp;' +
-                            '<span data-qtip="The source is run without going through knitr."><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                                    '<span data-qtip="The source is run without going through knitr."><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
                             checked : this.reportConfig.knitrFormat == 'None'},
                         {name : 'knitrFormat',
                             inputValue : 'Html',
                             boxLabel : 'Html&nbsp;' +
-                            '<span data-qtip="Use knitr to process html source"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                                    '<span data-qtip="Use knitr to process html source"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
                             checked : this.reportConfig.knitrFormat == 'Html'},
                         {name : 'knitrFormat',
                             inputValue : 'Markdown',
                             boxLabel : 'Markdown&nbsp;' +
-                            '<span data-qtip="Use knitr to process markdown source"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
-                            checked : this.reportConfig.knitrFormat == 'Markdown'}
+                                    '<span data-qtip="Use knitr to process markdown source"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                            checked : this.reportConfig.knitrFormat == 'Markdown'},
+                        { xtype : 'label',
+                          html : 'Dependencies&nbsp;' +
+                                  '<span data-qtip="Add a semi-colon delimited list of javascript, CSS, or library dependencies here."><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>'},
+                        { name : 'scriptDependencies',
+                            xtype : 'textarea',
+                            value : this.reportConfig.scriptDependencies,
+                            margin : '5 0 0 0',
+                            grow : true,
+                            width : 450,
+                            hideLabel : true
+                        }
                     ]
                 });
             }

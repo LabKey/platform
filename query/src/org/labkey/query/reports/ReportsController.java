@@ -83,7 +83,6 @@ import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ChartReport;
-import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportJob;
@@ -1053,6 +1052,9 @@ public class ReportsController extends SpringActionController
                 Map<String, Object> resultProperties = new HashMap<>();
 
                 LinkedHashSet<ClientDependency> dependencies = resultsView.getClientDependencies();
+                LinkedHashSet<String> cssScripts = new LinkedHashSet<>();
+                addScriptDependencies(bean, dependencies, cssScripts);
+
                 LinkedHashSet<String> includes = new LinkedHashSet<>();
                 LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
                 PageFlowUtil.getJavaScriptFiles(getContainer(), getUser(), dependencies, includes, implicitIncludes);
@@ -1067,9 +1069,9 @@ public class ReportsController extends SpringActionController
 
                 resultProperties.put("html", mr.getContentAsString());
                 resultProperties.put("requiredJsScripts", includes);
+                resultProperties.put("requiredCssScripts", cssScripts);
                 resultProperties.put("implicitJsIncludes", implicitIncludes);
                 resultProperties.put("moduleContext", PageFlowUtil.getModuleClientContext(getViewContext(), dependencies));
-
                 return new ApiSimpleResponse(resultProperties);
             }
 
@@ -1079,6 +1081,31 @@ public class ReportsController extends SpringActionController
 */
 
             return null;
+        }
+
+        private void addScriptDependencies(ScriptReportBean bean, LinkedHashSet<ClientDependency> clientDependencies, LinkedHashSet<String> cssScripts)
+        {
+            // add all the client dependencies (.css, .js. and libs)
+            if (null != bean.getScriptDependencies())
+            {
+                String [] scriptDependencies = bean.getScriptDependencies().split(";");
+                for (String d : scriptDependencies)
+                {
+                    if (StringUtils.isNotBlank(d))
+                    {
+                        ClientDependency cd;
+                        String s = d.trim();
+
+                        if (ClientDependency.isExternalDependency(s))
+                            cd = ClientDependency.fromURIPath(s);
+                        else
+                            cd = ClientDependency.fromFilePath(s);
+
+                        cssScripts.addAll(cd.getCssPaths(getContainer(), getUser(), AppProps.getInstance().isDevMode()));
+                        clientDependencies.add(cd);
+                    }
+                }
+            }
         }
     }
 
