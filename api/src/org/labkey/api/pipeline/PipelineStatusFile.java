@@ -48,6 +48,14 @@ public interface PipelineStatusFile
         boolean setStatus(PipelineJob job, String status, @Nullable String statusInfo, boolean allowInsert) throws Exception;
 
         void ensureError(PipelineJob job) throws Exception;
+
+        /**
+         * If a location can be serviced by multiple servers, we record the hostname of which server is RUNNING a given task.
+         * This is currently only supported for Remote Servers, but could be expanded for clusters.
+         *
+         * @param hostName The hostname the status writer should use when updating pipeline.StatusFiles
+         */
+        void setHostName(String hostName);
     }
 
     public interface JobStore
@@ -116,6 +124,12 @@ public interface PipelineStatusFile
 
     void save();
 
+    /**
+     *
+     * @return which of multiple hostnames for a location is RUNNING a task. Only set for tasks in a RUNNING state on a remote
+     * server. If active task is in an inactive state or running on the web server or a cluster, this will be null.
+     */
+    @Nullable
     String getActiveHostName();
 }
 

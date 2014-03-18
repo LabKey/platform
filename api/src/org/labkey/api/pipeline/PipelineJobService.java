@@ -77,7 +77,12 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
     {
         String getLocation();
         String getMuleConfig();
-        String getHostName();
+
+        /**
+         *
+         * @return the hostName to be recorded as activeHostName for the task in PipelineStatusFile
+         */
+        @NotNull String getHostName();
     }
 
     /**
