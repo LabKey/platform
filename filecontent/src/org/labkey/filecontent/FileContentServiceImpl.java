@@ -855,7 +855,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     public static class TestCase extends AssertionError
     {
-        private static final String TRICKY_CHARACTERS_FOR_PROJECT_NAMES = "\u2603~!@$&()_+{}-=[],.#äöü";
+        private static final String TRICKY_CHARACTERS_FOR_PROJECT_NAMES = "\u2603~!@$&()_+{}-=[],.#\u00E4\u00F6\u00FC";
 
         private static final String PROJECT1 = "FileRootTestProject1" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
         private static final String PROJECT1_SUBFOLDER1 = "Subfolder1";
