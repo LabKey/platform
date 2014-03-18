@@ -16,6 +16,7 @@
 package org.labkey.pipeline.mule;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.NoSuchJobException;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
@@ -37,9 +38,9 @@ public class RequeueLostJobsRequest implements StatusRequest
     private Collection<String> _locations;
     private Collection<String> _jobIds;
     private String _hostName;
-    private static final Object _lock = new Object();
+    private static final Object LOCK = new Object();
 
-    public RequeueLostJobsRequest(Collection<String> locations, Collection<String> jobIds, String hostName)
+    public RequeueLostJobsRequest(Collection<String> locations, Collection<String> jobIds, @Nullable String hostName)
     {
         _locations = locations;
         _jobIds = jobIds;
@@ -62,7 +63,11 @@ public class RequeueLostJobsRequest implements StatusRequest
             {
                 for (String location : _locations)
                 {
-                    synchronized(_lock)
+                    /*
+                       We requeue jobs with activeHostName matching the request, or == null. Synchronize to prevent race condition when activeHostName == null and multiple
+                       remote servers are servicing this location.
+                      */
+                    synchronized(LOCK)
                     {
                         _log.info("Requeueing jobs for location " + location);
                         for (PipelineStatusFileImpl sf : PipelineStatusManager.getStatusFilesForLocation(location, true))

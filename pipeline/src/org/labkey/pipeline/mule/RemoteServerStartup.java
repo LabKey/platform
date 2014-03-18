@@ -72,7 +72,7 @@ public class RemoteServerStartup extends AbstractPipelineStartup
         if (muleConfig == null)
             muleConfig = "org/labkey/pipeline/mule/config/remoteMuleConfig.xml";
 
-        ( (JMSStatusWriter)PipelineJobServiceImpl.get().getStatusWriter()).setHostName(props.getHostName());
+        PipelineJobServiceImpl.get().getStatusWriter().setHostName(props.getHostName());
 
         LabKeySpringContainerContext.setContext(factories.get(PipelineService.MODULE_NAME));
 

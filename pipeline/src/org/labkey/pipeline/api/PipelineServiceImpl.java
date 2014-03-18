@@ -476,6 +476,12 @@ public class PipelineServiceImpl extends PipelineService
         PipelineStatusManager.ensureError(job);
     }
 
+    @Override
+    public void setHostName(String hostName)
+    {
+        throw new UnsupportedOperationException("Method supported only on remote server");
+    }
+
     private List<String> parseArray(String dbPaths)
     {
         if(dbPaths == null) return null;

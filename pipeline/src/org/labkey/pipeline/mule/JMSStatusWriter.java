@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.mule;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineJob;
 import org.mule.extras.client.MuleClient;
@@ -31,7 +32,8 @@ public class JMSStatusWriter implements PipelineStatusFile.StatusWriter
     public static final String STATUS_QUEUE_NAME = "StatusQueue";
     private String hostName;
 
-    public void setHostName(String hostName)
+    @Override
+    public void setHostName(@NotNull String hostName)
     {
         this.hostName = hostName;
     }

@@ -35,4 +35,10 @@ public class NoOpPipelineStatusWriter implements PipelineStatusFile.StatusWriter
     {
         throw new UnsupportedOperationException("Method supported only on web server");
     }
+
+    @Override
+    public void setHostName(String hostName)
+    {
+        throw new UnsupportedOperationException("Method supported only on remote servers");
+    }
 }
