@@ -210,6 +210,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
                 _activeTaskId = curSF._activeTaskId;
         }
 
+        // We only care about the hostName for RUNNING tasks so they can be requeued properly on remote server restart.
         if (!isActive())
         {
             _activeHostName = null;
@@ -410,7 +411,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         return _activeHostName;
     }
 
-    public void setActiveHostName(String activeHostName)
+    public void setActiveHostName(@Nullable String activeHostName)
     {
         _activeHostName = activeHostName;
     }
