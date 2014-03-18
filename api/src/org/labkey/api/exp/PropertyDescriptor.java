@@ -201,10 +201,10 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
     @Override
     public String getInputType()
     {
-        if (null == propertyType)
+        if (null == getPropertyType())
             return super.getInputType();
 
-        return propertyType.getInputType();
+        return getPropertyType().getInputType();
     }
 
     public String getConceptURI()

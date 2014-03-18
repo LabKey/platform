@@ -24,6 +24,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -70,6 +71,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -138,7 +140,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         {
             if (col.isMvEnabled())
             {
-                mvEnabledColumns.add(col.getName());
+                // Check for all of the possible names for the column in the incoming data when deciding if we should
+                // check it for missing values
+                Set<String> columnAliases = ImportAliasable.Helper.createImportMap(Collections.singletonList(col), false).keySet();
+                mvEnabledColumns.addAll(columnAliases);
                 mvIndicatorColumns.add(col.getName() + MvColumn.MV_INDICATOR_SUFFIX);
             }
         }
