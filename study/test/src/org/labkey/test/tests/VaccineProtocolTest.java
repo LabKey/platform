@@ -298,7 +298,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         clickProject(projectName);
         portalHelper.addWebPart("Assay List");
 
-        _assayHelper.uploadXarFileAsAssayDesign(getSampledataPath() + "/studyextra/TestAssay1.xar", 1, "TestAssay1.xar");
+        _assayHelper.uploadXarFileAsAssayDesign(getSampledataPath() + "/studyextra/TestAssay1.xar", 1);
         goToProjectHome();
 
     } //defineAssay()
@@ -317,13 +317,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
     } //getTargetStudyOptionText()
 
     protected static final String TEST_RUN1_COMMENTS = "First comments";
-    protected static final String TEST_RUN1_DATA1 = "specimenID\tparticipantID\tvisitID\tDate\tValue\n" +
-            "V1-8\tV1\t\t2007-11-13\t1\n" +
-            "P1-8\tP1\t\t2007-11-13\t2\n" +
-            "P2-8\tP2\t\t2007-11-13\t3\n" +
-            "V2-8\tV2\t\t2007-11-13\t4\n" +
-            "V3-8\tV3\t\t2007-11-13\t5\n" +
-            "V4-8\tV4\t\t2007-11-13\t6";
+    protected static final File TEST_RUN1_DATA1 = new File(getSampledataPath(), "studyextra/TestAssayRun1.xar");
 
     protected void uploadRun()
     {
@@ -340,7 +334,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         setFormElement(Locator.name("name"), TEST_RUN1);
         setFormElement(Locator.name("comments"), TEST_RUN1_COMMENTS);
         click(Locator.xpath("//input[@value='textAreaDataProvider']"));
-        setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN1_DATA1);
+        setFormElement(Locator.id("TextAreaDataCollector.textArea"), getFileContents(TEST_RUN1_DATA1));
         clickButton("Save and Finish");
         // reenable the following lines when we've moved to strict type checking of the incoming file.  For now, we're
         // flexible and only error if required columns are missing.
