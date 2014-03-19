@@ -1,0 +1,3 @@
+
+ALTER TABLE exp.PropertyDescriptor ADD COLUMN KeyVariable BOOLEAN NOT NULL DEFAULT False;
+ALTER TABLE exp.PropertyDescriptor ADD COLUMN DefaultScale VARCHAR(40) NOT NULL DEFAULT 'LINEAR';

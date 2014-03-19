@@ -25,6 +25,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -33,6 +34,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.DefaultScaleType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
@@ -103,6 +105,8 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             gwtColumnInfo.setShownInUpdateView(columnInfo.isShownInUpdateView());
             gwtColumnInfo.setDimension(columnInfo.isDimension());
             gwtColumnInfo.setMeasure(columnInfo.isMeasure());
+            gwtColumnInfo.setKeyVariable(columnInfo.isKeyVariable());
+            gwtColumnInfo.setDefaultScale(columnInfo.getDefaultScale().name());
             gwtColumnInfo.setProtected(columnInfo.isProtected());
             gwtColumnInfo.setExcludeFromShifting(columnInfo.isExcludeFromShifting());
             gwtColumnInfo.setURL(columnInfo.getURL() == null ? null : columnInfo.getURL().toString());
@@ -209,6 +213,14 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                         if (column.isSetMeasure())
                         {
                             gwtColumnInfo.setMeasure(column.getMeasure());
+                        }
+                        if (column.isSetKeyVariable())
+                        {
+                            gwtColumnInfo.setKeyVariable(column.getKeyVariable());
+                        }
+                        if (column.isSetDefaultScale())
+                        {
+                            gwtColumnInfo.setDefaultScale(column.getDefaultScale().toString());
                         }
                         if (column.isSetProtected())
                         {
@@ -487,6 +499,24 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             else if (xmlColumn.isSetDimension())
             {
                 xmlColumn.unsetDimension();
+            }
+
+            if (gwtColumnInfo.isKeyVariable() != rawColumnInfo.isKeyVariable())
+            {
+                xmlColumn.setKeyVariable(gwtColumnInfo.isKeyVariable());
+            }
+            else if (xmlColumn.isSetKeyVariable())
+            {
+                xmlColumn.unsetKeyVariable();
+            }
+
+            if (!StringUtils.equals(gwtColumnInfo.getDefaultScale(), rawColumnInfo.getDefaultScale().name()))
+            {
+                xmlColumn.setDefaultScale(DefaultScaleType.Enum.forString(gwtColumnInfo.getDefaultScale()));
+            }
+            else if (xmlColumn.isSetDefaultScale())
+            {
+                xmlColumn.unsetDefaultScale();
             }
 
             if (gwtColumnInfo.isProtected() != rawColumnInfo.isProtected())

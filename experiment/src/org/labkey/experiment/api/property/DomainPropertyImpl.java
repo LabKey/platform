@@ -37,6 +37,7 @@ import org.labkey.api.exp.property.IPropertyType;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.security.User;
@@ -158,6 +159,18 @@ public class DomainPropertyImpl implements DomainProperty
     public boolean isDimension()
     {
         return _pd.isDimension();
+    }
+
+    @Override
+    public boolean isKeyVariable()
+    {
+        return _pd.isKeyVariable();
+    }
+
+    @Override
+    public DefaultScaleType getDefaultScale()
+    {
+        return _pd.getDefaultScale();
     }
 
     @Override
@@ -297,6 +310,23 @@ public class DomainPropertyImpl implements DomainProperty
         if (!isEdited() && isDimension == isDimension())
             return;
         edit().setDimension(isDimension);
+    }
+
+    @Override
+    public void setKeyVariable(boolean isKeyVariable)
+    {
+        if (!isEdited() && isKeyVariable == isKeyVariable())
+            return;
+        edit().setKeyVariable(isKeyVariable);
+    }
+
+    @Override
+    public void setDefaultScale(DefaultScaleType defaultScale)
+    {
+        if (!isEdited() && getDefaultScale() == defaultScale)
+            return;
+
+        edit().setDefaultScale(defaultScale);
     }
 
     @Override
@@ -640,6 +670,8 @@ public class DomainPropertyImpl implements DomainProperty
         setType(propSrc.getType());
         setDimension(propSrc.isDimension());
         setMeasure(propSrc.isMeasure());
+        setKeyVariable(propSrc.isKeyVariable());
+        setDefaultScale(propSrc.getDefaultScale());
         setRequired(propSrc.isRequired());
         setExcludeFromShifting(propSrc.isExcludeFromShifting());
         setFacetingBehavior(propSrc.getFacetingBehavior());
@@ -879,6 +911,8 @@ public class DomainPropertyImpl implements DomainProperty
             pd.setShownInDetailsView(true);
             pd.setDimension(false);
             pd.setMeasure(true);
+            pd.setKeyVariable(false);
+            pd.setDefaultScale(DefaultScaleType.LINEAR);
             pd.setFormat(null);
             pd.setMvEnabled(false);
             pd.setLookupContainer(c.getId());

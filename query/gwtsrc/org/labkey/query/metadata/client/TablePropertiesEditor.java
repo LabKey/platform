@@ -22,10 +22,12 @@ import com.google.gwt.http.client.URL;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.*;
 import org.labkey.api.gwt.client.ui.property.ConditionalFormatItem;
+import org.labkey.api.gwt.client.ui.property.DefaultScaleItem;
 import org.labkey.api.gwt.client.ui.property.DescriptionItem;
 import org.labkey.api.gwt.client.ui.property.DimensionItem;
 import org.labkey.api.gwt.client.ui.property.ExcludeFromShiftingItem;
 import org.labkey.api.gwt.client.ui.property.FormatItem;
+import org.labkey.api.gwt.client.ui.property.KeyVariableItem;
 import org.labkey.api.gwt.client.ui.property.MeasureItem;
 import org.labkey.api.gwt.client.ui.property.ProtectedItem;
 import org.labkey.api.gwt.client.ui.property.URLItem;
@@ -169,12 +171,17 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
         formatPane.addItem(new ConditionalFormatItem<GWTTableInfo, GWTColumnInfo>(getRootPanel(), formatPane));
         addChangeHandler(formatPane.getChangeListener());
 
+        PropertyPane<GWTTableInfo, GWTColumnInfo> reportingPane = new PropertyPane<GWTTableInfo, GWTColumnInfo>(this, "Reporting");
+        reportingPane.addItem(new MeasureItem<GWTTableInfo, GWTColumnInfo>(reportingPane));
+        reportingPane.addItem(new DimensionItem<GWTTableInfo, GWTColumnInfo>(reportingPane));
+        reportingPane.addItem(new KeyVariableItem<GWTTableInfo, GWTColumnInfo>(reportingPane));
+        reportingPane.addItem(new DefaultScaleItem<GWTTableInfo, GWTColumnInfo>(reportingPane));
+        addChangeHandler(reportingPane.getChangeListener());
+
         PropertyPane<GWTTableInfo, GWTColumnInfo> propertyPane = new PropertyPane<GWTTableInfo, GWTColumnInfo>(this, "Additional Properties");
         propertyPane.addItem(new DescriptionItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new URLItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new VisibilityItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
-        propertyPane.addItem(new MeasureItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
-        propertyPane.addItem(new DimensionItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new ProtectedItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new ExcludeFromShiftingItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new WrappedColumnItem(propertyPane));
@@ -183,6 +190,7 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
         List<PropertyPane<GWTTableInfo, GWTColumnInfo>> result = new ArrayList<PropertyPane<GWTTableInfo, GWTColumnInfo>>();
         result.add(propertyPane);
         result.add(formatPane);
+        result.add(reportingPane);
         return result;
     }
 
