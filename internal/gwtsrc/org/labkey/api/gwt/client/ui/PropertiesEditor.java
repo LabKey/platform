@@ -259,7 +259,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 _extraPropertiesTabPanel.getLayoutTarget().setStyleAttribute("backgroundColor","#eeeeee");
             }
         });
-        _extraPropertiesTabPanel.setPixelSize(360, getExtraPropertiesHeight());
+        _extraPropertiesTabPanel.setPixelSize(385, getExtraPropertiesHeight());
         _extraPropertiesTabPanel.setSelection(_extraPropertiesTabPanel.getItem(0));
         _extraPropertiesTabPanel.addListener(Events.Select, new Listener<TabPanelEvent>()
         {
@@ -345,13 +345,18 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         validatorPane.addItem(new ValidatorItem<DomainType, FieldType>(validatorPane));
         addChangeHandler(validatorPane.getChangeListener());
 
+        PropertyPane<DomainType, FieldType> reportingPane = new PropertyPane<DomainType, FieldType>(this, "Reporting");
+        reportingPane.addItem(new MeasureItem<DomainType, FieldType>(reportingPane));
+        reportingPane.addItem(new DimensionItem<DomainType, FieldType>(reportingPane));
+        reportingPane.addItem(new KeyVariableItem<DomainType, FieldType>(reportingPane));
+        reportingPane.addItem(new DefaultScaleItem<DomainType, FieldType>(reportingPane));
+        addChangeHandler(reportingPane.getChangeListener());
+
         PropertyPane<DomainType, FieldType> advancedPane = new PropertyPane<DomainType, FieldType>(this, "Advanced");
         advancedPane.addItem(new MvEnabledItem<DomainType, FieldType>(advancedPane));
         _defaultValueSelector = new DefaultValueItem<DomainType, FieldType>(_owner, advancedPane);
         advancedPane.addItem(_defaultValueSelector);
         advancedPane.addItem(new ImportAliasesItem<DomainType, FieldType>(advancedPane));
-        advancedPane.addItem(new MeasureItem<DomainType, FieldType>(advancedPane));
-        advancedPane.addItem(new DimensionItem<DomainType, FieldType>(advancedPane));
         advancedPane.addItem(new ProtectedItem<DomainType, FieldType>(advancedPane));
         advancedPane.addItem(new ExcludeFromShiftingItem<DomainType, FieldType>(advancedPane));
         advancedPane.addItem(new FacetingBehaviorItem<DomainType, FieldType>(advancedPane));
@@ -361,6 +366,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         result.add(displayPane);
         result.add(formatPane);
         result.add(validatorPane);
+        result.add(reportingPane);
         result.add(advancedPane);
         return result;
     }

@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.property.Type;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.DefaultScaleType;
 import org.labkey.data.xml.FacetingBehaviorType;
 import org.labkey.data.xml.PhiType;
 import org.labkey.data.xml.TableType;
@@ -113,6 +114,17 @@ public class TableInfoWriter
 
         if (column.isMeasure() != ColumnRenderProperties.inferIsMeasure(column))
             columnXml.setMeasure(column.isMeasure());
+
+        if (column.isKeyVariable())
+            columnXml.setKeyVariable(true);
+
+        if (column.getDefaultScale() != null)
+        {
+            // only export default scale if not set to LINEAR
+            String typeName = column.getDefaultScale().name();
+            if (!DefaultScaleType.LINEAR.toString().equals(typeName))
+                columnXml.setDefaultScale(DefaultScaleType.Enum.forString(typeName));
+        }
 
         if (null != column.getURL())
             columnXml.setUrl(column.getURL().getSource());

@@ -37,6 +37,7 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.gwt.client.ui.domain.CancellationException;
 import org.labkey.api.query.FieldKey;
@@ -1404,7 +1405,8 @@ public class OntologyManager
                 "propertyuri, ontologyuri, name, description, rangeuri, concepturi, label, searchterms, semantictype, " +
                 "format, container, project, lookupcontainer, lookupschema, lookupquery, defaultvaluetype, hidden, " +
                 "mvenabled, importaliases, url, shownininsertview, showninupdateview, shownindetailsview, dimension, " +
-                "measure, scale, createdby, created, modifiedby, modified, facetingbehaviortype, protected, excludefromshifting)\n");
+                "measure, scale, keyvariable, defaultscale, createdby, created, modifiedby, modified, facetingbehaviortype, " +
+                "protected, excludefromshifting)\n");
         sql.append("SELECT " +
                 "? as propertyuri, " +
                 "? as ontolotyuri, " +
@@ -1432,6 +1434,8 @@ public class OntologyManager
                 "? as dimension, " +
                 "? as measure, " +
                 "? as scale, " +
+                "? as keyvariable, " +
+                "? as defaultscale, " +
                 "cast(? as int)  as createdby, " +
                 "{fn now()} as created, " +
                 "cast(? as int) as modifiedby, " +
@@ -1467,6 +1471,8 @@ public class OntologyManager
         sql.add(pd.isDimension());
         sql.add(pd.isMeasure());
         sql.add(pd.getScale());
+        sql.add(pd.isKeyVariable());
+        sql.add(pd.getDefaultScale());
         sql.add(user); // createdby
         // created
         sql.add(user); // modifiedby
@@ -2170,13 +2176,13 @@ public class OntologyManager
 
     static final String parameters = "propertyuri,ontologyuri,name,description,rangeuri,concepturi,label,searchterms," +
             "semantictype,format,container,project,lookupcontainer,lookupschema,lookupquery,defaultvaluetype,hidden," +
-            "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale";
+            "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale,keyvariable";
     static final String[] parametersArray = parameters.split(",");
     static final String insertSql;
     static final String updateSql;
     static
     {
-        insertSql = "INSERT INTO exp.propertydescriptor (" + parameters + ")\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        insertSql = "INSERT INTO exp.propertydescriptor (" + parameters + ")\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         StringBuilder sb = new StringBuilder("UPDATE exp.propertydescriptor SET");
         String comma = " ";
         for (String p : parametersArray)
@@ -2641,6 +2647,8 @@ public class OntologyManager
         p.setShownInDetailsView(pd.isShownInDetailsView());
         p.setDimension(pd.isDimension());
         p.setMeasure(pd.isMeasure());
+        p.setKeyVariable(pd.isKeyVariable());
+        p.setDefaultScale(pd.getDefaultScale());
         p.setFormat(pd.getFormat());
         p.setMvEnabled(pd.isMvEnabled());
 
@@ -2707,6 +2715,15 @@ public class OntologyManager
             boolean dimension = m.get("Dimension") != null && ((Boolean)m.get("Dimension")).booleanValue();
             boolean measure = m.get("Measure") != null && ((Boolean)m.get("Measure")).booleanValue();
             int scale = m.get("Scale") != null ? (Integer)m.get("Scale") : PropertyStorageSpec.DEFAULT_SIZE;
+
+            boolean keyVariable = m.get("KeyVariable") != null && ((Boolean)m.get("KeyVariable")).booleanValue();
+            DefaultScaleType defaultScale = DefaultScaleType.LINEAR;
+            if (m.get("DefaultScale") != null)
+            {
+                DefaultScaleType type = DefaultScaleType.valueOf(m.get("DefaultScale").toString());
+                if (type != null)
+                    defaultScale = type;
+            }
 
             FacetingBehaviorType facetingBehavior = FacetingBehaviorType.AUTOMATIC;
             if (m.get("FacetingBehaviorType") != null)
@@ -2780,6 +2797,8 @@ public class OntologyManager
             pd.setDimension(dimension);
             pd.setMeasure(measure);
             pd.setScale(scale);
+            pd.setKeyVariable(keyVariable);
+            pd.setDefaultScale(defaultScale);
             pd.setFormat(format);
             pd.setMvEnabled(mvEnabled);
             pd.setLookupContainer(lookupContainerId);

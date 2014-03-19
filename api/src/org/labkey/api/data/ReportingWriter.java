@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.RowIdForeignKey;
@@ -138,6 +139,8 @@ public class ReportingWriter
         props.put("shownInDetailsView", cinfo == null || cinfo.isShownInDetailsView());
         props.put("dimension", cinfo != null && cinfo.isDimension());
         props.put("measure", cinfo != null && cinfo.isMeasure());
+        props.put("keyVariable", cinfo != null && cinfo.isKeyVariable());
+        props.put("defaultScale", cinfo != null ? cinfo.getDefaultScale().name() : DefaultScaleType.LINEAR.name());
 
         props.put("protected", cinfo != null && cinfo.isProtected());
         props.put("excludeFromShifting", cinfo != null && cinfo.isExcludeFromShifting());

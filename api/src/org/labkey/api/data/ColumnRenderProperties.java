@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.FieldKey;
@@ -59,6 +60,8 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     protected boolean hidden;
     protected Boolean measure;
     protected Boolean dimension;
+    protected Boolean keyVariable = false;
+    protected DefaultScaleType defaultScale = DefaultScaleType.LINEAR;
     protected boolean shownInInsertView = true;
     protected boolean shownInUpdateView = true;
     protected boolean shownInDetailsView = true;
@@ -94,6 +97,8 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         to.shownInDetailsView = shownInDetailsView;
         to.measure = measure;
         to.dimension = dimension;
+        to.keyVariable = keyVariable;
+        to.defaultScale = defaultScale;
         to.url = url;
         to.importAliases = new LinkedHashSet<>(importAliases);
         to.facetingBehaviorType = facetingBehaviorType;
@@ -271,6 +276,26 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public void setURLTargetWindow(String urlTargetWindow)
     {
         this.urlTargetWindow = urlTargetWindow;
+    }
+
+    public boolean isKeyVariable()
+    {
+        return keyVariable;
+    }
+
+    public void setKeyVariable(boolean keyVariable)
+    {
+        this.keyVariable = keyVariable;
+    }
+
+    public DefaultScaleType getDefaultScale()
+    {
+        return defaultScale;
+    }
+
+    public void setDefaultScale(DefaultScaleType defaultScale)
+    {
+        this.defaultScale = defaultScale;
     }
 
     public void setMeasure(boolean measure)

@@ -21,6 +21,7 @@ import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 
@@ -46,6 +47,8 @@ public interface DomainProperty extends ImportAliasable
     boolean isShownInDetailsView();
     boolean isMeasure();
     boolean isDimension();
+    boolean isKeyVariable();
+    DefaultScaleType getDefaultScale();
     boolean isProtected();
     boolean isExcludeFromShifting();
 
@@ -68,6 +71,8 @@ public interface DomainProperty extends ImportAliasable
     void setMvEnabled(boolean mv);
     void setMeasure(boolean isMeasure);
     void setDimension(boolean isDimension);
+    void setKeyVariable(boolean isKeyVariable);
+    void setDefaultScale(DefaultScaleType defaultScale);
     void setProtected(boolean isProtected);
     void setExcludeFromShifting(boolean isExcludeFromShifting);
     void setScale(int scale);

@@ -46,10 +46,12 @@ import org.labkey.api.gwt.client.ui.DirtyCallback;
 import org.labkey.api.gwt.client.ui.DomainProvider;
 import org.labkey.api.gwt.client.ui.LookupServiceAsync;
 import org.labkey.api.gwt.client.ui.PropertyPane;
+import org.labkey.api.gwt.client.ui.property.DefaultScaleItem;
 import org.labkey.api.gwt.client.ui.property.DescriptionItem;
 import org.labkey.api.gwt.client.ui.property.DimensionItem;
 import org.labkey.api.gwt.client.ui.property.FormatItem;
 import org.labkey.api.gwt.client.ui.property.ImportAliasesItem;
+import org.labkey.api.gwt.client.ui.property.KeyVariableItem;
 import org.labkey.api.gwt.client.ui.property.MeasureItem;
 import org.labkey.api.gwt.client.ui.property.MvEnabledItem;
 import org.labkey.api.gwt.client.ui.property.RequiredItem;
@@ -303,16 +305,21 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
         validatorPane.addItem(new RequiredItem<DomainType, FieldType>(validatorPane));
         //validatorPane.addItem(new ValidatorItem<DomainType, FieldType>(validatorPane));
 
+        PropertyPane<DomainType, FieldType> reportingPane = new PropertyPane<DomainType, FieldType>(this, "Reporting");
+        reportingPane.addItem(new MeasureItem<DomainType, FieldType>(reportingPane));
+        reportingPane.addItem(new DimensionItem<DomainType, FieldType>(reportingPane));
+        reportingPane.addItem(new KeyVariableItem<DomainType, FieldType>(reportingPane));
+        reportingPane.addItem(new DefaultScaleItem<DomainType, FieldType>(reportingPane));
+
         PropertyPane<DomainType, FieldType> advancedPane = new PropertyPane<DomainType, FieldType>(this, "Advanced");
         advancedPane.addItem(new MvEnabledItem<DomainType, FieldType>(advancedPane));
         advancedPane.addItem(new ImportAliasesItem<DomainType, FieldType>(advancedPane));
-        advancedPane.addItem(new MeasureItem<DomainType, FieldType>(advancedPane));
-        advancedPane.addItem(new DimensionItem<DomainType, FieldType>(advancedPane));
 
         List<PropertyPane<DomainType, FieldType>> result = new ArrayList<PropertyPane<DomainType, FieldType>>();
         result.add(displayPane);
         result.add(formatPane);
         result.add(validatorPane);
+        result.add(reportingPane);
         result.add(advancedPane);
 
         return result;

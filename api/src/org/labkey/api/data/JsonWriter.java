@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -146,7 +147,8 @@ public class JsonWriter
         props.put("shownInDetailsView", cinfo == null || cinfo.isShownInDetailsView());
         props.put("dimension", cinfo != null && cinfo.isDimension());
         props.put("measure", cinfo != null && cinfo.isMeasure());
-
+        props.put("keyVariable", cinfo != null && cinfo.isKeyVariable());
+        props.put("defaultScale", cinfo != null ? cinfo.getDefaultScale().name() : DefaultScaleType.LINEAR.name());
         props.put("protected", cinfo != null && cinfo.isProtected());
         props.put("excludeFromShifting", cinfo != null && cinfo.isExcludeFromShifting());
 

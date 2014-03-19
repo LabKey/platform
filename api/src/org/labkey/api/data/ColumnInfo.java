@@ -29,6 +29,7 @@ import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.AliasManager;
@@ -361,6 +362,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         measure = col.measure;
         dimension = col.dimension;
 
+        setKeyVariable(col.isKeyVariable());
+        setDefaultScale(col.getDefaultScale());
         setMvColumnName(col.getMvColumnName());
         setRawValueColumn(col.isRawValueColumn());
         setMvIndicatorColumn(col.isMvIndicatorColumn());
@@ -971,6 +974,10 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             dimension = xmlCol.getDimension();
         if (xmlCol.isSetMeasure())
             measure = xmlCol.getMeasure();
+        if (xmlCol.isSetKeyVariable())
+            keyVariable = xmlCol.getKeyVariable();
+        if (xmlCol.isSetDefaultScale())
+            defaultScale = DefaultScaleType.valueOf(xmlCol.getDefaultScale().toString());
         if (xmlCol.isSetIsUnselectable())
             isUnselectable = xmlCol.getIsUnselectable();
         if (xmlCol.isSetIsKeyField())

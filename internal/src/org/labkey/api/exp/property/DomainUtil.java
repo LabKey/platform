@@ -39,6 +39,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -199,6 +200,8 @@ public class DomainUtil
         gwtProp.setShownInDetailsView(prop.isShownInDetailsView());
         gwtProp.setDimension(prop.isDimension());
         gwtProp.setMeasure(prop.isMeasure());
+        gwtProp.setKeyVariable(prop.isKeyVariable());
+        gwtProp.setDefaultScale(prop.getDefaultScale().name());
         gwtProp.setMvEnabled(prop.isMvEnabled());
         gwtProp.setFacetingBehaviorType(prop.getFacetingBehavior().name());
         gwtProp.setProtected(prop.isProtected());
@@ -537,6 +540,12 @@ public class DomainUtil
             to.setMeasure(ColumnRenderProperties.inferIsMeasure(from.getName(), from.getLabel(), type != null && type.isNumeric(),
                                                                 false, from.getLookupQuery() != null, from.isHidden()));
         }
+
+        if (from.isKeyVariable())
+            to.setKeyVariable(from.isKeyVariable());
+
+        if (from.getDefaultScale() != null)
+            to.setDefaultScale(DefaultScaleType.valueOf(from.getDefaultScale()));
 
         if (from.getFacetingBehaviorType() != null)
         {

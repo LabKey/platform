@@ -21,6 +21,7 @@ import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.DefaultScaleType;
 import org.labkey.data.xml.FacetingBehaviorType;
 import org.labkey.data.xml.TableType;
 
@@ -67,6 +68,8 @@ public class ImportTypesHelper
         _standardKeys.add("ShownInDetailsView");
         _standardKeys.add("Measure");
         _standardKeys.add("Dimension");
+        _standardKeys.add("KeyVariable");
+        _standardKeys.add("DefaultScale");
         _standardKeys.add("ConditionalFormats");
         _standardKeys.add("FacetingBehaviorType");
         _standardKeys.add("Protected");
@@ -149,6 +152,11 @@ public class ImportTypesHelper
             else
                 dimension = ColumnRenderProperties.inferIsDimension(columnXml.getColumnName(), columnXml.getFk() != null, columnXml.getIsHidden());
 
+            boolean keyVariable = columnXml.isSetKeyVariable() && columnXml.getKeyVariable();
+
+            DefaultScaleType.Enum scaleType = columnXml.getDefaultScale();
+            String defaultScale = scaleType != null ? scaleType.toString() : DefaultScaleType.LINEAR.toString();
+
             FacetingBehaviorType.Enum type = columnXml.getFacetingBehavior();
             String facetingBehaviorType = FacetingBehaviorType.AUTOMATIC.toString();
             if (type != null)
@@ -188,6 +196,8 @@ public class ImportTypesHelper
                     shownInDetailsView,
                     measure,
                     dimension,
+                    keyVariable,
+                    defaultScale,
                     ConditionalFormat.convertFromXML(columnXml.getConditionalFormats()),
                     facetingBehaviorType,
                     isProtected,

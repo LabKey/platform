@@ -7744,6 +7744,7 @@ api/webapp/gtheme/img/rct.png -text
 api/webapp/gtheme/img/rdr.png -text
 internal/gwtsrc/org/labkey/api/gwt/Internal.gwt.xml -text
 internal/gwtsrc/org/labkey/api/gwt/client/AuditBehaviorType.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/DefaultScaleType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/DefaultValueType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/FacetingBehaviorType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayDesignerMainPanel.java -text
@@ -7827,6 +7828,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/incubator/ResizableWidget.java -tex
 internal/gwtsrc/org/labkey/api/gwt/client/ui/incubator/ResizableWidgetCollection.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/CheckboxItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ConditionalFormatItem.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DefaultScaleItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DefaultValueItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DescriptionItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DimensionItem.java -text
@@ -7834,6 +7836,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ExcludeFromShiftingItem.ja
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/FacetingBehaviorItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/FormatItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ImportAliasesItem.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/property/KeyVariableItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/MeasureItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/MvEnabledItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/PropertyPaneItem.java -text

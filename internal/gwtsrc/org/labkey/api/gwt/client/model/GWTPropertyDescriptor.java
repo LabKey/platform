@@ -17,6 +17,7 @@
 package org.labkey.api.gwt.client.model;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
+import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.gwt.client.util.BooleanProperty;
 import org.labkey.api.gwt.client.util.IPropertyWrapper;
@@ -65,6 +66,8 @@ public class GWTPropertyDescriptor implements IsSerializable
     private BooleanProperty shownInDetailsView = new BooleanProperty(true);
     private BooleanProperty measure = new BooleanProperty();
     private BooleanProperty dimension = new BooleanProperty();
+    private BooleanProperty keyVariable = new BooleanProperty(false);
+    private StringProperty defaultScale = new StringProperty(DefaultScaleType.LINEAR.name());
     private StringProperty facetingBehaviorType = new StringProperty();
     private BooleanProperty isProtected = new BooleanProperty();
     private BooleanProperty isExcludeFromShifting = new BooleanProperty();
@@ -112,6 +115,8 @@ public class GWTPropertyDescriptor implements IsSerializable
         setMvEnabled(s.getMvEnabled());
         setMeasure(s.isMeasure());
         setDimension(s.isDimension());
+        setKeyVariable(s.isKeyVariable());
+        setDefaultScale(s.getDefaultScale());
         setLookupContainer(s.getLookupContainer());
         setLookupSchema(s.getLookupSchema());
         setLookupQuery(s.getLookupQuery());
@@ -383,6 +388,26 @@ public class GWTPropertyDescriptor implements IsSerializable
         dimension.setBool(isDimension);
     }
 
+    public boolean isKeyVariable()
+    {
+        return keyVariable.booleanValue();
+    }
+
+    public void setKeyVariable(boolean isKeyVariable)
+    {
+        keyVariable.setBool(isKeyVariable);
+    }
+
+    public String getDefaultScale()
+    {
+        return defaultScale.getString();
+    }
+
+    public void setDefaultScale(String defaultScale)
+    {
+        this.defaultScale.set(defaultScale);
+    }
+
     public boolean getMvEnabled()
     {
         return mvEnabled.getBool();
@@ -527,6 +552,8 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (isShownInUpdateView() != that.isShownInUpdateView()) return false;
         if (isMeasure() != that.isMeasure()) return false;
         if (isDimension() != that.isDimension()) return false;
+        if (isKeyVariable() != that.isKeyVariable()) return false;
+        if (!StringUtils.equals(getDefaultScale(), that.getDefaultScale())) return false;
         if (!StringUtils.equals(getFacetingBehaviorType(), that.getFacetingBehaviorType())) return false;
         if (isProtected() != that.isProtected()) return false;
         if (isExcludeFromShifting() != that.isExcludeFromShifting()) return false;
@@ -571,6 +598,8 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + (shownInUpdateView.getBoolean() != null ? shownInUpdateView.getBoolean().hashCode() : 0);
         result = 31 * result + (dimension.getBoolean() != null ? dimension.getBoolean().hashCode() : 0);
         result = 31 * result + (measure.getBoolean() != null ? measure.getBoolean().hashCode() : 0);
+        result = 31 * result + (keyVariable.getBoolean() != null ? keyVariable.getBoolean().hashCode() : 0);
+        result = 31 * result + (defaultScale.getString() != null ? defaultScale.getString().hashCode() : 0);
         result = 31 * result + (facetingBehaviorType.getString() != null ? facetingBehaviorType.getString().hashCode() : 0);
         result = 31 * result + (isProtected.getBoolean() != null ? isProtected.getBoolean().hashCode() : 0);
         result = 31 * result + (isExcludeFromShifting.getBoolean() != null ? isExcludeFromShifting.getBoolean().hashCode() : 0);
@@ -605,6 +634,8 @@ public class GWTPropertyDescriptor implements IsSerializable
         if ("url".equals(prop)) return url;
         if ("dimension".equals(prop)) return dimension;
         if ("measure".equals(prop)) return measure;
+        if ("keyVariable".equals(prop)) return keyVariable;
+        if ("defaultScale".equals(prop)) return defaultScale;
         if ("importAliases".equals(prop)) return importAliases;
         if ("shownInInsertView".equals(prop)) return shownInInsertView;
         if ("shownInUpdateView".equals(prop)) return shownInUpdateView;

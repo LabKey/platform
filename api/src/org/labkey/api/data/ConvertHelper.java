@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
+import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
@@ -124,6 +125,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new UserConverter(), User.class);
         _register(new ExpDataFileConverter(), File.class);
         _register(new FacetingBehaviorTypeConverter(), FacetingBehaviorType.class);
+        _register(new DefaultScaleConverter(), DefaultScaleType.class);
         _register(new SchemaKey.Converter(), SchemaKey.class);
         _register(new FieldKey.Converter(), FieldKey.class);
         _register(new JSONTypeConverter(), JSONObject.class);
@@ -634,6 +636,19 @@ public class ConvertHelper implements PropertyEditorRegistrar
             else
             {
                 return FacetingBehaviorType.valueOf(value.toString());
+            }
+        }
+    }
+
+    public static class DefaultScaleConverter implements Converter
+    {
+        public Object convert(Class type, Object value)
+        {
+            if (value == null || value.equals("null") || !type.equals(DefaultScaleType.class))
+                return null;
+            else
+            {
+                return DefaultScaleType.valueOf(value.toString());
             }
         }
     }
