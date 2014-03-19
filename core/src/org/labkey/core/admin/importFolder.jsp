@@ -35,9 +35,8 @@
         {
             if (project.hasPermission(getViewContext().getUser(), AdminPermission.class))
             {
-                Study study = StudyService.get().getStudy(c);
                 Study studyProject = StudyService.get().getStudy(c.getProject());
-                if (null != study && null != studyProject && studyProject.getShareDatasetDefinitions())
+                if (null != studyProject && studyProject.getShareDatasetDefinitions())
                     canCreateSharedDatasets = true;
             }
         }
