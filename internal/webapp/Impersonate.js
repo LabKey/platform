@@ -236,7 +236,7 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
 
         var groupId = this.impersonateCombo.getValue();
         Ext4.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('user', 'impersonateGroupApi'),   // TODO: Change this action name
+            url: LABKEY.ActionURL.buildURL('user', 'impersonateGroup'),
             method: 'POST',
             params: {
                 groupId: groupId,

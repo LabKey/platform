@@ -35,6 +35,5 @@ public interface UserUrls extends UrlProvider
     ActionURL getUserDetailsURL(Container c, @Nullable URLHelper returnURL);
     ActionURL getUserUpdateURL(Container c, URLHelper returnURL, int userId);
     ActionURL getCheckUserUpdateURL(Container c, URLHelper returnURL, int userId, boolean checkIfRequired);
-    ActionURL getImpersonateGroupURL(Container c, int groupId, ActionURL returnURL);
     ActionURL getImpersonateRoleURL(Container c, String uniqueRoleName, ActionURL returnURL);
 }
