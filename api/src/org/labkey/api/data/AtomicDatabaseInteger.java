@@ -212,7 +212,7 @@ public class AtomicDatabaseInteger
 
             double perSecond = n / (elapsed / 1000.0);
 
-            assertTrue(String.format("Performance measured less than 100 increments per second: %dincrements in %dms; slowest get %dms", n, elapsed, longestGet), perSecond > 100);   // A very low bar
+            assertTrue(String.format("Performance measured less than 75 increments per second: %d increments in %dms; slowest get %dms", n, elapsed, longestGet), perSecond > 75);   // A very low bar
         }
 
         @After
