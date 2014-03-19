@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
@@ -70,6 +71,13 @@ public class MySqlDialect extends SimpleSqlDialect
             "using, utc_date, utc_time, utc_timestamp, values, varbinary, varchar, varcharacter, varying, when, where, " +
             "while, with, write, xor, year_month, zerofill"
         ));
+    }
+
+    @Override
+    protected void initializeJdbcTableTypeMap(Map<String, DatabaseTableType> map)
+    {
+        super.initializeJdbcTableTypeMap(map);
+        map.put("SYSTEM TABLE", DatabaseTableType.TABLE);
     }
 
     @Override
@@ -131,12 +139,6 @@ public class MySqlDialect extends SimpleSqlDialect
     public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, TableInfo table)
     {
         return new MySqlColumnMetaDataReader(rsCols);
-    }
-
-    @Override
-    public String[] getTableTypes()
-    {
-        return new String[]{"TABLE", "VIEW", "SYSTEM TABLE"};
     }
 
     private static class MySqlColumnMetaDataReader extends ColumnMetaDataReader
