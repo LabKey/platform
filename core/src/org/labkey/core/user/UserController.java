@@ -223,14 +223,6 @@ public class UserController extends SpringActionController
             return url;
         }
 
-        public ActionURL getImpersonateGroupURL(Container c, int groupId, ActionURL returnURL)
-        {
-            ActionURL url = new ActionURL(ImpersonateGroupAction.class, c);
-            url.addParameter("groupId", groupId);
-            url.addReturnURL(returnURL);
-            return url;
-        }
-
         public ActionURL getImpersonateRoleURL(Container c, String uniqueRoleName, ActionURL returnURL)
         {
             ActionURL url = new ActionURL(ImpersonateRoleAction.class, c);
@@ -2115,35 +2107,10 @@ public class UserController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class) @CSRF
-    public class ImpersonateGroupAction extends SimpleRedirectAction<ImpersonateGroupForm>
-    {
-        @Override
-        public void checkPermissions() throws UnauthorizedException
-        {
-            super.checkPermissions();
-            requiresProjectOrSiteAdmin();
-        }
-
-        public ActionURL getRedirectURL(ImpersonateGroupForm form) throws Exception
-        {
-            if (getUser().isImpersonated())
-                throw new UnauthorizedException("Can't impersonate; you're already impersonating");
-
-            Group group = SecurityManager.getGroup(form.getGroupId());
-
-            ActionURL returnURL = form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL());
-            SecurityManager.impersonateGroup(getViewContext(), group, returnURL);
-
-            return returnURL;
-        }
-    }
-
-
     // TODO: Better instructions
     // TODO: Messages for no groups, no users
     @RequiresPermissionClass(AdminPermission.class) @CSRF
-    public class ImpersonateGroupApiAction extends ImpersonateApiAction<ImpersonateGroupForm>
+    public class ImpersonateGroupAction extends ImpersonateApiAction<ImpersonateGroupForm>
     {
         @Override
         public @Nullable String impersonate(ImpersonateGroupForm form)
