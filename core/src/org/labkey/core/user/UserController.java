@@ -78,6 +78,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.impersonation.ImpersonateGroupContextFactory;
 import org.labkey.api.security.impersonation.ImpersonateRoleContextFactory;
 import org.labkey.api.security.impersonation.ImpersonateUserContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContext;
@@ -236,11 +237,6 @@ public class UserController extends SpringActionController
             url.addParameter("roleName", uniqueRoleName);
             url.addReturnURL(returnURL);
             return url;
-        }
-
-        public ActionURL getImpersonateUserURL(Container c)
-        {
-            return new ActionURL(ImpersonateUserAction.class, c);
         }
     }
 
@@ -1972,10 +1968,10 @@ public class UserController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class GetImpersonationUsersAction extends ApiAction<GetUsersForm>
+    public class GetImpersonationUsersAction extends ApiAction
     {
         @Override
-        public ApiResponse execute(GetUsersForm getUsersForm, BindException errors) throws Exception
+        public ApiResponse execute(Object object, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
@@ -2003,7 +1999,7 @@ public class UserController extends SpringActionController
     // Need returnUrl because we stash the current URL in session and return to it after impersonation is complete
     public static class ImpersonateUserForm extends ReturnUrlForm
     {
-        private Integer _userId;
+        private Integer _userId = null;
 
         public Integer getUserId()
         {
@@ -2017,11 +2013,16 @@ public class UserController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class) @CSRF
-    public class ImpersonateUserAction extends MutatingApiAction<ImpersonateUserForm>
+    // All three impersonate API actions have the same form
+    private abstract class ImpersonateApiAction<FORM> extends MutatingApiAction<FORM>
     {
+        protected String getCommandClassMethodName()
+        {
+            return "impersonate";
+        }
+
         @Override
-        public ApiResponse execute(ImpersonateUserForm form, BindException errors) throws Exception
+        public ApiResponse execute(FORM form, BindException errors) throws Exception
         {
             String error = impersonate(form);
 
@@ -2035,7 +2036,15 @@ public class UserController extends SpringActionController
         }
 
         // Non-null return value means send back an error message
-        private @Nullable String impersonate(ImpersonateUserForm form)
+        public abstract @Nullable String impersonate(FORM form);
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class) @CSRF
+    public class ImpersonateUserAction extends ImpersonateApiAction<ImpersonateUserForm>
+    {
+        @Override
+        public @Nullable String impersonate(ImpersonateUserForm form)
         {
             if (getUser().isImpersonated())
                 return "Can't impersonate; you're already impersonating";
@@ -2064,24 +2073,49 @@ public class UserController extends SpringActionController
     }
 
 
+    @RequiresPermissionClass(AdminPermission.class)
+    public class GetImpersonationGroupsAction extends ApiAction
+    {
+        @Override
+        public ApiResponse execute(Object object, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Collection<Group> groups = ImpersonateGroupContextFactory.getValidImpersonationGroups(getContainer(), getUser());
+            Collection<Map<String, Object>> responseGroups = new LinkedList<>();
+
+            for (Group group : groups)
+            {
+                Map<String, Object> map = new HashMap<>();
+                map.put("groupId", group.getUserId());
+                map.put("displayName", (group.isProjectGroup() ? "" : "Site: ") + group.getName());
+                responseGroups.add(map);
+            }
+
+            response.put("groups", responseGroups);
+
+            return response;
+        }
+    }
+
+
     public static class ImpersonateGroupForm extends ReturnUrlForm
     {
-        private int _groupId;
+        private Integer _groupId = null;
 
-        public int getGroupId()
+        public Integer getGroupId()
         {
             return _groupId;
         }
 
         @SuppressWarnings({"UnusedDeclaration"})
-        public void setGroupId(int groupId)
+        public void setGroupId(Integer groupId)
         {
             _groupId = groupId;
         }
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermissionClass(AdminPermission.class) @CSRF
     public class ImpersonateGroupAction extends SimpleRedirectAction<ImpersonateGroupForm>
     {
         @Override
@@ -2102,6 +2136,43 @@ public class UserController extends SpringActionController
             SecurityManager.impersonateGroup(getViewContext(), group, returnURL);
 
             return returnURL;
+        }
+    }
+
+
+    // TODO: Better instructions
+    // TODO: Messages for no groups, no users
+    @RequiresPermissionClass(AdminPermission.class) @CSRF
+    public class ImpersonateGroupApiAction extends ImpersonateApiAction<ImpersonateGroupForm>
+    {
+        @Override
+        public @Nullable String impersonate(ImpersonateGroupForm form)
+        {
+            if (getUser().isImpersonated())
+                return "Can't impersonate; you're already impersonating";
+
+            Integer groupId = form.getGroupId();
+
+            if (null == groupId)
+                return "Must specify a group ID";
+
+            Group group = SecurityManager.getGroup(groupId);
+
+            if (null == group)
+                return "Group doesn't exist";
+
+            ActionURL returnURL = form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL());
+
+            try
+            {
+                SecurityManager.impersonateGroup(getViewContext(), group, returnURL);
+            }
+            catch (UnauthorizedImpersonationException uie)
+            {
+                return uie.getMessage();
+            }
+
+            return null;
         }
     }
 
