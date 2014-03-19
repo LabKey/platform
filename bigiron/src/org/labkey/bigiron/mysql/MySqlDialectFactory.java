@@ -62,7 +62,7 @@ public class MySqlDialectFactory extends SqlDialectFactory
             if (logWarnings && version > 56)
                 _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ". " +  getProductName() + " 5.6 is the recommended version.");
 
-            return new MySqlDialect();
+            return version >= 56 ? new MySql56Dialect() : new MySqlDialect();
         }
 
         throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation to " + getProductName() + " version 5.1 or greater.");
