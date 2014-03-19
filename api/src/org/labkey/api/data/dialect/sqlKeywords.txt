@@ -392,6 +392,8 @@ intersection
 interval
 into
 invoker
+io_after_gtids
+io_before_gtids
 is
 isnull
 isolation
@@ -448,6 +450,7 @@ lower
 m
 map
 mapping
+master_bind
 master_heartbeat_period
 master_ssl_verify_server_cert
 match
@@ -513,6 +516,7 @@ nocreateuser
 noholdlock
 noinherit
 nologin
+nonblocking
 nonclustered
 none
 normalize
@@ -545,6 +549,7 @@ oids
 old
 on
 once
+one_shot
 online
 only
 open
@@ -756,6 +761,8 @@ specific
 specific_name
 specifictype
 sql
+sql_after_gtids
+sql_before_gtids
 sql_big_result
 sql_calc_found_rows
 sql_small_result

@@ -647,7 +647,6 @@ public class DbScope
 
     private void applyMetaDataXML(DbSchema schema, String schemaName) throws IOException, XmlException
     {
-
         // Use the canonical schema name, not the requested name (which could differ in casing)
         Resource resource = schema.getSchemaResource();
 
