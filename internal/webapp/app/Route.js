@@ -41,7 +41,7 @@ Ext.define('LABKEY.app.controller.Route', {
             this.route(hash);
         }
         else {
-            this.application.getController('State').loadState(null, null, null, true);
+            this.application.getController('State').loadState(null, null, null, null, true);
         }
     },
 
@@ -53,15 +53,23 @@ Ext.define('LABKEY.app.controller.Route', {
         }
 
         if (Ext.isArray(_fragments)) {
-            var viewContext = _fragments;
+            var urlContext = _fragments;
 
-            if (viewContext.length > 0) {
-                var view = viewContext[0];
-                var _vc = null;
-                if (viewContext.length > 1) {
-                    _vc = viewContext;
+            if (urlContext.length > 0) {
+                var controller = urlContext[0];
+                var viewContext = null, view;
+                if (urlContext.length > 1) {
+                    urlContext.shift(); // drop the controller
+                    view = urlContext[0];
+                    if (urlContext.length > 1) {
+                        urlContext.shift(); // drop the view
+                        viewContext = urlContext;
+                    }
                 }
-                this.application.getController('State').loadState(view, _vc, null, true, popState);
+//                console.log('control:', controller);
+//                console.log('view:', view);
+//                console.log('viewcontext:', viewContext);
+                this.application.getController('State').loadState(controller, view, viewContext, null, true, popState);
             }
             else {
                 alert('Router failed to find resolve view context from route.');

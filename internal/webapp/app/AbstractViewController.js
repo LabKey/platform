@@ -13,11 +13,25 @@ Ext.define('LABKEY.app.controller.AbstractViewController', {
             console.error('views not available to AbstractViewController. Make sure to NOT initialize as an Application Controller.');
         }
 
+        this._register();
         this._registerViews();
 
         // ensure that the function is overridden by subclases
         if (!this.createView)
             console.error('If extending AbstractViewController then createView() must be implemented');
+    },
+
+    _register : function() {
+        this.getViewManager().registerController(this.getControllerName(), this);
+    },
+
+    getControllerName : function() {
+        var name = this.self.getName().split('.');
+        return name[name.length-1];
+    },
+
+    getDefaultView : function() {
+        return '';
     },
 
     /**

@@ -44,7 +44,7 @@ Ext.define('LABKEY.app.controller.State', {
 
         this.viewController = this._getViewController();
 
-        this.viewController.on('afterchangeview', this.updateView, this)
+        this.viewController.on('afterchangeview', this.afterViewChange, this);
 
         this.views = {};
         if (this.preventRedundantHistory) {
@@ -60,10 +60,6 @@ Ext.define('LABKEY.app.controller.State', {
 //                me._popState(evt);
 //            }, false);
 //        }
-
-        if (LABKEY.ActionURL) {
-            this.urlParams = LABKEY.ActionURL.getParameters();
-        }
 
         this.state.load();
     },
@@ -107,7 +103,11 @@ Ext.define('LABKEY.app.controller.State', {
         this.olap.onReady(callback, s);
     },
 
-    loadState : function(activeView, viewContext, idx, useLast, popState) {
+    loadState : function(controller, view, viewContext, idx, useLast, popState) {
+
+        if (!controller && !view) {
+            controller = this.defaultController;
+        }
 
         if (popState) {
             this.POP_STATE = true;
@@ -141,10 +141,12 @@ Ext.define('LABKEY.app.controller.State', {
             }
 
             // Activate view
-            this.activeView = (activeView ? activeView : this.defaultView);
+            this._controller = controller;
+            this._view = view;
+            this._viewContext = viewContext;
 
             // Change view and do not save state since a prior state is being loaded.
-            this.viewController.changeView(this.activeView, viewContext, this.defaultTitle, true);
+            this.viewController._changeView(controller, view, viewContext, this.defaultTitle, true, false);
 
             // Apply Selections
             if (s.selections && s.selections.length > 0) {
@@ -159,9 +161,11 @@ Ext.define('LABKEY.app.controller.State', {
         else if (useLast) {
 
             // Activate view
-            this.activeView = (activeView ? activeView : this.defaultView);
+            this._controller = controller;
+            this._view = view;
+            this._viewContext = viewContext;
 
-            this.viewController.changeView(this.activeView, viewContext, this.defaultTitle, true);
+            this.viewController._changeView(controller, view, viewContext, this.defaultTitle, true, false);
         }
 
         this.manageState();
@@ -216,29 +220,14 @@ Ext.define('LABKEY.app.controller.State', {
         this.views[lookup.view][lookup.key] = state;
     },
 
-    updateView : function(viewname, viewstate, title, skipState) {
+    afterViewChange : function(controller, viewname, viewContext, title, skipState) {
 
-        this.activeView = viewname;
+        this._controller = controller;
+        this._view = viewname;
+        this._viewContext = viewContext;
 
         if (!skipState) {
             this.updateState();
-        }
-
-        if (Ext.supports.History) {
-            document.title = title || this.defaultTitle;
-            var appState;
-            if (viewstate && viewstate.length > 0) {
-                appState = viewstate.join('/').toLowerCase();
-            }
-            else {
-                appState = viewname;
-            }
-
-            if (!this.POP_STATE && this.preventRedundantHistory && (this.lastAppState != appState)) {
-                this.lastAppState = appState;
-                history.pushState({activeView : viewname}, this.getTitle(viewname), this.getAction(appState));
-            }
-            this.POP_STATE = false;
         }
     },
 
@@ -251,36 +240,15 @@ Ext.define('LABKEY.app.controller.State', {
         return viewname;
     },
 
-    /**
-     * Provided to be overridden to provide a unique URL for the current state of the application.
-     * @param appState
-     * @returns {string}
-     */
-    getAction : function(appState) {
-        return "";
-    },
-
-    getURLParams : function() {
-        var params = '';
-
-        if (this.urlParams) {
-            for (var u in this.urlParams) {
-                if (this.urlParams.hasOwnProperty(u)) {
-                    params += u + '=' + this.urlParams[u];
-                }
-            }
-        }
-        return params;
-    },
-
     clearAppState : function() {
         this.lastAppState = undefined;
     },
 
     updateState : function() {
         this.state.add({
-            activeView: this.activeView,
-            appVersion: this.appVersion,
+            controller: this._controller,
+            view: this._view,
+            viewContext: this._viewContext,
             viewState: {},
             views: this.views,
             filters: this.getFilters(true),

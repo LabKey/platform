@@ -31,7 +31,23 @@ Ext.define('LABKEY.app.controller.View', {
 
     controllerMap: {},
 
+    controllers: {},
+
+    preventRedundantHistory: true,
+
+    appName: '',
+
     init : function() {
+
+        VM = this;
+
+        if (this.preventRedundantHistory) {
+            this.lastHistory = '';
+        }
+
+        if (LABKEY.ActionURL) {
+            this.urlParams = LABKEY.ActionURL.getParameters();
+        }
 
         if (LABKEY.ActionURL) {
             var params = LABKEY.ActionURL.getParameters();
@@ -50,6 +66,10 @@ Ext.define('LABKEY.app.controller.View', {
      */
     registerView : function(viewtype, controllerInstance) {
         this.controllerMap[viewtype] = controllerInstance;
+    },
+
+    registerController : function(name, controllerInstance) {
+        this.controllers[name.toLowerCase()] = controllerInstance;
     },
 
     registerShowAction : function(xtype, showAction, scope) {
@@ -117,7 +137,7 @@ Ext.define('LABKEY.app.controller.View', {
             this.register(instance);
             return instance;
         }
-        console.error('Failed to create view of type \'' + xtype + '\' because it has not been registered.');
+        console.warn('Failed to create view of type \'' + xtype + '\' because it has not been registered.');
     },
 
     /**
@@ -197,59 +217,130 @@ Ext.define('LABKEY.app.controller.View', {
 //        });
     },
 
-    showNotFound : function() { },
+    showNotFound : function(controller, view, viewContext, title) { },
 
     /**
      * Call when a view needs to be shown. This will resolve all transitions and call the set show/hide methods
      * for that view type.
-     * @param {String} newViewXtype Xtype of the view to be shown
-     * @param {Array} newViewContext url-based context (optional)
-     * @param {String} viewTitle Title to display for page in browser (optional)
+     * @param {String} controller The name/target of the destination controller
+     * @param {String} view the xtype of the destination view
+     * @param {Array} viewContext url-based context (optional)
+     * @param {String} title Title to display for page in browser (optional)
      * @param {Boolean} skipState Control over whether this view change is a recorded state event. Defaults to False.
      * @param {Boolean} skipHide Control over whether the 'activeView' should be hidden. Defaults to False.
      */
-    changeView : function(newViewXtype, newViewContext, viewTitle, skipState, skipHide) {
+    _changeView : function(controller, view, viewContext, title, skipState, skipHide) {
+
         this.inTransition = true;
 
+        var control = this.controllers[controller.toLowerCase()], localContext;
+
         var _context = [];
-        if (newViewContext) {
-            if (Ext.isString(newViewContext))
-                newViewContext = newViewContext.split('/');
-            _context = Ext.Array.clone(newViewContext);
-            _context.shift(); // drop the active view
+
+        if (viewContext) {
+            if (Ext.isString(viewContext)) {
+                viewContext = [viewContext];
+            }
+            _context = Ext.Array.clone(viewContext);
         }
 
-        var c = this.controllerMap[newViewXtype], context;
+        if (control) {
+            //
+            // See if the controller provides a default view
+            //
+            if (!view) {
+                view = control.getDefaultView();
+            }
 
-        if (c) {
-            context = c.parseContext(_context);
+            //
+            // Ask the controller to parse the view context
+            //
+            localContext = control.parseContext(_context);
         }
         else {
-            this.showNotFound();
+            //
+            // Unable to resolve the controller
+            //
+            this.showNotFound(controller, view, viewContext, title);
             this.inTransition = false;
+            this._notFound = false;
 
             return;
         }
 
-        var actions = this.resolveViewTransitions(this.activeView, newViewXtype);
+        var actions = this.resolveViewTransitions(this.activeView, view);
 
         if (!skipHide && actions.hide) {
-            actions.show.fn.call(actions.show.scope, newViewXtype, context);
+            actions.show.fn.call(actions.show.scope, view, localContext);
         }
         else if (actions.show) {
-            actions.show.fn.call(actions.show.scope, newViewXtype, context);
+            actions.show.fn.call(actions.show.scope, view, localContext);
+        }
+        else {
+            this.requestNotFound();
+        }
+
+        if (this.notFound()) {
+            this.showNotFound(controller, view, viewContext, title);
+            this.inTransition = false;
+            this._notFound = false;
+
+            return;
         }
 
         if (!this.CREATE_VIEW) {
-            this.controllerMap[newViewXtype].updateView(newViewXtype, context);
+            this.controllerMap[view].updateView(view, localContext);
         }
         this.CREATE_VIEW = false;
 
-        this.activeView = newViewXtype;
+        this.updateHistory(controller, view, viewContext, title);
+
+        this.activeView = view;
 
         this.inTransition = false;
 
-        this.fireEvent('afterchangeview', this.activeView, newViewContext, viewTitle, skipState);
+        this.fireEvent('afterchangeview', controller, view, viewContext, title, skipState);
+    },
+
+    updateHistory : function(controller, view, viewContext, title) {
+        var url = this.getAppActionName() + '?' + this.getAppURLParams() + '#';
+        url += controller.toLowerCase();
+        if (view) {
+            url += '/' + view.toLowerCase();
+        }
+        if (viewContext) {
+            for (var v=0; v < viewContext.length; v++) {
+                url += '/' + viewContext[v].toString().toLowerCase();
+            }
+        }
+
+        history.pushState({
+            controller: controller,
+            view: view,
+            viewContext: viewContext
+        }, title, url);
+    },
+
+    setAppActionName : function(appName) {
+        this.appName = appName;
+    },
+
+    getAppActionName : function() {
+        return this.appName;
+    },
+
+    getAppURLParams : function() {
+        var params = '';
+
+        if (this.urlParams) {
+            for (var u in this.urlParams) {
+                if (this.urlParams.hasOwnProperty(u)) {
+                    params += u + '=' + this.urlParams[u];
+                }
+            }
+        }
+
+        return params;
     },
 
     /**
@@ -282,6 +373,14 @@ Ext.define('LABKEY.app.controller.View', {
         return actions;
     },
 
+    requestNotFound : function() {
+        this._notFound = true;
+    },
+
+    notFound : function() {
+        return this._notFound === true;
+    },
+
     /**
      * @private
      * Default show view method used to set the active view for the center region.
@@ -294,8 +393,15 @@ Ext.define('LABKEY.app.controller.View', {
 
         if (center) {
             if (!this.viewMap[xtype]) {
-                this.viewMap[xtype] = this.createView(xtype, context);
-                center.add(this.viewMap[xtype]);
+                var instance = this.createView(xtype, context);
+                if (instance) {
+                    this.viewMap[xtype] = instance;
+                    center.add(this.viewMap[xtype]);
+                }
+                else {
+                    this.requestNotFound();
+                    return;
+                }
             }
 
             var pre = center.getActiveTab();
@@ -317,9 +423,6 @@ Ext.define('LABKEY.app.controller.View', {
                 center.setActiveTab(post);
                 this.fadeInView(xtype);
             }
-        }
-        else {
-            console.warn('WATCH OUT: Failed to load', xtype);
         }
     }
 });
