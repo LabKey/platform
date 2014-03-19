@@ -1489,23 +1489,48 @@ LABKEY.Security = new function()
         /**
          * @private
          */
-        showImpersonateUser: function(){
+        showImpersonateUser: function()
+        {
+            this.ensureAndDisplay('LABKEY.Security.ImpersonateUser', 'Impersonate.js');
+        },
+
+        /**
+         * @private
+         */
+        showImpersonateGroup: function()
+        {
+            this.ensureAndDisplay('LABKEY.Security.ImpersonateGroup', 'Impersonate.js');
+        },
+
+        /**
+         * @private
+         */
+        showImpersonateRole: function()
+        {
+            this.ensureAndDisplay('LABKEY.Security.ImpersonateRole', 'Impersonate.js');
+        },
+
+        /**
+         * @private
+         */
+        ensureAndDisplay: function(componentName, scriptFile)
+        {
             var display = function() {
                 Ext4.onReady(function() {
-                    Ext4.create('LABKEY.Security.ImpersonateUser', {
+                    Ext4.create(componentName, {
                         autoShow: true
                     });
                 });
             };
 
-            if (LABKEY.Security.ImpersonateUser)
+            if (eval(componentName))
             {
                 display();
             }
             else
             {
                 LABKEY.requiresExt4Sandbox(true, function() {
-                    LABKEY.requiresScript('Impersonate.js', true, display, this);
+                    LABKEY.requiresScript(scriptFile, true, display, this);
                 }, this);
             }
         }

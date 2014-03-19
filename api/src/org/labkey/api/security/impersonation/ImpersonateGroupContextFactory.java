@@ -24,11 +24,9 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -108,36 +106,11 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         return false;
     }
 
-    static void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
+    static void addMenu(NavTree menu)
     {
-        NavTree groupMenu = new NavTree("Group");
-        UserUrls userURLs = PageFlowUtil.urlProvider(UserUrls.class);
-        Collection<Group> groups = getValidImpersonationGroups(c, user);
-
-        boolean addSeparator = false;
-
-        // Site groups are always first, followed by project groups
-        for (Group group : groups)
-        {
-            String display = group.getName();
-
-            if (!group.isProjectGroup())
-            {
-                display = "Site: " + display;
-                // We have at least one site group... so add a separator (if we also have project groups)
-                addSeparator = true;
-            }
-            else if (addSeparator)
-            {
-                // Our first project group after site groups... add a separator
-                groupMenu.addSeparator();
-                addSeparator = false;
-            }
-
-            groupMenu.addChild(display, userURLs.getImpersonateGroupURL(c, group.getUserId(), currentURL));
-        }
-
-        menu.addChild(groupMenu);
+        NavTree newUser = new NavTree("Group");
+        newUser.setScript("LABKEY.Security.showImpersonateGroup();");
+        menu.addChild(newUser);
     }
 
     public static Collection<Group> getValidImpersonationGroups(Container c, User user)
