@@ -32,6 +32,7 @@ public class DataspaceStudyFolderType extends StudyFolderType
         study.setSubjectColumnName("SubjectID");
         study.setSubjectNounPlural("Subjects");
         study.setSubjectNounSingular("Subject");
+        study.setShareDatasetDefinitions(Boolean.TRUE);
         StudyManager.getInstance().createStudy(user, study);
     }
 
