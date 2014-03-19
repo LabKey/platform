@@ -27,6 +27,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.InClauseGenerator;
@@ -95,16 +96,37 @@ public abstract class SqlDialect
     private final Set<String> _reservedWordSet;
     private final Map<String, Integer> _sqlTypeNameMap = new CaseInsensitiveHashMap<>();
     private final Map<Integer, String> _sqlTypeIntMap = new HashMap<>();
+    private final Map<String, DatabaseTableType> _tableTypeMap = new HashMap<>();
+    private final String[] _tableTypes;
 
     protected SqlDialect()
     {
         initializeSqlTypeNameMap();
         initializeSqlTypeIntMap();
+        initializeJdbcTableTypeMap(_tableTypeMap);
+        Set<String> types = _tableTypeMap.keySet();
+        _tableTypes = types.toArray(new String[types.size()]);
+
         _reservedWordSet = getReservedWords();
 
         MemTracker.getInstance().put(this);
     }
 
+    protected void initializeJdbcTableTypeMap(Map<String, DatabaseTableType> map)
+    {
+        for (DatabaseTableType type : DatabaseTableType.values())
+            map.put(type.name(), type);
+    }
+
+    public DatabaseTableType getTableType(String tableTypeName)
+    {
+        DatabaseTableType tableType = _tableTypeMap.get(tableTypeName);
+
+        if (null == tableType)
+            throw new IllegalStateException("Unknown table type: " + tableTypeName);
+
+        return tableType;
+    }
 
     protected abstract @NotNull Set<String> getReservedWords();
 
@@ -1189,7 +1211,7 @@ public abstract class SqlDialect
     // Return the interesting table types for this dialect. Types array is passed to DatabaseMetaData.getTables().
     public String[] getTableTypes()
     {
-        return new String[]{"TABLE", "VIEW"};
+        return _tableTypes;
     }
 
     public abstract boolean canShowExecutionPlan();

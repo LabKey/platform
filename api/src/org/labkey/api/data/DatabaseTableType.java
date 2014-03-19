@@ -16,9 +16,6 @@
 
 package org.labkey.api.data;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /*
 * User: adam
 * Date: Jul 7, 2011
@@ -26,37 +23,7 @@ import java.util.Map;
 */
 public enum DatabaseTableType
 {
-    TABLE("SYSTEM TABLE"),  // MySQL also includes "SYSTEM TABLE" type
+    TABLE,
     VIEW,
-    NOT_IN_DB;
-
-    private static final Map<String, DatabaseTableType> MAP = new HashMap<>();
-
-    static
-    {
-        for (DatabaseTableType type : values())
-        {
-            MAP.put(type.name(), type);
-
-            for (String alias : type.getAliases())
-                MAP.put(alias, type);
-        }
-    }
-
-    public static DatabaseTableType get(String typeName)
-    {
-        return MAP.get(typeName);
-    }
-
-    private final String[] _aliases;
-
-    private DatabaseTableType(String... aliases)
-    {
-        _aliases = aliases;
-    }
-
-    public String[] getAliases()
-    {
-        return _aliases;
-    }
+    NOT_IN_DB
 }

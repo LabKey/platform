@@ -401,7 +401,7 @@ public class DbSchema
         {
             assert _tableName.equalsIgnoreCase(name);
             String typeName = rs.getString("TABLE_TYPE");
-            DatabaseTableType tableType = DatabaseTableType.get(typeName);
+            DatabaseTableType tableType = DbSchema.this.getSqlDialect().getTableType(typeName);
             _ti = new SchemaTableInfo(DbSchema.this, tableType, _tableName);
             String description = rs.getString("REMARKS");
             if (null != description && !"No comments".equals(description))  // Consider: Move "No comments" exclusion to SAS dialect?
