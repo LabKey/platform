@@ -73,31 +73,30 @@
 
         var configDefaults =
         {
-            configId:<%=q(form.getConfigId())%>,
-            schemaName:<%=q(form.getSchemaName())%>,
-            success:function(cs){renderCellSet(cs,'cellset');},
-            failure:failed
+            configId: <%=q(form.getConfigId())%>,
+            schemaName: <%=q(form.getSchemaName())%>,
+            success: function(cs){renderCellSet(cs,'cellset');},
+            failure: failed
         };
-        var config;
+        var config, q;
         if ('query' in jsonQuery)
         {
-            config = Ext4.apply({}, jsonQuery, configDefaults);
+            q = jsonQuery['query'];
         }
         else
         {
-            config = Ext4.apply({}, {query:jsonQuery}, configDefaults);
+            q = jsonQuery;
         }
+        config = Ext4.apply({}, q, configDefaults);
 
-        Ext4.getBody().mask();
         startTime = new Date().getTime();
         mdx.query(config);
         return false;
     }
 
 
-    function failed(json,response,options)
+    function failed(json, response, options)
     {
-        Ext4.getBody().unmask();
         var msg = response.statusText;
         if (json && json.exception)
             msg = json.exception;
