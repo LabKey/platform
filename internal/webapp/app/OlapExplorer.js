@@ -9,6 +9,7 @@ Ext.define('LABKEY.app.model.OlapExplorer', {
         {name : 'hierarchy'},
         {name : 'value'},
         {name : 'level'},
+        {name : 'uniqueName'},
         {name : 'isGroup', type : 'boolean'},
         {name : 'collapsed', type : 'boolean'},
         {name : 'btnId'}
@@ -33,6 +34,10 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
     olapProvider: null,
 
     maxCount: 0,
+
+    // Subject name is going to be specific to the cube definition. It is used to prevent us from showing
+    // subject ids as bars.
+    subjectName : '',
 
     constructor : function(config) {
 
@@ -147,42 +152,46 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
             }
 
             var hierarchy = this.dim.getHierarchies()[this.hIndex];
-            var set = this.baseResult;
-
-            var targetLevels = set.metadata.cube.dimensions[1].hierarchies[0].levels;
+            var baseResult = this.baseResult;
+            var targetLevels = baseResult.metadata.cube.dimensions[1].hierarchies[0].levels;
 
             var recs = [],
                     max = this.totals[hierarchy.getName()],
                     target,
-                    pos = set.axes[1].positions,
+                    pos = baseResult.axes[1].positions,
                     activeGroup = '',
                     isGroup = false,
                     groupTarget;
 
+            var hasSubjectLevel = targetLevels[targetLevels.length-1].name == this.subjectName;
+            var hasGrpLevel = false;
+
+            if (hasSubjectLevel) {
+                hasGrpLevel = targetLevels.length > 3;
+            } else {
+                hasGrpLevel = targetLevels.length > 2;
+            }
+
+            var grpLevelID = targetLevels[1].id;
+
             // skip (All)
             for (var x=1; x < pos.length; x++)
             {
-                if (!this.showEmpty && set.cells[x][0].value == 0) {
+                // Subjects should not be listed so do not roll up
+                if ((!this.showEmpty && baseResult.cells[x][0].value == 0) || (pos[x][0].level.name == this.subjectName)) {
                     continue;
                 }
 
-                // Subjects should not be listed so do not roll up
-                if (hierarchy.getName().indexOf('Subject.') != -1)
-                {
-                    activeGroup = '';
-                    isGroup = false;
-                    if (pos[x][0].level.id != targetLevels[1].id) {
-                        continue;
-                    }
-                }
-                else if (targetLevels.length > 2 && pos[x][0].level.id == targetLevels[1].id) {
+                isGroup = false;
+                if (hasGrpLevel && pos[x][0].level.id == grpLevelID) {
                     activeGroup = pos[x][0].name;
                     isGroup = true;
                 }
 
                 target = {
                     label: pos[x][0].name == '#null' ? 'Unknown' : pos[x][0].name,
-                    count: set.cells[x][0].value,
+                    uniqueName: pos[x][0].uniqueName,
+                    count: baseResult.cells[x][0].value,
                     value: pos[x][0].name,
                     hierarchy: hierarchy.getName(),
                     isGroup: isGroup,
@@ -205,8 +214,6 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                 }
 
                 recs.push(target);
-
-                isGroup = false;
             }
 
             var groupOnly = true;
@@ -225,7 +232,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                 this.removeAll();
             }
 
-            this.group(this.groupField);
+            this.group(this.groupField, "ASC");
 
             this.maxCount = max;
             this.fireEvent('maxcount', this.maxCount);
