@@ -39,7 +39,6 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -787,11 +786,15 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
     protected ColumnInfo addFolderColumn()
     {
-        ColumnInfo folder = new AliasedColumn(this, "Folder", _rootTable.getColumn("Container"));
-        ContainerForeignKey.initColumn(folder,getUserSchema());
-        folder.setHidden(true);
-        addColumn(folder);
-        return folder;
+        // Workaround to prevent IllegalArgumentException for assay tables
+        if (getColumn("Folder") == null)
+        {
+            ColumnInfo folder = new AliasedColumn(this, "Folder", _rootTable.getColumn("Container"));
+            ContainerForeignKey.initColumn(folder,getUserSchema());
+            folder.setHidden(true);
+            addColumn(folder);
+        }
+        return getColumn("Folder");
     }
 
 
