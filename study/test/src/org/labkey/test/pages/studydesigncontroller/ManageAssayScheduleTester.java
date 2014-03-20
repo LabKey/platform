@@ -18,7 +18,7 @@ package org.labkey.test.pages.studydesigncontroller;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
-import org.labkey.test.util.Ext4HelperWD;
+import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 
@@ -42,14 +42,14 @@ public class ManageAssayScheduleTester
         Locator.XPathLocator assayConfigGrid = Locator.id("AssaySpecimenConfigGrid");
         Locator.XPathLocator insertNewConfigButton = assayConfigGrid.append(Locator.ext4Button("Insert New"));
 
-        Locator.XPathLocator addAssayConfigWindow = Ext4HelperWD.Locators.window("Add Assay Configuration");
+        Locator.XPathLocator addAssayConfigWindow = Ext4Helper.Locators.window("Add Assay Configuration");
 
         _test.click(insertNewConfigButton);
         _test.waitForElement(addAssayConfigWindow);
-        if (name != null) _test._ext4Helper.selectComboBoxItem(Ext4HelperWD.Locators.formItemWithInputNamed("AssayName"), true, name);
+        if (name != null) _test._ext4Helper.selectComboBoxItem(Ext4Helper.Locators.formItemWithInputNamed("AssayName"), true, name);
         if (description != null) _test.setFormElement(Locator.name("Description"), description);
-        if (lab != null) _test._ext4Helper.selectComboBoxItem(Ext4HelperWD.Locators.formItemWithInputNamed("Lab"), true, lab);
-        if (sampleType != null) _test._ext4Helper.selectComboBoxItem(Ext4HelperWD.Locators.formItemWithInputNamed("SampleType"), true, sampleType);
+        if (lab != null) _test._ext4Helper.selectComboBoxItem(Ext4Helper.Locators.formItemWithInputNamed("Lab"), true, lab);
+        if (sampleType != null) _test._ext4Helper.selectComboBoxItem(Ext4Helper.Locators.formItemWithInputNamed("SampleType"), true, sampleType);
 
         _test.clickAndWait(addAssayConfigWindow.append(Locator.ext4Button("Submit")));
     }

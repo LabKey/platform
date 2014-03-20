@@ -17,7 +17,7 @@ package org.labkey.test.pages.studydesigncontroller;
 
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
-import org.labkey.test.util.Ext4HelperWD;
+import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 
@@ -42,9 +42,9 @@ public class ManageStudyProductsTester
         Locator.XPathLocator insertNewImmunogenButton = immunogensGrid.append(Locator.ext4Button("Insert New"));
 
         _test.click(insertNewImmunogenButton);
-        _test.waitForElement(Ext4HelperWD.Locators.window("Insert Immunogen"));
+        _test.waitForElement(Ext4Helper.Locators.window("Insert Immunogen"));
         _test.setFormElement(Locator.name("Label"), label);
-        _test._ext4Helper.selectComboBoxItem(Ext4HelperWD.Locators.formItemWithLabel("Type:"), true, type);
+        _test._ext4Helper.selectComboBoxItem(Ext4Helper.Locators.formItemWithLabel("Type:"), true, type);
         _test.clickButton("Submit", 0);
         _test._ext4Helper.waitForMaskToDisappear();
     }
@@ -53,13 +53,13 @@ public class ManageStudyProductsTester
     {
         int antigenColumnNumber = 3;
         _test.doubleClick(Locator.tag("tr").withPredicate(Locator.xpath("td[1]").withText(immunogen)).append("/td[" + antigenColumnNumber + "]"));
-        _test.waitForElement(Ext4HelperWD.Locators.window("Edit HIV Antigens for " + immunogen));
+        _test.waitForElement(Ext4Helper.Locators.window("Edit HIV Antigens for " + immunogen));
     }
 
     @LogMethod
     public void insertNewAntigen(@LoggedParam String immunogen, String gene, String subType, String genBankId, String sequence)
     {
-        _test.click(Ext4HelperWD.Locators.window("Edit HIV Antigens for " + immunogen).append(Locator.ext4Button("Insert New")));
+        _test.click(Ext4Helper.Locators.window("Edit HIV Antigens for " + immunogen).append(Locator.ext4Button("Insert New")));
         if (gene != null) _test._ext4Helper.selectComboBoxItem(Locators.antigenComboBox("Gene"), true, gene);
         if (subType != null) _test._ext4Helper.selectComboBoxItem(Locators.antigenComboBox("SubType"), true, subType);
         _test.click(Locator.ext4Button("Update"));
@@ -67,7 +67,7 @@ public class ManageStudyProductsTester
 
     public void submitAntigens(String immunogen)
     {
-        _test.click(Ext4HelperWD.Locators.window("Edit HIV Antigens for " + immunogen).append(Locator.ext4Button("Submit")));
+        _test.click(Ext4Helper.Locators.window("Edit HIV Antigens for " + immunogen).append(Locator.ext4Button("Submit")));
         _test._ext4Helper.waitForMaskToDisappear();
     }
 
@@ -77,7 +77,7 @@ public class ManageStudyProductsTester
         Locator.XPathLocator adjuvantGrid = Locator.id("adjuvants-grid");
         Locator.XPathLocator insertNewAdjuvantButton = adjuvantGrid.append(Locator.ext4Button("Insert New"));
 
-        Locator.XPathLocator insertAdjuvantWindow = Ext4HelperWD.Locators.window("Insert Adjuvant");
+        Locator.XPathLocator insertAdjuvantWindow = Ext4Helper.Locators.window("Insert Adjuvant");
 
         _test.click(insertNewAdjuvantButton);
         _test.waitForElement(insertAdjuvantWindow);

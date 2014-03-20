@@ -23,7 +23,7 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.categories.Study;
 import org.labkey.test.pages.DesignerController.DesignerTester;
-import org.labkey.test.util.ListHelperWD;
+import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.PortalHelper;
 
 import java.io.File;
@@ -165,8 +165,8 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         portalHelper.addWebPart("Lists");
         clickAndWait(Locator.linkWithText("manage lists"));
 
-        ListHelperWD.ListColumn valueColumn = new ListHelperWD.ListColumn("Value", "Value", ListHelperWD.ListColumnType.String, "Vaccine Value");
-        _listHelper.createList(STUDY_FOLDER, LIST_NAME, ListHelperWD.ListColumnType.Integer, "Key", valueColumn);
+        ListHelper.ListColumn valueColumn = new ListHelper.ListColumn("Value", "Value", ListHelper.ListColumnType.String, "Vaccine Value");
+        _listHelper.createList(STUDY_FOLDER, LIST_NAME, ListHelper.ListColumnType.Integer, "Key", valueColumn);
         clickButton("Done");
 
         clickAndWait(Locator.linkWithText(LIST_NAME));
@@ -265,7 +265,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
     protected static final int TEST_ASSAY_SET_PREDEFINED_PROP_COUNT = 2;
     protected static final int TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT = 4;
     protected static final String[] TEST_ASSAY_DATA_PROP_NAMES = {"Value" };
-    protected static final ListHelperWD.ListColumnType[] TEST_ASSAY_DATA_PROP_TYPES = { ListHelperWD.ListColumnType.Integer };
+    protected static final ListHelper.ListColumnType[] TEST_ASSAY_DATA_PROP_TYPES = { ListHelper.ListColumnType.Integer };
     // protected final static int WAIT_FOR_JAVASCRIPT = 5000;  uncomment to override base class
 
     /**

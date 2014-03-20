@@ -18,7 +18,7 @@ package org.labkey.test.pages.studydesigncontroller;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
-import org.labkey.test.util.Ext4HelperWD;
+import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 
@@ -29,7 +29,7 @@ public class ManageImmunizationsTester
 {
     private BaseWebDriverTest _test;
 
-    private static final Locator.XPathLocator editCohortWindow = Ext4HelperWD.Locators.window("Edit Cohort");
+    private static final Locator.XPathLocator editCohortWindow = Ext4Helper.Locators.window("Edit Cohort");
 
     public ManageImmunizationsTester(BaseWebDriverTest test)
     {
@@ -45,11 +45,11 @@ public class ManageImmunizationsTester
         Locator.XPathLocator insertNewTreatmentButton = treatmentsGrid.append(Locator.ext4Button("Insert New"));
 
         _test.click(insertNewTreatmentButton);
-        _test.waitForElement(Ext4HelperWD.Locators.window("Insert Treatment"));
+        _test.waitForElement(Ext4Helper.Locators.window("Insert Treatment"));
         _test.setFormElement(Locator.name("Label"), label);
         _test.setFormElement(Locator.name("Description"), description);
         _test.clickButton("Next", 0);
-        _test.waitForElement(Ext4HelperWD.Locators.window("Edit Treatment"));
+        _test.waitForElement(Ext4Helper.Locators.window("Edit Treatment"));
         for (TreatmentComponent component : components)
         {
             Locator.XPathLocator componentRow = Locator.tag("table").withClass("x4-form-fieldcontainer")
@@ -112,7 +112,7 @@ public class ManageImmunizationsTester
         {
             Locator.XPathLocator treatmentComboForVisit = editCohortWindow
                     .append(Locators.fieldContainerWithLabel(treatmentVisit.getVisit().getLabel()))
-                    .append(Ext4HelperWD.Locators.formItem());
+                    .append(Ext4Helper.Locators.formItem());
 
             if (!_test.isElementPresent(treatmentComboForVisit))
                 addVisitToSchedule(treatmentVisit.getVisit(), treatmentVisit.isNewVisit());
@@ -127,7 +127,7 @@ public class ManageImmunizationsTester
 
     private void addVisitToSchedule(Visit visit, boolean isNew)
     {
-        Locator.XPathLocator addVisitWindow = Ext4HelperWD.Locators.window("Add Visit");
+        Locator.XPathLocator addVisitWindow = Ext4Helper.Locators.window("Add Visit");
         Locator.XPathLocator existingVisitRadio = Locator.tag("inpug").withClass("x4-form-radio")
                 .withPredicate(Locator.xpath("following-sibling::label").withText("Select an existing study visit:"));
         String newVisitRadioLabel = "Create a new study visit:";
@@ -140,7 +140,7 @@ public class ManageImmunizationsTester
 
         if (isNew)
         {
-            _test.click(Ext4HelperWD.Locators.radiobutton(_test, newVisitRadioLabel));
+            _test.click(Ext4Helper.Locators.radiobutton(_test, newVisitRadioLabel));
             _test.setFormElement(newVisitLabel, visit.getLabel());
             _test.setFormElement(newVisitRangeMin, visit.getRangeMin().toString());
             _test.setFormElement(newVisitRangeMax, visit.getRangeMax().toString());
@@ -148,7 +148,7 @@ public class ManageImmunizationsTester
         }
         else
         {
-            _test._ext4Helper.selectComboBoxItem(Ext4HelperWD.Locators.formItemWithInputNamed("existingVisit"), true, visit.getLabel());
+            _test._ext4Helper.selectComboBoxItem(Ext4Helper.Locators.formItemWithInputNamed("existingVisit"), true, visit.getLabel());
             _test.click(addVisitWindow.append(Locator.ext4Button("Select")));
         }
 
