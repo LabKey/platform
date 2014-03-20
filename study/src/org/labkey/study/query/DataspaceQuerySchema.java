@@ -1,7 +1,6 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.study.model.StudyImpl;
 
@@ -18,13 +17,6 @@ public class DataspaceQuerySchema extends StudyQuerySchema
     {
         super(study, user, mustCheckPermissions);
     }
-
-    @Override
-    public TableInfo createTable(String name)
-    {
-        return super.createTable(name);
-    }
-
 
     /* for tables that support container filter, should they turn on support or not */
     @Override

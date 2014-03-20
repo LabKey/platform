@@ -98,6 +98,7 @@ public class StudyQuerySchema extends UserSchema
     public static final String PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME = "ParticipantGroupCohortUnion";
     public static final String LOCATION_SPECIMEN_LIST_TABLE_NAME = "LocationSpecimenList";
 
+    public static final String PROPERTIES_TABLE_NAME = "StudyProperties";
     public static final String OBJECTIVE_TABLE_NAME = "Objective";
     public static final String PERSONNEL_TABLE_NAME = "Personnel";
     public static final String VISIT_TAG_TABLE_NAME = "VisitTag";
@@ -232,7 +233,7 @@ public class StudyQuerySchema extends UserSchema
         Set<String> ret = new LinkedHashSet<>();
 
         // Always add StudyProperties and study designer lookup tables, even if we have no study
-        ret.add("StudyProperties");
+        ret.add(PROPERTIES_TABLE_NAME);
         ret.add(STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
         ret.add(STUDY_DESIGN_GENES_TABLE_NAME);
         ret.add(STUDY_DESIGN_ROUTES_TABLE_NAME);
@@ -377,7 +378,7 @@ public class StudyQuerySchema extends UserSchema
     @Override
     public TableInfo createTable(String name)
     {
-        if ("StudyProperties".equalsIgnoreCase(name))
+        if (PROPERTIES_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyPropertiesTable ret = new StudyPropertiesTable(this);
             return ret;

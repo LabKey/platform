@@ -325,7 +325,7 @@ public class ListWriter
     {
         private final ListDefinition _def;
         private final Map<String, DomainProperty> _properties = new HashMap<>();
-        private Domain _domain;
+        private final Domain _domain;
 
         protected ListTableInfoWriter(TableInfo ti, ListDefinition def, Collection<ColumnInfo> columns)
         {

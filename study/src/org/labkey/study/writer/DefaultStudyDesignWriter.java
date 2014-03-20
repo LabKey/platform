@@ -131,7 +131,7 @@ public abstract class DefaultStudyDesignWriter
             TableType tableXml = tablesXml.addNewTable();
 
             Domain domain = tinfo.getDomain();
-            List<ColumnInfo> columns = new ArrayList();
+            List<ColumnInfo> columns = new ArrayList<>();
             Map<String, DomainProperty> propertyMap = new CaseInsensitiveHashMap<>();
 
             for (DomainProperty prop : domain.getProperties())
@@ -142,18 +142,18 @@ public abstract class DefaultStudyDesignWriter
                 if (!col.isKeyField() && propertyMap.containsKey(col.getName()))
                     columns.add(col);
             }
-            TableInfoWriter writer = new TreatementTableWriter(tablePackage.getContainer(), tinfo, domain, columns);        // TODO: container correct?
+            TableInfoWriter writer = new PropertyTableWriter(tablePackage.getContainer(), tinfo, domain, columns);        // TODO: container correct?
             writer.writeTable(tableXml);
         }
         vf.saveXmlBean(schemaFileName, tablesDoc);
     }
 
-    private static class TreatementTableWriter extends TableInfoWriter
+    private static class PropertyTableWriter extends TableInfoWriter
     {
         private final Map<String, DomainProperty> _properties = new CaseInsensitiveHashMap<>();
-        private Domain _domain;
+        private final Domain _domain;
 
-        protected TreatementTableWriter(Container c, TableInfo ti, Domain domain, Collection<ColumnInfo> columns)
+        protected PropertyTableWriter(Container c, TableInfo ti, Domain domain, Collection<ColumnInfo> columns)
         {
             super(c, ti, columns);
             _domain = domain;
@@ -162,7 +162,7 @@ public abstract class DefaultStudyDesignWriter
                 _properties.put(prop.getName(), prop);
         }
 
-        @Override  // No reason to ever export list PropertyURIs
+        @Override  // No reason to ever export PropertyURIs
         protected String getPropertyURI(ColumnInfo column)
         {
             return null;

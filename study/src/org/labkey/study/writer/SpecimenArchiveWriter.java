@@ -118,8 +118,8 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
     private static class SpecimenTableInfoWriter extends TableInfoWriter
     {
         private final Map<String, DomainProperty> _properties = new CaseInsensitiveHashMap<>();
-        private Domain _domain;
-        private String _name;
+        private final Domain _domain;
+        private final String _name;
 
         protected SpecimenTableInfoWriter(Container c, TableInfo ti, String tableName, Domain domain, Collection<ColumnInfo> columns)
         {
