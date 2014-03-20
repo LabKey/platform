@@ -511,7 +511,7 @@ public class VisualizationController extends SpringActionController
             for (Map.Entry<Pair<FieldKey, ColumnInfo>, QueryDefinition> entry : cols.entrySet())
             {
                 QueryDefinition query = entry.getValue();
-                boolean isDemographic = isDemographicQueryDefinition(query);
+
                 // add measure properties
                 FieldKey fieldKey = entry.getKey().first;
                 ColumnInfo column = entry.getKey().second;
@@ -520,7 +520,7 @@ public class VisualizationController extends SpringActionController
                 props.put("queryName", getQueryName(query));
                 props.put("queryLabel", getQueryLabel(query));
                 props.put("isUserDefined", !query.isTableQueryDefinition());
-                props.put("isDemographic", isDemographic);
+                props.put("isDemographic", isDemographicQueryDefinition(query));
                 props.put("id", count++);
 
                 measuresJSON.add(props);
@@ -538,6 +538,9 @@ public class VisualizationController extends SpringActionController
             props.put("type", col.getJdbcType().name());
             props.put("description", StringUtils.trimToEmpty(col.getDescription()));
             props.put("alias", VisualizationSourceColumn.getAlias(query.getSchemaName(), getQueryName(query), col.getName()));
+
+            props.put("isKeyVariable", col.isKeyVariable());
+            props.put("defaultScale", col.getDefaultScale().name());
 
             return props;
         }

@@ -783,13 +783,14 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             },
             border: false,
             forceFit: true,
+            hideHeaders: true,
             columns: [{
-                header: 'Source',
                 dataIndex: 'queryLabel',
                 sortable: false,
                 menuDisabled: true,
                 cls: '',
-                renderer: this.formatSourcesWithSelections
+                renderer: this.formatSourcesWithSelections,
+                scope: this
             }]
         });
 
@@ -801,6 +802,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 align: 'stretch'
             },
             cls: this.sourcePanelCls,
+            title : 'Source',
             border: false,
             items: [ this.sourcesGrid ]
         });
@@ -809,9 +811,12 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     },
 
     formatSourcesWithSelections : function(value, metaData, record, rowIndex, colIndex, store, view) {
-        // TODO: could change this to add/remove tdCls so that different styles could be applied
-        var num = record.get('numSelected');
-        metaData.style = (num && num > 0 ? 'font-style: italic;': '');
+        if (this.multiSelect)
+        {
+            // TODO: could change this to add/remove tdCls so that different styles could be applied
+            var num = record.get('numSelected');
+            metaData.style = (num && num > 0 ? 'font-style: italic;': '');
+        }
 
         return value;
     },
@@ -853,8 +858,9 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             multiSelect: this.multiSelect,
             singleSelect : !this.multiSelect,
             bubbleEvents : ['viewready'],
+            hideHeaders : !this.multiSelect,
             columns: [{
-                header: 'Measure',
+                header: 'Select All',
                 dataIndex: 'label',
                 flex: 1,
                 sortable: false,
@@ -887,8 +893,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 align: 'stretch'
             },
             cls : this.measurePanelCls,
+            title : 'Variables',
             border: false,
-            disabled: true, // starts disabled until a source query is chosen
             items: [ this.measuresGrid ]
         });
 
@@ -955,8 +961,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
         this.getEl().unmask();
 
-        // enable the measure panel and show the grid
-        this.measurePanel.setDisabled(false);
+        // show the grid
         this.measuresGrid.show();
     },
 
@@ -1050,7 +1055,9 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
                     {name   : 'schemaName'},
                     {name   : 'type'},
                     {name   : 'selected'},
-                    {name   : 'alias'}
+                    {name   : 'alias'},
+                    {name   : 'isKeyVariable'},
+                    {name   : 'defaultScale'}
                 ]
             });
         }
