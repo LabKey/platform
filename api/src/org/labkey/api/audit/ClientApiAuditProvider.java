@@ -148,7 +148,7 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
             }
 
             @Override
-            public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
+            public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
             {
                 // Don't allow deletes or updates for audit events, and don't let guests insert.
                 // AuditQueryView disables the insert and import buttons in the html UI, but

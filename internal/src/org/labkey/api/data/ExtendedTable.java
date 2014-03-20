@@ -123,9 +123,9 @@ public abstract class ExtendedTable<SchemaType extends UserSchema> extends Simpl
     }
 
     @Override
-    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
-        return super.hasPermissionOverridable(user, perm) && getBaseTable().hasPermission(user, perm);
+        return super.hasPermission(user, perm) && getBaseTable().hasPermission(user, perm);
     }
 
     /*

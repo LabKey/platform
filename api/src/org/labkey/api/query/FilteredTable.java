@@ -585,19 +585,4 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
         return _userSchema;
     }
 
-    @Override
-    // ONLY OVERRIDE THIS IF TABLE SHOULD BE VISIBLE IN DATASPACE PROJECT-LEVEL CONTAINER
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
-    {
-        // Most tables should not editable in Dataspace
-        if (getContainer().isDataspace())
-            return false;
-        return hasPermissionOverridable(user, perm);
-    }
-
-    protected boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
-    {
-        return false;
-    }
-
 }

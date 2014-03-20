@@ -380,7 +380,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     }
 
     @Override
-    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         return (DeletePermission.class.isAssignableFrom(perm) || UpdatePermission.class.isAssignableFrom(perm) || ReadPermission.class.isAssignableFrom(perm)) &&
                 _provider.isEditableResults(_protocol) &&
