@@ -74,10 +74,11 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable<ExternalSc
         return false;
     }
 
-    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
+    @Override
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         List<ColumnInfo> columns = getPkColumns();
-        return (perm.isAssignableFrom(ReadPermission.class) || (super.hasPermissionOverridable(user, perm) && getUserSchema().areTablesEditable() && columns.size() > 0));
+        return (perm.isAssignableFrom(ReadPermission.class) || (super.hasPermission(user, perm) && getUserSchema().areTablesEditable() && columns.size() > 0));
     }
 
     public void setContainer(String containerId)

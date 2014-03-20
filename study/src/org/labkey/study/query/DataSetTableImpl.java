@@ -808,8 +808,9 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
     }
 
     @Override
-    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
+        // OK to edit these in Dataspace project and in any folder
         DataSet def = getDatasetDefinition();
         if (ReadPermission.class.isAssignableFrom(perm))
             return def.canRead(user);

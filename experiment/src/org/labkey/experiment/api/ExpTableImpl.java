@@ -184,7 +184,8 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         addCondition(sqlCondition);
     }
 
-    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
+    @Override
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         if (getUpdateService() != null)
             return _allowablePermissions.contains(perm) && _userSchema.getContainer().hasPermission(user, perm);

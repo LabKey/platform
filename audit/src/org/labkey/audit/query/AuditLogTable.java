@@ -188,7 +188,7 @@ public class AuditLogTable extends FilteredTable<UserSchema>
     }
 
     @Override
-    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         // Don't allow deletes or updates for audit events, and don't let guests insert
         return ((perm.equals(InsertPermission.class) && !isGuest(user)) || perm.equals(ReadPermission.class)) &&

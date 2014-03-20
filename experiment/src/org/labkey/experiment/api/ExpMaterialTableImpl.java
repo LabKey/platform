@@ -423,7 +423,8 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         return new SampleSetUpdateService(this, _ss);
     }
 
-    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
+    @Override
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         if (_ss != null || perm.isAssignableFrom(DeletePermission.class) || perm.isAssignableFrom(ReadPermission.class))
             return _userSchema.getContainer().hasPermission(user, perm);

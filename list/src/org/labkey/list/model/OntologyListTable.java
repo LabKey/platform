@@ -244,7 +244,8 @@ import java.util.Set;
         return _list;
     }
 
-    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
+    @Override
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         return _list.getContainer().hasPermission(user, perm);
     }

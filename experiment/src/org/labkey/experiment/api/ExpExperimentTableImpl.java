@@ -219,7 +219,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
     }
 
     @Override
-    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         return isAllowedPermission(perm) && _userSchema.getContainer().hasPermission(user, perm);
     }
