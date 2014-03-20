@@ -15,6 +15,7 @@
  */
 package org.labkey.study.query.studydesign;
 
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.StudyQuerySchema;
 
@@ -24,9 +25,9 @@ import org.labkey.study.query.StudyQuerySchema;
  */
 public class StudyDesignUnitsTable extends StudyDesignLookupBaseTable
 {
-    public StudyDesignUnitsTable(StudyQuerySchema schema)
+    public StudyDesignUnitsTable(StudyQuerySchema schema, ContainerFilter filter)
     {
-        super(schema, StudySchema.getInstance().getTableInfoStudyDesignUnits());
+        super(schema, StudySchema.getInstance().getTableInfoStudyDesignUnits(), filter);
         setName("StudyDesignUnits");
     }
 }

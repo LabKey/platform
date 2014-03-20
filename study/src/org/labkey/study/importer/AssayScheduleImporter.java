@@ -17,7 +17,6 @@ package org.labkey.study.importer;
 
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
@@ -60,31 +59,31 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
             VirtualFile vf = root.getDir(dirType.getDir());
             if (vf != null)
             {
+                // import project-level tables first, since study-level may reference them
                 StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
-
-                // assay specimen table
-                ctx.getLogger().info("Importing assay schedule tables");
-                TableInfo assaySpecimenTable = schema.getTable(StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
-                deleteData(ctx, assaySpecimenTable);
-                importTableData(ctx, vf, assaySpecimenTable, _assaySpecimenTransform, null);
-
-                // assay specimen visit table
-                TableInfo assaySpecimenVisitTable = schema.getTable(StudyQuerySchema.ASSAY_SPECIMEN_VISIT_TABLE_NAME);
-                deleteData(ctx, assaySpecimenVisitTable);
-                importTableData(ctx, vf, assaySpecimenVisitTable, null, _assaySpecimenVisitMapTransform);
 
                 // study design tables
                 ctx.getLogger().info("Importing study design data tables");
-                List<TableInfo> studyDesignTables = new ArrayList<>();
-                studyDesignTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME));
-                studyDesignTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME));
-                studyDesignTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME));
+                List<String> studyDesignTableNames = new ArrayList<>();
+                studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME);
+                studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME);
+                studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
 
-                for (TableInfo table : studyDesignTables)
+                StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
+                for (String studyDesignTableName : studyDesignTableNames)
                 {
-                    deleteData(ctx, table);
-                    importTableData(ctx, vf, table, null, new PreserveExistingProjectData(ctx.getUser(), table, "Name"));
+                    StudyQuerySchema.TablePackage tablePackage = schema.getTablePackage(ctx, projectSchema, studyDesignTableName);
+                    importTableData(ctx, vf, tablePackage, null, new PreserveExistingProjectData(ctx.getUser(), tablePackage.getTableInfo(), "Name"));
                 }
+
+                // assay specimen table
+                ctx.getLogger().info("Importing assay schedule tables");
+                StudyQuerySchema.TablePackage assaySpecimenTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
+                importTableData(ctx, vf, assaySpecimenTablePackage, _assaySpecimenTransform, null);
+
+                // assay specimen visit table
+                StudyQuerySchema.TablePackage assaySpecimenVisitTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.ASSAY_SPECIMEN_VISIT_TABLE_NAME);
+                importTableData(ctx, vf, assaySpecimenVisitTablePackage, null, _assaySpecimenVisitMapTransform);
             }
             else
                 throw new ImportException("Unable to open the folder at : " + dirType.getDir());

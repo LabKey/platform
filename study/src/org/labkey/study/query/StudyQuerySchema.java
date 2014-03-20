@@ -72,11 +72,13 @@ import org.labkey.study.query.studydesign.StudyTreatmentProductTable;
 import org.labkey.study.query.studydesign.StudyTreatmentTable;
 import org.labkey.study.query.studydesign.StudyTreatmentVisitMapTable;
 import org.labkey.study.visualization.StudyVisualizationProvider;
+import org.labkey.study.writer.AbstractContext;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -412,35 +414,35 @@ public class StudyQuerySchema extends UserSchema
         // always expose the study designer lookup tables
         if (STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyDesignImmunogenTypesTable(this);
+            return new StudyDesignImmunogenTypesTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
         if (STUDY_DESIGN_GENES_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyDesignGenesTable(this);
+            return new StudyDesignGenesTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
         if (STUDY_DESIGN_ROUTES_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyDesignRoutesTable(this);
+            return new StudyDesignRoutesTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
         if (STUDY_DESIGN_SUB_TYPES_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyDesignSubTypesTable(this);
+            return new StudyDesignSubTypesTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
         if (STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyDesignSampleTypesTable(this);
+            return new StudyDesignSampleTypesTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
         if (STUDY_DESIGN_UNITS_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyDesignUnitsTable(this);
+            return new StudyDesignUnitsTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
         if (STUDY_DESIGN_ASSAYS_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyDesignAssaysTable(this);
+            return new StudyDesignAssaysTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
         if (STUDY_DESIGN_LABS_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyDesignLabsTable(this);
+            return new StudyDesignLabsTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
 
         if (_study == null)
@@ -601,14 +603,16 @@ public class StudyQuerySchema extends UserSchema
             StudyProductDomainKind domainKind = new StudyProductDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PRODUCT_TABLE_NAME);
 
-            return new StudyProductTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this);
+            return new StudyProductTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this,
+                    isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
         if (PRODUCT_ANTIGEN_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyProductAntigenDomainKind domainKind = new StudyProductAntigenDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PRODUCT_ANTIGEN_TABLE_NAME);
 
-            return new StudyProductAntigenTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this);
+            return new StudyProductAntigenTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this,
+                    isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
         if (TREATMENT_PRODUCT_MAP_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -650,7 +654,8 @@ public class StudyQuerySchema extends UserSchema
             StudyPersonnelDomainKind domainKind = new StudyPersonnelDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PERSONNEL_TABLE_NAME);
 
-            return new StudyPersonnelTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this);
+            return new StudyPersonnelTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this,
+                    isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
         if (OBJECTIVE_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -898,5 +903,86 @@ public class StudyQuerySchema extends UserSchema
             String label = queryDefinition.getTitle();
             namesAndLabels.put(name, label);
         }
+    }
+
+    public boolean isDataspaceProject()
+    {
+        Container container = getContainer();
+        if (null != container)
+        {
+            Container project = container.getProject();
+            if (null != project && project.isDataspace())
+                return true;
+        }
+        return false;
+    }
+
+    public class TablePackage
+    {
+        private TableInfo _tableInfo;
+        private Container _container;
+        private boolean _isProjectLevel;
+
+        public TablePackage(TableInfo tableInfo, Container container, boolean isProjectLevel)
+        {
+            _tableInfo = tableInfo;
+            _container = container;
+            _isProjectLevel = isProjectLevel;
+        }
+
+        public TableInfo getTableInfo()
+        {
+            return _tableInfo;
+        }
+
+        public Container getContainer()
+        {
+            return _container;
+        }
+
+        public boolean isProjectLevel()
+        {
+            return _isProjectLevel;
+        }
+    }
+
+    // Called on a study folder; return project-level table and container if appropriate; otherwise table from this container
+    public TablePackage getTablePackage(AbstractContext ctx, StudyQuerySchema projectSchema, String tableName)
+    {
+        TableInfo tableInfo;
+        Container container;
+        boolean isProjectLevel = false;
+        if (ctx.isDataspaceProject() && StudyQuerySchema.isDataspaceProjectTable(tableName))
+        {
+            tableInfo = projectSchema.getTable(tableName);
+            container = ctx.getProject();
+            isProjectLevel = true;
+        }
+        else
+        {
+            tableInfo = this.getTable(tableName);
+            container = ctx.getContainer();
+        }
+        return new TablePackage(tableInfo, container, isProjectLevel);
+    }
+
+    private static Set<String> _dataspaceProjectLevelTables = new HashSet<>();
+    static
+    {
+        _dataspaceProjectLevelTables.add(STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(STUDY_DESIGN_GENES_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(STUDY_DESIGN_ROUTES_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(STUDY_DESIGN_ASSAYS_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(STUDY_DESIGN_LABS_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(PRODUCT_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(PRODUCT_ANTIGEN_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(PERSONNEL_TABLE_NAME);
+    }
+
+    public static boolean isDataspaceProjectTable(String tableName)
+    {
+        return _dataspaceProjectLevelTables.contains(tableName);
     }
 }

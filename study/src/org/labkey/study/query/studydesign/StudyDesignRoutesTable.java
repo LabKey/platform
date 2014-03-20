@@ -25,15 +25,9 @@ import org.labkey.study.query.StudyQuerySchema;
  */
 public class StudyDesignRoutesTable extends StudyDesignLookupBaseTable
 {
-    public StudyDesignRoutesTable(StudyQuerySchema schema)
-    {
-        super(schema, StudySchema.getInstance().getTableInfoStudyDesignRoutes());
-        setName("StudyDesignRoutes");
-    }
-
     public StudyDesignRoutesTable(StudyQuerySchema schema, ContainerFilter filter)
     {
-        this(schema);
-        _setContainerFilter(filter);
+        super(schema, StudySchema.getInstance().getTableInfoStudyDesignRoutes(), filter);
+        setName("StudyDesignRoutes");
     }
 }

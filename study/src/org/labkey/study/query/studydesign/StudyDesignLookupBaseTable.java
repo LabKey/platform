@@ -16,8 +16,10 @@
 package org.labkey.study.query.studydesign;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
@@ -75,6 +77,13 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
                 FieldKey.fromParts("Inactive")
         ));
         setDefaultVisibleColumns(defaultColumns);
+    }
+
+    public StudyDesignLookupBaseTable(StudyQuerySchema schema, TableInfo tableInfo, @Nullable ContainerFilter containerFilter)
+    {
+        this(schema, tableInfo);
+        if (null != containerFilter)
+            _setContainerFilter(containerFilter);
     }
 
     @Override
@@ -147,5 +156,14 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
                 }
             }
         }
+    }
+
+    @Override
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        // These are editable in Dataspace, but not in a folder within a Dataspace
+        if (getContainer().getProject().isDataspace() && !getContainer().isDataspace())
+            return false;
+        return hasPermissionOverridable(user, perm);
     }
 }

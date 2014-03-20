@@ -16,6 +16,7 @@
 package org.labkey.study.writer;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractImportContext;
 import org.labkey.api.admin.ImportException;
@@ -41,5 +42,20 @@ public abstract class AbstractContext extends AbstractImportContext<StudyDocumen
     public StudyDocument.Study getXml() throws ImportException
     {
         return getDocument().getStudy();
+    }
+
+    @NotNull
+    public Container getProject()
+    {
+        Container project = getContainer().getProject();
+        if (null == project)
+            throw new IllegalStateException("Study Import/Export must happen within a project.");
+        return project;
+    }
+
+    public boolean isDataspaceProject()
+    {
+        Container project = getProject();
+        return project.isDataspace();
     }
 }

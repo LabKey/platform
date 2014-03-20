@@ -15,6 +15,7 @@
  */
 package org.labkey.study.query.studydesign;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
@@ -24,6 +25,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
@@ -48,9 +51,9 @@ public class StudyProductAntigenTable extends DefaultStudyDesignTable
         defaultVisibleColumns.add(FieldKey.fromParts("Sequence"));
     }
 
-    public StudyProductAntigenTable(Domain domain, DbSchema dbSchema, UserSchema schema)
+    public StudyProductAntigenTable(Domain domain, DbSchema dbSchema, UserSchema schema, @Nullable ContainerFilter containerFilter)
     {
-        super(domain, dbSchema, schema);
+        super(domain, dbSchema, schema, containerFilter);
 
         setName(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
         setDescription("Contains one row per study product antigen");
@@ -76,20 +79,7 @@ public class StudyProductAntigenTable extends DefaultStudyDesignTable
             {
                 public TableInfo getLookupTableInfo()
                 {
-                    StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
-                    if (study != null)
-                    {
-                        StudyQuerySchema schema = StudyQuerySchema.createSchema(study, _userSchema.getUser(), false);
-                        ContainerFilter cf;
-                        if (schema.isDataspace())
-                            cf = ContainerFilter.Type.Project.create(_userSchema.getUser());
-                        else
-                            cf = ContainerFilter.Type.Current.create(_userSchema.getUser());
-                        StudyDesignGenesTable result = new StudyDesignGenesTable(schema, cf);
-                        return result;
-                    }
-                    else
-                        return null;
+                    return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME);
                 }
             });
         }
@@ -99,20 +89,7 @@ public class StudyProductAntigenTable extends DefaultStudyDesignTable
             {
                 public TableInfo getLookupTableInfo()
                 {
-                    StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
-                    if (study != null)
-                    {
-                        StudyQuerySchema schema = StudyQuerySchema.createSchema(study, _userSchema.getUser(), false);
-                        ContainerFilter cf;
-                        if (schema.isDataspace())
-                            cf = ContainerFilter.Type.Project.create(_userSchema.getUser());
-                        else
-                            cf = ContainerFilter.Type.Current.create(_userSchema.getUser());
-                        StudyDesignSubTypesTable result = new StudyDesignSubTypesTable(schema, cf);
-                        return result;
-                    }
-                    else
-                        return null;
+                    return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
                 }
             });
         }
@@ -122,5 +99,14 @@ public class StudyProductAntigenTable extends DefaultStudyDesignTable
     public List<FieldKey> getDefaultVisibleColumns()
     {
         return defaultVisibleColumns;
+    }
+
+    @Override
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        // This is editable in Dataspace, but not in a folder within a Dataspace
+        if (getContainer().getProject().isDataspace() && !getContainer().isDataspace())
+            return false;
+        return hasPermissionOverridable(user, perm);
     }
 }

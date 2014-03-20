@@ -15,7 +15,9 @@
  */
 package org.labkey.study.query;
 
+import com.drew.lang.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
@@ -24,6 +26,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.studydesign.DefaultStudyDesignTable;
 
@@ -46,9 +50,9 @@ public class StudyPersonnelTable extends DefaultStudyDesignTable
         defaultVisibleColumns.add(FieldKey.fromParts("UserId"));
     }
 
-    public StudyPersonnelTable(Domain domain, DbSchema dbSchema, UserSchema schema)
+    public StudyPersonnelTable(Domain domain, DbSchema dbSchema, UserSchema schema, @Nullable ContainerFilter containerFilter)
     {
-        super(domain, dbSchema, schema);
+        super(domain, dbSchema, schema, containerFilter);
 
         setName(StudyQuerySchema.PERSONNEL_TABLE_NAME);
         setDescription("Contains one row per each study personnel");
@@ -67,5 +71,14 @@ public class StudyPersonnelTable extends DefaultStudyDesignTable
     public List<FieldKey> getDefaultVisibleColumns()
     {
         return defaultVisibleColumns;
+    }
+
+    @Override
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        // This is editable in Dataspace, but not in a folder within a Dataspace
+        if (getContainer().getProject().isDataspace() && !getContainer().isDataspace())
+            return false;
+        return hasPermissionOverridable(user, perm);
     }
 }

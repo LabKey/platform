@@ -25,18 +25,12 @@ import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.study.SampleManager;
-import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.writer.AbstractContext;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
 
 /**
  * User: adam

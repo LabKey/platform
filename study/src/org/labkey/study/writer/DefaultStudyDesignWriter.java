@@ -21,6 +21,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
@@ -34,7 +35,7 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
-import org.labkey.study.query.SpecimenTablesProvider;
+import org.labkey.study.query.StudyQuerySchema;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -50,11 +51,12 @@ import java.util.Set;
  */
 public abstract class DefaultStudyDesignWriter
 {
-    protected void writeTableData(StudyExportContext ctx, VirtualFile vf, Set<TableInfo> tables, @Nullable ContainerFilter containerFilter) throws SQLException, IOException
+    protected void writeTableData(StudyExportContext ctx, VirtualFile vf, Set<String> tableNames, StudyQuerySchema schema, StudyQuerySchema projectSchema) throws SQLException, IOException
     {
-        for (TableInfo tinfo : tables)
+        for (String tableName : tableNames)
         {
-            writeTableData(ctx, vf, tinfo, getDefaultColumns(tinfo), containerFilter);
+            StudyQuerySchema.TablePackage tableAndContainer = schema.getTablePackage(ctx, projectSchema, tableName);
+            writeTableData(ctx, vf, tableAndContainer.getTableInfo(), getDefaultColumns(tableAndContainer.getTableInfo()), null);
         }
     }
 
@@ -71,6 +73,7 @@ public abstract class DefaultStudyDesignWriter
                     ((ContainerFilterable)table).setContainerFilter(containerFilter);
                 }
             }
+//            createExtraForeignKeyColumns(table, columns);                             // TODO: QueryService gets unhappy and seems unnecessary
             Results rs = QueryService.get().select(table, columns, null, null);
             writeResultsToTSV(rs, vf, getFileName(table));
         }
@@ -115,14 +118,16 @@ public abstract class DefaultStudyDesignWriter
         return columns;
     }
 
-    protected void writeTableInfos(StudyExportContext ctx, VirtualFile vf, Set<TableInfo> tables, String schemaFileName) throws IOException
+    protected void writeTableInfos(StudyExportContext ctx, VirtualFile vf, Set<String> tableNames, StudyQuerySchema schema, StudyQuerySchema projectSchema, String schemaFileName) throws IOException
     {
         // Create dataset metadata file
         TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
         TablesType tablesXml = tablesDoc.addNewTables();
 
-        for (TableInfo tinfo : tables)
+        for (String tableName : tableNames)
         {
+            StudyQuerySchema.TablePackage tablePackage = schema.getTablePackage(ctx, projectSchema, tableName);
+            TableInfo tinfo = tablePackage.getTableInfo();
             TableType tableXml = tablesXml.addNewTable();
 
             Domain domain = tinfo.getDomain();
@@ -137,7 +142,7 @@ public abstract class DefaultStudyDesignWriter
                 if (!col.isKeyField() && propertyMap.containsKey(col.getName()))
                     columns.add(col);
             }
-            TableInfoWriter writer = new TreatementTableWriter(ctx.getContainer(), tinfo, domain, columns);
+            TableInfoWriter writer = new TreatementTableWriter(tablePackage.getContainer(), tinfo, domain, columns);        // TODO: container correct?
             writer.writeTable(tableXml);
         }
         vf.saveXmlBean(schemaFileName, tablesDoc);
@@ -176,6 +181,35 @@ public abstract class DefaultStudyDesignWriter
                 if (dp.getName() != null)
                     columnXml.setColumnName(dp.getName());
             }
+        }
+    }
+
+    public static void createExtraForeignKeyColumns(TableInfo table, Collection<ColumnInfo> columns)
+    {
+        // Add extra column for lookup from study table to project table, based on numeric key
+        if (!StudyQuerySchema.isDataspaceProjectTable(table.getName()))
+        {
+            List<FieldKey> fieldKeys = new ArrayList<>();
+            for (ColumnInfo column : columns)
+            {
+                if (null != column.getFk())
+                {
+                    ForeignKey fk = column.getFk();
+                    String lookupColumnName = fk.getLookupColumnName();
+                    TableInfo lookupTableInfo = fk.getLookupTableInfo();
+                    if (null != lookupTableInfo && StudyQuerySchema.isDataspaceProjectTable(lookupTableInfo.getName()) &&
+                            null != lookupColumnName && lookupTableInfo.getColumn(lookupColumnName).getJdbcType().isNumeric())
+                    {
+                        // Add extra column to tsv for numeric foreign key
+                        String displayName = fk.getLookupDisplayName();
+                        if (null == displayName)
+                            displayName = lookupTableInfo.getTitleColumn();
+                        fieldKeys.add(FieldKey.fromParts(column.getName(), displayName));   // TODO: push into ForeignKey
+                    }
+                }
+            }
+            Map<FieldKey, ColumnInfo> newColumnMap = QueryService.get().getColumns(table, fieldKeys);
+            columns.addAll(newColumnMap.values());
         }
     }
 }

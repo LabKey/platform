@@ -86,20 +86,7 @@ public class StudyTreatmentProductTable extends DefaultStudyDesignTable
             {
                 public TableInfo getLookupTableInfo()
                 {
-                    StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
-                    if (study != null)
-                    {
-                        StudyQuerySchema schema = StudyQuerySchema.createSchema(study, _userSchema.getUser(), false);
-                        ContainerFilter cf;
-                        if (schema.isDataspace())
-                            cf = ContainerFilter.Type.Project.create(_userSchema.getUser());
-                        else
-                            cf = ContainerFilter.Type.Current.create(_userSchema.getUser());
-                        StudyDesignRoutesTable result = new StudyDesignRoutesTable(schema, cf);
-                        return result;
-                    }
-                    else
-                        return null;
+                    return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.STUDY_DESIGN_ROUTES_TABLE_NAME);
                 }
             });
         }

@@ -30,9 +30,9 @@ import java.util.List;
  */
 public class StudyDesignSampleTypesTable extends StudyDesignLookupBaseTable
 {
-    public StudyDesignSampleTypesTable(StudyQuerySchema schema)
+    public StudyDesignSampleTypesTable(StudyQuerySchema schema, ContainerFilter filter)
     {
-        super(schema, StudySchema.getInstance().getTableInfoStudyDesignSampleTypes());
+        super(schema, StudySchema.getInstance().getTableInfoStudyDesignSampleTypes(), filter);
         setName("StudyDesignSampleTypes");
 
         List<FieldKey> defaultColumns = new ArrayList<>(Arrays.asList(
@@ -42,12 +42,5 @@ public class StudyDesignSampleTypesTable extends StudyDesignLookupBaseTable
                 FieldKey.fromParts("Inactive")
         ));
         setDefaultVisibleColumns(defaultColumns);
-
-    }
-
-    public StudyDesignSampleTypesTable(StudyQuerySchema schema, ContainerFilter filter)
-    {
-        this(schema);
-        _setContainerFilter(filter);
     }
 }

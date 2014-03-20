@@ -18,6 +18,7 @@ package org.labkey.study.query.studydesign;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -80,7 +81,16 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
         modifiedBy.setLabel("Modified By");
         UserIdForeignKey.initColumn(modifiedBy);
 
+        setPublicSchemaName("study");
+
         initColumns();
+    }
+
+    public DefaultStudyDesignTable(Domain domain, DbSchema dbSchema, UserSchema schema, @Nullable ContainerFilter containerFilter)
+    {
+        this(domain, dbSchema, schema);
+        if (null != containerFilter)
+            _setContainerFilter(containerFilter);
     }
 
     @Override

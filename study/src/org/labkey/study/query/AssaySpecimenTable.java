@@ -21,6 +21,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.security.UserPrincipal;
@@ -48,7 +49,7 @@ public class AssaySpecimenTable extends BaseStudyTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new StudyDesignAssaysTable(_userSchema);
+                return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME);
             }
         });
         addColumn(assayColumn);
@@ -65,13 +66,7 @@ public class AssaySpecimenTable extends BaseStudyTable
         {
             public TableInfo getLookupTableInfo()
             {
-                ContainerFilter cf;
-                if (_userSchema.isDataspace())
-                    cf = ContainerFilter.Type.Project.create(_userSchema.getUser());
-                else
-                    cf = ContainerFilter.Type.Current.create(_userSchema.getUser());
-                StudyDesignLabsTable result = new StudyDesignLabsTable(_userSchema, cf);
-                return result;
+                return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME);
             }
         });
         addColumn(labColumn);
@@ -81,13 +76,7 @@ public class AssaySpecimenTable extends BaseStudyTable
         {
             public TableInfo getLookupTableInfo()
             {
-                ContainerFilter cf;
-                if (_userSchema.isDataspace())
-                    cf = ContainerFilter.Type.Project.create(_userSchema.getUser());
-                else
-                    cf = ContainerFilter.Type.Current.create(_userSchema.getUser()); // TODO, this doesn't seem right
-                StudyDesignSampleTypesTable result = new StudyDesignSampleTypesTable(_userSchema, cf);
-                return result;
+                return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
             }
         });
         addColumn(sampleTypeColumn);

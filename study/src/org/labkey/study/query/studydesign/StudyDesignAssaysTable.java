@@ -15,6 +15,7 @@
  */
 package org.labkey.study.query.studydesign;
 
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.StudyQuerySchema;
@@ -29,9 +30,9 @@ import java.util.List;
  */
 public class StudyDesignAssaysTable extends StudyDesignLookupBaseTable
 {
-    public StudyDesignAssaysTable(StudyQuerySchema schema)
+    public StudyDesignAssaysTable(StudyQuerySchema schema, ContainerFilter filter)
     {
-        super(schema, StudySchema.getInstance().getTableInfoStudyDesignAssays());
+        super(schema, StudySchema.getInstance().getTableInfoStudyDesignAssays(), filter);
         setName("StudyDesignAssays");
 
         List<FieldKey> defaultColumns = new ArrayList<>(Arrays.asList(

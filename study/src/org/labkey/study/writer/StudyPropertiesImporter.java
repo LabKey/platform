@@ -34,15 +34,16 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
 
                 // import the objectve and personnel tables
                 StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
-                List<TableInfo> studyPropertyTables = new ArrayList<>();
+                StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
+                List<String> studyPropertyTableNames = new ArrayList<>();
 
-                studyPropertyTables.add(schema.getTable(StudyQuerySchema.OBJECTIVE_TABLE_NAME));
-                studyPropertyTables.add(schema.getTable(StudyQuerySchema.PERSONNEL_TABLE_NAME));
+                studyPropertyTableNames.add(StudyQuerySchema.OBJECTIVE_TABLE_NAME);
+                studyPropertyTableNames.add(StudyQuerySchema.PERSONNEL_TABLE_NAME);
 
-                for (TableInfo table : studyPropertyTables)
+                for (String tableName : studyPropertyTableNames)
                 {
-                    deleteData(ctx, table);
-                    importTableData(ctx, vf, table, null, null);
+                    StudyQuerySchema.TablePackage tablePackage = schema.getTablePackage(ctx, projectSchema, tableName);
+                    importTableData(ctx, vf, tablePackage, null, null);
                 }
             }
             else

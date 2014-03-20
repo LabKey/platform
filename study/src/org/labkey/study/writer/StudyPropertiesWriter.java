@@ -21,14 +21,15 @@ public class StudyPropertiesWriter extends DefaultStudyDesignWriter
      */
     public void writeExtendedStudyProperties(StudyImpl study, StudyExportContext ctx, VirtualFile dir) throws Exception
     {
-        Set<TableInfo> studyTables = new HashSet<>();
+        Set<String> studyTableNames = new HashSet<>();
         StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
+        StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
 
         // export the personnel table extended properties
-        studyTables.add(schema.getTable(StudyQuerySchema.PERSONNEL_TABLE_NAME));
-        writeTableInfos(ctx, dir, studyTables, SCHEMA_FILENAME);
+        studyTableNames.add(StudyQuerySchema.PERSONNEL_TABLE_NAME);
+        writeTableInfos(ctx, dir, studyTableNames, schema, projectSchema, SCHEMA_FILENAME);
 
-        studyTables.add(schema.getTable(StudyQuerySchema.OBJECTIVE_TABLE_NAME));
-        writeTableData(ctx, dir, studyTables, null);
+        studyTableNames.add(StudyQuerySchema.OBJECTIVE_TABLE_NAME);
+        writeTableData(ctx, dir, studyTableNames, schema, projectSchema);
     }
 }

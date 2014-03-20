@@ -25,15 +25,9 @@ import org.labkey.study.query.StudyQuerySchema;
  */
 public class StudyDesignSubTypesTable extends StudyDesignLookupBaseTable
 {
-    public StudyDesignSubTypesTable(StudyQuerySchema schema)
-    {
-        super(schema, StudySchema.getInstance().getTableInfoStudyDesignSubTypes());
-        setName("StudyDesignSubTypes");
-    }
-
     public StudyDesignSubTypesTable(StudyQuerySchema schema, ContainerFilter filter)
     {
-        this(schema);
-        _setContainerFilter(filter);
+        super(schema, StudySchema.getInstance().getTableInfoStudyDesignSubTypes(), filter);
+        setName("StudyDesignSubTypes");
     }
 }

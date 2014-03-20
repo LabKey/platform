@@ -249,6 +249,9 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
                 // copy participants
                 exportParticipantGroups(_form, ctx, vf);
 
+                // assay schedule and treatment data (study design)
+                importStudyDesignData(_errors, destStudy, vf);
+
                 // import dataset data or create snapshot datasets
                 importDatasetData(context, _form, destStudy, snapshot, vf, _errors);
 
@@ -258,9 +261,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
 
                 // import the cohort settings, needs to happen after the dataset data and specimen data is imported so the full ptid list is available
                 importCohortSettings(_errors, destStudy, vf);
-
-                // assay schedule and treatment data (study design)
-                importStudyDesignData(_errors, destStudy, vf);
 
                 // import folder items (reports, lists, etc)
                 importFolderItems(destStudy, vf);

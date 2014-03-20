@@ -25,15 +25,9 @@ import org.labkey.study.query.StudyQuerySchema;
  */
 public class StudyDesignLabsTable extends StudyDesignLookupBaseTable
 {
-    public StudyDesignLabsTable(StudyQuerySchema schema)
-    {
-        super(schema, StudySchema.getInstance().getTableInfoStudyDesignLabs());
-        setName("StudyDesignLabs");
-    }
-
     public StudyDesignLabsTable(StudyQuerySchema schema, ContainerFilter filter)
     {
-        this(schema);
-        _setContainerFilter(filter);
+        super(schema, StudySchema.getInstance().getTableInfoStudyDesignLabs(), filter);
+        setName("StudyDesignLabs");
     }
 }

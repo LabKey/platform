@@ -25,15 +25,9 @@ import org.labkey.study.query.StudyQuerySchema;
  */
 public class StudyDesignGenesTable extends StudyDesignLookupBaseTable
 {
-    public StudyDesignGenesTable(StudyQuerySchema schema)
-    {
-        super(schema, StudySchema.getInstance().getTableInfoStudyDesignGenes());
-        setName("StudyDesignGenes");
-    }
-
     public StudyDesignGenesTable(StudyQuerySchema schema, ContainerFilter filter)
     {
-        this(schema);
-        _setContainerFilter(filter);
+        super(schema, StudySchema.getInstance().getTableInfoStudyDesignGenes(), filter);
+        setName("StudyDesignGenes");
     }
 }

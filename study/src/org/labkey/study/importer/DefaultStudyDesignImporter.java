@@ -72,15 +72,15 @@ public class DefaultStudyDesignImporter
 {
     /**
      * Removes previous data for the specified table and container
-     * @param ctx
+     * @param container
      * @param tableInfo
      */
-    protected void deleteData(StudyImportContext ctx, TableInfo tableInfo) throws ImportException
+    protected void deleteData(Container container, TableInfo tableInfo) throws ImportException
     {
         try {
             if (tableInfo instanceof FilteredTable)
             {
-                Table.delete(((FilteredTable)tableInfo).getRealTable(), SimpleFilter.createContainerFilter(ctx.getContainer()));
+                Table.delete(((FilteredTable)tableInfo).getRealTable(), SimpleFilter.createContainerFilter(container));
             }
         }
         catch (SQLException e)
@@ -185,10 +185,17 @@ public class DefaultStudyDesignImporter
         }
     }
 
-    protected void importTableData(StudyImportContext ctx, VirtualFile vf, TableInfo tableInfo,
+    protected void importTableData(StudyImportContext ctx, VirtualFile vf, StudyQuerySchema.TablePackage tablePackage,
                                                      @Nullable TransformBuilder transformBuilder,
                                                      @Nullable TransformHelper transformHelper) throws Exception
     {
+        TableInfo tableInfo = tablePackage.getTableInfo();
+        Container container = tablePackage.getContainer();
+//        if (!tablePackage.isProjectLevel())           // TODO: implement a insert if not there using ETL Merge
+        {
+            deleteData(container, tableInfo);
+        }
+
         BatchValidationException errors = new BatchValidationException();
         if (null != tableInfo)
         {
@@ -213,10 +220,10 @@ public class DefaultStudyDesignImporter
                         {
                             if (!(transformHelper instanceof TransformHelper))
                                 throw new ImportException("The specified transform helper does not implement the TransformHelper interface");
-                            insertedRows = qus.insertRows(ctx.getUser(), ctx.getContainer(), transformHelper.transform(ctx, rows), errors, null);
+                            insertedRows = qus.insertRows(ctx.getUser(), container, transformHelper.transform(ctx, rows), errors, null);
                         }
                         else
-                            insertedRows = qus.insertRows(ctx.getUser(), ctx.getContainer(), rows, errors, null);
+                            insertedRows = qus.insertRows(ctx.getUser(), container, rows, errors, null);
 
                         if (transformBuilder != null)
                         {
@@ -227,7 +234,7 @@ public class DefaultStudyDesignImporter
                     }
                     else
                     {
-                        qus.importRows(ctx.getUser(), ctx.getContainer(), loader, errors, null);
+                        qus.importRows(ctx.getUser(), container, loader, errors, null);
                     }
                 }
                 else

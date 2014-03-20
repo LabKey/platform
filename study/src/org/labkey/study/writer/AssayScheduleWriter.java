@@ -64,6 +64,7 @@ public class AssayScheduleWriter extends DefaultStudyDesignWriter implements Int
         VirtualFile vf = root.getDir(DEFAULT_DIRECTORY);
 
         StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
+        StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
 
         // add the assay schedule specific tables
         TableInfo assaySpecimenTable = schema.getTable(StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
@@ -71,16 +72,13 @@ public class AssayScheduleWriter extends DefaultStudyDesignWriter implements Int
         writeTableData(ctx, vf, assaySpecimenTable, getDefaultColumns(assaySpecimenTable), null);
         writeAssaySpecimenVisitMap(ctx, vf);
 
-        // assay schedule lookup values can have data stored at both the project and folder level
-        ContainerFilter containerFilter = new ContainerFilter.CurrentPlusProject(ctx.getUser());
-
         // export the study design tables (no need to export tableinfo's as these are non-extensible)
-        Set<TableInfo> designTables = new HashSet<>();
-        designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME));
-        designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME));
-        designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME));
+        Set<String> designTableNames = new HashSet<>();
+        designTableNames.add(StudyQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME);
+        designTableNames.add(StudyQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME);
+        designTableNames.add(StudyQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
 
-        writeTableData(ctx, vf, designTables, containerFilter);
+        writeTableData(ctx, vf, designTableNames, schema, projectSchema);
     }
 
     private void writeAssaySpecimenVisitMap(StudyExportContext ctx, VirtualFile vf) throws Exception

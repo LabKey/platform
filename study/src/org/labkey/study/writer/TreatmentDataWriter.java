@@ -69,34 +69,32 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
         dir.setDir(DEFAULT_DIRECTORY);
 
         VirtualFile vf = root.getDir(DEFAULT_DIRECTORY);
-        Set<TableInfo> treatmentTables = new HashSet<>();
+        Set<String> treatmentTableNames = new HashSet<>();
         StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
+        StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
 
         // add the treatment specific tables
-        treatmentTables.add(schema.getTable(StudyQuerySchema.PRODUCT_TABLE_NAME));
-        treatmentTables.add(schema.getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME));
-        treatmentTables.add(schema.getTable(StudyQuerySchema.TREATMENT_TABLE_NAME));
-        treatmentTables.add(schema.getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME));
+        treatmentTableNames.add(StudyQuerySchema.PRODUCT_TABLE_NAME);
+        treatmentTableNames.add(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+        treatmentTableNames.add(StudyQuerySchema.TREATMENT_TABLE_NAME);
+        treatmentTableNames.add(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
 
         // write the table infos and data rows
-        writeTableInfos(ctx, vf, treatmentTables, SCHEMA_FILENAME);
-        writeTableData(ctx, vf, treatmentTables, null);
+        writeTableInfos(ctx, vf, treatmentTableNames, schema, projectSchema, SCHEMA_FILENAME);
+        writeTableData(ctx, vf, treatmentTableNames, schema, projectSchema);
 
         // for the TreatmentVisitMap table, export the visit sequence num & cohort label instead of the ID
         writeTreatmentVisitMap(ctx, vf);
 
         // export the study design tables (no need to export tableinfo's as these are non-extensible)
-        Set<TableInfo> designTables = new HashSet<>();
+        Set<String> designTableNames = new HashSet<>();
 
-        // study designs can have lookup data stored at both the project and folder level
-        ContainerFilter containerFilter = new ContainerFilter.CurrentPlusProject(ctx.getUser());
+        designTableNames.add(StudyQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME);
+        designTableNames.add(StudyQuerySchema.STUDY_DESIGN_ROUTES_TABLE_NAME);
+        designTableNames.add(StudyQuerySchema.STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
+        designTableNames.add(StudyQuerySchema.STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
 
-        designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME));
-        designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_ROUTES_TABLE_NAME));
-        designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME));
-        designTables.add(schema.getTable(StudyQuerySchema.STUDY_DESIGN_SUB_TYPES_TABLE_NAME));
-
-        writeTableData(ctx, vf, designTables, containerFilter);
+        writeTableData(ctx, vf, designTableNames, schema, projectSchema);
     }
 
     private void writeTreatmentVisitMap(StudyExportContext ctx, VirtualFile vf) throws Exception
