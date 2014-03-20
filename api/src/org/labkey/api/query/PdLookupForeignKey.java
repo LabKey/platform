@@ -89,7 +89,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         if (table == null)
             return null;
 
-        if (table.getPkColumns().size() != 1)
+        if (table.getPkColumns().size() < 1 || table.getPkColumns().size() > 2)
             return null;
 
         return table;

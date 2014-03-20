@@ -130,10 +130,19 @@ public class DomainEditorServiceBase extends BaseRemoteService
                 }
                 if (table == null)
                     continue;
+
+                // Accept lookups with 1 PK, but if a second PK is Container, that's acceptable, too
                 List<ColumnInfo> pkColumns = table.getPkColumns();
-                if (pkColumns.size() != 1)
+                if (pkColumns.size() < 1 || pkColumns.size() > 2)
                     continue;
                 ColumnInfo pk = pkColumns.get(0);
+                if (pkColumns.size() == 2)
+                {
+                    if (pk.getName().equalsIgnoreCase("container"))
+                        pk = pkColumns.get(1);
+                    else if (!pkColumns.get(1).getName().equalsIgnoreCase("container"))
+                        continue;
+                }
                 PropertyType type = PropertyType.getFromClass(pk.getJavaObjectClass());
                 GWTPropertyDescriptor pd = new GWTPropertyDescriptor(pk.getName(), type.getTypeUri());
                 availableQueries.put(name, pd);
