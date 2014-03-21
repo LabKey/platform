@@ -17,6 +17,7 @@ package org.labkey.query.olap;
 
 import com.drew.lang.annotations.NotNull;
 import mondrian.olap.MondrianServer;
+import mondrian.rolap.RolapConnection;
 import mondrian.rolap.RolapConnectionProperties;
 import mondrian.rolap.RolapHierarchy;
 import mondrian.rolap.agg.AggregationKey;
@@ -73,6 +74,8 @@ public class ServerManager
     private static final Object _serverLock = new Object();
 
     public static final ModuleResourceCache<OlapSchemaDescriptor> SCHEMA_DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(OlapSchemaCacheHandler.DIR_NAME), "Olap cube defintions", new OlapSchemaCacheHandler());
+
+    private static final String DATA_SOURCE_NAME = "dsn_LABKEY";
 
     static
     {
@@ -142,7 +145,7 @@ public class ServerManager
                         "<?xml version=\"1.0\"?>\n" +
                         "<DataSources>\n" +
                         "<DataSource>\n" +
-                        "<DataSourceName>dsn_LABKEY</DataSourceName>\n" +
+                        "<DataSourceName>" + DATA_SOURCE_NAME + "</DataSourceName>\n" +
                         "<DataSourceDescription>" + PageFlowUtil.filter(c.getPath()) + "</DataSourceDescription>\n" +
                         "<URL></URL>\n" +
                         "<DataSourceInfo>" +
@@ -171,7 +174,7 @@ public class ServerManager
                 s = MondrianServer.createWithRepository(rcf, new _CatalogLocator());
                 _log.debug("Create new Mondrian server: " + c.getPath() + " " + s.toString());
                 MemTracker.getInstance().put(s);
-                ref = new ServerReferenceCount(s);
+                ref = new ServerReferenceCount(s, c);
                 _servers.put(getServerCacheKey(c), ref);
             }
             return ref;
@@ -186,7 +189,7 @@ public class ServerManager
             return null;
 
         MondrianServer server = ref.get();
-        OlapConnection olap = server.getConnection("dsn_LABKEY", catalog, null);
+        OlapConnection olap = server.getConnection(DATA_SOURCE_NAME, catalog, null);
         MemTracker.getInstance().put(olap);
         OlapConnection wrap = OlapConnectionProxy.wrap(olap, ref);
         MemTracker.getInstance().put(wrap);
@@ -234,9 +237,27 @@ public class ServerManager
     }
 
 
-    static void closeServer(MondrianServer s)
+    static void closeServer(MondrianServer s, @NotNull Container container)
     {
         _log.debug("Shutdown Mondrian server: " + s.toString());
+
+        try
+        {
+            Collection<OlapSchemaDescriptor> descriptors = SCHEMA_DESCRIPTOR_CACHE.getResources(container);
+            for (OlapSchemaDescriptor d : descriptors)
+            {
+                String catalogName = OlapSchemaDescriptor.makeCatalogName(d, container);
+                OlapConnection c = s.getConnection(DATA_SOURCE_NAME, catalogName, null);
+                RolapConnection r = c.unwrap(RolapConnection.class);
+                r.getCacheControl(null).flushSchemaCache();
+            }
+        }
+        catch (Exception x)
+        {
+            _log.debug("Shutdown Mondrian server flush cache failed: " + s.toString());
+            _log.debug(x.getMessage());
+        }
+
         s.shutdown();
     }
 
@@ -326,10 +347,12 @@ public class ServerManager
     static class ServerReferenceCount extends ReferenceCount
     {
         MondrianServer _server;
+        Container _container;
 
-        ServerReferenceCount(@NotNull MondrianServer s)
+        ServerReferenceCount(@NotNull MondrianServer s, @NotNull Container c)
         {
             _server = s;
+            _container = c;
         }
 
         MondrianServer get()
@@ -354,7 +377,7 @@ public class ServerManager
         @Override
         void close()
         {
-            closeServer(_server);
+            closeServer(_server, _container);
             _server = null;
         }
     }
