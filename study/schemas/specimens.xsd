@@ -93,6 +93,68 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="displaySettings" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="commentsAndQC" minOccurs="0">
+                            <xs:complexType>
+                                <xs:attribute name="defaultToCommentsMode" type="xs:boolean"/>
+                                <xs:attribute name="enableManualQCFlagging" type="xs:boolean"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="lowSpecimenWarnings" minOccurs="0">
+                            <xs:complexType>
+                                <xs:attribute name="lastVial" type="xs:string"/>
+                                <xs:attribute name="zeroVials" type="xs:string"/>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="requestForms" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="form" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="title" type="xs:string" minOccurs="0"/>
+                                    <xs:element name="helpText" type="xs:string" minOccurs="0"/>
+                                </xs:sequence>
+                                <xs:attribute name="multiLine" type="xs:boolean"/>
+                                <xs:attribute name="required" type="xs:boolean"/>
+                                <xs:attribute name="rememberSiteValue" type="xs:boolean"/>
+                                <xs:attribute name="displayOrder" type="xs:int"/>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="notifications" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="replyTo" type="xs:string" minOccurs="0"/>
+                        <xs:element name="cc" type="xs:string" minOccurs="0"/>
+                        <xs:element name="subjectSuffix" type="xs:string" minOccurs="0"/>
+                        <xs:element name="newRequestNotify" type="xs:string" minOccurs="0"/>
+                        <xs:element name="defaultEmailNotify" type="xs:string" minOccurs="0"/>
+                        <xs:element name="specimensAttachment" type="xs:string" minOccurs="0"/>
+                    </xs:sequence>
+                    <xs:attribute name="ccCheckbox" type="xs:boolean"/>
+                    <xs:attribute name="newRequestNotifyCheckbox" type="xs:boolean"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="requestabilityRules" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="rule" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:attribute name="type" type="xs:string"/>
+                                <xs:attribute name="ruleData" type="xs:string"/>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
         </xs:sequence>
         <xs:attribute name="repositoryType" type="specimenRepositoryType">
             <xs:annotation>

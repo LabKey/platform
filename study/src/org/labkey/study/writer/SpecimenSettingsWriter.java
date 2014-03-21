@@ -22,12 +22,15 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.security.xml.GroupType;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.SampleRequestActor;
 import org.labkey.study.model.SampleRequestRequirement;
 import org.labkey.study.model.SampleRequestStatus;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.samples.settings.DisplaySettings;
 import org.labkey.study.samples.settings.RepositorySettings;
+import org.labkey.study.samples.settings.RequestNotificationSettings;
 import org.labkey.study.samples.settings.StatusSettings;
 import org.labkey.study.xml.DefaultRequirementType;
 import org.labkey.study.xml.DefaultRequirementsType;
@@ -36,6 +39,7 @@ import org.labkey.study.xml.SpecimenSettingsType;
 import org.labkey.study.xml.SpecimensDocument;
 import org.labkey.study.xml.StudyDocument;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -189,6 +193,11 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
             }
         }
 
+        writeDisplaySettings(xmlSettings, study, ctx);
+        writeRequestForm(xmlSettings, study, ctx);
+        writeNotifications(xmlSettings, study, ctx);
+        writeRequestabilityRules(xmlSettings, study, ctx);
+
         // write out the xml
         dir.saveXmlBean(DEFAULT_SETTINGS_FILE, xmlSettingsDoc);
     }
@@ -208,5 +217,88 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
         // for a actor type of per location, use the location label as the group name
         // otherwise use the actor label in the per study case
         xmlGroupType.setName(location != null ? location.getLabel() : actor.getLabel());
+    }
+
+    private void writeDisplaySettings(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx)
+    {
+        ctx.getLogger().info("Exporting specimen display settings");
+        DisplaySettings settings = SampleManager.getInstance().getDisplaySettings(ctx.getContainer());
+
+        org.labkey.study.xml.SpecimenSettingsType.DisplaySettings xmlSettings = specimenSettingsType.addNewDisplaySettings();
+
+        SpecimenSettingsType.DisplaySettings.CommentsAndQC commentsAndQC = xmlSettings.addNewCommentsAndQC();
+        commentsAndQC.setDefaultToCommentsMode(settings.isDefaultToCommentsMode());
+        commentsAndQC.setEnableManualQCFlagging(settings.isEnableManualQCFlagging());
+
+        SpecimenSettingsType.DisplaySettings.LowSpecimenWarnings warnings = xmlSettings.addNewLowSpecimenWarnings();
+        if (settings.getLastVial() != null)
+            warnings.setLastVial(settings.getLastVial());
+        if (settings.getZeroVials() != null)
+            warnings.setZeroVials(settings.getZeroVials());
+    }
+
+    private void writeRequestForm(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx) throws SQLException
+    {
+        ctx.getLogger().info("Exporting specimen request forms");
+        SampleManager.SpecimenRequestInput[] inputs = SampleManager.getInstance().getNewSpecimenRequestInputs(ctx.getContainer());
+
+        if (inputs != null && inputs.length > 0)
+        {
+            SpecimenSettingsType.RequestForms forms = specimenSettingsType.addNewRequestForms();
+            for (SampleManager.SpecimenRequestInput input : inputs)
+            {
+                SpecimenSettingsType.RequestForms.Form requestForm = forms.addNewForm();
+
+                if (input.getTitle() != null)
+                    requestForm.setTitle(input.getTitle());
+                if (input.getHelpText() != null)
+                    requestForm.setHelpText(input.getHelpText());
+                requestForm.setMultiLine(input.isMultiLine());
+                requestForm.setRequired(input.isRequired());
+                requestForm.setRememberSiteValue(input.isRememberSiteValue());
+                requestForm.setDisplayOrder(input.getDisplayOrder());
+            }
+        }
+    }
+
+    private void writeNotifications(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx)
+    {
+        ctx.getLogger().info("Exporting specimen notification settings");
+        RequestNotificationSettings notifications = SampleManager.getInstance().getRequestNotificationSettings(ctx.getContainer());
+        SpecimenSettingsType.Notifications xmlNotificatons = specimenSettingsType.addNewNotifications();
+
+        if (notifications.getReplyTo() != null)
+            xmlNotificatons.setReplyTo(notifications.getReplyTo());
+        if (notifications.getSubjectSuffix() != null)
+            xmlNotificatons.setSubjectSuffix(notifications.getSubjectSuffix());
+        xmlNotificatons.setNewRequestNotifyCheckbox(notifications.isNewRequestNotifyCheckbox());
+        if (notifications.getNewRequestNotify() != null)
+            xmlNotificatons.setNewRequestNotify(notifications.getNewRequestNotify());
+        xmlNotificatons.setCcCheckbox(notifications.isCcCheckbox());
+        if (notifications.getCc() != null)
+            xmlNotificatons.setCc(notifications.getCc());
+        if (notifications.getDefaultEmailNotify() != null)
+            xmlNotificatons.setDefaultEmailNotify(notifications.getDefaultEmailNotify());
+        if (notifications.getSpecimensAttachment() != null)
+            xmlNotificatons.setSpecimensAttachment(notifications.getSpecimensAttachment());
+    }
+
+    private void writeRequestabilityRules(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx)
+    {
+        ctx.getLogger().info("Exporting specimen requestability rules");
+        List<RequestabilityManager.RequestableRule> rules = RequestabilityManager.getInstance().getRules(ctx.getContainer());
+        if (!rules.isEmpty())
+        {
+            SpecimenSettingsType.RequestabilityRules rulesXml = specimenSettingsType.addNewRequestabilityRules();
+            for (RequestabilityManager.RequestableRule rule : rules)
+            {
+                SpecimenSettingsType.RequestabilityRules.Rule xmlRule = rulesXml.addNewRule();
+
+                if (rule.getType() != null)
+                    xmlRule.setType(rule.getType().name());
+                if (rule.getRuleData() != null)
+                    xmlRule.setRuleData(rule.getRuleData());
+            }
+        }
     }
 }

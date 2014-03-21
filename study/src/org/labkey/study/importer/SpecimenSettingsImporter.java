@@ -32,7 +32,9 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.requirements.RequirementType;
 import org.labkey.study.requirements.SpecimenRequestRequirementType;
+import org.labkey.study.samples.settings.DisplaySettings;
 import org.labkey.study.samples.settings.RepositorySettings;
+import org.labkey.study.samples.settings.RequestNotificationSettings;
 import org.labkey.study.samples.settings.StatusSettings;
 import org.labkey.study.xml.DefaultRequirementType;
 import org.labkey.study.xml.DefaultRequirementsType;
@@ -48,6 +50,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -97,7 +100,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
     }
 
     // Import specimen settings for versions >= 13.2.
-    private static void importSettings(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
+    private void importSettings(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
     {
         Container c = ctx.getContainer();
         RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(c);
@@ -146,11 +149,15 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         importRequestStatuses(study, ctx, xmlSettings);
         importRequestActors(study, ctx, xmlSettings);
         importDefaultRequirements(study, ctx, xmlSettings);
+        importDisplaySettings(study, ctx, xmlSettings);
+        importRequestForm(study, ctx, xmlSettings);
+        importNotifications(study, ctx, xmlSettings);
+        importRequestabilityRules(study, ctx, xmlSettings);
     }
 
 
 
-    private static void importRequestStatuses(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
+    private void importRequestStatuses(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
     {
         SpecimenSettingsType.RequestStatuses xmlRequestStatuses = xmlSettings.getRequestStatuses();
         if (xmlRequestStatuses != null)
@@ -207,7 +214,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         }
     }
 
-    private static void importRequestActors(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings)
+    private void importRequestActors(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings)
     {
         SpecimenSettingsType.RequestActors xmlRequestActors = xmlSettings.getRequestActors();
         if (xmlRequestActors != null)
@@ -284,7 +291,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         }
     }
 
-    private static void importDefaultRequirements(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
+    private void importDefaultRequirements(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
     {
         SpecimenSettingsType.DefaultRequirements xmlDefRequirements = xmlSettings.getDefaultRequirements();
         if (xmlDefRequirements != null)
@@ -317,7 +324,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         }
     }
 
-    private static void createDefaultRequirement(DefaultRequirementsType xmlReqs, StudyImportContext ctx, RequirementType type)
+    private void createDefaultRequirement(DefaultRequirementsType xmlReqs, StudyImportContext ctx, RequirementType type)
     {
         if (xmlReqs != null && xmlReqs.getRequirementArray().length > 0)
         {
@@ -342,7 +349,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
     }
 
     // Import specimen settings from study.xml doc for versions <13.2.
-    private static void importLegacySettings(StudyImpl study, StudyImportContext ctx, LegacySpecimenSettingsType xmlSettings)
+    private void importLegacySettings(StudyImpl study, StudyImportContext ctx, LegacySpecimenSettingsType xmlSettings)
     {
         Container c = ctx.getContainer();
         RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(c);
@@ -380,5 +387,129 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
             study.setAllowReqLocSal(xmlSettings.getAllowReqLocSal());
         if (xmlSettings.isSetAllowReqLocEndpoint())
             study.setAllowReqLocEndpoint(xmlSettings.getAllowReqLocEndpoint());
+    }
+
+    private void importDisplaySettings(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings)
+    {
+        ctx.getLogger().info("Importing specimen display settings");
+        org.labkey.study.xml.SpecimenSettingsType.DisplaySettings xmlDisplay = xmlSettings.getDisplaySettings();
+        if (xmlDisplay != null)
+        {
+            DisplaySettings display = new DisplaySettings();
+            SpecimenSettingsType.DisplaySettings.CommentsAndQC commentsAndQC = xmlDisplay.getCommentsAndQC();
+            if (commentsAndQC != null)
+            {
+                display.setDefaultToCommentsMode(commentsAndQC.getDefaultToCommentsMode());
+                display.setEnableManualQCFlagging(commentsAndQC.getEnableManualQCFlagging());
+            }
+            SpecimenSettingsType.DisplaySettings.LowSpecimenWarnings warnings = xmlDisplay.getLowSpecimenWarnings();
+            if (warnings != null)
+            {
+                display.setLastVial(warnings.getLastVial());
+                display.setZeroVials(warnings.getZeroVials());
+            }
+
+            SampleManager.getInstance().saveDisplaySettings(ctx.getContainer(), display);
+        }
+    }
+
+    private void importRequestForm(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
+    {
+        ctx.getLogger().info("Importing specimen request forms");
+        // try to merge with any existing request forms, even though there doesn't seem to be the notion of a duplicate value
+        Set<String> currentInputs = new HashSet<>();
+        List<SampleManager.SpecimenRequestInput> inputs = new ArrayList<>();
+        for (SampleManager.SpecimenRequestInput input : SampleManager.getInstance().getNewSpecimenRequestInputs(ctx.getContainer()))
+        {
+            inputs.add(input);
+            currentInputs.add(input.getTitle());
+        }
+
+        SpecimenSettingsType.RequestForms xmlForms = xmlSettings.getRequestForms();
+        if (xmlForms != null)
+        {
+            SpecimenSettingsType.RequestForms.Form[] formArray = xmlForms.getFormArray();
+            if (formArray != null && formArray.length > 0)
+            {
+                for (SpecimenSettingsType.RequestForms.Form form : formArray)
+                {
+                    if (!currentInputs.contains(form.getTitle()))
+                    {
+                        SampleManager.SpecimenRequestInput input = new SampleManager.SpecimenRequestInput(
+                                form.getTitle(),
+                                form.getHelpText(),
+                                form.getDisplayOrder(),
+                                form.getMultiLine(),
+                                form.getRequired(),
+                                form.getRememberSiteValue());
+
+                        inputs.add(input);
+                    }
+                    else
+                        ctx.getLogger().info("There is currently a form with the same title: " + form.getTitle() + ", skipping this from import");
+                }
+                SampleManager.getInstance().saveNewSpecimenRequestInputs(ctx.getContainer(), inputs.toArray(new SampleManager.SpecimenRequestInput[inputs.size()]));
+            }
+        }
+    }
+
+    private void importNotifications(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
+    {
+        ctx.getLogger().info("Importing specimen notification settings");
+        SpecimenSettingsType.Notifications xmlNotifications = xmlSettings.getNotifications();
+        if (xmlNotifications != null)
+        {
+            RequestNotificationSettings notifications = new RequestNotificationSettings();
+
+            if (xmlNotifications.getReplyTo() != null)
+                notifications.setReplyTo(xmlNotifications.getReplyTo());
+            if (xmlNotifications.getSubjectSuffix() != null)
+                notifications.setSubjectSuffix(xmlNotifications.getSubjectSuffix());
+            notifications.setNewRequestNotifyCheckbox(xmlNotifications.getNewRequestNotifyCheckbox());
+            if (xmlNotifications.getNewRequestNotify() != null)
+                notifications.setNewRequestNotify(xmlNotifications.getNewRequestNotify());
+            notifications.setCcCheckbox(xmlNotifications.getCcCheckbox());
+            if (xmlNotifications.getCc() != null)
+                notifications.setCc(xmlNotifications.getCc());
+            if (xmlNotifications.getDefaultEmailNotify() != null)
+                notifications.setDefaultEmailNotify(xmlNotifications.getDefaultEmailNotify());
+            if (xmlNotifications.getSpecimensAttachment() != null)
+                notifications.setSpecimensAttachment(xmlNotifications.getSpecimensAttachment());
+
+            SampleManager.getInstance().saveRequestNotificationSettings(ctx.getContainer(), notifications);
+        }
+    }
+
+    private void importRequestabilityRules(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
+    {
+        ctx.getLogger().info("Importing specimen requestability rules");
+        SpecimenSettingsType.RequestabilityRules xmlRules = xmlSettings.getRequestabilityRules();
+        if (xmlRules != null)
+        {
+            List<RequestabilityManager.RequestableRule> rules = new ArrayList<>();
+            Set<String> currentRules = new HashSet<>();
+
+            // seems like requestability rules should not get merged, instead just have the imported set
+            // replace any existing rules.
+/*
+            rules.addAll(RequestabilityManager.getInstance().getRules(ctx.getContainer()));
+            for (RequestabilityManager.RequestableRule rule : rules)
+                currentRules.add(rule.getType().name());
+*/
+
+            SpecimenSettingsType.RequestabilityRules.Rule[] xmlRuleArray = xmlRules.getRuleArray();
+            if (xmlRuleArray != null && xmlRuleArray.length > 0)
+            {
+                for (SpecimenSettingsType.RequestabilityRules.Rule rule : xmlRuleArray)
+                {
+                    if (!currentRules.contains(rule.getType()))
+                    {
+                        RequestabilityManager.RuleType type = RequestabilityManager.RuleType.valueOf(rule.getType());
+                        rules.add(type.createRule(ctx.getContainer(), rule.getRuleData()));
+                    }
+                }
+                RequestabilityManager.getInstance().saveRules(ctx.getContainer(), ctx.getUser(), rules);
+            }
+        }
     }
 }
