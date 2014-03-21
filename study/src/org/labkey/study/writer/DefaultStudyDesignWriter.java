@@ -128,22 +128,25 @@ public abstract class DefaultStudyDesignWriter
         {
             StudyQuerySchema.TablePackage tablePackage = schema.getTablePackage(ctx, projectSchema, tableName);
             TableInfo tinfo = tablePackage.getTableInfo();
-            TableType tableXml = tablesXml.addNewTable();
-
             Domain domain = tinfo.getDomain();
-            List<ColumnInfo> columns = new ArrayList<>();
-            Map<String, DomainProperty> propertyMap = new CaseInsensitiveHashMap<>();
-
-            for (DomainProperty prop : domain.getProperties())
-                propertyMap.put(prop.getName(), prop);
-
-            for (ColumnInfo col : tinfo.getColumns())
+            if (domain != null)
             {
-                if (!col.isKeyField() && propertyMap.containsKey(col.getName()))
-                    columns.add(col);
+                TableType tableXml = tablesXml.addNewTable();
+
+                List<ColumnInfo> columns = new ArrayList<>();
+                Map<String, DomainProperty> propertyMap = new CaseInsensitiveHashMap<>();
+
+                for (DomainProperty prop : domain.getProperties())
+                    propertyMap.put(prop.getName(), prop);
+
+                for (ColumnInfo col : tinfo.getColumns())
+                {
+                    if (!col.isKeyField() && propertyMap.containsKey(col.getName()))
+                        columns.add(col);
+                }
+                TableInfoWriter writer = new PropertyTableWriter(tablePackage.getContainer(), tinfo, domain, columns);        // TODO: container correct?
+                writer.writeTable(tableXml);
             }
-            TableInfoWriter writer = new PropertyTableWriter(tablePackage.getContainer(), tinfo, domain, columns);        // TODO: container correct?
-            writer.writeTable(tableXml);
         }
         vf.saveXmlBean(schemaFileName, tablesDoc);
     }
