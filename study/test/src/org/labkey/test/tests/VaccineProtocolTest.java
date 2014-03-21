@@ -317,7 +317,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
     } //getTargetStudyOptionText()
 
     protected static final String TEST_RUN1_COMMENTS = "First comments";
-    protected static final File TEST_RUN1_DATA1 = new File(getSampledataPath(), "studyextra/TestAssayRun1.xar");
+    protected static final File TEST_RUN1_DATA1 = new File(getSampledataPath(), "studyextra/TestAssayRun1.tsv");
 
     protected void uploadRun()
     {
