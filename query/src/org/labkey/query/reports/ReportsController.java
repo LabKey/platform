@@ -59,6 +59,8 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.pipeline.file.PathMapper;
+import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
@@ -515,13 +517,13 @@ public class ReportsController extends SpringActionController
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            List<Map<String, String>> views = new ArrayList<>();
+            List<Map<String, Object>> views = new ArrayList<>();
 
             ScriptEngineManager manager = ServiceRegistry.get().getService(ScriptEngineManager.class);
 
             for (ScriptEngineFactory factory : manager.getEngineFactories())
             {
-                Map<String, String> record = new HashMap<>();
+                Map<String, Object> record = new HashMap<>();
 
                 record.put("name", factory.getEngineName());
                 record.put("extensions", StringUtils.join(factory.getExtensions(), ','));
@@ -547,8 +549,13 @@ public class ReportsController extends SpringActionController
                     {
                         record.put("machine", def.getMachine());
                         record.put("port", String.valueOf(def.getPort()));
-                        record.put("reportShare", def.getReportShare());
-                        record.put("pipelineShare", def.getPipelineShare());
+
+                        PathMapper pathMap = def.getPathMap();
+                        if (pathMap != null)
+                            record.put("pathMap", ((PathMapperImpl)pathMap).toJSON());
+                        else
+                            record.put("pathMap", null);
+
                         record.put("user", def.getUser());
                         record.put("password", def.getPassword());
                     }

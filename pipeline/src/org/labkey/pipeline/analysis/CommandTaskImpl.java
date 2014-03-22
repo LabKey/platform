@@ -455,7 +455,6 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             String[] inputPaths = getProcessPaths(WorkDirectory.Function.input, key);
             for (String inputPath : inputPaths)
             {
-                inputPath = rewritePath(inputPath);
                 rows.add(factory.getRowMap(key, inputPath, path.getType().getDefaultSuffix()));
             }
         }
@@ -470,7 +469,6 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             String[] outputPaths = getProcessPaths(WorkDirectory.Function.output, key);
             for (String outputPath : outputPaths)
             {
-                outputPath = rewritePath(outputPath);
                 rows.add(factory.getRowMap(key, outputPath, path.getType().getDefaultSuffix()));
             }
         }

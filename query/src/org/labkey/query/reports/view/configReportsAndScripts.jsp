@@ -20,6 +20,9 @@
 <%@ page import="org.labkey.api.reports.report.ExternalScriptEngineReport"%>
 <%@ page import="org.labkey.api.reports.report.RReport" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.util.FileUtil" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.reports.report.ScriptEngineReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -75,23 +78,47 @@
         var rEngineItem = new Ext.menu.Item({
             id: 'add_rEngine',
             text:'New R Engine',
-            listeners:{click:function(button, event) {editRecord(button, grid,{
-                name: R_ENGINE_NAME,
-                extensions: R_EXTENSIONS,
-                <% if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING)) { %>
-                    machine:'<%=text(RReport.DEFAULT_R_MACHINE)%>',
-                    port:<%=RReport.DEFAULT_R_PORT%>,
-                <% } else { %>
-                    exeCommand:'<%=text(RReport.DEFAULT_R_CMD)%>',
-                    <% if (!StringUtils.isEmpty(RReport.getDefaultRPath())) { %>
-                        exePath: <%=q(RReport.getDefaultRPath())%>,
+            listeners:{
+                click:function(button, event) {
+                    var record = {
+                        name: R_ENGINE_NAME,
+                        extensions: R_EXTENSIONS,
+                        <% if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING)) { %>
+                            machine:'<%=text(RReport.DEFAULT_R_MACHINE)%>',
+                            port:<%=RReport.DEFAULT_R_PORT%>,
+                        <% } else { %>
+                            exeCommand:'<%=text(RReport.DEFAULT_R_CMD)%>',
+                            <% if (!StringUtils.isEmpty(RReport.getDefaultRPath())) { %>
+                                exePath: <%=q(RReport.getDefaultRPath())%>,
+                            <% } %>
+                        <% }%>
+                        outputFileName: <%= q(ExternalScriptEngine.SCRIPT_NAME_REPLACEMENT + ".Rout") %>,
+                        external: true,
+                        enabled: true,
+                        languageName:'R'
+                    };
+
+                    <% if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING)) { %>
+                    record['pathMap'] = {
+                        localIgnoreCase: <%= FileUtil.isCaseInsensitiveFileSystem() %>,
+                        remoteIgnoreCase: false,
+                        paths: [
+                            {
+                                localURI: <%=PageFlowUtil.jsString(ScriptEngineReport.getDefaultTempRoot().toURI().toString())%>,
+                                remoteURI: ''
+                            },
+                            {
+                                localURI: <%=PageFlowUtil.jsString(AppProps.getInstance().getFileSystemRoot().toURI().toString())%>,
+                                remoteURI: ''
+                            }
+                        ]
+                    };
                     <% } %>
-                <% }%>
-                outputFileName: <%= q(ExternalScriptEngine.SCRIPT_NAME_REPLACEMENT + ".Rout") %>,
-                external: true,
-                enabled: true,
-                languageName:'R'});}}}
-            );
+
+                    editRecord(button, grid, record);
+                }
+            }
+        });
 
         var perlEngineItem = new Ext.menu.Item({
             id: 'add_perlEngine',
@@ -121,8 +148,7 @@
                         {name:'exeCommand'},
                         {name:'machine'},
                         {name:'port'},
-                        {name:'reportShare'},
-                        {name:'pipelineShare'},
+                        {name:'pathMap'},
                         {name:'user'},
                         {name:'password'},
                         {name:'extensions'},
@@ -304,27 +330,69 @@
             width: 275
         };
 
-        var itemReportShare = {
-            fieldLabel: 'Remote Report Share',
-            name: 'reportShare',
-            id: 'editEngine_reportShare',
-            tooltip: {text: 'The share used on the remote machine to reference the report share on the LabKey machine', title: 'Remote Report Share'},
-            listeners: {render: setFormFieldTooltip},
-            disabled:!record.external,
-            value: record.reportShare,
-            width: 275
-        };
+        var pathMapStore = new Ext.data.JsonStore({
+            fields: [{
+                name: 'localURI',
+                allowBlank: false,
+            },{
+                name: 'remoteURI',
+                allowBlank: false,
+            }],
+            idProperty: 'localURI',
+            root: 'paths'
+        });
 
-        var itemPipelineShare = {
-            fieldLabel: 'Remote Pipeline Share',
-            name: 'pipelineShare',
-            id: 'editEngine_pipelineShare',
-            tooltip: {text: 'The share used on the remote machine to reference the pipeline override root', title: 'Remote Pipeline Share'},
+        if (record.pathMap) {
+            pathMapStore.loadData(record.pathMap);
+        }
+
+        var editor = new Ext.form.TextField();
+
+        var itemPathGrid = new Ext.grid.EditorGridPanel({
+            xtype: 'grid',
+            fieldLabel: 'Path Mapping',
+            name: 'pathMap',
+            id: 'editEngine_pathMap',
+            tooltip: {text: 'Add or remove local to remote path mappings', title: 'Local to Remote Path Mapping'},
             listeners: {render: setFormFieldTooltip},
             disabled:!record.external,
-            value: record.pipelineShare,
-            width: 275
-        };
+            stripeRows: true,
+            autoEncode: true,
+            enableColumnHide: false,
+            store: pathMapStore,
+            colModel: new Ext.grid.ColumnModel({
+                defaults: {
+                    sortable: false
+                },
+                columns: [
+                    {id: 'localURI', header: 'Local', dataIndex: 'localURI', editable: true, editor: editor, width: 200, renderer: Ext.util.Format.htmlEncode},
+                    {id: 'remoteURI', header: 'Remote', dataIndex: 'remoteURI', editable: true, editor: editor, width: 200, renderer: Ext.util.Format.htmlEncode},
+                ]
+            }),
+            tbar: [{
+                text: 'Add',
+                handler: function () {
+                    var data = {'localURI':'', 'remoteURI':''};
+                    var record = new pathMapStore.recordType(data);
+                    pathMapStore.add(record);
+                }
+            },{
+                text: 'Remove',
+                handler: function (btn, evt) {
+                    var record = itemPathGrid.getSelectionModel().getSelected();
+                    pathMapStore.remove(record);
+                }
+            }],
+            sm: new Ext.grid.RowSelectionModel({singleSelect:true}),
+            width: 430,
+            height: 160,
+            viewConfig: {forceFit: true},
+
+            // Get the JSON object used to submit
+            getValue: function () {
+                console.log("grid");
+            }
+        });
 
         var itemUser = {
             fieldLabel: 'Remote User',
@@ -448,8 +516,9 @@
                     itemExtensions,
                     itemMachine,
                     itemPort,
-                    itemReportShare,
-                    itemPipelineShare,
+//                    itemReportShare,
+//                    itemPipelineShare,
+                    itemPathGrid,
                     itemUser,
                     itemPassword,
                     itemOutputFileName,
@@ -483,7 +552,7 @@
             title: 'Edit Engine Configuration',
             layout:'form',
             border: false,
-            width: 475,
+            width: useRserve ? 575 : 475,
             autoHeight : true,
             closeAction:'close',
             modal: false,
@@ -516,17 +585,29 @@
             return false;
         }
 
+        var values = form.getFieldValues();
+
+        // Get the pathMap store data as an array of JSON objects of the form: {'localURI':'A', 'remoteURI':'B'}
+        var pathMapItem = panel.items.get('editEngine_pathMap');
+        if (pathMapItem)
+        {
+            var pathMapDatas = Ext.pluck(pathMapItem.store.data.items, 'data');
+            values['pathMap'] = {
+                paths: pathMapDatas
+            };
+        }
+
         win.getBottomToolbar().get(0).setText("");
-        form.submit({
+        Ext.Ajax.request({
             url: LABKEY.ActionURL.buildURL("reports", "scriptEnginesSave"),
-            waitMsg:'Submiting Form...',
             method: 'POST',
+            jsonData: values,
             success: function(){
                 win.close();
                 grid.store.load();
             },
             failure: function(form, action){handleError(win, action);}
-        });
+        })
     }
 
     function handleError(win, action)

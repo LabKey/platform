@@ -48,7 +48,7 @@ import org.labkey.pipeline.api.properties.GlobusClientPropertiesImpl;
 import org.labkey.pipeline.cluster.NoOpPipelineStatusWriter;
 import org.labkey.pipeline.mule.JMSStatusWriter;
 import org.labkey.pipeline.xml.TaskType;
-import org.labkey.pipeline.xstream.PathMapperImpl;
+import org.labkey.api.pipeline.file.PathMapperImpl;
 
 import java.io.File;
 import java.io.FileNotFoundException;

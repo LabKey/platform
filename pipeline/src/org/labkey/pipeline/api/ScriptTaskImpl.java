@@ -86,7 +86,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
                 if (inputPaths[0] == null)
                     replacements.put(key, "");
                 else
-                    replacements.put(key, Matcher.quoteReplacement(rewritePath(inputPaths[0].replaceAll("\\\\", "/"))));
+                    replacements.put(key, Matcher.quoteReplacement(inputPaths[0].replaceAll("\\\\", "/")));
             }
             else
             {
@@ -109,7 +109,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
                 if (outputPaths[0] == null)
                     replacements.put(key, "");
                 else
-                    replacements.put(key, Matcher.quoteReplacement(rewritePath(outputPaths[0].replaceAll("\\\\", "/"))));
+                    replacements.put(key, Matcher.quoteReplacement(outputPaths[0].replaceAll("\\\\", "/")));
             }
             else
             {
@@ -128,8 +128,8 @@ public class ScriptTaskImpl extends CommandTaskImpl
         //replacements.put(PipelineJob.PIPELINE_JOB_INFO_PARAM, rewritePath(engine, jobInfoFile.getAbsolutePath()));
 
         // Task info replacement
-        File taskInfoFile = new File(_wd.getDir(), getJobSupport().getBaseName() + "-taskInfo.tsv");
-        replacements.put(ScriptTaskFactory.PIPELINE_TASK_INFO_PARAM, rewritePath(taskInfoFile.getAbsolutePath()));
+        String taskInfoFile = getJobSupport().getBaseName() + "-taskInfo.tsv";
+        replacements.put(ScriptTaskFactory.PIPELINE_TASK_INFO_PARAM, taskInfoFile);
 
         return replacements;
     }
@@ -286,8 +286,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
     {
         if (_engine != null && AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
         {
-            // HACK: Change relative path into absolute path.
-            // HACK: In the Rserve case, the process is not executed in the work directory so relative paths won't work.
+            // Ensure local path is absolute before converting to remote path
             File f = new File(path);
             if (!f.isAbsolute())
             {
@@ -296,7 +295,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
             }
 
             RserveScriptEngine rengine = (RserveScriptEngine) _engine;
-            String ret = rengine.getRemotePipelinePath(path);
+            String ret = rengine.getRemotePath(path);
             getJob().debug("rewritePath: " + path + " -> " + ret);
             return ret;
         }

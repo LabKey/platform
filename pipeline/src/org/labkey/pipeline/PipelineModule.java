@@ -72,7 +72,7 @@ import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.status.StatusController;
 import org.labkey.pipeline.xml.ExecTaskType;
 import org.labkey.pipeline.xml.ScriptTaskType;
-import org.labkey.pipeline.xstream.PathMapperImpl;
+import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
