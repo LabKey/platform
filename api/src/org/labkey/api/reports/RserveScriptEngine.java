@@ -16,13 +16,13 @@
 package org.labkey.api.reports;
 
 import org.apache.axis.utils.StringUtils;
-import org.labkey.api.reports.report.RReport;
+import org.labkey.api.pipeline.file.PathMapper;
 
 import javax.script.*;
 import java.io.*;
-import java.util.HashMap;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
-import java.util.Map;
 
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPMismatchException;
@@ -51,23 +51,14 @@ public class RserveScriptEngine extends RScriptEngine
     @Override
     protected String getInputFilename(File inputScript)
     {
-        String inputPath = RReport.getLocalPath(inputScript);
-        String remotePath = getRemoteReportPath(inputPath);
-        if (inputPath.equals(remotePath))
-            remotePath = getRemotePipelinePath(inputPath);
-
-        return remotePath;
+        return getRemotePath(inputScript);
     }
 
     @Override
     protected String getRWorkingDir(ScriptContext context)
     {
-        String workingDir = RReport.getLocalPath(getWorkingDir(context));
-        String remoteDir = getRemoteReportPath(workingDir);
-        if (workingDir.equals(remoteDir))
-            remoteDir = getRemotePipelinePath(workingDir);
-
-        return remoteDir;
+        File workingDir = getWorkingDir(context);
+        return getRemotePath(workingDir);
     }
 
     public Object eval(String script, ScriptContext context) throws ScriptException
@@ -100,23 +91,37 @@ public class RserveScriptEngine extends RScriptEngine
 
         try
         {
-            rconn = getConnection(rh);
+            rconn = getConnection(rh, context);
 
             //
             // use the source command to load in the script.  this is good because we aren't parsing the script at all
             // but for short scripts on a local machine it is slower than evaluating the script
             // line by line
             //
-            boolean output = false;
             StringBuilder sb = new StringBuilder();
+
             //
             // wrap the command to capture the output
+            // We use .try_quietly instead of try so the R stack is included in the error
+            // See http://stackoverflow.com/questions/16879821/save-traceback-on-error-using-trycatch
             //
-            sb.append("try(capture.output(source(\"");
+            sb.append("tools:::.try_quietly(capture.output(source(\"");
             sb.append(getInputFilename(scriptFile));
-            sb.append("\")), silent=TRUE)");
+            sb.append("\")))");
 
-            REXP rexp = rconn.eval(sb.toString());
+            return eval(rconn, sb.toString());
+        }
+        finally
+        {
+            closeConnection(rconn, rh);
+        }
+    }
+
+    private String eval(RConnection rconn, String script)
+    {
+        try
+        {
+            REXP rexp = rconn.eval(script);
             if (rexp.inherits("try-error"))
                 throw new RuntimeException(getRserveOutput(rexp));
 
@@ -125,10 +130,6 @@ public class RserveScriptEngine extends RScriptEngine
         catch (RserveException re)
         {
             throw new RuntimeException(getRserveError(rconn, re));
-        }
-        finally
-        {
-            closeConnection(rconn, rh);
         }
     }
 
@@ -195,6 +196,35 @@ public class RserveScriptEngine extends RScriptEngine
         return StringUtils.isEmpty(rserveOut) ? null : rserveOut;
      }
 
+    public String getRemotePath(File localFile)
+    {
+        String localPath = localFile.toURI().toString();
+        return getRemotePath(localPath);
+    }
+
+    public String getRemotePath(String localURI)
+    {
+        PathMapper pathMap = _def.getPathMap();
+        if (pathMap != null && !pathMap.getPathMap().isEmpty())
+        {
+            // CONSIDER: Move converting file path to URI into the PathMapper.
+            if (!localURI.startsWith("file:"))
+                localURI = new File(localURI).toURI().toString();
+
+            String remoteURI = pathMap.localToRemote(localURI);
+            remoteURI = remoteURI.replace('\\', '/');
+            try
+            {
+                File f = new File(new URI(remoteURI));
+                return f.getAbsolutePath();
+            }
+            catch (URISyntaxException e) { }
+        }
+
+        return localURI;
+    }
+
+    /*
     public String getRemoteReportPath(String localPath)
     {
         File f = (File) getBindings(ScriptContext.ENGINE_SCOPE).get(RserveScriptEngine.TEMP_ROOT);
@@ -225,6 +255,7 @@ public class RserveScriptEngine extends RScriptEngine
 
         return localPath;
     }
+    */
 
 
     /*
@@ -298,7 +329,19 @@ public class RserveScriptEngine extends RScriptEngine
         */
     }
 
-    private RConnection getConnection(RConnectionHolder rh)
+    /** Change to the R working directory on the remote RServe. */
+    private void initEnv(RConnection rconn, ScriptContext context)
+    {
+        String workingDir = getRWorkingDir(context);
+        if (workingDir != null)
+        {
+            String script = "setwd(\"" + workingDir + "\")\n";
+
+            eval(rconn, script);
+        }
+    }
+
+    private RConnection getConnection(RConnectionHolder rh, ScriptContext context)
     {
         //
         // todo: on windows this will create a connection against the same environment
@@ -336,10 +379,11 @@ public class RserveScriptEngine extends RScriptEngine
                 //
                 rconn = new RConnection(_def.getMachine(), _def.getPort());
 
-                if (rconn != null &&
-                    rconn.needLogin())
+                if (rconn != null && rconn.needLogin())
                 {
                     rconn.login(_def.getUser(), _def.getPassword());
+
+                    initEnv(rconn, context);
                 }
             }
             catch(RserveException rse)

@@ -699,8 +699,7 @@ quickScan:
     public static File getAbsoluteCaseSensitiveFile(File file)
     {
         file = resolveFile(file.getAbsoluteFile());
-        String osName = System.getProperty("os.name").toLowerCase();
-        if (osName.startsWith("windows") || osName.startsWith("mac os"))
+        if (isCaseInsensitiveFileSystem())
         {
             try
             {
@@ -716,6 +715,12 @@ quickScan:
             }
         }
         return file.getAbsoluteFile();
+    }
+
+    public static boolean isCaseInsensitiveFileSystem()
+    {
+        String osName = System.getProperty("os.name").toLowerCase();
+        return (osName.startsWith("windows") || osName.startsWith("mac os"));
     }
 
     /**

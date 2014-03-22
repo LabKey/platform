@@ -275,11 +275,12 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         {
             RserveScriptEngine rengine = (RserveScriptEngine) engine;
 
-            String localPath = getLocalPath(getPipelineRoot(context));
+            File pipelineRoot = getPipelineRoot(context);
+            String localPath = getLocalPath(pipelineRoot);
             labkey.append("labkey.pipeline.root <- \"" + localPath + "\"\n");
 
             // include remote paths so that the client can fixup any file references
-            String remotePath = rengine.getRemotePipelinePath(localPath);
+            String remotePath = rengine.getRemotePath(pipelineRoot);
             labkey.append("labkey.remote.pipeline.root <- \"" + remotePath + "\"\n");
         }
 
@@ -332,7 +333,7 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
             // path to the input file created on the labkey machine
             //
             RserveScriptEngine rengine = (RserveScriptEngine) engine;
-            String remotePath = rengine.getRemoteReportPath(localPath);
+            String remotePath = rengine.getRemotePath(inputFile);
             scriptOut = ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, remotePath);
         }
         else
@@ -353,7 +354,7 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         {
             RserveScriptEngine rengine = (RserveScriptEngine)engine;
             String localPath = getLocalPath(reportDir);
-            String remoteRoot = rengine.getRemoteReportPath(localPath);
+            String remoteRoot = rengine.getRemotePath(localPath);
             scriptOut = ParamReplacementSvc.get().processParamReplacement(script, reportDir, remoteRoot, replacements);
         }
         else

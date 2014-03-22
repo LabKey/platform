@@ -15,6 +15,8 @@
  */
 package org.labkey.api.reports;
 
+import org.labkey.api.pipeline.file.PathMapper;
+
 /*
 * User: Karl Lum
 * Date: Dec 2, 2008
@@ -37,8 +39,7 @@ public interface ExternalScriptEngineDefinition
     public int getPort();
     public String getUser();
     public String getPassword();
-    public String getReportShare();
-    public String getPipelineShare();
+    public PathMapper getPathMap();
 
     public void setName(String name);
     public void setExtensions(String[] extensions);
@@ -64,6 +65,5 @@ public interface ExternalScriptEngineDefinition
     public void setPort(int port);
     public void setUser(String user);
     public void setPassword(String password);
-    public void setReportShare(String reportShare);
-    public void setPipelineShare(String pipelineShare);
+    public void setPathMap(PathMapper pathMap);
 }

@@ -18,10 +18,17 @@ package org.labkey.api.reports;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.json.JSONObject;
+import org.labkey.api.action.BaseViewAction;
+import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.pipeline.file.PathMapper;
+import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.springframework.beans.MutablePropertyValues;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
@@ -29,6 +36,7 @@ import javax.script.ScriptEngineManager;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,6 +47,8 @@ import java.util.Map;
 */
 public class LabkeyScriptEngineManager extends ScriptEngineManager
 {
+    private static final Logger LOG = Logger.getLogger(LabkeyScriptEngineManager.class);
+
     private static final String SCRIPT_ENGINE_MAP = "ExternalScriptEngineMap";
     private static final String ENGINE_DEF_MAP_PREFIX = "ScriptEngineDefinition_";
 
@@ -54,8 +64,7 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         disabled,
         machine,
         port,
-        reportShare,
-        pipelineShare,
+        pathMap,
         user,
         password
     }
@@ -169,16 +178,12 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
             }
             catch (Exception e)
             {
-                deleteDefinition(name);
+                LOG.error("Failed to parse script engine definition: " + e.getMessage());
+                //deleteDefinition(name);
             }
         }
 
         return engines;
-    }
-
-    public static ExternalScriptEngineDefinition createDefinition()
-    {
-        return new EngineDefinition();
     }
 
     public static void deleteDefinition(ExternalScriptEngineDefinition def)
@@ -240,8 +245,15 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
                     {
                         setProp(Props.machine.name(), def.getMachine(), key);
                         setProp(Props.port.name(), String.valueOf(def.getPort()), key);
-                        setProp(Props.reportShare.name(), def.getReportShare(), key);
-                        setProp(Props.pipelineShare.name(), def.getPipelineShare(), key);
+
+                        String pathMapStr = null;
+                        PathMapper pathMapper = def.getPathMap();
+                        if (pathMapper != null && !pathMapper.getPathMap().isEmpty())
+                        {
+                            pathMapStr = ((PathMapperImpl)pathMapper).toJSON().toString();
+                        }
+
+                        setProp(Props.pathMap.name(), pathMapStr, key);
                         setProp(Props.user.name(), def.getUser(), key);
                         setProp(Props.password.name(), def.getPassword(), key);
                     }
@@ -296,6 +308,11 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         String name = props.get(Props.name.name());
         String exePath = props.get(Props.exePath.name());
         String extensionStr = props.get(Props.extensions.name());
+        String pathMapStr = props.get(Props.pathMap.name());
+
+        // Create a copy of the props so we can remove pathMap
+        props = new HashMap<>(props);
+        props.remove(Props.pathMap.name());
 
         //
         // if using Rserve then it's okay for the exePath to be null
@@ -312,6 +329,18 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
                 BeanUtils.populate(def, props);
                 def.setExtensions(extensions);
                 def.setEnabled(!BooleanUtils.toBoolean(props.get(Props.disabled.name())));
+
+                PathMapper pathMapper;
+                if (pathMapStr != null && !pathMapStr.equals("null"))
+                {
+                    JSONObject pathMapJson = new JSONObject(pathMapStr);
+                    pathMapper = PathMapperImpl.fromJSON(pathMapJson);
+                }
+                else
+                {
+                    pathMapper = new PathMapperImpl();
+                }
+                def.setPathMap(pathMapper);
 
                 return def;
             }
@@ -342,7 +371,7 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         PropertyManager.saveProperties(map);
     }
 
-    public static class EngineDefinition implements ExternalScriptEngineDefinition
+    public static class EngineDefinition implements ExternalScriptEngineDefinition, CustomApiForm
     {
         String _key;
         String _name;
@@ -356,11 +385,9 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         int    _port;
         String _user;
         String _password;
-        String _reportShare;
-        String _pipelineShare;
+        PathMapper _pathMap;
         boolean _enabled;
         boolean _external;
-
 
         public String getKey()
         {
@@ -415,16 +442,6 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         public int getPort()
         {
             return _port;
-        }
-
-        public String getReportShare()
-        {
-            return _reportShare;
-        }
-
-        public String getPipelineShare()
-        {
-            return _pipelineShare;
         }
 
         public String getUser()
@@ -512,13 +529,31 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
             _password = password;
         }
 
-        public void setReportShare(String reportShare)
+        @Override
+        public PathMapper getPathMap()
         {
-            _reportShare = reportShare;
+            return _pathMap;
         }
-        public void setPipelineShare(String pipelineShare)
+
+        @Override
+        public void setPathMap(PathMapper pathMap)
         {
-            _pipelineShare = pipelineShare;
+            _pathMap = pathMap;
         }
+
+        @Override
+        public void bindProperties(Map<String, Object> props)
+        {
+            // Use default binding for most fields
+            MutablePropertyValues params = new MutablePropertyValues(props);
+            BaseViewAction.defaultBindParameters(this, "form", params);
+
+            // Handle pathMap
+            JSONObject jsonPathMap = (JSONObject)props.get("pathMap");
+            if (jsonPathMap != null)
+                _pathMap = PathMapperImpl.fromJSON(jsonPathMap);
+        }
+
     }
+
 }

@@ -357,44 +357,42 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     public static File getTempRoot(ReportDescriptor descriptor)
     {
         File tempRoot;
-        String tempFolderName = null;// = getTempFolder();
         boolean isPipeline = BooleanUtils.toBoolean(descriptor.getProperty(ScriptReportDescriptor.Prop.runInBackground));
 
-        if (StringUtils.isEmpty(tempFolderName))
+        try
         {
-            try
+            if (isPipeline && descriptor.getContainerId() != null)
             {
-                if (isPipeline && descriptor.getContainerId() != null)
-                {
-                    Container c = ContainerManager.getForId(descriptor.getContainerId());
-                    PipeRoot root = PipelineService.get().findPipelineRoot(c);
-                    tempRoot = root.resolvePath(REPORT_DIR);
+                Container c = ContainerManager.getForId(descriptor.getContainerId());
+                PipeRoot root = PipelineService.get().findPipelineRoot(c);
+                tempRoot = root.resolvePath(REPORT_DIR);
 
-                    if (!tempRoot.exists())
-                        tempRoot.mkdirs();
-                }
-                else
-                {
-                    File tempDir = new File(System.getProperty("java.io.tmpdir"));
-                    tempRoot = new File(tempDir, REPORT_DIR);
-
-                    if (!tempRoot.exists())
-                        tempRoot.mkdirs();
-                }
+                if (!tempRoot.exists())
+                    tempRoot.mkdirs();
             }
-            catch (Exception e)
+            else
             {
-                throw new RuntimeException("Error setting up temp directory", e);
+                tempRoot = getDefaultTempRoot();
+
+                if (!tempRoot.exists())
+                    tempRoot.mkdirs();
             }
         }
-        else
+        catch (Exception e)
         {
-            tempRoot = new File(tempFolderName);
+            throw new RuntimeException("Error setting up temp directory", e);
         }
 
         return tempRoot;
     }
 
+
+    public static File getDefaultTempRoot()
+    {
+        File tempDir = new File(System.getProperty("java.io.tmpdir"));
+        tempDir = new File(tempDir, REPORT_DIR);
+        return tempDir;
+    }
 
     protected TSVGridWriter createGridWriter(Results r) throws SQLException
     {
