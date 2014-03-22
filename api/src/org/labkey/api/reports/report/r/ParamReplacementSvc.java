@@ -16,8 +16,8 @@
 
 package org.labkey.api.reports.report.r;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.view.HrefOutput;

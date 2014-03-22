@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.TabBoxView" %>
-<%@ page import="org.springframework.web.servlet.ModelAndView" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.gwt.client.util.StringUtils" %>
+<%@ page import="org.springframework.web.servlet.ModelAndView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
     TabBoxView me = (TabBoxView) HttpView.currentModel();

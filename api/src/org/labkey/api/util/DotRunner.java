@@ -15,8 +15,8 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
