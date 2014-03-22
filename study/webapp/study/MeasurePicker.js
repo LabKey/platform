@@ -719,7 +719,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
         Ext4.apply(this, config, {
             allColumns : false,
-            showHidden : false
+            showHidden : false,
+            trackSelectionCount : false
         });
 
         this.callParent([config]);
@@ -764,36 +765,6 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
     createSourcePanel : function() {
 
-        this.sourcesGrid = Ext4.create('Ext.grid.Panel', {
-            store: this.getSourceStore(),
-            selModel: Ext4.create('Ext.selection.RowModel', {
-                singleSelect: true,
-                listeners: {
-                    select: this.onSourceRowSelection,
-                    scope: this
-                }
-            }),
-            cls : 'sourcegrid iScroll',
-            flex: 1,
-            ui: this.ui,
-            enableColumnHide: false,
-            enableColumnResize: false,
-            viewConfig : {
-                stripeRows : false
-            },
-            border: false,
-            forceFit: true,
-            hideHeaders: true,
-            columns: [{
-                dataIndex: 'queryLabel',
-                sortable: false,
-                menuDisabled: true,
-                cls: '',
-                renderer: this.formatSourcesWithSelections,
-                scope: this
-            }]
-        });
-
         this.sourcePanel = Ext4.create('Ext.panel.Panel', {
             flex: 1,
             ui: this.ui,
@@ -804,26 +775,42 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             cls: this.sourcePanelCls,
             title : 'Source',
             border: false,
-            items: [ this.sourcesGrid ]
+            items: [ this.getSourcesView() ]
         });
 
         return this.sourcePanel;
     },
 
-    formatSourcesWithSelections : function(value, metaData, record, rowIndex, colIndex, store, view) {
-        if (this.multiSelect)
+    getSourcesView : function() {
+        if (!this.sourcesView)
         {
-            // TODO: could change this to add/remove tdCls so that different styles could be applied
-            var num = record.get('numSelected');
-            metaData.style = (num && num > 0 ? 'font-style: italic;': '');
+            this.sourcesView = Ext4.create('Ext.view.View', {
+                ui: this.ui,
+                border: false,
+                cls: 'sourcegrid iScroll',
+                flex: 1,
+                height: '100%',
+                autoScroll: true,
+                store: this.getSourceStore(),
+                itemSelector: 'div.itemrow',
+                selectedItemCls: 'itemselected',
+                tpl: new Ext.XTemplate(
+                    '<tpl for=".">',
+                        '<div class="itemrow" style="padding: 3px 6px 4px 6px; cursor: pointer;">{queryLabel:htmlEncode}</div>',
+                    '</tpl>'
+                )
+            });
+
+            this.sourcesView.getSelectionModel().on('select', this.onSourceRowSelection, this);
         }
 
-        return value;
+        return this.sourcesView;
     },
 
     createMeasurePanel : function() {
         // Using a new MeasureStore, but we will only display filtered sets of measures
         this.measuresStore = Ext4.create('LABKEY.ext4.MeasuresStore', {
+            showKeyVariablesFirst : !this.multiSelect,
             listeners : {
                 measureStoreSorted : function(store) {
                     this.loaded = true;
@@ -842,49 +829,6 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             }
         });
 
-        this.measuresGrid = Ext4.create('Ext.grid.Panel', {
-            store: this.measuresStore,
-            viewConfig : {
-                stripeRows : false
-            },
-            border: false,
-            selType: this.multiSelect ? 'checkboxmodel' : 'rowmodel',
-            cls : 'measuresgrid iScroll',
-            flex: 1,
-            ui: this.ui,
-            hidden: true, // starts hidden until a source query is chosen
-            enableColumnHide: false,
-            enableColumnResize: false,
-            multiSelect: this.multiSelect,
-            singleSelect : !this.multiSelect,
-            bubbleEvents : ['viewready'],
-            hideHeaders : !this.multiSelect,
-            columns: [{
-                header: 'Select All',
-                dataIndex: 'label',
-                flex: 1,
-                sortable: false,
-                menuDisabled: true
-            }],
-            listeners : {
-                select : this.onMeasureSelect,
-                deselect : this.onMeasureDeselect,
-                scope : this
-            }
-        });
-
-        this.measuresGrid.getSelectionModel().on('selectionchange', function(selModel) {
-            this.fireEvent('measureChanged', null, null);
-        }, this);
-
-        // workaround for scrollbar issue with adding/removing filters and reloading data
-        this.measuresGrid.on('scrollershow', function(scroller) {
-            if (scroller && scroller.scrollEl) {
-                scroller.clearManagedListeners();
-                scroller.mon(scroller.scrollEl, 'scroll', scroller.onElScroll, scroller);
-            }
-        });        
-
         this.measurePanel = Ext4.create('Ext.panel.Panel', {
             flex: 1,
             ui: this.ui,
@@ -895,10 +839,83 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             cls : this.measurePanelCls,
             title : 'Variables',
             border: false,
-            items: [ this.measuresGrid ]
+            items: [ this.getMeasuresGrid() ]
         });
 
         return this.measurePanel;        
+    },
+
+    getMeasuresGrid : function() {
+        if (!this.measuresGrid)
+        {
+            var measuresGridConfig = {
+                border: false,
+                flex: 1,
+                ui: this.ui,
+                cls : 'measuresgrid iScroll',
+                hidden: true, // starts hidden until a source query is chosen
+                listeners : {
+                    select : this.onMeasureSelect,
+                    deselect : this.onMeasureDeselect,
+                    scope : this
+                }
+            };
+
+            if (this.multiSelect)
+            {
+                this.measuresGrid = Ext4.create('Ext.grid.Panel', Ext.apply(measuresGridConfig, {
+                    store: this.measuresStore,
+                    viewConfig : { stripeRows : false },
+                    selType: 'checkboxmodel',
+                    enableColumnHide: false,
+                    enableColumnResize: false,
+                    multiSelect: true,
+                    bubbleEvents : ['viewready'],
+                    columns: [{
+                        header: 'Select All',
+                        dataIndex: 'label',
+                        flex: 1,
+                        sortable: false,
+                        menuDisabled: true
+                    }]
+                }));
+            }
+            else
+            {
+                this.measuresGrid = Ext4.create('Ext.view.View', Ext.apply(measuresGridConfig, {
+                    height: '100%',
+                    autoScroll: true,
+                    store: this.measuresStore,
+                    itemSelector: 'div.itemrow',
+                    selectedItemCls: 'itemselected',
+                    tpl: new Ext.XTemplate(
+                        '<tpl for=".">',
+                            '<tpl if="isKeyVariable && xindex == 1">',
+                                '<div class="groupheader" style="padding: 3px 6px 4px 6px; color: #808080">Key Measures</div>',
+                            '</tpl>',
+                            '<tpl if="!isKeyVariable && parent[xindex - 2] && parent[xindex - 2].isKeyVariable">',
+                                '<div class="groupheader" style="padding: 18px 6px 4px 6px; color: #808080">Other Measures</div>',
+                            '</tpl>',
+                            '<div class="itemrow" style="padding: 3px 6px 4px 6px; cursor: pointer;">{label:htmlEncode}</div>',
+                        '</tpl>'
+                    )
+                }));
+            }
+
+            this.measuresGrid.getSelectionModel().on('selectionchange', function(selModel) {
+                this.fireEvent('measureChanged', null, null);
+            }, this);
+
+            // workaround for scrollbar issue with adding/removing filters and reloading data
+            this.measuresGrid.on('scrollershow', function(scroller) {
+                if (scroller && scroller.scrollEl) {
+                    scroller.clearManagedListeners();
+                    scroller.mon(scroller.scrollEl, 'scroll', scroller.onElScroll, scroller);
+                }
+            });
+        }
+
+        return this.measuresGrid;
     },
 
     getMeasures : function() {
@@ -956,13 +973,13 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
         // since selections aren't remembered after filters are applied, reselect any of the selected measure that are visible for this filter
         Ext4.each(this.selectedMeasures, function(measure) {
-            this.measuresGrid.getSelectionModel().select(measure, true, true);
+            this.getMeasuresGrid().getSelectionModel().select(measure, true, true);
         }, this);
 
         this.getEl().unmask();
 
         // show the grid
-        this.measuresGrid.show();
+        this.getMeasuresGrid().show();
     },
 
     onMeasureSelect : function(selModel, record, ix) {
@@ -995,18 +1012,21 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     updateSourcesSelectionEntry : function(record, sourceCountUpdate) {
 
         // update the numSelected value for the source entry
-        var sourceStore = this.getSourceStore();
-        var sourceEntryIndex = sourceStore.findExact('queryName', record.get('queryName'));
-        if (sourceEntryIndex > -1)
+        if (this.trackSelectionCount)
         {
-            var sourceEntry = sourceStore.getAt(sourceEntryIndex);
-            if (!sourceEntry.get('numSelected'))
+            var sourceStore = this.getSourceStore();
+            var sourceEntryIndex = sourceStore.findExact('queryName', record.get('queryName'));
+            if (sourceEntryIndex > -1)
             {
-                sourceEntry.set('numSelected', 0);
-            }
+                var sourceEntry = sourceStore.getAt(sourceEntryIndex);
+                if (!sourceEntry.get('numSelected'))
+                {
+                    sourceEntry.set('numSelected', 0);
+                }
 
-            sourceEntry.set('numSelected', sourceEntry.get('numSelected') + sourceCountUpdate);
-            sourceEntry.commit(); // to remove the dirty state
+                sourceEntry.set('numSelected', sourceEntry.get('numSelected') + sourceCountUpdate);
+                sourceEntry.commit(); // to remove the dirty state
+            }
         }
 
     },
@@ -1030,13 +1050,15 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     },
 
     setSelectedRecord : function(measure) {
-        this.measuresGrid.getSelectionModel().select(measure);
+        this.getMeasuresGrid().getSelectionModel().select(measure);
     }
 });
 
 Ext4.define('LABKEY.ext4.MeasuresStore', {
 
     extend: 'Ext.data.Store',
+
+    showKeyVariablesFirst: false,
 
     constructor : function(config) {
 
@@ -1081,7 +1103,12 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
         this.addEvents("measureStoreSorted");
 
         this.on('load', function(store) {
-            store.sort([{property: 'schemaName', direction: 'ASC'},{property: 'queryLabel', direction: 'ASC'},{property: 'label', direction: 'ASC'}]);
+            var sortArr = [{property: 'schemaName', direction: 'ASC'},{property: 'queryLabel', direction: 'ASC'}];
+            if (this.showKeyVariablesFirst)
+                sortArr.push({property: 'isKeyVariable', direction: 'DESC'});
+            sortArr.push({property: 'label', direction: 'ASC'});
+
+            store.sort(sortArr);
             store.fireEvent("measureStoreSorted", store);
         });
     }
