@@ -116,10 +116,10 @@ public class AssayJSONConverter
         JSONObject jsonObject = ExperimentJSONConverter.serializeRun(run, provider.getRunDomain(protocol));
 
         JSONArray dataRows;
-        ExpData[] datas = run.getOutputDatas(provider.getDataType());
-        if (datas.length == 1)
+        List<? extends ExpData> datas = run.getOutputDatas(provider.getDataType());
+        if (datas.size() == 1)
         {
-            dataRows = serializeDataRows(datas[0], provider, protocol, user);
+            dataRows = serializeDataRows(datas.get(0), provider, protocol, user);
         }
         else
         {
@@ -150,7 +150,7 @@ public class AssayJSONConverter
         return new ApiSimpleResponse(result);
     }
 
-    public static ApiResponse serializeResult(AssayProvider provider, ExpProtocol protocol, ExpExperiment[] batches, User user) throws SQLException
+    public static ApiResponse serializeResult(AssayProvider provider, ExpProtocol protocol, List<? extends ExpExperiment> batches, User user) throws SQLException
     {
         JSONObject result = new JSONObject();
         result.put(ASSAY_ID, protocol.getRowId());

@@ -25,7 +25,9 @@ import org.labkey.api.util.NetworkDrive;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -73,7 +75,7 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
         // to the file that are stored in the exp.data table
         try
         {
-            ExpData[] allData = run == null ? new ExpData[0] : run.getAllDataUsedByRun();
+            List<? extends ExpData> allData = run == null ? Collections.<ExpData>emptyList() : run.getAllDataUsedByRun();
             File assayDir = ensureUploadDirectory(context.getContainer());
             File tempDir = getFileTargetDir(context);
             for (File tempDirFile : tempDir.listFiles())

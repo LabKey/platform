@@ -51,7 +51,6 @@ import org.labkey.api.view.ViewContext;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -82,7 +81,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
     }
 
     @Override
-    public void afterSave(ViewContext context, ExpExperiment[] batches, ExpProtocol protocol) throws Exception
+    public void afterSave(ViewContext context, List<? extends ExpExperiment> batches, ExpProtocol protocol) throws Exception
     {
     }
 
@@ -142,7 +141,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
                 runs.add(run);
             }
         }
-        List<ExpRun> existingRuns = Arrays.asList(batch.getRuns());
+        List<? extends ExpRun> existingRuns = batch.getRuns();
 
         // Make sure that all the runs are considered part of the batch
         List<ExpRun> runsToAdd = new ArrayList<>(runs);

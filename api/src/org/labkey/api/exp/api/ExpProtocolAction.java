@@ -18,13 +18,15 @@ package org.labkey.api.exp.api;
 
 import org.labkey.api.security.User;
 
+import java.util.List;
+
 public interface ExpProtocolAction
 {
     int getRowId();
     ExpProtocol getParentProtocol();
     ExpProtocol getChildProtocol();
-    ExpProtocolAction[] getPredecessors();
-    ExpProtocolAction[] getSuccessors();
+    List<? extends ExpProtocolAction> getPredecessors();
+    List<? extends ExpProtocolAction> getSuccessors();
     int getActionSequence();
 
     void addSuccessor(User user, ExpProtocolAction successor) throws Exception;

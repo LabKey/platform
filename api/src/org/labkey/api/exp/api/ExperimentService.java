@@ -74,14 +74,14 @@ public class ExperimentService
 
         ExpRun getExpRun(int rowid);
         ExpRun getExpRun(String lsid);
-        ExpRun[] getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol);
+        List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol);
         ExpRun createExperimentRun(Container container, String name);
 
         ExpData getExpData(int rowid);
         ExpData getExpData(String lsid);
-        ExpData[] getExpDatas(int... rowid);
-        ExpData[] getExpDatas(Collection<Integer> rowid);
-        ExpData[] getExpDatas(Container container, @Nullable DataType type, @Nullable String name);
+        List<? extends ExpData> getExpDatas(int... rowid);
+        List<? extends ExpData> getExpDatas(Collection<Integer> rowid);
+        List<? extends ExpData> getExpDatas(Container container, @Nullable DataType type, @Nullable String name);
         /**
          * Create a data object.  The object will be unsaved, and will have a name which is a GUID.
          */
@@ -178,9 +178,9 @@ public class ExperimentService
         public DbSchema getSchema();
 
         ExpProtocolApplication getExpProtocolApplication(String lsid);
-        ExpProtocolApplication[] getExpProtocolApplicationsForProtocolLSID(String protocolLSID);
+        List<? extends ExpProtocolApplication> getExpProtocolApplicationsForProtocolLSID(String protocolLSID);
 
-        ExpData[] getExpData(Container c);
+        List<? extends ExpData> getExpData(Container c);
         ExpData getExpDataByURL(String canonicalURL, @Nullable Container container);
         ExpData getExpDataByURL(File f, @Nullable Container c);
         List<? extends ExpData> getAllExpDataByURL(String canonicalURL);
@@ -200,18 +200,18 @@ public class ExperimentService
         ExpSampleSet ensureActiveSampleSet(Container container);
         public String getDefaultSampleSetLsid();
 
-        ExpRun[] getRunsUsingMaterials(List<ExpMaterial> materials);
-        ExpRun[] getRunsUsingMaterials(int... materialIds);
+        List<? extends ExpRun> getRunsUsingMaterials(List<ExpMaterial> materials);
+        List<? extends ExpRun> getRunsUsingMaterials(int... materialIds);
         List<? extends ExpRun> getRunsUsingDatas(List<ExpData> datas);
 
         ExpRun getCreatingRun(File file, Container c);
         List<? extends ExpRun> getExpRunsForProtocolIds(boolean includeRelated, int... rowIds);
-        ExpRun[] getRunsUsingSampleSets(ExpSampleSet... sampleSets);
+        List<? extends ExpRun> getRunsUsingSampleSets(ExpSampleSet... sampleSets);
 
         /**
          * @return the subset of these runs which are supposed to be deleted when one of their inputs is deleted.
          */
-        List<ExpRun> runsDeletedWithInput(ExpRun[] runs);
+        List<? extends ExpRun> runsDeletedWithInput(List<? extends ExpRun> runs);
 
         void deleteAllExpObjInContainer(Container container, User user) throws ExperimentException;
 
@@ -219,7 +219,7 @@ public class ExperimentService
 
         void clearCaches();
 
-        ProtocolApplicationParameter[] getProtocolApplicationParameters(int rowId);
+        List<ProtocolApplicationParameter> getProtocolApplicationParameters(int rowId);
 
         void moveContainer(Container c, Container cOldParent, Container cNewParent) throws ExperimentException;
 
@@ -227,12 +227,12 @@ public class ExperimentService
 
         Identifiable getObject(Lsid lsid);
 
-        ExpData[] deleteExperimentRunForMove(int runId, User user);
+        List<? extends ExpData> deleteExperimentRunForMove(int runId, User user);
 
         /** Kicks off an asynchronous move - a PipelineJob is submitted to the queue to perform the move */
         void moveRuns(ViewBackgroundInfo targetInfo, Container sourceContainer, List<ExpRun> runs) throws IOException;
 
-        public ExpData[] getChildren(File file, Container c);
+        public List<? extends ExpData> getChildren(File file, Container c);
 
         public ExpProtocol insertSimpleProtocol(ExpProtocol baseProtocol, User user) throws ExperimentException;
 
@@ -267,10 +267,10 @@ public class ExperimentService
         public ProtocolImplementation getProtocolImplementation(String name);
 
         ExpProtocolApplication getExpProtocolApplication(int rowId);
-        ExpProtocolApplication[] getExpProtocolApplicationsForRun(int runId);
+        List<? extends ExpProtocolApplication> getExpProtocolApplicationsForRun(int runId);
 
-        ExpProtocol[] getExpProtocols(Container... containers);
-        ExpProtocol[] getAllExpProtocols();
+        List<? extends ExpProtocol> getExpProtocols(Container... containers);
+        List<? extends ExpProtocol> getAllExpProtocols();
 
         /**
          * Kicks off a pipeline job to asynchronously load the XAR from disk

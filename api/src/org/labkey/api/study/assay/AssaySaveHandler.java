@@ -133,5 +133,5 @@ public interface AssaySaveHandler
      * from the database if needed.  In the case of a single batch, a single element array of batches will
      * be passed.  This method is always called by SaveAssayBatchAction
      */
-    void afterSave(ViewContext context, ExpExperiment[] batches, ExpProtocol protocol) throws Exception;
+    void afterSave(ViewContext context, List<? extends ExpExperiment> batches, ExpProtocol protocol) throws Exception;
 }

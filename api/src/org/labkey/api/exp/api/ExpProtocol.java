@@ -79,7 +79,7 @@ public interface ExpProtocol extends ExpObject
 
     String getContact();
 
-    List<ExpProtocol> getChildProtocols();
+    List<? extends ExpProtocol> getChildProtocols();
     List<? extends ExpExperiment> getBatches();
 
     enum ApplicationType
@@ -109,9 +109,9 @@ public interface ExpProtocol extends ExpObject
      */
     public ExpProtocolAction addStep(User user, ExpProtocol childProtocol, int actionSequence);
 
-    public List<ExpProtocol> getParentProtocols();
+    public List<? extends ExpProtocol> getParentProtocols();
     
-    ExpRun[] getExpRuns();
+    List<? extends ExpRun> getExpRuns();
 
     Set<Container> getExpRunContainers();
 

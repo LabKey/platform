@@ -23,8 +23,8 @@ import java.util.List;
 
 public interface ExpExperiment extends ExpObject
 {
-    ExpRun[] getRuns();
-    ExpRun[] getRuns(@Nullable ExpProtocol parentProtocol, ExpProtocol childProtocol);
+    List<? extends ExpRun> getRuns();
+    List<? extends ExpRun> getRuns(@Nullable ExpProtocol parentProtocol, ExpProtocol childProtocol);
 
     /**
      * If this experiment is a batch, it only allows runs that are of the same parent protocol.
@@ -41,7 +41,7 @@ public interface ExpExperiment extends ExpObject
     /**
      * @return all the parent protocols for all of the member runs 
      */
-    List<ExpProtocol> getAllProtocols();
+    List<? extends ExpProtocol> getAllProtocols();
     void removeRun(User user, ExpRun run);
     void addRuns(User user, ExpRun... run);
     boolean isHidden();

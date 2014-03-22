@@ -540,13 +540,13 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 else
                 {
                     // Look for input data files to the original version of the run
-                    ExpData[] inputDatas = context.getReRun().getInputDatas(ExpDataRunInput.DEFAULT_ROLE, ExpProtocol.ApplicationType.ExperimentRunOutput);
-                    if (inputDatas.length == 1)
+                    List<? extends ExpData> inputDatas = context.getReRun().getInputDatas(ExpDataRunInput.DEFAULT_ROLE, ExpProtocol.ApplicationType.ExperimentRunOutput);
+                    if (inputDatas.size() == 1)
                     {
                         // There's exactly one input, so just use it
-                        addReusableData(reusableFiles, inputDatas[0]);
+                        addReusableData(reusableFiles, inputDatas.get(0));
                     }
-                    else if (inputDatas.length > 1)
+                    else if (inputDatas.size() > 1)
                     {
                         // The original run was likely run through a transform script
                         // See https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=16952

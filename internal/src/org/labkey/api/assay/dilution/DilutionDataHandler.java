@@ -248,10 +248,10 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     {
         if (run == null)
             return null;
-        ExpData[] outputDatas = run.getOutputDatas(getDataType());
-        if (outputDatas == null || outputDatas.length != 1)
+        List<? extends ExpData> outputDatas = run.getOutputDatas(getDataType());
+        if (outputDatas == null || outputDatas.size() != 1)
             throw new IllegalStateException(getResourceName(run) + " runs should have a single data output.");
-        File dataFile = outputDatas[0].getFile();
+        File dataFile = outputDatas.get(0).getFile();
         if (!dataFile.exists())
             return null;
         return dataFile;

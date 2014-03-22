@@ -42,6 +42,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -224,9 +225,9 @@ public class PlateBasedRunCreator extends DefaultAssayRunCreator<AbstractPlateBa
                 ExpRun derivationRun = ExperimentService.get().deriveSamples(originalMaterialSet, derivedMaterialSet, info, null);
                 if (sampleMetadataFile != null)
                 {
-                    ExpProtocolApplication[] applications = derivationRun.getProtocolApplications();
-                    assert applications.length == 3 : "Expected three protocol applications in each sample derivation run.";
-                    ExpProtocolApplication firstApplication = applications[0];
+                    List<? extends ExpProtocolApplication> applications = derivationRun.getProtocolApplications();
+                    assert applications.size() == 3 : "Expected three protocol applications in each sample derivation run.";
+                    ExpProtocolApplication firstApplication = applications.get(0);
                     assert firstApplication.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun :
                             "Expected first protocol application to be of type ExperimentRun.";
                     firstApplication.addDataInput(context.getUser(), sampleMetadataFile, AbstractPlateBasedAssayProvider.SAMPLE_METADATA_INPUT_ROLE);

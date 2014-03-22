@@ -32,12 +32,12 @@ public interface ExpRun extends ExpObject
     /**
      * @param type an optional filter for the type of data
      */
-    public ExpData[] getOutputDatas(@Nullable DataType type);
+    public List<? extends ExpData> getOutputDatas(@Nullable DataType type);
     /**
      * @param inputRole if null, don't filter by input role. If non-null, filter to only the specified role
      * @param appType if null, don't filter by type. If non-null, filter to only the specified type
      */
-    public ExpData[] getInputDatas(@Nullable String inputRole, @Nullable ExpProtocol.ApplicationType appType);
+    public List<? extends ExpData> getInputDatas(@Nullable String inputRole, @Nullable ExpProtocol.ApplicationType appType);
     public File getFilePathRoot();
     public void setFilePathRoot(File filePathRoot);
     public void setProtocol(ExpProtocol protocol);
@@ -60,10 +60,10 @@ public interface ExpRun extends ExpObject
     List<ExpMaterial> getMaterialOutputs();
 
     List<ExpData> getDataOutputs();
-    ExpData[] getAllDataUsedByRun();
+    List<? extends ExpData> getAllDataUsedByRun();
     public Integer getJobId();
 
-    ExpProtocolApplication[] getProtocolApplications();
+    List<? extends ExpProtocolApplication> getProtocolApplications();
 
     /** Get the protocol application that marks all of the inputs to the run as a whole */
     ExpProtocolApplication getInputProtocolApplication();

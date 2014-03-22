@@ -17,7 +17,6 @@
 package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 
@@ -29,7 +28,7 @@ public interface ExpSampleSet extends ExpObject
 
     public List<? extends DomainProperty> getPropertiesForType();
 
-    public ExpMaterial[] getSamples();
+    public List<? extends ExpMaterial> getSamples();
 
     public ExpMaterial getSample(String name);
 

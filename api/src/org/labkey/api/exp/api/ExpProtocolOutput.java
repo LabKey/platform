@@ -36,9 +36,9 @@ public interface ExpProtocolOutput extends ExpObject
     Integer getRunId();
 
     /** @return all of the protocol applications that reference this data/material as input */
-    ExpProtocolApplication[] getTargetApplications();
+    List<? extends ExpProtocolApplication> getTargetApplications();
     /** @return all of the protocol applications that reference this data/material as input */
-    ExpRun[] getTargetRuns();
+    List<? extends ExpRun> getTargetRuns();
 
     void setSourceApplication(ExpProtocolApplication sourceApplication);
     /**
