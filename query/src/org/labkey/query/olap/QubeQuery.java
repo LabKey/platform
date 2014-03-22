@@ -693,7 +693,7 @@ public class QubeQuery
             {
                 if ("members".equals(json.get("members")))
                     e.membersMember = true;
-                else if ("children".equals(json.get("children")))
+                else if ("children".equals(json.get("members")))
                     e.childrenMember = true;
                 else if (json.get("members") instanceof JSONArray)
                 {
@@ -720,6 +720,11 @@ public class QubeQuery
             else if (json.get("membersQuery") instanceof JSONObject)
             {
                 e.membersQuery = parseJsonExpr(json.get("membersQuery"), OP.MEMBERS, OP.XINTERSECT);
+            }
+            else
+            {
+                // treat like members:'members'
+                e.membersMember = true;
             }
             return e;
         }
@@ -775,17 +780,28 @@ public class QubeQuery
         if (memberSpec instanceof String)
             return _getMember((String)memberSpec, h, l);
         JSONObject json = (JSONObject)memberSpec;
-        if (null != json.get(("uname")))
+
+        String uniqueName = null;
+        if (json.get("uniqueName") instanceof String)
+            uniqueName =  (String)json.get("uniqueName");
+        else if (null != json.get("uname"))
         {
             JSONArray uname = (JSONArray)json.get("uname");
             Path path = new Path();
             for (Object o : uname.toArray())
                 path = path.append(String.valueOf(o));
-            String uniqueName = pathToUniqueName(path);
+            uniqueName = pathToUniqueName(path);
+        }
+
+        if (null != uniqueName)
+        {
             return _getMember(uniqueName, h, l);
         }
-        errors.reject(SpringActionController.ERROR_MSG, "member not found: " + String.valueOf(memberSpec));
-        throw errors;
+        else
+        {
+            errors.reject(SpringActionController.ERROR_MSG, "member not found: " + String.valueOf(memberSpec));
+            throw errors;
+        }
     }
 
 
@@ -826,7 +842,7 @@ public class QubeQuery
             {
                 if (m.getUniqueName().contains("Row"))
                     rows = m;
-                else if (m.getUniqueName().contains("Subject"))
+                else if (m.getUniqueName().contains("Subject") || m.getUniqueName().contains("Participant"))
                     distinct = m;
             }
             QubeQuery qq = new QubeQuery(cube);
@@ -1051,6 +1067,8 @@ public class QubeQuery
         "WITH SET ptids AS Filter([Subject].[Subject].members,NOT ISEMPTY([Vaccine Component.Vaccine Insert].[gag]))\n" +
         "MEMBER [Measures].ParticipantCount AS COUNT(ptids,EXCLUDEEMPTY)\n" +
         "SELECT\n" +
+
+
         "[Measures].ParticipantCount ON COLUMNS\n" +
         ", [Vaccine Component.Vaccine Insert].members ON ROWS\n" +
         "FROM [DataspaceCube]");
