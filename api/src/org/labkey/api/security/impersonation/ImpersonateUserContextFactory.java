@@ -136,9 +136,9 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
 
     static void addMenu(NavTree menu)
     {
-        NavTree newUser = new NavTree("User");
-        newUser.setScript("LABKEY.Security.showImpersonateUser();");
-        menu.addChild(newUser);
+        NavTree userMenu = new NavTree("User");
+        userMenu.setScript("LABKEY.Security.showImpersonateUser();");
+        menu.addChild(userMenu);
     }
 
     // Somewhat redundant with verifyPermissions() below, but much more expensive in the single-user case. Keep these two methods in sync.

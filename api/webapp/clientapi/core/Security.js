@@ -1507,7 +1507,12 @@ LABKEY.Security = new function()
          */
         showImpersonateRole: function()
         {
-            this.ensureAndDisplay('LABKEY.Security.ImpersonateRole', 'Impersonate.js');
+            // TODO: This seems like a total hack, but it gets the job done for now...
+            LABKEY.requiresCss('ux/CheckCombo/CheckCombo.css');
+            LABKEY.requiresScript('ux/CheckCombo/CheckCombo.js', true, function(){
+                this.ensureAndDisplay('LABKEY.Security.ImpersonateRoles', 'Impersonate.js');
+            }, this);
+//            this.ensureAndDisplay('LABKEY.Security.ImpersonateRole', 'Impersonate.js');
         },
 
         /**

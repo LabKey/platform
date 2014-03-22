@@ -54,12 +54,24 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
 
     private String _cacheKey;
 
+    @Deprecated // TODO: Delete
     public ImpersonateRoleContextFactory(Container project, User adminUser, Role role, URLHelper returnURL)
     {
         _projectId = null != project ? project.getEntityId() : null;
         _adminUserId = adminUser.getUserId();
         _returnURL = returnURL;
         addRole(role);
+    }
+
+    public ImpersonateRoleContextFactory(Container project, User adminUser, Collection<Role> roles, URLHelper returnURL)
+    {
+        _projectId = null != project ? project.getEntityId() : null;
+        _adminUserId = adminUser.getUserId();
+        _returnURL = returnURL;
+
+        // TODO: inline, simplify, and immutify addRoles()
+        for (Role role : roles)
+            addRole(role);
     }
 
     public void addRole(Role role)
@@ -115,7 +127,15 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
         // TODO: Audit log?
     }
 
-    static void addMenu(NavTree menu, Container c, ActionURL currentURL, Set<Role> currentImpersonationRoles)
+    static void addMenu(NavTree menu)
+    {
+        NavTree newRoleMenu = new NavTree("Roles");
+        newRoleMenu.setScript("LABKEY.Security.showImpersonateRole();");
+        menu.addChild(newRoleMenu);
+    }
+
+    @Deprecated // TODO: Delete
+    static void addOldMenu(NavTree menu, Container c, ActionURL currentURL, Set<Role> currentImpersonationRoles)
     {
         // At the moment, impersonating roles in the root is worthless... we require Reader before allowing TroubleShooter,
         // AuditLog, or EmailAddress roles, but Reader results in a 401 with no way to impersonate additional roles. This
@@ -188,7 +208,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
             _adminUser = user;
         }
 
-        // Throws if user is not authorized.  Throws IllegalStateException because UI should prevent this... could be a code bug.
+        // Throws if user is not authorized.
         private void verifyPermissions(@Nullable Container project, User user)
         {
             // Site admin can impersonate anywhere
@@ -197,7 +217,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
 
             // Must not be root
             if (null == project)
-                throw new UnauthorizedImpersonationException("You are not allowed to impersonate a role in this project", getFactory());
+                throw new UnauthorizedImpersonationException("You are not allowed to impersonate a role in the root", getFactory());
 
             // Must have admin permissions in project
             if (!project.hasPermission(user, AdminPermission.class))
@@ -275,7 +295,8 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
         @Override
         public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
         {
-            ImpersonateRoleContextFactory.addMenu(menu, c, currentURL, getRoles());
+            // TODO: Remove this once ExtJS UI is finalized
+            ImpersonateRoleContextFactory.addOldMenu(menu, c, currentURL, getRoles());
         }
     }
 }

@@ -108,9 +108,9 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
 
     static void addMenu(NavTree menu)
     {
-        NavTree newUser = new NavTree("Group");
-        newUser.setScript("LABKEY.Security.showImpersonateGroup();");
-        menu.addChild(newUser);
+        NavTree groupMenu = new NavTree("Group");
+        groupMenu.setScript("LABKEY.Security.showImpersonateGroup();");
+        menu.addChild(groupMenu);
     }
 
     public static Collection<Group> getValidImpersonationGroups(Container c, User user)

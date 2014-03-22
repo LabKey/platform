@@ -541,6 +541,7 @@ public class SecurityManager
     }
 
 
+    @Deprecated // TODO: Delete
     public static void impersonateRole(ViewContext viewContext, Role role, URLHelper returnURL)
     {
         @Nullable Container project = viewContext.getContainer().getProject();
@@ -558,6 +559,18 @@ public class SecurityManager
                 project = null;
             impersonate(viewContext, new ImpersonateRoleContextFactory(project, user, role, returnURL));
         }
+    }
+
+
+    public static void impersonateRoles(ViewContext viewContext, Collection<Role> roles, URLHelper returnURL)
+    {
+        @Nullable Container project = viewContext.getContainer().getProject();
+        User user = viewContext.getUser();
+
+        if (user.isSiteAdmin())
+            project = null;
+
+        impersonate(viewContext, new ImpersonateRoleContextFactory(project, user, roles, returnURL));
     }
 
 

@@ -94,6 +94,8 @@ public class NotImpersonatingContext implements ImpersonationContext
     {
         ImpersonateUserContextFactory.addMenu(menu);
         ImpersonateGroupContextFactory.addMenu(menu);
-        ImpersonateRoleContextFactory.addMenu(menu, c, currentURL, Collections.<Role>emptySet());
+        // TODO: Remove once ExtJS UI is finalized
+        ImpersonateRoleContextFactory.addOldMenu(menu, c, currentURL, Collections.<Role>emptySet());
+        ImpersonateRoleContextFactory.addMenu(menu);
     }
 }
