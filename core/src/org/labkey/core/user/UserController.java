@@ -17,6 +17,7 @@
 package org.labkey.core.user;
 
 import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
@@ -2144,6 +2145,33 @@ public class UserController extends SpringActionController
     }
 
 
+    @RequiresPermissionClass(AdminPermission.class)
+    public class GetImpersonationRolesAction extends ApiAction
+    {
+        @Override
+        public ApiResponse execute(Object object, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Collection<Role> roles = ImpersonateRoleContextFactory.getValidImpersonationRoles(getContainer());
+            Collection<Map<String, Object>> responseRoles = new LinkedList<>();
+
+            for (Role role : roles)
+            {
+                Map<String, Object> map = new HashMap<>();
+                map.put("displayName", role.getName());
+                map.put("roleName", role.getUniqueName());
+                map.put("hasRead", role.getPermissions().contains(ReadPermission.class));
+                responseRoles.add(map);
+            }
+
+            response.put("roles", responseRoles);
+
+            return response;
+        }
+    }
+
+
+    @Deprecated // TODO: Delete
     public static class ImpersonateRoleForm extends ReturnUrlForm
     {
         private String _roleName;
@@ -2160,6 +2188,7 @@ public class UserController extends SpringActionController
     }
 
 
+    @Deprecated // TODO: Delete
     @RequiresNoPermission  // Permissions are handled below
     public class ImpersonateRoleAction extends SimpleRedirectAction<ImpersonateRoleForm>
     {
@@ -2200,6 +2229,55 @@ public class UserController extends SpringActionController
             SecurityManager.impersonateRole(getViewContext(), role, returnURL);
 
             return returnURL;
+        }
+    }
+
+
+    public static class ImpersonateRolesForm extends ReturnUrlForm
+    {
+        private String[] _roleNames;
+
+        public String[] getRoleNames()
+        {
+            return _roleNames;
+        }
+
+        public void setRoleNames(String[] roleNames)
+        {
+            _roleNames = roleNames;
+        }
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class) @CSRF
+    public class ImpersonateRolesAction extends ImpersonateApiAction<ImpersonateRolesForm>
+    {
+        @Nullable
+        @Override
+        public String impersonate(ImpersonateRolesForm form)
+        {
+            if (getUser().isImpersonated())
+                return "Can't impersonate; you're already impersonating";
+
+            String[] roleNames = form.getRoleNames();
+
+            if (ArrayUtils.isEmpty(roleNames))
+                return "Must provide roles";
+
+            Collection<Role> roles = new LinkedList<>();
+
+            for (String roleName : roleNames)
+            {
+                Role role = RoleManager.getRole(roleName);
+                if (null == role)
+                    return "Role not found: " + roleName;
+                roles.add(role);
+            }
+
+            ActionURL returnURL = form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL());
+            SecurityManager.impersonateRoles(getViewContext(), roles, returnURL);
+
+            return null;
         }
     }
 

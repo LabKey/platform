@@ -195,7 +195,7 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
             hidden: true
         }].concat(this.getGroupedSearchCfg());
 
-        cfg = cfg.concat()
+        cfg = cfg.concat();
 
         return cfg;
     },
