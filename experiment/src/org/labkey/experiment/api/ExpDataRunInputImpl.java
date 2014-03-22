@@ -17,18 +17,18 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.ExpDataRunInput;
-import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpProtocolApplication;
-import org.labkey.api.exp.api.ExperimentService;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ExpDataRunInputImpl extends ExpRunInputImpl<DataInput> implements ExpDataRunInput
 {
-    static public ExpDataRunInput[] fromInputs(DataInput[] inputs)
+    static public List<ExpDataRunInputImpl> fromInputs(List<DataInput> inputs)
     {
-        ExpDataRunInput[] ret = new ExpDataRunInput[inputs.length];
-        for (int i = 0; i < inputs.length; i ++)
+        List<ExpDataRunInputImpl> ret = new ArrayList<>(inputs.size());
+        for (DataInput input : inputs)
         {
-            ret[i] = new ExpDataRunInputImpl(inputs[i]);
+            ret.add(new ExpDataRunInputImpl(input));
         }
         return ret;
     }
@@ -38,8 +38,8 @@ public class ExpDataRunInputImpl extends ExpRunInputImpl<DataInput> implements E
         super(input);
     }
 
-    public ExpData getData()
+    public ExpDataImpl getData()
     {
-        return ExperimentService.get().getExpData(_input.getDataId());
+        return ExperimentServiceImpl.get().getExpData(_input.getDataId());
     }
 }

@@ -26,8 +26,6 @@ import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpProtocolApplication;
-import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -43,6 +41,8 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements ExpData
 {
@@ -52,12 +52,12 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
      */
     private static MimeMap MIME_MAP = new MimeMap();
 
-    static public ExpDataImpl[] fromDatas(Data[] datas)
+    static public List<ExpDataImpl> fromDatas(List<Data> datas)
     {
-        ExpDataImpl[] ret = new ExpDataImpl[datas.length];
-        for (int i = 0; i < datas.length; i ++)
+        List<ExpDataImpl> ret = new ArrayList<>(datas.size());
+        for (Data data : datas)
         {
-            ret[i] = new ExpDataImpl(datas[i]);
+            ret.add(new ExpDataImpl(data));
         }
         return ret;
     }
@@ -72,12 +72,12 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         return getDataType().getDetailsURL(this);
     }
 
-    public ExpProtocolApplication[] getTargetApplications()
+    public List<ExpProtocolApplicationImpl> getTargetApplications()
     {
         return getTargetApplications(new SimpleFilter(FieldKey.fromParts("DataId"), getRowId()), ExperimentServiceImpl.get().getTinfoDataInput());
     }
 
-    public ExpRun[] getTargetRuns()
+    public List<ExpRunImpl> getTargetRuns()
     {
         return getTargetRuns(ExperimentServiceImpl.get().getTinfoDataInput(), "DataId");
     }

@@ -729,7 +729,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             //
             // verify data inputs: test job has two source inputs
             //
-            ExpData[] datas = expRun.getInputDatas(TransformTask.INPUT_ROLE, null);
+            List<? extends ExpData> datas = expRun.getInputDatas(TransformTask.INPUT_ROLE, null);
             verifyDatas(d, datas, 2, true );
 
             //
@@ -753,8 +753,8 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             //
             // verify protocol applications:  we have two steps that map to this
             //
-            ExpProtocolApplication[] apps = expRun.getProtocolApplications();
-            assertEquals(d._stepMetaDatas.size(), apps.length - 2);
+            List<? extends ExpProtocolApplication> apps = expRun.getProtocolApplications();
+            assertEquals(d._stepMetaDatas.size(), apps.size() - 2);
 
             for (ExpProtocolApplication app : apps)
             {
@@ -773,11 +773,11 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             //
             assertTrue(isValidStep(d, app.getName()));
 
-            List<ExpData> datas = app.getInputDatas();
-            verifyDatas(d, datas.toArray(new ExpData[datas.size()]), 1, true);
+            List<? extends ExpData> datas = app.getInputDatas();
+            verifyDatas(d, datas, 1, true);
 
             datas = app.getOutputDatas();
-            verifyDatas(d, datas.toArray(new ExpData[datas.size()]), 1, false);
+            verifyDatas(d, datas, 1, false);
 
             // verify our step start/end times are within the bounds of the entire run start/end times
             assertTrue(transformRun.getStartTime().getTime() <= app.getStartTime().getTime());
@@ -822,9 +822,9 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             return false;
         }
 
-        private void verifyDatas(TransformDescriptor d, ExpData[] datas, int expectedCount, boolean isInput)
+        private void verifyDatas(TransformDescriptor d, List<? extends ExpData> datas, int expectedCount, boolean isInput)
         {
-            assertEquals(expectedCount, datas.length);
+            assertEquals(expectedCount, datas.size());
 
             for (ExpData data : datas)
             {

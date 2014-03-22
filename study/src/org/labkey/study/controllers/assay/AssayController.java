@@ -670,8 +670,7 @@ public class AssayController extends SpringActionController
                         ExpData expData = ExperimentService.get().getExpDataByURL(f, null); 
                         if (expData != null)
                         {
-                            ExpRun[] targetRuns = expData.getTargetRuns();
-                            for (ExpRun targetRun : targetRuns)
+                            for (ExpRun targetRun : expData.getTargetRuns())
                             {
                                 runNames.add(targetRun.getName());
                             }

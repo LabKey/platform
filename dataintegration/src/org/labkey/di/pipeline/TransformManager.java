@@ -684,8 +684,7 @@ public class TransformManager implements DataIntegrationService
 
     public VariableMap getVariableMapForTransformStep(Integer expRunId, String transformStepId)
     {
-        ExpProtocolApplication[] protocolApps = ExperimentService.get().getExpProtocolApplicationsForRun(expRunId);
-        for (ExpProtocolApplication protocolApp : protocolApps)
+        for (ExpProtocolApplication protocolApp : ExperimentService.get().getExpProtocolApplicationsForRun(expRunId))
         {
             if (StringUtils.equals(protocolApp.getName(), transformStepId))
             {

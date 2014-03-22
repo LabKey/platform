@@ -210,7 +210,7 @@ public class AssayManager implements AssayService.Interface
                 containers.add(container.getParent());
             }
 
-            ExpProtocol[] protocols = ExperimentService.get().getExpProtocols(containers.toArray(new Container[containers.size()]));
+            List<? extends ExpProtocol> protocols = ExperimentService.get().getExpProtocols(containers.toArray(new Container[containers.size()]));
             result = new ArrayList<>();
 
             // Filter to just the ones that have an AssayProvider associated with them
@@ -473,9 +473,9 @@ public class AssayManager implements AssayService.Interface
             if (null == provider)
                 continue;
 
-            ExpRun[] runs = ExperimentService.get().getExpRuns(c, protocol, null);
+            List<? extends ExpRun> runs = ExperimentService.get().getExpRuns(c, protocol, null);
 
-            if (0 == runs.length)
+            if (runs.isEmpty())
                 continue;
 
             StringBuilder runKeywords = new StringBuilder();

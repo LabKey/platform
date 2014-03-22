@@ -309,7 +309,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 allowing(_uploadContext).getReRun();
                 will(returnValue(_run));
                 allowing(_run).getInputDatas(ExpDataRunInput.DEFAULT_ROLE, ExpProtocol.ApplicationType.ExperimentRunOutput);
-                will(returnValue(new ExpData[]{_data}));
+                will(returnValue(Collections.singletonList(_data)));
                 allowing(_data).getFile();
                 will(returnValue(PipelineService.get().getPipelineRootSetting(_uploadContext.getContainer()).resolvePath("mockFile")));
             }});
@@ -333,7 +333,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 allowing(_uploadContext).getReRun();
                 will(returnValue(_run));
                 allowing(_run).getInputDatas(ExpDataRunInput.DEFAULT_ROLE, ExpProtocol.ApplicationType.ExperimentRunOutput);
-                will(returnValue(new ExpData[]{_data}));
+                will(returnValue(Collections.singletonList(_data)));
                 allowing(_data).getFile();
                 // Use a file that's not under the pipeline root for the folder
                 will(returnValue(new File("mockFile")));

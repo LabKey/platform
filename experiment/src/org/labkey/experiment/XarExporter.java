@@ -209,10 +209,8 @@ public class XarExporter
             }
         }
 
-        ExpProtocolApplication[] applications = ExperimentService.get().getExpProtocolApplicationsForRun(run.getRowId());
         ExperimentRunType.ProtocolApplications xApplications = xRun.addNewProtocolApplications();
-
-        for (ExpProtocolApplication application : applications)
+        for (ExpProtocolApplication application : ExperimentService.get().getExpProtocolApplicationsForRun(run.getRowId()))
         {
             addProtocolApplication(application, run, xApplications);
         }
@@ -259,8 +257,8 @@ public class XarExporter
         }
 
         InputOutputRefsType inputRefs = null;
-        Data[] inputDataRefs = ExperimentServiceImpl.get().getDataInputReferencesForApplication(application.getRowId());
-        DataInput[] dataInputs = ExperimentServiceImpl.get().getDataInputsForApplication(application.getRowId());
+        List<Data> inputDataRefs = ExperimentServiceImpl.get().getDataInputReferencesForApplication(application.getRowId());
+        List<DataInput> dataInputs = ExperimentServiceImpl.get().getDataInputsForApplication(application.getRowId());
         for (Data data : inputDataRefs)
         {
             if (inputRefs == null)
@@ -294,8 +292,8 @@ public class XarExporter
             }
         }
 
-        Material[] inputMaterial = ExperimentServiceImpl.get().getMaterialInputReferencesForApplication(application.getRowId());
-        MaterialInput[] materialInputs = ExperimentServiceImpl.get().getMaterialInputsForApplication(application.getRowId());
+        List<Material> inputMaterial = ExperimentServiceImpl.get().getMaterialInputReferencesForApplication(application.getRowId());
+        List<MaterialInput> materialInputs = ExperimentServiceImpl.get().getMaterialInputsForApplication(application.getRowId());
         for (Material material : inputMaterial)
         {
             if (inputRefs == null)
@@ -321,7 +319,7 @@ public class XarExporter
         xApplication.setName(application.getName());
 
         ProtocolApplicationBaseType.OutputDataObjects outputDataObjects = xApplication.addNewOutputDataObjects();
-        List<ExpData> outputData = application.getOutputDatas();
+        List<? extends ExpData> outputData = application.getOutputDatas();
         if (!outputData.isEmpty())
         {
             for (ExpData data : outputData)
@@ -344,8 +342,8 @@ public class XarExporter
             xApplication.setProperties(appProperties);
         }
 
-        ProtocolApplicationParameter[] parameters = ExperimentService.get().getProtocolApplicationParameters(application.getRowId());
-        if (parameters != null)
+        List<ProtocolApplicationParameter> parameters = ExperimentService.get().getProtocolApplicationParameters(application.getRowId());
+        if (!parameters.isEmpty())
         {
             SimpleValueCollectionType xParameters = xApplication.addNewProtocolApplicationParameters();
             for (ProtocolApplicationParameter parameter : parameters)

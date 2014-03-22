@@ -195,7 +195,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -383,7 +382,7 @@ public class ExperimentController extends SpringActionController
             VBox vbox = new VBox();
             vbox.addView(new StandardAndCustomPropertiesView(detailsView, customPropertiesView));
 
-            List<ExpProtocol> protocols = _experiment.getAllProtocols();
+            List<? extends ExpProtocol> protocols = _experiment.getAllProtocols();
 
             Set<ExperimentRunType> types = new TreeSet<>(ExperimentService.get().getExperimentRunTypes(getContainer()));
             ExperimentRunType selectedType = ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter"));
@@ -875,7 +874,7 @@ public class ExperimentController extends SpringActionController
                 return Collections.emptySet();
             }
             List<ExpRun> runsToInvestigate = new ArrayList<>();
-            runsToInvestigate.addAll(Arrays.asList(ExperimentServiceImpl.get().getRunsUsingMaterials(_material.getRowId())));
+            runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingMaterials(_material.getRowId()));
             runsToInvestigate.remove(_material.getRun());
             Set<ExpMaterial> result = new HashSet<>();
             Set<ExpRun> investigatedRuns = new HashSet<>();
@@ -892,7 +891,7 @@ public class ExperimentController extends SpringActionController
 
                     for (ExpMaterial materialOutput : materialOutputs)
                     {
-                        runsToInvestigate.addAll(Arrays.asList(ExperimentServiceImpl.get().getRunsUsingMaterials(materialOutput.getRowId())));
+                        runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingMaterials(materialOutput.getRowId()));
                     }
 
                     runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingDatas(childRun.getDataOutputs()));
@@ -2327,7 +2326,7 @@ public class ExperimentController extends SpringActionController
             // We don't actually delete runs that use the materials - we just disconnect the material from the run
             // In some cases (such as flow) this is required. In others, it's not as sensible
             List<ExpRun> runsToDelete = new ArrayList<>();
-            ExpRun[] runArray = ExperimentService.get().getRunsUsingMaterials(materials);
+            List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingMaterials(materials);
             for (ExpRun run : ExperimentService.get().runsDeletedWithInput(runArray))
                 runsToDelete.add(run);
 
@@ -2423,7 +2422,7 @@ public class ExperimentController extends SpringActionController
                 // Deleting a batch also deletes all of its runs
                 if (experiment.getBatchProtocol() != null)
                 {
-                    runs.addAll(Arrays.asList(experiment.getRuns()));
+                    runs.addAll(experiment.getRuns());
                 }
                 else
                 {
@@ -2536,11 +2535,11 @@ public class ExperimentController extends SpringActionController
             return true;
         }
 
-        private List<ExpRun> getRuns(List<ExpSampleSet> sampleSets) throws SQLException
+        private List<? extends ExpRun> getRuns(List<ExpSampleSet> sampleSets) throws SQLException
         {
             if (sampleSets.size() > 0)
             {
-                ExpRun[] runArray = ExperimentService.get().getRunsUsingSampleSets(sampleSets.toArray(new ExpSampleSet[sampleSets.size()]));
+                List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingSampleSets(sampleSets.toArray(new ExpSampleSet[sampleSets.size()]));
                 return ExperimentService.get().runsDeletedWithInput(runArray);
             }
             else

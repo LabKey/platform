@@ -419,8 +419,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             // Copy the job run's inputs to the assay run's inputs
             ExpProtocolApplication assayInputApplication = run.getInputProtocolApplication();
             ExpProtocolApplication jobInputApplication = expRun.getInputProtocolApplication();
-            ExpDataRunInput[] dataInputs = jobInputApplication.getDataInputs();
-            for (ExpDataRunInput dataInput : dataInputs)
+            for (ExpDataRunInput dataInput : jobInputApplication.getDataInputs())
             {
                 ExpData inputData = dataInput.getData();
                 String role = dataInput.getRole();

@@ -207,17 +207,17 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
         return _object.getCreated();
     }
 
-    protected ExpProtocolApplication[] getTargetApplications(SimpleFilter filter, TableInfo inputTable)
+    protected List<ExpProtocolApplicationImpl> getTargetApplications(SimpleFilter filter, TableInfo inputTable)
     {
-        List<ExpProtocolApplication> ret = new ArrayList<>();
+        List<ExpProtocolApplicationImpl> ret = new ArrayList<>();
         for (Integer id : new TableSelector(inputTable, Collections.singleton("TargetApplicationId"), filter, null).getArrayList(Integer.class))
         {
-            ret.add(ExperimentService.get().getExpProtocolApplication(id.intValue()));
+            ret.add(ExperimentServiceImpl.get().getExpProtocolApplication(id.intValue()));
         }
-        return ret.toArray(new ExpProtocolApplication[ret.size()]);
+        return ret;
     }
 
-    protected ExpRun[] getTargetRuns(TableInfo inputTable, String rowIdColumnName)
+    protected List<ExpRunImpl> getTargetRuns(TableInfo inputTable, String rowIdColumnName)
     {
         SQLFragment sql = new SQLFragment("SELECT r.* FROM ");
         sql.append(ExperimentService.get().getTinfoExperimentRun(), "r");
@@ -229,7 +229,6 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
         sql.append(rowIdColumnName);
         sql.append(" = ?)");
         sql.add(getRowId());
-        ExperimentRun[] runs = new SqlSelector(ExperimentService.get().getSchema(), sql).getArray(ExperimentRun.class);
-        return ExpRunImpl.fromRuns(runs);
+        return ExpRunImpl.fromRuns(new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(ExperimentRun.class));
     }
 }

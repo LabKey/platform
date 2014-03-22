@@ -34,14 +34,14 @@ public class ChooseExperimentTypeBean
     private final ExperimentRunType _selectedType;
     private final ActionURL _url;
 
-    public ChooseExperimentTypeBean(Set<ExperimentRunType> types, ExperimentRunType selectedType, ActionURL url, List<ExpProtocol> protocols)
+    public ChooseExperimentTypeBean(Set<ExperimentRunType> types, ExperimentRunType selectedType, ActionURL url, List<? extends ExpProtocol> protocols)
     {
         _types = types;
         _selectedType = getBestTypeSelection(types, selectedType, protocols);
         _url = url;
     }
 
-    public static ExperimentRunType getBestTypeSelection(Set<ExperimentRunType> types, ExperimentRunType selectedType, List<ExpProtocol> protocols)
+    public static ExperimentRunType getBestTypeSelection(Set<ExperimentRunType> types, ExperimentRunType selectedType, List<? extends ExpProtocol> protocols)
     {
         if (selectedType != null)
         {

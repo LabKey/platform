@@ -472,7 +472,7 @@ public class XarReader extends AbstractXarImporter
             if (existingProtocol != null)
             {
                 // First make sure it isn't in use by some run that's not part of this file
-                if (ExperimentService.get().getExpProtocolApplicationsForProtocolLSID(protocolLSID).length == 0 &&
+                if (ExperimentService.get().getExpProtocolApplicationsForProtocolLSID(protocolLSID).isEmpty() &&
                     ExperimentService.get().getExpRunsForProtocolIds(false, existingProtocol.getRowId()).isEmpty())
                 {
                     getLog().debug("Deleting existing action set with parent protocol LSID '" + protocolLSID + "' so that the protocol specified in the file can be uploaded");

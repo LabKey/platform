@@ -369,8 +369,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         {
             public void run()
             {
-                ExpMaterialImpl[] materials = ExperimentServiceImpl.get().getIndexableMaterials(c, modifiedSince);
-                for (ExpMaterialImpl material : materials)
+                for (ExpMaterialImpl material : ExperimentServiceImpl.get().getIndexableMaterials(c, modifiedSince))
                 {
                     material.index(task);
                 }

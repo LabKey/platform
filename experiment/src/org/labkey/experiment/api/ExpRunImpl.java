@@ -60,7 +60,6 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -74,7 +73,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 {
     private boolean _populated;
 
-    private ExpProtocolApplicationImpl[] _protocolSteps;
+    private List<ExpProtocolApplicationImpl> _protocolSteps;
     private Map<ExpMaterial, String> _materialInputs = new HashMap<>();
     private Map<ExpData, String> _dataInputs = new HashMap<>();
     private List<ExpMaterial> _materialOutputs = new ArrayList<>();
@@ -82,12 +81,12 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     private ExpRunImpl _replacedByRun;
     private static final Logger LOG = Logger.getLogger(ExpRunImpl.class);
 
-    static public ExpRunImpl[] fromRuns(ExperimentRun[] runs)
+    static public List<ExpRunImpl> fromRuns(List<ExperimentRun> runs)
     {
-        ExpRunImpl[] ret = new ExpRunImpl[runs.length];
-        for (int i = 0; i < runs.length; i ++)
+        List<ExpRunImpl> ret = new ArrayList<>(runs.size());
+        for (ExperimentRun run : runs)
         {
-            ret[i] = new ExpRunImpl(runs[i]);
+            ret.add(new ExpRunImpl(run));
         }
         return ret;
     }
@@ -126,7 +125,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         return ExperimentServiceImpl.get().getExpProtocol(_object.getProtocolLSID());
     }
 
-    public ExpData[] getOutputDatas(@Nullable DataType type)
+    public List<ExpDataImpl> getOutputDatas(@Nullable DataType type)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("RunId"), getRowId());
@@ -134,10 +133,10 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         {
             filter.addWhereClause(Lsid.namespaceFilter("LSID", type.getNamespacePrefix()), null);
         }
-        return ExpDataImpl.fromDatas(new TableSelector(ExperimentServiceImpl.get().getTinfoData(), filter, null).getArray(Data.class));
+        return ExpDataImpl.fromDatas(new TableSelector(ExperimentServiceImpl.get().getTinfoData(), filter, null).getArrayList(Data.class));
     }
 
-    public ExpData[] getInputDatas(@Nullable String inputRole, @Nullable ExpProtocol.ApplicationType applicationType)
+    public List<ExpDataImpl> getInputDatas(@Nullable String inputRole, @Nullable ExpProtocol.ApplicationType applicationType)
     {
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT exp.Data.* FROM exp.Data WHERE exp.Data.RowId IN ");
@@ -156,7 +155,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             sql.appendStringLiteral(applicationType.toString());
         }
         sql.append(")");
-        return ExpDataImpl.fromDatas(new SqlSelector(ExperimentService.get().getSchema(), sql).getArray(Data.class));
+        return ExpDataImpl.fromDatas(new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(Data.class));
     }
 
     public File getFilePathRoot()
@@ -280,7 +279,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         return _object.getJobId();
     }
 
-    public void setProtocolApplications(ExpProtocolApplicationImpl[] protocolSteps)
+    public void setProtocolApplications(List<ExpProtocolApplicationImpl> protocolSteps)
     {
         ensureUnlocked();
         _protocolSteps = protocolSteps;
@@ -310,7 +309,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         return _dataOutputs;
     }
 
-    public ExpProtocolApplicationImpl[] getProtocolApplications()
+    public List<ExpProtocolApplicationImpl> getProtocolApplications()
     {
         ensureFullyPopulated();
         return _protocolSteps;
@@ -373,10 +372,10 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     @Override
     public List<ExpRunImpl> getReplacesRuns()
     {
-        return Arrays.asList(fromRuns(new TableSelector(ExperimentServiceImpl.get().getTinfoExperimentRun(), new SimpleFilter(FieldKey.fromParts("ReplacedByRunId"), getRowId()), new Sort("Name")).getArray(ExperimentRun.class)));
+        return fromRuns(new TableSelector(ExperimentServiceImpl.get().getTinfoExperimentRun(), new SimpleFilter(FieldKey.fromParts("ReplacedByRunId"), getRowId()), new Sort("Name")).getArrayList(ExperimentRun.class));
     }
 
-    public void deleteProtocolApplications(ExpData[] datasToDelete, User user)
+    public void deleteProtocolApplications(List<ExpDataImpl> datasToDelete, User user)
     {
         if (user == null || !getContainer().hasPermission(user, DeletePermission.class))
         {
@@ -403,8 +402,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
         new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute(sql);
 
-        ExpMaterial[] materialsToDelete = ExperimentServiceImpl.get().getExpMaterialsForRun(getRowId());
-        for (ExpMaterial expMaterial : materialsToDelete)
+        for (ExpMaterial expMaterial : ExperimentServiceImpl.get().getExpMaterialsForRun(getRowId()))
         {
             expMaterial.delete(user);
         }
@@ -449,7 +447,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         List<ExpData> listD = new ArrayList<>();
         Set<ExpProtocolApplication> ancestorPAStack = new LinkedHashSet<>();
         Set<ExpProtocolApplication> descendantPAStack = new LinkedHashSet<>();
-        ExpProtocolApplicationImpl[] apps = getProtocolApplications();
+        List<ExpProtocolApplicationImpl> apps = getProtocolApplications();
 
         boolean found = false;
 
@@ -484,8 +482,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             {
                 if (type.equals(DotGraph.TYPECODE_MATERIAL))
                 {
-                    List<ExpMaterial> outputMat = app.getOutputMaterials();
-                    for (ExpMaterial m : outputMat)
+                    for (ExpMaterial m : app.getOutputMaterials())
                         if (m.getRowId() == id.intValue())
                         {
                             found = true;
@@ -580,7 +577,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                 listM.add(m);
                 if (getMaterialInputs().containsKey(m))
                 {
-                    ExpProtocolApplication runNode = getProtocolApplications()[0];
+                    ExpProtocolApplication runNode = getProtocolApplications().get(0);
                     assert runNode.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun;
                     listPA.add(runNode);
                     continue;
@@ -593,7 +590,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                 listD.add(d);
                 if (getDataInputs().containsKey(d))
                 {
-                    ExpProtocolApplication runNode = getProtocolApplications()[0];
+                    ExpProtocolApplication runNode = getProtocolApplications().get(0);
                     assert runNode.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun;
                     listPA.add(runNode);
                     continue;
@@ -679,10 +676,10 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                     app.getOutputDatas().remove(d);
             }
         }
-        setProtocolApplications(allPA.toArray(new ExpProtocolApplicationImpl[allPA.size()]));
+        setProtocolApplications(allPA);
     }
 
-    public ExpDataImpl[] getAllDataUsedByRun()
+    public List<ExpDataImpl> getAllDataUsedByRun()
     {
         SQLFragment sql = new SQLFragment();
         sql.append("select d.* from ");
@@ -693,7 +690,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         sql.append(ExperimentServiceImpl.get().getTinfoProtocolApplication(), "pa");
         sql.append(" where di.targetapplicationid=pa.rowid and pa.runid=? and di.dataid=d.rowid");
         sql.add(getRowId());
-        return ExpDataImpl.fromDatas(new SqlSelector(ExperimentServiceImpl.get().getSchema(), sql).getArray(Data.class));
+        return ExpDataImpl.fromDatas(new SqlSelector(ExperimentServiceImpl.get().getSchema(), sql).getArrayList(Data.class));
     }
 
 

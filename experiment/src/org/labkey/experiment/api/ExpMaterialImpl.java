@@ -20,8 +20,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpProtocolApplication;
-import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
@@ -38,20 +36,22 @@ import org.labkey.api.webdav.ActionResource;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implements ExpMaterial
 {
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("material", "Material/Sample");
 
-    static public ExpMaterialImpl[] fromMaterials(Material[] materials)
+    static public List<ExpMaterialImpl> fromMaterials(List<Material> materials)
     {
-        ExpMaterialImpl[] ret = new ExpMaterialImpl[materials.length];
-        for (int i = 0; i < materials.length; i ++)
+        List<ExpMaterialImpl> ret = new ArrayList<>(materials.size());
+        for (Material material : materials)
         {
-            ret[i] = new ExpMaterialImpl(materials[i]);
+            ret.add(new ExpMaterialImpl(material));
         }
         return ret;
     }
@@ -96,7 +96,7 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
         return values;
     }
 
-    public ExpProtocolApplication[] getTargetApplications()
+    public List<ExpProtocolApplicationImpl> getTargetApplications()
     {
         return getTargetApplications(new SimpleFilter(FieldKey.fromParts("MaterialId"), getRowId()), ExperimentServiceImpl.get().getTinfoMaterialInput());
     }
@@ -119,7 +119,7 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
         // Deleting from search index is handled inside deleteMaterialByRowIds()
     }
 
-    public ExpRun[] getTargetRuns()
+    public List<ExpRunImpl> getTargetRuns()
     {
         return getTargetRuns(ExperimentServiceImpl.get().getTinfoMaterialInput(), "MaterialId");
     }

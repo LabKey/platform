@@ -31,6 +31,9 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssaySaveHandler;
 import org.springframework.validation.BindException;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * User: jeckels
  * Date: Jan 14, 2009
@@ -77,13 +80,13 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
                                       JSONObject rootJsonObject, JSONArray batchesJsonArray) throws Exception
     {
         saveHandler.beforeSave(getViewContext(), rootJsonObject, protocol);
-        ExpExperiment[] batches = new ExpExperiment[batchesJsonArray.length()];
+        List<ExpExperiment> batches = new ArrayList<>(batchesJsonArray.length());
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
             for (int i = 0; i < batchesJsonArray.length(); i++)
             {
                 JSONObject batchJsonObject = batchesJsonArray.getJSONObject(i);
-                batches[i] = saveHandler.handleBatch(getViewContext(), batchJsonObject, protocol);
+                batches.add(saveHandler.handleBatch(getViewContext(), batchJsonObject, protocol));
             }
 
             transaction.commit();
@@ -96,16 +99,16 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
     private ApiResponse executeAction(AssaySaveHandler saveHandler, ExpProtocol protocol, AssayProvider provider,
                                       JSONObject rootJsonObject, JSONObject batchJsonObject) throws Exception
     {
-        ExpExperiment[] batches = new ExpExperiment[1];
+        List<ExpExperiment> batches = new ArrayList<>(1);
 
         saveHandler.beforeSave(getViewContext(), rootJsonObject, protocol);
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
-            batches[0] = saveHandler.handleBatch(getViewContext(), batchJsonObject, protocol);
+            batches.add(saveHandler.handleBatch(getViewContext(), batchJsonObject, protocol));
             transaction.commit();
         }
         saveHandler.afterSave(getViewContext(), batches, protocol);
-        return AssayJSONConverter.serializeResult(provider, protocol, batches[0], getUser());
+        return AssayJSONConverter.serializeResult(provider, protocol, batches.get(0), getUser());
     }
 }
 

@@ -71,9 +71,9 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
         return _action.getSequence();
     }
 
-    public ExpProtocolAction[] getPredecessors()
+    public List<ExpProtocolActionImpl> getPredecessors()
     {
-        final List<ExpProtocolAction> ret = new ArrayList<>();
+        final List<ExpProtocolActionImpl> ret = new ArrayList<>();
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("ActionId"), getRowId());
 
@@ -86,12 +86,12 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
             }
         });
 
-        return ret.toArray(new ExpProtocolAction[ret.size()]);
+        return ret;
     }
 
-    public ExpProtocolAction[] getSuccessors()
+    public List<ExpProtocolActionImpl> getSuccessors()
     {
-        final List<ExpProtocolAction> ret = new ArrayList<>();
+        final List<ExpProtocolActionImpl> ret = new ArrayList<>();
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("PredecessorId"), getRowId());
 
@@ -104,7 +104,7 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
             }
         });
 
-        return ret.toArray(new ExpProtocolAction[ret.size()]);
+        return ret;
     }
 
     public void addSuccessor(User user, ExpProtocolAction successor) throws Exception

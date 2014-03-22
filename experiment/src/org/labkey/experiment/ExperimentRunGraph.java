@@ -30,6 +30,8 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.experiment.api.ExpDataImpl;
+import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
 import org.labkey.experiment.api.ExpRunImpl;
 
@@ -208,9 +210,9 @@ public class ExperimentRunGraph
                     Map<ExpData, String> dataRoles = run.getDataInputs();
                     List<ExpData> inputDatas = new ArrayList<>(dataRoles.keySet());
                     Collections.sort(inputDatas, new RoleAndNameComparator<>(dataRoles));
-                    if (run.getProtocolApplications().length > 0)
+                    if (!run.getProtocolApplications().isEmpty())
                     {
-                        int groupId = run.getProtocolApplications()[0].getRowId();
+                        int groupId = run.getProtocolApplications().get(0).getRowId();
                         addStartingInputs(inputMaterials, inputDatas, groupId, dg, run.getRowId(), ctrlProps);
                         generateDetailGraph(run, dg, ctrlProps);
                     }
@@ -409,10 +411,10 @@ public class ExperimentRunGraph
                 continue;
             }
             
-            List<ExpMaterial> inputMaterials = protApp.getInputMaterials();
-            List<ExpData> inputDatas = protApp.getInputDatas();
-            List<ExpMaterial> outputMaterials = protApp.getOutputMaterials();
-            List<ExpData> outputDatas = protApp.getOutputDatas();
+            List<ExpMaterialImpl> inputMaterials = protApp.getInputMaterials();
+            List<ExpDataImpl> inputDatas = protApp.getInputDatas();
+            List<ExpMaterialImpl> outputMaterials = protApp.getOutputMaterials();
+            List<ExpDataImpl> outputDatas = protApp.getOutputDatas();
 
             Collections.sort(inputMaterials, new RoleAndNameComparator<>(runMaterialInputs));
             Collections.sort(inputDatas, new RoleAndNameComparator<>(runDataInputs));
@@ -658,10 +660,11 @@ public class ExperimentRunGraph
         int iLevelEnd = 0;
         GraphCtrlProps ctrlProps = new GraphCtrlProps();
 
-        ExpProtocolApplication [] aSteps = exp.getProtocolApplications();
-        for (int i = 0; i < aSteps.length; i++)
+        int i = 0;
+        List<ExpProtocolApplicationImpl> steps = exp.getProtocolApplications();
+        for (ExpProtocolApplicationImpl step : steps)
         {
-            int curS = aSteps[i].getActionSequence();
+            int curS = step.getActionSequence();
 
             Integer countSeq = ctrlProps.mPANodesPerSequence.get(curS);
             if (null==countSeq)
@@ -692,10 +695,11 @@ public class ExperimentRunGraph
                 iLevelStart = i;
             }
             iLevelEnd = i;
-            curMI += Math.min(aSteps[i].getInputMaterials().size(), maxSiblingsPerParent);
-            curDI += Math.min(aSteps[i].getInputDatas().size(), maxSiblingsPerParent);
-            curMO += Math.min(aSteps[i].getOutputMaterials().size(), maxSiblingsPerParent);
-            curDO += Math.min(aSteps[i].getOutputDatas().size(), maxSiblingsPerParent);
+            curMI += Math.min(step.getInputMaterials().size(), maxSiblingsPerParent);
+            curDI += Math.min(step.getInputDatas().size(), maxSiblingsPerParent);
+            curMO += Math.min(step.getOutputMaterials().size(), maxSiblingsPerParent);
+            curDO += Math.min(step.getOutputDatas().size(), maxSiblingsPerParent);
+            i++;
         }
 
         if (maxMD > MAX_WIDTH_BIG_FONT)
@@ -717,12 +721,13 @@ public class ExperimentRunGraph
             curMO = 0;
             curDO = 0;
             maxSiblingsPerParent--;
-            for (int i = iMaxLevelStart; i <= (Math.min(iMaxLevelEnd, iMaxLevelStart + maxSiblingsPerParent - 1)); i++)
+            for (i = iMaxLevelStart; i <= (Math.min(iMaxLevelEnd, iMaxLevelStart + maxSiblingsPerParent - 1)); i++)
             {
-                curMI += Math.min(aSteps[i].getInputMaterials().size(), maxSiblingsPerParent);
-                curDI += Math.min(aSteps[i].getInputDatas().size(), maxSiblingsPerParent);
-                curMO += Math.min(aSteps[i].getOutputMaterials().size(), maxSiblingsPerParent);
-                curDO += Math.min(aSteps[i].getOutputDatas().size(), maxSiblingsPerParent);
+                ExpProtocolApplication step = steps.get(i);
+                curMI += Math.min(step.getInputMaterials().size(), maxSiblingsPerParent);
+                curDI += Math.min(step.getInputDatas().size(), maxSiblingsPerParent);
+                curMO += Math.min(step.getOutputMaterials().size(), maxSiblingsPerParent);
+                curDO += Math.min(step.getOutputDatas().size(), maxSiblingsPerParent);
             }
             maxMD = Math.max(curMO + curDO, curMI + curDI);
         }

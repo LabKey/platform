@@ -170,13 +170,12 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
         }
     }
 
-    public List<ExpProtocol> getParentProtocols()
+    public List<ExpProtocolImpl> getParentProtocols()
     {
         String sql = "SELECT P.* FROM " + ExperimentServiceImpl.get().getTinfoProtocol() + " P, " + ExperimentServiceImpl.get().getTinfoProtocolAction() + " PA "
                 + " WHERE P.RowId = PA.ParentProtocolID AND PA.ChildProtocolId = ?" ;
 
-        ExpProtocol[] expProtocols = fromProtocols(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql, getRowId()).getArray(Protocol.class));
-        return Arrays.asList(expProtocols);
+        return fromProtocols(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql, getRowId()).getArrayList(Protocol.class));
     }
 
     public void setContainer(Container container)
@@ -211,13 +210,12 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
         return _object.getContact();
     }
 
-    public List<ExpProtocol> getChildProtocols()
+    public List<ExpProtocolImpl> getChildProtocols()
     {
         String sql = "SELECT P.* FROM " + ExperimentServiceImpl.get().getTinfoProtocol() + " P, " + ExperimentServiceImpl.get().getTinfoProtocolAction() + " PA "
                 + " WHERE P.RowId = PA.ChildProtocolID AND PA.ParentProtocolId = ? ORDER BY PA.Sequence" ;
 
-        ExpProtocolImpl[] result = fromProtocols(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql, _object.getRowId()).getArray(Protocol.class));
-        return Arrays.<ExpProtocol>asList(result);
+        return fromProtocols(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql, _object.getRowId()).getArrayList(Protocol.class));
     }
 
     public List<ExpExperimentImpl> getBatches()
@@ -226,12 +224,12 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
         return ExpExperimentImpl.fromExperiments(new TableSelector(ExperimentServiceImpl.get().getTinfoExperiment(), filter, null).getArray(Experiment.class));
     }
 
-    public static ExpProtocolImpl[] fromProtocols(Protocol[] protocols)
+    public static List<ExpProtocolImpl> fromProtocols(List<Protocol> protocols)
     {
-        ExpProtocolImpl[] result = new ExpProtocolImpl[protocols.length];
-        for (int i = 0; i < protocols.length; i++)
+        List<ExpProtocolImpl> result = new ArrayList<>(protocols.size());
+        for (Protocol protocol : protocols)
         {
-            result[i] = new ExpProtocolImpl(protocols[i]);
+            result.add(new ExpProtocolImpl(protocol));
         }
         return result;
     }
@@ -261,15 +259,14 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
         return _object.getOutputMaterialType();
     }
 
-    public ExpRun[] getExpRuns()
+    public List<ExpRunImpl> getExpRuns()
     {
         SQLFragment sql = new SQLFragment(" SELECT ER.* "
                     + " FROM exp.ExperimentRun ER "
                     + " WHERE ER.ProtocolLSID = ?");
         sql.add(getLSID());
 
-        ExperimentRun[] runs = new SqlSelector(ExperimentService.get().getSchema(), sql).getArray(ExperimentRun.class);
-        return ExpRunImpl.fromRuns(runs);
+        return ExpRunImpl.fromRuns(new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(ExperimentRun.class));
     }
 
     public Set<Container> getExpRunContainers()

@@ -19,10 +19,18 @@ import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.view.*;
+import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
+import org.labkey.experiment.api.ExpProtocolImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -85,8 +93,8 @@ public class ExperimentRunWebPartFactory extends BaseWebPartFactory
         {
             // Try to find the most specific kind of run that we will be asked to show so we can present the
             // best set of columns
-            ExpProtocol[] protocols = ExperimentServiceImpl.get().getExpProtocolsForRunsInContainer(portalCtx.getContainer());
-            if (protocols.length > 1)
+            List<ExpProtocolImpl> protocols = ExperimentServiceImpl.get().getExpProtocolsForRunsInContainer(portalCtx.getContainer());
+            if (protocols.size() > 1)
             {
                 Set<ExperimentRunType> runTypes = new TreeSet<>();
                 for (ExpProtocol protocol : protocols)
@@ -113,7 +121,7 @@ public class ExperimentRunWebPartFactory extends BaseWebPartFactory
 
                 return result;
             }
-            selectedType = ChooseExperimentTypeBean.getBestTypeSelection(types, selectedType, Arrays.asList(protocols));
+            selectedType = ChooseExperimentTypeBean.getBestTypeSelection(types, selectedType, protocols);
         }
 
         ExperimentRunListView result = ExperimentService.get().createExperimentRunWebPart(new ViewContext(portalCtx), selectedType);

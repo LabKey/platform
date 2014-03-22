@@ -108,8 +108,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
                 handler.beforeMove(oldData, experimentRun.getContainer(), job.getUser());
             }
 
-            ExpData[] datas = ExperimentService.get().deleteExperimentRunForMove(experimentRun.getRowId(), job.getUser());
-            for (ExpData data : datas)
+            for (ExpData data : ExperimentService.get().deleteExperimentRunForMove(experimentRun.getRowId(), job.getUser()))
             {
                 if (data.getDataFileUrl() != null)
                 {

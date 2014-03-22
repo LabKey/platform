@@ -26,7 +26,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyColumn;
-import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ProtocolImplementation;
@@ -190,12 +189,12 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         _object.setMaterialLSIDPrefix(s);
     }
 
-    public ExpMaterialImpl[] getSamples()
+    public List<ExpMaterialImpl> getSamples()
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
         filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
         Sort sort = new Sort("Name");
-        return ExpMaterialImpl.fromMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, sort).getArray(Material.class));
+        return ExpMaterialImpl.fromMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, sort).getArrayList(Material.class));
     }
 
     public ExpMaterialImpl getSample(String name)
@@ -255,14 +254,14 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         ExpProtocol[] protocols = getProtocols(user);
         if (protocols.length == 0)
             return;
-        ExpMaterial[] expMaterials = null;
+        List<ExpMaterialImpl> expMaterials = null;
 
         if (materials != null)
         {
-            expMaterials = new ExpMaterial[materials.size()];
-            for (int i = 0; i < expMaterials.length; i ++)
+            expMaterials = new ArrayList<>(materials.size());
+            for (int i = 0; i < expMaterials.size(); i ++)
             {
-                expMaterials[i] = new ExpMaterialImpl(materials.get(i));
+                expMaterials.add(new ExpMaterialImpl(materials.get(i)));
             }
         }
         for (ExpProtocol protocol : protocols)

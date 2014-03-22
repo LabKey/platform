@@ -16,18 +16,21 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.api.ExpMaterialRunInput;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpMaterialRunInput;
 import org.labkey.api.exp.api.ExperimentService;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ExpMaterialRunInputImpl extends ExpRunInputImpl<MaterialInput> implements ExpMaterialRunInput
 {
-    static public ExpMaterialRunInputImpl[] fromInputs(MaterialInput[] inputs)
+    static public List<ExpMaterialRunInputImpl> fromInputs(List<MaterialInput> inputs)
     {
-        ExpMaterialRunInputImpl[] ret = new ExpMaterialRunInputImpl[inputs.length];
-        for (int i = 0; i < inputs.length; i ++)
+        List<ExpMaterialRunInputImpl> ret = new ArrayList<>(inputs.size());
+        for (MaterialInput input : inputs)
         {
-            ret[i] = new ExpMaterialRunInputImpl(inputs[i]);
+            ret.add(new ExpMaterialRunInputImpl(input));
         }
         return ret;
     }
@@ -37,8 +40,8 @@ public class ExpMaterialRunInputImpl extends ExpRunInputImpl<MaterialInput> impl
         super(input);
     }
     
-    public ExpMaterial getMaterial()
+    public ExpMaterialImpl getMaterial()
     {
-        return ExperimentService.get().getExpMaterial(_input.getMaterialId());
+        return ExperimentServiceImpl.get().getExpMaterial(_input.getMaterialId());
     }
 }

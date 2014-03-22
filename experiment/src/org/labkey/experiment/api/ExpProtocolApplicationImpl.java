@@ -25,9 +25,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpMaterialRunInput;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
@@ -37,17 +35,16 @@ import org.labkey.api.util.URLHelper;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
 public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<ProtocolApplication> implements ExpProtocolApplication
 {
-    private List<ExpMaterial> _inputMaterials;
-    private List<ExpData> _inputDatas;
-    private List<ExpMaterial> _outputMaterials;
-    private List<ExpData> _outputDatas;
+    private List<ExpMaterialImpl> _inputMaterials;
+    private List<ExpDataImpl> _inputDatas;
+    private List<ExpMaterialImpl> _outputMaterials;
+    private List<ExpDataImpl> _outputDatas;
 
     public ExpProtocolApplicationImpl(ProtocolApplication app)
     {
@@ -94,19 +91,19 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     }
 
     @NotNull
-    public ExpDataRunInput[] getDataInputs()
+    public List<ExpDataRunInputImpl> getDataInputs()
     {
         return ExpDataRunInputImpl.fromInputs(ExperimentServiceImpl.get().getDataInputsForApplication(getRowId()));
     }
 
     @NotNull
-    public List<ExpData> getInputDatas()
+    public List<ExpDataImpl> getInputDatas()
     {
         if (_inputDatas == null)
         {
-            ExpDataRunInput[] inputs = getDataInputs();
-            _inputDatas= new ArrayList<>(inputs.length);
-            for (ExpDataRunInput input : inputs)
+            List<ExpDataRunInputImpl> inputs = getDataInputs();
+            _inputDatas= new ArrayList<>(inputs.size());
+            for (ExpDataRunInputImpl input : inputs)
             {
                 _inputDatas.add(input.getData());
             }
@@ -116,13 +113,13 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     }
 
     @NotNull
-    public List<ExpMaterial> getInputMaterials()
+    public List<ExpMaterialImpl> getInputMaterials()
     {
         if (_inputMaterials == null)
         {
-            ExpMaterialRunInput[] inputs = getMaterialInputs();
-            _inputMaterials = new ArrayList<>(inputs.length);
-            for (ExpMaterialRunInput input : inputs)
+            List<ExpMaterialRunInputImpl> inputs = getMaterialInputs();
+            _inputMaterials = new ArrayList<>(inputs.size());
+            for (ExpMaterialRunInputImpl input : inputs)
             {
                 _inputMaterials.add(input.getMaterial());
             }
@@ -132,28 +129,28 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     }
 
     @NotNull
-    public List<ExpData> getOutputDatas()
+    public List<ExpDataImpl> getOutputDatas()
     {
         if (_outputDatas == null)
         {
-            _outputDatas = new ArrayList<ExpData>(Arrays.asList(ExpDataImpl.fromDatas(ExperimentServiceImpl.get().getOutputDataForApplication(getRowId()))));
+            _outputDatas = new ArrayList<>(ExpDataImpl.fromDatas(ExperimentServiceImpl.get().getOutputDataForApplication(getRowId())));
             Collections.sort(_outputDatas);
         }
         return _outputDatas;
     }
 
     @NotNull
-    public ExpMaterialRunInput[] getMaterialInputs()
+    public List<ExpMaterialRunInputImpl> getMaterialInputs()
     {
         return ExpMaterialRunInputImpl.fromInputs(ExperimentServiceImpl.get().getMaterialInputsForApplication(getRowId()));
     }
 
     @NotNull
-    public List<ExpMaterial> getOutputMaterials()
+    public List<ExpMaterialImpl> getOutputMaterials()
     {
         if (_outputMaterials == null)
         {
-            _outputMaterials = new ArrayList<ExpMaterial>(Arrays.asList(ExpMaterialImpl.fromMaterials(ExperimentServiceImpl.get().getOutputMaterialForApplication(getRowId()))));
+            _outputMaterials = new ArrayList<>(ExpMaterialImpl.fromMaterials(ExperimentServiceImpl.get().getOutputMaterialForApplication(getRowId())));
             Collections.sort(_outputMaterials);
         }
         return _outputMaterials;
@@ -287,25 +284,25 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         }
     }
 
-    public void setInputMaterials(List<ExpMaterial> inputMaterialList)
+    public void setInputMaterials(List<ExpMaterialImpl> inputMaterialList)
     {
         ensureUnlocked();
         _inputMaterials = inputMaterialList;
     }
 
-    public void setInputDatas(List<ExpData> inputDataList)
+    public void setInputDatas(List<ExpDataImpl> inputDataList)
     {
         ensureUnlocked();
         _inputDatas = inputDataList;
     }
 
-    public void setOutputMaterials(List<ExpMaterial> outputMaterialList)
+    public void setOutputMaterials(List<ExpMaterialImpl> outputMaterialList)
     {
         ensureUnlocked();
         _outputMaterials = outputMaterialList;
     }
 
-    public void setOutputDatas(List<ExpData> outputDataList)
+    public void setOutputDatas(List<ExpDataImpl> outputDataList)
     {
         ensureUnlocked();
         _outputDatas = outputDataList;
@@ -374,12 +371,12 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         }
     }
 
-    public static ExpProtocolApplicationImpl[] fromProtocolApplications(ProtocolApplication[] apps)
+    public static List<ExpProtocolApplicationImpl> fromProtocolApplications(List<ProtocolApplication> apps)
     {
-        ExpProtocolApplicationImpl[] result = new ExpProtocolApplicationImpl[apps.length];
-        for (int i = 0; i < result.length; i++)
+        List<ExpProtocolApplicationImpl> result = new ArrayList<>(apps.size());
+        for (ProtocolApplication app : apps)
         {
-            result[i] = new ExpProtocolApplicationImpl(apps[i]);
+            result.add(new ExpProtocolApplicationImpl(app));
         }
         return result;
     }

@@ -72,8 +72,8 @@ public class SampleSetServiceImpl extends BaseRemoteService implements SampleSet
             return null;
         }
 
-        ExpMaterial[] materials = set.getSamples();
-        List<GWTMaterial> result = new ArrayList<>(materials.length);
+        List<? extends ExpMaterial> materials = set.getSamples();
+        List<GWTMaterial> result = new ArrayList<>(materials.size());
         for (ExpMaterial material : materials)
         {
             GWTMaterial gwtMaterial = new GWTMaterial();

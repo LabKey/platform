@@ -237,7 +237,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpRunImpl(run);
     }
 
-    public ExpRun[] getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol)
+    public List<ExpRunImpl> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol)
     {
         SQLFragment sql = new SQLFragment(" SELECT ER.* "
                     + " FROM exp.ExperimentRun ER "
@@ -255,8 +255,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 + " WHERE PA.ProtocolLSID = ? ) ");
             sql.add(childProtocol.getLSID());
         }
-        ExperimentRun[] runs = new SqlSelector(getSchema(), sql).getArray(ExperimentRun.class);
-        return ExpRunImpl.fromRuns(runs);
+        return ExpRunImpl.fromRuns(new SqlSelector(getSchema(), sql).getArrayList(ExperimentRun.class));
     }
 
     public ExpRunImpl createExperimentRun(Container container, String name)
@@ -284,7 +283,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpDataImpl(data);
     }
 
-    public ExpData[] getExpDatas(int... rowids)
+    public List<ExpDataImpl> getExpDatas(int... rowids)
     {
         if (rowids.length == 0)
             return null;
@@ -294,21 +293,21 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return getExpDatas(ids);
     }
 
-    public ExpData[] getExpDatas(Collection<Integer> rowids)
+    public List<ExpDataImpl> getExpDatas(Collection<Integer> rowids)
     {
         if (rowids.size() == 0)
             return null;
-        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), new SimpleFilter(FieldKey.fromParts("RowId"), rowids, CompareType.IN), null).getArray(Data.class));
+        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), new SimpleFilter(FieldKey.fromParts("RowId"), rowids, CompareType.IN), null).getArrayList(Data.class));
     }
 
-    public ExpData[] getExpDatas(Container container, @Nullable DataType type, @Nullable String name)
+    public List<ExpDataImpl> getExpDatas(Container container, @Nullable DataType type, @Nullable String name)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         if (type != null)
             filter.addWhereClause(Lsid.namespaceFilter("LSID", type.getNamespacePrefix()), null);
         if (name != null)
             filter.addCondition(FieldKey.fromParts("Name"), name);
-        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, null).getArray(Data.class));
+        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, null).getArrayList(Data.class));
     }
 
     public ExpDataImpl createData(URI uri, XarSource source) throws XarFormatException
@@ -442,7 +441,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return result == null ? null : new ExpMaterialImpl(result);
     }
 
-    public ExpMaterialImpl[] getIndexableMaterials(Container container, @Nullable Date modifiedSince)
+    public List<ExpMaterialImpl> getIndexableMaterials(Container container, @Nullable Date modifiedSince)
     {
         // Big hack to prevent indexing study specimens. Also in ExpMaterialImpl.index()
         SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoMaterial() + " WHERE Container = ? AND LSID NOT LIKE '%:"
@@ -451,8 +450,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterial(), modifiedSince, null).toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
-        Material[] result = new SqlSelector(getSchema(), sql).getArray(Material.class);
-        return ExpMaterialImpl.fromMaterials(result);
+        return ExpMaterialImpl.fromMaterials(new SqlSelector(getSchema(), sql).getArrayList(Material.class));
     }
 
     private static final MaterialSource MISS_MARKER = new MaterialSource();
@@ -942,16 +940,16 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     /**
      * @return the data objects that were attached to the run that should be attached to the run in its new folder
      */
-    public ExpDataImpl[] deleteExperimentRunForMove(int runId, User user)
+    public List<ExpDataImpl> deleteExperimentRunForMove(int runId, User user)
     {
-        ExpDataImpl[] datasToDelete = getAllDataOwnedByRun(runId);
+        List<ExpDataImpl> datasToDelete = getAllDataOwnedByRun(runId);
 
         deleteRun(runId, datasToDelete, user);
         return datasToDelete;
     }
 
 
-    private void deleteRun(int runId, ExpData[] datasToDelete, User user)
+    private void deleteRun(int runId, List<ExpDataImpl> datasToDelete, User user)
     {
         ExpRunImpl run = getExpRun(runId);
         if (run == null)
@@ -1322,7 +1320,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DataFileUrl"), canonicalURL);
         Sort sort = new Sort("-Created");
-        return Arrays.asList(ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, sort).getArray(Data.class)));
+        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, sort).getArrayList(Data.class));
     }
 
     public ExpDataImpl getExpDataByURL(String url, @Nullable Container c)
@@ -1398,7 +1396,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         }
 
                         // Grab these to delete after we've deleted the Data rows
-                        ExpDataImpl[] datasToDelete = getAllDataOwnedByRun(runId);
+                        List<ExpDataImpl> datasToDelete = getAllDataOwnedByRun(runId);
 
                         // Archive all data files prior to deleting
                         //  ideally this would be transacted as a commit task but we decided against it due to complications
@@ -1491,7 +1489,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         sb.append("SELECT LSID FROM exp.Protocol WHERE RowId IN (");
         sb.append(StringUtils.join(ArrayUtils.toObject(allProtocolIds), ", "));
         sb.append("))");
-        return Arrays.asList(ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sb.toString()).getArray(ExperimentRun.class)));
+        return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sb.toString()).getArrayList(ExperimentRun.class));
     }
 
     public void deleteProtocolByRowIds(Container c, User user, int... selectedProtocolIds) throws ExperimentException
@@ -1616,7 +1614,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     }
 
                     // Delete any runs using the material if the ProtocolImplementation allows deleting the run when an input is deleted.
-                    ExpRun[] runArray = ExperimentService.get().getRunsUsingMaterials(material.getRowId());
+                    List<ExpRunImpl> runArray = getRunsUsingMaterials(material.getRowId());
                     for (ExpRun run : ExperimentService.get().runsDeletedWithInput(runArray))
                     {
                         Container runContainer = run.getContainer();
@@ -1665,7 +1663,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 String dataIds = StringUtils.join(new ArrayIterator(selectedDataIds, from, to), ", ");
                 String sql = "SELECT * FROM exp.Data WHERE RowId IN (" + dataIds + ");";
                 
-                Data[] datas = new SqlSelector(getExpSchema(), sql).getArray(Data.class);
+                List<Data> datas = new SqlSelector(getExpSchema(), sql).getArrayList(Data.class);
 
                 beforeDeleteData(ExpDataImpl.fromDatas(datas));
                 for (Data data : datas)
@@ -1780,10 +1778,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ExpDataImpl[] getAllDataOwnedByRun(int runId)
+    public List<ExpDataImpl> getAllDataOwnedByRun(int runId)
     {
         Filter filter = new SimpleFilter(FieldKey.fromParts("RunId"), runId);
-        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, null).getArray(Data.class));
+        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, null).getArrayList(Data.class));
     }
 
     public void moveRuns(ViewBackgroundInfo info, Container sourceContainer, List<ExpRun> runs) throws IOException
@@ -1811,7 +1809,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return "LSID/" + lsid;
     }
 
-    public void beforeDeleteData(ExpData[] datas)
+    public void beforeDeleteData(List<ExpDataImpl> datas)
     {
         try
         {
@@ -1871,11 +1869,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         sql.append(in2.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), getExpSchema().getSqlDialect()));
         sql.append(")) ORDER BY Created DESC");
 
-        ExperimentRun[] runs = new SqlSelector(getExpSchema(), sql).getArray(ExperimentRun.class);
-        return Arrays.asList(ExpRunImpl.fromRuns(runs));
+        return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class));
     }
 
-    public ExpRun[] getRunsUsingMaterials(List<ExpMaterial> materials)
+    public List<ExpRunImpl> getRunsUsingMaterials(List<ExpMaterial> materials)
     {
         int[] ids = new int[materials.size()];
         for (int i = 0; i < materials.size(); i++)
@@ -1884,17 +1881,17 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return getRunsUsingMaterials(ids);
     }
 
-    public ExpRun[] getRunsUsingMaterials(int... ids)
+    public List<ExpRunImpl> getRunsUsingMaterials(int... ids)
     {
         if (ids.length == 0)
         {
-            return new ExpRun[0];
+            return Collections.emptyList();
         }
         String materialRowIdSQL = StringUtils.join(ArrayUtils.toObject(ids), ", ");
         return ExpRunImpl.fromRuns(getRunsForMaterialList(materialRowIdSQL));
     }
 
-    public List<ExpRun> runsDeletedWithInput(ExpRun[] runs)
+    public List<? extends ExpRun> runsDeletedWithInput(List<? extends ExpRun> runs)
     {
         List<ExpRun> ret = new ArrayList<>();
         for (ExpRun run : runs)
@@ -1916,7 +1913,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ret;
     }
 
-    public ExpRun[] getRunsUsingSampleSets(ExpSampleSet... source)
+    public List<ExpRunImpl> getRunsUsingSampleSets(ExpSampleSet... source)
     {
         Object[] params = new Object[source.length];
         StringBuilder sb = new StringBuilder();
@@ -1932,7 +1929,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ExpRunImpl.fromRuns(getRunsForMaterialList(materialRowIdSQL, params));
     }
 
-    private ExperimentRun[] getRunsForMaterialList(String materialRowIdSQL, Object... params)
+    private List<ExperimentRun> getRunsForMaterialList(String materialRowIdSQL, Object... params)
     {
         Object[] doubledParams = new Object[params.length * 2];
         System.arraycopy(params, 0, doubledParams, 0, params.length);
@@ -1943,7 +1940,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 "WHERE mi.TargetApplicationId = pa.RowId AND mi.MaterialID IN (" + materialRowIdSQL + ")) \n" +
             "UNION " +
                 "(SELECT pa.RunId FROM " + getTinfoProtocolApplication() + " pa, " + getTinfoMaterial() + " m " +
-                "WHERE m.SourceApplicationId = pa.RowId AND m.RowId IN (" + materialRowIdSQL + ")))", doubledParams).getArray(ExperimentRun.class);
+                "WHERE m.SourceApplicationId = pa.RowId AND m.RowId IN (" + materialRowIdSQL + ")))", doubledParams).getArrayList(ExperimentRun.class);
     }
 
     public void deleteSampleSet(int rowId, Container c, User user) throws ExperimentException
@@ -1995,22 +1992,22 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         int runId = expRun.getRowId();
         SimpleFilter filt = new SimpleFilter(FieldKey.fromParts("RunId"), runId);
         Sort sort = new Sort("ActionSequence, RowId");
-        ExpProtocolApplicationImpl[] protocolSteps = ExpProtocolApplicationImpl.fromProtocolApplications(new TableSelector(getTinfoProtocolApplication(), getTinfoProtocolApplication().getColumns(), filt, sort).getArray(ProtocolApplication.class));
+        List<ExpProtocolApplicationImpl> protocolSteps = ExpProtocolApplicationImpl.fromProtocolApplications(new TableSelector(getTinfoProtocolApplication(), getTinfoProtocolApplication().getColumns(), filt, sort).getArrayList(ProtocolApplication.class));
         expRun.setProtocolApplications(protocolSteps);
-        final Map<Integer, ExpProtocolApplicationImpl> protStepMap = new HashMap<>(protocolSteps.length);
+        final Map<Integer, ExpProtocolApplicationImpl> protStepMap = new HashMap<>(protocolSteps.size());
 
         for (ExpProtocolApplicationImpl protocolStep : protocolSteps)
         {
             protStepMap.put(protocolStep.getRowId(), protocolStep);
-            protocolStep.setInputMaterials(new ArrayList<ExpMaterial>());
-            protocolStep.setInputDatas(new ArrayList<ExpData>());
-            protocolStep.setOutputMaterials(new ArrayList<ExpMaterial>());
-            protocolStep.setOutputDatas(new ArrayList<ExpData>());
+            protocolStep.setInputMaterials(new ArrayList<ExpMaterialImpl>());
+            protocolStep.setInputDatas(new ArrayList<ExpDataImpl>());
+            protocolStep.setOutputMaterials(new ArrayList<ExpMaterialImpl>());
+            protocolStep.setOutputDatas(new ArrayList<ExpDataImpl>());
         }
 
         sort = new Sort("RowId");
-        ExpMaterialImpl[] materials = ExpMaterialImpl.fromMaterials(new TableSelector(getTinfoMaterial(), getTinfoMaterial().getColumns(), filt, sort).getArray(Material.class));
-        final Map<Integer, ExpMaterialImpl> runMaterialMap = new HashMap<>(materials.length);
+        List<ExpMaterialImpl> materials = ExpMaterialImpl.fromMaterials(new TableSelector(getTinfoMaterial(), getTinfoMaterial().getColumns(), filt, sort).getArrayList(Material.class));
+        final Map<Integer, ExpMaterialImpl> runMaterialMap = new HashMap<>(materials.size());
 
         for (ExpMaterialImpl mat : materials)
         {
@@ -2022,8 +2019,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             mat.markAsPopulated(protStepMap.get(srcAppId));
         }
 
-        ExpDataImpl[] datas = ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), getTinfoData().getColumns(), filt, sort).getArray(Data.class));
-        final Map<Integer, ExpDataImpl> runDataMap = new HashMap<>(datas.length);
+        List<ExpDataImpl> datas = ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), getTinfoData().getColumns(), filt, sort).getArrayList(Data.class));
+        final Map<Integer, ExpDataImpl> runDataMap = new HashMap<>(datas.size());
 
         for (ExpDataImpl dat : datas)
         {
@@ -2050,16 +2047,16 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
                 + "  ORDER BY MI.MaterialId;";
 
-        materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), materialSQL, runId).getArray(Material.class));
-        MaterialInput[] materialInputs = new SqlSelector(getExpSchema(), materialInputSQL, runId).getArray(MaterialInput.class);
-        assert materials.length == materialInputs.length;
-        final Map<Integer, ExpMaterialImpl> startingMaterialMap = new HashMap<>(materials.length);
+        materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), materialSQL, runId).getArrayList(Material.class));
+        List<MaterialInput> materialInputs = new SqlSelector(getExpSchema(), materialInputSQL, runId).getArrayList(MaterialInput.class);
+        assert materials.size() == materialInputs.size();
+        final Map<Integer, ExpMaterialImpl> startingMaterialMap = new HashMap<>(materials.size());
         int index = 0;
 
         for (ExpMaterialImpl mat : materials)
         {
             startingMaterialMap.put(mat.getRowId(), mat);
-            MaterialInput input = materialInputs[index++];
+            MaterialInput input = materialInputs.get(index++);
             expRun.getMaterialInputs().put(mat, input.getRole());
             mat.setSuccessorAppList(new ArrayList<ExpProtocolApplication>());
         }
@@ -2080,9 +2077,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
                 + "  ORDER BY DataId;";
 
-        datas = ExpDataImpl.fromDatas(new SqlSelector(getExpSchema(), dataSQL, runId).getArray(Data.class));
+        datas = ExpDataImpl.fromDatas(new SqlSelector(getExpSchema(), dataSQL, runId).getArrayList(Data.class));
         DataInput[] dataInputs = new SqlSelector(getExpSchema(), dataInputSQL, runId).getArray(DataInput.class);
-        final Map<Integer, ExpDataImpl> startingDataMap = new HashMap<>(datas.length);
+        final Map<Integer, ExpDataImpl> startingDataMap = new HashMap<>(datas.size());
         index = 0;
 
         for (ExpDataImpl dat : datas)
@@ -2108,7 +2105,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             {
                 Integer appId = materialInputRS.getInt("TargetApplicationId");
                 int matId = materialInputRS.getInt("MaterialId");
-                ExpProtocolApplication pa = protStepMap.get(appId);
+                ExpProtocolApplicationImpl pa = protStepMap.get(appId);
                 ExpMaterialImpl mat;
 
                 if (runMaterialMap.containsKey(matId))
@@ -2148,7 +2145,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             {
                 Integer appId = dataInputRS.getInt("TargetApplicationId");
                 Integer datId = dataInputRS.getInt("DataId");
-                ExpProtocolApplication pa = protStepMap.get(appId);
+                ExpProtocolApplicationImpl pa = protStepMap.get(appId);
                 ExpDataImpl dat;
 
                 if (runDataMap.containsKey(datId))
@@ -2244,55 +2241,55 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new TableSelector(getTinfoProtocolActionPredecessorLSIDView(), filter, new Sort("+PredecessorSequence")).getArray(ProtocolActionPredecessor.class);
     }
 
-    public Data[] getOutputDataForApplication(int applicationId)
+    public List<Data> getOutputDataForApplication(int applicationId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("SourceApplicationId"), applicationId);
-        return new TableSelector(getTinfoData(), filter, null).getArray(Data.class);
+        return new TableSelector(getTinfoData(), filter, null).getArrayList(Data.class);
     }
 
-    public Material[] getOutputMaterialForApplication(int applicationId)
+    public List<Material> getOutputMaterialForApplication(int applicationId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("SourceApplicationId"), applicationId);
-        return new TableSelector(getTinfoMaterial(), filter, null).getArray(Material.class);
+        return new TableSelector(getTinfoMaterial(), filter, null).getArrayList(Material.class);
     }
 
-    public ExpData[] getExpData(Container c)
+    public List<ExpDataImpl> getExpData(Container c)
     {
-        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), SimpleFilter.createContainerFilter(c), null).getArray(Data.class));
+        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), SimpleFilter.createContainerFilter(c), null).getArrayList(Data.class));
     }
 
-    public Data[] getDataInputReferencesForApplication(int rowId)
+    public List<Data> getDataInputReferencesForApplication(int rowId)
     {
         String outputSQL = "SELECT exp.Data.* from exp.Data, exp.DataInput " +
                 "WHERE exp.Data.RowId = exp.DataInput.DataId " +
                 "AND exp.DataInput.TargetApplicationId = ?";
-        return new SqlSelector(getExpSchema(), outputSQL, rowId).getArray(Data.class);
+        return new SqlSelector(getExpSchema(), outputSQL, rowId).getArrayList(Data.class);
     }
 
-    public DataInput[] getDataInputsForApplication(int applicationId)
+    public List<DataInput> getDataInputsForApplication(int applicationId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), applicationId);
-        return new TableSelector(getTinfoDataInput(), filter, null).getArray(DataInput.class);
+        return new TableSelector(getTinfoDataInput(), filter, null).getArrayList(DataInput.class);
     }
 
-    public Material[] getMaterialInputReferencesForApplication(int rowId)
+    public List<Material> getMaterialInputReferencesForApplication(int rowId)
     {
         String outputSQL = "SELECT exp.Material.* from exp.Material, exp.MaterialInput " +
                 "WHERE exp.Material.RowId = exp.MaterialInput.MaterialId " +
                 "AND exp.MaterialInput.TargetApplicationId = ?";
-        return new SqlSelector(getExpSchema(), outputSQL, rowId).getArray(Material.class);
+        return new SqlSelector(getExpSchema(), outputSQL, rowId).getArrayList(Material.class);
     }
 
-    public MaterialInput[] getMaterialInputsForApplication(int applicationId)
+    public List<MaterialInput> getMaterialInputsForApplication(int applicationId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), applicationId);
-        return new TableSelector(getTinfoMaterialInput(), filter, null).getArray(MaterialInput.class);
+        return new TableSelector(getTinfoMaterialInput(), filter, null).getArrayList(MaterialInput.class);
     }
 
-    public ProtocolApplicationParameter[] getProtocolApplicationParameters(int rowId)
+    public List<ProtocolApplicationParameter> getProtocolApplicationParameters(int rowId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ProtocolApplicationId"), rowId);
-        return new TableSelector(getTinfoProtocolApplicationParameter(), filter, null).getArray(ProtocolApplicationParameter.class);
+        return new TableSelector(getTinfoProtocolApplicationParameter(), filter, null).getArrayList(ProtocolApplicationParameter.class);
     }
 
     public ProtocolActionStepDetail getProtocolActionStepDetail(String parentProtocolLSID, Integer actionSequence) throws XarFormatException
@@ -2311,10 +2308,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return details[0];
     }
 
-    public ExpProtocolApplication[] getExpProtocolApplicationsForProtocolLSID(String protocolLSID)
+    public List<ExpProtocolApplicationImpl> getExpProtocolApplicationsForProtocolLSID(String protocolLSID)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ProtocolLSID"), protocolLSID);
-        return ExpProtocolApplicationImpl.fromProtocolApplications(new TableSelector(getTinfoProtocolApplication(), filter, null).getArray(ProtocolApplication.class));
+        return ExpProtocolApplicationImpl.fromProtocolApplications(new TableSelector(getTinfoProtocolApplication(), filter, null).getArrayList(ProtocolApplication.class));
     }
 
     public Protocol saveProtocol(User user, Protocol protocol)
@@ -2666,7 +2663,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public ExpProtocolApplication createSimpleRunExtraProtocolApplication(ExpRun run, String name)
     {
         ExpProtocol protocol = run.getProtocol();
-        List<ExpProtocol> childProtocols = protocol.getChildProtocols();
+        List<? extends ExpProtocol> childProtocols = protocol.getChildProtocols();
         if (childProtocols.size() != 3)
         {
             throw new IllegalArgumentException("Expected to be called for a protocol with three steps, but found " + childProtocols.size());
@@ -2808,11 +2805,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpProtocolApplicationImpl(app);
     }
 
-    public ExpProtocolApplication[] getExpProtocolApplicationsForRun(int runId)
+    public List<ExpProtocolApplicationImpl> getExpProtocolApplicationsForRun(int runId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RunId"), runId);
         Sort sort = new Sort("ActionSequence, RowId");
-        return ExpProtocolApplicationImpl.fromProtocolApplications(new TableSelector(getTinfoProtocolApplication(), filter, sort).getArray(ProtocolApplication.class));
+        return ExpProtocolApplicationImpl.fromProtocolApplications(new TableSelector(getTinfoProtocolApplication(), filter, sort).getArrayList(ProtocolApplication.class));
     }
 
     public ExpSampleSetImpl createSampleSet()
@@ -2919,13 +2916,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ss;
     }
 
-    public ExpProtocol[] getExpProtocols(Container... containers)
+    public List<ExpProtocolImpl> getExpProtocols(Container... containers)
     {
         SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts("Container"), Arrays.asList(containers)));
-        return ExpProtocolImpl.fromProtocols(new TableSelector(getTinfoProtocol(), filter, null).getArray(Protocol.class));
+        return ExpProtocolImpl.fromProtocols(new TableSelector(getTinfoProtocol(), filter, null).getArrayList(Protocol.class));
     }
 
-    public ExpProtocolImpl[] getExpProtocolsForRunsInContainer(Container container)
+    public List<ExpProtocolImpl> getExpProtocolsForRunsInContainer(Container container)
     {
         SQLFragment sql = new SQLFragment("SELECT p.* FROM ");
         sql.append(getTinfoProtocol(), "p");
@@ -2933,12 +2930,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         sql.append(getTinfoExperimentRun(), "er");
         sql.append(" WHERE er.Container = ?)");
         sql.add(container.getId());
-        return ExpProtocolImpl.fromProtocols(new SqlSelector(getSchema(), sql).getArray(Protocol.class));
+        return ExpProtocolImpl.fromProtocols(new SqlSelector(getSchema(), sql).getArrayList(Protocol.class));
     }
 
-    public ExpProtocol[] getAllExpProtocols()
+    public List<ExpProtocolImpl> getAllExpProtocols()
     {
-        return ExpProtocolImpl.fromProtocols(new TableSelector(getTinfoProtocol()).getArray(Protocol.class));
+        return ExpProtocolImpl.fromProtocols(new TableSelector(getTinfoProtocol()).getArrayList(Protocol.class));
     }
 
     public PipelineJob importXarAsync(ViewBackgroundInfo info, File file, String description, PipeRoot root) throws IOException
@@ -2958,7 +2955,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     private void addMaterialInputs(Map<ExpMaterial, String> inputMaterials, ProtocolApplication protApp1, User user)
             throws SQLException
     {
-        Set<MaterialInput> existingInputs = new HashSet<>(Arrays.asList(getMaterialInputsForApplication(protApp1.getRowId())));
+        Set<MaterialInput> existingInputs = new HashSet<>(getMaterialInputsForApplication(protApp1.getRowId()));
 
         Set<MaterialInput> desiredInputs = new HashSet<>();
 
@@ -2977,7 +2974,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     private void addDataInputs(Map<ExpData, String> inputDatas, ProtocolApplication protApp1, User user)
             throws SQLException
     {
-        Set<DataInput> existingInputs = new HashSet<>(Arrays.asList(getDataInputsForApplication(protApp1.getRowId())));
+        Set<DataInput> existingInputs = new HashSet<>(getDataInputsForApplication(protApp1.getRowId()));
 
         Set<DataInput> desiredInputs = new HashSet<>();
 
@@ -3013,14 +3010,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ExpData[] getChildren(File file, Container c)
+    public List<ExpDataImpl> getChildren(File file, Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         String prefix = file.toURI().toString() + "/";
 
         filter.addCondition(FieldKey.fromParts("datafileurl"), prefix, CompareType.STARTS_WITH);
         filter.addCondition(FieldKey.fromParts("datafileurl"), file.toURI().toString(), CompareType.NEQ);
-        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, null).getArray(Data.class));
+        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, null).getArrayList(Data.class));
     }
 
     public ExpProtocol insertSimpleProtocol(ExpProtocol wrappedProtocol, User user) throws ExperimentException
@@ -3132,9 +3129,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ExpMaterial[] getExpMaterialsForRun(int runId)
+    public List<ExpMaterialImpl> getExpMaterialsForRun(int runId)
     {
-        return ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), new SQLFragment("SELECT * FROM " + getTinfoMaterial() + " WHERE RunId = ?", runId)).getArray(Material.class));
+        return ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), new SQLFragment("SELECT * FROM " + getTinfoMaterial() + " WHERE RunId = ?", runId)).getArrayList(Material.class));
     }
 
     /**

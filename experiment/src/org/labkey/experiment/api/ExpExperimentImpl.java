@@ -32,7 +32,6 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.util.URLHelper;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -61,17 +60,17 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         return _object.getRowId();
     }
 
-    public ExpRunImpl[] getRuns()
+    public List<ExpRunImpl> getRuns()
     {
         String sql = "SELECT ER.* FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
                 + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoRunList()  + " RL ON (E.RowId = RL.ExperimentId) "
                 + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoExperimentRun()  + " ER ON (ER.RowId = RL.ExperimentRunId) "
                 + " WHERE E.LSID = ? ORDER BY ER.RowId" ;
 
-        return ExpRunImpl.fromRuns(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql, getLSID()).getArray(ExperimentRun.class));
+        return ExpRunImpl.fromRuns(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql, getLSID()).getArrayList(ExperimentRun.class));
     }
 
-    public ExpRun[] getRuns(@Nullable ExpProtocol parentProtocol, ExpProtocol childProtocol)
+    public List<ExpRunImpl> getRuns(@Nullable ExpProtocol parentProtocol, ExpProtocol childProtocol)
     {
         SQLFragment sql = new SQLFragment(" SELECT ER.* "
                     + " FROM exp.ExperimentRun ER "
@@ -90,8 +89,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
                 + " WHERE PA.ProtocolLSID = ? ) ");
             sql.add(childProtocol.getLSID());
         }
-        ExperimentRun[] runs = new SqlSelector(ExperimentService.get().getSchema(), sql).getArray(ExperimentRun.class);
-        return ExpRunImpl.fromRuns(runs);
+        return ExpRunImpl.fromRuns(new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(ExperimentRun.class));
     }
 
     public ExpProtocol getBatchProtocol()
@@ -109,10 +107,10 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         _object.setBatchProtocolId(protocol == null ? null : protocol.getRowId());
     }
 
-    public List<ExpProtocol> getAllProtocols()
+    public List<ExpProtocolImpl> getAllProtocols()
     {
         String sql = "SELECT p.* FROM " + ExperimentServiceImpl.get().getTinfoProtocol() + " p, " + ExperimentServiceImpl.get().getTinfoExperimentRun() + " r WHERE p.LSID = r.ProtocolLSID AND r.RowId IN (SELECT ExperimentRunId FROM " + ExperimentServiceImpl.get().getTinfoRunList() + " WHERE ExperimentId = ?)";
-        return Arrays.<ExpProtocol>asList(ExpProtocolImpl.fromProtocols(new SqlSelector(ExperimentServiceImpl.get().getSchema(), sql, getRowId()).getArray(Protocol.class)));
+        return ExpProtocolImpl.fromProtocols(new SqlSelector(ExperimentServiceImpl.get().getSchema(), sql, getRowId()).getArrayList(Protocol.class));
     }
 
     public void removeRun(User user, ExpRun run)
@@ -133,7 +131,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
     {
         try (DbScope.Transaction transaction = ExperimentServiceImpl.get().getExpSchema().getScope().ensureTransaction())
         {
-            ExpRun[] existingRuns = getRuns();
+            List<ExpRunImpl> existingRuns = getRuns();
             Set<Integer> existingRunIds = new HashSet<>();
             for (ExpRun run : newRuns)
             {
