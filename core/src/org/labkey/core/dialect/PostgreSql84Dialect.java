@@ -113,8 +113,7 @@ public class PostgreSql84Dialect extends SqlDialect
     @Override
     public String getAdminWarningMessage()
     {
-        return null;
-//        return "LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + ". " + PostgreSqlDialectFactory.RECOMMENDED;
+        return "LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + ". " + PostgreSqlDialectFactory.RECOMMENDED;
     }
 
     @Override

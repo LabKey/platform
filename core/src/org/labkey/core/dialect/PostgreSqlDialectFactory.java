@@ -77,19 +77,16 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
         // Version 8.4 or greater is allowed
         if (version >= 84)
         {
-//          This approach is used when it's time to deprecate a version of PostgreSQL:
-//
-//            if (84 == version)
-//            {
-//                // PostgreSQL 8.4 is deprecated; support will be removed in LabKey Server 14.x
-//                if (logWarnings)
-//                    _log.warn("LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
-//
-//                return new PostgreSql84Dialect();
-//            }
-//
+            // This approach is used when it's time to deprecate a version of PostgreSQL. Also, change the old dialect's
+            // getAdminWarning() method to return a message that gets displayed in the page header for admins.
             if (84 == version)
+            {
+                // PostgreSQL 8.4 is deprecated; support will be removed in LabKey Server 14.3
+                if (logWarnings)
+                    _log.warn("LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
+
                 return new PostgreSql84Dialect();
+            }
 
             if (90 == version)
                 return new PostgreSql90Dialect();

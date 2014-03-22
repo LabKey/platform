@@ -38,4 +38,10 @@ public class PostgreSql90Dialect extends PostgreSql84Dialect
 
         return words;
     }
+
+    @Override  // 9.0 and above show no warning
+    public String getAdminWarningMessage()
+    {
+        return null;
+    }
 }
