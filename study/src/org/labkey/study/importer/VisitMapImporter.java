@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2013 LabKey Corporation
+ * Copyright (c) 2006-2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package org.labkey.study.importer;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;

@@ -16,12 +16,12 @@
 package org.labkey.study.query;
 
 import org.apache.commons.beanutils.converters.IntegerConverter;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.gwt.client.util.PropertyUtil;
-import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.InvalidKeyException;

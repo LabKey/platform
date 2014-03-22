@@ -15,10 +15,10 @@
  */
 package org.labkey.study.importer;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
-import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;

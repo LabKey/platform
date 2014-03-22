@@ -16,6 +16,7 @@
 
 package org.labkey.search.model;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.index.AtomicReader;
 import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.SortedDocValues;
@@ -27,7 +28,6 @@ import org.apache.lucene.util.DocIdBitSet;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.module.Module;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurableResource;

@@ -15,6 +15,7 @@
  */
 package org.labkey.study.controllers;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SpringActionController;
@@ -25,7 +26,6 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.gwt.client.util.PropertyUtil;
-import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;

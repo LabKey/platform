@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.apache.commons.lang3.StringUtils"%>
 <%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
-<%@ page import="org.labkey.api.gwt.client.util.StringUtils" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();

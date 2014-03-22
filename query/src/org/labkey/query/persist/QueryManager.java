@@ -16,6 +16,7 @@
 
 package org.labkey.query.persist;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,7 +34,6 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewChangeListener;
@@ -45,7 +45,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.query.ExternalSchema;
 import org.labkey.query.ExternalSchemaDocumentProvider;

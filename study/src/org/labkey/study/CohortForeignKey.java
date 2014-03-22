@@ -15,10 +15,10 @@
  */
 package org.labkey.study;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;

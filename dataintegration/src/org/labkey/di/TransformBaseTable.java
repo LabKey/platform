@@ -15,6 +15,7 @@
  */
 package org.labkey.di;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
@@ -26,7 +27,6 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;

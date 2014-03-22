@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.gwt.client.util.StringUtils" %>
 <%@ page import="org.labkey.api.module.Module" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
