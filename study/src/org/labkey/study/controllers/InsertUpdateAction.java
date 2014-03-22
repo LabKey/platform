@@ -307,7 +307,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
 
                 // save last inputs for use in default value population:
                 Domain domain = PropertyService.get().getDomain(c, _ds.getTypeURI());
-                DomainProperty[] properties = domain.getProperties();
+                List<? extends DomainProperty> properties = domain.getProperties();
                 Map<String, Object> requestMap = updateForm.getTypedValues();
                 Map<DomainProperty, Object> dataMap = new HashMap<>(requestMap.size());
                 for (DomainProperty property : properties)

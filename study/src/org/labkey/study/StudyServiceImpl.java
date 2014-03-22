@@ -142,12 +142,6 @@ public class StudyServiceImpl implements StudyService.Service
             return StudyManager.getInstance().createStudy(user, study);
     }
 
-    public String getStudyName(Container container)
-    {
-        Study study = getStudy(container);
-        return study == null ? null : study.getLabel();
-    }
-
     public DataSetDefinition getDataSet(Container c, int datasetId)
     {
         Study study = StudyManager.getInstance().getStudy(c);
@@ -419,7 +413,7 @@ public class StudyServiceImpl implements StudyService.Service
         {
             String studyRef = (String)studyReference;
             // look for study by label
-            Study[] studies = user == null ?
+            List<? extends StudyImpl> studies = user == null ?
                     StudyManager.getInstance().getAllStudies() :
                     StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, ReadPermission.class);
 
@@ -655,7 +649,7 @@ public class StudyServiceImpl implements StudyService.Service
     }
 
     @Override
-    public Study[] getAllStudies(Container root, User user)
+    public List<? extends Study> getAllStudies(Container root, User user)
     {
         return StudyManager.getInstance().getAllStudies(root, user);
     }

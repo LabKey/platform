@@ -520,7 +520,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         if (domain == null)
             return 0;
 
-        return domain.getProperties().length;
+        return domain.getProperties().size();
     }
 
     public boolean isAllowReload()

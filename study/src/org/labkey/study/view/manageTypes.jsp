@@ -50,7 +50,7 @@
     for (DataSet def : datasets)
     {
         Domain d = def.getDomain();
-        if (null == d || 0 == d.getProperties().length)
+        if (null == d || 0 == d.getProperties().size())
             countUndefined++;
     }
     String dateFormat = DateUtil.getDateFormatString(getContainer());

@@ -139,7 +139,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             gwtDomains.add(gwtDomain);
             List<GWTPropertyDescriptor> gwtProps = new ArrayList<>();
 
-            DomainProperty[] properties = domain.getProperties();
+            List<? extends DomainProperty> properties = domain.getProperties();
             Map<DomainProperty, Object> defaultValues = domainInfo.getValue();
 
             for (DomainProperty prop : properties)

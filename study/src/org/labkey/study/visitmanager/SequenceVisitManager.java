@@ -52,7 +52,7 @@ public class SequenceVisitManager extends VisitManager
     }
 
     @Override
-    protected SQLFragment getVisitSummarySql(User user, CohortFilter cohortFilter, QCStateSet qcStates, String statsSql, String alias, boolean showAll, boolean useVisitId)
+    protected SQLFragment getVisitSummarySql(User user, CohortFilter cohortFilter, QCStateSet qcStates, String statsSql, String alias, boolean showAll)
     {
         TableInfo studyData = showAll ?
                 StudySchema.getInstance().getTableInfoStudyData(getStudy(), null) :
@@ -78,23 +78,16 @@ public class SequenceVisitManager extends VisitManager
         sqlSequenceVisitMap.append("\n\tGROUP BY Container, SequenceNum");
         sqlSequenceVisitMap.appendComment("</MapSequenceNumToVisitRowId>", participantTable.getSqlDialect());
 
-        SQLFragment keyCols = new SQLFragment("DatasetId, ");
-        if (useVisitId)
-            keyCols.append("SVM.VisitId");
-        else
-            keyCols.append(alias).append(".SequenceNum");
+        SQLFragment keyCols = new SQLFragment("DatasetId, SVM.VisitId");
 
         if (cohortFilter == null)
         {
             sql.append("SELECT ").append(keyCols);
             sql.append(statsSql);
             sql.append("\nFROM ").append(studyData.getFromSQL(alias));
-            if (useVisitId)
-            {
-                sql.append(" LEFT OUTER JOIN (").append(sqlSequenceVisitMap).append(") AS SVM ON ")
-                        .append(alias).append(".SequenceNum = SVM.SequenceNum AND ")
-                        .append(alias).append(".container = SVM.container");
-            }
+            sql.append(" LEFT OUTER JOIN (").append(sqlSequenceVisitMap).append(") AS SVM ON ")
+                    .append(alias).append(".SequenceNum = SVM.SequenceNum AND ")
+                    .append(alias).append(".container = SVM.container");
             sql.append("\nWHERE ").append(studyDataContainerFilter);
             if (null != qcStates)
                 sql.append(" AND ").append(qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME));
@@ -112,12 +105,9 @@ public class SequenceVisitManager extends VisitManager
                         .append(alias).append(".container = ? AND \n\tPV.ParticipantId = ").append(alias).append(".ParticipantId AND \n\tPV.SequenceNum = ")
                         .append(alias).append(".SequenceNum AND\n\t").append(alias).append(".container=PV.Container AND \n" + "\tPV.CohortID = ?)\n");
                     sql.add(cohortFilter.getCohortId());
-                    if (useVisitId)
-                    {
-                        sql.append(" LEFT OUTER JOIN (").append(sqlSequenceVisitMap).append(") AS SVM ON ")
-                                .append(alias).append(".SequenceNum = SVM.SequenceNum AND ")
-                                .append(alias).append(".container = SVM.container");
-                    }
+                    sql.append(" LEFT OUTER JOIN (").append(sqlSequenceVisitMap).append(") AS SVM ON ")
+                            .append(alias).append(".SequenceNum = SVM.SequenceNum AND ")
+                            .append(alias).append(".container = SVM.container");
                     sql.append("\nWHERE ").append(studyDataContainerFilter);
                     if (qcStates != null)
                         sql.append(" AND ").append(qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME));
@@ -131,12 +121,9 @@ public class SequenceVisitManager extends VisitManager
                         .append(" INNER JOIN ").append(participantTable.getFromSQL("P")).append(" ON (P.ParticipantId = ").append(alias).append(".ParticipantId")
                         .append(" AND ").append(alias).append(".container=P.Container AND P.").append(cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId").append(" = ?)\n");
                     sql.add(cohortFilter.getCohortId());
-                    if (useVisitId)
-                    {
-                        sql.append(" LEFT OUTER JOIN (").append(sqlSequenceVisitMap).append(") AS SVM ON ")
-                                .append(alias).append(".SequenceNum = SVM.SequenceNum AND ")
-                                .append(alias).append(".container = SVM.container");
-                    }
+                    sql.append(" LEFT OUTER JOIN (").append(sqlSequenceVisitMap).append(") AS SVM ON ")
+                            .append(alias).append(".SequenceNum = SVM.SequenceNum AND ")
+                            .append(alias).append(".container = SVM.container");
                     sql.append("\nWHERE ").append(studyDataContainerFilter);
                     if (qcStates != null)
                         sql.append(" AND ").append(qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME));

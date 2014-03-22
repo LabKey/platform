@@ -22,16 +22,16 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container proj = getContainer().getProject();
 
-    Study[] studies = StudyManager.getInstance().getAllStudies(proj, getUser());
-    if (studies.length == 0)
-    {
-        out.print("No Studies found in project " + proj.getName());
+    List<? extends Study> studies = StudyManager.getInstance().getAllStudies(proj, getUser());
+    if (studies.isEmpty())
+    { %>
+        No Studies found in project <%= h(proj.getName()) %> <%
     }
-    int i = 0;
     FolderType studyFolderType = ModuleLoader.getInstance().getFolderType("Study");
 %> <div style="vertical-align:top;display:inline-block;margin-right:1em" ><%
     for (Study study: studies)

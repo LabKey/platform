@@ -200,7 +200,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     public ColumnInfo addColumns(Domain domain, String legacyName)
     {
         ColumnInfo colProperty = null;
-        if (legacyName != null && domain.getProperties().length > 0)
+        if (legacyName != null && !domain.getProperties().isEmpty())
         {
             colProperty = wrapColumn(legacyName, getLSIDColumn());
             colProperty.setFk(new PropertyForeignKey(domain, _userSchema));

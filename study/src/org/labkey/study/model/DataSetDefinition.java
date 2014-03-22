@@ -1174,7 +1174,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             // Property columns (see OntologyManager.getColumnsForType())
 
             Domain d = def.getDomain();
-            DomainProperty[] properties = null==d ? new DomainProperty[0] : d.getProperties();
+            List<? extends DomainProperty> properties = null == d ? Collections.<DomainProperty>emptyList() : d.getProperties();
 
             for (DomainProperty p : properties)
             {

@@ -1098,7 +1098,7 @@ public class FileContentController extends SpringActionController
     public class UpdateFilePropsAction extends MutatingApiAction<FilePropsForm>
     {
         private List<Map<String, Object>> _files;
-        private DomainProperty[] _domainProps;
+        private List<? extends DomainProperty> _domainProps;
 
         public ApiResponse execute(FilePropsForm form, BindException errors) throws Exception
         {

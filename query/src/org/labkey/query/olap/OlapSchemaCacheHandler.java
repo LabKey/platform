@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.resource.Resource;
@@ -59,7 +60,7 @@ public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<String
         return module.getName() + ":/" + name;
     }
 
-    private static final Pattern CONFIG_ID_PATTERN = Pattern.compile("(\\w+):/(.+)");
+    private static final Pattern CONFIG_ID_PATTERN = Pattern.compile("("+ ModuleLoader.MODULE_NAME_REGEX + "):/(.+)");
 
     @Override
     public CacheLoader<String, OlapSchemaDescriptor> getResourceLoader()

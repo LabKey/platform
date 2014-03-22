@@ -44,6 +44,7 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> implements ExpSampleSet
@@ -77,12 +78,12 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return _object.getMaterialLSIDPrefix();
     }
 
-    public DomainProperty[] getPropertiesForType()
+    public List<? extends DomainProperty> getPropertiesForType()
     {
         Domain d = getType();
         if (d == null)
         {
-            return new DomainProperty[0];
+            return Collections.emptyList();
         }
         return d.getProperties();
     }
@@ -153,10 +154,10 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         DomainProperty result = getDomainProperty(_object.getIdCol1());
         if (result == null)
         {
-            DomainProperty[] props = getPropertiesForType();
-            if (props.length > 0)
+            List<? extends DomainProperty> props = getPropertiesForType();
+            if (!props.isEmpty())
             {
-                result = props[0];
+                result = props.get(0);
             }
         }
         return result;

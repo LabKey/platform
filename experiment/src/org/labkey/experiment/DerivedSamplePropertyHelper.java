@@ -121,13 +121,13 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
         return !getNamePDs().contains(pd);
     }
 
-    public static DomainProperty[] getPropertyDescriptors(ExpSampleSet sampleSet, Container c)
+    public static List<? extends DomainProperty> getPropertyDescriptors(ExpSampleSet sampleSet, Container c)
     {
         List<DomainProperty> dps = new ArrayList<>();
 
         if (sampleSet != null && sampleSet.getType() != null)
         {
-            dps.addAll(Arrays.asList(sampleSet.getType().getProperties()));
+            dps.addAll(sampleSet.getType().getProperties());
         }
         else
         {
@@ -137,7 +137,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
             dps.add(nameDomainProperty);
         }
         
-        return dps.toArray(new DomainProperty[dps.size()]);
+        return dps;
     }
 
     public List<DomainProperty> getNamePDs()
@@ -157,8 +157,8 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
         }
         else
         {
-            assert _domainProperties[0].getName().equals("Name");
-            return Collections.singletonList(_domainProperties[0]);
+            assert _domainProperties.get(0).getName().equals("Name");
+            return Collections.singletonList(_domainProperties.get(0));
         }
     }
 

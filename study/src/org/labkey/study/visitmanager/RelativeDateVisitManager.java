@@ -65,7 +65,7 @@ public class RelativeDateVisitManager extends VisitManager
     
 
     @Override
-    protected SQLFragment getVisitSummarySql(User user, CohortFilter cohortFilter, QCStateSet qcStates, String statsSql, String alias, boolean showAll, boolean useVisitId)
+    protected SQLFragment getVisitSummarySql(User user, CohortFilter cohortFilter, QCStateSet qcStates, String statsSql, String alias, boolean showAll)
     {
         TableInfo studyData = showAll ?
                 StudySchema.getInstance().getTableInfoStudyData(getStudy(), user) :
@@ -81,10 +81,7 @@ public class RelativeDateVisitManager extends VisitManager
         sql.appendComment("<RelativeDateVisitManager.getVisitSummarySql>", participantTable.getSqlDialect());
 
         SQLFragment keyCols = new SQLFragment("DatasetId, ");
-        if (useVisitId)
-            keyCols.append("PV.VisitRowId");
-        else
-            keyCols.append("PV.Day");
+        keyCols.append("PV.VisitRowId");
 
         if (cohortFilter == null)
         {

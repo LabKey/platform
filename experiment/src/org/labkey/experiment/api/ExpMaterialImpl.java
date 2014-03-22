@@ -88,9 +88,8 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
         {
             return Collections.emptyMap();
         }
-        DomainProperty[] pds = sampleSet.getPropertiesForType();
         Map<PropertyDescriptor, Object> values = new HashMap<>();
-        for (DomainProperty pd : pds)
+        for (DomainProperty pd : sampleSet.getPropertiesForType())
         {
             values.put(pd.getPropertyDescriptor(), getProperty(pd));
         }

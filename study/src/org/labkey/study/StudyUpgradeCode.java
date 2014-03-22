@@ -601,8 +601,7 @@ public class StudyUpgradeCode implements UpgradeCode
                 PropertyStorageSpec drawDateStorageSpec = SpecimenDomainKind.getDrawDateStorageSpec();
                 PropertyStorageSpec drawTimeStorageSpec = SpecimenDomainKind.getDrawTimeStorageSpec();
                 boolean foundDrawDate = false;
-                DomainProperty[] properties = specimenDomain.getProperties();
-                for (DomainProperty property : properties)
+                for (DomainProperty property : specimenDomain.getProperties())
                 {
                     if (drawDateStorageSpec.getName().equalsIgnoreCase(property.getName()))
                     {

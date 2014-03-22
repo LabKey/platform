@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api.property;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
@@ -212,9 +213,10 @@ public class DomainImpl implements Domain
         edit().setDescription(description);
     }
 
-    public DomainPropertyImpl[] getProperties()
+    @NotNull
+    public List<? extends DomainPropertyImpl> getProperties()
     {
-        return _properties.toArray(new DomainPropertyImpl[_properties.size()]);
+        return Collections.unmodifiableList(_properties);
     }
 
     public List<DomainProperty> getNonBaseProperties()
@@ -238,6 +240,7 @@ public class DomainImpl implements Domain
         {
             throw new IndexOutOfBoundsException();
         }
+        //noinspection SuspiciousMethodCalls
         if (!_properties.remove(prop))
         {
             throw new IllegalArgumentException("The property is not part of this domain");

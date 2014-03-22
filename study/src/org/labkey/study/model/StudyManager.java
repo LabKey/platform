@@ -439,22 +439,22 @@ public class StudyManager
     }
 
     @NotNull
-    public StudyImpl[] getAllStudies()
+    public List<? extends StudyImpl> getAllStudies()
     {
-        return new TableSelector(StudySchema.getInstance().getTableInfoStudy(), null, new Sort("Label")).getArray(StudyImpl.class);
+        return Collections.unmodifiableList(new TableSelector(StudySchema.getInstance().getTableInfoStudy(), null, new Sort("Label")).getArrayList(StudyImpl.class));
     }
 
     @NotNull
-    public Study[] getAllStudies(Container root, User user)
+    public List<? extends StudyImpl> getAllStudies(Container root, User user)
     {
         return getAllStudies(root, user, ReadPermission.class);
     }
 
     @NotNull
-    public Study[] getAllStudies(Container root, User user, Class<? extends Permission> perm)
+    public List<? extends StudyImpl> getAllStudies(Container root, User user, Class<? extends Permission> perm)
     {
-        StudyImpl[] studies = getAllStudies();
-        List<Study> result = new ArrayList<>(studies.length);
+        List<? extends StudyImpl> studies = getAllStudies();
+        List<StudyImpl> result = new ArrayList<>(studies);
         for (StudyImpl study : studies)
         {
             if (study.getContainer().hasPermission(user, perm) &&
@@ -463,7 +463,7 @@ public class StudyManager
                 result.add(study);
             }
         }
-        return result.toArray(new Study[result.size()]);
+        return Collections.unmodifiableList(result);
     }
 
     public StudyImpl createStudy(User user, StudyImpl study)
@@ -3169,7 +3169,7 @@ public class StudyManager
 
         // now that we actually have datasets, create/update the domains
         Map<String, Domain> domainsMap = new CaseInsensitiveHashMap<>();
-        Map<String, List<DomainProperty>> domainsPropertiesMap = new CaseInsensitiveHashMap<>();
+        Map<String, List<? extends DomainProperty>> domainsPropertiesMap = new CaseInsensitiveHashMap<>();
         for (OntologyManager.ImportPropertyDescriptor ipd : list.properties)
         {
             Domain d = domainsMap.get(ipd.domainURI);
@@ -3181,16 +3181,14 @@ public class StudyManager
                     d = PropertyService.get().createDomain(entry.dataSetDefinition.getDefinitionContainer(), ipd.domainURI, ipd.domainName);
                 domainsMap.put(d.getTypeURI(), d);
                 // add all the properties that exist for the domain
-                DomainProperty[] existingProperties = d.getProperties();
-                List<DomainProperty> l = new ArrayList<>(existingProperties.length);
-                Collections.addAll(l, existingProperties);
-                domainsPropertiesMap.put(d.getTypeURI(), l);
+                List<? extends DomainProperty> existingProperties = new ArrayList<>(d.getProperties());
+                domainsPropertiesMap.put(d.getTypeURI(), existingProperties);
             }
             // Issue 14569:  during study reimport be sure to look for a column has been deleted.
             // Look at the existing properties for this dataset's domain and
             // remove them as we find them in schema.  If there are any properties left after we've
             // iterated over all the import properties then we need to delete them
-            List<DomainProperty> propertiesToDel = domainsPropertiesMap.get(d.getTypeURI());
+            List<? extends DomainProperty> propertiesToDel = domainsPropertiesMap.get(d.getTypeURI());
             DomainProperty p = d.getPropertyByName(ipd.pd.getName());
             propertiesToDel.remove(p);
 
@@ -3219,7 +3217,7 @@ public class StudyManager
         // see if we need to delete any columns from an existing domain
         for (Domain d : domainsMap.values())
         {
-            List<DomainProperty> propertiesToDel = domainsPropertiesMap.get(d.getTypeURI());
+            List<? extends DomainProperty> propertiesToDel = domainsPropertiesMap.get(d.getTypeURI());
             for (DomainProperty p : propertiesToDel)
             {
                 p.delete();

@@ -114,7 +114,7 @@ public abstract class VisitManager
      */
     public void updateParticipantVisits(User user, Collection<DataSetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants, @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired)
     {
-        updateParticipants(user, changedDatasets, potentiallyAddedParticipants, potentiallyDeletedParticipants);
+        updateParticipants(changedDatasets, potentiallyAddedParticipants, potentiallyDeletedParticipants);
         if (participantVisitResyncRequired)
         {
             updateParticipantVisitTable(user);
@@ -155,11 +155,7 @@ public abstract class VisitManager
 
         //CAST(CAST(? AS NUMERIC(15, 4)) AS " + strType +
 
-        StringBuilder participantSequenceNum = new StringBuilder("(");
-        participantSequenceNum.append(dialect.concatenate(ptidColumnName, "'|'", "CAST(CAST(" + sequenceNumColumnName + " AS NUMERIC(15,4)) AS " + strType + ")"));
-        participantSequenceNum.append(")");
-
-        return participantSequenceNum.toString();
+        return "(" + dialect.concatenate(ptidColumnName, "'|'", "CAST(CAST(" + sequenceNumColumnName + " AS NUMERIC(15,4)) AS " + strType + ")") + ")";
     }
 
 
@@ -173,7 +169,7 @@ public abstract class VisitManager
 
     // Produce appropriate SQL for getVisitSummary().  The SQL must select dataset ID, sequence number, and then the specified statistics;
     // it also needs to filter by cohort and qcstates.  Tables providing the statistics must be aliased using the provided alias.
-    protected abstract SQLFragment getVisitSummarySql(User user, CohortFilter cohortFilter, QCStateSet qcStates, String stats, String alias, boolean showAll, boolean useVisitId);
+    protected abstract SQLFragment getVisitSummarySql(User user, CohortFilter cohortFilter, QCStateSet qcStates, String stats, String alias, boolean showAll);
 
     public Map<VisitMapKey, VisitStatistics> getVisitSummary(User user, CohortFilter cohortFilter, QCStateSet qcStates, Set<VisitStatistic> stats, boolean showAll) throws SQLException
     {
@@ -186,13 +182,11 @@ public abstract class VisitManager
             statsSql.append(stat.getSql(alias));
         }
 
-        boolean useVisitId = true;
-
         Map<VisitMapKey, VisitStatistics> visitSummary = new HashMap<>();
         VisitMapKey key = null;
         VisitStatistics statistics = new VisitStatistics();
 
-        SQLFragment sql = getVisitSummarySql(user, cohortFilter, qcStates, statsSql.toString(), alias, showAll, useVisitId);
+        SQLFragment sql = getVisitSummarySql(user, cohortFilter, qcStates, statsSql.toString(), alias, showAll);
 
         try (ResultSet rows = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false, false))
         {
@@ -201,20 +195,9 @@ public abstract class VisitManager
                 int datasetId = rows.getInt(1);
                 int visitRowId;
 
-                if (useVisitId)
-                {
-                    visitRowId = rows.getInt(2);
-                    if (rows.wasNull())
-                        continue;
-                }
-                else
-                {
-                    double sequenceNum = rows.getDouble(2);
-                    VisitImpl v = findVisitBySequence(sequenceNum);
-                    if (null == v)
-                        continue;
-                    visitRowId = v.getRowId();
-                }
+                visitRowId = rows.getInt(2);
+                if (rows.wasNull())
+                    continue;
 
                 if (null == key || key.datasetId != datasetId || key.visitRowId != visitRowId)
                 {
@@ -414,9 +397,9 @@ public abstract class VisitManager
     }
 
     /** Update the Participants table to match the entries in StudyData. */
-    protected void updateParticipants(User user, Collection<DataSetDefinition> changedDatasets,
-        final Set<String> potentiallyInsertedParticipants, 
-        Set<String> potentiallyDeletedParticipants)
+    protected void updateParticipants(Collection<DataSetDefinition> changedDatasets,
+                                      final Set<String> potentiallyInsertedParticipants,
+                                      Set<String> potentiallyDeletedParticipants)
     {
         String c = getStudy().getContainer().getId();
 
@@ -430,7 +413,7 @@ public abstract class VisitManager
         {
             SQLFragment datasetParticipantsSQL = new SQLFragment("INSERT INTO " + tableParticipant + " (container, participantid)\n" +
                     "SELECT DISTINCT ?, participantid\n" +
-                    "FROM (").append(studyPtidsFragment).append("\n) x WHERE participantid NOT IN (SELECT participantid FROM ").append(tableParticipant).append(" WHERE container = ?)");
+                    "FROM (").append(studyPtidsFragment).append("\n) x WHERE participantid NOT IN (SELECT participantid FROM ").append(tableParticipant, "p").append(" WHERE container = ?)");
             datasetParticipantsSQL.add(c);
             datasetParticipantsSQL.add(c);
 
@@ -454,7 +437,7 @@ public abstract class VisitManager
             scheduleParticipantPurge(potentiallyDeletedParticipants);
         }
 
-        updateStartDates(user);
+        updateStartDates();
 
 
         //
@@ -579,7 +562,7 @@ public abstract class VisitManager
     }
 
 
-    protected void updateStartDates(User user)
+    protected void updateStartDates()
     {
         TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
         //See if there are any demographic datasets that contain a start date

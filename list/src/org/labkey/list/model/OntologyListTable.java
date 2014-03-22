@@ -78,9 +78,9 @@ import java.util.Set;
         {
             case Integer:
             case AutoIncrementInteger:
-                return OntologyManager.getTinfoIndexInteger();
+                return OntologyManager.getExpSchema().getTable("IndexInteger");
             case Varchar:
-                return OntologyManager.getTinfoIndexVarchar();
+                return OntologyManager.getExpSchema().getTable("IndexVarchar");
             default:
                 return null;
         }

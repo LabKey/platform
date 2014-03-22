@@ -137,7 +137,7 @@ public class AssayPublishManager implements AssayPublishService.Service
      */
     public Set<Study> getValidPublishTargets(User user, Class<? extends Permission> permission)
     {
-        Study[] studies = StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, permission);
+        List<? extends Study> studies = StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, permission);
 
         // Sort based on full container path
         Set<Study> result = new TreeSet<>(new Comparator<Study>()
@@ -148,7 +148,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 return s1.getContainer().compareTo(s2.getContainer());
             }
         });
-        result.addAll(Arrays.asList(studies));
+        result.addAll(studies);
         return result;
     }
 

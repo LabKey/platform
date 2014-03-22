@@ -25,10 +25,11 @@
 <%@ page import="org.labkey.api.data.ColumnRenderProperties" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
+<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
-    AssayRunUploadForm bean = me.getModelBean();
+    AssayRunUploadForm<AssayProvider> bean = me.getModelBean();
 %>
 <div id="showExpectedDataFieldsDiv"><%= textLink("Show Expected Data Fields", (URLHelper)null, "document.getElementById('expectedDataFields').style.display = 'block'; document.getElementById('showExpectedDataFieldsDiv').style.display = 'none'; return false;", "showExpectedDataFieldsLink") %></div>
 <div id="expectedDataFields" style="display: none">
