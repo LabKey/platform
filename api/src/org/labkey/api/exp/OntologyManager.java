@@ -48,7 +48,6 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.CPUTimer;
-import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory;
@@ -324,7 +323,7 @@ public class OntologyManager
 		List<String> resultingLsids = new ArrayList<>(rows.size());
 
         Domain d = table.getDomain();
-        DomainProperty[] properties = null == d ? new DomainProperty[0] : d.getProperties();
+        List<? extends DomainProperty> properties = null == d ? Collections.<DomainProperty>emptyList() : d.getProperties();
         
         ValidatorContext validatorCache = new ValidatorContext(c, user);
 
@@ -982,16 +981,6 @@ public class OntologyManager
             // Owned objects should be in same container, so this should work
 			String deleteObjPropSql = "DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
             executor.execute(deleteObjPropSql, c);
-            if (null != getTinfoIndexInteger())
-            {
-                String deleteIndexIntegerSql = "DELETE FROM " + getTinfoIndexInteger() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
-                executor.execute(deleteIndexIntegerSql, c);
-            }
-            if (null != getTinfoIndexVarchar())
-            {
-                String deleteIndexVarcharSql = "DELETE FROM " + getTinfoIndexVarchar() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
-                executor.execute(deleteIndexVarcharSql, c);
-            }
 			String deleteObjSql = "DELETE FROM " + getTinfoObject() + " WHERE Container = ?";
             executor.execute(deleteObjSql, c);
 
@@ -1954,14 +1943,6 @@ public class OntologyManager
     {
         return getDomainDescriptor(id, false);
     }
-
-
-    private static DomainDescriptor EMPTY = new DomainDescriptor();
-    static
-    {
-        MemTracker.getInstance().remove(EMPTY);
-    }
-    
 
     public static DomainDescriptor getDomainDescriptor(String domainURI, Container c)
 	{
@@ -3508,24 +3489,6 @@ public class OntologyManager
     public static TableInfo getTinfoObjectProperty()
     {
         return getExpSchema().getTable("ObjectProperty");
-    }
-
-    /**
-     * Since migrating Lists to Hard Tables this table no longer exists.
-     */
-    @Deprecated
-    public static TableInfo getTinfoIndexInteger()
-    {
-        return getExpSchema().getTable("IndexInteger");
-    }
-
-    /**
-     * Since migrating Lists to Hard Tables this table no longer exists.
-     */
-    @Deprecated
-    public static TableInfo getTinfoIndexVarchar()
-    {
-        return getExpSchema().getTable("IndexVarchar");
     }
 
     public static TableInfo getTinfoPropertyDescriptor()

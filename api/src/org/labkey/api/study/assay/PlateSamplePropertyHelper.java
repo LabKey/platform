@@ -35,7 +35,7 @@ public class PlateSamplePropertyHelper extends SamplePropertyHelper<String>
     private List<String> _sampleNames;
     protected final PlateTemplate _template;
 
-    public PlateSamplePropertyHelper(DomainProperty[] domainProperties, PlateTemplate template)
+    public PlateSamplePropertyHelper(List<? extends DomainProperty> domainProperties, PlateTemplate template)
     {
         super(domainProperties);
         _template = template;

@@ -55,7 +55,7 @@ import java.util.Set;
         column.setKeyField(false);
         column.setIsUnselectable(true);
         _resultsDomain = schema.getProvider().getResultsDomain(schema.getProtocol());
-        DomainProperty[] resultsDPs = _resultsDomain.getProperties();
+        List<? extends DomainProperty> resultsDPs = _resultsDomain.getProperties();
         QcAwarePropertyForeignKey fk = new QcAwarePropertyForeignKey(resultsDPs, this, schema);
         fk.setParentIsObjectId(true);
         fk.addDecorator(new SpecimenPropertyColumnDecorator(schema.getProvider(),schema.getProtocol(), schema));

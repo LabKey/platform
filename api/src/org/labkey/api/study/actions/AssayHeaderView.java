@@ -115,7 +115,7 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
                     for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : domainInfos)
                     {
                         Domain domain = domainInfo.getKey();
-                        if (_provider.allowDefaultValues(domain) && domain.getProperties().length > 0)
+                        if (_provider.allowDefaultValues(domain) && !domain.getProperties().isEmpty())
                         {
                             ActionURL currentEditUrl = baseEditUrl.clone();
                             currentEditUrl.addParameter("domainId", domain.getTypeId());

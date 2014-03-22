@@ -44,6 +44,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -374,16 +375,13 @@ public class StatementUtils
 
         Domain domain = t.getDomain();
         DomainKind domainKind = t.getDomainKind();
-        DomainProperty[] properties = null;
+        List<? extends DomainProperty> properties = Collections.emptyList();
 
         if (null != domain && null != domainKind && StringUtils.isEmpty(domainKind.getStorageSchemaName()))
         {
             properties = domain.getProperties();
 
-            if (properties.length == 0)
-                properties = null;
-
-            if (null != properties)
+            if (!properties.isEmpty())
             {
                 if (!dialect.isPostgreSQL() && !dialect.isSqlServer())
                     throw new IllegalStateException("Domains are only supported for sql server and postgres");
@@ -669,7 +667,7 @@ public class StatementUtils
         // ObjectProperty
         //
 
-        if (null != properties)
+        if (!properties.isEmpty())
         {
             Set<String> skip = updatable.skipProperties();
             if (null != skip)

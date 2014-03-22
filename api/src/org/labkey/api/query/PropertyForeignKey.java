@@ -73,11 +73,11 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     
     private static PropertyDescriptor[] listProperties(Domain domain)
     {
-        DomainProperty[] properties = domain.getProperties();
-        PropertyDescriptor[] result = new PropertyDescriptor[properties.length];
-        for (int i = 0; i < properties.length; i++)
+        List<? extends DomainProperty> properties = domain.getProperties();
+        PropertyDescriptor[] result = new PropertyDescriptor[properties.size()];
+        for (int i = 0; i < properties.size(); i++)
         {
-            result[i] = properties[i].getPropertyDescriptor();
+            result[i] = properties.get(i).getPropertyDescriptor();
         }
         return result;
     }

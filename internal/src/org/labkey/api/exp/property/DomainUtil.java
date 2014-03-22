@@ -15,7 +15,6 @@
  */
 package org.labkey.api.exp.property;
 
-import com.google.common.base.Strings;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -139,7 +138,7 @@ public class DomainUtil
 
         ArrayList<GWTPropertyDescriptor> list = new ArrayList<>();
 
-        DomainProperty[] properties = domain.getProperties();
+        List<? extends DomainProperty> properties = domain.getProperties();
         Map<DomainProperty, Object> defaultValues = DefaultValueService.get().getDefaultValues(domain.getContainer(), domain);
 
         for (DomainProperty prop : properties)

@@ -31,6 +31,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -67,7 +68,7 @@ public class DilutionDataExchangeHandler extends PlateBasedDataExchangeHandler
         {
             AbstractPlateBasedAssayProvider plateProvider = (AbstractPlateBasedAssayProvider)provider;
             PlateTemplate template = plateProvider.getPlateTemplate(viewContext.getContainer(), protocol);
-            DomainProperty[] props = plateProvider.getSampleWellGroupDomain(protocol).getProperties();
+            List<? extends DomainProperty> props = plateProvider.getSampleWellGroupDomain(protocol).getProperties();
 
             Map<String, Map<DomainProperty, String>>specimens = createTestSampleProperties(props, template, WellGroup.Type.SPECIMEN);
 

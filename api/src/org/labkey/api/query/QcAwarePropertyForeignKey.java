@@ -45,16 +45,16 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         _metadata = getDisplayPds(pds);
     }
 
-    public QcAwarePropertyForeignKey(DomainProperty[] dps, TableInfo baseTable, QuerySchema schema)
+    public QcAwarePropertyForeignKey(List<? extends DomainProperty> dps, TableInfo baseTable, QuerySchema schema)
     {
         this(getPropertyDescriptors(dps), baseTable, schema);
     }
 
-    private static PropertyDescriptor[] getPropertyDescriptors(DomainProperty[] domainProperties)
+    private static PropertyDescriptor[] getPropertyDescriptors(List<? extends DomainProperty> domainProperties)
     {
-        PropertyDescriptor[] propertyDescriptors = new PropertyDescriptor[domainProperties.length];
-        for (int i = 0; i < domainProperties.length; i++)
-            propertyDescriptors[i] = domainProperties[i].getPropertyDescriptor();
+        PropertyDescriptor[] propertyDescriptors = new PropertyDescriptor[domainProperties.size()];
+        for (int i = 0; i < domainProperties.size(); i++)
+            propertyDescriptors[i] = domainProperties.get(i).getPropertyDescriptor();
         return propertyDescriptors;
     }
 

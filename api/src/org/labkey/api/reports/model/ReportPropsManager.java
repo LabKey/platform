@@ -68,7 +68,7 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
 
         if (domain != null)
         {
-            properties.addAll(Arrays.asList(domain.getProperties()));
+            properties.addAll(domain.getProperties());
         }
         return properties;
     }

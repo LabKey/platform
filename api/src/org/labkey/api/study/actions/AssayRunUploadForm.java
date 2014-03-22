@@ -60,7 +60,6 @@ import org.labkey.api.view.UnauthorizedException;
 import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -96,7 +95,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private TransformResult _transformResult = DefaultTransformResult.createEmptyResult();
     private ExpRun _reRun;
 
-    public DomainProperty[] getRunDataProperties()
+    public List<? extends DomainProperty> getRunDataProperties()
     {
         Domain domain = getProvider().getResultsDomain(getProtocol());
         return domain.getProperties();
@@ -107,8 +106,8 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         if (_runProperties == null)
         {
             Domain domain = getProvider().getRunDomain(getProtocol());
-            DomainProperty[] properties = domain.getProperties();
-            _runProperties = getPropertyMapFromRequest(Arrays.asList(properties));
+            List<? extends DomainProperty> properties = domain.getProperties();
+            _runProperties = getPropertyMapFromRequest(properties);
         }
         return Collections.unmodifiableMap(_runProperties);
     }
@@ -119,13 +118,12 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         if (_uploadSetProperties == null)
         {
             Domain domain = getProvider().getBatchDomain(getProtocol());
-            DomainProperty[] properties = domain.getProperties();
-            _uploadSetProperties = getPropertyMapFromRequest(Arrays.asList(properties));
+            _uploadSetProperties = getPropertyMapFromRequest(domain.getProperties());
         }
         return Collections.unmodifiableMap(_uploadSetProperties);
     }
 
-    protected Map<DomainProperty, String> getPropertyMapFromRequest(List<DomainProperty> columns)
+    protected Map<DomainProperty, String> getPropertyMapFromRequest(List<? extends DomainProperty> columns)
     {
         Map<DomainProperty, String> properties = new LinkedHashMap<>();
         Map<DomainProperty, File> additionalFiles = getAdditionalPostedFiles(columns);
@@ -230,7 +228,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         return _uploadedData;
     }
 
-    public Map<DomainProperty, File> getAdditionalPostedFiles(List<DomainProperty> pds)
+    public Map<DomainProperty, File> getAdditionalPostedFiles(List<? extends DomainProperty> pds)
     {
         if (_additionalFiles == null)
         {

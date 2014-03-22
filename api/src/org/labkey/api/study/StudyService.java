@@ -86,9 +86,6 @@ public class StudyService
         @NotNull
         public Set<Study> findStudy(@NotNull Object studyReference, @Nullable User user);
 
-        @Nullable
-        public String getStudyName(Container container);
-
         /**
          * Returns the {@link DataSet} of the given id for the {@link Container} or null.
          * @param container The container
@@ -167,7 +164,7 @@ public class StudyService
 
         Map<String, String> getAlternateIdMap(Container container);
     
-        Study[] getAllStudies(Container root, User user);
+        List<? extends Study> getAllStudies(Container root, User user);
 
         boolean runStudyImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
 

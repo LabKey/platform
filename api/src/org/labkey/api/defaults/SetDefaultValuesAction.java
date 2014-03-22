@@ -147,8 +147,8 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
     {
         _returnUrl = domainIdForm.getReturnURLHelper();
         Domain domain = getDomain(domainIdForm);
-        DomainProperty[] properties = domain.getProperties();
-        if (properties.length == 0)
+        List<? extends DomainProperty> properties = domain.getProperties();
+        if (properties.isEmpty())
         {
             return new HtmlView("No fields are defined for this table.<br><br>" + 
                     PageFlowUtil.button("Cancel").href(new ActionURL(domainIdForm.getReturnUrl())));

@@ -84,7 +84,7 @@ public class PlateBasedDataExchangeHandler extends TsvDataExchangeHandler
     /**
      * Create fake wellgroup data for debugging and testing of programmatic QC scripts.
      */
-    protected Map<String, Map<DomainProperty, String>> createTestSampleProperties(DomainProperty[] properties, PlateTemplate template, WellGroup.Type type)
+    protected Map<String, Map<DomainProperty, String>> createTestSampleProperties(List<? extends DomainProperty> properties, PlateTemplate template, WellGroup.Type type)
     {
         Map<String, Map<DomainProperty, String>> specimens = new HashMap<>();
         for (WellGroupTemplate wellGroup : template.getWellGroups())

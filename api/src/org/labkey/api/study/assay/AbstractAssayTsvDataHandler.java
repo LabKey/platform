@@ -70,7 +70,6 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -131,7 +130,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         Domain dataDomain = provider.getResultsDomain(protocol);
 
-        DomainProperty[] columns = dataDomain.getProperties();
+        List<? extends DomainProperty> columns = dataDomain.getProperties();
         Map<String, DomainProperty> aliases = dataDomain.createImportMap(false);
         Set<String> mvEnabledColumns = Sets.newCaseInsensitiveHashSet();
         Set<String> mvIndicatorColumns = Sets.newCaseInsensitiveHashSet();
@@ -184,7 +183,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             List<Map<String, Object>> dataRows = loader.load();
 
             // loader did not parse any rows
-            if (dataRows.isEmpty() && !settings.isAllowEmptyData() && columns.length > 0)
+            if (dataRows.isEmpty() && !settings.isAllowEmptyData() && columns.size() > 0)
                 throw new ExperimentException("Unable to load any rows from the input data. Please check the format of the input data to make sure it matches the assay data columns.");
             if (!dataRows.isEmpty())
                 adjustFirstRowOrder(dataRows, loader);
@@ -289,7 +288,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             if (rawData.size() == 0)
             {
-                if (allowEmptyData() || dataDomain.getProperties().length == 0)
+                if (allowEmptyData() || dataDomain.getProperties().isEmpty())
                 {
                     ExperimentService.get().commitTransaction();
                     return;
@@ -339,10 +338,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
         else
         {
-            PropertyDescriptor[] dataProperties = new PropertyDescriptor[dataDomain.getProperties().length];
-            for (int i = 0; i < dataDomain.getProperties().length; i++)
+            PropertyDescriptor[] dataProperties = new PropertyDescriptor[dataDomain.getProperties().size()];
+            for (int i = 0; i < dataDomain.getProperties().size(); i++)
             {
-                dataProperties[i] = dataDomain.getProperties()[i].getPropertyDescriptor();
+                dataProperties[i] = dataDomain.getProperties().get(i).getPropertyDescriptor();
             }
             Integer id = OntologyManager.ensureObject(container, data.getLSID());
             OntologyManager.insertTabDelimited(container, user, id,
@@ -355,7 +354,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     private void checkColumns(Domain dataDomain, Set<String> actual, List<String> missing, List<String> unexpected, List<Map<String, Object>> rawData, boolean strict)
     {
         Set<String> checkSet = new CaseInsensitiveHashSet();
-        DomainProperty[] expected = dataDomain.getProperties();
+        List<? extends DomainProperty> expected = dataDomain.getProperties();
         for (DomainProperty pd : expected)
         {
             checkSet.add(pd.getName());
@@ -377,7 +376,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         // Now figure out what's missing but required
         Map<String, DomainProperty> importMap = dataDomain.createImportMap(true);
         // Consider all of them initially
-        LinkedHashSet<DomainProperty> missingProps = new LinkedHashSet<>(Arrays.asList(expected));
+        LinkedHashSet<DomainProperty> missingProps = new LinkedHashSet<>(expected);
 
         // Iterate through the ones we got
         for (String col : actual)
@@ -470,7 +469,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DomainProperty datePD = null;
         DomainProperty targetStudyPD = null;
 
-        DomainProperty[] columns = dataDomain.getProperties();
+        List<? extends DomainProperty> columns = dataDomain.getProperties();
 
         for (DomainProperty pd : columns)
         {

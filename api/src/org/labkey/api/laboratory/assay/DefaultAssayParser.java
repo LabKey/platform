@@ -402,7 +402,7 @@ public class DefaultAssayParser implements AssayParser
         for (Map<String, Object> row : rows)
         {
             idx++; //1-based counter
-            CaseInsensitiveHashMap map = new CaseInsensitiveHashMap(row);
+            CaseInsensitiveHashMap<Object> map = new CaseInsensitiveHashMap<>(row);
             for (DomainProperty dp : resultDomain.getProperties())
             {
                 if (dp.isRequired() && (!map.containsKey(dp.getName()) || map.get(dp.getName()) == null))

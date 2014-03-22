@@ -177,7 +177,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
         ColumnInfo objectUriCol = getObjectUriColumn();
         Domain domain = getDomain();
-        if (objectUriCol != null && domain != null && domain.getProperties().length > 0)
+        if (objectUriCol != null && domain != null && !domain.getProperties().isEmpty())
         {
             String lsid = (String)row.get(objectUriCol.getName());
             if (lsid != null)
@@ -268,7 +268,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     {
         ColumnInfo objectUriCol = getObjectUriColumn();
         Domain domain = getDomain();
-        if (objectUriCol != null && domain != null && domain.getProperties().length > 0)
+        if (objectUriCol != null && domain != null && !domain.getProperties().isEmpty())
         {
             // convert "Property name"->value map into PropertyURI->value map
             List<PropertyDescriptor> pds = new ArrayList<>();
@@ -360,7 +360,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     {
         ColumnInfo objectUriCol = getObjectUriColumn();
         Domain domain = getDomain();
-        if (objectUriCol != null && domain != null && domain.getProperties().length > 0)
+        if (objectUriCol != null && domain != null && !domain.getProperties().isEmpty())
         {
             String lsid = (String)oldRow.get(objectUriCol.getName());
 

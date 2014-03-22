@@ -52,6 +52,7 @@ import org.labkey.api.view.ViewContext;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -271,7 +272,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
 
 
     @Override
-    public void handleProperties(ViewContext context, ExpObject object, DomainProperty[] dps, JSONObject propertiesJsonObject) throws ValidationException, JSONException
+    public void handleProperties(ViewContext context, ExpObject object, List<? extends DomainProperty> dps, JSONObject propertiesJsonObject) throws ValidationException, JSONException
     {
         for (Map.Entry<DomainProperty, Object> entry : ExperimentJSONConverter.convertProperties(propertiesJsonObject, dps, context.getContainer(), true).entrySet())
         {
@@ -279,7 +280,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
         }
     }
 
-    private void handleStandardProperties(ViewContext context, JSONObject jsonObject, ExpObject object, DomainProperty[] dps) throws ValidationException, SQLException
+    private void handleStandardProperties(ViewContext context, JSONObject jsonObject, ExpObject object, List<? extends DomainProperty> dps) throws ValidationException, SQLException
     {
         if (jsonObject.has(ExperimentJSONConverter.NAME))
         {
@@ -565,7 +566,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
             // To delete a property, include a property map with that property and set its value to null.
             if (materialProperties.size() > 0)
             {
-                DomainProperty[] dps = sampleSet != null ? sampleSet.getPropertiesForType() : new DomainProperty[0];
+                List<? extends DomainProperty> dps = sampleSet != null ? sampleSet.getPropertiesForType() : Collections.<DomainProperty>emptyList();
                 handleProperties(context, material, dps, materialProperties);
             }
         }
@@ -578,7 +579,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
     {
         ExpData data = ExpDataFileConverter.resolveExpData(dataObject, context.getContainer(), context.getUser());
 
-        handleProperties(context, data, new DomainProperty[0], dataObject);
+        handleProperties(context, data, Collections.<DomainProperty>emptyList(), dataObject);
         return data;
     }
 

@@ -231,7 +231,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
 
         Collection<ExpMaterial> inputs = _run.getMaterialInputs().keySet();
         Domain sampleDomain = _provider.getSampleWellGroupDomain(_protocol);
-        DomainProperty[] sampleDomainProperties = sampleDomain.getProperties();
+        List<? extends DomainProperty> sampleDomainProperties = sampleDomain.getProperties();
 
         AssayProtocolSchema schema = _provider.createProtocolSchema(_user, _run.getContainer(), _protocol, null);
         // Do a query to get all the info we need to do the copy

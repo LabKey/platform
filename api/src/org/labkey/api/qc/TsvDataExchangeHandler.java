@@ -454,7 +454,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             Domain runDataDomain = provider.getResultsDomain(protocol);
             if (runDataDomain != null)
             {
-                DomainProperty[] properties = runDataDomain.getProperties();
+                List<? extends DomainProperty> properties = runDataDomain.getProperties();
                 for (int i=0; i < SAMPLE_DATA_ROWS; i++)
                 {
                     Map<String, Object> row = new HashMap<>();

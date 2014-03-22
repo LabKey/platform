@@ -241,8 +241,7 @@ public final class ModuleResourceCache<T>
         return module.getName() + "/" + resourceName;
     }
 
-    private static final Pattern STANDARD_CACHE_KEY_PATTERN = Pattern.compile("(\\w+)/(.+)");
-
+    private static final Pattern STANDARD_CACHE_KEY_PATTERN = Pattern.compile("(" + ModuleLoader.MODULE_NAME_REGEX + ")/(.+)");
 
     public static class CacheId
     {

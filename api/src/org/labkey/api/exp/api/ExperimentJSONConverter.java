@@ -31,6 +31,7 @@ import org.labkey.api.util.URIUtil;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -111,7 +112,7 @@ public class ExperimentJSONConverter
     }
 
 
-    public static JSONObject serializeStandardProperties(ExpObject object, DomainProperty[] properties)
+    public static JSONObject serializeStandardProperties(ExpObject object, List<? extends DomainProperty> properties)
     {
         JSONObject jsonObject = new JSONObject();
 
@@ -219,7 +220,7 @@ public class ExperimentJSONConverter
         return jsonObject;
     }
 
-    public static Map<DomainProperty, Object> convertProperties(JSONObject propertiesJsonObject, DomainProperty[] dps, Container container, boolean ignoreMissingProperties)
+    public static Map<DomainProperty, Object> convertProperties(JSONObject propertiesJsonObject, List<? extends DomainProperty> dps, Container container, boolean ignoreMissingProperties)
     {
         Map<DomainProperty, Object> properties = new HashMap<>();
         for (DomainProperty dp : dps)

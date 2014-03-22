@@ -65,6 +65,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Class that wraps a data source and is shared amongst that data source's DbSchemas.
@@ -599,28 +600,7 @@ public class DbScope
         TransactionImpl t = getCurrentTransactionImpl();
         if (null != t)
         {
-            if (t._closesToIgnore == 0)
-            {
-                if (!t.decrement())
-                {
-                    t._aborted = true;
-                }
-
-                t.closeConnection();
-
-                synchronized (_transaction)
-                {
-                    _transaction.remove(getEffectiveThread());
-                }
-            }
-            else
-            {
-                t._closesToIgnore--;
-            }
-            if (t._closesToIgnore < 0)
-            {
-                throw new IllegalStateException("Popped too many closes from the stack");
-            }
+            t.close();
         }
     }
 
@@ -1306,7 +1286,28 @@ public class DbScope
         @Override
         public void close()
         {
-            DbScope.this.closeConnection();
+            if (_closesToIgnore == 0)
+            {
+                if (!decrement())
+                {
+                    _aborted = true;
+                }
+
+                closeConnection();
+
+                synchronized (_transaction)
+                {
+                    _transaction.remove(getEffectiveThread());
+                }
+            }
+            else
+            {
+                _closesToIgnore--;
+            }
+            if (_closesToIgnore < 0)
+            {
+                throw new IllegalStateException("Popped too many closes from the stack");
+            }
         }
 
         @Override
@@ -1546,8 +1547,8 @@ public class DbScope
             return element;
         }
 
-        @Test
-        public void testExtraCloseIgnored()
+        @Test(expected = IllegalStateException.class)
+        public void testExtraCloseException()
         {
             try (Transaction t = getLabkeyScope().ensureTransaction())
             {
@@ -1557,7 +1558,61 @@ public class DbScope
                 t.close();
                 t.close();
             }
-            assertFalse(getLabkeyScope().isTransactionActive());
+        }
+
+        @Test
+        public void testLockReleasedCommitted()
+        {
+            ReentrantLock lock = new ReentrantLock();
+            ReentrantLock lock2 = new ReentrantLock();
+            try (Transaction t = getLabkeyScope().ensureTransaction(lock))
+            {
+                assertEquals("Lock should be singly held", 1, lock.getHoldCount());
+                try (Transaction t2 = getLabkeyScope().ensureTransaction(lock, lock2))
+                {
+                    assertEquals("Lock should be doubly held", 2, lock.getHoldCount());
+                    assertEquals("Lock should be singly held", 1, lock2.getHoldCount());
+                    t2.commit();
+                }
+                assertEquals("Lock should be singly held", 1, lock.getHoldCount());
+                assertEquals("Lock should be released", 0, lock2.getHoldCount());
+                t.commit();
+            }
+            assertEquals("Lock should be released", 0, lock.getHoldCount());
+            assertEquals("Lock should be released", 0, lock2.getHoldCount());
+        }
+
+        @Test
+        public void testLockReleasedException()
+        {
+            ReentrantLock lock = new ReentrantLock();
+            ReentrantLock lock2 = new ReentrantLock();
+            try
+            {
+                try (Transaction t = getLabkeyScope().ensureTransaction(lock))
+                {
+                    try
+                    {
+                        assertEquals("Lock should be singly held", 1, lock.getHoldCount());
+                        try (Transaction t2 = getLabkeyScope().ensureTransaction(lock, lock2))
+                        {
+                            assertEquals("Lock should be doubly held", 2, lock.getHoldCount());
+                            assertEquals("Lock should be singly held", 1, lock2.getHoldCount());
+                            // no commit!
+                            throw new RuntimeException();
+                        }
+                    }
+                    catch (RuntimeException e)
+                    {
+                        assertEquals("Lock should be singly held", 1, lock.getHoldCount());
+                        assertEquals("Lock should be released", 0, lock2.getHoldCount());
+                        throw e;
+                    }
+                }
+            }
+            catch (RuntimeException ignored) {}
+            assertEquals("Lock should be released", 0, lock.getHoldCount());
+            assertEquals("Lock should be released", 0, lock2.getHoldCount());
         }
 
         @Test

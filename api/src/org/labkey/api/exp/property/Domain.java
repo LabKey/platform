@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.property;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -47,7 +48,8 @@ public interface Domain extends IPropertyType
 
     void setDescription(String description);
     void setPropertyIndex(DomainProperty prop, int index);
-    DomainProperty[] getProperties();
+    @NotNull
+    List<? extends DomainProperty> getProperties();
     List<DomainProperty> getNonBaseProperties();
     DomainProperty getProperty(int id);
     @Nullable

@@ -106,6 +106,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 /**
  * User: migra
@@ -124,6 +125,7 @@ public class ModuleLoader implements Filter
     private static final CoreSchema _core = CoreSchema.getInstance();
     private static final Object UPGRADE_LOCK = new Object();
     private static final Object STARTUP_LOCK = new Object();
+    public static final String MODULE_NAME_REGEX = "\\w+";
 
     private static ModuleLoader _instance = null;
     private static Throwable _startupFailure = null;
@@ -580,6 +582,7 @@ public class ModuleLoader implements Filter
 
         Map<String, File> moduleNameToFile = new CaseInsensitiveHashMap<>();
         List<Module> modules = new ArrayList<>();
+        Pattern moduleNamePattern = Pattern.compile(MODULE_NAME_REGEX);
         for(File moduleDir : explodedModuleDirs)
         {
             File moduleXml = new File(moduleDir, "config/module.xml");
@@ -602,6 +605,13 @@ public class ModuleLoader implements Filter
                     {
                         _log.warn("Module with name '" + module.getName() + "' has already been loaded from "
                                 + moduleNameToFile.get(module.getName()).getAbsolutePath() + ". Skipping additional copy of the module in " + moduleDir);
+                    }
+                    else if (!moduleNamePattern.matcher(module.getName()).matches())
+                    {
+                        IllegalArgumentException t = new IllegalArgumentException("Module names may only contain alpha, numeric, and underscore characters. Invalid name: '" + module.getName() + "'");
+                        _log.error("Invalid module", t);
+                        //noinspection ThrowableResultOfMethodCallIgnored
+                        _moduleFailures.put(moduleDir.getName(), t);
                     }
                     else
                     {
@@ -1160,7 +1170,7 @@ public class ModuleLoader implements Filter
      *     <li>Startup listeners</li>
      * </ol>
      *
-     * Once the deferred upgrade tasks have run, the module is considered {@link ModuleState.Started started}.
+     * Once the deferred upgrade tasks have run, the module is considered {@link ModuleState#Started started}.
      */
     private void completeStartup()
     {
@@ -1707,7 +1717,7 @@ public class ModuleLoader implements Filter
             return getAllFolderTypes();
         }
 
-        ArrayList<FolderType> allFolderTypes = null;
+        ArrayList<FolderType> allFolderTypes;
         synchronized (_folderTypes)
         {
             allFolderTypes = new ArrayList<>(_folderTypes.values());

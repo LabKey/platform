@@ -827,13 +827,13 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         ExpProtocol protocol = run.getProtocol();
         Domain batchDomain = getBatchDomain(protocol);
-        DomainProperty[] batchColumns = batchDomain.getProperties();
+        List<? extends DomainProperty> batchColumns = batchDomain.getProperties();
         Domain runDomain = getRunDomain(protocol);
-        DomainProperty[] runColumns = runDomain.getProperties();
+        List<? extends DomainProperty> runColumns = runDomain.getProperties();
 
         List<DomainProperty> pds = new ArrayList<>();
-        pds.addAll(Arrays.asList(runColumns));
-        pds.addAll(Arrays.asList(batchColumns));
+        pds.addAll(runColumns);
+        pds.addAll(batchColumns);
 
         Map<String, ObjectProperty> props = new HashMap<>(run.getObjectProperties());
         ExpExperiment batch = AssayService.get().findBatch(run);

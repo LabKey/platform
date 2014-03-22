@@ -291,7 +291,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         Collection<ExpMaterial> sampleInputs = run.getMaterialInputs().keySet();
         Map<ExpMaterial, List<WellGroup>> inputs = getMaterialWellGroupMapping(provider, plates, sampleInputs);
 
-        DomainProperty[] sampleProperties = provider.getSampleWellGroupDomain(protocol).getProperties();
+        List<? extends DomainProperty> sampleProperties = provider.getSampleWellGroupDomain(protocol).getProperties();
         Map<String, DomainProperty> samplePropertyMap = new HashMap<>();
         for (DomainProperty sampleProperty : sampleProperties)
             samplePropertyMap.put(sampleProperty.getName(), sampleProperty);

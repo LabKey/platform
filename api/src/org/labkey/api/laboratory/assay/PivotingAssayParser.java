@@ -17,31 +17,21 @@ package org.labkey.api.laboratory.assay;
 
 import au.com.bytecode.opencsv.CSVReader;
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.ViewContext;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
-import java.util.regex.Pattern;
 
 /**
  * User: bimber
@@ -142,7 +132,7 @@ public class PivotingAssayParser extends DefaultAssayParser
     private Map<Integer, String> inspectHeader(String[] header, ImportContext context) throws BatchValidationException
     {
         Map<Integer, String> resultMap = new HashMap<>();
-        Map<String, String> allowable = new CaseInsensitiveHashMap();
+        Map<String, String> allowable = new CaseInsensitiveHashMap<String>();
         BatchValidationException errors = new BatchValidationException();
 
         for (String val : _pivotMethod.getAllowableValues())

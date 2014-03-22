@@ -162,12 +162,12 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
     }
 
-    protected InsertView createInsertView(TableInfo baseTable, String lsidCol, DomainProperty[] properties, boolean errorReshow, String uploadStepName, FormType form, BindException errors)
+    protected InsertView createInsertView(TableInfo baseTable, String lsidCol, List<? extends DomainProperty> properties, boolean errorReshow, String uploadStepName, FormType form, BindException errors)
     {
         // First, find the domain from our domain properties.  We do this, rather than having the caller provide a domain,
         // to allow insert views with a subset a given domain's properties.
         Domain domain = null;
-        if (properties.length > 0)
+        if (!properties.isEmpty())
         {
             Set<Domain> domains = new HashSet<>();
             for (DomainProperty property : properties)
@@ -291,8 +291,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
      */
     protected boolean showBatchStep(FormType form, Domain batchDomain) throws ServletException
     {
-        DomainProperty[] batchColumns = batchDomain.getProperties();
-        return batchColumns != null && batchColumns.length != 0;
+        return !batchDomain.getProperties().isEmpty();
     }
 
     protected void addNextButton(ButtonBar bbar)
@@ -318,18 +317,16 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     protected InsertView createRunInsertView(FormType newRunForm, boolean errorReshow, BindException errors) throws ExperimentException
     {
-        Set<DomainProperty> propertySet = newRunForm.getRunProperties().keySet();
-        DomainProperty[] properties = propertySet.toArray(new DomainProperty[propertySet.size()]);
+        List<DomainProperty> propertySet = new ArrayList<>(newRunForm.getRunProperties().keySet());
         return createInsertView(ExperimentService.get().getTinfoExperimentRun(),
-                "lsid", properties, errorReshow, RunStepHandler.NAME, newRunForm, errors);
+                "lsid", propertySet, errorReshow, RunStepHandler.NAME, newRunForm, errors);
     }
 
     protected InsertView createBatchInsertView(FormType runForm, boolean reshow, BindException errors)
     {
-        Set<DomainProperty> propertySet = runForm.getBatchProperties().keySet();
-        DomainProperty[] properties = propertySet.toArray(new DomainProperty[propertySet.size()]);
+        List<DomainProperty> propertySet = new ArrayList<>(runForm.getBatchProperties().keySet());
         return createInsertView(ExperimentService.get().getTinfoExperimentRun(),
-                "lsid", properties, reshow, BatchStepHandler.NAME, runForm, errors);
+                "lsid", propertySet, reshow, BatchStepHandler.NAME, runForm, errors);
     }
 
     protected ModelAndView getRunPropertiesView(FormType newRunForm, boolean errorReshow, boolean warnings, BindException errors) throws ExperimentException
@@ -394,7 +391,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     protected boolean shouldShowDataCollectorUI(FormType newRunForm)
     {
         Domain resultsDomain = newRunForm.getProvider().getResultsDomain(newRunForm.getProtocol());
-        return resultsDomain == null || resultsDomain.getProperties().length > 0;
+        return resultsDomain == null || !resultsDomain.getProperties().isEmpty();
     }
 
     protected void addHiddenBatchProperties(FormType newRunForm, InsertView insertView)

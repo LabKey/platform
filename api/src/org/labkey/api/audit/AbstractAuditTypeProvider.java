@@ -75,7 +75,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
         // NOTE: Remove domains created prior to migration that used DomainKind base properties instead of normal PropertyDescriptors
         // NOTE: This check will drop domains from servers built from source during 13.3 dev prior to the audit hard table migration.
-        if (domain != null && domain.getProperties().length == 0 && !AuditLogService.get().hasEventTypeMigrated(getEventName()))
+        if (domain != null && domain.getProperties().isEmpty() && !AuditLogService.get().hasEventTypeMigrated(getEventName()))
         {
             try
             {

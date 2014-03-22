@@ -27,7 +27,7 @@ public interface ExpSampleSet extends ExpObject
 {
     public String getMaterialLSIDPrefix();
 
-    public DomainProperty[] getPropertiesForType();
+    public List<? extends DomainProperty> getPropertiesForType();
 
     public ExpMaterial[] getSamples();
 

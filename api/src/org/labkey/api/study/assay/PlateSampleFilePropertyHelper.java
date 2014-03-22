@@ -43,7 +43,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -63,7 +62,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
     private File _metadataFile;
     private SampleMetadataInputFormat _metadataInputFormat;
 
-    public PlateSampleFilePropertyHelper(Container container, ExpProtocol protocol, DomainProperty[] domainProperties, PlateTemplate template, SampleMetadataInputFormat inputFormat)
+    public PlateSampleFilePropertyHelper(Container container, ExpProtocol protocol, List<? extends DomainProperty> domainProperties, PlateTemplate template, SampleMetadataInputFormat inputFormat)
     {
         super(domainProperties, template);
         _container = container;
@@ -164,23 +163,23 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         return _metadataFile;
     }
 
-    private boolean domainPropertiesEqual(DomainProperty[] first, DomainProperty[] second)
+    private boolean domainPropertiesEqual(List<? extends DomainProperty> first, List<? extends DomainProperty> second)
     {
         if (first == second)
             return true;
         if (first == null || second == null)
             return false;
-        if (first.length != second.length)
+        if (first.size() != second.size())
             return false;
         Set<DomainProperty> firstSet = new HashSet<>();
-        firstSet.addAll(Arrays.asList(first));
+        firstSet.addAll(first);
         Set<DomainProperty> secondSet = new HashSet<>();
-        secondSet.addAll(Arrays.asList(second));
+        secondSet.addAll(second);
         return firstSet.equals(secondSet);
     }
 
     @Override
-    public void setDomainProperties(DomainProperty[] domainProperties)
+    public void setDomainProperties(List<? extends DomainProperty> domainProperties)
     {
         // short-circuit if the new properties are equal to the old properties; helpful for high-throughput NAb since
         // there are many samples and property lookup can be expensive.

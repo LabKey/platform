@@ -187,8 +187,8 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         PlateSamplePropertyHelper helper = context.getSamplePropertyHelper();
         PlateTemplate template = getPlateTemplate(context.getContainer(), context.getProtocol());
         Domain sampleDomain = getSampleWellGroupDomain(context.getProtocol());
-        DomainProperty[] allSampleProperties = sampleDomain.getProperties();
-        DomainProperty[] selectedSampleProperties = allSampleProperties;
+        List<? extends DomainProperty> allSampleProperties = sampleDomain.getProperties();
+        List<? extends DomainProperty> selectedSampleProperties = allSampleProperties;
         if (filterInputsForType != null)
         {
             List<DomainProperty> selected = new ArrayList<>();
@@ -197,7 +197,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
                 if (filterInputsForType.collectPropertyOnUpload(context, possible.getName()))
                     selected.add(possible);
             }
-            selectedSampleProperties = selected.toArray(new DomainProperty[selected.size()]);
+            selectedSampleProperties = selected;
         }
         // If we don't have a sample helper yet, create it here:
         if (helper == null)
@@ -216,7 +216,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         return helper;
     }
 
-    protected PlateSamplePropertyHelper createSampleFilePropertyHelper(Container c, ExpProtocol protocol, DomainProperty[] sampleProperties, PlateTemplate template, SampleMetadataInputFormat inputFormat)
+    protected PlateSamplePropertyHelper createSampleFilePropertyHelper(Container c, ExpProtocol protocol, List<? extends DomainProperty> sampleProperties, PlateTemplate template, SampleMetadataInputFormat inputFormat)
     {
         return new PlateSampleFilePropertyHelper(c, protocol, sampleProperties, template, inputFormat);
     }

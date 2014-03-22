@@ -53,7 +53,7 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
         return PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), protocol);
     }
 
-    protected DataRegion createDataRegionForInsert(TableInfo baseTable, String lsidCol, DomainProperty[] domainProperties, Map<String, String> columnNameToPropertyName)
+    protected DataRegion createDataRegionForInsert(TableInfo baseTable, String lsidCol, List<? extends DomainProperty> domainProperties, Map<String, String> columnNameToPropertyName)
     {
         DataRegion rgn = new DataRegion();
         rgn.setTable(baseTable);

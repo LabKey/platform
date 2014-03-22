@@ -31,6 +31,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.view.ViewContext;
 
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  * User: dax
@@ -118,7 +119,7 @@ public interface AssaySaveHandler
      * Used to handle any properties of an ExpObject.
      * Called from DefaultAssaySaveHandler.handleBatch, handleRun, handleData, and handleMaterial as appropriate.
      */
-    void handleProperties(ViewContext context, ExpObject object, DomainProperty[] dps, JSONObject propertiesJson) throws ValidationException, JSONException;
+    void handleProperties(ViewContext context, ExpObject object, List<? extends DomainProperty> dps, JSONObject propertiesJson) throws ValidationException, JSONException;
 
     /**
      * The JSON object sent to beforeSave is the JSON sent directly from the client.  As long as the client provides a

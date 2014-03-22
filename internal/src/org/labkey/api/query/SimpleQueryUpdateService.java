@@ -87,7 +87,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
         final Domain domain = getQueryTable().getDomain();
 
         DataIteratorBuilder ret = data;
-        if (objectUriColumn != null && domain != null && domain.getProperties().length > 0)
+        if (objectUriColumn != null && domain != null && domain.getProperties().size() > 0)
         {
             ret = new DataIteratorBuilder()
             {
