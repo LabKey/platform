@@ -47,6 +47,8 @@ public class ApiJsonWriter extends ApiResponseWriter
     public ApiJsonWriter(Writer out) throws IOException
     {
         super(out);
+        // Don't flush the underlying Writer (thus committing the response) on all calls to write JSON content. See issue 19924
+        jg.disable(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM);
     }
 
     public ApiJsonWriter(HttpServletResponse response) throws IOException
@@ -69,6 +71,8 @@ public class ApiJsonWriter extends ApiResponseWriter
             jg.useDefaultPrettyPrinter();
         }
         jg.setCodec(new ObjectMapper());  // makes the generator annotation aware
+        // Don't flush the underlying Writer (thus committing the response) on all calls to write JSON content. See issue 19924
+        jg.disable(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM);
     }
 
     @Override
