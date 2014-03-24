@@ -454,7 +454,7 @@ public class StudyManager
     public List<? extends StudyImpl> getAllStudies(Container root, User user, Class<? extends Permission> perm)
     {
         List<? extends StudyImpl> studies = getAllStudies();
-        List<StudyImpl> result = new ArrayList<>(studies);
+        List<StudyImpl> result = new ArrayList<>();
         for (StudyImpl study : studies)
         {
             if (study.getContainer().hasPermission(user, perm) &&
