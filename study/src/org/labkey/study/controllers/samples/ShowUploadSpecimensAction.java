@@ -78,7 +78,10 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
     {
         Container container = getContainer();
         User user = getUser();
-        SimpleSpecimenImporter importer = new SimpleSpecimenImporter(container, user);
+        Study study = StudyManager.getInstance().getStudy(container);
+        SimpleSpecimenImporter importer = new SimpleSpecimenImporter(container, user,
+                study != null ? study.getTimepointType() : TimepointType.DATE,
+                StudyService.get().getSubjectNounSingular(container));
 
         TabLoader loader = new TabLoader(form.getTsv(), true);
         Map<String, String> columnAliases = new CaseInsensitiveHashMap<>();
@@ -158,7 +161,6 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
 
         Set<String> participants = new HashSet<>();
         Set<Object> vialIds = new HashSet<>();
-        Study study = StudyManager.getInstance().getStudy(container);
         Map<Object, Pair<Object,Object>> sampleIdMap = new HashMap<>();
         String visitKey = study.getTimepointType() == TimepointType.VISIT ? SimpleSpecimenImporter.VISIT : SimpleSpecimenImporter.DRAW_TIMESTAMP;
 

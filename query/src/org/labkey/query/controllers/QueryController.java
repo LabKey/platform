@@ -2916,7 +2916,7 @@ public class QueryController extends SpringActionController
             {
                 while (rs.next())
                 {
-                    writer.writeListEntry(rs.getObject("value"));
+                    writer.writeListEntry(rs.getObject(1));
                 }
             }
             catch (SQLException x)

@@ -20,15 +20,18 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.wiki.FormattedHtml;
 
 import java.io.StringWriter;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Stack;
 
@@ -118,12 +121,35 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
                         u = ctx.getUser();
                     }
 
-                    StringBuilder sb = new StringBuilder();
-                    PageFlowUtil.writeCss(c, u, sb, view.getClientDependencies());
-                    sb.append(PageFlowUtil.getJavaScriptIncludes(c, u, view.getClientDependencies(), false));
+                    LinkedHashSet<ClientDependency> dependencies = view.getClientDependencies();
+                    LinkedHashSet<String> includes = new LinkedHashSet<>();
+                    PageFlowUtil.getJavaScriptFiles(c, u, dependencies, includes, new LinkedHashSet<String>());
 
-                    if (sb.length() > 0)
+                    LinkedHashSet<String> cssScripts = new LinkedHashSet<>();
+                    for (ClientDependency d : dependencies)
+                    {
+                        cssScripts.addAll(d.getCssPaths(c, u, AppProps.getInstance().isDevMode()));
+                    }
+
+                    if (!includes.isEmpty() || !cssScripts.isEmpty())
+                    {
+                        StringBuilder sb = new StringBuilder();
+
+                        sb.append("<script type=\"text/javascript\">");
+
+                        for (String script : includes)
+                        {
+                            sb.append("\tLABKEY.requiresScript('").append(script).append("');\n");
+                        }
+
+                        for (String script : cssScripts)
+                        {
+                            sb.append("\tLABKEY.requiresCss('").append(script).append("');\n");
+                        }
+                        sb.append("</script>\n");
+
                         sw.write(sb.toString());
+                    }
                 }
                 view.include(view, sw);
             }
