@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.plate.PlateController" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -31,7 +32,7 @@
     <tr>
         <td>Copy <b><%= h(bean.getTemplateName()) %></b> to:</td>
     </tr>
-    <%= bean.getTreeHtml() %>
+    <%= text(bean.getTreeHtml()) %>
     <tr>
         <td>
             <br>
@@ -44,15 +45,15 @@
         </td>
     </tr>
 <%
-    PlateTemplate[] templates = bean.getDestinationTemplates();
+    List<? extends PlateTemplate> templates = bean.getDestinationTemplates();
     if (templates != null)
     {
 %>
     <tr>
-        <th align="left">Templates currently in <%= bean.getSelectedDestination() %>:</th>
+        <th align="left">Templates currently in <%= h(bean.getSelectedDestination()) %>:</th>
     </tr>
 <%
-        if (templates.length == 0)
+        if (templates.isEmpty())
         {
 %>
     <tr>
@@ -66,7 +67,7 @@
             {
 %>
     <tr>
-        <td class="labkey-indented"><%= template.getName() %></td>
+        <td class="labkey-indented"><%= h(template.getName()) %></td>
     </tr>
 <%
             }

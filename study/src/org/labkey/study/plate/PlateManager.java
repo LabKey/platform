@@ -155,18 +155,19 @@ public class PlateManager implements PlateService.Service
         return template;
     }
 
-    public PlateTemplate[] getPlateTemplates(Container container)
+    @NotNull
+    public List<PlateTemplateImpl> getPlateTemplates(Container container)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Template"), Boolean.TRUE);
         filter.addCondition(FieldKey.fromParts("Container"), container);
-        PlateTemplateImpl[] templates = new TableSelector(StudySchema.getInstance().getTableInfoPlate(),
-                filter, new Sort("Name")).getArray(PlateTemplateImpl.class);
-        for (int i = 0; i < templates.length; i++)
+        List<PlateTemplateImpl> templates = new TableSelector(StudySchema.getInstance().getTableInfoPlate(),
+                filter, new Sort("Name")).getArrayList(PlateTemplateImpl.class);
+        for (int i = 0; i < templates.size(); i++)
         {
-            PlateTemplateImpl template = templates[i];
+            PlateTemplateImpl template = templates.get(i);
             PlateTemplateImpl cached = getCachedPlateTemplate(container, template.getRowId().intValue());
             if (cached != null)
-                templates[i] = cached;
+                templates.set(1, cached);
             else
                 populatePlate(template);
         }

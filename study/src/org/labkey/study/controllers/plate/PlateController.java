@@ -86,13 +86,13 @@ public class PlateController extends SpringActionController
 
     public static class PlateTemplateListBean
     {
-        private PlateTemplate[] _templates;
-        public PlateTemplateListBean(PlateTemplate[] templates)
+        private List<? extends PlateTemplate> _templates;
+        public PlateTemplateListBean(List<? extends PlateTemplate> templates)
         {
             _templates = templates;
         }
 
-        public PlateTemplate[] getTemplates()
+        public List<? extends PlateTemplate> getTemplates()
         {
             return _templates;
         }
@@ -104,7 +104,7 @@ public class PlateController extends SpringActionController
         public ModelAndView getView(ReturnUrlForm plateTemplateListForm, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("editPlateTemplate"));
-            PlateTemplate[] plateTemplates = PlateService.get().getPlateTemplates(getContainer());
+            List<? extends PlateTemplate> plateTemplates = PlateService.get().getPlateTemplates(getContainer());
             return new JspView<>("/org/labkey/study/plate/view/plateTemplateList.jsp",
                     new PlateTemplateListBean(plateTemplates));
         }
@@ -224,10 +224,10 @@ public class PlateController extends SpringActionController
             properties.put("templateRowCount", "" + form.getRowCount());
             properties.put("templateColumnCount", "" + form.getColCount());
 
-            PlateTemplate[] templates = PlateService.get().getPlateTemplates(getContainer());
-            for (int i = 0; i < templates.length; i++)
+            List<? extends PlateTemplate> templates = PlateService.get().getPlateTemplates(getContainer());
+            for (int i = 0; i < templates.size(); i++)
             {
-                PlateTemplate template = templates[i];
+                PlateTemplate template = templates.get(i);
                 properties.put("templateName[" + i + "]", template.getName());
             }
             return new StudyGWTView(gwt.client.org.labkey.plate.designer.client.TemplateDesigner.class, properties);
@@ -244,8 +244,8 @@ public class PlateController extends SpringActionController
     {
         public ModelAndView getView(NameForm form, BindException errors) throws Exception
         {
-            PlateTemplate[] templates = PlateService.get().getPlateTemplates(getContainer());
-            if (templates != null && templates.length > 1)
+            List<? extends PlateTemplate> templates = PlateService.get().getPlateTemplates(getContainer());
+            if (templates.size() > 1)
             {
                 PlateTemplate template = PlateService.get().getPlateTemplate(getContainer(), form.getTemplateName());
                 if (template != null)
@@ -265,7 +265,7 @@ public class PlateController extends SpringActionController
         private String _treeHtml;
         private String _templateName;
         private String _selectedDestination;
-        private PlateTemplate[] _destinationTemplates;
+        private List<? extends PlateTemplate> _destinationTemplates;
 
         public CopyTemplateBean(final Container container, final User user, final String templateName, final String selectedDestination)
         {
@@ -319,7 +319,7 @@ public class PlateController extends SpringActionController
             return _templateName;
         }
 
-        public PlateTemplate[] getDestinationTemplates()
+        public List<? extends PlateTemplate> getDestinationTemplates()
         {
             return _destinationTemplates;
         }
@@ -408,9 +408,8 @@ public class PlateController extends SpringActionController
 
     private String getUniqueName(Container container, String originalName) throws SQLException
     {
-        PlateTemplate[] templates = PlateService.get().getPlateTemplates(container);
         Set<String> existing = new HashSet<>();
-        for (PlateTemplate template : templates)
+        for (PlateTemplate template : PlateService.get().getPlateTemplates(container))
             existing.add(template.getName());
         String baseUniqueName;
         if (!originalName.startsWith("Copy of "))

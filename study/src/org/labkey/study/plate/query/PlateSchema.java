@@ -16,22 +16,26 @@
 
 package org.labkey.study.plate.query;
 
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.module.Module;
-import org.labkey.api.query.*;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.module.Module;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.study.PlateQueryView;
-import org.labkey.api.study.WellGroup;
 import org.labkey.api.study.PlateService;
-import org.labkey.api.study.PlateTemplate;
+import org.labkey.api.study.WellGroup;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 
-import java.util.Set;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -45,7 +49,7 @@ public class PlateSchema extends UserSchema
 
     static public class Provider extends DefaultSchema.SchemaProvider
     {
-        public Provider(@Nullable Module module)
+        public Provider(@NotNull Module module)
         {
             super(module);
         }
@@ -53,8 +57,7 @@ public class PlateSchema extends UserSchema
         @Override
         public boolean isAvailable(DefaultSchema schema, Module module)
         {
-            PlateTemplate[] templates = PlateService.get().getPlateTemplates(schema.getContainer());
-            return templates != null && templates.length > 0;
+            return !PlateService.get().getPlateTemplates(schema.getContainer()).isEmpty();
         }
 
         public QuerySchema createSchema(DefaultSchema schema, Module module)
@@ -65,7 +68,7 @@ public class PlateSchema extends UserSchema
 
     public PlateSchema(User user, Container container)
     {
-        super(SCHEMA_NAME, null, user, container, StudySchema.getInstance().getSchema());
+        super(SCHEMA_NAME, SCHEMA_DESCR, user, container, StudySchema.getInstance().getSchema());
     }
 
     public Set<String> getTableNames()

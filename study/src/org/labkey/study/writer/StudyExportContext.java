@@ -117,7 +117,7 @@ public class StudyExportContext extends AbstractContext
         boolean includeCRF = _dataTypes.contains(DatasetWriter.SELECTION_TEXT);
         boolean includeAssay = _dataTypes.contains(AssayDatasetWriter.SELECTION_TEXT);
 
-        for (DataSetDefinition dataset : study.getDataSetsByType(new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER}))
+        for (DataSetDefinition dataset : study.getDataSetsByType(DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER))
         {
             if ((!dataset.isAssayData() && includeCRF) || (dataset.isAssayData() && includeAssay))
             {

@@ -439,23 +439,22 @@ public class StudyManager
     }
 
     @NotNull
-    public List<? extends StudyImpl> getAllStudies()
+    public Set<? extends StudyImpl> getAllStudies()
     {
-        return Collections.unmodifiableList(new TableSelector(StudySchema.getInstance().getTableInfoStudy(), null, new Sort("Label")).getArrayList(StudyImpl.class));
+        return Collections.unmodifiableSet(new LinkedHashSet<>(new TableSelector(StudySchema.getInstance().getTableInfoStudy(), null, new Sort("Label")).getArrayList(StudyImpl.class)));
     }
 
     @NotNull
-    public List<? extends StudyImpl> getAllStudies(Container root, User user)
+    public Set<? extends StudyImpl> getAllStudies(Container root, User user)
     {
         return getAllStudies(root, user, ReadPermission.class);
     }
 
     @NotNull
-    public List<? extends StudyImpl> getAllStudies(Container root, User user, Class<? extends Permission> perm)
+    public Set<? extends StudyImpl> getAllStudies(Container root, User user, Class<? extends Permission> perm)
     {
-        List<? extends StudyImpl> studies = getAllStudies();
-        List<StudyImpl> result = new ArrayList<>();
-        for (StudyImpl study : studies)
+        Set<StudyImpl> result = new LinkedHashSet<>();
+        for (StudyImpl study : getAllStudies())
         {
             if (study.getContainer().hasPermission(user, perm) &&
                     (study.getContainer().equals(root) || study.getContainer().isDescendant(root)))
@@ -463,7 +462,7 @@ public class StudyManager
                 result.add(study);
             }
         }
-        return Collections.unmodifiableList(result);
+        return Collections.unmodifiableSet(result);
     }
 
     public StudyImpl createStudy(User user, StudyImpl study)

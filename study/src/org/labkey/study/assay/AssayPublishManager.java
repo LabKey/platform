@@ -137,7 +137,7 @@ public class AssayPublishManager implements AssayPublishService.Service
      */
     public Set<Study> getValidPublishTargets(User user, Class<? extends Permission> permission)
     {
-        List<? extends Study> studies = StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, permission);
+        Set<? extends Study> studies = StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, permission);
 
         // Sort based on full container path
         Set<Study> result = new TreeSet<>(new Comparator<Study>()
@@ -645,7 +645,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     private static String createUniqueDatasetName(Study study, String assayName)
     {
         Set<String> inUseNames = new CaseInsensitiveHashSet();
-        for (DataSet def : study.getDataSetsByType(new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER}))
+        for (DataSet def : study.getDataSetsByType(DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER))
             inUseNames.add(def.getName());
 
         int suffix = 1;

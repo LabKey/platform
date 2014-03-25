@@ -23,11 +23,12 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container proj = getContainer().getProject();
 
-    List<? extends Study> studies = StudyManager.getInstance().getAllStudies(proj, getUser());
+    Set<? extends Study> studies = StudyManager.getInstance().getAllStudies(proj, getUser());
     if (studies.isEmpty())
     { %>
         No Studies found in project <%= h(proj.getName()) %> <%

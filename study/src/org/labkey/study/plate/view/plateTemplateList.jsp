@@ -33,7 +33,7 @@
 <%
     JspView<PlateController.PlateTemplateListBean> me = (JspView<PlateController.PlateTemplateListBean>) HttpView.currentView();
     Container c = getContainer();
-    PlateTemplate[] plateTemplates = me.getModelBean().getTemplates();
+    List<? extends PlateTemplate> plateTemplates = me.getModelBean().getTemplates();
 %>
 <h4>Available Plate Templates</h4>
 <table>
@@ -60,10 +60,10 @@
             if (c.hasPermission(getUser(), DeletePermission.class))
             {
         %>
-        <td><%= ((plateTemplates !=null && plateTemplates.length > 1) ?
+        <td><%= text(((plateTemplates.size() > 1) ?
                 textLink("delete", buildURL(PlateController.DeleteAction.class, "templateName=" + PageFlowUtil.encode(template.getName())),
                         "return confirm('Permanently delete this plate template?')", null) :
-                "Cannot delete the final template.") %></td>
+                "Cannot delete the final template.")) %></td>
         <%
             }
         %>

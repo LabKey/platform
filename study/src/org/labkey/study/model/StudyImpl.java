@@ -244,7 +244,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
-    public List<DataSetDefinition> getDataSetsByType(String[] types)
+    public List<DataSetDefinition> getDataSetsByType(String... types)
     {
         return StudyManager.getInstance().getDataSetDefinitions(this, null, types);
     }

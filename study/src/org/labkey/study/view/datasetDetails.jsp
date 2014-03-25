@@ -243,7 +243,7 @@ if (!pipelineSet)
         Ext4.onReady(function(){
             var datasets = [
 <%
-        for (DataSet def : study.getDataSetsByType(new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER}))
+        for (DataSet def : study.getDataSetsByType(DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER))
         {
 %>
                 {label: "<%=h(def.getLabel())%>", id: <%=def.getDataSetId()%>},

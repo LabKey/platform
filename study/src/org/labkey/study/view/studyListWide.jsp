@@ -22,7 +22,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="java.util.List" %>
+<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <style type="text/css">
     div.labkey-study-list div.study-header {padding-top:6px;}
@@ -33,7 +33,7 @@
 <%
     Container c = getContainer();
 
-    List<? extends Study> studies = StudyManager.getInstance().getAllStudies(c, getUser());
+    Set<? extends Study> studies = StudyManager.getInstance().getAllStudies(c, getUser());
     if (studies.isEmpty())
     {
         out.print(text("No Studies found in " + (c.equals(c.getProject()) ? "project " : "folder ") + h(c.getName()) + " or child folders."));

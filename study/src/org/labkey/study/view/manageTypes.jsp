@@ -45,7 +45,7 @@
     Study study = StudyManager.getInstance().getStudy(c);
     boolean sharedDatasets = null != StudyManager.getInstance().getSharedStudy(study);
 
-    List<? extends DataSet> datasets = study.getDataSetsByType(new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER});
+    List<? extends DataSet> datasets = study.getDataSetsByType(DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER);
     int countUndefined = 0;
     for (DataSet def : datasets)
     {

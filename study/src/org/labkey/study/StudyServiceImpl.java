@@ -413,7 +413,7 @@ public class StudyServiceImpl implements StudyService.Service
         {
             String studyRef = (String)studyReference;
             // look for study by label
-            List<? extends StudyImpl> studies = user == null ?
+            Set<? extends StudyImpl> studies = user == null ?
                     StudyManager.getInstance().getAllStudies() :
                     StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, ReadPermission.class);
 
@@ -649,7 +649,7 @@ public class StudyServiceImpl implements StudyService.Service
     }
 
     @Override
-    public List<? extends Study> getAllStudies(Container root, User user)
+    public Set<? extends Study> getAllStudies(Container root, User user)
     {
         return StudyManager.getInstance().getAllStudies(root, user);
     }
