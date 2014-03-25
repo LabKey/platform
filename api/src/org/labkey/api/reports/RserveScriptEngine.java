@@ -16,6 +16,7 @@
 package org.labkey.api.reports;
 
 import org.apache.axis.utils.StringUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.file.PathMapper;
 
 import javax.script.*;
@@ -31,6 +32,8 @@ import org.rosuda.REngine.Rserve.RserveException;
 
 public class RserveScriptEngine extends RScriptEngine
 {
+    private static final Logger LOG = Logger.getLogger(RserveScriptEngine.class);
+
     private String localHostIP = "127.0.0.1";
     private String localHostName = "localhost";
     private static final int INITIAL_R_SESSONS = 5;
@@ -85,6 +88,7 @@ public class RserveScriptEngine extends RScriptEngine
             // if we have a session in the bindings then the connection holder better be there and marked as in use
             //
             assert (rh!=null) && (rh.isInUse());
+            LOG.info("Reusing RServe connection in use: " + rh.isInUse());
         }
 
         File scriptFile = prepareScriptFile(script, context, extensions);
@@ -105,11 +109,15 @@ public class RserveScriptEngine extends RScriptEngine
             // We use .try_quietly instead of try so the R stack is included in the error
             // See http://stackoverflow.com/questions/16879821/save-traceback-on-error-using-trycatch
             //
+            String remoteInputFile = getInputFilename(scriptFile);
+            LOG.debug("Executing remote script '" + remoteInputFile + "'...");
             sb.append("tools:::.try_quietly(capture.output(source(\"");
-            sb.append(getInputFilename(scriptFile));
+            sb.append(remoteInputFile);
             sb.append("\")))");
 
-            return eval(rconn, sb.toString());
+            String output = eval(rconn, sb.toString());
+            LOG.debug("Executed remote script '" + scriptFile + "' successfully");
+            return output;
         }
         finally
         {
@@ -216,9 +224,18 @@ public class RserveScriptEngine extends RScriptEngine
             try
             {
                 File f = new File(new URI(remoteURI));
-                return f.getAbsolutePath();
+                String remotePath = f.getAbsolutePath();
+                LOG.debug("Mapped path '" + localURI + "' ==> '" + remotePath + "'");
+                return remotePath;
             }
-            catch (URISyntaxException e) { }
+            catch (URISyntaxException e)
+            {
+                LOG.warn("Error mapping localURI '" + localURI + "' to remote RServe path: " + e.getMessage());
+            }
+        }
+        else
+        {
+            LOG.warn("No path mapping configured; using localURI '" + localURI + "' on remote RServe");
         }
 
         return localURI;
@@ -335,6 +352,7 @@ public class RserveScriptEngine extends RScriptEngine
         String workingDir = getRWorkingDir(context);
         if (workingDir != null)
         {
+            LOG.debug("Setting RServe working directory to '" + workingDir + "'");
             String script = "setwd(\"" + workingDir + "\")\n";
 
             eval(rconn, script);
@@ -377,14 +395,16 @@ public class RserveScriptEngine extends RScriptEngine
                 //
                 // get a new connection (will HANG on a windows server)
                 //
+                LOG.debug("Creating new RServe connection to " + _def.getMachine() + ":" + _def.getPort());
                 rconn = new RConnection(_def.getMachine(), _def.getPort());
 
-                if (rconn != null && rconn.needLogin())
+                if (rconn.needLogin())
                 {
+                    LOG.debug("Logging in to RServe as '" + _def.getUser() + "'");
                     rconn.login(_def.getUser(), _def.getPassword());
-
-                    initEnv(rconn, context);
                 }
+
+                initEnv(rconn, context);
             }
             catch(RserveException rse)
             {
@@ -423,6 +443,7 @@ public class RserveScriptEngine extends RScriptEngine
             }
             else
             {
+                LOG.info("Closing RServe connection");
                 conn.close();
             }
         }
