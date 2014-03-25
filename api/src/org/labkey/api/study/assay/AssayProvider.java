@@ -49,7 +49,6 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -189,9 +188,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
      */
     @Nullable
     PipelineProvider getPipelineProvider();
-
-    /** Upgrade from property store to hard table */
-    void upgradeAssayDefinitions(User user, ExpProtocol protocol, double targetVersion) throws SQLException;
 
     /** @return the links to be shown in the header of standard assay views (run and result data grids, for example) */
     List<NavTree> getHeaderLinks(ViewContext viewContext, ExpProtocol protocol, ContainerFilter containerFilter);

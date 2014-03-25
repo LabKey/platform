@@ -1298,8 +1298,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return new AssayRunAsyncContext(context);
     }
 
-    public void upgradeAssayDefinitions(User user, ExpProtocol protocol, double targetVersion) throws SQLException {}
-
     @Override
     public List<NavTree> getHeaderLinks(ViewContext viewContext, ExpProtocol protocol, ContainerFilter containerFilter)
     {

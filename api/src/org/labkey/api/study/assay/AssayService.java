@@ -112,8 +112,6 @@ public class AssayService
 
         public void indexAssays(SearchService.IndexTask task, Container c);
 
-        void upgradeAssayDefinitions(User upgradeUser, double targetVersion);
-
         /**
          * Creates a run, but does not persist it to the database. Creates the run only, no protocol applications, etc.
          */

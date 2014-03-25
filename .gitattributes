@@ -1406,7 +1406,6 @@ api/src/org/labkey/api/study/assay/PlateUrls.java -text
 api/src/org/labkey/api/study/assay/PreviouslyUploadedDataCollector.java -text
 api/src/org/labkey/api/study/assay/ReplacedRunFilter.java -text
 api/src/org/labkey/api/study/assay/RunDataSetContextualRoles.java -text
-api/src/org/labkey/api/study/assay/RunDataTable.java -text
 api/src/org/labkey/api/study/assay/RunListDetailsQueryView.java -text
 api/src/org/labkey/api/study/assay/SampleChooserDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/SampleMetadataInputFormat.java -text

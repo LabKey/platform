@@ -43,7 +43,7 @@ public interface Study extends StudyEntity
 
     List<? extends DataSet> getDataSets();
 
-    List<? extends DataSet> getDataSetsByType(String[] types);
+    List<? extends DataSet> getDataSetsByType(String... types);
 
     List<? extends Location> getLocations();
 

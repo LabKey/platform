@@ -15,40 +15,17 @@
  */
 package org.labkey.api.study.assay;
 
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleUpgrader;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.security.User;
-import org.labkey.api.study.DataSet;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.util.UnexpectedException;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 
@@ -58,8 +35,6 @@ import java.util.Map;
  */
 public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
 {
-    public static final String OBJECT_ID_UPGRADE = "ObjectId__Upgrade";
-    private static final String DATASET_SCHEMA_NAME = "studydataset";
     public static final String ASSAY_SCHEMA_NAME = "assayresult";
     public static final String ROW_ID_COLUMN_NAME = "RowId";
     public static final String DATA_ID_COLUMN_NAME = "DataId";
@@ -104,178 +79,5 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         }
 
         return null;
-    }
-
-    public void upgradeAssayDefinitions(User user, ExpProtocol protocol, double targetVersion) throws SQLException
-    {
-        // Due to a bug in the original implementation, this upgrade is handled in two separate pieces.
-        if (targetVersion == 11.1)
-        {
-            // The first step is to create the hard table and migrate data into it
-            migrateToHardTable(user, protocol);
-        }
-        if (targetVersion == 11.101)
-        {
-            // The second step is to make the dataset match the new expectations for the key property name
-            renameObjectIdDatasetColumn(user, protocol);
-        }
-    }
-
-    /**
-     * The original migration code incorrectly left the single property named "ObjectId", instead of
-     * "RowId" which is what future copy-to-study operations expect. We need to loop through all datasets created
-     * from this assay definition and fix them up.
-     */
-    public void renameObjectIdDatasetColumn(User user, ExpProtocol protocol) throws SQLException
-    {
-        // Iterate through all of the studies that contain a dataset created by copying from this assay
-        for (DataSet<DataSet> dataSet : StudyService.get().getDatasetsForAssayProtocol(protocol))
-        {
-            Domain domain = dataSet.getDomain();
-            DomainProperty property = domain.getPropertyByName("ObjectId");
-            // Check if we have the old property name - datasets created with 11.1 won't
-            if (property != null)
-            {
-                try
-                {
-                    // Rename it to be "RowId"
-                    property.setName("RowId");
-                    property.setLabel("RowId");
-                    domain.save(user);
-                    // Update the key property name too
-                    dataSet = dataSet.createMutable();
-                    dataSet.setKeyPropertyName("RowId");
-                    dataSet.save(user);
-                }
-                catch (ChangePropertyDescriptorException e)
-                {
-                    throw new UnexpectedException(e);
-                }
-            }
-        }
-    }
-
-    public void migrateToHardTable(User user, ExpProtocol protocol) throws SQLException
-    {
-        // First create the hard table
-        Domain resultsDomain = getResultsDomain(protocol);
-        TableInfo toTable = StorageProvisioner.createTableInfo(resultsDomain, DbSchema.get(ASSAY_SCHEMA_NAME));
-
-        // Add a column to temporarily hold the objectId
-        TableChange addColumnChange = new TableChange(toTable.getSchema().getName(), toTable.getName(), TableChange.ChangeType.AddColumns);
-        PropertyStorageSpec objectIdSpec = new PropertyStorageSpec(OBJECT_ID_UPGRADE, JdbcType.INTEGER);
-        addColumnChange.addColumn(objectIdSpec);
-        for (String sql : toTable.getSqlDialect().getChangeStatements(addColumnChange))
-        {
-            new SqlExecutor(toTable.getSchema()).execute(sql);
-        }
-
-        Container container = protocol.getContainer();
-        AssayProtocolSchema schema = createProtocolSchema(user, container, protocol, null);
-
-        @SuppressWarnings({"deprecation"})
-        RunDataTable fromTable = new RunDataTable(schema, true);
-        fromTable.setContainerFilter(ContainerFilter.EVERYTHING);
-
-        // Build up a list of all the columns we need from the source table
-        List<FieldKey> selectFKs = new ArrayList<>();
-        for (ColumnInfo columnInfo : fromTable.getColumns())
-        {
-            // Include all the base columns
-            selectFKs.add(columnInfo.getFieldKey());
-        }
-        for (DomainProperty property : resultsDomain.getProperties())
-        {
-            // Plus the custom properties
-            selectFKs.add(FieldKey.fromParts("Properties", property.getName()));
-        }
-
-        Map<FieldKey, ColumnInfo> fromColumns = QueryService.get().getColumns(fromTable, selectFKs);
-
-        Map<String, ColumnInfo> colMap = new CaseInsensitiveHashMap<>();
-        for (ColumnInfo c : fromColumns.values())
-        {
-            if (null != c.getPropertyURI())
-                colMap.put(c.getPropertyURI(), c);
-            colMap.put(c.getName(), c);
-        }
-
-        SQLFragment fromSQL = QueryService.get().getSelectSQL(fromTable, fromColumns.values(), null, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
-
-        // 
-        SQLFragment insertInto = new SQLFragment("INSERT INTO " + toTable.getSelectName() + " (" + objectIdSpec.getName());
-        SQLFragment select = new SQLFragment("SELECT ObjectId" );
-        for (ColumnInfo to : toTable.getColumns())
-        {
-            ColumnInfo from = colMap.get(to.getPropertyURI());
-            if (null == from)
-                from = colMap.get(to.getName());
-            if (null == from)
-            {
-                String name = to.getName().toLowerCase();
-                if (name.endsWith("_" + MvColumn.MV_INDICATOR_SUFFIX.toLowerCase()))
-                {
-                    from = colMap.get(name.substring(0,name.length()-(MvColumn.MV_INDICATOR_SUFFIX.length()+1)) + MvColumn.MV_INDICATOR_SUFFIX);
-                    if (null == from)
-                        continue;
-                }
-                else
-                {
-                    ModuleUpgrader.getLogger().error("Could not copy column: " + container.getId() + "-" + container.getPath() + " " + protocol.getRowId() + "-" + protocol.getName() + " " + to.getName());
-                    continue;
-                }
-            }
-            insertInto.append(", ").append(schema.getDbSchema().getSqlDialect().makeLegalIdentifier(to.getSelectName()));
-            select.append(", ").append(from.getAlias());
-        }
-        insertInto.append(")\n");
-        insertInto.append(select);
-        insertInto.append("\n FROM (").append(fromSQL).append(") x ORDER BY ObjectId ");
-
-        ModuleUpgrader.getLogger().info("Migrating data for [" + container.getPath() + "]  '" + protocol.getName() + "'");
-        ModuleUpgrader.getLogger().info(insertInto.toString());
-        new SqlExecutor(toTable.getSchema()).execute(insertInto);
-
-        for (DataSet dataSet : StudyService.get().getDatasetsForAssayProtocol(protocol))
-        {
-            Domain dataSetDomain = dataSet.getDomain();
-            SQLFragment updateKeysSQL = new SQLFragment("UPDATE " + DATASET_SCHEMA_NAME + "." + dataSetDomain.getStorageTableName());
-            updateKeysSQL.append(" SET _key = (SELECT RowId FROM ");
-            updateKeysSQL.append(ASSAY_SCHEMA_NAME + "." + toTable.getName());
-            updateKeysSQL.append(" WHERE CAST(_key AS INT) = " + OBJECT_ID_UPGRADE + ")");
-
-            int copyFixupCount = new SqlExecutor(toTable.getSchema()).execute(updateKeysSQL);
-
-            SQLFragment updateObjectIdSQL = new SQLFragment("UPDATE " + DATASET_SCHEMA_NAME + "." + dataSetDomain.getStorageTableName());
-            updateObjectIdSQL.append(" SET ObjectId = CAST(_key AS INT)");
-            new SqlExecutor(toTable.getSchema()).execute(updateObjectIdSQL);
-
-            ModuleUpgrader.getLogger().info("Migrated ObjectId to RowId for " + copyFixupCount + " in " + dataSet.getContainer().getPath() + "." + dataSet.getName());
-        }
-
-        // Remove the temporary objectId column from the new assay results table
-        TableChange removeColumnChange = new TableChange(toTable.getSchema().getName(), toTable.getName(), TableChange.ChangeType.DropColumns);
-        removeColumnChange.addColumn(objectIdSpec);
-        for (String sql : toTable.getSqlDialect().getChangeStatements(removeColumnChange))
-        {
-            new SqlExecutor(toTable.getSchema()).execute(sql);
-        }
-
-        // Delete the data from OntologyManager
-        SQLFragment objectIdsSQL = new SQLFragment("(SELECT child.objectid FROM exp.object child, exp.object parent, " +
-                "exp.data d, exp.experimentrun r\n" +
-                "\tWHERE child.ownerobjectid = parent.objectid AND parent.objecturi = d.lsid AND d.runid = r.rowid AND\n" +
-                "\tr.protocollsid = ?)");
-        objectIdsSQL.add(protocol.getLSID());
-
-        SQLFragment deleteObjectPropertiesSQL = new SQLFragment("DELETE FROM exp.objectproperty WHERE objectid IN ");
-        deleteObjectPropertiesSQL.append(objectIdsSQL);
-        new SqlExecutor(toTable.getSchema()).execute(deleteObjectPropertiesSQL);
-        ModuleUpgrader.getLogger().info("Deleted property values from OntologyManager for protocol " + protocol.getName());
-
-        SQLFragment deleteObjectsSQL = new SQLFragment("DELETE FROM exp.object WHERE objectid IN ");
-        deleteObjectsSQL.append(objectIdsSQL);
-        new SqlExecutor(toTable.getSchema()).execute(deleteObjectsSQL);
-        ModuleUpgrader.getLogger().info("Deleted data rows from OntologyManager for protocol " + protocol.getName());
     }
 }

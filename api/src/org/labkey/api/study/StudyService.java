@@ -163,8 +163,9 @@ public class StudyService
         DataSet.KeyType getDatasetKeyType(Container container, String datasetName);
 
         Map<String, String> getAlternateIdMap(Container container);
-    
-        List<? extends Study> getAllStudies(Container root, User user);
+
+        /** @return all studies under the specified parent container that the user has at least read access to */
+        Set<? extends Study> getAllStudies(Container root, User user);
 
         boolean runStudyImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
 

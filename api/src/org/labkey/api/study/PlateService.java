@@ -16,6 +16,7 @@
 
 package org.labkey.api.study;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
@@ -78,7 +79,8 @@ public class PlateService
          * @param container The templates' container.
          * @return An array of all plate templates from the specified container.
          */
-        PlateTemplate[] getPlateTemplates(Container container);
+        @NotNull
+        List<? extends PlateTemplate> getPlateTemplates(Container container);
 
         /**
          * Creates a new plate template.
