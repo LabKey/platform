@@ -185,16 +185,23 @@ public class BitSetQueryImpl
             }
             else if (null != hierarchy)
             {
-                // CONSIDER: not the most efficient
-                MemberSet set = new MemberSet();
-                for (Level level : hierarchy.getLevels())
-                    set.addAll(level);
-                return set;
+                List<Member> ret = new ArrayList<>();
+                for (Member r : hierarchy.getRootMembers())
+                    addMemberAndChildren(r,ret);
+                return ret;
             }
             else
             {
                 return members;
             }
+        }
+
+
+        void addMemberAndChildren(Member m, List<Member> list) throws OlapException
+        {
+            list.add(m);
+            for (Member c : m.getChildMembers())
+                addMemberAndChildren(c, list);
         }
 
 
