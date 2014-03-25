@@ -167,7 +167,7 @@ public class PlateManager implements PlateService.Service
             PlateTemplateImpl template = templates.get(i);
             PlateTemplateImpl cached = getCachedPlateTemplate(container, template.getRowId().intValue());
             if (cached != null)
-                templates.set(1, cached);
+                templates.set(i, cached);
             else
                 populatePlate(template);
         }
