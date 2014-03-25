@@ -111,14 +111,16 @@ public class DefaultStudyDesignImporter
             // get the domain of the table we are updating
             StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
             TableInfo table = schema.getTable(tableName);
+
             if (table != null)
             {
                 final Domain domain = table.getDomain();
-                // study design table domains are rooted at the project level
-                final Container container = domain.getContainer();
 
                 if (domain != null)
                 {
+                    // study design table domains are rooted at the project level
+                    final Container container = domain.getContainer();
+
                     ImportTypesHelper importHelper = new ImportTypesHelper(tableXml, "TableName", tableName);
                     List<Map<String, Object>> importMaps = importHelper.createImportMaps();
                     List<String> propErrors = new ArrayList<>();
@@ -184,7 +186,9 @@ public class DefaultStudyDesignImporter
         TableInfo tableInfo = tablePackage.getTableInfo();
         Container container = tablePackage.getContainer();
 //        if (!tablePackage.isProjectLevel())           // TODO: implement a insert if not there using ETL Merge
+        if (!"Study".equalsIgnoreCase(tableInfo.getName()))
         {
+            // Consider: defer to QueryUpdateService?
             deleteData(container, tableInfo);
         }
 

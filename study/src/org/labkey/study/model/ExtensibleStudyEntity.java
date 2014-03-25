@@ -17,8 +17,13 @@ package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.*;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.ValidationException;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.sql.SQLException;
 
@@ -102,28 +107,38 @@ public abstract class ExtensibleStudyEntity<E> extends AbstractStudyEntity<E>
 
     public abstract String getLsid();
 
+    // This is not up to current standards... but at least we're using the domain to get the PropertyURIs now...
     public void savePropertyBag(Map<String, Object> props) throws SQLException, ValidationException
     {
         Container container = getContainer();
         String ownerLsid = getLsid();
-        String classLsid = getDomainInfo().getDomainURI(container);
+        String domainURI = getDomainInfo().getDomainURI(container);
+        Domain domain = PropertyService.get().getDomain(container, domainURI);
 
         Map<String, ObjectProperty> resourceProperties = OntologyManager.getPropertyObjects(container, ownerLsid);
         if (resourceProperties != null && !resourceProperties.isEmpty())
         {
             OntologyManager.deleteOntologyObject(ownerLsid, container, false);
         }
-        ObjectProperty[] objectProperties = new ObjectProperty[props.size()];
-        int idx = 0;
+
+        List<ObjectProperty> objectProperties = new ArrayList<>(props.size());
+
         for (Map.Entry<String, Object> entry : props.entrySet())
         {
-            String propertyURI = Lsid.isLsid(entry.getKey()) ? entry.getKey() : classLsid + "#" + entry.getKey();
-            if (entry.getValue() != null)
-                objectProperties[idx++] = new ObjectProperty(ownerLsid, container, propertyURI, entry.getValue());
-            else
-                objectProperties[idx++] = new ObjectProperty(ownerLsid, container, propertyURI, entry.getValue(), PropertyType.STRING);
+            DomainProperty property = domain.getPropertyByName(entry.getKey());
+
+            if (null != property)
+            {
+                String propertyURI = property.getPropertyURI();
+
+                if (entry.getValue() != null)
+                    objectProperties.add(new ObjectProperty(ownerLsid, container, propertyURI, entry.getValue()));
+                else
+                    objectProperties.add(new ObjectProperty(ownerLsid, container, propertyURI, entry.getValue(), PropertyType.STRING));
+            }
         }
-        if (objectProperties.length > 0)
-            OntologyManager.insertProperties(container, ownerLsid, objectProperties);
+
+        if (!objectProperties.isEmpty())
+            OntologyManager.insertProperties(container, ownerLsid, objectProperties.toArray(new ObjectProperty[objectProperties.size()]));
     }
 }

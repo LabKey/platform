@@ -1,7 +1,6 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.admin.ImportException;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.importer.DefaultStudyDesignImporter;
 import org.labkey.study.importer.StudyImportContext;
@@ -39,6 +38,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
 
                 studyPropertyTableNames.add(StudyQuerySchema.OBJECTIVE_TABLE_NAME);
                 studyPropertyTableNames.add(StudyQuerySchema.PERSONNEL_TABLE_NAME);
+                studyPropertyTableNames.add(StudyQuerySchema.PROPERTIES_TABLE_NAME);
 
                 for (String tableName : studyPropertyTableNames)
                 {

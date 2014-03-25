@@ -22,6 +22,7 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.portal.ProjectUrls;
@@ -34,6 +35,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -117,7 +119,21 @@ public class StudyPropertiesTable extends BaseStudyTable
         String domainURI = StudyImpl.DOMAIN_INFO.getDomainURI(schema.getContainer());
 
         _domain = PropertyService.get().getDomain(schema.getContainer(), domainURI);
-        if (_domain != null)
+
+        if (null == _domain)
+        {
+            _domain = PropertyService.get().createDomain(getContainer(), domainURI, StudyImpl.DOMAIN_INFO.getDomainName());
+
+            try
+            {
+                _domain.save(schema.getUser());
+            }
+            catch (ChangePropertyDescriptorException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+        else
         {
             for (ColumnInfo extraColumn : _domain.getColumns(this, lsidColumn, schema.getContainer(), schema.getUser()))
             {
@@ -147,8 +163,8 @@ public class StudyPropertiesTable extends BaseStudyTable
     @Override
     public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
-        if (UpdatePermission.class == perm || ReadPermission.class.equals(perm))
-            return super.canReadOrIsAdminPermission(user, perm);
+        if (UpdatePermission.class == perm || InsertPermission.class == perm || ReadPermission.class.equals(perm))
+            return canReadOrIsAdminPermission(user, perm);
         return false;
     }
 

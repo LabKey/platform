@@ -378,7 +378,7 @@ public class StudyQuerySchema extends UserSchema
     @Override
     public TableInfo createTable(String name)
     {
-        if (PROPERTIES_TABLE_NAME.equalsIgnoreCase(name))
+        if (PROPERTIES_TABLE_NAME.equalsIgnoreCase(name) || "Study".equalsIgnoreCase(name))
         {
             StudyPropertiesTable ret = new StudyPropertiesTable(this);
             return ret;

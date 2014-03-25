@@ -210,7 +210,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
             VirtualFile vf = ctx.getRoot();
 
-            // study.objective and study.personnel tables
+            // study.objective, study.personnel, and study.studyproperties tables
             new StudyPropertiesImporter().importExtendedStudyProperties(ctx, vf);
 
             new MissingValueImporterFactory().create().process(job, ctx, vf);
