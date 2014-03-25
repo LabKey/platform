@@ -40,6 +40,8 @@ import org.labkey.api.exp.api.ExpProtocolAction;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -723,32 +725,36 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     {
         try
         {
-            for (ExpData expData : getAllDataUsedByRun())
+            PipeRoot pipeRoot = PipelineService.get().getPipelineRootSetting(getContainer());
+            if (pipeRoot.isValid())
             {
-                File file = expData.getFile();
-                // If we can find the file on disk, and it's in the assaydata directory, and there aren't any other
-                // usages, move it into an archived subdirectory
-                if (file != null && NetworkDrive.exists(file) && file.isFile() &&
-                    file.getParentFile().equals(AssayFileWriter.ensureUploadDirectory( getContainer())) && !hasOtherRunUsing(expData, this))
+                for (ExpData expData : getAllDataUsedByRun())
                 {
-                    File archivedDir;
-                    try
+                    File file = expData.getFile();
+                    // If we can find the file on disk, and it's in the assaydata directory, and there aren't any other
+                    // usages, move it into an archived subdirectory
+                    if (file != null && NetworkDrive.exists(file) && file.isFile() &&
+                        file.getParentFile().equals(AssayFileWriter.ensureUploadDirectory( getContainer())) && !hasOtherRunUsing(expData, this))
                     {
-                        archivedDir = AssayFileWriter.ensureSubdirectory(getContainer(), AssayFileWriter.ARCHIVED_DIR_NAME);
+                        File archivedDir;
+                        try
+                        {
+                            archivedDir = AssayFileWriter.ensureSubdirectory(getContainer(), AssayFileWriter.ARCHIVED_DIR_NAME);
+                        }
+                        catch (ExperimentException e)
+                        {
+                            // In this case, the archived directory was not created correctly perhaps due to file permission or
+                            // some other problem. This exception has been observed on production servers. The error is being
+                            // ignored and the file is not archived. Archiving is a best attempt action.
+                            LOG.warn("Unable to create an archive directory - discontinue archive and delete.");
+                            return;
+                        }
+                        File targetFile = AssayFileWriter.findUniqueFileName(file.getName(), archivedDir);
+                        targetFile = FileUtil.getAbsoluteCaseSensitiveFile(targetFile);
+                        FileUtils.moveFile(file, targetFile);
+                        expData.setDataFileURI(targetFile.toURI());
+                        expData.save(user);
                     }
-                    catch (ExperimentException e)
-                    {
-                        // In this case, the archived directory was not created correctly perhaps due to file permission or
-                        // some other problem. This exception has been observed on production servers. The error is being
-                        // ignored and the file is not archived. Archiving is a best attempt action.
-                        LOG.warn("Unable to create an archive directory - discontinue archive and delete.");
-                        return;
-                    }
-                    File targetFile = AssayFileWriter.findUniqueFileName(file.getName(), archivedDir);
-                    targetFile = FileUtil.getAbsoluteCaseSensitiveFile(targetFile);
-                    FileUtils.moveFile(file, targetFile);
-                    expData.setDataFileURI(targetFile.toURI());
-                    expData.save(user);
                 }
             }
         }
