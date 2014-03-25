@@ -115,16 +115,16 @@ Ext.define('LABKEY.app.model.Filter', {
             return 'Unknown';
         },
 
-        getOlapFilter : function(data) {
+        getOlapFilter : function(data, subjectName) {
             var filter = {
                 operator : LABKEY.app.model.Filter.lookupOperator(data),
                 arguments: []
             };
 
-            if (data.hierarchy == 'Subject') {
+            if (data.hierarchy == subjectName) {
 
                 filter.arguments.push({
-                    hierarchy : 'Subject',
+                    hierarchy : subjectName,
                     members  : data.members
                 });
                 return filter;
@@ -132,7 +132,7 @@ Ext.define('LABKEY.app.model.Filter', {
 
             for (var m=0; m < data.members.length; m++) {
                 filter.arguments.push({
-                    hierarchy : 'Subject',
+                    hierarchy : subjectName,
                     membersQuery : {
                         hierarchy : data.hierarchy,
                         members   : [data.members[m]]
@@ -196,8 +196,8 @@ Ext.define('LABKEY.app.model.Filter', {
         }
     },
 
-    getOlapFilter : function() {
-        return LABKEY.app.model.Filter.getOlapFilter(this.data);
+    getOlapFilter : function(subjectName) {
+        return LABKEY.app.model.Filter.getOlapFilter(this.data, subjectName);
     },
 
     getHierarchy : function() {

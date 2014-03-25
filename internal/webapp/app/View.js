@@ -23,7 +23,7 @@ Ext.define('LABKEY.app.controller.View', {
     },
 
     /**
-     * This is a map of all the views for the Connector Application.
+     * This is a map of all the views for the Application.
      * It's purpose is to be able to register views and then use them throughout the application lifetime
      * NOTE: This is different from Ext.app.Controller.getView() because it returns an instance of a view
      */

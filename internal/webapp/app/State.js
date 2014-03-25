@@ -32,6 +32,8 @@ Ext.define('LABKEY.app.controller.State', {
 
     preventRedundantHistory: true,
 
+    subjectName: '',
+
     init : function() {
         if (LABKEY.devMode) {
             STATE = this;
@@ -317,11 +319,20 @@ Ext.define('LABKEY.app.controller.State', {
         return flatFilters;
     },
 
+    getFilterGroupModelName : function() {
+        console.error('Failed to get filter group model name.');
+    },
+
+    getFilterModelName : function() {
+        console.error('Failed to get filter model name.');
+    },
+
     _getFilterSet : function(filters) {
 
         var newFilters = [],
-                grpClass = 'Connector.model.FilterGroup',
-                filterClass = 'Connector.model.Filter'
+                grpClass = this.getFilterGroupModelName(),
+                filterClass = this.getFilterModelName();
+
         for (var s=0; s < filters.length; s++) {
             var f = filters[s];
 
@@ -516,17 +527,17 @@ Ext.define('LABKEY.app.controller.State', {
                         // have a subgroup
                         for (var i=0; i < _g.length; i++) {
                             ff = _g[i].data ? _g[i].data : _g[i];
-                            olapFilters.push(LABKEY.app.model.Filter.getOlapFilter(ff));
+                            olapFilters.push(LABKEY.app.model.Filter.getOlapFilter(ff, this.subjectName));
                         }
                     }
                     else {
                         ff = grpFilters[g].data ? grpFilters[g].data : grpFilters[g];
-                        olapFilters.push(LABKEY.app.model.Filter.getOlapFilter(ff));
+                        olapFilters.push(LABKEY.app.model.Filter.getOlapFilter(ff, this.subjectName));
                     }
                 }
             }
             else {
-                olapFilters.push(LABKEY.app.model.Filter.getOlapFilter(this.filters[f].data));
+                olapFilters.push(LABKEY.app.model.Filter.getOlapFilter(this.filters[f].data, this.subjectName));
             }
         }
 
@@ -686,7 +697,7 @@ Ext.define('LABKEY.app.controller.State', {
         for (var s=0; s < this.selections.length; s++) {
 
             // construct the query
-            sels.push(this.selections[s].getOlapFilter());
+            sels.push(this.selections[s].getOlapFilter(this.subjectName));
         }
 
         this.onMDXReady(function(mdx){
@@ -716,15 +727,15 @@ Ext.define('LABKEY.app.controller.State', {
             for (var s=0; s < selection.length; s++) {
 
                 if (!selection[s].$className)
-                    newSelectors.push(Ext.create('Connector.model.Filter', selection[s]));
-                else if (selection[s].$className && selection[s].$className == 'Connector.model.Filter')
+                    newSelectors.push(Ext.create(this.getFilterModelName(), selection[s]));
+                else if (selection[s].$className && selection[s].$className == this.getFilterModelName())
                     newSelectors.push(selection[s]);
             }
 
             this.privatefilters[name] = newSelectors;
 
             for (s=0; s < newSelectors.length; s++) {
-                filters.push(newSelectors[s].getOlapFilter())
+                filters.push(newSelectors[s].getOlapFilter(this.subjectName))
             }
         }
 
@@ -738,7 +749,7 @@ Ext.define('LABKEY.app.controller.State', {
             else
             {
                 mdx.setNamedFilter(name, [{
-                    hierarchy : 'Subject',
+                    hierarchy : this.subjectName,
                     membersQuery : selection
                 }]);
             }

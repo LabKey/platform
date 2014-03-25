@@ -8221,6 +8221,7 @@ internal/webapp/app/AbstractViewController.js -text
 internal/webapp/app/Filter.js -text
 internal/webapp/app/OlapExplorer.js -text
 internal/webapp/app/Route.js -text
+internal/webapp/app/Selection.js -text
 internal/webapp/app/State.js -text
 internal/webapp/app/View.js -text
 internal/webapp/applet.js -text
