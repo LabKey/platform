@@ -270,7 +270,7 @@ public class SparseBitSet implements Cloneable, Serializable
     static final long[] ZERO_BLOCK = new long[LENGTH3];
 
 
-    static boolean sealed = false;
+    boolean sealed = false;
 
     /*  Programming notes:
 
