@@ -24,8 +24,8 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -219,7 +219,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
             }
             catch (SQLException x)
             {
-                if (!SqlDialect.isConstraintException(x))
+                if (!RuntimeSQLException.isConstraintException(x))
                     throw x;
                 errors.reject(SpringActionController.ERROR_MSG, x.getMessage());
             }

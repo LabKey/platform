@@ -18,10 +18,10 @@ package org.labkey.api.data;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
 
-import java.io.Serializable;
-import java.sql.SQLException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.Serializable;
+import java.sql.SQLException;
 
 /**
  * User: mbellew
@@ -101,5 +101,18 @@ public class RuntimeSQLException extends RuntimeException implements Serializabl
     public SQLException getSQLException()
     {
         return sqlx;
+    }
+
+    public boolean isConstraintException()
+    {
+        return isConstraintException(getSQLException());
+    }
+
+    public static boolean isConstraintException(SQLException x)
+    {
+        String sqlState = x.getSQLState();
+        if (null == sqlState || !sqlState.startsWith("23"))
+            return false;
+        return sqlState.equals("23000") || sqlState.equals("23505") || sqlState.equals("23503");
     }
 }

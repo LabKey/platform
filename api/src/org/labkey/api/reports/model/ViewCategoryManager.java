@@ -25,7 +25,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -39,7 +38,6 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 
 import java.beans.PropertyChangeEvent;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -181,28 +179,22 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             throw new RuntimeException("You must be an administrator to delete a view category");
 
         List<ViewCategory> categoriesToDelete = new ArrayList<>();
-        try {
-            category = getCategory(category.getRowId());
-            if (category == null)
-                throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
+        category = getCategory(category.getRowId());
+        if (category == null)
+            throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
 
-            categoriesToDelete.add(category);
-            categoriesToDelete.addAll(category.getSubcategories());
+        categoriesToDelete.add(category);
+        categoriesToDelete.addAll(category.getSubcategories());
 
-            // delete the category definition (plus any subcategories) and fire the deleted event
-            SQLFragment sql = new SQLFragment("DELETE FROM ").append(getTableInfoCategories(), "").append(" WHERE RowId = ?");
-            sql.append(" OR Parent = ?");
-            sql.addAll(new Object[]{category.getRowId(), category.getRowId()});
+        // delete the category definition (plus any subcategories) and fire the deleted event
+        SQLFragment sql = new SQLFragment("DELETE FROM ").append(getTableInfoCategories(), "").append(" WHERE RowId = ?");
+        sql.append(" OR Parent = ?");
+        sql.addAll(new Object[]{category.getRowId(), category.getRowId()});
 
-            SqlExecutor executor = new SqlExecutor(CoreSchema.getInstance().getSchema().getScope());
-            executor.execute(sql);
+        SqlExecutor executor = new SqlExecutor(CoreSchema.getInstance().getSchema().getScope());
+        executor.execute(sql);
 
-            getCategoryCache().clear();
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        getCategoryCache().clear();
 
         List<Throwable> errors = new ArrayList<>();
         for (ViewCategory vc : categoriesToDelete)
@@ -220,66 +212,60 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
     public ViewCategory saveCategory(Container c, User user, ViewCategory category)
     {
-        try {
-            ViewCategory ret = null;
-            List<Throwable> errors;
+        ViewCategory ret = null;
+        List<Throwable> errors;
 
-            if (category.isNew()) // insert
+        if (category.isNew()) // insert
+        {
+            // check for duplicates
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("label"), category.getLabel());
+            if (category.getParent() != null)
+                filter.addCondition(FieldKey.fromParts("parent"), category.getParent().getRowId());
+            else
+                filter.addClause(new SimpleFilter.SQLClause("parent IS NULL", null));
+
+            if (getCategories(c, user, filter).length > 0)
             {
-                // check for duplicates
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("label"), category.getLabel());
                 if (category.getParent() != null)
-                    filter.addCondition(FieldKey.fromParts("parent"), category.getParent().getRowId());
+                    throw new IllegalArgumentException("There is already a subcategory attached to the same parent with the name: " + category.getLabel());
                 else
-                    filter.addClause(new SimpleFilter.SQLClause("parent IS NULL", null));
+                    throw new IllegalArgumentException("There is already a category in this folder with the name: " + category.getLabel());
+            }
+            category.beforeInsert(user, c.getId());
 
-                if (getCategories(c, user, filter).length > 0)
-                {
-                    if (category.getParent() != null)
-                        throw new IllegalArgumentException("There is already a subcategory attached to the same parent with the name: " + category.getLabel());
-                    else
-                        throw new IllegalArgumentException("There is already a category in this folder with the name: " + category.getLabel());
-                }
-                category.beforeInsert(user, c.getId());
+            ret = Table.insert(user, getTableInfoCategories(), category);
 
-                ret = Table.insert(user, getTableInfoCategories(), category);
+            getCategoryCache().clear();
+
+            errors = fireCreatedCategory(user, ret);
+        }
+        else // update
+        {
+            ViewCategory existing = getCategory(category.getRowId());
+            if (existing != null)
+            {
+                existing.setLabel(category.getLabel());
+                existing.setDisplayOrder(category.getDisplayOrder());
+
+                ret = Table.update(user, getTableInfoCategories(), existing, existing.getRowId());
 
                 getCategoryCache().clear();
 
-                errors = fireCreatedCategory(user, ret);
+                errors = fireUpdateCategory(user, ret);
             }
-            else // update
-            {
-                ViewCategory existing = getCategory(category.getRowId());
-                if (existing != null)
-                {
-                    existing.setLabel(category.getLabel());
-                    existing.setDisplayOrder(category.getDisplayOrder());
-
-                    ret = Table.update(user, getTableInfoCategories(), existing, existing.getRowId());
-
-                    getCategoryCache().clear();
-
-                    errors = fireUpdateCategory(user, ret);
-                }
-                else
-                    throw new RuntimeException("The specified category does not exist, rowid: " + category.getRowId());
-            }
-            
-            if (errors.size() != 0)
-            {
-                Throwable first = errors.get(0);
-                if (first instanceof RuntimeException)
-                    throw (RuntimeException)first;
-                else
-                    throw new RuntimeException(first);
-            }
-            return ret;
+            else
+                throw new RuntimeException("The specified category does not exist, rowid: " + category.getRowId());
         }
-        catch (SQLException x)
+
+        if (errors.size() != 0)
         {
-            throw new RuntimeSQLException(x);
+            Throwable first = errors.get(0);
+            if (first instanceof RuntimeException)
+                throw (RuntimeException)first;
+            else
+                throw new RuntimeException(first);
         }
+        return ret;
     }
 
     public List<ViewCategory> getSubCategories(ViewCategory category)

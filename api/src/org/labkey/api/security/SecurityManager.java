@@ -792,7 +792,7 @@ public class SecurityManager
                     Map returnMap = Table.insert(null, core.getTableInfoPrincipals(), fieldsIn);
                     userId = (Integer) returnMap.get("UserId");
                 }
-                catch (SQLException e)
+                catch (RuntimeSQLException e)
                 {
                     if (!"23000".equals(e.getSQLState()))
                     {
@@ -825,7 +825,7 @@ public class SecurityManager
                     m.put("DisplayName", displayName);
                     Table.insert(null, core.getTableInfoUsersData(), m);
                 }
-                catch (SQLException x)
+                catch (RuntimeSQLException x)
                 {
                     if (!"23000".equals(x.getSQLState()))
                     {
@@ -839,7 +839,7 @@ public class SecurityManager
                 newUser = UserManager.getUser(userId);
                 UserManager.fireAddUser(newUser);
             }
-            catch (SQLException e)
+            catch (RuntimeSQLException e)
             {
                 throw new UserManagementException(email, "Unable to create user.", e);
             }
@@ -1090,15 +1090,8 @@ public class SecurityManager
         if (groupExists(c, group.getName(), group.getOwnerId()))
             throw new IllegalArgumentException("Group '" + group.getName() + "' already exists");
 
-        try
-        {
-            Table.insert(null, core.getTableInfoPrincipals(), group);
-            ProjectAndSiteGroupsCache.uncache(c);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        Table.insert(null, core.getTableInfoPrincipals(), group);
+        ProjectAndSiteGroupsCache.uncache(c);
 
         return group;
     }
@@ -1125,15 +1118,8 @@ public class SecurityManager
         if (null != getGroupId(c, newName, false))
             throw new IllegalArgumentException("Cannot rename group '" + group.getName() + "' to '" + newName + "' because that name is already used by another group!");
 
-        try
-        {
-            Table.update(currentUser, core.getTableInfoPrincipals(), Collections.singletonMap("name", newName), group.getUserId());
-            GroupCache.uncache(group.getUserId());
-        }
-        catch(SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        Table.update(currentUser, core.getTableInfoPrincipals(), Collections.singletonMap("name", newName), group.getUserId());
+        GroupCache.uncache(group.getUserId());
 
         return getGroup(getGroupId(c, newName));
 
@@ -1152,29 +1138,22 @@ public class SecurityManager
                 groupId == Group.groupUsers)
             throw new IllegalArgumentException("The global groups cannot be deleted.");
 
-        try
-        {
-            Group group = getGroup(groupId);
+        Group group = getGroup(groupId);
 
-            // Need to invalidate all computed group lists. This isn't quite right, but it gets the job done.
-            GroupMembershipCache.handleGroupChange(group, group);
+        // Need to invalidate all computed group lists. This isn't quite right, but it gets the job done.
+        GroupMembershipCache.handleGroupChange(group, group);
 
-            Table.delete(core.getTableInfoRoleAssignments(), new SimpleFilter(FieldKey.fromParts("UserId"), groupId));
+        Table.delete(core.getTableInfoRoleAssignments(), new SimpleFilter(FieldKey.fromParts("UserId"), groupId));
 
-            Filter groupFilter = new SimpleFilter(FieldKey.fromParts("GroupId"), groupId);
-            Table.delete(core.getTableInfoMembers(), groupFilter);
+        Filter groupFilter = new SimpleFilter(FieldKey.fromParts("GroupId"), groupId);
+        Table.delete(core.getTableInfoMembers(), groupFilter);
 
-            Filter principalsFilter = new SimpleFilter(FieldKey.fromParts("UserId"), groupId);
-            Table.delete(core.getTableInfoPrincipals(), principalsFilter);
+        Filter principalsFilter = new SimpleFilter(FieldKey.fromParts("UserId"), groupId);
+        Table.delete(core.getTableInfoPrincipals(), principalsFilter);
 
-            GroupCache.uncache(groupId);
-            Container c = ContainerManager.getForId(group.getContainer());
-            ProjectAndSiteGroupsCache.uncache(c);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        GroupCache.uncache(groupId);
+        Container c = ContainerManager.getForId(group.getContainer());
+        ProjectAndSiteGroupsCache.uncache(c);
     }
 
 

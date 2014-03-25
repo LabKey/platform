@@ -37,6 +37,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlScriptManager;
@@ -1231,18 +1232,11 @@ public class ModuleLoader implements Filter
 
     void saveModuleContext(ModuleContext context)
     {
-        try
-        {
-            ModuleContext stored = getModuleContext(context.getName());
-            if (null == stored)
-                Table.insert(null, getTableInfoModules(), context);
-            else
-                Table.update(null, getTableInfoModules(), context, context.getName());
-        }
-        catch (SQLException x)
-        {
-            _log.error("Couldn't save module context.", x);
-        }
+        ModuleContext stored = getModuleContext(context.getName());
+        if (null == stored)
+            Table.insert(null, getTableInfoModules(), context);
+        else
+            Table.update(null, getTableInfoModules(), context, context.getName());
     }
 
 
@@ -1332,7 +1326,7 @@ public class ModuleLoader implements Filter
                 map.put("Schemas", StringUtils.join(module.getSchemaNames(), ','));
                 Table.update(getUpgradeUser(), getTableInfoModules(), map, module.getName());
             }
-            catch (SQLException e)
+            catch (RuntimeSQLException e)
             {
                 ExceptionUtil.logExceptionToMothership(null, e);
             }

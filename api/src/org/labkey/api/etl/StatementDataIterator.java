@@ -283,7 +283,7 @@ class StatementDataIterator extends AbstractDataIterator
         {
             if (x instanceof BatchUpdateException && null != x.getNextException())
                 x = x.getNextException();
-            if (StringUtils.startsWith(x.getSQLState(), "22") || SqlDialect.isConstraintException(x))
+            if (StringUtils.startsWith(x.getSQLState(), "22") || RuntimeSQLException.isConstraintException(x))
             {
                 getRowError().addGlobalError(x);
                 _context.checkShouldCancel();
@@ -392,7 +392,7 @@ class StatementDataIterator extends AbstractDataIterator
                 {
                     if (x instanceof BatchUpdateException && null != x.getNextException())
                         x = x.getNextException();
-                    if (StringUtils.startsWith(x.getSQLState(), "22") || SqlDialect.isConstraintException(x))
+                    if (StringUtils.startsWith(x.getSQLState(), "22") || RuntimeSQLException.isConstraintException(x))
                     {
                         getRowError().addGlobalError(x);
                         _context.checkShouldCancel();

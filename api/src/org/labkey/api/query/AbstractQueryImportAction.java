@@ -28,7 +28,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
@@ -389,7 +388,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             } */
             catch (SQLException x)
             {
-                boolean isConstraint = SqlDialect.isConstraintException(x);
+                boolean isConstraint = RuntimeSQLException.isConstraintException(x);
                 if (isConstraint)
                     errors.addRowError(new ValidationException(x.getMessage()));
                 else

@@ -35,7 +35,6 @@ import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container.ContainerException;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.event.PropertyChange;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleLoader;
@@ -160,17 +159,10 @@ public class ContainerManager
 
     private static Container createRoot()
     {
-        try
-        {
-            HashMap<String, Object> m = new HashMap<>();
-            m.put("Parent", null);
-            m.put("Name", "");
-            Table.insert(null, CORE.getTableInfoContainers(), m);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        Map<String, Object> m = new HashMap<>();
+        m.put("Parent", null);
+        m.put("Name", "");
+        Table.insert(null, CORE.getTableInfoContainers(), m);
 
         return getRoot();
     }
@@ -258,11 +250,11 @@ public class ContainerManager
             m.put("Type", type);
             insertMap = Table.insert(user, CORE.getTableInfoContainers(), m);
         }
-        catch (SQLException x)
+        catch (RuntimeSQLException x)
         {
-            if (!SqlDialect.isConstraintException(x))
-                throw new RuntimeSQLException(x);
-            sqlx = x;
+            if (!x.isConstraintException())
+                throw x;
+            sqlx = x.getSQLException();
         }
 
         _clearChildrenFromCache(parent);

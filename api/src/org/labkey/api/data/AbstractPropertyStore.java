@@ -147,10 +147,6 @@ public abstract class AbstractPropertyStore implements PropertyStore
                 return m;
             }
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
     }
 
     @Override

@@ -37,7 +37,6 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
@@ -304,17 +303,6 @@ public abstract class SqlDialect
     {
         return null;
     }
-
-    public static boolean isConstraintException(SQLException x)
-    {
-        if (x instanceof Table.OptimisticConflictException)
-            return true;
-        String sqlState = x.getSQLState();
-        if (null == sqlState || !sqlState.startsWith("23"))
-            return false;
-        return sqlState.equals("23000") || sqlState.equals("23505") || sqlState.equals("23503");
-    }
-
 
     public static boolean isCancelException(SQLException x)
     {

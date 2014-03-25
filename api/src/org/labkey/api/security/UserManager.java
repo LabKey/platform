@@ -27,6 +27,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -571,7 +572,7 @@ public class UserManager
             addToUserHistory(userToAdjust, "User account " + userToAdjust.getEmail() + " was " +
                     (active ? "re-enabled" : "disabled"));
         }
-        catch(SQLException e)
+        catch(RuntimeSQLException e)
         {
             LOG.error("setUserActive: " + e);
             throw new SecurityManager.UserManagementException(userToAdjust.getEmail(), e);

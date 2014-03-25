@@ -118,15 +118,8 @@ public class Portal
     {
         WebPartCache.remove(c);
 
-        try
-        {
-            Table.delete(getTableInfoPortalWebParts(), SimpleFilter.createContainerFilter(c));
-            Table.delete(getTableInfoPortalPages(), SimpleFilter.createContainerFilter(c));
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        Table.delete(getTableInfoPortalWebParts(), SimpleFilter.createContainerFilter(c));
+        Table.delete(getTableInfoPortalPages(), SimpleFilter.createContainerFilter(c));
     }
 
 
@@ -877,10 +870,10 @@ public class Portal
             }
             transaction.commit();
         }
-        catch (SQLException x)
+        catch (RuntimeSQLException x)
         {
-            if (!SqlDialect.isConstraintException(x))
-                throw new RuntimeSQLException(x);
+            if (!x.isConstraintException())
+                throw x;
         }
         finally
         {
@@ -1241,10 +1234,6 @@ public class Portal
             Table.delete(tableInfo, filter);
             Table.delete(getTableInfoPortalPages(), new Object[] {page.getContainer(), page.getPageId()});
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
         finally
         {
             WebPartCache.remove(ContainerManager.getForId(page.getContainer()));
@@ -1278,10 +1267,6 @@ public class Portal
             page = page.copy();
             page.setHidden(hidden);
             Table.update(null, getTableInfoPortalPages(), page, new Object[] {page.getContainer(), page.getPageId()});
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
         }
         finally
         {
@@ -1327,7 +1312,7 @@ public class Portal
                 page = page.copy();
                 Table.update(null, getTableInfoPortalPages(), page, new Object[] {page.getContainer(), page.getPageId()});
             }
-            catch (SQLException | DataIntegrityViolationException x)
+            catch (RuntimeSQLException | DataIntegrityViolationException x)
             {
                 throw getPortalPageException(x);
             }
@@ -1340,24 +1325,24 @@ public class Portal
 
     private static RuntimeException getPortalPageException(Exception x)
     {
-        SQLException s = null;
-        if (x instanceof SQLException)
-            s = (SQLException)x;
+        RuntimeSQLException s = null;
+        if (x instanceof RuntimeSQLException)
+            s = (RuntimeSQLException)x;
         else if (x instanceof DataIntegrityViolationException)
         {
             DataIntegrityViolationException d = (DataIntegrityViolationException)x;
-            if (d.getCause() instanceof SQLException)
-                s = (SQLException)d.getCause();
+            if (d.getCause() instanceof RuntimeSQLException)
+                s = (RuntimeSQLException)d.getCause();
         }
         if (null != s)
         {
-            if (SqlDialect.isConstraintException(s))
+            if (s.isConstraintException())
             {
                 s = new Table.OptimisticConflictException(
                     "A SQL exception occurred which could have been caused by two clients changing portal page ordering simultaneously. Try again.",
                     Table.SQLSTATE_TRANSACTION_STATE, 0);
             }
-            return new RuntimeSQLException(s);
+            return s;
         }
         return new RuntimeException(x);
     }
@@ -1385,10 +1370,6 @@ public class Portal
         try
         {
             Table.update(null, getTableInfoPortalPages(), page, new Object[] {page.getContainer(), page.getPageId()});
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
         }
         finally
         {

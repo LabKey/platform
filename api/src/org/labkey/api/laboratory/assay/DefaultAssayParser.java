@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -53,7 +54,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -433,9 +433,9 @@ public class DefaultAssayParser implements AssayParser
 
             Table.update(ctx.getUser(), ti, row, templateId);
         }
-        catch (SQLException e)
+        catch (RuntimeSQLException e)
         {
-            throw new BatchValidationException(Collections.singletonList(new ValidationException(e.getMessage())), null);
+            throw new BatchValidationException(Collections.singletonList(new ValidationException(e.getSQLException().getMessage())), null);
         }
     }
 

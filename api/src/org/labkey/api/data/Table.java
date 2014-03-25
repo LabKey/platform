@@ -548,7 +548,7 @@ public class Table
 
         String trim = sql.getSQL().trim();
 
-        if (SqlDialect.isConstraintException(e) && (StringUtils.startsWithIgnoreCase(trim, "INSERT") || StringUtils.startsWithIgnoreCase(trim, "UPDATE")))
+        if (RuntimeSQLException.isConstraintException(e) && (StringUtils.startsWithIgnoreCase(trim, "INSERT") || StringUtils.startsWithIgnoreCase(trim, "UPDATE")))
         {
             if (Level.WARN.isGreaterOrEqual(logLevel))
             {
@@ -767,7 +767,7 @@ public class Table
 
 
     // Returns a new Map<String, Object> if fieldsIn is a Map, otherwise returns modified version of fieldsIn.
-    public static <K> K insert(@Nullable User user, TableInfo table, K fieldsIn) throws SQLException
+    public static <K> K insert(@Nullable User user, TableInfo table, K fieldsIn)
     {
         assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): ("Table " + table.getSchema().getName() + "." + table.getName() + " is not in the physical database.");
 
@@ -884,7 +884,7 @@ public class Table
         catch(SQLException e)
         {
             logException(new SQLFragment(insertSQL, parameters), conn, e, Level.WARN);
-            throw(e);
+            throw new RuntimeSQLException(e);
         }
         finally
         {
@@ -896,13 +896,13 @@ public class Table
     }
 
 
-    public static <K> K update(@Nullable User user, TableInfo table, K fieldsIn, Object pkVals) throws SQLException
+    public static <K> K update(@Nullable User user, TableInfo table, K fieldsIn, Object pkVals)
     {
         return update(user, table, fieldsIn, pkVals, null, Level.WARN);
     }
 
 
-    public static <K> K update(@Nullable User user, TableInfo table, K fieldsIn, Object pkVals, @Nullable Filter filter, Level level) throws SQLException
+    public static <K> K update(@Nullable User user, TableInfo table, K fieldsIn, Object pkVals, @Nullable Filter filter, Level level)
     {
         assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
         assert null != pkVals;
@@ -1023,7 +1023,7 @@ public class Table
         }
         catch(OptimisticConflictException e)
         {
-            logException(updateSQL, null, e, level);
+            logException(updateSQL, null, e.getSQLException(), level);
             throw(e);
         }
 
@@ -1031,7 +1031,7 @@ public class Table
     }
 
 
-    public static void delete(TableInfo table, Object rowId) throws SQLException
+    public static void delete(TableInfo table, Object rowId)
     {
         List<ColumnInfo> columnPK = table.getPkColumns();
         Object[] pkVals;
@@ -1063,7 +1063,7 @@ public class Table
         return result;
     }
 
-    public static int delete(TableInfo table, Filter filter) throws SQLException
+    public static int delete(TableInfo table, Filter filter)
     {
         assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
 
@@ -1076,7 +1076,7 @@ public class Table
         return result;
     }
 
-    public static void truncate(TableInfo table) throws SQLException
+    public static void truncate(TableInfo table)
     {
         assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
         SqlExecutor sqlExecutor = new SqlExecutor(table.getSchema());
@@ -1138,13 +1138,18 @@ public class Table
     }
 
 
-    public static class OptimisticConflictException extends SQLException
+    public static class OptimisticConflictException extends RuntimeSQLException
     {
         public OptimisticConflictException(String errorMessage, String sqlState, int error)
         {
-            super(errorMessage, sqlState, error);
+            super(new SQLException(errorMessage, sqlState, error));
         }
 
+        @Override
+        public boolean isConstraintException()
+        {
+            return true;
+        }
 
         public static OptimisticConflictException create(int error)
         {

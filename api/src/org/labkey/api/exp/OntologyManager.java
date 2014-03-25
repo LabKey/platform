@@ -612,14 +612,7 @@ public class OntologyManager
 			o.setContainer(container);
 			o.setObjectURI(objectURI);
 			o.setOwnerObjectId(ownerId);
-            try
-            {
-                o = Table.insert(null, getTinfoObject(), o);
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            o = Table.insert(null, getTinfoObject(), o);
 		}
 
 		objectIdCache.put(objectURI, o.getObjectId());
@@ -1559,12 +1552,12 @@ public class OntologyManager
                 domainDescCache.put(getCacheKey(dd),dd);
                 return dd;
             }
-            catch (SQLException x)
+            catch (RuntimeSQLException x)
             {
                 // might be an optimistic concurrency problem see 16126
                 dd = getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
                 if (null == dd)
-                    throw new RuntimeSQLException(x);
+                    throw x;
             }
         }
 
@@ -1796,24 +1789,17 @@ public class OntologyManager
 
     public static void deleteProperty(String objectURI, String propertyURI, Container objContainer, Container propContainer)
     {
-        try
-        {
-            OntologyObject o = getOntologyObject(objContainer, objectURI);
-            if (o == null)
-                return;
+        OntologyObject o = getOntologyObject(objContainer, objectURI);
+        if (o == null)
+            return;
 
-            PropertyDescriptor pd = getPropertyDescriptor(propertyURI, propContainer);
-            if (pd == null)
-                return;
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectId"), o.getObjectId());
-            filter.addCondition(FieldKey.fromParts("PropertyId"), pd.getPropertyId());
-            Table.delete(getTinfoObjectProperty(), filter);
-            clearPropertyCache(objectURI);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        PropertyDescriptor pd = getPropertyDescriptor(propertyURI, propContainer);
+        if (pd == null)
+            return;
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectId"), o.getObjectId());
+        filter.addCondition(FieldKey.fromParts("PropertyId"), pd.getPropertyId());
+        Table.delete(getTinfoObjectProperty(), filter);
+        clearPropertyCache(objectURI);
     }
 
     /** Delete properties owned by the objects. */
@@ -2258,36 +2244,22 @@ public class OntologyManager
     //todo:  we automatically update a pd to the last  one in?
 	public static PropertyDescriptor updatePropertyDescriptor(PropertyDescriptor pd)
 	{
-        try
-        {
-            assert pd.getPropertyId() != 0;
-            pd = Table.update(null, getTinfoPropertyDescriptor(), pd, pd.getPropertyId());
-            propDescCache.put(getCacheKey(pd), pd);
-            // It's possible that the propertyURI has changed, thus breaking our reference
-            domainPropertiesCache.clear();
-            return pd;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        assert pd.getPropertyId() != 0;
+        pd = Table.update(null, getTinfoPropertyDescriptor(), pd, pd.getPropertyId());
+        propDescCache.put(getCacheKey(pd), pd);
+        // It's possible that the propertyURI has changed, thus breaking our reference
+        domainPropertiesCache.clear();
+        return pd;
 	}
 
 
     public static DomainDescriptor updateDomainDescriptor(DomainDescriptor dd)
     {
-        try
-        {
-            assert dd.getDomainId() != 0;
-            dd = Table.update(null, getTinfoDomainDescriptor(), dd, dd.getDomainId());
-            domainDescCache.remove(getCacheKey(dd));
-            domainPropertiesCache.remove(getCacheKey(dd));
-            return dd;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        assert dd.getDomainId() != 0;
+        dd = Table.update(null, getTinfoDomainDescriptor(), dd, dd.getDomainId());
+        domainDescCache.remove(getCacheKey(dd));
+        domainPropertiesCache.remove(getCacheKey(dd));
+        return dd;
     }
 
 	public static void clearCaches()
@@ -3599,24 +3571,17 @@ public class OntologyManager
 
     static public PropertyDescriptor updatePropertyDescriptor(User user, DomainDescriptor dd, PropertyDescriptor pdOld, PropertyDescriptor pdNew, int sortOrder) throws ChangePropertyDescriptorException
     {
-        try
-        {
-            PropertyType oldType = pdOld.getPropertyType();
-            PropertyType newType = pdNew.getPropertyType();
-            if (oldType.getStorageType() != newType.getStorageType() && new TableSelector(getTinfoObjectProperty(), new SimpleFilter(FieldKey.fromParts("PropertyId"), pdOld.getPropertyId()), null).exists())
-                throw new ChangePropertyDescriptorException("This property type cannot be changed because there are existing values.");
+        PropertyType oldType = pdOld.getPropertyType();
+        PropertyType newType = pdNew.getPropertyType();
+        if (oldType.getStorageType() != newType.getStorageType() && new TableSelector(getTinfoObjectProperty(), new SimpleFilter(FieldKey.fromParts("PropertyId"), pdOld.getPropertyId()), null).exists())
+            throw new ChangePropertyDescriptorException("This property type cannot be changed because there are existing values.");
 
-            validatePropertyDescriptor(pdNew);
-            PropertyDescriptor update = Table.update(user, getTinfoPropertyDescriptor(), pdNew, pdOld.getPropertyId());
+        validatePropertyDescriptor(pdNew);
+        PropertyDescriptor update = Table.update(user, getTinfoPropertyDescriptor(), pdNew, pdOld.getPropertyId());
 
-            ensurePropertyDomain(pdNew, dd, sortOrder);
+        ensurePropertyDomain(pdNew, dd, sortOrder);
 
-            return update;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return update;
     }
 
     private static void validatePropertyDescriptor(PropertyDescriptor pd) throws ChangePropertyDescriptorException

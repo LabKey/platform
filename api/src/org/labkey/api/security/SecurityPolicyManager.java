@@ -25,7 +25,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
@@ -36,7 +35,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.Set;
 
@@ -139,10 +137,6 @@ public class SecurityPolicyManager
             //commit transaction
             transaction.commit();
         }
-        catch(SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
         //remove the resource-oriented policy from cache
         remove(policy);
         notifyPolicyChange(policy.getResourceId());
@@ -165,10 +159,6 @@ public class SecurityPolicyManager
 
             //commit transaction
             transaction.commit();
-        }
-        catch(SQLException e)
-        {
-            throw new RuntimeSQLException(e);
         }
 
         //remove the resource-oriented policy from cache

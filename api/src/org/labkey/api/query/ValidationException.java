@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.RuntimeSQLException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
 
@@ -262,6 +263,11 @@ public class ValidationException extends Exception implements Iterable<Validatio
     {
         _globalErrors.add(new SimpleValidationError(x));
         return this;
+    }
+
+    public ValidationException addGlobalError(RuntimeSQLException x)
+    {
+        return addGlobalError(x.getSQLException());
     }
 
     public int getGlobalErrorCount()
