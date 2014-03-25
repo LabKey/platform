@@ -655,6 +655,7 @@ public class SparseBitSet implements Cloneable, Serializable
         try
         {
             final SparseBitSet result = (SparseBitSet) super.clone();
+            result.sealed = false;
             /*  Clear out the shallow copy of the set array (which contains just
                 copies of the references from this set), and then replace these
                 by a deep copy (created by a "copy" from the set being cloned . */
