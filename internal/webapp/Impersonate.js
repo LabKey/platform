@@ -114,7 +114,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
             },
             scope: this,
             success: function(response){
-                location.reload();
+                location = location;
             },
             failure: function(response){
                 var jsonResp = LABKEY.ExtAdapter.decode(response.responseText);
@@ -241,7 +241,7 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
             },
             scope: this,
             success: function(response){
-                location.reload();
+                location = location;
             },
             failure: function(response){
                 var jsonResp = LABKEY.ExtAdapter.decode(response.responseText);
@@ -383,7 +383,7 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
             },
             scope: this,
             success: function(response){
-                location.reload();
+                location = location;
             },
             failure: function(response){
                 var jsonResp = LABKEY.ExtAdapter.decode(response.responseText);
