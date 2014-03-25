@@ -547,13 +547,13 @@ public class DbSchema
         return _scope;
     }
 
-    public void dropTableIfExists(String objName) throws SQLException
+    public void dropTableIfExists(String objName)
     {
         getSqlDialect().dropIfExists(this, objName, "TABLE", null);
         getSqlDialect().dropIfExists(this, objName, "VIEW", null);
     }
 
-    public void dropIndexIfExists(String objName, String indexName) throws SQLException
+    public void dropIndexIfExists(String objName, String indexName)
     {
         getSqlDialect().dropIfExists(this, objName, "INDEX", indexName);
     }

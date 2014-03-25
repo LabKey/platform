@@ -83,7 +83,7 @@ public class AtomicDatabaseInteger
     }
 
     // Atomically sets the value to the given update value if the current value == the expected value.
-    public boolean compareAndSet(int expect, int update) throws SQLException
+    public boolean compareAndSet(int expect, int update)
     {
         String targetColumnName = _targetColumn.getSelectName();
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(targetColumnName), expect);
@@ -107,7 +107,7 @@ public class AtomicDatabaseInteger
         }
     }
 
-    public int incrementAndGet() throws SQLException
+    public int incrementAndGet()
     {
         for (;;)
         {
@@ -118,7 +118,7 @@ public class AtomicDatabaseInteger
         }
     }
 
-    public int decrementAndGet() throws SQLException
+    public int decrementAndGet()
     {
         for (;;)
         {
@@ -129,7 +129,7 @@ public class AtomicDatabaseInteger
         }
     }
 
-    public int addAndGet(int delta) throws SQLException
+    public int addAndGet(int delta)
     {
         for (;;)
         {

@@ -28,7 +28,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
-import java.sql.SQLException;
 import java.text.Format;
 import java.util.Map;
 import java.util.Set;
@@ -341,13 +340,13 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public void renderGridHeaderCell(RenderContext ctx, Writer out) throws IOException, SQLException
+    public void renderGridHeaderCell(RenderContext ctx, Writer out) throws IOException
     {
         _column.renderGridHeaderCell(ctx, out);
     }
 
     @Override
-    public void renderGridHeaderCell(RenderContext ctx, Writer out, String headerClass) throws IOException, SQLException
+    public void renderGridHeaderCell(RenderContext ctx, Writer out, String headerClass) throws IOException
     {
         _column.renderGridHeaderCell(ctx, out, headerClass);
     }

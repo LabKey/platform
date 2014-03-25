@@ -22,7 +22,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
@@ -35,7 +34,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 
 import java.beans.PropertyChangeEvent;
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 
@@ -81,37 +79,29 @@ public class SimpleModuleContainerListener implements ContainerManager.Container
 
         Logger.getLogger(SimpleModuleContainerListener.class).debug("Purging schema '" + schemaName + "' in container '" + c.getPath() + "'...");
 
-        try
+        // Walk over the dbSchema's tables -- it's faster than walking the UserSchema's tables
+        List<TableInfo> sorted = dbSchema.getSortedTables();
+        Collections.reverse(sorted);
+        for (TableInfo dbTable : sorted)
         {
-            // Walk over the dbSchema's tables -- it's faster than walking the UserSchema's tables
-            List<TableInfo> sorted = dbSchema.getSortedTables();
-            Collections.reverse(sorted);
-            for (TableInfo dbTable : sorted)
+            ColumnInfo containerCol = null;
+            for (ColumnInfo column : dbTable.getColumns())
             {
-                ColumnInfo containerCol = null;
-                for (ColumnInfo column : dbTable.getColumns())
+                if ("container".equalsIgnoreCase(column.getName()))
                 {
-                    if ("container".equalsIgnoreCase(column.getName()))
-                    {
-                        containerCol = column;
-                        break;
-                    }
-                }
-
-                if (containerCol != null)
-                {
-                    purgeTable(userSchema, dbTable, c, user);
+                    containerCol = column;
+                    break;
                 }
             }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
+
+            if (containerCol != null)
+            {
+                purgeTable(userSchema, dbTable, c, user);
+            }
         }
     }
 
     protected void purgeTable(UserSchema userSchema, TableInfo dbTable, Container c, User u)
-            throws SQLException
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         if (dbTable.getTableType() == DatabaseTableType.TABLE)

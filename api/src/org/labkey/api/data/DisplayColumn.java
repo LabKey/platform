@@ -437,7 +437,7 @@ public abstract class DisplayColumn extends RenderColumn
         return "";
     }
 
-    public void renderGridHeaderCell(RenderContext ctx, Writer out) throws IOException, SQLException
+    public void renderGridHeaderCell(RenderContext ctx, Writer out) throws IOException
     {
         renderGridHeaderCell(ctx, out, null);
     }
@@ -458,7 +458,7 @@ public abstract class DisplayColumn extends RenderColumn
         return null;
     }
 
-    public void renderGridHeaderCell(RenderContext ctx, Writer out, String headerClass) throws IOException, SQLException
+    public void renderGridHeaderCell(RenderContext ctx, Writer out, String headerClass) throws IOException
     {
         Sort sort = getSort(ctx);
         Sort.SortField sortField = getSortColumn(sort);

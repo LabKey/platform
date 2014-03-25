@@ -916,7 +916,7 @@ public abstract class SqlDialect
      * @param objectType "TABLE", "VIEW", "INDEX"
      * @param subObjectName index name;  ignored if not an index
      */
-    public void dropIfExists(DbSchema schema, String objectName, String objectType, @Nullable String subObjectName) throws SQLException
+    public void dropIfExists(DbSchema schema, String objectName, String objectType, @Nullable String subObjectName)
     {
         String sql = schema.getSqlDialect().execute(CoreSchema.getInstance().getSchema(), "fn_dropifexists", "?, ?, ?, ?");
         new SqlExecutor(schema).execute(sql, objectName, schema.getName(), objectType, subObjectName);

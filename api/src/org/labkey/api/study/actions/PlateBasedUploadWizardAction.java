@@ -20,7 +20,6 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.study.assay.AbstractPlateBasedAssayProvider;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.study.assay.PlateSamplePropertyHelper;
@@ -29,8 +28,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.ServletException;
-import java.sql.SQLException;
 import java.util.Map;
 
 /**
@@ -94,7 +91,7 @@ public abstract class PlateBasedUploadWizardAction <FormType extends PlateUpload
             return runPropsValid && samplePropsValid && !errors.hasErrors();
         }
 
-        protected ModelAndView handleSuccessfulPost(FormType form, BindException errors) throws SQLException, ServletException, ExperimentException
+        protected ModelAndView handleSuccessfulPost(FormType form, BindException errors) throws ExperimentException
         {
             form.setSampleProperties(_postedSampleProperties);
             for (Map.Entry<String, Map<DomainProperty, String>> entry : _postedSampleProperties.entrySet())

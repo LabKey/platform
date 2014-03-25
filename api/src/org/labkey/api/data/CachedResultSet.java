@@ -193,7 +193,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
         return relative(_direction);
     }
 
-    public void close() throws SQLException
+    public void close()
     {
         _wasClosed = true;
     }
@@ -577,7 +577,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
 
 
     // careful! this does no error checking
-    public void _setObject(int columnIndex, Object o) throws SQLException
+    public void _setObject(int columnIndex, Object o)
     {
         _rowMaps.get(_row).set(columnIndex, o);
     }
@@ -632,12 +632,12 @@ public class CachedResultSet implements ResultSet, TableResultSet
         return _rowMaps.size() > 0 && _row == _rowMaps.size() - 1;
     }
 
-    public void beforeFirst() throws SQLException
+    public void beforeFirst()
     {
         _row = -1;
     }
 
-    public void afterLast() throws SQLException
+    public void afterLast()
     {
         _row = _rowMaps.size();
     }

@@ -174,17 +174,15 @@ public class PlateService
          * Deletes all plate and template data from the specified container.  Typically used
          * only when a container is deleted.
          * @param container The container from which to delete all plate data.
-         * @throws SQLException Thrown in the event of a database failure.
          */
-        void deleteAllPlateData(Container container) throws SQLException;
+        void deleteAllPlateData(Container container);
 
         /**
          * Deletes a single plate object.
          * @param container The object's container.
          * @param rowid The row id of the plate object to be deleted.
-         * @throws SQLException Thrown in the event of a database failure.
          */
-        void deletePlate(Container container, int rowid) throws SQLException;
+        void deletePlate(Container container, int rowid);
 
         /**
          * Registration of a details link provider allows plate grid views to include links to plate-specific detail pages.
@@ -197,18 +195,16 @@ public class PlateService
          * @param user The current user.
          * @param plate The plate with which to associate the data file.
          * @param file The file to associate.
-         * @throws SQLException Thrown in the event of a database failure.
          * @throws IOException Thrown if the specified file cannot be read.
          * @throws org.labkey.api.attachments.AttachmentService.DuplicateFilenameException Thrown if the specified file has already been attached to this plate
          */
-        void setDataFile(User user, Plate plate, AttachmentFile file) throws SQLException, IOException, AttachmentService.DuplicateFilenameException;
+        void setDataFile(User user, Plate plate, AttachmentFile file) throws IOException, AttachmentService.DuplicateFilenameException;
 
         /**
          * Deletes a plate-associated data file.
          * @param plate The plate associated with the data file to be deleted.
-         * @throws SQLException Thrown in the event of a database failure.
          */
-        void deleteDataFile(Plate plate) throws SQLException;
+        void deleteDataFile(Plate plate);
 
         /**
          * Gets the download URL for the associated plate's data file.

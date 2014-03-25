@@ -136,7 +136,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     }
 
     /** After a run has been successfully created, either send the user to upload another, or complete the wizard */
-    protected ModelAndView afterRunCreation(FormType form, ExpRun run, BindException errors) throws ServletException, ExperimentException
+    protected ModelAndView afterRunCreation(FormType form, ExpRun run, BindException errors) throws ExperimentException
     {
         if (form.isMultiRunUpload())
         {
@@ -581,7 +581,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 return getRunPropertiesView(form, !form.isResetDefaultValues(), false, errors);
         }
 
-        protected ModelAndView handleSuccessfulPost(FormType form, BindException errors) throws SQLException, ServletException, ExperimentException
+        protected ModelAndView handleSuccessfulPost(FormType form, BindException errors) throws ExperimentException
         {
             ExpRun run;
             try

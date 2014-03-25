@@ -508,34 +508,32 @@ public class Portal
     }
 
 
-    public static void updatePart(User u, WebPart part) throws SQLException
+    public static void updatePart(User u, WebPart part)
     {
         Table.update(u, getTableInfoPortalWebParts(), part, new Object[]{part.getRowId()});
         WebPartCache.remove(part.getContainer());
     }
 
     // Add a web part to the container at the end of the list
-    public static WebPart addPart(Container c, WebPartFactory desc, String location) throws SQLException
+    public static WebPart addPart(Container c, WebPartFactory desc, String location)
     {
         return addPart(c, desc, location, -1);
     }
 
     // Add a web part to a particular page at the end of the list
     public static WebPart addPart(Container c, String pageId, WebPartFactory desc, String location)
-            throws SQLException
     {
         return addPart(c, pageId, desc, location, -1, null);
     }
 
     // Add a web part to the container at the end of the list, with properties
     public static WebPart addPart(Container c, WebPartFactory desc, String location, Map<String, String> properties)
-            throws SQLException
     {
         return addPart(c, desc, location, -1, properties);
     }
 
     // Add a web part to the container at the specified index
-    public static WebPart addPart(Container c, WebPartFactory desc, String location, int partIndex) throws SQLException
+    public static WebPart addPart(Container c, WebPartFactory desc, String location, int partIndex)
     {
         return addPart(c, desc, location, partIndex, null);
     }
@@ -1179,7 +1177,7 @@ public class Portal
         return webPartNames;
     }
 
-    public static int purge() throws SQLException
+    public static int purge()
     {
         return ContainerUtil.purgeTable(getTableInfoPortalWebParts(), "PageId");
     }

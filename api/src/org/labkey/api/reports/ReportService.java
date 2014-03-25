@@ -85,15 +85,15 @@ public class ReportService
         public Report createReportInstance(String typeName);
         public Report createReportInstance(ReportDescriptor descriptor);
 
-        public void deleteReport(ContainerUser context, Report report) throws SQLException;
+        public void deleteReport(ContainerUser context, Report report);
 
         /**
          * Note: almost all cases of saveReport will want to use the version that does not skip validation.
          *       One example of where we skip validation is in the StudyUpgradeCode which has a method to fix report properties
          *       across all reports in the database (regardless of user)
          */
-        public int saveReport(ContainerUser context, String key, Report report, boolean skipValidation) throws SQLException;
-        public int saveReport(ContainerUser context, String key, Report report) throws SQLException;
+        public int saveReport(ContainerUser context, String key, Report report, boolean skipValidation);
+        public int saveReport(ContainerUser context, String key, Report report);
 
         public Report getReport(int reportId);
         public Report getReportByEntityId(Container c, String entityId);

@@ -678,7 +678,7 @@ public class Parameter
 //            return _stmt;
 //        }
 
-        public void clearParameters() throws SQLException
+        public void clearParameters()
         {
             for (Parameter p : _parameters)
                 if (!p._constant)

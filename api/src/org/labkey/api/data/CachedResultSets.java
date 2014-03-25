@@ -82,15 +82,8 @@ public class CachedResultSets
 
         CachedResultSet crs = new CachedResultSet(md, false, convertToRowMaps(md, maps), true, null);
 
-        try
-        {
-            // Avoid error message from CachedResultSet.finalize() about unclosed CachedResultSet.
-            crs.close();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        // Avoid error message from CachedResultSet.finalize() about unclosed CachedResultSet.
+        crs.close();
 
         return crs;
     }

@@ -22,7 +22,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ScalabilityProblem;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -179,7 +178,7 @@ public class WebThemeManager
         updateWebTheme(new WebTheme(friendlyName, textColor, linkColor, gridColor, primaryBackgroundColor, secondaryBackgroundColor, borderTitleColor, webPartColor));
     }
 
-    public static void deleteWebTheme(String friendlyName) throws SQLException
+    public static void deleteWebTheme(String friendlyName)
     {
         synchronized(_webThemeMap)
         {

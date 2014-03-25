@@ -98,7 +98,7 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
     }
 
     @Override
-    public void renderGridHeaderCell(RenderContext ctx, Writer out) throws IOException, SQLException
+    public void renderGridHeaderCell(RenderContext ctx, Writer out) throws IOException
     {
         super.renderGridHeaderCell(ctx, out);
 
