@@ -2135,7 +2135,7 @@ public class ExperimentController extends SpringActionController
             return new ConfirmDeleteView("run", ShowRunGraphAction.class, runs, deleteForm, Collections.<ExpRun>emptyList(), "dataset(s) have one or more rows which", permissionDatasetRows, noPermissionDatasetRows);
         }
 
-        protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException
+        protected void deleteObjects(DeleteForm deleteForm) throws ExperimentException
         {
             ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), deleteForm.getIds(true));
         }
@@ -2271,7 +2271,7 @@ public class ExperimentController extends SpringActionController
             return protocols;
         }
 
-        protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException
+        protected void deleteObjects(DeleteForm deleteForm) throws ExperimentException
         {
             for (ExpProtocol protocol : getProtocols(deleteForm))
             {
@@ -2403,7 +2403,7 @@ public class ExperimentController extends SpringActionController
             super();
         }
 
-        protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException, ServletException
+        protected void deleteObjects(DeleteForm deleteForm) throws ExperimentException, ServletException
         {
             for (ExpExperiment exp : lookupExperiments(deleteForm))
             {
@@ -2535,7 +2535,7 @@ public class ExperimentController extends SpringActionController
             return true;
         }
 
-        private List<? extends ExpRun> getRuns(List<ExpSampleSet> sampleSets) throws SQLException
+        private List<? extends ExpRun> getRuns(List<ExpSampleSet> sampleSets)
         {
             if (sampleSets.size() > 0)
             {

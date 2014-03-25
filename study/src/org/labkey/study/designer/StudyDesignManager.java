@@ -172,12 +172,12 @@ public class StudyDesignManager
         return dest;
     }
 
-    public StudyDesignInfo getStudyDesign(Container c, String name) throws SQLException
+    public StudyDesignInfo getStudyDesign(Container c, String name)
     {
         return getStudyDesign(c, name, false);
     }
 
-    public StudyDesignInfo getStudyDesign(Container c, String name, boolean checkSourceContainer) throws SQLException
+    public StudyDesignInfo getStudyDesign(Container c, String name, boolean checkSourceContainer)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromParts("Label"), name);
@@ -198,7 +198,7 @@ public class StudyDesignManager
         return null;
     }
 
-    public GWTStudyDefinition getGWTStudyDefinition(User user, Container c, StudyDesignInfo info) throws SQLException
+    public GWTStudyDefinition getGWTStudyDefinition(User user, Container c, StudyDesignInfo info)
     {
         StudyDesignVersion version = getStudyDesignVersion(info.getContainer(), info.getStudyId());
 
@@ -228,12 +228,12 @@ public class StudyDesignManager
         return def;
     }
 
-    public StudyDesignInfo insertStudyDesign(User user, StudyDesignInfo info) throws SQLException
+    public StudyDesignInfo insertStudyDesign(User user, StudyDesignInfo info)
     {
         return Table.insert(user, getStudyDesignTable(), info);
     }
 
-    public StudyDesignVersion[] getStudyDesignVersions(Container c, int studyId) throws SQLException
+    public StudyDesignVersion[] getStudyDesignVersions(Container c, int studyId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromParts("studyId"), studyId);
@@ -241,7 +241,7 @@ public class StudyDesignManager
         return new TableSelector(getStudyVersionTable(), filter, new Sort("Revision")).getArray(StudyDesignVersion.class);
     }
     
-    public StudyDesignVersion getStudyDesignVersion(Container c, int studyId, int versionId) throws SQLException
+    public StudyDesignVersion getStudyDesignVersion(Container c, int studyId, int versionId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromParts("studyId"), studyId);
@@ -252,12 +252,8 @@ public class StudyDesignManager
 
     /**
      * Return the latest version of the given study.
-     * @param c
-     * @param studyId
-     * @return
-     * @throws SQLException
      */
-    public StudyDesignVersion getStudyDesignVersion(Container c, int studyId) throws SQLException
+    public StudyDesignVersion getStudyDesignVersion(Container c, int studyId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromParts("studyId"), studyId);
@@ -269,13 +265,13 @@ public class StudyDesignManager
     /**
      * returns null if no revision can be found for the particular study and container
      */
-    public Integer getLatestRevisionNumber(Container c, int studyId) throws SQLException
+    public Integer getLatestRevisionNumber(Container c, int studyId)
     {
         String sql = "SELECT MAX(Revision) FROM " + getStudyVersionTable().toString() + " WHERE Container = ? AND StudyId = ?";
         return new SqlSelector(getSchema(), sql, c, studyId).getObject(Integer.class);
     }
 
-    public StudyDesignVersion saveStudyDesign(User user, Container container, StudyDesignVersion version) throws SaveException, SQLException
+    public StudyDesignVersion saveStudyDesign(User user, Container container, StudyDesignVersion version) throws SaveException
     {
         int studyDesignId = version.getStudyId();
         StudyDesignInfo designInfo;

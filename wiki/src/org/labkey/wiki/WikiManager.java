@@ -138,7 +138,7 @@ public class WikiManager implements WikiService
     }
 
     // Used to verify that entityId is a wiki and belongs in the specified container
-    public Wiki getWikiByEntityId(Container c, String entityId) throws SQLException
+    public Wiki getWikiByEntityId(Container c, String entityId)
     {
         if (null == c || c.getId().length() == 0 || null == entityId || entityId.length() == 0)
             return null;
@@ -196,7 +196,6 @@ public class WikiManager implements WikiService
 
 
     public boolean updateWiki(User user, Wiki wikiNew, WikiVersion versionNew)
-            throws SQLException
     {
         DbScope scope = comm.getSchema().getScope();
         Container c = wikiNew.lookupContainer();
@@ -386,13 +385,13 @@ public class WikiManager implements WikiService
     }
 
 
-    public int purge() throws SQLException
+    public int purge()
     {
         return ContainerUtil.purgeTable(comm.getTableInfoPages(), null);
     }
 
 
-    public FormattedHtml formatWiki(Container c, Wiki wiki, WikiVersion wikiversion) throws SQLException
+    public FormattedHtml formatWiki(Container c, Wiki wiki, WikiVersion wikiversion)
     {
         String hrefPrefix = wiki.getWikiURL(WikiController.PageAction.class, HString.EMPTY).toString();
         String attachPrefix = null;

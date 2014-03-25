@@ -26,7 +26,7 @@ import org.labkey.api.pipeline.PipelineJob;
 */
 public class NoOpPipelineStatusWriter implements PipelineStatusFile.StatusWriter
 {
-    public boolean setStatus(PipelineJob job, String status, String statusInfo, boolean allowInsert) throws Exception
+    public boolean setStatus(PipelineJob job, String status, String statusInfo, boolean allowInsert)
     {
         return true;
     }

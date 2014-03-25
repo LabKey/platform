@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.pipeline;
 
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.pipeline.ExpGeneratorId;
@@ -29,7 +30,6 @@ import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.FileType;
 
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -116,11 +116,7 @@ public class ExpGeneratorTask extends PipelineJob.Task<ExpGeneratorTask.Factory>
                 run.delete(getJob().getUser());
             }
         }
-        catch (SQLException e)
-        {
-            throw new PipelineJobException("Failed to save experiment run in the database", e);
-        }
-        catch (ValidationException e)
+        catch (RuntimeSQLException | ValidationException e)
         {
             throw new PipelineJobException("Failed to save experiment run in the database", e);
         }

@@ -725,7 +725,7 @@ public class IssueManager
         return emails;
     }
 
-    public static void deleteUserEmailPreferences(User user) throws SQLException
+    public static void deleteUserEmailPreferences(User user)
     {
         Table.delete(_issuesSchema.getTableInfoEmailPrefs(), new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()));
     }

@@ -25,13 +25,11 @@ import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -61,7 +59,7 @@ public abstract class AbstractXarImporter
         }
     }
 
-    protected void checkMaterialCpasType(String declaredType) throws SQLException, XarFormatException
+    protected void checkMaterialCpasType(String declaredType) throws XarFormatException
     {
         if (declaredType != null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(declaredType))
         {

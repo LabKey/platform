@@ -24,6 +24,7 @@ import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.FilterInfo;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.CustomView;
@@ -65,7 +66,6 @@ import org.labkey.query.view.CustomViewSetKey;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -253,7 +253,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
             _mgr.fireViewChanged(this);
             _dirty = false;
         }
-        catch (SQLException e)
+        catch (RuntimeSQLException e)
         {
             throw new QueryException("Error", e);
         }
@@ -277,7 +277,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
                 _cstmView = null;
             }
         }
-        catch (SQLException e)
+        catch (RuntimeSQLException e)
         {
             throw new QueryException("Error", e);
         }

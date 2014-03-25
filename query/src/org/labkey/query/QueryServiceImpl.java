@@ -585,19 +585,12 @@ public class QueryServiceImpl extends QueryService
             if (null == viewName)
                 throw new IllegalStateException(viewFileName + ": Must specify a view name");
 
-            try
-            {
-                // Get all shared views on this query with the same name
-                CstmView[] views = mgr.getCstmViews(container, qd.getSchemaName(), qd.getName(), viewName, null, false, true);
+            // Get all shared views on this query with the same name
+            CstmView[] views = mgr.getCstmViews(container, qd.getSchemaName(), qd.getName(), viewName, null, false, true);
 
-                // Delete them
-                for (CstmView view : views)
-                    mgr.delete(null, view);
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            // Delete them
+            for (CstmView view : views)
+                mgr.delete(null, view);
 
             // owner == null since we're exporting/importing only shared views
             CustomView cv = qd.createSharedCustomView(reader.getName());

@@ -730,7 +730,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    private void requiresEditRequestPermissions(SampleRequest request) throws SQLException, ServletException
+    private void requiresEditRequestPermissions(SampleRequest request)
     {
         if (!SampleManager.getInstance().hasEditRequestPermissions(getUser(), request))
             throw new UnauthorizedException();
@@ -5413,20 +5413,13 @@ public class SpecimenController extends BaseStudyController
         protected void validatePermission(User user, BindException errors)
         {
             checkPermissions();
-            try
-            {
-                SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), _requestId);
+            SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), _requestId);
 
-                if (!SampleManager.getInstance().hasEditRequestPermissions(getUser(), request) ||
-                        SampleManager.getInstance().isInFinalState(request))
-                {
-                    // No permission
-                    errors.reject(SpringActionController.ERROR_MSG, "You do not have permission to modify this request.");
-                }
-            }
-            catch (ServletException e)
+            if (!SampleManager.getInstance().hasEditRequestPermissions(getUser(), request) ||
+                    SampleManager.getInstance().isInFinalState(request))
             {
-                errors.reject(SpringActionController.ERROR_MSG, "Unexpected Exception checking permissions.");
+                // No permission
+                errors.reject(SpringActionController.ERROR_MSG, "You do not have permission to modify this request.");
             }
         }
 

@@ -40,7 +40,6 @@ import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
 
 import java.lang.reflect.InvocationTargetException;
-import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -86,12 +85,12 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
             return getStudy().getDataSets();
         }
 
-        public List<? extends Location> getSites() throws SQLException
+        public List<? extends Location> getSites()
         {
             return getStudy().getLocations();
         }
 
-        public List<? extends Cohort> getCohorts(User user) throws SQLException
+        public List<? extends Cohort> getCohorts(User user)
         {
             return getStudy().getCohorts(user);
         }

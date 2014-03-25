@@ -16,6 +16,7 @@
 
 package org.labkey.study.reports;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ColumnInfo;
@@ -182,22 +183,16 @@ public class ChartReportView extends AbstractReportView
             final String datasetId = getDescriptor().getProperty("datasetId");
             final String chartsPerRow = getDescriptor().getProperty("chartsPerRow");
 
-            try {
-                if (datasetId != null && _reports != null)
-                {
-                    //Map<Integer, Report> map = ReportsController.getCachedReports(context, Integer.parseInt(datasetId));
-                    //for (Report report : map.values())
-                    for (Report report : _reports)
-                    {
-                        report.getDescriptor().setProperty("chartsPerRow", chartsPerRow != null ? chartsPerRow : "3");
-                        report.getDescriptor().setOwner(getDescriptor().getOwner());
-                        ReportService.get().saveReport(context, key, report);
-                    }
-                }
-            }
-            catch (SQLException e)
+            if (datasetId != null && _reports != null)
             {
-                throw new RuntimeException(e);
+                //Map<Integer, Report> map = ReportsController.getCachedReports(context, Integer.parseInt(datasetId));
+                //for (Report report : map.values())
+                for (Report report : _reports)
+                {
+                    report.getDescriptor().setProperty("chartsPerRow", chartsPerRow != null ? chartsPerRow : "3");
+                    report.getDescriptor().setOwner(getDescriptor().getOwner());
+                    ReportService.get().saveReport(context, key, report);
+                }
             }
         }
         else
@@ -206,17 +201,10 @@ public class ChartReportView extends AbstractReportView
 
             for (Report report : getChildReports(context))
             {
-                if (owner != report.getDescriptor().getOwner())
+                if (!ObjectUtils.equals(owner, report.getDescriptor().getOwner()))
                 {
-                    try
-                    {
-                        report.getDescriptor().setOwner(owner);
-                        ReportService.get().saveReport(context, report.getDescriptor().getReportKey(), report);
-                    }
-                    catch (SQLException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
+                    report.getDescriptor().setOwner(owner);
+                    ReportService.get().saveReport(context, report.getDescriptor().getReportKey(), report);
                 }
             }
         }

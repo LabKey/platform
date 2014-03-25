@@ -18,6 +18,7 @@ package org.labkey.visualization;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
@@ -27,8 +28,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
-
-import java.sql.SQLException;
 
 
 public class VisualizationUpgradeCode implements UpgradeCode
@@ -58,7 +57,7 @@ public class VisualizationUpgradeCode implements UpgradeCode
                     {
                         ReportService.get().saveReport(rptContext, descriptor.getReportKey(), report, true);
                     }
-                    catch (SQLException e)
+                    catch (RuntimeSQLException e)
                     {
                         _log.error("An error occurred upgrading generic chart report properties: ", e);
                     }

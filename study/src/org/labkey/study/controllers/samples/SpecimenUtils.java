@@ -127,7 +127,7 @@ public class SpecimenUtils
         return _controller.getStudyThrowIfNull();
     }
 
-    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter) throws ServletException, SQLException
+    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter)
     {
         return getSpecimenQueryView(showVials, forExport, null, viewMode, cohortFilter);
     }
@@ -154,7 +154,7 @@ public class SpecimenUtils
                 (selectedMode == SpecimenQueryView.Mode.DEFAULT && SampleManager.getInstance().getDisplaySettings(container).isDefaultToCommentsMode());
     }
 
-    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, ParticipantDataset[] cachedFilterData, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter) throws ServletException
+    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, ParticipantDataset[] cachedFilterData, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter)
     {
         boolean commentsMode = isCommentsMode(getContainer(), viewMode);
 

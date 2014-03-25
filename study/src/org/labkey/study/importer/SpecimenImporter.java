@@ -3010,7 +3010,6 @@ public class SpecimenImporter
     }
 
     protected void checkForConflictingSpecimens(DbSchema schema, String tempTable, List<SpecimenColumn> loadedColumns)
-            throws SQLException
     {
         if (!StudyManager.getInstance().getStudy(_container).getRepositorySettings().isSpecimenDataEditable())
         {

@@ -16,25 +16,35 @@
 package org.labkey.experiment.pipeline;
 
 import org.apache.commons.io.FileUtils;
-import org.labkey.api.pipeline.*;
-import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
-import org.labkey.api.exp.pipeline.XarGeneratorId;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.FileXarSource;
+import org.labkey.api.exp.XarSource;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.pipeline.XarGeneratorFactorySettings;
-import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.*;
+import org.labkey.api.exp.pipeline.XarGeneratorId;
+import org.labkey.api.pipeline.AbstractTaskFactory;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.experiment.api.ExpRunImpl;
-import org.labkey.experiment.XarExporter;
-import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.DataURLRelativizer;
+import org.labkey.experiment.LSIDRelativizer;
+import org.labkey.experiment.XarExporter;
 
-import java.io.IOException;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.sql.SQLException;
-import java.util.*;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Creates an experiment run to represent the work that the task's job has done so far.
@@ -154,11 +164,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
                 }
             }
         }
-        catch (SQLException e)
-        {
-            throw new PipelineJobException("Failed to save experiment run in the database", e);
-        }
-        catch (ValidationException e)
+        catch (RuntimeSQLException | ValidationException e)
         {
             throw new PipelineJobException("Failed to save experiment run in the database", e);
         }

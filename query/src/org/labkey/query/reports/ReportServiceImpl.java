@@ -492,7 +492,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return null;
     }
 
-    public void deleteReport(ContainerUser context, Report report) throws SQLException
+    public void deleteReport(ContainerUser context, Report report)
     {
         //ensure that descriptor id is a DbReportIdentifier
         DbReportIdentifier reportId;
@@ -515,7 +515,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         }
     }
 
-    private void _deleteReport(Container c, int reportId) throws SQLException
+    private void _deleteReport(Container c, int reportId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), c.getId());
         filter.addCondition(FieldKey.fromParts("RowId"), reportId);
@@ -523,12 +523,12 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     }
 
     @Override
-    public int saveReport(ContainerUser context, String key, Report report, boolean skipValidation) throws SQLException
+    public int saveReport(ContainerUser context, String key, Report report, boolean skipValidation)
     {
         return _saveReport(context, key, report, skipValidation).getRowId();
     }
 
-    public int saveReport(ContainerUser context, String key, Report report) throws SQLException
+    public int saveReport(ContainerUser context, String key, Report report)
     {
         return _saveReport(context, key, report).getRowId();
     }
@@ -576,12 +576,12 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return errors.isEmpty();
     }
 
-    private ReportDB _saveReport(ContainerUser context, String key, Report report) throws SQLException
+    private ReportDB _saveReport(ContainerUser context, String key, Report report)
     {
         return _saveReport(context, key, report, false);
     }
 
-    private ReportDB _saveReport(ContainerUser context, String key, Report report, boolean skipValidation) throws SQLException
+    private ReportDB _saveReport(ContainerUser context, String key, Report report, boolean skipValidation)
     {
         DbScope scope = getTable().getSchema().getScope();
         ReportDescriptor descriptor;
@@ -605,7 +605,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return r;
     }
 
-    private ReportDB _saveReport(User user, Container c, String key, ReportDescriptor descriptor) throws SQLException
+    private ReportDB _saveReport(User user, Container c, String key, ReportDescriptor descriptor)
     {
         ReportDB reportDB = new ReportDB(c, user.getUserId(), key, descriptor);
 
@@ -629,7 +629,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return reportDB;
     }
 
-    private void _saveReportProperties(Container c, String entityId, ReportDescriptor descriptor) throws SQLException
+    private void _saveReportProperties(Container c, String entityId, ReportDescriptor descriptor)
     {
         // consider: make this more generic instead of picking out these specific properties
         try {
@@ -853,7 +853,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
     private static final Report[] EMPTY_REPORT = new Report[0];
 
-    private boolean reportExists(int reportId) throws SQLException
+    private boolean reportExists(int reportId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), reportId);
         ReportDB report = new TableSelector(getTable(), filter, null).getObject(ReportDB.class);

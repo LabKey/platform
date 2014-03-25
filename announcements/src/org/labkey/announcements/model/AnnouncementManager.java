@@ -242,7 +242,7 @@ public class AnnouncementManager
         return getAnnouncement(c, rowId, INCLUDE_NOTHING);
     }
 
-    public static void saveEmailPreference(User user, Container c, int emailPreference, String srcIdentifier) throws SQLException
+    public static void saveEmailPreference(User user, Container c, int emailPreference, String srcIdentifier)
     {
         saveEmailPreference(user, c, user, emailPreference, srcIdentifier);
     }
@@ -295,7 +295,7 @@ public class AnnouncementManager
     }
 
 
-    public static AnnouncementModel insertAnnouncement(Container c, User user, AnnouncementModel insert, List<AttachmentFile> files) throws SQLException, IOException, MessagingException
+    public static AnnouncementModel insertAnnouncement(Container c, User user, AnnouncementModel insert, List<AttachmentFile> files) throws IOException, MessagingException
     {
         // If no srcIdentifier is set and this is a parent message, set its source to the container
         if (insert.getDiscussionSrcIdentifier() == null && insert.getParent() == null)
@@ -482,7 +482,7 @@ public class AnnouncementManager
     }
 
 
-    private static synchronized void insertMemberList(User user, List<Integer> userIds, int messageId) throws SQLException
+    private static synchronized void insertMemberList(User user, List<Integer> userIds, int messageId)
     {
         // TODO: Should delete/insert only on diff
         if (null != userIds)
@@ -519,7 +519,7 @@ public class AnnouncementManager
     }
 
 
-    public static AnnouncementModel updateAnnouncement(User user, AnnouncementModel update, List<AttachmentFile> files) throws SQLException, IOException
+    public static AnnouncementModel updateAnnouncement(User user, AnnouncementModel update, List<AttachmentFile> files) throws IOException
     {
         update.beforeUpdate(user);
         AnnouncementModel result = Table.update(user, _comm.getTableInfoAnnouncements(), update, update.getRowId());
@@ -534,18 +534,18 @@ public class AnnouncementManager
     }
 
 
-    private static void deleteAnnouncement(AnnouncementModel ann) throws SQLException
+    private static void deleteAnnouncement(AnnouncementModel ann)
     {
         Table.delete(_comm.getTableInfoAnnouncements(), ann.getRowId());
         AttachmentService.get().deleteAttachments(ann);
     }
 
 
-    public static void deleteAnnouncement(Container c, int rowId) throws SQLException
+    public static void deleteAnnouncement(Container c, int rowId)
     {
         DbSchema schema = _comm.getSchema();
 
-        AnnouncementModel ann = null;
+        AnnouncementModel ann;
 
         try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
         {
@@ -576,12 +576,12 @@ public class AnnouncementManager
     }
     
 
-    public static void deleteUserFromAllMemberLists(User user) throws SQLException
+    public static void deleteUserFromAllMemberLists(User user)
     {
         Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()));
     }
 
-    public static void deleteUserFromMemberList(User user, int messageId) throws SQLException
+    public static void deleteUserFromMemberList(User user, int messageId)
     {
         Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()).addCondition(FieldKey.fromParts("MessageId"), messageId));
     }

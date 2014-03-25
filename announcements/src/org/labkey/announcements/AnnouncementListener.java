@@ -27,7 +27,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 
 import java.beans.PropertyChangeEvent;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -72,15 +71,8 @@ public class AnnouncementListener implements ContainerManager.ContainerListener,
     public void userDeletedFromSite(User user)
     {
         //when user is deleted from site, remove any corresponding record from EmailPrefs table.
-        try
-        {
-            MessageConfigManager.deleteUserEmailPref(user, null);
-            AnnouncementManager.deleteUserFromAllMemberLists(user);
-        }
-        catch (SQLException e)
-        {
-            _log.error(e);
-        }
+        MessageConfigManager.deleteUserEmailPref(user, null);
+        AnnouncementManager.deleteUserFromAllMemberLists(user);
     }
 
     @Override

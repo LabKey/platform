@@ -648,20 +648,13 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
         // Don't use an explicit namespace, making the XML much more readable
         xmlOptions.setUseDefaultNamespace();
         queryDef.setMetaData(doc.xmlText(xmlOptions));
-        try
+        if (queryDef.getQueryDefId() == 0)
         {
-            if (queryDef.getQueryDefId() == 0)
-            {
-                QueryManager.get().insert(getViewContext().getUser(), queryDef);
-            }
-            else
-            {
-                QueryManager.get().update(getViewContext().getUser(), queryDef);
-            }
+            QueryManager.get().insert(getViewContext().getUser(), queryDef);
         }
-        catch (SQLException e)
+        else
         {
-            throw new RuntimeSQLException(e);
+            QueryManager.get().update(getViewContext().getUser(), queryDef);
         }
 
         return getMetadata(schemaName, gwtTableInfo.getName());
@@ -679,27 +672,20 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
     {
         validatePermissions();
 
-        try
+        QueryDef queryDef = QueryManager.get().getQueryDef(getViewContext().getContainer(), schemaName, queryName, false);
+        if (queryDef != null)
         {
-            QueryDef queryDef = QueryManager.get().getQueryDef(getViewContext().getContainer(), schemaName, queryName, false);
+            // Delete the metadata override on a built-in table
+            QueryManager.get().delete(getViewContext().getUser(), queryDef);
+        }
+        else
+        {
+            queryDef = QueryManager.get().getQueryDef(getViewContext().getContainer(), schemaName, queryName, true);
             if (queryDef != null)
             {
-                // Delete the metadata override on a built-in table
-                QueryManager.get().delete(getViewContext().getUser(), queryDef);
+                queryDef.setMetaData(null);
+                QueryManager.get().update(getViewContext().getUser(), queryDef);
             }
-            else
-            {
-                queryDef = QueryManager.get().getQueryDef(getViewContext().getContainer(), schemaName, queryName, true);
-                if (queryDef != null)
-                {
-                    queryDef.setMetaData(null);
-                    QueryManager.get().update(getViewContext().getUser(), queryDef);
-                }
-            }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
         }
         return getMetadata(schemaName, queryName);
     }

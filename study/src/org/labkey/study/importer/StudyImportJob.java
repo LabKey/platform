@@ -37,8 +37,6 @@ import org.labkey.study.pipeline.StudyPipeline;
 import org.springframework.validation.BindException;
 
 import java.io.File;
-import java.sql.SQLException;
-import java.util.Collection;
 
 /**
  * User: adam
@@ -129,7 +127,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
     }
 
     @Override
-    public File getSpecimenArchive() throws ImportException, SQLException
+    public File getSpecimenArchive() throws ImportException
     {
         return _ctx.getSpecimenArchive(_root);
     }

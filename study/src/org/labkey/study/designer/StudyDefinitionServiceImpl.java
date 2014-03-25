@@ -163,19 +163,12 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
 
     public GWTStudyDesignVersion[] getVersions(int studyId)
     {
-        try
-        {
-            StudyDesignVersion[] versions = StudyDesignManager.get().getStudyDesignVersions(getContainer(), studyId);
-            GWTStudyDesignVersion[] gwtVersions = new GWTStudyDesignVersion[versions.length];
-            for (int i = 0; i < versions.length; i++)
-                gwtVersions[i] = versions[i].toGWTVersion(_context);
+        StudyDesignVersion[] versions = StudyDesignManager.get().getStudyDesignVersions(getContainer(), studyId);
+        GWTStudyDesignVersion[] gwtVersions = new GWTStudyDesignVersion[versions.length];
+        for (int i = 0; i < versions.length; i++)
+            gwtVersions[i] = versions[i].toGWTVersion(_context);
 
-            return gwtVersions;
-        }
-        catch (SQLException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
+        return gwtVersions;
     }
 
     public GWTStudyDefinition ensureDatasetPlaceholders(GWTStudyDefinition studyDefinition)

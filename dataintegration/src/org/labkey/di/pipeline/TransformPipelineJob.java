@@ -18,7 +18,6 @@ package org.labkey.di.pipeline;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.labkey.api.data.ParameterDescription;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.SystemProperty;
@@ -35,7 +34,6 @@ import org.labkey.di.VariableMapImpl;
 import org.labkey.di.data.TransformProperty;
 
 import java.io.File;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -162,14 +160,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
 
     private void update(TransformRun run)
     {
-        try
-        {
-            TransformManager.get().updateTransformRun(getUser(), run);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        TransformManager.get().updateTransformRun(getUser(), run);
     }
 
 

@@ -159,7 +159,7 @@ public class TreatmentManager
         return StudyManager.getInstance().getSortedVisitsByRowIds(container, visitRowIds);
     }
 
-    public TreatmentVisitMapImpl insertTreatmentVisitMap(User user, Container container, int cohortId, int visitId, int treatmentId) throws SQLException
+    public TreatmentVisitMapImpl insertTreatmentVisitMap(User user, Container container, int cohortId, int visitId, int treatmentId)
     {
         TreatmentVisitMapImpl newMapping = new TreatmentVisitMapImpl();
         newMapping.setContainer(container);
@@ -170,14 +170,14 @@ public class TreatmentManager
         return Table.insert(user, StudySchema.getInstance().getTableInfoTreatmentVisitMap(), newMapping);
     }
 
-    public void deleteTreatmentVisitMapForCohort(Container container, int rowId) throws SQLException
+    public void deleteTreatmentVisitMapForCohort(Container container, int rowId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("CohortId"), rowId);
         Table.delete(StudySchema.getInstance().getTableInfoTreatmentVisitMap(), filter);
     }
 
-    public void deleteTreatmentVisitMapForVisit(Container container, int rowId) throws SQLException
+    public void deleteTreatmentVisitMapForVisit(Container container, int rowId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("VisitId"), rowId);

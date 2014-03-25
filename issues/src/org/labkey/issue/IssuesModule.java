@@ -40,7 +40,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.query.IssuesQuerySchema;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -172,7 +171,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         task.addRunnable(r, SearchService.PRIORITY.bulk);
     }
 
-    public void indexDeleted() throws SQLException
+    public void indexDeleted()
     {
         new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute("UPDATE issues.issues SET lastIndexed=NULL");
     }

@@ -1010,7 +1010,7 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public void afterPasswordSet(BindException errors, User user) throws SQLException
+        public void afterPasswordSet(BindException errors, User user)
         {
             try
             {
@@ -1233,7 +1233,7 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public void afterPasswordSet(BindException errors, User user) throws SQLException
+        public void afterPasswordSet(BindException errors, User user)
         {
             UserManager.addToUserHistory(user, "Changed password.");
         }

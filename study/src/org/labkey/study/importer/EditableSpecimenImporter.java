@@ -202,7 +202,6 @@ public class EditableSpecimenImporter extends SpecimenImporter
 
     @Override
     protected void checkForConflictingSpecimens(DbSchema schema, String tempTable, List<SpecimenColumn> loadedColumns)
-            throws SQLException
     {
         // Only check if inserting
         if (_insert)

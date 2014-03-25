@@ -267,14 +267,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
                 run.setTransformRunStatusEnum(TransformRun.TransformRunStatus.ERROR);
             if (null != errorVerbose)
                 run.setTransformRunLog(errorVerbose);
-            try
-            {
-                TransformManager.get().insertTransformRun(context.getUser(),run);
-            }
-            catch (SQLException sqlx)
-            {
-                throw new RuntimeSQLException(sqlx);
-            }
+            TransformManager.get().insertTransformRun(context.getUser(),run);
         }
 
         if (null != x)
@@ -333,7 +326,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         {
             TransformManager.get().insertTransformRun(context.getUser(), run);
         }
-        catch (SQLException e)
+        catch (RuntimeSQLException e)
         {
             throw new PipelineJobException(e);
         }

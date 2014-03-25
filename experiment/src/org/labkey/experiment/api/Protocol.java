@@ -16,7 +16,6 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
@@ -318,7 +317,7 @@ public class Protocol extends IdentifiableEntity
         return result;
     }
 
-    private void diffProperties(Map<String, ObjectProperty> thisProps, Map<String, ObjectProperty> otherProps, String uri, List<Difference> result) throws SQLException
+    private void diffProperties(Map<String, ObjectProperty> thisProps, Map<String, ObjectProperty> otherProps, String uri, List<Difference> result)
     {
         if (!diff(thisProps.keySet(), otherProps.keySet(), "Properties for " + uri, result))
         {

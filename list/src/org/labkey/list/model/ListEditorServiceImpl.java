@@ -295,17 +295,13 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
             {
                 ListManager.get().update(getUser(), def);
             }
-            catch (SQLException x)
+            catch (RuntimeSQLException x)
             {
-                if (changedName && RuntimeSQLException.isConstraintException(x))
+                if (changedName && x.isConstraintException())
                     throw new ListImportException("The name '" + def.getName() + "' is already in use.");
                 throw x;
             }
             transaction.commit();
-        }
-        catch (SQLException x)
-        {
-
         }
 
         // schedules a scan (doesn't touch db)

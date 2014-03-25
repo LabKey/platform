@@ -21,6 +21,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.data.views.DefaultViewInfo;
@@ -57,7 +58,6 @@ import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.study.StudySchema;
 
 import java.io.InputStream;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -431,7 +431,7 @@ public class ReportViewProvider implements DataViewProvider
                     else
                         throw new ValidationException(errors);
                 }
-                catch (SQLException e)
+                catch (RuntimeSQLException e)
                 {
                     throw new ValidationException(e.getMessage());
                 }

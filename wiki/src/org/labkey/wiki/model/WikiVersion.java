@@ -25,7 +25,6 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.wiki.WikiContentCache;
 import org.labkey.wiki.WikiManager;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
@@ -119,12 +118,12 @@ public class WikiVersion
     }
 
     // TODO: WikiVersion should know its wiki & container
-    public String getHtml(Container c, Wiki wiki) throws SQLException
+    public String getHtml(Container c, Wiki wiki)
     {
         return "<div class=\"labkey-wiki\">" + getHtmlForConvert(c, wiki) + "</div>";
     }
 
-    public String getHtmlForConvert(Container c, Wiki wiki) throws SQLException
+    public String getHtmlForConvert(Container c, Wiki wiki)
     {
         return WikiContentCache.getHtml(c, wiki, this, _cache);
     }

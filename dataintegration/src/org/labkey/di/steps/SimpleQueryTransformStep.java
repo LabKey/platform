@@ -202,7 +202,7 @@ public class SimpleQueryTransformStep extends TransformTask
     }
 
 
-    DataIteratorBuilder selectFromSource(CopyConfig meta, Container c, User u, DataIteratorContext context, Logger log) throws SQLException
+    DataIteratorBuilder selectFromSource(CopyConfig meta, Container c, User u, DataIteratorContext context, Logger log)
     {
         try
         {

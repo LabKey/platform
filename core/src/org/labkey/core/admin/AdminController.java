@@ -3122,7 +3122,7 @@ public class AdminController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public class DeleteWebThemeAction extends AbstractWebThemeAction
     {
-        protected void handleTheme(WebThemeForm form, ActionURL redirectURL) throws SQLException
+        protected void handleTheme(WebThemeForm form, ActionURL redirectURL)
         {
             WebThemeManager.deleteWebTheme(form.getThemeName());
         }
@@ -5862,14 +5862,7 @@ public class AdminController extends SpringActionController
         menuProps.put(CUSTOMMENU_INCLUDEALLDESCENDANTS, form.isIncludeAllDescendants() ? "true" : "false");
         menuProps.put(CUSTOMMENU_CURRENTPROJECTONLY, form.isCurrentProjectOnly() ? "true" : "false");
 
-        try
-        {
-            Portal.updatePart(user, webPart);
-        }
-        catch (SQLException e)
-        {
-
-        }
+        Portal.updatePart(user, webPart);
     }
 
     @RequiresPermissionClass(AdminPermission.class)

@@ -37,7 +37,6 @@ import org.labkey.api.security.UserDisplayNameComparator;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -80,7 +79,7 @@ public class MothershipManager
         return DbSchema.get(SCHEMA_NAME);
     }
 
-    public void insertException(ExceptionStackTrace stackTrace, ExceptionReport report) throws SQLException
+    public void insertException(ExceptionStackTrace stackTrace, ExceptionReport report)
     {
         // Synchronize to prevent two different threads from creating duplicate rows in the ExceptionStackTrace table
         try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction(INSERT_EXCEPTION_LOCK))
@@ -226,7 +225,6 @@ public class MothershipManager
     }
 
     public ExceptionStackTrace getExceptionStackTrace(String stackTraceHash, String containerId)
-            throws SQLException
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), containerId);
         filter.addCondition(FieldKey.fromString("StackTraceHash"), stackTraceHash);
@@ -257,7 +255,7 @@ public class MothershipManager
        sqlExecutor.execute("UPDATE " + getTableInfoExceptionStackTrace() + " SET ModifiedBy = NULL WHERE ModifiedBy = ?", u.getUserId());
     }
 
-    public synchronized ServerSession updateServerSession(ServerSession session, ServerInstallation installation, Container container) throws SQLException
+    public synchronized ServerSession updateServerSession(ServerSession session, ServerInstallation installation, Container container)
     {
         try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
         {
@@ -442,7 +440,7 @@ public class MothershipManager
         saveProperty(c, CREATE_ISSUE_URL_PROP, url);
     }
 
-    public void updateExceptionStackTrace(ExceptionStackTrace stackTrace, User user) throws SQLException
+    public void updateExceptionStackTrace(ExceptionStackTrace stackTrace, User user)
     {
         Table.update(user, getTableInfoExceptionStackTrace(), stackTrace, stackTrace.getExceptionStackTraceId());
     }
@@ -457,19 +455,19 @@ public class MothershipManager
         saveProperty(c, ISSUES_CONTAINER_PROP, container);
     }
 
-    public void insertSoftwareRelease(Container container, User user, SoftwareRelease bean) throws SQLException
+    public void insertSoftwareRelease(Container container, User user, SoftwareRelease bean)
     {
         bean.setContainer(container.getId());
         Table.insert(user, getTableInfoSoftwareRelease(), bean);
     }
 
-    public void deleteSoftwareRelease(Container container, int i) throws SQLException
+    public void deleteSoftwareRelease(Container container, int i)
     {
         Filter filter = SimpleFilter.createContainerFilter(container).addCondition(FieldKey.fromParts("ReleaseId"), i);
         Table.delete(getTableInfoSoftwareRelease(), filter);
     }
 
-    public SoftwareRelease updateSoftwareRelease(Container container, User user, SoftwareRelease bean) throws SQLException
+    public SoftwareRelease updateSoftwareRelease(Container container, User user, SoftwareRelease bean)
     {
         bean.setContainer(container.getId());
         return Table.update(user, getTableInfoSoftwareRelease(), bean, bean.getSoftwareReleaseId());
@@ -489,7 +487,7 @@ public class MothershipManager
         return new SqlSelector(getSchema(), sql).getCollection(ServerInstallation.class);
     }
 
-    public Collection<ServerInstallation> getServerInstallationsActiveBefore(Calendar cal) throws SQLException
+    public Collection<ServerInstallation> getServerInstallationsActiveBefore(Calendar cal)
     {
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT si.* FROM ");

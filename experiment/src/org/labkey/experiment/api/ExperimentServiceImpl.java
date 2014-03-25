@@ -888,7 +888,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return reader.getExperimentRuns();
     }
 
-    public ExpRun importRun(PipelineJob job, XarSource source) throws SQLException, PipelineJobException, ValidationException
+    public ExpRun importRun(PipelineJob job, XarSource source) throws PipelineJobException, ValidationException
     {
         return ExpGeneratorHelper.insertRun(job, source, null);
     }
@@ -2358,7 +2358,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public void loadParameter(User user, AbstractParameter param,
                                    TableInfo tiValueTable,
-                                   String pkName, int rowId) throws SQLException
+                                   String pkName, int rowId)
     {
         SimpleFilter filter = new SimpleFilter(pkName, rowId);
         filter.addCondition(FieldKey.fromParts("OntologyEntryURI"), param.getOntologyEntryURI());
@@ -2370,7 +2370,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
         else
         {
-            throw new SQLException("Duplicate " + tiValueTable.getSelectName() + " value, filter= " + filter + ". Existing parameter is " + existingValue + ", new value is " + param.getValue());
+            throw new RuntimeSQLException(new SQLException("Duplicate " + tiValueTable.getSelectName() + " value, filter= " + filter + ". Existing parameter is " + existingValue + ", new value is " + param.getValue()));
         }
     }
 

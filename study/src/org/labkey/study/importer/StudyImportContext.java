@@ -29,7 +29,6 @@ import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 
 /**
  * User: adam
@@ -136,7 +135,7 @@ public class StudyImportContext extends AbstractContext
         return studyDoc;
     }
 
-    public File getSpecimenArchive(VirtualFile root) throws ImportException, SQLException
+    public File getSpecimenArchive(VirtualFile root) throws ImportException
     {
         StudyDocument.Study.Specimens specimens = getXml().getSpecimens();
 

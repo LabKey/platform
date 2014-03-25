@@ -22,8 +22,6 @@ import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 
-import java.sql.SQLException;
-
 /**
  * User: adam
  * Date: Oct 8, 2010
@@ -33,7 +31,7 @@ public class WikiContentCache
 {
     private static final StringKeyCache<String> CONTENT_CACHE = CacheManager.getStringKeyCache(10000, CacheManager.DAY, "Wiki Content");
 
-    public static String getHtml(Container c, Wiki wiki, WikiVersion version, boolean cache) throws SQLException
+    public static String getHtml(Container c, Wiki wiki, WikiVersion version, boolean cache)
     {
         if (!cache)
             return WikiManager.get().formatWiki(c, wiki, version).getHtml();

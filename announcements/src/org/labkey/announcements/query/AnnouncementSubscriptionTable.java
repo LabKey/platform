@@ -141,7 +141,7 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
         }
 
         @Override
-        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException
         {
             try
             {

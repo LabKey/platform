@@ -145,12 +145,12 @@ public class ExpGeneratorHelper
     }
 
 
-    static public ExpRunImpl insertRun(PipelineJob job) throws SQLException, PipelineJobException, ValidationException
+    static public ExpRunImpl insertRun(PipelineJob job) throws PipelineJobException, ValidationException
     {
         return insertRun(job, null, null);
     }
 
-    static public ExpRunImpl insertRun(PipelineJob job, @Nullable XarSource source, @Nullable XarWriter xarWriter) throws SQLException, PipelineJobException, ValidationException
+    static public ExpRunImpl insertRun(PipelineJob job, @Nullable XarSource source, @Nullable XarWriter xarWriter) throws PipelineJobException, ValidationException
     {
         ExpRunImpl run;
         try
@@ -265,7 +265,7 @@ public class ExpGeneratorHelper
     }
 
     static private ExpRunImpl insertRun(PipelineJob job, Set<RecordedAction> actions, XarSource source, Map<URI, String> runOutputsWithRoles, Map<URI, String> runInputsWithRoles, ExpProtocol parentProtocol)
-        throws SQLException, PipelineJobException, ValidationException
+        throws PipelineJobException, ValidationException
     {
         ExpRunImpl run = ExperimentServiceImpl.get().createExperimentRun(job.getContainer(), job.getDescription());
         run.setProtocol(parentProtocol);

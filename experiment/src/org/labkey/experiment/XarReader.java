@@ -462,7 +462,7 @@ public class XarReader extends AbstractXarImporter
         return domain;
     }
 
-    private void deleteUniqueActions(ProtocolActionSetType[] actionDefs) throws ExperimentException, SQLException
+    private void deleteUniqueActions(ProtocolActionSetType[] actionDefs) throws ExperimentException
     {
         for (ProtocolActionSetType actionDef : actionDefs)
         {
@@ -486,7 +486,7 @@ public class XarReader extends AbstractXarImporter
         }
     }
 
-    private void deleteUniqueProtocols(ProtocolBaseType[] protocolDefs) throws SQLException, ExperimentException
+    private void deleteUniqueProtocols(ProtocolBaseType[] protocolDefs) throws ExperimentException
     {
         for (ProtocolBaseType protocol : protocolDefs)
         {
@@ -509,7 +509,7 @@ public class XarReader extends AbstractXarImporter
         }
     }
 
-    private void deleteExistingExperimentRuns(ExperimentArchiveType.ExperimentRuns experimentRuns, boolean deleteExistingRuns) throws SQLException, ExperimentException
+    private void deleteExistingExperimentRuns(ExperimentArchiveType.ExperimentRuns experimentRuns, boolean deleteExistingRuns) throws ExperimentException
     {
         for (ExperimentRunType experimentRun : experimentRuns.getExperimentRunArray())
         {

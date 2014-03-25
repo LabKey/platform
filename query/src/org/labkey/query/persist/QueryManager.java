@@ -28,7 +28,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.FilterInfo;
 import org.labkey.api.data.JsonWriter;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
@@ -135,29 +134,29 @@ public class QueryManager
         return key.select();
     }
 
-    public QueryDef insert(User user, QueryDef queryDef) throws SQLException
+    public QueryDef insert(User user, QueryDef queryDef)
     {
         return Table.insert(user, getTableInfoQueryDef(), queryDef);
     }
 
-    public QueryDef update(User user, QueryDef queryDef) throws SQLException
+    public QueryDef update(User user, QueryDef queryDef)
     {
         return Table.update(user, getTableInfoQueryDef(), queryDef, queryDef.getQueryDefId());
     }
 
-    public void delete(User user, QueryDef queryDef) throws SQLException
+    public void delete(User user, QueryDef queryDef)
     {
         Table.delete(getTableInfoQueryDef(), queryDef.getQueryDefId());
     }
 
-    public void delete(User user, QuerySnapshotDef querySnapshotDef) throws SQLException
+    public void delete(User user, QuerySnapshotDef querySnapshotDef)
     {
         Table.delete(getTableInfoQuerySnapshotDef(), querySnapshotDef.getRowId());
         if (querySnapshotDef.getQueryDefId() != null)
             Table.delete(getTableInfoQueryDef(), querySnapshotDef.getQueryDefId());
     }
 
-    public QuerySnapshotDef insert(User user, QueryDef queryDef, QuerySnapshotDef snapshotDef) throws SQLException
+    public QuerySnapshotDef insert(User user, QueryDef queryDef, QuerySnapshotDef snapshotDef)
     {
         if (queryDef != null && snapshotDef.getQueryTableName() == null)
         {
@@ -299,17 +298,17 @@ public class QueryManager
         return key.select();
     }
 
-    public CstmView update(User user, CstmView view) throws SQLException
+    public CstmView update(User user, CstmView view)
     {
         return Table.update(user, getTableInfoCustomView(), view, view.getCustomViewId());
     }
 
-    public CstmView insert(User user, CstmView view) throws SQLException
+    public CstmView insert(User user, CstmView view)
     {
         return Table.insert(user, getTableInfoCustomView(), view);
     }
 
-    public void delete(@Nullable User user, CstmView view) throws SQLException
+    public void delete(@Nullable User user, CstmView view)
     {
         Table.delete(getTableInfoCustomView(), view.getCustomViewId());
     }
@@ -345,7 +344,7 @@ public class QueryManager
         return ret;
     }
 
-    public ExternalSchemaDef update(User user, ExternalSchemaDef def) throws Exception
+    public ExternalSchemaDef update(User user, ExternalSchemaDef def)
     {
         checkDefConstraints(def);
         ExternalSchemaDef ret = Table.update(user, getTableInfoExternalSchema(), def, def.getExternalSchemaId());
@@ -353,7 +352,7 @@ public class QueryManager
         return ret;
     }
 
-    public void delete(User user, ExternalSchemaDef def) throws Exception
+    public void delete(User user, ExternalSchemaDef def)
     {
         Table.delete(getTableInfoExternalSchema(), def.getExternalSchemaId());
         ExternalSchemaDocumentProvider.getInstance().enumerateDocuments(null, def.lookupContainer(), null);
@@ -397,19 +396,19 @@ public class QueryManager
         return key.selectObject();
     }
 
-    public LinkedSchemaDef insert(User user, LinkedSchemaDef def) throws Exception
+    public LinkedSchemaDef insert(User user, LinkedSchemaDef def)
     {
         checkDefConstraints(def);
         return Table.insert(user, getTableInfoExternalSchema(), def);
     }
 
-    public LinkedSchemaDef update(User user, LinkedSchemaDef def) throws Exception
+    public LinkedSchemaDef update(User user, LinkedSchemaDef def)
     {
         checkDefConstraints(def);
         return Table.update(user, getTableInfoExternalSchema(), def, def.getExternalSchemaId());
     }
 
-    public void delete(User user, LinkedSchemaDef def) throws Exception
+    public void delete(User user, LinkedSchemaDef def)
     {
         Table.delete(getTableInfoExternalSchema(), def.getExternalSchemaId());
     }
@@ -518,7 +517,7 @@ public class QueryManager
         return getDbSchema().getTable("ExternalSchema");
     }
 
-    public void containerDeleted(Container c) throws SQLException
+    public void containerDeleted(Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         Table.delete(getTableInfoQuerySnapshotDef(), filter);
@@ -646,14 +645,7 @@ public class QueryManager
 
         public void containerDeleted(Container c, User user)
         {
-            try
-            {
-                QueryManager.get().containerDeleted(c);
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            QueryManager.get().containerDeleted(c);
         }
 
         public void propertyChange(PropertyChangeEvent evt)

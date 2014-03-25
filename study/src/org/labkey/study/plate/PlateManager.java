@@ -482,7 +482,7 @@ public class PlateManager implements PlateService.Service
         return PlateSchema.createWellGroupQueryView(context, null, showOnlyType);
     }
 
-    public Set<String> getDistinctTemplateNames() throws SQLException
+    public Set<String> getDistinctTemplateNames()
     {
         synchronized (TEMPLATE_NAME_SYNC_OBJ)
         {
@@ -507,7 +507,7 @@ public class PlateManager implements PlateService.Service
         }
     }
 
-    public void deletePlate(Container container, int rowid) throws SQLException
+    public void deletePlate(Container container, int rowid)
     {
         SimpleFilter plateFilter = SimpleFilter.createContainerFilter(container);
         plateFilter.addCondition(FieldKey.fromParts("RowId"), rowid);
@@ -539,7 +539,7 @@ public class PlateManager implements PlateService.Service
         }
     }
 
-    public void deleteAllPlateData(Container container) throws SQLException
+    public void deleteAllPlateData(Container container)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         Table.delete(StudySchema.getInstance().getTableInfoWell(), filter);
@@ -674,14 +674,14 @@ public class PlateManager implements PlateService.Service
         return (PlateManager) PlateService.get();
     }
 
-    public void deleteDataFile(Plate plate) throws SQLException
+    public void deleteDataFile(Plate plate)
     {
         String guid = ((PlateImpl) plate).getDataFileId();
         if (guid != null)
             AttachmentService.get().deleteAttachments(plate);
     }
 
-    public void setDataFile(User user, Plate plate, AttachmentFile file) throws SQLException, IOException, AttachmentService.DuplicateFilenameException
+    public void setDataFile(User user, Plate plate, AttachmentFile file) throws IOException, AttachmentService.DuplicateFilenameException
     {
         AttachmentService.get().addAttachments(plate, Collections.singletonList(file), user);
     }

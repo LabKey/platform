@@ -133,7 +133,6 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
         }
 
         private void setParents(ImportContext<FolderDocument.Folder> ctx, Map<Wiki, String> parentsToBeSet)
-                throws SQLException
         {
             for (Map.Entry<Wiki, String> entry : parentsToBeSet.entrySet())
             {

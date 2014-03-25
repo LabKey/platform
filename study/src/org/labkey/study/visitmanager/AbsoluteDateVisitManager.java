@@ -25,7 +25,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitMapKey;
 
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -54,7 +53,7 @@ public class AbsoluteDateVisitManager extends RelativeDateVisitManager
     }
 
     @Override
-    public Map<VisitMapKey, VisitStatistics> getVisitSummary(User user, CohortFilter cohortFilter, QCStateSet qcStates, Set<VisitStatistic> stats, boolean showAll) throws SQLException
+    public Map<VisitMapKey, VisitStatistics> getVisitSummary(User user, CohortFilter cohortFilter, QCStateSet qcStates, Set<VisitStatistic> stats, boolean showAll)
     {
         return Collections.emptyMap();
     }

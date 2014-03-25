@@ -197,7 +197,7 @@ public class ListManager implements SearchService.DocumentProvider
 
 
     // Note: callers must invoke indexer (can't invoke here since we may already be in a transaction)
-    ListDef update(User user, final ListDef def) throws SQLException
+    ListDef update(User user, final ListDef def)
     {
         Container c = def.lookupContainer();
         if (null == c)

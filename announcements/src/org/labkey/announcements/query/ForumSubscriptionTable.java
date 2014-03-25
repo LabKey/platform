@@ -223,13 +223,13 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         }
 
         @Override
-        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException
         {
             return new TableSelector(ForumSubscriptionTable.this).getObject(getTargets(keys, user, container).createUserSchemaFilter(), Map.class);
         }
 
         @Override
-        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException
         {
             try
             {

@@ -692,7 +692,7 @@ public class DesignerController extends SpringActionController
     }
 
     @SuppressWarnings("unchecked")
-    private void showSamples(CreateRepositoryForm form) throws SQLException, IOException
+    private void showSamples(CreateRepositoryForm form) throws IOException
     {
         if (form.isUploadSpecimens())
         {
@@ -714,7 +714,7 @@ public class DesignerController extends SpringActionController
 
     @SuppressWarnings("unchecked")
     private void handleUploadSamples(CreateRepositoryForm form)
-            throws SQLException, IOException
+            throws IOException
     {
         Set<String> errors = new LinkedHashSet<>();
         String specimenTSV = StringUtils.trimToNull(form.getSpecimenTSV());
@@ -799,7 +799,7 @@ public class DesignerController extends SpringActionController
             form.setWizardStep(WizardStep.CONFIRM);
     }
 
-    public static GWTStudyDefinition getStudyDefinition(CreateRepositoryForm form, User user, Container container) throws SQLException
+    public static GWTStudyDefinition getStudyDefinition(CreateRepositoryForm form, User user, Container container)
     {
         StudyDesignInfo info = StudyDesignManager.get().getStudyDesign(container, form.getStudyId());
         if (info == null)
@@ -807,7 +807,7 @@ public class DesignerController extends SpringActionController
         return StudyDesignManager.get().getGWTStudyDefinition(user, container, info);
     }
 
-    private GWTStudyDefinition getStudyDefinition(CreateRepositoryForm form) throws SQLException
+    private GWTStudyDefinition getStudyDefinition(CreateRepositoryForm form)
     {
         return getStudyDefinition(form, getUser(), getContainer());
     }

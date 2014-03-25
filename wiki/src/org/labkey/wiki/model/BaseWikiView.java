@@ -18,10 +18,8 @@ package org.labkey.wiki.model;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -33,10 +31,8 @@ import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.wiki.BaseWikiPermissions;
 import org.labkey.wiki.WikiController;
-import org.labkey.wiki.WikiModule;
 import org.labkey.wiki.WikiSelectManager;
 
-import java.sql.SQLException;
 import java.util.Map;
 
 /**
@@ -124,10 +120,6 @@ public abstract class BaseWikiView extends JspView<Object>
                 try
                 {
                     html = wikiVersion.getHtml(c, wiki);
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeSQLException(e);
                 }
                 catch (Exception e)
                 {

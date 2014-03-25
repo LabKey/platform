@@ -210,7 +210,7 @@ public class VisitMapImporter
         }
     }
 
-    private void saveImportAliases(User user, Study study, List<StudyManager.VisitAlias> aliases) throws ValidationException, IOException, SQLException
+    private void saveImportAliases(User user, Study study, List<StudyManager.VisitAlias> aliases) throws ValidationException, IOException
     {
         StudyManager.getInstance().importVisitAliases(study, user, aliases);
     }

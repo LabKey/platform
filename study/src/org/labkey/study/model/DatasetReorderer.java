@@ -82,7 +82,7 @@ public class DatasetReorderer
         _i = 0;
     }
 
-    private void updateDef(DataSetDefinition def, int displayOrderIndex) throws SQLException
+    private void updateDef(DataSetDefinition def, int displayOrderIndex)
     {
         if (null != def)
         {
@@ -95,7 +95,7 @@ public class DatasetReorderer
         }
     }
 
-    private void updateDef(DataSetDefinition def) throws SQLException
+    private void updateDef(DataSetDefinition def)
     {
         if (null != def)
         {

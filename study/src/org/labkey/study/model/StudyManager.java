@@ -512,7 +512,7 @@ public class StudyManager
         }
     }
 
-    public void createDataSetDefinition(User user, Container container, int dataSetId) throws SQLException
+    public void createDataSetDefinition(User user, Container container, int dataSetId)
     {
         createDataSetDefinition(user, new DataSetDefinition(getStudy(container), dataSetId));
     }
@@ -864,14 +864,14 @@ public class StudyManager
         return new VisitImpl(study.getContainer(), visitIdMin, visitIdMax, label, type);
     }
 
-    public void importVisitAliases(Study study, User user, List<VisitAlias> aliases) throws IOException, ValidationException, SQLException
+    public void importVisitAliases(Study study, User user, List<VisitAlias> aliases) throws IOException, ValidationException
     {
         DataIteratorBuilder it = new BeanDataIterator.Builder(VisitAlias.class, aliases);
         importVisitAliases(study, user, it);
     }
 
 
-    public int importVisitAliases(final Study study, User user, DataIteratorBuilder loader) throws SQLException, IOException, ValidationException
+    public int importVisitAliases(final Study study, User user, DataIteratorBuilder loader) throws IOException, ValidationException
     {
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitAliases();
         DbScope scope = tinfo.getSchema().getScope();
@@ -898,7 +898,7 @@ public class StudyManager
     }
 
 
-    public void clearVisitAliases(Study study) throws SQLException
+    public void clearVisitAliases(Study study)
     {
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitAliases();
@@ -1221,12 +1221,12 @@ public class StudyManager
         return _locationHelper.get(container, new SimpleFilter(FieldKey.fromParts("Label"), label));
     }
 
-    public void createSite(User user, LocationImpl location) throws SQLException
+    public void createSite(User user, LocationImpl location)
     {
         _locationHelper.create(user, location);
     }
 
-    public void updateSite(User user, LocationImpl location) throws SQLException
+    public void updateSite(User user, LocationImpl location)
     {
         _locationHelper.update(user, location);
     }
@@ -2472,7 +2472,7 @@ public class StudyManager
         StorageProvisioner.drop(PropertyService.get().getDomain(c, personnelDomainURI));
     }
 
-    private void deleteStudyDesignData(Container c, User user, List<TableInfo> studyDesignTables) throws SQLException
+    private void deleteStudyDesignData(Container c, User user, List<TableInfo> studyDesignTables)
     {
         for (TableInfo tinfo : studyDesignTables)
         {

@@ -343,7 +343,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
     @Override
     protected int truncateRows(User user, Container container)
-        throws QueryUpdateServiceException, SQLException
+        throws QueryUpdateServiceException
     {
        return _dataset.deleteRows(user, (Date) null);
     }

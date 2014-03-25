@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.module.Module;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityPolicy;
@@ -60,7 +61,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -554,7 +554,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
                 _version = null;
                 return len;
             }
-            catch (SQLException x)
+            catch (RuntimeSQLException x)
             {
                 throw new IOException("error writing to wiki");
             }

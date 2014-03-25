@@ -280,7 +280,7 @@ public class WikiSelectManager
         return getAllVersions(wiki).length;
     }
 
-    public static int getNextVersionNumber(Wiki wiki) throws SQLException
+    public static int getNextVersionNumber(Wiki wiki)
     {
         WikiVersion[] versions = getAllVersions(wiki);
         //get last wiki version inserted

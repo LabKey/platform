@@ -692,24 +692,24 @@ public class SampleManager implements ContainerManager.ContainerListener
         return request.getRequirements();
     }
 
-    public void deleteRequestRequirement(User user, SampleRequestRequirement requirement) throws SQLException, AttachmentService.DuplicateFilenameException
+    public void deleteRequestRequirement(User user, SampleRequestRequirement requirement) throws AttachmentService.DuplicateFilenameException
     {
         deleteRequestRequirement(user, requirement, true);
     }
 
-    public void deleteRequestRequirement(User user, SampleRequestRequirement requirement, boolean createEvent) throws SQLException, AttachmentService.DuplicateFilenameException
+    public void deleteRequestRequirement(User user, SampleRequestRequirement requirement, boolean createEvent) throws AttachmentService.DuplicateFilenameException
     {
         if (createEvent)
             createRequestEvent(user, requirement, RequestEventType.REQUIREMENT_REMOVED, requirement.getRequirementSummary(), null);
         requirement.delete();
     }
 
-    public void createRequestRequirement(User user, SampleRequestRequirement requirement, boolean createEvent) throws SQLException, AttachmentService.DuplicateFilenameException
+    public void createRequestRequirement(User user, SampleRequestRequirement requirement, boolean createEvent) throws AttachmentService.DuplicateFilenameException
     {
         createRequestRequirement(user, requirement, createEvent, false);
     }
 
-    public void createRequestRequirement(User user, SampleRequestRequirement requirement, boolean createEvent, boolean force) throws SQLException, AttachmentService.DuplicateFilenameException
+    public void createRequestRequirement(User user, SampleRequestRequirement requirement, boolean createEvent, boolean force) throws AttachmentService.DuplicateFilenameException
     {
         SampleRequest request = getRequest(requirement.getContainer(), requirement.getRequestId());
         SampleRequestRequirement newRequirement = _requirementProvider.createRequirement(user, request, requirement, force);
@@ -798,7 +798,7 @@ public class SampleManager implements ContainerManager.ContainerListener
             return statuses.get(1);
     }
 
-    public boolean hasEditRequestPermissions(User user, SampleRequest request) throws ServletException
+    public boolean hasEditRequestPermissions(User user, SampleRequest request)
     {
         if (request == null)
             return false;
@@ -826,17 +826,17 @@ public class SampleManager implements ContainerManager.ContainerListener
         return uniqueStatuses;
     }
 
-    public void createRequestStatus(User user, SampleRequestStatus status) throws SQLException
+    public void createRequestStatus(User user, SampleRequestStatus status)
     {
         _requestStatusHelper.create(user, status);
     }
 
-    public void updateRequestStatus(User user, SampleRequestStatus status) throws SQLException
+    public void updateRequestStatus(User user, SampleRequestStatus status)
     {
         _requestStatusHelper.update(user, status);
     }
 
-    public void deleteRequestStatus(User user, SampleRequestStatus status) throws SQLException
+    public void deleteRequestStatus(User user, SampleRequestStatus status)
     {
         _requestStatusHelper.delete(status);
     }
@@ -878,17 +878,17 @@ public class SampleManager implements ContainerManager.ContainerListener
         }
     }
 
-    public SampleRequestEvent createRequestEvent(User user, SampleRequestRequirement requirement, RequestEventType type, String comments, List<AttachmentFile> attachments) throws SQLException, AttachmentService.DuplicateFilenameException
+    public SampleRequestEvent createRequestEvent(User user, SampleRequestRequirement requirement, RequestEventType type, String comments, List<AttachmentFile> attachments) throws AttachmentService.DuplicateFilenameException
     {
         return createRequestEvent(user, requirement.getContainer(), requirement.getRequestId(), requirement.getRowId(), type, comments, attachments);
     }
 
-    public SampleRequestEvent createRequestEvent(User user, SampleRequest request, RequestEventType type, String comments, List<AttachmentFile> attachments) throws SQLException, AttachmentService.DuplicateFilenameException
+    public SampleRequestEvent createRequestEvent(User user, SampleRequest request, RequestEventType type, String comments, List<AttachmentFile> attachments) throws AttachmentService.DuplicateFilenameException
     {
         return createRequestEvent(user, request.getContainer(), request.getRowId(), -1, type, comments, attachments);
     }
 
-    private SampleRequestEvent createRequestEvent(User user, Container container, int requestId, int requirementId, RequestEventType type, String comments, List<AttachmentFile> attachments) throws SQLException, AttachmentService.DuplicateFilenameException
+    private SampleRequestEvent createRequestEvent(User user, Container container, int requestId, int requirementId, RequestEventType type, String comments, List<AttachmentFile> attachments) throws AttachmentService.DuplicateFilenameException
     {
         SampleRequestEvent event = new SampleRequestEvent();
         event.setEntryType(type.getDisplayText());
@@ -929,7 +929,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         }
     }
 
-    private SampleRequestEvent createRequestEvent(User user, SampleRequestEvent event) throws SQLException
+    private SampleRequestEvent createRequestEvent(User user, SampleRequestEvent event)
     {
         return _requestEventHelper.create(user, event);
     }
@@ -1404,8 +1404,8 @@ public class SampleManager implements ContainerManager.ContainerListener
         {
             List<Specimen> specimens = request.getSpecimens();
             List<Long> specimenIds = new ArrayList<>(specimens.size());
-            for (int i = 0; i < specimens.size(); i++)
-                specimenIds.add(specimens.get(i).getRowId());
+            for (Specimen specimen : specimens)
+                specimenIds.add(specimen.getRowId());
 
             deleteRequestSampleMappings(user, request, specimenIds, false);
 

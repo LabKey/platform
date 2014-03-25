@@ -380,7 +380,7 @@ public class StudyDesignController extends BaseStudyController
             return cohort;
         }
 
-        private void updateTreatmentVisitMapping(StudyImmunizationSchedule form, CohortImpl cohort) throws SQLException
+        private void updateTreatmentVisitMapping(StudyImmunizationSchedule form, CohortImpl cohort)
         {
             if (cohort != null)
             {

@@ -636,14 +636,14 @@ public class TransformManager implements DataIntegrationService
         return run;
     }
 
-    public TransformRun insertTransformRun(User user, TransformRun run) throws SQLException
+    public TransformRun insertTransformRun(User user, TransformRun run)
     {
         run = Table.insert(user, DataIntegrationQuerySchema.getTransformRunTableInfo(), run);
         return run;
     }
 
 
-    public void updateTransformRun(User user, TransformRun run) throws SQLException
+    public void updateTransformRun(User user, TransformRun run)
     {
         Table.update(user, DataIntegrationQuerySchema.getTransformRunTableInfo(), run, run.getTransformRunId());
     }

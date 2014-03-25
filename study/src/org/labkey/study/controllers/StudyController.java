@@ -39,7 +39,6 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
@@ -171,7 +170,23 @@ import org.labkey.study.importer.StudyReload;
 import org.labkey.study.importer.StudyReload.ReloadStatus;
 import org.labkey.study.importer.StudyReload.ReloadTask;
 import org.labkey.study.importer.VisitMapImporter;
-import org.labkey.study.model.*;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.CohortManager;
+import org.labkey.study.model.CustomParticipantView;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetReorderer;
+import org.labkey.study.model.LocationImpl;
+import org.labkey.study.model.Participant;
+import org.labkey.study.model.QCState;
+import org.labkey.study.model.QCStateSet;
+import org.labkey.study.model.SecurityType;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.UploadLog;
+import org.labkey.study.model.VisitDataSet;
+import org.labkey.study.model.VisitDataSetType;
+import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.VisitMapKey;
 import org.labkey.study.pipeline.DatasetFileReader;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.query.DataSetQuerySettings;
@@ -3266,7 +3281,7 @@ public class StudyController extends BaseStudyController
     }
 
     // TODO: Move to StudyManager?
-    public static void updateQcState(StudyImpl study, User user, ManageQCStatesForm form) throws SQLException
+    public static void updateQcState(StudyImpl study, User user, ManageQCStatesForm form)
     {
         if (!nullSafeEqual(study.getDefaultAssayQCState(), form.getDefaultAssayQCState()) ||
             !nullSafeEqual(study.getDefaultPipelineQCState(), form.getDefaultPipelineQCState()) ||
@@ -6516,9 +6531,9 @@ public class StudyController extends BaseStudyController
 
                 StudyManager.getInstance().importVisitAliases(getStudyThrowIfNull(), getUser(), new TabLoader(form.getTsv(), true));
             }
-            catch (SQLException e)
+            catch (RuntimeSQLException e)
             {
-                if (RuntimeSQLException.isConstraintException(e))
+                if (e.isConstraintException())
                 {
                     errors.reject(ERROR_MSG, "The visit import mapping includes duplicate visit names: " + e.getMessage());
                     return false;

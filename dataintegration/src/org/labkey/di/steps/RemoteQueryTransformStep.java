@@ -41,7 +41,6 @@ import org.labkey.remoteapi.SelectRowsStreamHack;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.Map;
 
@@ -87,7 +86,7 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
     }
 
     @Override
-    DataIteratorBuilder selectFromSource(CopyConfig meta, Container c, User u, DataIteratorContext context, Logger log) throws SQLException
+    DataIteratorBuilder selectFromSource(CopyConfig meta, Container c, User u, DataIteratorContext context, Logger log)
     {
         // find the category to look up in the property manager, provided by the .xml
         if (! (meta instanceof RemoteQueryTransformStepMeta) )

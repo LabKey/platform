@@ -292,7 +292,7 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
         return null;
     }
 
-    public static void saveEnrollmentReport(ViewContext context, Report report) throws SQLException
+    public static void saveEnrollmentReport(ViewContext context, Report report)
     {
         ReportService.get().saveReport(context, "enrollmentReport", report);
     }

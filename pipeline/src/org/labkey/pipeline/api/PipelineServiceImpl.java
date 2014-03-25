@@ -451,7 +451,7 @@ public class PipelineServiceImpl extends PipelineService
         return PipelineStatusManager.getStatusFile(rowId);
     }
 
-    public PipelineStatusFile[] getQueuedStatusFiles() throws SQLException
+    public PipelineStatusFile[] getQueuedStatusFiles()
     {
         return PipelineStatusManager.getQueuedStatusFiles();
     }
@@ -461,12 +461,12 @@ public class PipelineServiceImpl extends PipelineService
         return PipelineStatusManager.getJobsWaitingForFiles(c);
     }
 
-    public PipelineStatusFile[] getQueuedStatusFiles(Container c) throws SQLException
+    public PipelineStatusFile[] getQueuedStatusFiles(Container c)
     {
         return PipelineStatusManager.getQueuedStatusFilesForContainer(c);
     }
 
-    public boolean setStatus(PipelineJob job, String status, String statusInfo, boolean allowInsert) throws Exception
+    public boolean setStatus(PipelineJob job, String status, String statusInfo, boolean allowInsert)
     {
         return PipelineStatusManager.setStatusFile(job, job.getUser(), status, statusInfo, allowInsert);
     }

@@ -572,7 +572,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    private void updateDisplayOrder(List<Wiki> pages, int[] order) throws SQLException
+    private void updateDisplayOrder(List<Wiki> pages, int[] order)
     {
         if (!verifyOrder(pages, order))
         {

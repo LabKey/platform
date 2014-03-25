@@ -23,16 +23,13 @@ import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.api.Announcement;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.UnauthorizedException;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -65,21 +62,9 @@ public class AnnouncementServiceImpl implements AnnouncementService.Interface
         {
             AnnouncementManager.insertAnnouncement(c, u, insert, files);
         }
-        catch (AttachmentService.DuplicateFilenameException e)
+        catch (MessagingException | IOException e)
         {
             throw new RuntimeException(e);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-        catch (MessagingException e)
-        {
-            throw new RuntimeException(e);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
         }
 
         return new AnnouncementImpl(insert);
@@ -132,33 +117,26 @@ public class AnnouncementServiceImpl implements AnnouncementService.Interface
         AnnouncementModel model;
         DiscussionService.Settings settings = AnnouncementsController.getSettings(c);
         Permissions perm = AnnouncementsController.getPermissions(c, u, settings);
-        
+
+        model = AnnouncementManager.getAnnouncement(c, RowId);
+
+        if (!perm.allowUpdate(model))
+        {
+            throw new UnauthorizedException();
+        }
+
+        model.setTitle(title);
+        model.setBody(body);
+
+        List<AttachmentFile> files = Collections.emptyList();
+
         try
         {
-            model = AnnouncementManager.getAnnouncement(c, RowId);
-
-            if (!perm.allowUpdate(model))
-            {
-                throw new UnauthorizedException();
-            }
-            
-            model.setTitle(title);
-            model.setBody(body);
-
-            List<AttachmentFile> files = Collections.emptyList();
-
-            try
-            {
-                AnnouncementManager.updateAnnouncement(u, model, files);
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
+            AnnouncementManager.updateAnnouncement(u, model, files);
         }
-        catch (SQLException e)
+        catch (IOException e)
         {
-            throw new RuntimeSQLException(e);
+            throw new RuntimeException(e);
         }
         return new AnnouncementImpl(model);
     }
@@ -169,19 +147,12 @@ public class AnnouncementServiceImpl implements AnnouncementService.Interface
         Container container = announcement.getContainer();
         DiscussionService.Settings settings = AnnouncementsController.getSettings(container);
         Permissions perm = AnnouncementsController.getPermissions(container, HttpView.getRootContext().getUser(), settings);
-        
-        try
+
+        if (!perm.allowDeleteAnyThread())
         {
-            if (!perm.allowDeleteAnyThread())
-            {
-                throw new UnauthorizedException();
-            }
-            
-            AnnouncementManager.deleteAnnouncement(container, announcement.getRowId());
+            throw new UnauthorizedException();
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+
+        AnnouncementManager.deleteAnnouncement(container, announcement.getRowId());
     }
 }

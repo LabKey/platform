@@ -15,12 +15,11 @@
  */
 package org.labkey.issue;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager.UserListener;
 import org.labkey.issue.model.IssueManager;
-import org.apache.log4j.Logger;
 
-import java.sql.SQLException;
 import java.beans.PropertyChangeEvent;
 
 /**
@@ -38,15 +37,8 @@ public class IssueUserListener implements UserListener
 
     public void userDeletedFromSite(User user)
     {
-        try
-        {
-            IssueManager.deleteUserEmailPreferences(user);
-            IssueManager.uncache(null);                     // Might change assigned to lists
-        }
-        catch (SQLException e)
-        {
-            _log.error(e);
-        }
+        IssueManager.deleteUserEmailPreferences(user);
+        IssueManager.uncache(null);                     // Might change assigned to lists
     }
 
     public void userAccountDisabled(User user)
