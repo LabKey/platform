@@ -144,9 +144,9 @@ public class SavePaths implements DavCrawler.SavePaths
             map = Table.insert(User.getSearchUser(), getSearchSchema().getTable("CrawlCollections"), map);
             return ((Integer)map.get("id"));
         }
-        catch (SQLException x)
+        catch (RuntimeSQLException x)
         {
-            if (SqlDialect.isConstraintException(x))
+            if (RuntimeSQLException.isConstraintException(x.getSQLException()))
             {
                 return getId(path);
             }
@@ -185,7 +185,7 @@ public class SavePaths implements DavCrawler.SavePaths
         }
         catch (SQLException x)
         {
-            if (SqlDialect.isConstraintException(x))
+            if (RuntimeSQLException.isConstraintException(x))
             {
                 return false;
             }
@@ -383,7 +383,7 @@ public class SavePaths implements DavCrawler.SavePaths
         catch (SQLException x)
         {
 
-            if (SqlDialect.isConstraintException(x))
+            if (RuntimeSQLException.isConstraintException(x))
             {
                 return false;
             }

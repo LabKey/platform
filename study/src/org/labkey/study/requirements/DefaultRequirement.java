@@ -16,12 +16,9 @@
 
 package org.labkey.study.requirements;
 
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
-
-import java.sql.SQLException;
 
 /**
  * User: brittp
@@ -32,26 +29,12 @@ public abstract class DefaultRequirement<R extends DefaultRequirement<R>> implem
 {
     public R update(User user)
     {
-        try
-        {
-            return Table.update(user, getTableInfo(), (R) this, getPrimaryKeyValue());
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return Table.update(user, getTableInfo(), (R) this, getPrimaryKeyValue());
     }
 
     public void delete()
     {
-        try
-        {
-            Table.delete(getTableInfo(), getPrimaryKeyValue());
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        Table.delete(getTableInfo(), getPrimaryKeyValue());
     }
 
     public R persist(User user, String ownerEntityId)
@@ -60,16 +43,10 @@ public abstract class DefaultRequirement<R extends DefaultRequirement<R>> implem
             throw new IllegalArgumentException("Container must be set for all requirements.");
         if (ownerEntityId == null)
             throw new IllegalArgumentException("Owner entity Id must be provided for all requirements.");
-        try
-        {
-            R mutable = createMutable();
-            mutable.setOwnerEntityId(ownerEntityId);
-            return Table.insert(user, getTableInfo(), mutable);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+
+        R mutable = createMutable();
+        mutable.setOwnerEntityId(ownerEntityId);
+        return Table.insert(user, getTableInfo(), mutable);
     }
 
     protected abstract TableInfo getTableInfo();

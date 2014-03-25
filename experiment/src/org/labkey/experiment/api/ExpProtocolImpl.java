@@ -155,19 +155,12 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
 
     public ExpProtocolAction addStep(User user, ExpProtocol childProtocol, int actionSequence)
     {
-        try
-        {
-            ProtocolAction action = new ProtocolAction();
-            action.setParentProtocolId(getRowId());
-            action.setChildProtocolId(childProtocol.getRowId());
-            action.setSequence(actionSequence);
-            action = Table.insert(user, ExperimentServiceImpl.get().getTinfoProtocolAction(), action);
-            return new ExpProtocolActionImpl(action);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        ProtocolAction action = new ProtocolAction();
+        action.setParentProtocolId(getRowId());
+        action.setChildProtocolId(childProtocol.getRowId());
+        action.setSequence(actionSequence);
+        action = Table.insert(user, ExperimentServiceImpl.get().getTinfoProtocolAction(), action);
+        return new ExpProtocolActionImpl(action);
     }
 
     public List<ExpProtocolImpl> getParentProtocols()

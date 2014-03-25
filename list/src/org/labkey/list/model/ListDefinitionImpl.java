@@ -28,7 +28,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
@@ -415,7 +414,7 @@ public class ListDefinitionImpl implements ListDefinition
 
     private void processSqlException(SQLException e) throws Exception
     {
-        if (SqlDialect.isConstraintException(e))
+        if (RuntimeSQLException.isConstraintException(e))
         {
             //verify this is actually due to a duplicate name
             for (ListDef l : ListManager.get().getLists(getContainer()))

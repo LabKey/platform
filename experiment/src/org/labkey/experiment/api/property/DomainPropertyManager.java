@@ -20,18 +20,24 @@ import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.security.User;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -290,34 +296,27 @@ public class DomainPropertyManager
     {
         if (null != prop)
         {
-            try
-            {
-                // Delete them all first
-                deleteConditionalFormats(prop.getPropertyId());
+            // Delete them all first
+            deleteConditionalFormats(prop.getPropertyId());
 
-                // Save the new ones
-                int index = 0;
-                for (ConditionalFormat format : formats)
-                {
-                    // Table has two additional properties that aren't on the bean itself - propertyId and sortOrder
-                    Map<String, Object> row = new HashMap<>();
-                    row.put("Bold", format.isBold());
-                    row.put("Italic", format.isItalic());
-                    row.put("Strikethrough", format.isStrikethrough());
-                    row.put("TextColor", format.getTextColor());
-                    row.put("BackgroundColor", format.getBackgroundColor());
-                    row.put("Filter", format.getFilter());
-                    row.put("SortOrder", index++);
-                    row.put("PropertyId", prop.getPropertyId());
-
-                    Table.insert(user, getTinfoConditionalFormat(), row);
-                    // Blow the cache for the container
-                    _conditionalFormatCache.remove(prop.getContainer().getEntityId());
-                }
-            }
-            catch (SQLException e)
+            // Save the new ones
+            int index = 0;
+            for (ConditionalFormat format : formats)
             {
-                throw new RuntimeSQLException(e);
+                // Table has two additional properties that aren't on the bean itself - propertyId and sortOrder
+                Map<String, Object> row = new HashMap<>();
+                row.put("Bold", format.isBold());
+                row.put("Italic", format.isItalic());
+                row.put("Strikethrough", format.isStrikethrough());
+                row.put("TextColor", format.getTextColor());
+                row.put("BackgroundColor", format.getBackgroundColor());
+                row.put("Filter", format.getFilter());
+                row.put("SortOrder", index++);
+                row.put("PropertyId", prop.getPropertyId());
+
+                Table.insert(user, getTinfoConditionalFormat(), row);
+                // Blow the cache for the container
+                _conditionalFormatCache.remove(prop.getContainer().getEntityId());
             }
         }
     }

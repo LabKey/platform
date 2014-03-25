@@ -1354,73 +1354,66 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (selectedRunIds == null || selectedRunIds.length == 0)
             return;
 
-        try
+        for (int runId : selectedRunIds)
         {
-            for (int runId : selectedRunIds)
+            try (DbScope.Transaction transaction = ensureTransaction())
             {
-                try (DbScope.Transaction transaction = ensureTransaction())
+                final ExpRunImpl run = getExpRun(runId);
+                if (run != null)
                 {
-                    final ExpRunImpl run = getExpRun(runId);
-                    if (run != null)
+                    SimpleFilter containerFilter = new SimpleFilter(FieldKey.fromParts("RunId"), runId);
+                    Table.delete(getTinfoAssayQCFlag(), containerFilter);
+
+                    ExpProtocol protocol = run.getProtocol();
+                    ProtocolImplementation protocolImpl = null;
+                    if (protocol != null)
                     {
-                        SimpleFilter containerFilter = new SimpleFilter(FieldKey.fromParts("RunId"), runId);
-                        Table.delete(getTinfoAssayQCFlag(), containerFilter);
-
-                        ExpProtocol protocol = run.getProtocol();
-                        ProtocolImplementation protocolImpl = null;
-                        if (protocol != null)
+                        protocolImpl = protocol.getImplementation();
+                        for (DataSet dataset : StudyService.get().getDatasetsForAssayRuns(Collections.<ExpRun>singletonList(run), user))
                         {
-                            protocolImpl = protocol.getImplementation();
-                            for (DataSet dataset : StudyService.get().getDatasetsForAssayRuns(Collections.<ExpRun>singletonList(run), user))
+                            if (!dataset.canWrite(user))
                             {
-                                if (!dataset.canWrite(user))
-                                {
-                                    throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
-                                }
-                                UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
-                                TableInfo tableInfo = schema.getTable(dataset.getName());
-                                AssayProvider provider = AssayService.get().getProvider(protocol);
-                                if (provider != null)
-                                {
-                                    AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
-                                    SimpleFilter filter = new SimpleFilter(tableMetadata.getRunRowIdFieldKeyFromResults(), run.getRowId());
-                                    Collection<String> lsids = new TableSelector(tableInfo, Collections.<String>singleton("LSID"), filter, null).getCollection(String.class);
+                                throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
+                            }
+                            UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
+                            TableInfo tableInfo = schema.getTable(dataset.getName());
+                            AssayProvider provider = AssayService.get().getProvider(protocol);
+                            if (provider != null)
+                            {
+                                AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
+                                SimpleFilter filter = new SimpleFilter(tableMetadata.getRunRowIdFieldKeyFromResults(), run.getRowId());
+                                Collection<String> lsids = new TableSelector(tableInfo, Collections.<String>singleton("LSID"), filter, null).getCollection(String.class);
 
-                                    // Do the actual delete on the dataset for the rows in question
-                                    dataset.deleteDatasetRows(user, lsids);
+                                // Do the actual delete on the dataset for the rows in question
+                                dataset.deleteDatasetRows(user, lsids);
 
-                                    // Add an audit event to the copy to study history
-                                    StudyService.get().addAssayRecallAuditEvent(dataset, lsids.size(), run.getContainer(), user);
-                                }
+                                // Add an audit event to the copy to study history
+                                StudyService.get().addAssayRecallAuditEvent(dataset, lsids.size(), run.getContainer(), user);
                             }
                         }
-
-                        // Grab these to delete after we've deleted the Data rows
-                        List<ExpDataImpl> datasToDelete = getAllDataOwnedByRun(runId);
-
-                        // Archive all data files prior to deleting
-                        //  ideally this would be transacted as a commit task but we decided against it due to complications
-                        run.archiveDataFiles(user);
-
-                        deleteRun(runId, datasToDelete, user);
-
-                        for (ExpData data : datasToDelete)
-                        {
-                            ExperimentDataHandler handler = data.findDataHandler();
-                            handler.deleteData(data, container, user);
-                        }
-
-                        if (protocolImpl != null)
-                            protocolImpl.onRunDeleted(container, user);
                     }
 
-                    transaction.commit();
+                    // Grab these to delete after we've deleted the Data rows
+                    List<ExpDataImpl> datasToDelete = getAllDataOwnedByRun(runId);
+
+                    // Archive all data files prior to deleting
+                    //  ideally this would be transacted as a commit task but we decided against it due to complications
+                    run.archiveDataFiles(user);
+
+                    deleteRun(runId, datasToDelete, user);
+
+                    for (ExpData data : datasToDelete)
+                    {
+                        ExperimentDataHandler handler = data.findDataHandler();
+                        handler.deleteData(data, container, user);
+                    }
+
+                    if (protocolImpl != null)
+                        protocolImpl.onRunDeleted(container, user);
                 }
+
+                transaction.commit();
             }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
         }
     }
 

@@ -22,7 +22,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -38,9 +37,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.StudyManager;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -158,10 +155,6 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
         {
             Table.delete(data, new SimpleFilter().addWhereClause("Container=?", new Object[] {getContainer()}));
             transaction.commit();
-        }
-        catch (SQLException s)
-        {
-            throw new RuntimeSQLException(s);
         }
     }
 }

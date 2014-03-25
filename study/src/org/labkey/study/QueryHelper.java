@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
@@ -31,7 +30,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyCachable;
 
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 
@@ -136,14 +134,7 @@ public class QueryHelper<K extends StudyCachable>
     public K create(User user, K obj)
     {
         clearCache(obj);
-        try
-        {
-            return Table.insert(user, getTableInfo(), obj);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return Table.insert(user, getTableInfo(), obj);
     }
 
     public K update(User user, K obj)
@@ -154,27 +145,13 @@ public class QueryHelper<K extends StudyCachable>
     public K update(User user, K obj, Object... pk)
     {
         clearCache(obj);
-        try
-        {
-            return Table.update(user, getTableInfo(), obj, pk);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return Table.update(user, getTableInfo(), obj, pk);
     }
 
     public void delete(K obj)
     {
         clearCache(obj);
-        try
-        {
-            Table.delete(getTableInfo(), obj.getPrimaryKey());
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        Table.delete(getTableInfo(), obj.getPrimaryKey());
     }
 
     public TableInfo getTableInfo()

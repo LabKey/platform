@@ -664,10 +664,6 @@ public class StudyManager
             }
             transaction.commit();
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
         finally
         {
             uncache(dataSetDefinition);
@@ -1152,18 +1148,11 @@ public class StudyManager
 
     public void updateParticipant(User user, Participant participant)
     {
-        try
-        {
-            Table.update(user,
-                    SCHEMA.getTableInfoParticipant(),
-                    participant,
-                    new Object[] {participant.getContainer().getId(), participant.getParticipantId()}
-            );
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        Table.update(user,
+                SCHEMA.getTableInfoParticipant(),
+                participant,
+                new Object[] {participant.getContainer().getId(), participant.getParticipantId()}
+        );
     }
 
 

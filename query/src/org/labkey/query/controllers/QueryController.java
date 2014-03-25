@@ -948,7 +948,7 @@ public class QueryController extends SpringActionController
                 }
                 catch (SQLException x)
                 {
-                    if (SqlDialect.isConstraintException(x))
+                    if (RuntimeSQLException.isConstraintException(x))
                     {
                         errors.reject(ERROR_MSG, "The query '" + newQueryName + "' already exists.");
                         return false;
@@ -2327,7 +2327,7 @@ public class QueryController extends SpringActionController
             }
             catch (SQLException x)
             {
-                if (!SqlDialect.isConstraintException(x))
+                if (!RuntimeSQLException.isConstraintException(x))
                     throw x;
                 errors.reject(ERROR_MSG, getMessage(table.getSchema().getSqlDialect(), x));
                 return false;
@@ -3742,7 +3742,7 @@ public class QueryController extends SpringActionController
             }
             catch (SQLException e)
             {
-                if (SqlDialect.isConstraintException(e))
+                if (RuntimeSQLException.isConstraintException(e))
                 {
                     errors.reject(ERROR_MSG, "A schema by that name is already defined in this folder");
                     return false;
@@ -3918,7 +3918,7 @@ public class QueryController extends SpringActionController
             }
             catch (SQLException e)
             {
-                if (SqlDialect.isConstraintException(e))
+                if (RuntimeSQLException.isConstraintException(e))
                 {
                     errors.reject(ERROR_MSG, "A schema by that name is already defined in this folder");
                     return false;
@@ -4009,7 +4009,7 @@ public class QueryController extends SpringActionController
             }
             catch (SQLException e)
             {
-                if (SqlDialect.isConstraintException(e))
+                if (RuntimeSQLException.isConstraintException(e))
                 {
                     errors.reject(ERROR_MSG, "A schema by that name is already defined in this folder");
                     return false;

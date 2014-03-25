@@ -27,7 +27,6 @@ import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
@@ -62,7 +61,6 @@ import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -362,17 +360,11 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         //We do this because insert does not return new fields
         parent.setEntityid(GUID.makeGUID());
 
-        try
-        {
-            FileSystemAttachmentParent ret = Table.insert(HttpView.currentContext().getUser(), CoreSchema.getInstance().getMappedDirectories(), parent);
-            ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
-                    c, ContainerManager.Property.AttachmentDirectory, null, ret);
-            ContainerManager.firePropertyChangeEvent(evt);
-            return ret;
-        } catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        FileSystemAttachmentParent ret = Table.insert(HttpView.currentContext().getUser(), CoreSchema.getInstance().getMappedDirectories(), parent);
+        ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
+                c, ContainerManager.Property.AttachmentDirectory, null, ret);
+        ContainerManager.firePropertyChangeEvent(evt);
+        return ret;
     }
 
     public void unregisterDirectory(Container c, String name)
@@ -380,17 +372,10 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         FileSystemAttachmentParent parent = getRegisteredDirectory(c, name);
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromParts("Name"), name);
-        try
-        {
-            Table.delete(CoreSchema.getInstance().getMappedDirectories(), filter);
-            ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
-                    c, ContainerManager.Property.AttachmentDirectory, parent, null);
-            ContainerManager.firePropertyChangeEvent(evt);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        Table.delete(CoreSchema.getInstance().getMappedDirectories(), filter);
+        ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
+                c, ContainerManager.Property.AttachmentDirectory, parent, null);
+        ContainerManager.firePropertyChangeEvent(evt);
     }
 
     public AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws UnsetRootDirectoryException, MissingRootDirectoryException

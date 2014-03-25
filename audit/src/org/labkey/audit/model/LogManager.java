@@ -28,19 +28,18 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.HttpView;
 import org.labkey.audit.AuditSchema;
 
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -73,7 +72,7 @@ public class LogManager
         return getSchema().getTable("AuditLog");
     }
 
-    public <K extends AuditTypeEvent> AuditLogEvent insertEvent(User user, AuditLogEvent event) throws SQLException
+    public <K extends AuditTypeEvent> AuditLogEvent insertEvent(User user, AuditLogEvent event)
     {
         validateFields(event);
 
@@ -89,7 +88,7 @@ public class LogManager
             return Table.insert(user, getTinfoAuditLog(), event);
     }
 
-    public <K extends AuditTypeEvent> K _insertEvent(User user, K type) throws SQLException
+    public <K extends AuditTypeEvent> K _insertEvent(User user, K type)
     {
         AuditTypeProvider provider = AuditLogService.get().getAuditProvider(type.getEventType());
 
@@ -119,20 +118,10 @@ public class LogManager
                     }
                 }
             }
-            catch (SQLException x)
+            catch (RuntimeSQLException x)
             {
-                if (!SqlDialect.isConstraintException(x))
+                if (!x.isConstraintException())
                     throw x;
-            }
-/*
-            catch (BatchValidationException x)
-            {
-                throw new RuntimeException(x);
-            }
-*/
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);
             }
         }
         return null;

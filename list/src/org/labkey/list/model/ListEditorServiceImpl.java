@@ -20,12 +20,15 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
-import org.labkey.api.exp.list.ListDefinition.*;
+import org.labkey.api.exp.list.ListDefinition.BodySetting;
+import org.labkey.api.exp.list.ListDefinition.DiscussionSetting;
+import org.labkey.api.exp.list.ListDefinition.IndexSetting;
+import org.labkey.api.exp.list.ListDefinition.KeyType;
+import org.labkey.api.exp.list.ListDefinition.TitleSetting;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainUtil;
@@ -294,7 +297,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
             }
             catch (SQLException x)
             {
-                if (changedName && SqlDialect.isConstraintException(x))
+                if (changedName && RuntimeSQLException.isConstraintException(x))
                     throw new ListImportException("The name '" + def.getName() + "' is already in use.");
                 throw x;
             }

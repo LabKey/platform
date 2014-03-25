@@ -650,10 +650,6 @@ public class ParticipantGroupManager
             transaction.commit();
             return ret;
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
     }
 
     public ParticipantGroup setParticipantGroup(Container c, User user, ParticipantGroup group) throws SQLException, ValidationException

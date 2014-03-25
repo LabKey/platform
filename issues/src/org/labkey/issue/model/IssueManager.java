@@ -346,10 +346,6 @@ public class IssueManager
 
             transaction.commit();
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
         finally
         {
             ColumnConfigurationCache.uncache(c);

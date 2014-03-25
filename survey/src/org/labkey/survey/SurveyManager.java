@@ -32,7 +32,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -54,7 +53,6 @@ import org.labkey.api.survey.model.SurveyListener;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -190,10 +188,6 @@ public class SurveyManager
             transaction.commit();
             return ret;
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
     }
 
     public Survey saveSurvey(Container container, User user, Survey survey)
@@ -233,10 +227,6 @@ public class SurveyManager
 
             transaction.commit();
             return ret;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
         }
     }
 
@@ -380,10 +370,6 @@ public class SurveyManager
                 }
             }
             transaction.commit();
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
         }
     }
 

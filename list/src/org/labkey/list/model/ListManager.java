@@ -927,37 +927,21 @@ public class ListManager implements SearchService.DocumentProvider
 
                 listDomain.setPropertyIndex(p, 0);
 
-                try
-                {
-                    PropertyDescriptor pd = Table.insert(null, OntologyManager.getTinfoPropertyDescriptor(), p.getPropertyDescriptor());
-                    listDef.clearDomain();
-                    listDomain = listDef.getDomain();
+                PropertyDescriptor pd = Table.insert(null, OntologyManager.getTinfoPropertyDescriptor(), p.getPropertyDescriptor());
+                listDef.clearDomain();
+                listDomain = listDef.getDomain();
 
-                    DomainDescriptor dd = OntologyManager.getDomainDescriptor(listDomain.getTypeId());
-                    OntologyManager.ensurePropertyDomain(pd, dd, 0);
-                }
-                catch (SQLException e)
-                {
-                    ModuleUpgrader.getLogger().info("Failed to add Primary Key Property Descriptor");
-                    throw new RuntimeSQLException(e);
-                }
+                DomainDescriptor dd = OntologyManager.getDomainDescriptor(listDomain.getTypeId());
+                OntologyManager.ensurePropertyDomain(pd, dd, 0);
             }
             else if (!pk.getPropertyURI().equals(pkProperyURI))
             {
                 // ensure the PropertyURI is correctly formatted
                 pk.setPropertyURI(pkProperyURI);
 
-                try
-                {
-                    Table.update(null, OntologyManager.getTinfoPropertyDescriptor(), pk.getPropertyDescriptor(), pk.getPropertyId());
-                    listDef.clearDomain();
-                    listDomain = listDef.getDomain();
-                }
-                catch (SQLException e)
-                {
-                    ModuleUpgrader.getLogger().info("Failed to update Primary Key Property Descriptor");
-                    throw new RuntimeSQLException(e);
-                }
+                Table.update(null, OntologyManager.getTinfoPropertyDescriptor(), pk.getPropertyDescriptor(), pk.getPropertyId());
+                listDef.clearDomain();
+                listDomain = listDef.getDomain();
             }
 
             for (DomainProperty dp : listDomain.getProperties())
@@ -968,17 +952,9 @@ public class ListManager implements SearchService.DocumentProvider
                     mergeURI = mergeURI.replace(":List.Folder-", ":" + listDomain.getDomainKind().getKindName() + ".Folder-");
                     dp.setPropertyURI(mergeURI);
 
-                    try
-                    {
-                        Table.update(null, OntologyManager.getTinfoPropertyDescriptor(), dp.getPropertyDescriptor(), dp.getPropertyId());
-                        listDef.clearDomain();
-                        listDomain = listDef.getDomain();
-                    }
-                    catch (SQLException e)
-                    {
-                        ModuleUpgrader.getLogger().info("Failed to update Primary Key Property Descriptor");
-                        throw new RuntimeSQLException(e);
-                    }
+                    Table.update(null, OntologyManager.getTinfoPropertyDescriptor(), dp.getPropertyDescriptor(), dp.getPropertyId());
+                    listDef.clearDomain();
+                    listDomain = listDef.getDomain();
                 }
             }
 
@@ -1079,24 +1055,16 @@ public class ListManager implements SearchService.DocumentProvider
                 newDomain.setPropertyIndex(p, 0);
 
                 // Add the Primary Key Property Descriptor to the old domain
-                try
-                {
-                    PropertyDescriptor pd = Table.insert(null, OntologyManager.getTinfoPropertyDescriptor(), p.getPropertyDescriptor());
-                    listDef.clearDomain();
-                    newDomain = listDef.getDomain();
+                PropertyDescriptor pd = Table.insert(null, OntologyManager.getTinfoPropertyDescriptor(), p.getPropertyDescriptor());
+                listDef.clearDomain();
+                newDomain = listDef.getDomain();
 
-                    DomainDescriptor dd = OntologyManager.getDomainDescriptor(newDomain.getTypeId());
-                    OntologyManager.ensurePropertyDomain(pd, dd, 0);
+                DomainDescriptor dd = OntologyManager.getDomainDescriptor(newDomain.getTypeId());
+                OntologyManager.ensurePropertyDomain(pd, dd, 0);
 
-                    OntologyManager.clearCaches();
-                    listDef.clearDomain();
-                    newDomain = listDef.getDomain();
-                }
-                catch (SQLException e)
-                {
-                    ModuleUpgrader.getLogger().info("Failed to add Primary Key Property Descriptor");
-                    throw new RuntimeSQLException(e);
-                }
+                OntologyManager.clearCaches();
+                listDef.clearDomain();
+                newDomain = listDef.getDomain();
             }
 
             // check for duplicates properties in the domain
@@ -1114,16 +1082,8 @@ public class ListManager implements SearchService.DocumentProvider
                         PropertyDescriptor pd = dp.getPropertyDescriptor();
                         pd.setName(pd.getName() + pd.getPropertyId());
 
-                        try
-                        {
-                            Table.update(null, OntologyManager.getTinfoPropertyDescriptor(), pd, pd.getPropertyId());
-                            clearDomain = true;
-                        }
-                        catch (SQLException e)
-                        {
-                            ModuleUpgrader.getLogger().info("Failed to update duplicate Property Descriptor");
-                            throw new RuntimeSQLException(e);
-                        }
+                        Table.update(null, OntologyManager.getTinfoPropertyDescriptor(), pd, pd.getPropertyId());
+                        clearDomain = true;
                     }
                     else
                         names.add(dp.getName());

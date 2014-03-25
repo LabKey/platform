@@ -44,15 +44,14 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableViewForm;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
-import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
@@ -69,7 +68,6 @@ import org.labkey.api.survey.SurveyUrls;
 import org.labkey.api.survey.model.Survey;
 import org.labkey.api.survey.model.SurveyDesign;
 import org.labkey.api.survey.model.SurveyStatus;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -728,7 +726,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
         catch (SQLException x)
         {
-            if (!SqlDialect.isConstraintException(x))
+            if (!RuntimeSQLException.isConstraintException(x))
                 throw x;
             errors.reject(SpringActionController.ERROR_MSG, x.getMessage());
         }

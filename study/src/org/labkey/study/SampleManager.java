@@ -31,14 +31,15 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
-import org.labkey.api.query.*;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -79,7 +80,20 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -761,15 +775,8 @@ public class SampleManager implements ContainerManager.ContainerListener
             notYetSubmittedStatus.setSpecimensLocked(true);
             notYetSubmittedStatus.setLabel("Not Yet Submitted");
             notYetSubmittedStatus.setSortOrder(-1);
-            try
-            {
-                Table.insert(user, _requestStatusHelper.getTableInfo(), notYetSubmittedStatus);
-                statuses = _requestStatusHelper.get(c, "SortOrder");
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            Table.insert(user, _requestStatusHelper.getTableInfo(), notYetSubmittedStatus);
+            statuses = _requestStatusHelper.get(c, "SortOrder");
         }
         return statuses;
     }

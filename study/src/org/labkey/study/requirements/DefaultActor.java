@@ -17,22 +17,24 @@
 package org.labkey.study.requirements;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.security.*;
-import org.labkey.api.security.SecurityManager;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.InvalidGroupMembershipException;
+import org.labkey.api.security.PrincipalType;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.study.Location;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.StudySchema;
 import org.labkey.api.util.Pair;
+import org.labkey.study.StudySchema;
+import org.labkey.study.model.StudyManager;
 
-import java.util.List;
-import java.util.Iterator;
 import java.util.ArrayList;
-import java.sql.SQLException;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * User: brittp
@@ -158,26 +160,12 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
     {
         if (getContainer() == null)
             throw new IllegalArgumentException("Container must be set for all requirements.");
-        try
-        {
-            return Table.insert(user, getTableInfo(), (A) this);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return Table.insert(user, getTableInfo(), (A) this);
     }
 
     public A update(User user)
     {
-        try
-        {
-            return Table.update(user, getTableInfo(), (A) this, getPrimaryKey());
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return Table.update(user, getTableInfo(), (A) this, getPrimaryKey());
     }
 
     public void delete()
@@ -189,10 +177,6 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
             Table.delete(getTableInfo(), getPrimaryKey());
 
             transaction.commit();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
         }
     }
 

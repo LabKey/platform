@@ -24,7 +24,6 @@ import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -210,22 +209,15 @@ public class CoreUpgradeCode implements UpgradeCode
         Collection<PortalUpgradePage> pages = ts.getCollection(PortalUpgradePage.class);
         if (pages.size() > 0)
         {
-            try
+            int validPageIndex = 1;
+            for (PortalUpgradePage page : pages)
             {
-                int validPageIndex = 1;
-                for (PortalUpgradePage page : pages)
+                if (validPageIndex != page.getIndex())
                 {
-                    if (validPageIndex != page.getIndex())
-                    {
-                        page.setIndex(validPageIndex);
-                        Table.update(null, portalTable, page, new Object[] {page.getContainer(), page.getPageId()});
-                    }
-                    validPageIndex++;
+                    page.setIndex(validPageIndex);
+                    Table.update(null, portalTable, page, new Object[] {page.getContainer(), page.getPageId()});
                 }
-            }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
+                validPageIndex++;
             }
         }
     }

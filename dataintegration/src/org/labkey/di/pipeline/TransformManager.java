@@ -29,7 +29,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
@@ -558,18 +557,11 @@ public class TransformManager implements DataIntegrationService
 
     public TransformConfiguration saveTransformConfiguration(User user, TransformConfiguration config)
     {
-        try
-        {
-            TableInfo t = DbSchema.get("dataintegration").getTable("TransformConfiguration");
-            if (-1 == config.rowId)
-                return Table.insert(user, t, config);
-            else
-                return Table.update(user, t, config, new Object[] {config.rowId});
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        TableInfo t = DbSchema.get("dataintegration").getTable("TransformConfiguration");
+        if (-1 == config.rowId)
+            return Table.insert(user, t, config);
+        else
+            return Table.update(user, t, config, new Object[] {config.rowId});
     }
 
 

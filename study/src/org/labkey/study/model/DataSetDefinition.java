@@ -896,10 +896,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             StudyManager.dataSetModified(this, user, true);
             transaction.commit();
         }
-        catch (SQLException s)
-        {
-            throw new RuntimeSQLException(s);
-        }
     }
 
 
@@ -1632,10 +1628,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 StudyManager.dataSetModified(this, user, true);
             }
             transaction.commit();
-        }
-        catch (SQLException s)
-        {
-            throw new RuntimeSQLException(s);
         }
     }
 
@@ -2440,7 +2432,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public String translateSQLException(SQLException e)
     {
-        if (SqlDialect.isConstraintException(e) && e.getMessage() != null && e.getMessage().contains("_pk"))
+        if (RuntimeSQLException.isConstraintException(e) && e.getMessage() != null && e.getMessage().contains("_pk"))
         {
             StringBuilder sb = new StringBuilder("Duplicate dataset row. All rows must have unique ");
             sb.append(getStudy().getSubjectColumnName());

@@ -49,12 +49,12 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.IssuesUrls;
 import org.labkey.api.query.FieldKey;
@@ -1449,7 +1449,7 @@ public class IssuesController extends SpringActionController
             }
             catch (Exception e)
             {
-                if (SqlDialect.isConstraintException(null))
+                if (RuntimeSQLException.isConstraintException(null))
                 {
                     errors.reject(ERROR_MSG, "\"" + form.getKeyword() + "\" already exists");
                     return false;

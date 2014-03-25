@@ -30,8 +30,8 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
@@ -340,7 +340,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         }
         catch (SQLException x)
         {
-            if (!SqlDialect.isConstraintException(x))
+            if (!RuntimeSQLException.isConstraintException(x))
                 throw x;
             errors.reject(SpringActionController.ERROR_MSG, x.getMessage());
         }

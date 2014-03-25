@@ -23,7 +23,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -138,50 +137,42 @@ public class MothershipManager
     {
         synchronized (ENSURE_SOFTWARE_RELEASE_LOCK)
         {
-            try
+            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+            if (svnRevision == null)
             {
-                SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-                if (svnRevision == null)
-                {
-                    filter.addCondition(FieldKey.fromString("SVNRevision"), null, CompareType.ISBLANK);
-                }
-                else
-                {
-                    filter.addCondition(FieldKey.fromString("SVNRevision"), svnRevision);
-                }
-
-                if (svnURL == null)
-                {
-                    filter.addCondition(FieldKey.fromString("SVNURL"), null, CompareType.ISBLANK);
-                }
-                else
-                {
-                    filter.addCondition(FieldKey.fromString("SVNURL"), svnURL);
-                }
-
-                if (description == null)
-                {
-                    description = fabricateDescription(svnURL, svnRevision);
-                }
-                filter.addCondition(FieldKey.fromString("Description"), description);
-
-                SoftwareRelease result = new TableSelector(getTableInfoSoftwareRelease(), filter, null).getObject(SoftwareRelease.class);
-                if (result == null)
-                {
-                    result = new SoftwareRelease();
-                    result.setSVNRevision(svnRevision);
-                    result.setSVNURL(svnURL);
-                    result.setContainer(container.getId());
-                    result.setDescription(description);
-                    result = Table.insert(null, getTableInfoSoftwareRelease(), result);
-                }
-                return result;
-
+                filter.addCondition(FieldKey.fromString("SVNRevision"), null, CompareType.ISBLANK);
             }
-            catch (SQLException e)
+            else
             {
-                throw new RuntimeSQLException(e);
+                filter.addCondition(FieldKey.fromString("SVNRevision"), svnRevision);
             }
+
+            if (svnURL == null)
+            {
+                filter.addCondition(FieldKey.fromString("SVNURL"), null, CompareType.ISBLANK);
+            }
+            else
+            {
+                filter.addCondition(FieldKey.fromString("SVNURL"), svnURL);
+            }
+
+            if (description == null)
+            {
+                description = fabricateDescription(svnURL, svnRevision);
+            }
+            filter.addCondition(FieldKey.fromString("Description"), description);
+
+            SoftwareRelease result = new TableSelector(getTableInfoSoftwareRelease(), filter, null).getObject(SoftwareRelease.class);
+            if (result == null)
+            {
+                result = new SoftwareRelease();
+                result.setSVNRevision(svnRevision);
+                result.setSVNURL(svnURL);
+                result.setContainer(container.getId());
+                result.setDescription(description);
+                result = Table.insert(null, getTableInfoSoftwareRelease(), result);
+            }
+            return result;
         }
     }
 

@@ -31,7 +31,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
@@ -709,16 +708,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         ul.setStatus("Initializing");
         ul.setFilePath(file.getPath());
 
-        try
-        {
-            ul = Table.insert(user, getTinfoUpdateLog(), ul);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-
-        return ul;
+        return Table.insert(user, getTinfoUpdateLog(), ul);
     }
 
 
@@ -776,15 +766,8 @@ public class AssayPublishManager implements AssayPublishService.Service
                 ul.setStatus("ERROR");
                 String description = ul.getDescription();
                 ul.setDescription(description == null ? "" : description + "\n" + new Date() + ":" + x.getMessage());
-                try
-                {
-                    ul = Table.update(user, StudySchema.getInstance().getTableInfoUploadLog(), ul, ul.getRowId());
-                    return Pair.of(lsids, ul);
-                }
-                catch (SQLException s)
-                {
-                    //throw original
-                }
+                ul = Table.update(user, StudySchema.getInstance().getTableInfoUploadLog(), ul, ul.getRowId());
+                return Pair.of(lsids, ul);
             }
         }
 

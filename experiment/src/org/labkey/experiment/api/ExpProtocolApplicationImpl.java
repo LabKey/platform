@@ -19,7 +19,6 @@ package org.labkey.experiment.api;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -33,7 +32,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -259,28 +257,21 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     {
         if (getRowId() != 0)
         {
-            try
-            {
-                Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
-                Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
-                Table.delete(ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter(), new SimpleFilter(FieldKey.fromParts("ProtocolApplicationId"), getRowId()));
+            Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
+            Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
+            Table.delete(ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter(), new SimpleFilter(FieldKey.fromParts("ProtocolApplicationId"), getRowId()));
 
-                SQLFragment commonSQL = new SQLFragment(" SET SourceApplicationId = NULL, RunId = NULL WHERE SourceApplicationId = ?", getRowId());
+            SQLFragment commonSQL = new SQLFragment(" SET SourceApplicationId = NULL, RunId = NULL WHERE SourceApplicationId = ?", getRowId());
 
-                SQLFragment materialSQL = new SQLFragment("UPDATE " + ExperimentServiceImpl.get().getTinfoMaterial());
-                materialSQL.append(commonSQL);
-                new SqlExecutor(ExperimentServiceImpl.get().getSchema()).execute(materialSQL);
+            SQLFragment materialSQL = new SQLFragment("UPDATE " + ExperimentServiceImpl.get().getTinfoMaterial());
+            materialSQL.append(commonSQL);
+            new SqlExecutor(ExperimentServiceImpl.get().getSchema()).execute(materialSQL);
 
-                SQLFragment dataSQL = new SQLFragment("UPDATE " + ExperimentServiceImpl.get().getTinfoData());
-                dataSQL.append(commonSQL);
-                new SqlExecutor(ExperimentServiceImpl.get().getSchema()).execute(dataSQL);
+            SQLFragment dataSQL = new SQLFragment("UPDATE " + ExperimentServiceImpl.get().getTinfoData());
+            dataSQL.append(commonSQL);
+            new SqlExecutor(ExperimentServiceImpl.get().getSchema()).execute(dataSQL);
 
-                Table.delete(ExperimentServiceImpl.get().getTinfoProtocolApplication(), getRowId());
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            Table.delete(ExperimentServiceImpl.get().getTinfoProtocolApplication(), getRowId());
         }
     }
 
@@ -310,65 +301,37 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     
     public void addDataInput(User user, ExpData data, String roleName)
     {
-        try
-        {
-            DataInput obj = new DataInput();
-            obj.setDataId(data.getRowId());
-            obj.setTargetApplicationId(getRowId());
-            obj.setRole(roleName);
+        DataInput obj = new DataInput();
+        obj.setDataId(data.getRowId());
+        obj.setTargetApplicationId(getRowId());
+        obj.setRole(roleName);
 
-            Table.insert(user, ExperimentServiceImpl.get().getTinfoDataInput(), obj);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        Table.insert(user, ExperimentServiceImpl.get().getTinfoDataInput(), obj);
     }
 
     public void addMaterialInput(User user, ExpMaterial material, @Nullable String roleName)
     {
-        try
-        {
-            MaterialInput obj = new MaterialInput();
-            obj.setMaterialId(material.getRowId());
-            obj.setTargetApplicationId(getRowId());
-            obj.setRole(roleName);
-            Table.insert(user, ExperimentServiceImpl.get().getTinfoMaterialInput(), obj);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        MaterialInput obj = new MaterialInput();
+        obj.setMaterialId(material.getRowId());
+        obj.setTargetApplicationId(getRowId());
+        obj.setRole(roleName);
+        Table.insert(user, ExperimentServiceImpl.get().getTinfoMaterialInput(), obj);
     }
 
     public void removeDataInput(User user, ExpData data)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition(FieldKey.fromParts("TargetApplicationId"), getRowId());
-            filter.addCondition(FieldKey.fromParts("DataId"), data.getRowId());
-            Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), filter);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("TargetApplicationId"), getRowId());
+        filter.addCondition(FieldKey.fromParts("DataId"), data.getRowId());
+        Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), filter);
     }
 
     public void removeMaterialInput(User user, ExpMaterial material)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition(FieldKey.fromParts("TargetApplicationId"), getRowId());
-            filter.addCondition(FieldKey.fromParts("MaterialId"), material.getRowId());
-            Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), filter);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("TargetApplicationId"), getRowId());
+        filter.addCondition(FieldKey.fromParts("MaterialId"), material.getRowId());
+        Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), filter);
     }
 
     public static List<ExpProtocolApplicationImpl> fromProtocolApplications(List<ProtocolApplication> apps)

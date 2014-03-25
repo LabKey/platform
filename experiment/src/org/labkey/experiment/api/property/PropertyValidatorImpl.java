@@ -15,25 +15,23 @@
  */
 package org.labkey.experiment.api.property;
 
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.property.IPropertyValidator;
-import org.labkey.api.exp.property.ValidatorContext;
-import org.labkey.api.exp.property.ValidatorKind;
-import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.security.User;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.query.ValidationError;
+import org.labkey.api.data.Table;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.sql.SQLException;
 
 /*
 * User: Karl Lum
@@ -148,21 +146,14 @@ public class PropertyValidatorImpl implements IPropertyValidator
             throw new ValidationException(errors);
         }
 
-        try
+        if (isNew())
         {
-            if (isNew())
-            {
-                setContainer(container.getId());
-                return new PropertyValidatorImpl(Table.insert(user, DomainPropertyManager.get().getTinfoValidator(), _validator));
-            }
-            else
-                return new PropertyValidatorImpl(Table.update(user, DomainPropertyManager.get().getTinfoValidator(), _validator,
-                        getRowId()));
+            setContainer(container.getId());
+            return new PropertyValidatorImpl(Table.insert(user, DomainPropertyManager.get().getTinfoValidator(), _validator));
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        else
+            return new PropertyValidatorImpl(Table.update(user, DomainPropertyManager.get().getTinfoValidator(), _validator,
+                    getRowId()));
     }
 
     public void delete()
@@ -177,14 +168,7 @@ public class PropertyValidatorImpl implements IPropertyValidator
     
     public void delete(User user)
     {
-        try
-        {
-            Table.delete(DomainPropertyManager.get().getTinfoValidator(), new Integer(getRowId()));
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        Table.delete(DomainPropertyManager.get().getTinfoValidator(), getRowId());
     }
 
     public boolean validate(PropertyDescriptor prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache)

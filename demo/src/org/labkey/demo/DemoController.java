@@ -189,7 +189,7 @@ public class DemoController extends SpringActionController
             catch (Table.OptimisticConflictException x)
             {
                 errors.addError(new ObjectError("main", new String[]{"Error"}, new Object[]{x}, x.getMessage()));
-                if (x.getErrorCode() == Table.ERROR_ROWVERSION)
+                if (x.getSQLException().getErrorCode() == Table.ERROR_ROWVERSION)
                     setReshow(false);
                 return false;
             }

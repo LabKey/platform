@@ -15,7 +15,6 @@
  */
 package org.labkey.study.importer;
 
-import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
@@ -25,7 +24,6 @@ import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
@@ -39,7 +37,6 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.reader.DataLoader;
@@ -54,11 +51,8 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.query.studydesign.DefaultStudyDesignTable;
-import org.labkey.study.writer.TreatmentDataWriter;
 
 import java.io.InputStream;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -72,8 +66,6 @@ public class DefaultStudyDesignImporter
 {
     /**
      * Removes previous data for the specified table and container
-     * @param container
-     * @param tableInfo
      */
     protected void deleteData(Container container, TableInfo tableInfo) throws ImportException
     {
@@ -83,7 +75,7 @@ public class DefaultStudyDesignImporter
                 Table.delete(((FilteredTable)tableInfo).getRealTable(), SimpleFilter.createContainerFilter(container));
             }
         }
-        catch (SQLException e)
+        catch (RuntimeSQLException e)
         {
             throw new ImportException(e.getMessage());
         }

@@ -37,7 +37,6 @@ import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -500,7 +499,7 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
         }
         catch (SQLException x)
         {
-            boolean isConstraint = SqlDialect.isConstraintException(x);
+            boolean isConstraint = RuntimeSQLException.isConstraintException(x);
             if (isConstraint)
                 context.getErrors().addRowError(new ValidationException(x.getMessage()));
             else

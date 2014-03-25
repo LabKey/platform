@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -37,7 +36,6 @@ import org.labkey.api.view.ShortURLRecord;
 import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.UnauthorizedException;
 
-import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -79,10 +77,6 @@ public class ShortURLServiceImpl implements ShortURLService
             Table.delete(CoreSchema.getInstance().getTableInfoShortURL(), record.getRowId());
             transaction.commit();
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
     }
 
     @NotNull
@@ -113,10 +107,6 @@ public class ShortURLServiceImpl implements ShortURLService
                 transaction.commit();
                 return newRecord;
             }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
         }
         else
         {
@@ -132,10 +122,6 @@ public class ShortURLServiceImpl implements ShortURLService
                 ShortURLRecord result = Table.update(user, CoreSchema.getInstance().getTableInfoShortURL(), existingRecord, existingRecord.getRowId());
                 transaction.commit();
                 return result;
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
             }
         }
     }

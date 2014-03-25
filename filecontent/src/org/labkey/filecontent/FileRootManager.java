@@ -22,15 +22,12 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
-
-import java.sql.SQLException;
 
 /**
  * User: klum
@@ -93,17 +90,10 @@ public class FileRootManager
 
     public void deleteFileRoot(Container c)
     {
-        try
-        {
-            SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-            Table.delete(getTinfoFileRoots(), filter);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        Table.delete(getTinfoFileRoots(), filter);
 
-            CACHE.remove(getCacheKey(c));
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        CACHE.remove(getCacheKey(c));
     }
 
     public FileRoot saveFileRoot(User user, FileRoot root)
@@ -118,10 +108,6 @@ public class FileRootManager
             {
                 return Table.update(user, getTinfoFileRoots(), root, root.getRowId());
             }
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
         }
         finally
         {

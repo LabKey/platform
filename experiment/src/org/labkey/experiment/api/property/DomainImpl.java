@@ -28,7 +28,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -57,7 +56,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -277,24 +275,17 @@ public class DomainImpl implements Domain
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
             List<DomainProperty> checkRequiredStatus = new ArrayList<>();
-            try
+            if (isNew())
             {
-                if (isNew())
-                {
-                    _dd = Table.insert(user, OntologyManager.getTinfoDomainDescriptor(), _dd);
-                    // CONSIDER put back if we want automatic provisioning for serveral DomainKinds
-                    // StorageProvisioner.create(this);
-                    addAuditEvent(user, String.format("The domain %s was created", _dd.getName()));
-                }
-                else if (_ddOld != null)
-                {
-                    _dd = Table.update(user, OntologyManager.getTinfoDomainDescriptor(), _dd, _dd.getDomainId());
-                    addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()));
-                }
+                _dd = Table.insert(user, OntologyManager.getTinfoDomainDescriptor(), _dd);
+                // CONSIDER put back if we want automatic provisioning for serveral DomainKinds
+                // StorageProvisioner.create(this);
+                addAuditEvent(user, String.format("The domain %s was created", _dd.getName()));
             }
-            catch (SQLException e)
+            else if (_ddOld != null)
             {
-                throw new RuntimeSQLException(e);
+                _dd = Table.update(user, OntologyManager.getTinfoDomainDescriptor(), _dd, _dd.getDomainId());
+                addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()));
             }
             boolean propChanged = false;
             int sortOrder = 0;

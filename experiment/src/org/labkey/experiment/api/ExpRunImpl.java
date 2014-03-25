@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -60,7 +59,6 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -231,15 +229,9 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         pa.setStartTime(startTime);
         pa.setEndTime(endTime);
         pa.setRecordCount(recordCount);
-        try
-        {
-            pa = Table.insert(user, ExperimentServiceImpl.get().getTinfoProtocolApplication(), pa);
-            return new ExpProtocolApplicationImpl(pa);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+
+        pa = Table.insert(user, ExperimentServiceImpl.get().getTinfoProtocolApplication(), pa);
+        return new ExpProtocolApplicationImpl(pa);
     }
 
     public String getComments()

@@ -6518,7 +6518,7 @@ public class StudyController extends BaseStudyController
             }
             catch (SQLException e)
             {
-                if (SqlDialect.isConstraintException(e))
+                if (RuntimeSQLException.isConstraintException(e))
                 {
                     errors.reject(ERROR_MSG, "The visit import mapping includes duplicate visit names: " + e.getMessage());
                     return false;

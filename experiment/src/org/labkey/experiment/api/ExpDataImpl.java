@@ -16,7 +16,6 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -40,7 +39,6 @@ import org.labkey.api.util.URLHelper;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -105,20 +103,13 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
     public void save(User user)
     {
-        try
+        if (getRowId() == 0)
         {
-            if (getRowId() == 0)
-            {
-                _object = Table.insert(user, ExperimentServiceImpl.get().getTinfoData(), _object);
-            }
-            else
-            {
-                _object = Table.update(user, ExperimentServiceImpl.get().getTinfoData(), _object, getRowId());
-            }
+            _object = Table.insert(user, ExperimentServiceImpl.get().getTinfoData(), _object);
         }
-        catch (SQLException e)
+        else
         {
-            throw new RuntimeSQLException(e);
+            _object = Table.update(user, ExperimentServiceImpl.get().getTinfoData(), _object, getRowId());
         }
     }
 

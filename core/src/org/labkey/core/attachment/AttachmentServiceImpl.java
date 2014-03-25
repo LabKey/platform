@@ -16,7 +16,6 @@
 
 package org.labkey.core.attachment;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -326,55 +325,48 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             }
         }
 
-        try
+        if (null == files || files.isEmpty())
+            return;
+
+        Set<String> filesToSkip = new TreeSet<>();
+        File fileLocation = parent instanceof AttachmentDirectory ? ((AttachmentDirectory) parent).getFileSystemDirectory() : null;
+
+        for (AttachmentFile file : files)
         {
-            if (null == files || files.isEmpty())
-                return;
-
-            Set<String> filesToSkip = new TreeSet<>();
-            File fileLocation = parent instanceof AttachmentDirectory ? ((AttachmentDirectory) parent).getFileSystemDirectory() : null;
-
-            for (AttachmentFile file : files)
+            if (exists(parent, file.getFilename()))
             {
-                if (exists(parent, file.getFilename()))
-                {
-                    filesToSkip.add(file.getFilename());
-                    continue;
-                }
-
-                HashMap<String, Object> hm = new HashMap<>();
-                if (null == fileLocation)
-                {
-                    int maxSize = AppProps.getInstance().getMaxBLOBSize();
-                    if (file.getSize() > maxSize)
-                    {
-                        throw new AttachmentService.FileTooLargeException(file, maxSize);
-                    }
-
-                    hm.put("Document", file);
-                }
-                else
-                    ((AttachmentDirectory)parent).addAttachment(user, file);
-
-                hm.put("DocumentName", file.getFilename());
-                hm.put("DocumentSize", file.getSize());
-                hm.put("DocumentType", file.getContentType());
-                hm.put("Parent", parent.getEntityId());
-                hm.put("Container", parent.getContainerId());
-                Table.insert(user, coreTables().getTableInfoDocuments(), hm);
-
-                addAuditEvent(user, parent, file.getFilename(), "The attachment " + file.getFilename() + " was added");
+                filesToSkip.add(file.getFilename());
+                continue;
             }
 
-            AttachmentCache.removeAttachments(parent);
+            HashMap<String, Object> hm = new HashMap<>();
+            if (null == fileLocation)
+            {
+                int maxSize = AppProps.getInstance().getMaxBLOBSize();
+                if (file.getSize() > maxSize)
+                {
+                    throw new AttachmentService.FileTooLargeException(file, maxSize);
+                }
 
-            if (!filesToSkip.isEmpty())
-                throw new AttachmentService.DuplicateFilenameException(filesToSkip);
+                hm.put("Document", file);
+            }
+            else
+                ((AttachmentDirectory)parent).addAttachment(user, file);
+
+            hm.put("DocumentName", file.getFilename());
+            hm.put("DocumentSize", file.getSize());
+            hm.put("DocumentType", file.getContentType());
+            hm.put("Parent", parent.getEntityId());
+            hm.put("Container", parent.getContainerId());
+            Table.insert(user, coreTables().getTableInfoDocuments(), hm);
+
+            addAuditEvent(user, parent, file.getFilename(), "The attachment " + file.getFilename() + " was added");
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+
+        AttachmentCache.removeAttachments(parent);
+
+        if (!filesToSkip.isEmpty())
+            throw new AttachmentService.DuplicateFilenameException(filesToSkip);
     }
 
     @Override
