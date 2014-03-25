@@ -143,10 +143,10 @@ Ext.define('LABKEY.app.model.Filter', {
             return filter;
         },
 
-        getOlapFilters : function(datas) {
+        getOlapFilters : function(datas, subjectName) {
             var olapFilters = [];
             for (var i = 0; i < datas.length; i++) {
-                olapFilters.push(LABKEY.app.model.Filter.getOlapFilter(datas[i]));
+                olapFilters.push(LABKEY.app.model.Filter.getOlapFilter(datas[i], subjectName));
             }
             return olapFilters;
         },
