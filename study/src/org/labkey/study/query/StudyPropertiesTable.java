@@ -161,6 +161,12 @@ public class StudyPropertiesTable extends BaseStudyTable
     }
 
     @Override
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        return hasPermissionOverridable(user, perm);
+    }
+
+    @Override
     public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
         if (UpdatePermission.class == perm || InsertPermission.class == perm || ReadPermission.class.equals(perm))
