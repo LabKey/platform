@@ -2472,13 +2472,17 @@ query/src/org/labkey/query/jdbc/QueryDatabaseMetaData.java -text
 query/src/org/labkey/query/jdbc/QueryDriver.java -text
 query/src/org/labkey/query/jdbc/QueryStatement.java -text
 query/src/org/labkey/query/metadata/MetadataServiceImpl.java -text
+query/src/org/labkey/query/olap/BitSetQueryImpl.java -text
+query/src/org/labkey/query/olap/MdxQueryImpl.java -text
 query/src/org/labkey/query/olap/MemberSet.java -text
 query/src/org/labkey/query/olap/Olap4Js.java -text
 query/src/org/labkey/query/olap/OlapSchemaCacheHandler.java -text
 query/src/org/labkey/query/olap/OlapSchemaDescriptor.java -text
 query/src/org/labkey/query/olap/Qube.java -text
+query/src/org/labkey/query/olap/QubeCellSet.java -text
 query/src/org/labkey/query/olap/QubeQuery.java -text
 query/src/org/labkey/query/olap/ServerManager.java -text
+query/src/org/labkey/query/olap/SqlQueryImpl.java -text
 query/src/org/labkey/query/persist/AbstractExternalSchemaDef.java -text
 query/src/org/labkey/query/persist/CstmView.java -text
 query/src/org/labkey/query/persist/ExternalSchemaDef.java -text

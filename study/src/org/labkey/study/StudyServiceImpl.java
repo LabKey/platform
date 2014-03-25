@@ -706,7 +706,7 @@ public class StudyServiceImpl implements StudyService.Service
                         @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName)
     {
         if (!(qsDefault instanceof StudyQuerySchema))
-            throw new IllegalArgumentException("expceted study schema");
+            throw new IllegalArgumentException("expected study schema");
         StudyQuerySchema schemaDefault = (StudyQuerySchema)qsDefault;
         User user = schemaDefault.getUser();
 
@@ -742,7 +742,7 @@ public class StudyServiceImpl implements StudyService.Service
     public TableInfo getVialTableUnion(QuerySchema qsDefault, List<Container> containers)
     {
         if (!(qsDefault instanceof StudyQuerySchema))
-            throw new IllegalArgumentException("expceted study schema");
+            throw new IllegalArgumentException("expected study schema");
         StudyQuerySchema schemaDefault = (StudyQuerySchema)qsDefault;
         User user = schemaDefault.getUser();
 
@@ -776,7 +776,7 @@ public class StudyServiceImpl implements StudyService.Service
                         @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName)
     {
         if (!(qsDefault instanceof StudyQuerySchema))
-            throw new IllegalArgumentException("expceted study schema");
+            throw new IllegalArgumentException("expected study schema");
         StudyQuerySchema schemaDefault = (StudyQuerySchema)qsDefault;
         User user = schemaDefault.getUser();
 
@@ -812,7 +812,7 @@ public class StudyServiceImpl implements StudyService.Service
                         @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName)
     {
         if (!(qsDefault instanceof StudyQuerySchema))
-            throw new IllegalArgumentException("expceted study schema");
+            throw new IllegalArgumentException("expected study schema");
         StudyQuerySchema schemaDefault = (StudyQuerySchema)qsDefault;
         User user = schemaDefault.getUser();
 

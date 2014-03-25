@@ -38,13 +38,11 @@ import org.olap4j.metadata.Schema;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
@@ -75,7 +73,7 @@ public class QubeQuery
     QubeExpr filters;               // for regular slices, e.g. [Species].[Homo Sapiens]
     // for magic count(distinct) handling
 //    QubeExpr distinctMeasureFilters;       // for filtering the count distinct measure
-//    Level countDistinctLevel;       // [Subject].[Subject]
+    Level countDistinctLevel;       // [Subject].[Subject]
     Member countDistinctMember;     // [Measures].[ParticipantCount]
     Member countRowsMember;         // [Measures].[RowCount]
 
@@ -123,9 +121,9 @@ public class QubeQuery
     }
 
 
-    public class QubeMembersExpr extends QubeExpr
+    public static class QubeMembersExpr extends QubeExpr
     {
-        QubeMembersExpr(Hierarchy h, Level l) throws BindException
+        QubeMembersExpr(Hierarchy h, Level l, BindException errors) throws BindException
         {
             super(OP.MEMBERS);
 
@@ -157,330 +155,6 @@ public class QubeQuery
 
 
 
-    /*
-     * MDX
-     */
-
-
-    // this class is an intermediary data structure between the input QueryExpr and final string MDX
-    enum FN
-    {
-        Intersect, CrossJoin, Union,
-        Filter,
-        MemberSet
-        {
-            @Override
-            public String toString()
-            {
-                return "{";
-            }
-        }
-    }
-    enum TYPE
-    {
-        set
-    }
-
-    private class _MDX
-    {
-        _MDX(FN fn, List<Object> arguments)
-        {
-            this.fn = fn;
-            this.arguments = arguments;
-        }
-        _MDX(FN fn, Level level, List<Object> arguments)
-        {
-            this.fn = fn;
-            this.level = level;
-            this.arguments = arguments;
-        }
-        _MDX(FN fn, Level level, Object[] arguments)
-        {
-            this.fn = fn;
-            this.level = level;
-            this.arguments = new ArrayList(Arrays.asList(arguments));
-        }
-
-        FN  fn;
-        Level level;
-        List<Object> arguments;     // String,Member,_MDX
-    }
-
-
-
-    _MDX _toFilterExistsExpr(_MDX levelExpr, _MDX membersExpr, String andor, Member measure)
-    {
-        String op = " " + andor + " ";
-        String opConnector = "";
-        StringBuilder filterExpr = new StringBuilder();
-        for (int m=0 ; m<membersExpr.arguments.size() ; m++)
-        {
-            String term = "NOT ISEMPTY(" + this._toSetString(membersExpr.arguments.get(m)) + ")";
-            filterExpr.append(opConnector).append(term);
-            opConnector = op;
-        }
-        return new _MDX(FN.Filter, levelExpr.level, new Object[]{levelExpr,filterExpr});
-    }
-
-
-    _MDX _toMembersExpr(QubeExpr e) throws BindException
-    {
-        QubeMembersExpr membersDef = (QubeMembersExpr)e;
-        if (membersDef.childrenMember || membersDef.membersMember)
-        {
-            if (null != membersDef.level && membersDef.membersMember)
-                return new _MDX(FN.MemberSet, membersDef.level, new Object[] {membersDef.level.getUniqueName() + ".members"});
-            else if (null != membersDef.hierarchy)
-                return new _MDX(FN.MemberSet, null, new Object[] {membersDef.hierarchy.getUniqueName() + ".members"});
-            errors.reject(SpringActionController.ERROR_MSG, "unexpected members expression");
-            throw errors;
-        }
-        else if (null != membersDef.membersSet && !membersDef.membersSet.isEmpty())
-        {
-            Level l = null != membersDef.level ? membersDef.level : membersDef.hierarchy.getLevels().get(membersDef.hierarchy.getLevels().size()-1);
-            return new _MDX(FN.MemberSet, l, membersDef.membersSet.toArray());
-        }
-        else
-        {
-            if (null == membersDef.level && null == membersDef.hierarchy)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, "level or hiearchy must be specified");
-                throw errors;
-            }
-            Level l = null != membersDef.level ? membersDef.level : membersDef.hierarchy.getLevels().get(membersDef.hierarchy.getLevels().size()-1);
-            _MDX levelExpr = new _MDX(FN.MemberSet, l, new Object[] {l.getUniqueName() + ".members"});
-            if (null == membersDef.membersQuery)
-                return levelExpr;
-            _MDX membersExpr = this._processExpr(membersDef.membersQuery);
-            return this._toFilterExistsExpr(levelExpr, membersExpr, "OR", this.countRowsMember);
-        }
-    }
-
-    _MDX _toIntersectExpr(QubeExpr expr) throws BindException
-    {
-        List<Object> sets = new ArrayList<>();
-        for (int e=0 ; e<expr.arguments.size() ; e++)
-        {
-            _MDX set = this._processExpr(expr.arguments.get(e));
-            sets.add(set);
-        }
-        if (sets.size() == 1)
-            return (_MDX)sets.get(0);
-        else
-        {
-            Level level = ((_MDX)sets.get(0)).level;
-            for (int s=0 ; s<sets.size() ; s++)
-            {
-                Level next = ((_MDX)sets.get(s)).level;
-                if (null == level || null == next || !level.getUniqueName().equals(next.getUniqueName()))
-                    level = null;
-            }
-            return new _MDX(FN.Intersect, level, sets);
-        }
-    }
-
-
-    // smart cross-join: intersect within level, crossjoin across levels
-    _MDX _toSmartCrossJoinExpr(QubeExpr expr) throws BindException
-    {
-        Map<String,List<Object>> setsByLevel = new TreeMap<>();
-        for (int e=0 ; e<expr.arguments.size() ; e++)
-        {
-            _MDX set = this._processExpr(expr.arguments.get(e));
-            String key = null != set.level ? set.level.getUniqueName() : "-";
-            if (!setsByLevel.containsKey(key))
-                setsByLevel.put(key, new ArrayList<>());
-            setsByLevel.get(key).add(set);
-        }
-        List<Object> sets = new ArrayList<>(setsByLevel.size());
-        for (String k : setsByLevel.keySet())
-        {
-            List<Object> arr = setsByLevel.get(k);
-            if (arr.size() == 1)
-                sets.add(arr.get(0));
-            else
-                sets.add(new _MDX(FN.Intersect, ((_MDX) arr.get(0)).level, arr));
-        }
-        if (sets.size() == 1)
-            return (_MDX)sets.get(0);
-        else
-            return new _MDX(FN.CrossJoin, sets);
-    }
-
-
-    _MDX _toCrossJoinExpr(QubeExpr expr) throws BindException
-    {
-        List<Object> sets = new ArrayList<>();
-        for (int e=0 ; e<expr.arguments.size() ; e++)
-        {
-            _MDX set = this._processExpr(expr.arguments.get(e));
-            sets.add(set);
-        }
-        if (sets.size() == 1)
-            return (_MDX)sets.get(0);
-        else
-            return new _MDX(FN.CrossJoin, sets);
-    }
-
-
-    _MDX _toUnionExpr(QubeExpr expr) throws BindException
-    {
-        List<Object> sets = new ArrayList<>();
-        for (int e=0 ; e<expr.arguments.size() ; e++)
-        {
-            _MDX set = this._processExpr(expr.arguments.get(e));
-            if (set.fn==FN.MemberSet)
-            {
-                // flatten nested unions
-                sets.addAll(set.arguments);
-                for (int i=0 ; i<set.arguments.size() ; i++)
-                    sets.add(set.arguments.get(i));
-            }
-            else
-            {
-                sets.add(set);
-            }
-        }
-        if (sets.size() == 1)
-            return (_MDX)sets.get(0);
-        else
-        {
-            Level level = ((_MDX)sets.get(0)).level;
-            for (int s=1 ; s<sets.size() ; s++)
-            {
-                Level next = ((_MDX)sets.get(s)).level;
-                if (null == level || null == next || !level.getUniqueName().equals(next.getUniqueName()))
-                    level = null;
-            }
-            return new _MDX(FN.Union, level, sets);
-        }
-    }
-
-
-    _MDX  _processExpr(QubeExpr expr) throws BindException
-    {
-
-//        if (Ext4.isArray(expr))
-//            expr = {operator:(defaultArrayOperator || "UNION"), arguments:expr};
-//        var op;
-//        if (expr.operator)
-//            op = expr.operator;
-//        else if (expr.membersQuery || expr.members)
-//            op = "MEMBERS";
-//        else
-//            op = defaultOperator || "MEMBERS";
-
-        switch (expr.op)
-        {
-            case UNION:     return this._toUnionExpr(expr);
-            case MEMBERS:   return this._toMembersExpr(expr);
-            case INTERSECT: return this._toIntersectExpr(expr);
-            case CROSSJOIN: return this._toCrossJoinExpr(expr);
-            case XINTERSECT:return this._toSmartCrossJoinExpr(expr);
-            default:
-                errors.reject(SpringActionController.ERROR_MSG, "unexpected operator: " + expr.op);
-                throw errors;
-        }
-    }
-
-
-    String _toSetString(Object o)
-    {
-        if (o instanceof CharSequence)
-            return o.toString();
-        if (o instanceof MetadataElement)
-            return ((MetadataElement)o).getUniqueName();
-
-        _MDX expr = (_MDX)o;
-
-        boolean binarySetFn = true;
-        String start = expr.fn.name() + "(", end = ")";
-
-        switch (expr.fn)
-        {
-//            if (expr.fn == "(")
-//            {
-//                start = "(";
-//                binarySetFn = false;
-//            }
-            case MemberSet:
-                start = "{"; end = "}";
-                if (expr.arguments.size() == 1)
-                    start = end = "";
-                binarySetFn = false;
-                break;
-            case Intersect:
-                binarySetFn = true;
-                break;
-            case Union:
-                binarySetFn = true;
-                break;
-            case CrossJoin:
-                binarySetFn = true;
-                break;
-            case Filter:
-                break;
-            default:
-                assert false;
-        }
-
-        if (binarySetFn)
-        {
-            while (expr.arguments.size() > 2)
-            {
-                _MDX binary = new _MDX(expr.fn, Arrays.asList(expr.arguments.get(0), expr.arguments.get(1)));
-                expr.arguments.set(0,binary);
-                expr.arguments.remove(1);
-            }
-        }
-
-        StringBuilder s = new StringBuilder(start);
-        String comma = "";
-        for (int a=0 ; a<expr.arguments.size() ; a++)
-        {
-            s.append(comma); comma=",";
-            Object arg = expr.arguments.get(a);
-            if (arg instanceof CharSequence)
-                s.append((CharSequence)arg);
-            else
-                s.append(this._toSetString(arg));
-        }
-        s.append(end);
-        return s.toString();
-    }
-
-
-    public String generateMDX(BindException errors) throws BindException
-    {
-        this.errors = errors;
-        String rowset=null, columnset = null, filterset = null;
-        if (null != onColumns)
-            columnset = this._toSetString(this._processExpr(onColumns));
-        if (null != onRows)
-            rowset = this._toSetString(this._processExpr(onRows));
-        if (null != filters && filters.arguments.size() > 0)
-            filterset = this._toSetString(this._processExpr(filters));
-
-        String countMeasure = "[Measures].DefaultMember";
-        String withDefinition = "";
-        if (null != filterset)
-        {
-            countMeasure = "[Measures]." + countDistinctMember.getName();
-            withDefinition = "WITH SET ptids AS " + filterset + "\n" +
-                    "MEMBER " + countMeasure + " AS " + "COUNT(ptids,EXCLUDEEMPTY)\n";
-        }
-        if (null == columnset)
-            columnset = countMeasure;
-        else
-            columnset = "(" + columnset + " , " + countMeasure + ")";
-
-        StringBuilder query = new StringBuilder(withDefinition + "SELECT\n" + "  "  + columnset + " ON COLUMNS");
-        if (null != rowset)
-            query.append(",\n" + (showEmpty ? "" : " NON EMPTY ") + rowset + " ON ROWS\n");
-        query.append("\nFROM [" + getCube().getName() + "]\n");
-
-        return query.toString();
-    }
 
 
 
@@ -688,7 +362,7 @@ public class QubeQuery
             Hierarchy h = _getHierarchy(json);
             Level l = _getLevel(json, h);
 
-            QubeMembersExpr e = new QubeMembersExpr(h,l);
+            QubeMembersExpr e = new QubeMembersExpr(h,l,errors);
             if (null != json.get("members"))
             {
                 if ("members".equals(json.get("members")))
@@ -850,7 +524,7 @@ public class QubeQuery
             qq.countDistinctMember = distinct;
 //            qq.countDistinctLevel = cube.getHierarchies().get("Subject").getLevels().get("Subject");
             qq.fromJson(o, errors);
-            String mdx = qq.generateMDX(errors);
+            String mdx = (new MdxQueryImpl(qq, errors)).generateMDX();
             compare(this.mdxExpected, mdx);
         }
         void compare(String a, String b)

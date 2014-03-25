@@ -46,6 +46,8 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.query.olap.BitSetQueryImpl;
+import org.labkey.query.olap.MdxQueryImpl;
 import org.labkey.query.olap.Olap4Js;
 import org.labkey.query.olap.OlapSchemaDescriptor;
 import org.labkey.query.olap.QubeQuery;
@@ -338,7 +340,8 @@ public class OlapController extends SpringActionController
             qquery.fromJson(q, errors);
             if (errors.hasErrors())
                 return null;
-            String mdx = qquery.generateMDX(errors);
+
+            String mdx =  new MdxQueryImpl(qquery, errors).generateMDX();
             if (errors.hasErrors())
                 return null;
 
@@ -351,6 +354,55 @@ public class OlapController extends SpringActionController
             ExecuteMdxAction action = new ExecuteMdxAction();
             action.setViewContext(getViewContext());
             return action.execute(mdxForm, errors);
+        }
+    }
+
+
+    /**
+     * NOT PART OF OFFICIAL CLIENT API
+     * the particulars of the JSON format may change, and is very tied to the dataspace implementation
+     */
+    @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
+    public class CountDistinctQueryAction extends ApiAction<JsonQueryForm>
+    {
+        @Override
+        public ApiResponse execute(JsonQueryForm form, BindException errors) throws Exception
+        {
+            if (errors.hasErrors())
+                return null;
+
+            Cube cube = getCube(form, errors);
+            if (errors.hasErrors())
+                return null;
+
+            JSONObject q = (JSONObject)form.json.get("query");
+            if (null == q)
+            {
+                errors.reject(ERROR_MSG, "query not specified");
+                return null;
+            }
+
+            QubeQuery qquery = new QubeQuery(cube);
+            qquery.fromJson(q, errors);
+            if (errors.hasErrors())
+                return null;
+
+            long start = System.currentTimeMillis();
+            OlapSchemaDescriptor sd = ServerManager.getDescriptor(getContainer(), form.getConfigId());
+            BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), sd, getConnection(sd), qquery, errors);
+            CellSet cs = bitsetquery.executeQuery();
+            _log.warn("bitsetquery.executeQuery() took " + DateUtil.formatDuration(System.currentTimeMillis()-start));
+
+
+            HttpServletResponse response = getViewContext().getResponse();
+            response.setContentType(ApiJsonWriter.CONTENT_TYPE_JSON);
+
+            StringWriter sw = new StringWriter();
+            Olap4Js.convertCellSet(cs, sw);
+            _log.debug(sw.toString());
+            response.getWriter().write(sw.toString());
+            return null;
         }
     }
 
@@ -454,7 +506,7 @@ public class OlapController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Olap configuration not found: " + form.getSchemaName());
             }
-            return new JspView("/org/labkey/query/view/mdx.jsp", form, errors);
+            return new JspView<>("/org/labkey/query/view/mdx.jsp", form, errors);
         }
 
         @Override
@@ -480,7 +532,7 @@ public class OlapController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Olap configuration not found: " + form.getSchemaName());
             }
-            return new JspView("/org/labkey/query/view/json.jsp", form, errors);
+            return new JspView<>("/org/labkey/query/view/json.jsp", form, errors);
         }
 
         @Override

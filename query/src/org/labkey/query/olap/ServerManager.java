@@ -27,6 +27,7 @@ import mondrian.spi.CatalogLocator;
 import mondrian.spi.DataSourceChangeListener;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+//import org.labkey.api.concurrent.CountingSemaphore;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleResourceCache;
@@ -222,6 +223,7 @@ public class ServerManager
             for (ServerReferenceCount ref : _servers.values())
                 ref.decrement();
             _servers.clear();
+            BitSetQueryImpl.invalidateCache(d);
         }
     }
 
@@ -233,6 +235,7 @@ public class ServerManager
             ServerReferenceCount ref = _servers.remove(getServerCacheKey(c));
             if (null != ref)
                 ref.decrement();
+            BitSetQueryImpl.invalidateCache(c);
         }
     }
 
@@ -259,6 +262,7 @@ public class ServerManager
         }
 
         s.shutdown();
+        BitSetQueryImpl.invalidateCache(container);
     }
 
 
@@ -300,8 +304,8 @@ public class ServerManager
             Boolean waschanged = ischanged.put(aggregation.toString(),Boolean.FALSE);
             return waschanged != Boolean.FALSE;
         }
-
     }
+
 
     private static class _CatalogLocator implements CatalogLocator
     {
@@ -424,6 +428,7 @@ public class ServerManager
     {
         final MondrianServer _inner;
         final ReferenceCount _count;
+//        final CountingSemaphore _semaphore = new CountingSemaphore(8, true);
 
         static MondrianServer wrap(MondrianServer conn, ReferenceCount ref)
         {
@@ -448,6 +453,13 @@ public class ServerManager
             {
                 _count.decrement();
                 return null;
+//            }
+//            else if ("executeOlapQuery".equals(method.getName()))
+//            {
+//                try (AutoCloseable permit = _semaphore.acquire())
+//                {
+//                    return method.invoke(_inner,args);
+//                }
             }
             else
                 return method.invoke(_inner,args);

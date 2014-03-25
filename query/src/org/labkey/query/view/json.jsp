@@ -64,11 +64,15 @@
         try
         {
             if (query)
+            {
+                //jsonQUery = (Ext4||Ext).JSON.decode(query);
                 jsonQuery = JSON.parse(query);
+            }
         }
         catch (x)
         {
             alert(x);
+            return;
         }
 
         var configDefaults =
@@ -81,14 +85,14 @@
         var config, q;
         if ('query' in jsonQuery)
         {
-            q = jsonQuery['query'];
+            config = Ext4.apply({}, jsonQuery.query, configDefaults);
         }
         else
         {
-            q = jsonQuery;
+            config = Ext4.apply({}, jsonQuery, configDefaults);
         }
-        config = Ext4.apply({}, q, configDefaults);
 
+//        Ext4.getBody().mask();
         startTime = new Date().getTime();
         mdx.query(config);
         return false;
@@ -135,7 +139,8 @@
                 html.push('</tr>');
             }
             html.push("</table>");
-            html.push("<p><b>" + (duration/1000) + "</b></p>");        }
+            html.push("<p><b>" + (duration/1000) + "</b></p>");
+        }
         else if (cs.axes.length == 2)
         {
             for (var row=0 ; row<cs.axes[1].positions.length ; row++)
