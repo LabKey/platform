@@ -24,6 +24,7 @@ import org.springframework.validation.BindException;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -33,9 +34,22 @@ public interface ProteinService
 {
     public int ensureProtein(String sequence, String organism, String name, String description);
 
-    public int ensureProteinAndIdentifier(String sequence, String organism, String identifer, String description, String identifierType);
+    /**
+     *
+     * @param seqId
+     * @param typeAndIdentifiers A map of identifier types to identifiers.
+     * Identifier type (e.g. SwissProtAccn) --> set of identifiers (e.g. B7Z1V4, P80404)
+     */
+    public void ensureIdentifiers(int seqId, Map<String, Set<String>> typeAndIdentifiers);
 
-    public void ensureIdentifiers(int seqId, Map<String, String> identifierAndTypes);
+    /**
+     *
+     * @param description
+     * @param names
+     * @return  A map of identifier types to identifiers
+     * Identifier type (e.g. SwissProtAccn) --> set of identifiers (e.g. B7Z1V4, P80404)
+     */
+    public Map<String, Set<String>> getIdentifiers(String description, String... names);
 
     public void registerProteinSearchView(QueryViewProvider<ProteinSearchForm> provider);
     public void registerPeptideSearchView(QueryViewProvider<PeptideSearchForm> provider);
