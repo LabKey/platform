@@ -58,4 +58,6 @@ public interface IVisualizationSourceQuery
     Container getContainer();
 
     String getQueryName();
+
+    void addSelect(VisualizationSourceColumn select, boolean measure);
 }

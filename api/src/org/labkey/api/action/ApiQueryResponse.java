@@ -250,7 +250,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
 
     // see Ext.data.JsonReader (response.metaData)
-    protected Map<String, Object> getMetaData() throws Exception
+    protected Map<String, Object> getMetaData()
     {
         Map<String, Object> metaData = new HashMap<>();
 

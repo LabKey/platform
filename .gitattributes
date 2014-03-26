@@ -1659,7 +1659,6 @@ api/src/org/labkey/api/visualization/VisualizationIntervalColumn.java -text
 api/src/org/labkey/api/visualization/VisualizationProvider.java -text
 api/src/org/labkey/api/visualization/VisualizationReportDescriptor.java -text
 api/src/org/labkey/api/visualization/VisualizationSourceColumn.java -text
-api/src/org/labkey/api/visualization/VisualizationSourceQuery.java -text
 api/src/org/labkey/api/visualization/VisualizationUrls.java -text
 api/src/org/labkey/api/webdav/AbstractDocumentResource.java -text
 api/src/org/labkey/api/webdav/AbstractWebdavResource.java -text

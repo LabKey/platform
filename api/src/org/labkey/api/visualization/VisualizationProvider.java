@@ -24,7 +24,6 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,11 +41,12 @@ public abstract class VisualizationProvider<SchemaType extends UserSchema>
     private ChartType _type;
 
     public abstract List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>>
-            getJoinColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery first, IVisualizationSourceQuery second, boolean isGroupByQuery);
-    public abstract void addExtraSelectColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery query);
+            getJoinColumns(VisualizationSourceColumn.Factory factory, IVisualizationSourceQuery first, IVisualizationSourceQuery second, boolean isGroupByQuery);
+    public abstract void addExtraSelectColumns(VisualizationSourceColumn.Factory factory, IVisualizationSourceQuery query);
 
     public abstract void appendAggregates(StringBuilder sql, Map<String, Set<VisualizationSourceColumn>> columnAliases, Map<String, VisualizationIntervalColumn> intervals, String queryAlias, IVisualizationSourceQuery joinQuery);
 
+    /** @return true if the column is one that is needed to correctly join between separate queries */
     public abstract boolean isJoinColumn(VisualizationSourceColumn column, Container container);
     
     protected static enum ColumnMatchType
@@ -238,38 +238,38 @@ public abstract class VisualizationProvider<SchemaType extends UserSchema>
         return getMatchingColumns(queries, matchType);
     }
 
-    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMeasures(ViewContext context, QueryType queryType)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMeasures(QueryType queryType)
     {
         return getMatchingColumns(queryType, ColumnMatchType.CONFIGURED_MEASURES);
     }
 
-    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMeasures(ViewContext context, String queryName)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMeasures(String queryName)
     {
         return getMatchingColumns(ColumnMatchType.CONFIGURED_MEASURES, queryName);
     }
 
-    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDateMeasures(ViewContext context, QueryType queryType)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDateMeasures(QueryType queryType)
     {
         return getMatchingColumns(queryType, ColumnMatchType.DATETIME_COLS);
     }
 
-    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDateMeasures(ViewContext context, String queryName)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDateMeasures(String queryName)
     {
         return getMatchingColumns(ColumnMatchType.DATETIME_COLS, queryName);
     }
 
-    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getZeroDateMeasures(ViewContext context, QueryType queryType)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getZeroDateMeasures(QueryType queryType)
     {
         // By default, assume that any date can be a measure date or a zero date.
-        return getDateMeasures(context, queryType);
+        return getDateMeasures(queryType);
     }
 
-    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDimensions(ViewContext context, String queryName)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDimensions(String queryName)
     {
         return getMatchingColumns(ColumnMatchType.CONFIGURED_DIMENSIONS, queryName);
     }
 
-    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getAllColumns(ViewContext context, String queryName, boolean hiddenColumns)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getAllColumns(String queryName, boolean hiddenColumns)
     {
         return getMatchingColumns(hiddenColumns ? ColumnMatchType.All : ColumnMatchType.All_VISIBLE, queryName);
     }
