@@ -40,7 +40,6 @@ import org.labkey.api.visualization.VisualizationAggregateColumn;
 import org.labkey.api.visualization.VisualizationIntervalColumn;
 import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.api.visualization.VisualizationSourceColumn;
-import org.labkey.api.visualization.VisualizationSourceQuery;
 import org.labkey.visualization.VisualizationController;
 
 import java.util.*;

@@ -23,7 +23,6 @@ import org.labkey.api.visualization.SQLGenerationException;
 import org.labkey.api.visualization.VisualizationAggregateColumn;
 import org.labkey.api.visualization.VisualizationIntervalColumn;
 import org.labkey.api.visualization.VisualizationSourceColumn;
-import org.labkey.api.visualization.VisualizationSourceQuery;
 
 import java.util.*;
 
@@ -41,6 +40,7 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
     {
         _generator = generator;
         _queries = queries;
+        _hasRowLimit = hasRowLimit;
     }
 
     @Override
@@ -68,6 +68,12 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
     public VisualizationSourceQuery getJoinTarget()
     {
         return null;
+    }
+
+    @Override
+    public void addSelect(VisualizationSourceColumn select, boolean measure)
+    {
+        throw new UnsupportedOperationException();
     }
 
     @Override

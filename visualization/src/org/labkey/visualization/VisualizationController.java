@@ -463,24 +463,24 @@ public class VisualizationController extends SpringActionController
                     if (form.isDateMeasures())
                     {
                         if (mf.getQuery() != null)
-                            measures.putAll(provider.getDateMeasures(getViewContext(), mf.getQuery()));
+                            measures.putAll(provider.getDateMeasures(mf.getQuery()));
                         else
-                            measures.putAll(provider.getDateMeasures(getViewContext(), mf.getQueryType()));
+                            measures.putAll(provider.getDateMeasures(mf.getQueryType()));
 
                     }
                     else if (form.isAllColumns())
                     {
                         if (mf.getQuery() != null)
-                            measures.putAll(provider.getAllColumns(getViewContext(), mf.getQuery(), form.isShowHidden()));
+                            measures.putAll(provider.getAllColumns(mf.getQuery(), form.isShowHidden()));
                         else
                             measures.putAll(provider.getAllColumns(mf.getQueryType(), form.isShowHidden()));
                     }
                     else
                     {
                         if (mf.getQuery() != null)
-                            measures.putAll(provider.getMeasures(getViewContext(), mf.getQuery()));
+                            measures.putAll(provider.getMeasures(mf.getQuery()));
                         else
-                            measures.putAll(provider.getMeasures(getViewContext(), mf.getQueryType()));
+                            measures.putAll(provider.getMeasures(mf.getQueryType()));
                     }
                 }
             }
@@ -490,9 +490,9 @@ public class VisualizationController extends SpringActionController
                 for (VisualizationProvider provider : createVisualizationProviders().values())
                 {
                     if (form.isDateMeasures())
-                        measures.putAll(provider.getDateMeasures(getViewContext(), VisualizationProvider.QueryType.all));
+                        measures.putAll(provider.getDateMeasures(VisualizationProvider.QueryType.all));
                     else
-                        measures.putAll(provider.getMeasures(getViewContext(), VisualizationProvider.QueryType.all));
+                        measures.putAll(provider.getMeasures(VisualizationProvider.QueryType.all));
                 }
             }
 
@@ -592,7 +592,7 @@ public class VisualizationController extends SpringActionController
                     errors.reject(ERROR_MSG, "No measure provider found for schema " + schema.getSchemaPath());
                     return null;
                 }
-                Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> dimensions = provider.getDimensions(getViewContext(), form.getQueryName());
+                Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> dimensions = provider.getDimensions(form.getQueryName());
                 List<Map<String, Object>> dimensionJSON = getColumnResponse(dimensions);
                 resp.put("success", true);
                 resp.put("dimensions", dimensionJSON);
@@ -889,14 +889,14 @@ public class VisualizationController extends SpringActionController
                         errors.reject(ERROR_MSG, "No measure provider found for schema " + schema.getSchemaPath());
                         return null;
                     }
-                    measures.putAll(provider.getZeroDateMeasures(getViewContext(), mf.getQueryType()));
+                    measures.putAll(provider.getZeroDateMeasures(mf.getQueryType()));
                 }
             }
             else
             {
                 // get all tables in this container
                 for (VisualizationProvider provider : createVisualizationProviders().values())
-                    measures.putAll(provider.getZeroDateMeasures(getViewContext(), VisualizationProvider.QueryType.all));
+                    measures.putAll(provider.getZeroDateMeasures(VisualizationProvider.QueryType.all));
             }
 
             List<Map<String, Object>> measuresJSON = getColumnResponse(measures);

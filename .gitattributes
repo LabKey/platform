@@ -4272,6 +4272,7 @@ visualization/src/org/labkey/visualization/report/scatter_plot.png -text
 visualization/src/org/labkey/visualization/report/timechart.png -text
 visualization/src/org/labkey/visualization/sql/OuterJoinSourceQuery.java -text
 visualization/src/org/labkey/visualization/sql/VisualizationSQLGenerator.java -text
+visualization/src/org/labkey/visualization/sql/VisualizationSourceQuery.java -text
 visualization/src/org/labkey/visualization/views/genericChartWizard.jsp -text
 visualization/src/org/labkey/visualization/views/timeChartWizard.jsp -text
 visualization/webapp/visualization/report/box_plot.gif -text

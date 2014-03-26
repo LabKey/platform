@@ -25,12 +25,10 @@ import org.labkey.api.study.DataSetTable;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.IVisualizationSourceQuery;
 import org.labkey.api.visualization.VisualizationIntervalColumn;
 import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.api.visualization.VisualizationSourceColumn;
-import org.labkey.api.visualization.VisualizationSourceQuery;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.*;
@@ -47,7 +45,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
     }
 
     @Override
-    public void addExtraSelectColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery query)
+    public void addExtraSelectColumns(VisualizationSourceColumn.Factory factory, IVisualizationSourceQuery query)
     {
         if (getType() == ChartType.TIME_VISITBASED)
         {
@@ -104,7 +102,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
     }
 
     @Override
-    public List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> getJoinColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery first, IVisualizationSourceQuery second, boolean isGroupByQuery)
+    public List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> getJoinColumns(VisualizationSourceColumn.Factory factory, IVisualizationSourceQuery first, IVisualizationSourceQuery second, boolean isGroupByQuery)
     {
         if (!first.getContainer().equals(second.getContainer()))
             throw new IllegalArgumentException("Can't yet join across containers.");
@@ -231,16 +229,16 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
     protected Set<String> getTableNames(UserSchema schema)
     {
         Set<String> tables = new HashSet<>(super.getTableNames(schema));
-        tables.remove("StudyData");
+        tables.remove(StudyQuerySchema.STUDY_DATA_TABLE_NAME);
         return tables;
     }
 
     @Override
-    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getZeroDateMeasures(ViewContext context, QueryType queryType)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getZeroDateMeasures(QueryType queryType)
     {
         // For studies, valid zero date columns are found in demographic datasets only:
         Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = new HashMap<>();
-        Study study = StudyService.get().getStudy(context.getContainer());
+        Study study = getSchema().getStudy();
         if (study != null)
         {
             for (DataSet ds : study.getDataSets())
@@ -261,27 +259,6 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
             }
         }
         return measures;
-    }
-
-    private static final boolean INCLUDE_DEMOGRAPHIC_DIMENSIONS = false;
-    @Override
-    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDimensions(ViewContext context, String queryName)
-    {
-        Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> dimensions = super.getDimensions(context, queryName);
-        if (INCLUDE_DEMOGRAPHIC_DIMENSIONS)
-        {
-            // include dimensions from demographic data sources
-            Study study = StudyService.get().getStudy(context.getContainer());
-            if (study != null)
-            {
-                for (DataSet ds : study.getDataSets())
-                {
-                    if (ds.isDemographicData())
-                        dimensions.putAll(super.getDimensions(context, ds.getName()));
-                }
-            }
-        }
-        return dimensions;
     }
 
     @Override
