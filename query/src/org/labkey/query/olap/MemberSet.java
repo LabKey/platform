@@ -331,7 +331,26 @@ public class MemberSet extends AbstractSet<Member>
     @Override
     public boolean retainAll(Collection<?> c)
     {
-        return false;
+        if (c instanceof MemberSet)
+        {
+            return retainAll((MemberSet)c);
+        }
+        throw new UnsupportedOperationException();
+    }
+
+
+    public boolean retainAll(MemberSet from)
+    {
+        for (Map.Entry<String,LevelMemberSet> e : levelMap.entrySet())
+        {
+            LevelMemberSet setRetain = e.getValue();
+            LevelMemberSet setFrom = from.levelMap.get(e.getKey());
+            if (null == setFrom)
+                setRetain.clear();
+            else
+                setRetain.retainAll(setFrom);
+        }
+        return true;
     }
 
 
@@ -560,11 +579,22 @@ public class MemberSet extends AbstractSet<Member>
             return true;
         }
 
+
         @Override
         public boolean retainAll(Collection<?> c)
         {
+            if (c instanceof LevelMemberSet)
+                return retainAll((LevelMemberSet)c);
             throw new UnsupportedOperationException();
         }
+
+
+        public boolean retainAll(LevelMemberSet from)
+        {
+            _set.and(from._set);
+            return true;
+        }
+
 
         @Override
         public boolean removeAll(Collection<?> c)
