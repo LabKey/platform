@@ -20,6 +20,7 @@ import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.exp.ExperimentException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.labkey.api.util.NumberUtilsLabKey;
 
 import java.io.File;
 import java.io.LineNumberReader;
@@ -110,7 +111,7 @@ public class TextPlateReader implements PlateReader
             while (tokenizer.hasMoreTokens())
             {
                 String token = tokenizer.nextToken();
-                if (!NumberUtils.isNumber(token))
+                if (!NumberUtilsLabKey.isNumber(token))
                     return false;
                 row[i++] = NumberUtils.toDouble(token);
                 if (i == row.length)

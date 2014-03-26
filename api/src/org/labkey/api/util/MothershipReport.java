@@ -247,7 +247,7 @@ public class MothershipReport implements Runnable
         {
             addParam("svnRevision", coreModule.getSvnRevision());
         }
-        if (!NumberUtils.isNumber(coreModule.getSvnRevision()))
+        if (!NumberUtils.isDigits(coreModule.getSvnRevision()))
         {
             addParam("description", "Core v" + coreModule.getFormattedVersion());
         }
