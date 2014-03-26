@@ -2,7 +2,6 @@ package org.labkey.query.olap;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
@@ -25,6 +24,7 @@ import org.springframework.validation.BindException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -99,10 +99,6 @@ public class BitSetQueryImpl
         {
             super(t);
         }
-        Result eval()
-        {
-            return this;
-        }
     }
 
 
@@ -114,10 +110,32 @@ public class BitSetQueryImpl
             this.level = null;
             this.hierarchy = null;
             if (members instanceof MemberSet)
-                this.members = (MemberSet)members;
+            {
+                this.members = (MemberSet) members;
+                this.member = null;
+            }
+            else if (members.size() == 1)
+            {
+                this.members = null;
+                this.member = members.toArray(new Member[1])[0];
+            }
             else
+            {
+                this.member = null;
                 this.members = new MemberSet(members);
+            }
         }
+
+    /*
+        MemberSetResult(Member m)
+        {
+            super(Type.setOfMembers);
+            this.members = null;
+            this.level = null;
+            this.hierarchy = null;
+            this.member = m;
+        }
+    */
 
         MemberSetResult(Level level)
         {
@@ -125,6 +143,7 @@ public class BitSetQueryImpl
             this.members = null;
             this.level = level;
             this.hierarchy = null;
+            this.member = null;
         }
 
         MemberSetResult(Hierarchy h)
@@ -133,14 +152,25 @@ public class BitSetQueryImpl
             this.members = null;
             this.level = null;
             this.hierarchy = h;
+            this.member = null;
         }
 
         void toMdxSet(StringBuilder sb)
         {
-            if (null != level)
+            if (null != member)
+            {
+                sb.append("{");
+                sb.append(member.getUniqueName());
+                sb.append("}\n");
+            }
+            else if (null != level)
+            {
                 sb.append(level.getUniqueName()).append(".members");
+            }
             else if (null != hierarchy)
+            {
                 sb.append(hierarchy.getUniqueName()).append(".members");
+            }
             else
             {
                 sb.append("{");
@@ -157,6 +187,8 @@ public class BitSetQueryImpl
 
         Level getLevel()
         {
+            if (null != member)
+                return member.getLevel();
             if (null != level)
                 return level;
             if (null != hierarchy)
@@ -168,6 +200,8 @@ public class BitSetQueryImpl
 
         Hierarchy getHierarchy()
         {
+            if (null != member)
+                return member.getHierarchy();
             if (null != level)
                 return level.getHierarchy();
             if (null != hierarchy)
@@ -177,10 +211,15 @@ public class BitSetQueryImpl
             return null;
         }
 
+
         @NotNull
         Collection<Member> getCollection() throws OlapException
         {
-            if (null != level)
+            if (null != member)
+            {
+                return Collections.singletonList(member);
+            }
+            else if (null != level)
             {
                 return level.getMembers();
             }
@@ -198,14 +237,7 @@ public class BitSetQueryImpl
         }
 
 
-        void addMemberAndChildren(Member m, List<Member> list) throws OlapException
-        {
-            list.add(m);
-            for (Member c : m.getChildMembers())
-                addMemberAndChildren(c, list);
-        }
-
-
+ /*
         void addMembersTo(Set<Member> output) throws OlapException
         {
             if (null != level)
@@ -224,12 +256,12 @@ public class BitSetQueryImpl
             else
                 throw new IllegalStateException();
         }
+ */
 
-
-        // ONE of these should be non-null
-        final Level level;
-        final Hierarchy hierarchy;
-        final MemberSet members;
+        final Level level;              // all members of a level
+        final Hierarchy hierarchy;      // all members of a hierarchy
+        final Member member;            // special case, one member (used in filters)
+        final MemberSet members;        // explicit list of members
 
         @Override
         public String toString()
@@ -268,6 +300,27 @@ public class BitSetQueryImpl
         {
             super(Type.crossSet);
         }
+    }
+
+
+
+    void addMemberAndChildren(Member m, Collection<Member> list) throws OlapException
+    {
+        list.add(m);
+        for (Member c : m.getChildMembers())
+            addMemberAndChildren(c, list);
+    }
+
+
+    void addMemberAndChildrenInLevel(Member m, Level filter, Collection<Member> list) throws OlapException
+    {
+        if (m.getLevel().getUniqueName().equals(filter.getUniqueName()))
+        {
+            list.add(m);
+            return;
+        }
+        for (Member c : m.getChildMembers())
+            addMemberAndChildrenInLevel(c, filter, list);
     }
 
 
@@ -382,6 +435,9 @@ public class BitSetQueryImpl
         {
             return processMembers((QubeQuery.QubeMembersExpr)expr);
         }
+
+        if (null == expr.arguments || 0 == expr.arguments.size())
+            throw new IllegalArgumentException("No arguments provided");
 
         List<Result> results = new ArrayList<>(expr.arguments.size());
         for (QubeQuery.QubeExpr in : expr.arguments)
@@ -842,6 +898,13 @@ public class BitSetQueryImpl
 
         MemberSet membersQuery(Level outer, Member sub) throws SQLException
         {
+            if (sub.getHierarchy().getUniqueName().equals(outer.getHierarchy().getUniqueName()))
+            {
+                MemberSet s = new MemberSet();
+                addMemberAndChildrenInLevel(sub, outer, s);
+                return s;
+            }
+
             String query = queryIsNotEmpty(outer, sub);
             MemberSet s = resultsCacheGet(query);
             if (null != s)
@@ -870,6 +933,7 @@ public class BitSetQueryImpl
     {
 
     }
+
 
     class _CellSet extends QubeCellSet
     {
