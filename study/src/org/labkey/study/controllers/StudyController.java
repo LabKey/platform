@@ -3723,7 +3723,7 @@ public class StudyController extends BaseStudyController
             String id = getViewContext().getRequest().getParameter(DataSetDefinition.DATASETKEY);
             String defaultView = getViewContext().getRequest().getParameter("defaultView");
 
-            if (NumberUtils.isNumber(id))
+            if (NumberUtils.isDigits(id))  // Should be a positive integer
             {
                 int dsid = NumberUtils.toInt(id);
                 def = StudyManager.getInstance().getDataSetDefinition(study, dsid);

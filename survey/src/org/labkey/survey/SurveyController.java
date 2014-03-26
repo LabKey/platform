@@ -385,7 +385,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                     capture = true;
                     key = "column";
                 }
-                else if (NumberUtils.isNumber(part))
+                else if (NumberUtils.isDigits(part)) // Should be positive integer
                 {
                     if (capture && key != null)
                         errors.put(key, NumberUtils.toInt(part));

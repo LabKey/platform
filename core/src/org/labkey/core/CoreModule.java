@@ -170,7 +170,6 @@ import javax.servlet.ServletContextEvent;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -803,7 +802,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 EmailTemplate.TestCase.class,
                 HelpTopic.TestCase.class,
                 CaseInsensitiveHashMap.TestCase.class,
-                StatsServiceImpl.TestCase.class
+                StatsServiceImpl.TestCase.class,
+                NumberUtilsLabKey.TestCase.class
         ));
     }
 

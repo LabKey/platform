@@ -26,6 +26,7 @@ import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.NumberUtilsLabKey;
 import org.labkey.api.util.Pair;
 
 import java.util.ArrayList;
@@ -109,7 +110,7 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
 
     private boolean isValid(Object value, Pair<String, String> constraint)
     {
-        if (NumberUtils.isNumber(String.valueOf(value)))
+        if (NumberUtilsLabKey.isNumber(String.valueOf(value)))
         {
             int comparison = Double.compare(NumberUtils.toDouble(String.valueOf(value)), NumberUtils.toDouble(constraint.getValue()));
             return comparisonValid(comparison, constraint.getKey());

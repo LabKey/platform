@@ -338,7 +338,7 @@ public class ChartReportView extends AbstractReportView
             //if (BooleanUtils.toBoolean(descriptor.getProperty("isPlotView")))
             {
                 final String participantId = context.getActionURL().getParameter("participantId");
-                if (participantId != null && NumberUtils.isNumber(participantId))
+                if (participantId != null && NumberUtils.isDigits(participantId))
                 {
                     SimpleFilter filter = new SimpleFilter();
                     filter.addCondition(FieldKey.fromParts("participantId"), participantId, CompareType.EQUAL);

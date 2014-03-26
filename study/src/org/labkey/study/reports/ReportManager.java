@@ -353,7 +353,7 @@ public class ReportManager implements DatasetManager.DatasetListener
                 String datasetId = report.getDescriptor().getProperty(DataSetDefinition.DATASETKEY);
                 String queryName = report.getDescriptor().getProperty(QueryParam.queryName.toString());
 
-                if (NumberUtils.isNumber(datasetId))
+                if (NumberUtils.isDigits(datasetId))
                 {
                     DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, NumberUtils.toInt(datasetId));
                     if (dsDef != null)
