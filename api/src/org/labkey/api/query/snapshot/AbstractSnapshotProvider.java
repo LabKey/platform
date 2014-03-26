@@ -138,20 +138,25 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
         prop.setFormat(column.getFormat());
         prop.setPropertyURI(getPropertyURI(domain, column));
 
-        if (pd != null && pd.getLookupQuery() != null)
+        if (pd != null)
         {
-            String container = pd.getLookupContainer();
-            Container c = null;
-            if (container != null)
-            {
-                if (GUID.isGUID(container))
-                    c = ContainerManager.getForId(container);
-                if (c == null)
-                    c = ContainerManager.getForPath(container);
-            }
-            Lookup lu = new Lookup(c, pd.getLookupSchema(), pd.getLookupQuery());
-            prop.setLookup(lu);
+            prop.setScale(pd.getScale());
             prop.setRequired(pd.isRequired());
+
+            if (pd.getLookupQuery() != null)
+            {
+                String container = pd.getLookupContainer();
+                Container c = null;
+                if (container != null)
+                {
+                    if (GUID.isGUID(container))
+                        c = ContainerManager.getForId(container);
+                    if (c == null)
+                        c = ContainerManager.getForPath(container);
+                }
+                Lookup lu = new Lookup(c, pd.getLookupSchema(), pd.getLookupQuery());
+                prop.setLookup(lu);
+            }
         }
         return prop;
     }
