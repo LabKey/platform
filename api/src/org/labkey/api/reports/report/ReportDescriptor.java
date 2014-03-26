@@ -55,9 +55,9 @@ import org.labkey.query.xml.ReportDescriptorDocument;
 import org.labkey.query.xml.ReportDescriptorType;
 import org.labkey.query.xml.ReportPropertyList;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -531,13 +531,13 @@ public enum Prop implements ReportProperty
     public String serialize(Container c) throws IOException
     {
         ReportDescriptorDocument doc = getDescriptorDocument(c);
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        StringWriter writer = new StringWriter();
 
         try
         {
             XmlBeansUtil.validateXmlDocument(doc);
-            doc.save(output, XmlBeansUtil.getDefaultSaveOptions());
-            return output.toString();
+            doc.save(writer, XmlBeansUtil.getDefaultSaveOptions());
+            return writer.toString();
         }
         catch (XmlValidationException e)
         {
@@ -546,7 +546,7 @@ public enum Prop implements ReportProperty
         }
         finally
         {
-            output.close();
+            writer.close();
         }
     }
 
