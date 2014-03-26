@@ -26,6 +26,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -811,7 +812,9 @@ public class BitSetQueryImpl
 
             if (null != outer.level && null != sub.members && sub.members.size() == 1)
             {
-                set = membersQuery(outer.level, sub.members.iterator().next());
+                Iterator<Member> it = sub.members.iterator();
+                it.hasNext();
+                set = membersQuery(outer.level, it.next());
             }
             else
             {

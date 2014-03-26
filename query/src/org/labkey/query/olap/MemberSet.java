@@ -234,7 +234,11 @@ public class MemberSet extends AbstractSet<Member>
     Level getLevel()
     {
         if (levelMap.size() == 1)
-            return levelMap.values().iterator().next()._level;
+        {
+            Iterator<LevelMemberSet> it = levelMap.values().iterator();
+            it.hasNext();
+            return it.next()._level;
+        }
         else
             return null;
     }
@@ -245,11 +249,13 @@ public class MemberSet extends AbstractSet<Member>
     {
         if (levelMap.size() == 0)
             return null;
-        Hierarchy h = levelMap.values().iterator().next()._level.getHierarchy();
+        Hierarchy h = null;
         for (LevelMemberSet l : levelMap.values())
         {
-            if (!l._level.getHierarchy().getUniqueName().equals(h.getUniqueName()))
-                return null;
+            if (h == null)
+                h = l._level.getHierarchy();
+            else if (!l._level.getHierarchy().getUniqueName().equals(h.getUniqueName()))
+                    return null;
         }
         return h;
     }
@@ -261,7 +267,12 @@ public class MemberSet extends AbstractSet<Member>
         if (levelMap.isEmpty())
             return Collections.emptyIterator();
         if (levelMap.size() == 1)
-            return levelMap.values().iterator().next().iterator();
+        {
+            Iterator<LevelMemberSet> it = levelMap.values().iterator();
+            it.hasNext();
+            LevelMemberSet only = it.next();
+            return only.iterator();
+        }
 
         // sort levels by depth
         List<LevelMemberSet> list = new ArrayList<>();
