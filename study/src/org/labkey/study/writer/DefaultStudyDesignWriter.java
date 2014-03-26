@@ -51,12 +51,13 @@ import java.util.Set;
  */
 public abstract class DefaultStudyDesignWriter
 {
-    protected void writeTableData(StudyExportContext ctx, VirtualFile vf, Set<String> tableNames, StudyQuerySchema schema, StudyQuerySchema projectSchema) throws SQLException, IOException
+    protected void writeTableData(StudyExportContext ctx, VirtualFile vf, Set<String> tableNames, StudyQuerySchema schema,
+                                  StudyQuerySchema projectSchema, @Nullable ContainerFilter containerFilter) throws SQLException, IOException
     {
         for (String tableName : tableNames)
         {
             StudyQuerySchema.TablePackage tableAndContainer = schema.getTablePackage(ctx, projectSchema, tableName);
-            writeTableData(ctx, vf, tableAndContainer.getTableInfo(), getDefaultColumns(tableAndContainer.getTableInfo()), null);
+            writeTableData(ctx, vf, tableAndContainer.getTableInfo(), getDefaultColumns(tableAndContainer.getTableInfo()), containerFilter);
         }
     }
 

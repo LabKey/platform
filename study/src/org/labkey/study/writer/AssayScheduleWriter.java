@@ -72,13 +72,17 @@ public class AssayScheduleWriter extends DefaultStudyDesignWriter implements Int
         writeTableData(ctx, vf, assaySpecimenTable, getDefaultColumns(assaySpecimenTable), null);
         writeAssaySpecimenVisitMap(ctx, vf);
 
+        // assay schedule lookup values can have data stored at both the project and folder level
+        ContainerFilter containerFilter = new ContainerFilter.CurrentPlusProject(ctx.getUser());
+
         // export the study design tables (no need to export tableinfo's as these are non-extensible)
         Set<String> designTableNames = new HashSet<>();
         designTableNames.add(StudyQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME);
         designTableNames.add(StudyQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME);
         designTableNames.add(StudyQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
+        designTableNames.add(StudyQuerySchema.STUDY_DESIGN_UNITS_TABLE_NAME);
 
-        writeTableData(ctx, vf, designTableNames, schema, projectSchema);
+        writeTableData(ctx, vf, designTableNames, schema, projectSchema, containerFilter);
     }
 
     private void writeAssaySpecimenVisitMap(StudyExportContext ctx, VirtualFile vf) throws Exception

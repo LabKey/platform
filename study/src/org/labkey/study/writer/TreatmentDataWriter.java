@@ -81,7 +81,7 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
 
         // write the table infos and data rows
         writeTableInfos(ctx, vf, treatmentTableNames, schema, projectSchema, SCHEMA_FILENAME);
-        writeTableData(ctx, vf, treatmentTableNames, schema, projectSchema);
+        writeTableData(ctx, vf, treatmentTableNames, schema, projectSchema, null);
 
         // for the TreatmentVisitMap table, export the visit sequence num & cohort label instead of the ID
         writeTreatmentVisitMap(ctx, vf);
@@ -89,12 +89,15 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
         // export the study design tables (no need to export tableinfo's as these are non-extensible)
         Set<String> designTableNames = new HashSet<>();
 
+        // study designs can have lookup data stored at both the project and folder level
+        ContainerFilter containerFilter = new ContainerFilter.CurrentPlusProject(ctx.getUser());
+
         designTableNames.add(StudyQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME);
         designTableNames.add(StudyQuerySchema.STUDY_DESIGN_ROUTES_TABLE_NAME);
         designTableNames.add(StudyQuerySchema.STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
         designTableNames.add(StudyQuerySchema.STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
 
-        writeTableData(ctx, vf, designTableNames, schema, projectSchema);
+        writeTableData(ctx, vf, designTableNames, schema, projectSchema, containerFilter);
     }
 
     private void writeTreatmentVisitMap(StudyExportContext ctx, VirtualFile vf) throws Exception

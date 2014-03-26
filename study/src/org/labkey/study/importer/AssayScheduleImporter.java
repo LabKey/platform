@@ -68,6 +68,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                 studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME);
                 studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME);
                 studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
+                studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_UNITS_TABLE_NAME);
 
                 StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
                 for (String studyDesignTableName : studyDesignTableNames)

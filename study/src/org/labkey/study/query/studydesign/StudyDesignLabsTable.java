@@ -16,8 +16,13 @@
 package org.labkey.study.query.studydesign;
 
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.query.FieldKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.StudyQuerySchema;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * User: cnathe
@@ -29,5 +34,17 @@ public class StudyDesignLabsTable extends StudyDesignLookupBaseTable
     {
         super(schema, StudySchema.getInstance().getTableInfoStudyDesignLabs(), filter);
         setName("StudyDesignLabs");
+
+        List<FieldKey> defaultColumns = new ArrayList<>(Arrays.asList(
+                FieldKey.fromParts("Name"),
+                FieldKey.fromParts("Label"),
+                FieldKey.fromParts("Description"),
+                FieldKey.fromParts("Inactive"),
+                FieldKey.fromParts("PI"),
+                FieldKey.fromParts("Summary"),
+                FieldKey.fromParts("Institution")
+        ));
+        setDefaultVisibleColumns(defaultColumns);
+
     }
 }

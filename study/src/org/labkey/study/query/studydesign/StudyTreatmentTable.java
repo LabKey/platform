@@ -46,6 +46,7 @@ public class StudyTreatmentTable extends DefaultStudyDesignTable
         defaultVisibleColumns.add(FieldKey.fromParts("Container"));
         defaultVisibleColumns.add(FieldKey.fromParts("Label"));
         defaultVisibleColumns.add(FieldKey.fromParts("Description"));
+        defaultVisibleColumns.add(FieldKey.fromParts("DescriptionRendererType"));
     }
 
     public StudyTreatmentTable(Domain domain, DbSchema dbSchema, UserSchema schema)

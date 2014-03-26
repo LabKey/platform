@@ -29,6 +29,6 @@ public class StudyPropertiesWriter extends DefaultStudyDesignWriter
         writeTableInfos(ctx, dir, studyTableNames, schema, projectSchema, SCHEMA_FILENAME);
 
         studyTableNames.add(StudyQuerySchema.OBJECTIVE_TABLE_NAME);
-        writeTableData(ctx, dir, studyTableNames, schema, projectSchema);
+        writeTableData(ctx, dir, studyTableNames, schema, projectSchema, null);
     }
 }
