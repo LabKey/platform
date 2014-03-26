@@ -90,7 +90,8 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         for (int i = 0; i < characters.length; i++)
         {
             char character = characters[i];
-            if (!Character.isLetterOrDigit(character))
+            boolean isAtoZchar = character >= 'A' && character <= 'z';
+            if (!Character.isDigit(character) && !isAtoZchar)
                 characters[i] = '_';
         }
         protocolName = new String(characters);
