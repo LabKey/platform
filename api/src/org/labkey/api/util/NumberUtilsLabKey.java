@@ -12,11 +12,10 @@ import org.junit.Test;
 public class NumberUtilsLabKey
 {
     /*
-        This is like NumberUtils.isNumber(), except it works like you'd expect. In other words, it doesn't require
-        Java formatted numbers with type characters.
+        This is like NumberUtils.isNumber(), except it doesn't have a huge bug in it. NumberUtils.isNumber(), as of 3.3.1, returns
+        false for "0.0", "0.4790", and other decimal numbers with leading zeroes. https://issues.apache.org/jira/browse/LANG-992
 
-        It's obviously just a convenience method for determining if Double.parseDouble(String str) will throw
-        NumberFormatException, but we do this kind of check in a lot of places.
+        We'll remove this method once we've upgraded to a version that fixes the problem.
     */
     public static boolean isNumber(String str)
     {
