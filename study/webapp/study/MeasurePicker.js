@@ -772,7 +772,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 type: 'vbox',
                 align: 'stretch'
             },
-            cls: this.sourcePanelCls,
+            cls: this.sourcePanelCls + ' iScroll',
             title : 'Source',
             border: false,
             items: [ this.getSourcesView() ]
@@ -787,7 +787,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             this.sourcesView = Ext4.create('Ext.view.View', {
                 ui: this.ui,
                 border: false,
-                cls: 'sourcegrid iScroll',
+                cls: 'sourcegrid',
                 flex: 1,
                 height: '100%',
                 autoScroll: true,
@@ -836,7 +836,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 type: 'vbox',
                 align: 'stretch'
             },
-            cls : this.measurePanelCls,
+            cls : this.measurePanelCls + ' iScroll',
             title : 'Variables',
             border: false,
             items: [ this.getMeasuresGrid() ]
@@ -852,7 +852,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 border: false,
                 flex: 1,
                 ui: this.ui,
-                cls : 'measuresgrid iScroll',
+                cls : 'measuresgrid',
                 hidden: true, // starts hidden until a source query is chosen
                 listeners : {
                     select : this.onMeasureSelect,
