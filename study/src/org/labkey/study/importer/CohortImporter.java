@@ -76,7 +76,7 @@ public class CohortImporter implements InternalStudyImporter
 
             if (cohortType == CohortType.AUTOMATIC)
             {
-                Integer dataSetId = cohortsXml.getDatasetId();
+                Integer dataSetId = cohortsXml.getDatasetId() != 0 ? cohortsXml.getDatasetId() : null;
                 String dataSetProperty = cohortsXml.getDatasetProperty();
 
                 if (p2c == null)

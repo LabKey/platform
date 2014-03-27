@@ -56,8 +56,10 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by klum on 1/24/14.
@@ -114,7 +116,7 @@ public class DefaultStudyDesignImporter
 
             if (table != null)
             {
-                final Domain domain = table.getDomain();
+                final Domain domain = schema.getTable(tableName).getDomain();
 
                 if (domain != null)
                 {
@@ -127,10 +129,12 @@ public class DefaultStudyDesignImporter
 
                     // Create a map of existing properties
                     Map<String, PropertyDescriptor> current = new CaseInsensitiveHashMap<>();
+                    Set<String> currentPropertyURIs = new HashSet<>();
                     for (DomainProperty dp : domain.getProperties())
                     {
                         PropertyDescriptor pd = dp.getPropertyDescriptor();
                         current.put(pd.getName(), pd);
+                        currentPropertyURIs.add(pd.getPropertyURI());
                     }
 
                     DomainURIFactory factory = new DomainURIFactory() {
@@ -150,6 +154,10 @@ public class DefaultStudyDesignImporter
                     {
                         if (!current.containsKey(ipd.pd.getName()))
                         {
+                            // issue 19943, renamed property descriptors retain their original name-based uri
+                            if (currentPropertyURIs.contains(ipd.pd.getPropertyURI()))
+                                ipd.pd.setPropertyURI(getUniquePropertyURI(ipd.pd.getPropertyURI(), currentPropertyURIs));
+
                             domain.addPropertyOfPropertyDescriptor(ipd.pd);
                             isDirty = true;
                         }
@@ -177,6 +185,17 @@ public class DefaultStudyDesignImporter
             else
                 ctx.getLogger().info("No tableinfo for table : " + tableName);
         }
+    }
+
+    private String getUniquePropertyURI(String uri, Set<String> existingURIs)
+    {
+        for (int i=1; i < 50; i++)
+        {
+            String newUri = uri + "." + i;
+            if (!existingURIs.contains(newUri))
+                return newUri;
+        }
+        return uri;
     }
 
     protected void importTableData(StudyImportContext ctx, VirtualFile vf, StudyQuerySchema.TablePackage tablePackage,

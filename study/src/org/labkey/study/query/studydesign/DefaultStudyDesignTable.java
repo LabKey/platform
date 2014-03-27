@@ -20,16 +20,23 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
@@ -54,8 +61,34 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
         super(StorageProvisioner.createTableInfo(domain, dbSchema), schema);
 
         _domain = domain;
-        wrapAllColumns(true);
 
+        for (ColumnInfo baseColumn : getRealTable().getColumns())
+        {
+            ColumnInfo col = addWrapColumn(baseColumn);
+
+            if (baseColumn.isHidden())
+                col.setHidden(true);
+
+            String propertyURI = col.getPropertyURI();
+            if (null != propertyURI)
+            {
+                PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propertyURI, schema.getContainer());
+                if (null != pd && pd.getLookupQuery() != null)
+                    col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
+
+                if (pd != null && pd.getPropertyType() == PropertyType.MULTI_LINE)
+                {
+                    col.setDisplayColumnFactory(new DisplayColumnFactory() {
+                        public DisplayColumn createRenderer(ColumnInfo colInfo)
+                        {
+                            DataColumn dc = new DataColumn(colInfo);
+                            dc.setPreserveNewlines(true);
+                            return dc;
+                        }
+                    });
+                }
+            }
+        }
         _defaultVisibleColumns.add(FieldKey.fromParts("Container"));
         _defaultVisibleColumns.add(FieldKey.fromParts("Created"));
         _defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));

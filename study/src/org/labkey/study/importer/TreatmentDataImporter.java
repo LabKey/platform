@@ -17,10 +17,13 @@ package org.labkey.study.importer;
 
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
@@ -67,44 +70,50 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
             VirtualFile vf = root.getDir(dirType.getDir());
             if (vf != null)
             {
-                // import any custom treatment table properties
-                importTableinfo(ctx, vf, TreatmentDataWriter.SCHEMA_FILENAME);
-
-                // import project-level tables first, since study-level may reference them
-                StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
-                StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
-
-                // study design tables
-                ctx.getLogger().info("Importing study design data tables");
-                List<String> studyDesignTableNames = new ArrayList<>();
-
-                studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME);
-                studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_ROUTES_TABLE_NAME);
-                studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
-                studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
-
-                for (String studyDesignTableName : studyDesignTableNames)
+                DbScope scope = StudySchema.getInstance().getSchema().getScope();
+                try (DbScope.Transaction transaction = scope.ensureTransaction())
                 {
-                    StudyQuerySchema.TablePackage tablePackage = schema.getTablePackage(ctx, projectSchema, studyDesignTableName);
-                    importTableData(ctx, vf, tablePackage, null, new PreserveExistingProjectData(ctx.getUser(), tablePackage.getTableInfo(), "Name"));
+                    // import any custom treatment table properties
+                    importTableinfo(ctx, vf, TreatmentDataWriter.SCHEMA_FILENAME);
+
+                    // import project-level tables first, since study-level may reference them
+                    StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
+                    StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
+
+                    // study design tables
+                    ctx.getLogger().info("Importing study design data tables");
+                    List<String> studyDesignTableNames = new ArrayList<>();
+
+                    studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME);
+                    studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_ROUTES_TABLE_NAME);
+                    studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
+                    studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
+
+                    for (String studyDesignTableName : studyDesignTableNames)
+                    {
+                        StudyQuerySchema.TablePackage tablePackage = schema.getTablePackage(ctx, projectSchema, studyDesignTableName);
+                        importTableData(ctx, vf, tablePackage, null, new PreserveExistingProjectData(ctx.getUser(), tablePackage.getTableInfo(), "Name"));
+                    }
+
+                    // add the treatment specific tables
+                    ctx.getLogger().info("Importing treatment data tables");
+                    StudyQuerySchema.TablePackage productTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PRODUCT_TABLE_NAME);
+                    importTableData(ctx, vf, productTablePackage, _productTableTransform, null);
+
+                    StudyQuerySchema.TablePackage productAntigenTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+                    importTableData(ctx, vf, productAntigenTablePackage, null, _productAntigenTableTransform);
+
+                    StudyQuerySchema.TablePackage treatmentTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_TABLE_NAME);
+                    importTableData(ctx, vf, treatmentTablePackage, _treatmentTableTransform, null);
+
+                    StudyQuerySchema.TablePackage treatmentProductTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+                    importTableData(ctx, vf, treatmentProductTablePackage, null, _treatmentProductTransform);
+
+                    StudyQuerySchema.TablePackage treatmentVisitMapTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_VISIT_MAP_TABLE_NAME);
+                    importTableData(ctx, vf, treatmentVisitMapTablePackage, null, _treatmentVisitMapTransform);
+
+                    transaction.commit();
                 }
-
-                // add the treatment specific tables
-                ctx.getLogger().info("Importing treatment data tables");
-                StudyQuerySchema.TablePackage productTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PRODUCT_TABLE_NAME);
-                importTableData(ctx, vf, productTablePackage, _productTableTransform, null);
-
-                StudyQuerySchema.TablePackage productAntigenTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
-                importTableData(ctx, vf, productAntigenTablePackage, null, _productAntigenTableTransform);
-
-                StudyQuerySchema.TablePackage treatmentTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_TABLE_NAME);
-                importTableData(ctx, vf, treatmentTablePackage, _treatmentTableTransform, null);
-
-                StudyQuerySchema.TablePackage treatmentProductTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
-                importTableData(ctx, vf, treatmentProductTablePackage, null, _treatmentProductTransform);
-
-                StudyQuerySchema.TablePackage treatmentVisitMapTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_VISIT_MAP_TABLE_NAME);
-                importTableData(ctx, vf, treatmentVisitMapTablePackage, null, _treatmentVisitMapTransform);
             }
             else
                 throw new ImportException("Unable to open the folder at : " + dirType.getDir());
