@@ -939,7 +939,12 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                     if (this.sourcesStoreKeys.indexOf(key) == -1)
                     {
                         this.sourcesStoreKeys.push(key);
-                        this.sourcesStoreData.push(measure);
+                        this.sourcesStoreData.push({
+                            schemaName : measure.schemaName,
+                            queryName : measure.queryName,
+                            queryLabel : measure.queryLabel,
+                            description : measure.queryDescription
+                        });
                     }
                 }, this);
 

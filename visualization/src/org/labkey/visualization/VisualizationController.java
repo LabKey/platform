@@ -439,6 +439,8 @@ public class VisualizationController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class GetMeasuresAction<Form extends MeasuresForm> extends ApiAction<Form>
     {
+        private Map<QueryDefinition, TableInfo> _tableInfoMap = new HashMap<>();
+
         public ApiResponse execute(Form form, BindException errors) throws Exception
         {
             Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = new HashMap<>();
@@ -512,6 +514,11 @@ public class VisualizationController extends SpringActionController
             {
                 QueryDefinition query = entry.getValue();
 
+                List<QueryException> errors = new ArrayList<>();
+                TableInfo tableInfo = query.getTable(errors, false);
+                if (errors.isEmpty() && !_tableInfoMap.containsKey(query))
+                    _tableInfoMap.put(query, tableInfo);
+
                 // add measure properties
                 FieldKey fieldKey = entry.getKey().first;
                 ColumnInfo column = entry.getKey().second;
@@ -519,6 +526,7 @@ public class VisualizationController extends SpringActionController
                 props.put("schemaName", query.getSchema().getName());
                 props.put("queryName", getQueryName(query));
                 props.put("queryLabel", getQueryLabel(query));
+                props.put("queryDescription", getQueryDefinition(query));
                 props.put("isUserDefined", !query.isTableQueryDefinition());
                 props.put("isDemographic", isDemographicQueryDefinition(query));
                 props.put("id", count++);
@@ -557,17 +565,35 @@ public class VisualizationController extends SpringActionController
 
         private String getQueryName(QueryDefinition query, boolean asLabel)
         {
-            List<QueryException> errors = new ArrayList<>();
-            TableInfo table = query.getTable(errors, false);
             String queryName = query.getName();
-            if (table instanceof DataSetTable && errors.isEmpty())
+
+            if (_tableInfoMap.containsKey(query))
             {
-                if (asLabel)
-                    queryName = ((DataSetTable) table).getDataSet().getLabel();
-                else
-                    queryName = ((DataSetTable) table).getDataSet().getName();
+                TableInfo table = _tableInfoMap.get(query);
+                if (table instanceof DataSetTable)
+                {
+                    if (asLabel)
+                        queryName = ((DataSetTable) table).getDataSet().getLabel();
+                    else
+                        queryName = ((DataSetTable) table).getDataSet().getName();
+                }
             }
+
             return queryName;
+        }
+
+        private String getQueryDefinition(QueryDefinition query)
+        {
+            String description = query.getDescription();
+
+            if (_tableInfoMap.containsKey(query))
+            {
+                TableInfo table = _tableInfoMap.get(query);
+                if (table instanceof DataSetTable)
+                    description = ((DataSetTable) table).getDataSet().getDescription();
+            }
+
+            return description;
         }
     }
 
