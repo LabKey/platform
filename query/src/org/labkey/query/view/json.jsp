@@ -30,7 +30,7 @@
 </form>
 <p>&nbsp;</p>
 <div id=cellset></div>
-<script type="text/javascript">                               s
+<script type="text/javascript">
     LABKEY.requiresExt4Sandbox(true);
 </script>
 <script src="<%=h(request.getContextPath())%>/query/olap.js"></script>
