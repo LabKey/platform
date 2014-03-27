@@ -31,6 +31,7 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.AggregateRowConfig;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -85,6 +86,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 abstract public class AbstractTableInfo implements TableInfo, MemTrackable
@@ -1499,6 +1501,91 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
 
 
         _importTemplates = list;
+    }
+
+    private Map<TableInfo, Pair<ColumnInfo, QueryForeignKey>> _extensions = null;
+
+    /**
+     * Adds all columns from the extension table to this table.
+     * Columns may be added one to this table one at a time
+     * from the extension table using {@link .addExtendColumn()}
+     * or all at once when <code>addAllColumns</code> is true.
+     *
+     * TODO: inserts/udpates/deletes to the extended table aren't supported yet.
+     * CONSIDER: Only allow SchemaTableInfo as extensionTable.
+     *
+     * @param extensionTable Table that will be added to this table.
+     * @param foreignKey     Column name on this table used to construct a query lookup to the extension table's lookup key column.
+     * @param lookupKey      Column name on the extension table used to construct a query lookup from this table.
+     * @param addAllColumns  If true, all columns from the extensionTable will be added to this table.
+     * @return If addAllColumns is true, the set of columns added to this table otherwise an empty list.
+     */
+    public Collection<ColumnInfo> extendWith(TableInfo extensionTable, String foreignKey, String lookupKey, boolean addAllColumns)
+    {
+        checkLocked();
+
+        QueryForeignKey extensionFK = new QueryForeignKey(extensionTable, null, lookupKey, null);
+
+        ColumnInfo extensionCol = getColumn(foreignKey);
+        assert extensionCol != null;
+
+        if (_extensions == null)
+            _extensions = new HashMap<>();
+        _extensions.put(extensionTable, Pair.of(extensionCol, extensionFK));
+
+        if (addAllColumns)
+        {
+            List<ColumnInfo> baseColumns = extensionTable.getColumns();
+            Collection<ColumnInfo> columns = new ArrayList<>(baseColumns.size());
+            for (ColumnInfo col : baseColumns)
+            {
+                // Skip the lookup column itself
+                if (col.getName().equalsIgnoreCase(lookupKey))
+                    continue;
+
+                ColumnInfo lookupCol = extensionFK.createLookupColumn(extensionCol, col.getName());
+                AliasedColumn aliased = new AliasedColumn(this, col.getName(), lookupCol);
+                if (lookupCol.isHidden())
+                    aliased.setHidden(true);
+
+                columns.add(addColumn(aliased));
+            }
+
+            return columns;
+        }
+        else
+        {
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Add a column from an extension table to this table.  The table must first be registered via
+     * {@link #extendWith(TableInfo, String, String, boolean)}
+     *
+     * @param extensionTable Table registered with .extend().
+     * @param baseColName    Column from extensionTable to be added to this table.
+     * @param newColName     The column name for the newly added column, if not null.
+     * @return The newly added column.
+     */
+    public ColumnInfo addExtendColumn(TableInfo extensionTable, String baseColName, @Nullable String newColName)
+    {
+        checkLocked();
+        assert _extensions != null && _extensions.containsKey(extensionTable) : "You must call extendWith before adding extended columns.";
+
+        Pair<ColumnInfo, QueryForeignKey> extension = _extensions.get(extensionTable);
+        ColumnInfo extensionCol = extension.first;
+        QueryForeignKey extensionFK = extension.second;
+
+        newColName = Objects.toString(newColName, baseColName);
+
+        ColumnInfo col = extensionTable.getColumn(baseColName);
+        ColumnInfo lookupCol = extensionFK.createLookupColumn(extensionCol, col.getName());
+        AliasedColumn aliased = new AliasedColumn(this, newColName, lookupCol);
+        if (lookupCol.isHidden())
+            aliased.setHidden(true);
+
+        return addColumn(aliased);
     }
 
     @Override

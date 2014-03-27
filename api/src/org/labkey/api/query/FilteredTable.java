@@ -29,8 +29,6 @@ import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
