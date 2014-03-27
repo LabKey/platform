@@ -113,6 +113,8 @@ public abstract class DefaultStudyDesignWriter
                 continue;
             if (FieldKey.fromParts("ModifiedBy").equals(col.getFieldKey()))
                 continue;
+            if (col.isProtected())
+                continue;
 
             columns.add(col);
         }

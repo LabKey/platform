@@ -49,6 +49,8 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -419,7 +421,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         // try to merge with any existing request forms, even though there doesn't seem to be the notion of a duplicate value
         Set<String> currentInputs = new HashSet<>();
         List<SampleManager.SpecimenRequestInput> inputs = new ArrayList<>();
-        for (SampleManager.SpecimenRequestInput input : SampleManager.getInstance().getNewSpecimenRequestInputs(ctx.getContainer()))
+        for (SampleManager.SpecimenRequestInput input : SampleManager.getInstance().getNewSpecimenRequestInputs(ctx.getContainer(), false))
         {
             inputs.add(input);
             currentInputs.add(input.getTitle());
@@ -448,6 +450,14 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                     else
                         ctx.getLogger().info("There is currently a form with the same title: " + form.getTitle() + ", skipping this from import");
                 }
+                Collections.sort(inputs, new Comparator<SampleManager.SpecimenRequestInput>()
+                {
+                    @Override
+                    public int compare(SampleManager.SpecimenRequestInput o1, SampleManager.SpecimenRequestInput o2)
+                    {
+                        return o1.getDisplayOrder() - o2.getDisplayOrder();
+                    }
+                });
                 SampleManager.getInstance().saveNewSpecimenRequestInputs(ctx.getContainer(), inputs.toArray(new SampleManager.SpecimenRequestInput[inputs.size()]));
             }
         }

@@ -1183,11 +1183,11 @@ public class SampleManager implements ContainerManager.ContainerListener
         return getNewSpecimenRequestInputs(container, true);
     }
 
-    private SpecimenRequestInput[] getNewSpecimenRequestInputs(Container container, boolean createIfMissing) throws SQLException
+    public SpecimenRequestInput[] getNewSpecimenRequestInputs(Container container, boolean createIfMissing) throws SQLException
     {
         String parentObjectLsid = getRequestInputObjectLsid(container);
         Map<String,ObjectProperty> resourceProperties = OntologyManager.getPropertyObjects(container, parentObjectLsid);
-        SpecimenRequestInput[] inputs = null;
+        SpecimenRequestInput[] inputs = new SpecimenRequestInput[0];
         if (resourceProperties == null || resourceProperties.size() == 0)
         {
             if (createIfMissing)
@@ -1293,7 +1293,7 @@ public class SampleManager implements ContainerManager.ContainerListener
     private boolean requestInputsChanged(Container container, SpecimenRequestInput[] newInputs) throws SQLException
     {
         SpecimenRequestInput[] oldInputs = getNewSpecimenRequestInputs(container, false);
-        if (oldInputs == null)
+        if (oldInputs.length == 0)
             return true;
         else if (oldInputs.length != newInputs.length)
             return true;

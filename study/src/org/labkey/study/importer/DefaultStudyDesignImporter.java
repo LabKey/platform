@@ -161,6 +161,8 @@ public class DefaultStudyDesignImporter
                             domain.addPropertyOfPropertyDescriptor(ipd.pd);
                             isDirty = true;
                         }
+                        else
+                            ctx.getLogger().warn("Table: " + tableName + " already has a field named: " + ipd.pd.getName() + ", ignoring the imported field");
                     }
                     for (Map.Entry<String, List<ConditionalFormat>> entry : pds.formats.entrySet())
                     {
