@@ -112,10 +112,19 @@ Ext.onReady(function () {
             isUpload: true,
             params: exportParams,
             callback: function (options, success, response) {
+                dr.getMessageArea().removeAll();
                 if (!success) {
                     dr.showErrorMessage("Error exporting to Excel.");
                 }
-                document.form.removeChild(newForm);
+                if (response.responseXML && response.responseXML.title) {
+                    var title = response.responseXML.title;
+                    var index = title.indexOf("Error Page -- ");
+                    if (index != -1) {
+                        var message = title.substring(index + "Error Page -- ".length);
+                        dr.showErrorMessage("Error: " + message);
+                    }
+                }
+                document.body.removeChild(newForm);
             }
         });
 
