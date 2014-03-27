@@ -52,6 +52,7 @@ public class ManageAssayScheduleTester
         if (sampleType != null) _test._ext4Helper.selectComboBoxItem(Ext4Helper.Locators.formItemWithInputNamed("SampleType"), true, sampleType);
 
         _test.clickAndWait(addAssayConfigWindow.append(Locator.ext4Button("Submit")));
+        _test.waitForElement(Locators.assayGridRow(name));
     }
 
     public void setAssayPlan(String assayPlan)
@@ -63,6 +64,11 @@ public class ManageAssayScheduleTester
 
     public static class Locators
     {
+        public static Locator.XPathLocator assayGridRow(String name)
+        {
+            return Locator.id("AssaySpecimenConfigGrid").append(Locator.tagWithAttribute("tr", "role", "row").append("/td[1]").withText(name));
+        }
+
         public static Locator.XPathLocator assayScheduleGridCheckbox(String assay, String visit)
         {
             Locator.XPathLocator assayScheduleGrid = Locator.id("assaySpecimenVisitMappingTable");

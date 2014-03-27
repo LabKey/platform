@@ -74,11 +74,12 @@ public class ManageImmunizationsTester
         if (count != null) _test.setFormElement(Locator.name("SubjectCount"), count.toString());
         _test.clickButton("Next", 0);
         addTreatmentVisitMappingsToSelectedCohort(treatmentVisits);
+        _test.waitForElement(Locators.immunizationScheduleCohortRow(label));
     }
 
     public void editCohort(String label)
     {
-        Locator.XPathLocator groupRow = Locator.id("immunization-schedule-grid").append(Locator.tagWithAttribute("tr", "role", "row").append("/td[1]").withText(label));
+        Locator.XPathLocator groupRow = Locators.immunizationScheduleCohortRow(label);
         _test.doubleClick(groupRow);
         _test.waitForElement(editCohortWindow);
     }
@@ -258,6 +259,11 @@ public class ManageImmunizationsTester
         {
             return Locator.tagWithClass("table", "x4-form-fieldcontainer")
                     .withPredicate(Locator.tagWithText("label", label + ":"));
+        }
+
+        public static Locator.XPathLocator immunizationScheduleCohortRow(String label)
+        {
+            return Locator.id("immunization-schedule-grid").append(Locator.tagWithAttribute("tr", "role", "row").append("/td[1]").withText(label));
         }
     }
 }
