@@ -191,7 +191,7 @@ public class ServerManager
 
         MondrianServer server = ref.get();
         OlapConnection olap = server.getConnection(DATA_SOURCE_NAME, catalog, null);
-        MemTracker.getInstance().put(olap);
+//        MemTracker.getInstance().put(olap);
         OlapConnection wrap = OlapConnectionProxy.wrap(olap, ref);
         MemTracker.getInstance().put(wrap);
         return wrap;
