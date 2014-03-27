@@ -30,11 +30,21 @@
 </form>
 <p>&nbsp;</p>
 <div id=cellset></div>
-<script type="text/javascript">
+<script type="text/javascript">                               s
     LABKEY.requiresExt4Sandbox(true);
 </script>
 <script src="<%=h(request.getContextPath())%>/query/olap.js"></script>
 <script type="text/javascript">
+    var resizer = new (Ext4||Ext).Resizable("query", {
+        handles: 'se',
+        minWidth: 200,
+        minHeight: 100,
+        maxWidth: 1200,
+        maxHeight: 800,
+        pinned: true
+    });
+
+
 
     var connection = null;
     var cube = null;
@@ -118,10 +128,11 @@
         html.push('<table class="labkey-data-region labkey-show-borders"><tr>');
         if (cs.axes.length>1)
                 html.push('<td>&nbsp;</td>');
+
         for (var col=0 ; col<cs.axes[0].positions.length ; col++)
         {
             // only showing first member (handle hierarchy)
-            html.push('<td class="labkey-column-header">' + h(cs.axes[0].positions[col][0].name) + "</td>");
+            html.push('<td class="labkey-column-header" title="' + h(cs.axes[0].positions[col][0].uniqueName) +'">' + h(cs.axes[0].positions[col][0].name) + "</td>");
         }
         html.push("</tr>");
 
@@ -150,7 +161,7 @@
                 for (var p=0; p < pos.length; p++)
                 {
                     // only showing first member (handle hierarchy)
-                    html.push('<td class="labkey-column-header">' + h(cs.axes[1].positions[row][p].uniqueName) + "</td>");
+                    html.push('<td class="labkey-column-header" title="' + h(cs.axes[1].positions[row][p].uniqueName) +'">' +  h(cs.axes[1].positions[row][p].name) + "</td>");
                 }
 
                 for (var col=0 ; col<cs.axes[0].positions.length ; col++)
