@@ -1573,14 +1573,22 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         checkLocked();
         assert _extensions != null && _extensions.containsKey(extensionTable) : "You must call extendWith before adding extended columns.";
 
+        ColumnInfo baseCol = extensionTable.getColumn(baseColName);
+        return addExtendColumn(extensionTable, baseCol, newColName);
+    }
+
+    public ColumnInfo addExtendColumn(TableInfo extensionTable, ColumnInfo baseCol, @Nullable String newColName)
+    {
+        checkLocked();
+        assert _extensions != null && _extensions.containsKey(extensionTable) : "You must call extendWith before adding extended columns.";
+
         Pair<ColumnInfo, QueryForeignKey> extension = _extensions.get(extensionTable);
         ColumnInfo extensionCol = extension.first;
         QueryForeignKey extensionFK = extension.second;
 
-        newColName = Objects.toString(newColName, baseColName);
+        newColName = Objects.toString(newColName, baseCol.getName());
 
-        ColumnInfo col = extensionTable.getColumn(baseColName);
-        ColumnInfo lookupCol = extensionFK.createLookupColumn(extensionCol, col.getName());
+        ColumnInfo lookupCol = extensionFK.createLookupColumn(extensionCol, baseCol.getName());
         AliasedColumn aliased = new AliasedColumn(this, newColName, lookupCol);
         if (lookupCol.isHidden())
             aliased.setHidden(true);
