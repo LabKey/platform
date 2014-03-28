@@ -223,14 +223,6 @@ public class UserController extends SpringActionController
 
             return url;
         }
-
-        public ActionURL getImpersonateRoleURL(Container c, String uniqueRoleName, ActionURL returnURL)
-        {
-            ActionURL url = new ActionURL(ImpersonateRoleAction.class, c);
-            url.addParameter("roleName", uniqueRoleName);
-            url.addReturnURL(returnURL);
-            return url;
-        }
     }
 
     public static void registerAdminConsoleLinks()
@@ -716,12 +708,8 @@ public class UserController extends SpringActionController
 
     private void requiresProjectOrSiteAdmin() throws UnauthorizedException
     {
-        requiresProjectOrSiteAdmin(getUser());
-    }
+        User user = getUser();
 
-
-    private void requiresProjectOrSiteAdmin(User user) throws UnauthorizedException
-    {
         if (!(user.isSiteAdmin() || isProjectAdmin(user)))
             throw new UnauthorizedException();
     }
@@ -2167,68 +2155,6 @@ public class UserController extends SpringActionController
             response.put("roles", responseRoles);
 
             return response;
-        }
-    }
-
-
-    @Deprecated // TODO: Delete
-    public static class ImpersonateRoleForm extends ReturnUrlForm
-    {
-        private String _roleName;
-
-        public String getRoleName()
-        {
-            return _roleName;
-        }
-
-        public void setRoleName(String roleName)
-        {
-            _roleName = roleName;
-        }
-    }
-
-
-    @Deprecated // TODO: Delete
-    @RequiresNoPermission  // Permissions are handled below
-    public class ImpersonateRoleAction extends SimpleRedirectAction<ImpersonateRoleForm>
-    {
-        @Override
-        public void checkPermissions() throws UnauthorizedException
-        {
-            super.checkPermissions();
-
-            User user = getUser();
-
-            if (user.isImpersonated())
-            {
-                ImpersonationContext impersonationContext = user.getImpersonationContext();
-                if (!(impersonationContext instanceof ImpersonateRoleContextFactory.ImpersonateRoleContext))
-                    throw new UnauthorizedException("Can't impersonate; you're already impersonating");
-
-                requiresProjectOrSiteAdmin(impersonationContext.getAdminUser());
-            }
-            else
-            {
-                requiresProjectOrSiteAdmin();
-            }
-        }
-
-        public ActionURL getRedirectURL(ImpersonateRoleForm form) throws Exception
-        {
-            String roleName = StringUtils.trimToNull(form.getRoleName());
-
-            if (null == roleName)
-                throw new NotFoundException("roleName parameter is missing");
-
-            Role role = RoleManager.getRole(form.getRoleName());
-
-            if (null == role)
-                throw new NotFoundException("Role not found");
-
-            ActionURL returnURL = form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL());
-            SecurityManager.impersonateRole(getViewContext(), role, returnURL);
-
-            return returnURL;
         }
     }
 
