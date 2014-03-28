@@ -292,7 +292,7 @@
                 fieldLabel       : Ext4.util.Format.htmlEncode(meta.label || meta.caption || meta.caption || meta.header || meta.name),
                 originalConfig   : meta,
                 //we assume the store's translateMeta() will handle this
-                allowBlank       : meta.allowBlank!==false,
+                allowBlank       : meta.required!==true,
                 //disabled: meta.editable===false,
                 name             : meta.name,
                 dataIndex        : meta.dataIndex || meta.name,
@@ -303,13 +303,22 @@
                 validateOnChange : true
             };
 
-            var helpPopup = meta.helpPopup || [
-                'Type: ' + (meta.friendlyType ? meta.friendlyType : ''),
-                'Required: ' + !meta.allowBlank,
-                'Description: ' + (meta.description || '')
-            ];
+            var helpPopup = meta.helpPopup || (function() {
+                var array = [];
 
-            if(Ext4.isArray(helpPopup))
+                if (meta.friendlyType)
+                    array.push(meta.friendlyType);
+
+                if (meta.description)
+                    array.push(Ext4.util.Format.htmlEncode(meta.description));
+
+                if (!field.allowBlank)
+                    array.push("This field is required.");
+
+                return array;
+            }());
+
+            if (Ext4.isArray(helpPopup))
                 helpPopup = helpPopup.join('<br>');
             field.helpPopup = helpPopup;
 
@@ -332,7 +341,7 @@
                 }
 
                 Ext4.apply(field, {
-                    //this purpose of this is to allow other editors like multiselect, checkboxGroup, etc.
+                    // the purpose of this is to allow other editors like multiselect, checkboxGroup, etc.
                     xtype           : (meta.xtype || 'labkey-combo'),
                     forceSelection  : true,
                     typeAhead       : true,
