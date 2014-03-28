@@ -34,35 +34,35 @@ public class PopupUserView extends PopupMenuView
     public PopupUserView(ViewContext context)
     {
         User user = context.getUser();
-        NavTree tree = new NavTree(user.getFriendlyName());
-        tree.addChild("My Account", PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(context.getContainer(), user.getUserId(), context.getActionURL()));
-
         Container c = context.getContainer();
+        ActionURL currentURL = context.getActionURL();
 
-        ImpersonationContext impersonationContext = user.getImpersonationContext();
-        @Nullable Container project = c.getProject();
-
-        // If user is already impersonating then we need to check permissions on the actual admin user
-        User adminUser = impersonationContext.isImpersonating() ? impersonationContext.getAdminUser() : user;
-
-        // Must be site or project admin (folder admins can't impersonate)
-        if (adminUser.isSiteAdmin() || (null != project && project.hasPermission(adminUser, AdminPermission.class)))
-        {
-            ActionURL currentURL = context.getActionURL();
-            NavTree impersonateMenu = new NavTree("Impersonate");
-            impersonationContext.addMenu(impersonateMenu, c, user, currentURL);
-
-            if (impersonateMenu.hasChildren())
-                tree.addChild(impersonateMenu);
-        }
+        NavTree tree = new NavTree(user.getFriendlyName());
+        tree.addChild("My Account", PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), currentURL));
 
         if (user.isImpersonated())
         {
-            tree.addChild("Stop Impersonating", PageFlowUtil.urlProvider(LoginUrls.class).getStopImpersonatingURL(context.getContainer(), user.getImpersonationContext().getReturnURL()));
+            tree.addChild("Stop Impersonating", PageFlowUtil.urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()));
         }
         else
         {
-            tree.addChild("Sign Out", PageFlowUtil.urlProvider(LoginUrls.class).getLogoutURL(context.getContainer()));
+            ImpersonationContext impersonationContext = user.getImpersonationContext();
+            @Nullable Container project = c.getProject();
+
+            // If user is already impersonating then we need to check permissions on the actual admin user
+            User adminUser = impersonationContext.isImpersonating() ? impersonationContext.getAdminUser() : user;
+
+            // Must be site or project admin (folder admins can't impersonate)
+            if (adminUser.isSiteAdmin() || (null != project && project.hasPermission(adminUser, AdminPermission.class)))
+            {
+                NavTree impersonateMenu = new NavTree("Impersonate");
+                impersonationContext.addMenu(impersonateMenu, c, user, currentURL);
+
+                if (impersonateMenu.hasChildren())
+                    tree.addChild(impersonateMenu);
+            }
+
+            tree.addChild("Sign Out", PageFlowUtil.urlProvider(LoginUrls.class).getLogoutURL(c));
         }
 
         tree.setId("userMenu");

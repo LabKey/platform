@@ -22,20 +22,17 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
@@ -49,19 +46,9 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
 {
     private final @Nullable GUID _projectId;
     private final int _adminUserId;
-    private final Set<String> _roleNames = new HashSet<>();
+    private final Set<String> _roleNames;
     private final URLHelper _returnURL;
-
-    private String _cacheKey;
-
-    @Deprecated // TODO: Delete
-    public ImpersonateRoleContextFactory(Container project, User adminUser, Role role, URLHelper returnURL)
-    {
-        _projectId = null != project ? project.getEntityId() : null;
-        _adminUserId = adminUser.getUserId();
-        _returnURL = returnURL;
-        addRole(role);
-    }
+    private final String _cacheKey;
 
     public ImpersonateRoleContextFactory(Container project, User adminUser, Collection<Role> roles, URLHelper returnURL)
     {
@@ -69,31 +56,25 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
         _adminUserId = adminUser.getUserId();
         _returnURL = returnURL;
 
-        // TODO: inline, simplify, and immutify addRoles()
+        // Compute the navtree cache key based on role names + project: NavTree will be different for each role set + project combination
+        StringBuilder cacheKey = new StringBuilder("/impersonationRole=");
+        Set<String> roleNames = new HashSet<>();
+
         for (Role role : roles)
-            addRole(role);
-    }
-
-    public void addRole(Role role)
-    {
-        synchronized (_roleNames)
         {
-            _roleNames.add(role.getUniqueName());
+            String roleName = role.getUniqueName();
+            roleNames.add(roleName);
 
-            // Compute the navtree cache key now; NavTree will be different for each role set + project combination
-            StringBuilder cacheKey = new StringBuilder("/impersonationRole=");
-
-            for (String roleName : _roleNames)
-            {
-                cacheKey.append(roleName);
-                cacheKey.append("|");
-            }
-
-            if (null != _projectId)
-                cacheKey.append("/impersonationProject=").append(_projectId);
-
-            _cacheKey = cacheKey.toString();
+            cacheKey.append(roleName);
+            cacheKey.append("|");
         }
+
+        _roleNames = Collections.unmodifiableSet(roleNames);
+
+        if (null != _projectId)
+            cacheKey.append("/impersonationProject=").append(_projectId);
+
+        _cacheKey = cacheKey.toString();
     }
 
     @Override
@@ -101,10 +82,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
     {
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
 
-        synchronized (_roleNames)
-        {
-            return new ImpersonateRoleContext(project, getAdminUser(), new HashSet<>(_roleNames), _returnURL);
-        }
+        return new ImpersonateRoleContext(project, getAdminUser(), _roleNames, _returnURL);
     }
 
     @Override
@@ -134,49 +112,6 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
         menu.addChild(newRoleMenu);
     }
 
-    @Deprecated // TODO: Delete
-    static void addOldMenu(NavTree menu, Container c, ActionURL currentURL, Set<Role> currentImpersonationRoles)
-    {
-        // At the moment, impersonating roles in the root is worthless... we require Reader before allowing TroubleShooter,
-        // AuditLog, or EmailAddress roles, but Reader results in a 401 with no way to impersonate additional roles. This
-        // should be fixed with improved impersonation UI, #19451.
-        if (c.isRoot())
-            return;
-
-        UserUrls userURLs = PageFlowUtil.urlProvider(UserUrls.class);
-        NavTree roleMenu = new NavTree("Role");
-
-        boolean hasRead = false;
-
-        for (Role impersonatingRole : currentImpersonationRoles)
-        {
-            if (impersonatingRole.getPermissions().contains(ReadPermission.class))
-            {
-                hasRead = true;
-                break;
-            }
-        }
-
-        // All roles that are applicable in this Container
-        Collection<Role> validRoles = getValidImpersonationRoles(c);
-
-        // Now add them to the menu, disabling the ones that can't be selected
-        for (Role role : validRoles)
-        {
-            NavTree roleItem = new NavTree(role.getName(), userURLs.getImpersonateRoleURL(c, role.getUniqueName(), currentURL));
-
-            // Disable roles that are already being impersonated. Also, disable all roles that don't include read
-            // permissions, until a role that does has been selected. #14835
-            if (currentImpersonationRoles.contains(role) || (!hasRead && !role.getPermissions().contains(ReadPermission.class)))
-                roleItem.setDisabled(true);
-
-            roleMenu.addChild(roleItem);
-        }
-
-        if (roleMenu.hasChildren())
-            menu.addChild(roleMenu);
-    }
-
     public static Collection<Role> getValidImpersonationRoles(Container c)
     {
         Collection<Role> validRoles = new LinkedList<>();
@@ -190,22 +125,17 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
         return validRoles;
     }
 
-    public class ImpersonateRoleContext implements ImpersonationContext
+    private class ImpersonateRoleContext extends AbstractImpersonatingContext
     {
-        private final @Nullable Container _project;
-        /** Hold on to the role names and not the Roles themselves for serialization purposes. See issue 15660 */
+        /** Hold on to the role names and not the Roles themselves for serialization purposes. See issue #15660 */
         private final Set<String> _roleNames;
         private transient Set<Role> _roles;
-        private final URLHelper _returnURL;
-        private final User _adminUser;
 
         private ImpersonateRoleContext(@Nullable Container project, User user, Set<String> roleNames, URLHelper returnURL)
         {
+            super(user, project, returnURL);
             verifyPermissions(project, user);
-            _project = project;
             _roleNames = roleNames;
-            _returnURL = returnURL;
-            _adminUser = user;
         }
 
         // Throws if user is not authorized.
@@ -225,42 +155,15 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
         }
 
         @Override
-        public boolean isImpersonating()
-        {
-            return true;
-        }
-
-        @Override
         public boolean isAllowedGlobalRoles()
         {
             return false;
         }
 
         @Override
-        public @Nullable Container getImpersonationProject()
-        {
-            return _project;
-        }
-
-        @Override
-        public User getAdminUser()
-        {
-            return _adminUser;
-        }
-
-        @Override
         public String getNavTreeCacheKey()
         {
-            synchronized (_roleNames)
-            {
-                return _cacheKey;
-            }
-        }
-
-        @Override
-        public URLHelper getReturnURL()
-        {
-            return _returnURL;
+            return _cacheKey;
         }
 
         @Override
@@ -275,6 +178,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
             return ImpersonateRoleContextFactory.this;
         }
 
+        // TODO: More expensive than it needs to be... should hold onto a Set<Roles> and use custom serialization (using unique names)
         private synchronized Set<Role> getRoles()
         {
             if (_roles == null)
@@ -290,13 +194,6 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
         public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
         {
             return new HashSet<>(getRoles());
-        }
-
-        @Override
-        public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
-        {
-            // TODO: Remove this once ExtJS UI is finalized
-            ImpersonateRoleContextFactory.addOldMenu(menu, c, currentURL, getRoles());
         }
     }
 }

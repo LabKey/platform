@@ -28,7 +28,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
@@ -127,15 +126,17 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         return validGroups;
     }
 
-    public class ImpersonateGroupContext implements ImpersonationContext
+    private class ImpersonateGroupContext extends AbstractImpersonatingContext
     {
         private final Group _group;
         private final int[] _groups;
-        private final URLHelper _returnURL;
-        private final User _adminUser;
 
         private ImpersonateGroupContext(@Nullable Container project, User user, Group group, URLHelper returnURL)
         {
+            // project is used to verify authorization, but isn't needed for impersonation itself... the group itself will
+            // limit the admin user appropriately
+            super(user, null, returnURL);
+
             if (!canImpersonateGroup(project, user, group))
                 throw new UnauthorizedImpersonationException("You are not allowed to impersonate this group", getFactory());
 
@@ -156,15 +157,7 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
 
             // Now expand the list of groups to include all groups they belong to (see #13802)
             _groups = GroupMembershipCache.computeAllGroups(seedGroups);
-            _returnURL = returnURL;
             _group = group;
-            _adminUser = user;
-        }
-
-        @Override
-        public boolean isImpersonating()
-        {
-            return true;
         }
 
         @Override
@@ -174,29 +167,10 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         }
 
         @Override
-        @Nullable
-        public Container getImpersonationProject()
-        {
-            return null;
-        }
-
-        @Override
-        public User getAdminUser()
-        {
-            return _adminUser;
-        }
-
-        @Override
         public String getNavTreeCacheKey()
         {
             // NavTree for user impersonating a group will be different for each group
             return "/impersonationGroup=" + _group.getUserId();
-        }
-
-        @Override
-        public URLHelper getReturnURL()
-        {
-            return _returnURL;
         }
 
         @Override
@@ -215,12 +189,6 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
         {
             return user.getStandardContextualRoles();
-        }
-
-        @Override
-        public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
-        {
-            // If impersonating a group, don't add an impersonation menu
         }
     }
 }

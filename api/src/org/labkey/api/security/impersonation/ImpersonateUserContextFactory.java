@@ -28,7 +28,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
@@ -166,18 +165,12 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
         return validUsers;
     }
 
-    private class ImpersonateUserContext implements ImpersonationContext
+    private class ImpersonateUserContext extends AbstractImpersonatingContext
     {
-        private final @Nullable Container _project;
-        private final User _adminUser;
-        private final URLHelper _returnURL;
-
         private ImpersonateUserContext(@Nullable Container project, User adminUser, User impersonatedUser, URLHelper returnURL)
         {
+            super(adminUser, project, returnURL);
             verifyPermissions(project, impersonatedUser, adminUser);
-            _project = project;
-            _adminUser = adminUser;
-            _returnURL = returnURL;
         }
 
         // Keep in sync with getValidImpersonationUsers() above
@@ -197,28 +190,10 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
         }
 
         @Override
-        public boolean isImpersonating()
-        {
-            return true;
-        }
-
-        @Override
-        public @Nullable Container getImpersonationProject()
-        {
-            return _project;
-        }
-
-        @Override
         public boolean isAllowedGlobalRoles()
         {
             // Don't allow global roles (site admin, developer, etc.) if user is being impersonated within a project
-            return null == _project;
-        }
-
-        @Override
-        public User getAdminUser()
-        {
-            return _adminUser;
+            return null == getImpersonationProject();
         }
 
         @Override
@@ -227,16 +202,10 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
             // NavTree for user being impersonated will be different per impersonating user per project
             String suffix = "/impersonatingUser=" + getAdminUser().getUserId();
 
-            if (null != _project)
-                suffix += "/impersonationProject=" + _project.getId();
+            if (null != getImpersonationProject())
+                suffix += "/impersonationProject=" + getImpersonationProject().getId();
 
             return suffix;
-        }
-
-        @Override
-        public URLHelper getReturnURL()
-        {
-            return _returnURL;
         }
 
         @Override
@@ -255,12 +224,6 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
         public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
         {
             return user.getStandardContextualRoles();
-        }
-
-        @Override
-        public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
-        {
-            // If impersonating a user, don't add an impersonation menu
         }
     }
 }
