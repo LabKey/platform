@@ -1092,27 +1092,14 @@ public class ReportsController extends SpringActionController
 
         private void addScriptDependencies(ScriptReportBean bean, LinkedHashSet<ClientDependency> clientDependencies, LinkedHashSet<String> cssScripts)
         {
-            // add all the client dependencies (.css, .js. and libs)
-            if (null != bean.getScriptDependencies())
-            {
-                String [] scriptDependencies = bean.getScriptDependencies().split(";");
-                for (String d : scriptDependencies)
-                {
-                    if (StringUtils.isNotBlank(d))
-                    {
-                        ClientDependency cd;
-                        String s = d.trim();
+            LinkedHashSet<ClientDependency> scriptDependencies = ClientDependency.fromList(bean.getScriptDependencies());
 
-                        if (ClientDependency.isExternalDependency(s))
-                            cd = ClientDependency.fromURIPath(s);
-                        else
-                            cd = ClientDependency.fromFilePath(s);
+            // add any css dependencies we have
+            for (ClientDependency cd : scriptDependencies)
+                cssScripts.addAll(cd.getCssPaths(getContainer(), getUser(), AppProps.getInstance().isDevMode()));
 
-                        cssScripts.addAll(cd.getCssPaths(getContainer(), getUser(), AppProps.getInstance().isDevMode()));
-                        clientDependencies.add(cd);
-                    }
-                }
-            }
+            // add these to our client dependencies
+            clientDependencies.addAll(scriptDependencies);
         }
     }
 
