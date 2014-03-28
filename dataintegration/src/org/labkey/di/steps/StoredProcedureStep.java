@@ -18,6 +18,7 @@ package org.labkey.di.steps;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -26,8 +27,6 @@ import org.labkey.api.data.dialect.SqlDialect.ParameterInfo;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.util.DateUtil;
 import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
@@ -147,17 +146,11 @@ public class StoredProcedureStep extends TransformTask
     {
         procSchema = _meta.getTargetSchema().toString();
         procName = _meta.getTargetQuery();
-        QuerySchema schema = DefaultSchema.get(_context.getUser(), _context.getContainer(), procSchema);
-        if (schema == null || schema.getDbSchema() == null)
-        {
-            getJob().error("Schema '" + procSchema + "' does not exist or user does not have permission.");
-            return false;
-        }
-        else
-        {
-            scope = schema.getDbSchema().getScope();
-            dialect = scope.getSqlDialect();
-        }
+
+        DbSchema schema = DbSchema.get(procSchema);
+        scope = schema.getScope();
+        dialect = scope.getSqlDialect();
+
         return true;
     }
 
