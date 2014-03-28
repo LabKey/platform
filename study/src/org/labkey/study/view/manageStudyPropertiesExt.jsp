@@ -274,9 +274,10 @@ var renderTypes = {<%
 String comma = "";
 for (WikiRendererType type : getRendererTypes())
 {
-    %><%=comma%><%=q(type.name())%>:<%=q(type.getDisplayName())%><%
+    %><%=text(comma)%><%=q(type.name())%>:<%=q(type.getDisplayName())%><%
     comma = ",";
-}%>};
+}
+%>};
 
 
 function renderFormPanel(data, editable){
@@ -287,7 +288,7 @@ function renderFormPanel(data, editable){
     {
 %>
     protocolDocs.push({
-        logo : '<%= request.getContextPath() + att.getFileIcon() %>',
+        logo : '<%=getWebappURL(att.getFileIcon())%>',
         text : '<%= h(shortenFileName(att.getName()))%>',
         removeURL : <%=PageFlowUtil.jsString(att.getName())%>,
         atId : <%=x%>
@@ -408,7 +409,7 @@ function renderFormPanel(data, editable){
                     comma = "";
                     for (WikiRendererType type : getRendererTypes())
                     {
-                        %><%=comma%>[<%=q(type.name())%>,<%=q(type.getDisplayName())%>]<%
+                        %><%=text(comma)%>[<%=q(type.name())%>,<%=q(type.getDisplayName())%>]<%
                         comma = ",";
                     }
 %>
@@ -522,6 +523,8 @@ function renderFormPanel(data, editable){
                 }
             }
         }
+        else if (items[i].xtype == 'checkbox')    // Checkbox doesn't respect "value"
+            items[i].checked = value;
         else
             items[i].value = value;
     }
