@@ -222,6 +222,30 @@ public class ClientDependency
         return ClientDependency.fromFilePath(path, ModeTypeEnum.BOTH);
     }
 
+    // converts a semi-colon delimited list of dependencies into a set of
+    // appropriate ClientDependency objects
+    public static LinkedHashSet<ClientDependency> fromList(String dependencies)
+    {
+        LinkedHashSet<ClientDependency> set = new LinkedHashSet<>();
+        if (null != dependencies)
+        {
+            String [] list = dependencies.split(";");
+            for (String d : list)
+            {
+                if (StringUtils.isNotBlank(d))
+                {
+                    String s = d.trim();
+                    if (isExternalDependency(s))
+                        set.add(fromURIPath(s));
+                    else
+                        set.add(fromFilePath(s));
+                }
+            }
+        }
+
+        return set;
+    }
+
     public static ClientDependency fromFilePath(String path, ModeTypeEnum.Enum mode)
     {
         path = path.replaceAll("^/", "");
