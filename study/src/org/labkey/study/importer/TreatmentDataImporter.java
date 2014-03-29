@@ -42,13 +42,14 @@ import java.util.Map;
 public class TreatmentDataImporter extends DefaultStudyDesignImporter implements InternalStudyImporter
 {
     // shared transform data structures
-    Map<Integer, Integer> _productIdMap = new HashMap<>();
+    Map<Object, Object> _productIdMap = new HashMap<>();
+    Map<Object, Object> _productAntigenIdMap = new HashMap<>();
     Map<Integer, Integer> _treatmentIdMap = new HashMap<>();
 
     Map<String, CohortImpl> _cohortMap = new HashMap<>();
     Map<Double, Visit> _visitMap = new HashMap<>();
 
-    private ProductTableTransform _productTableTransform = new ProductTableTransform();
+    private ProductTableTransform _productTableTransform = new ProductTableTransform(_productIdMap, "Label");
     private ProductAntigenTableTransform _productAntigenTableTransform = new ProductAntigenTableTransform();
     private TreatmentTableTransform _treatmentTableTransform = new TreatmentTableTransform();
     private TreatmentProductTransform _treatmentProductTransform = new TreatmentProductTransform();
@@ -92,16 +93,25 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     for (String studyDesignTableName : studyDesignTableNames)
                     {
                         StudyQuerySchema.TablePackage tablePackage = schema.getTablePackage(ctx, projectSchema, studyDesignTableName);
-                        importTableData(ctx, vf, tablePackage, null, new PreserveExistingProjectData(ctx.getUser(), tablePackage.getTableInfo(), "Name"));
+                        importTableData(ctx, vf, tablePackage, null, new PreserveExistingProjectData(ctx.getUser(), tablePackage.getTableInfo(), "Name", null, null));
                     }
 
                     // add the treatment specific tables
                     ctx.getLogger().info("Importing treatment data tables");
                     StudyQuerySchema.TablePackage productTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PRODUCT_TABLE_NAME);
-                    importTableData(ctx, vf, productTablePackage, _productTableTransform, null);
+                    importTableData(ctx, vf, productTablePackage, _productTableTransform,
+                           ctx.isDataspaceProject() ? new PreserveExistingProjectData(ctx.getUser(), productTablePackage.getTableInfo(), "Label", "RowId", _productIdMap) : null);
 
                     StudyQuerySchema.TablePackage productAntigenTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
-                    importTableData(ctx, vf, productAntigenTablePackage, null, _productAntigenTableTransform);
+                    List<TransformHelper> transformHelpers = new ArrayList<>();
+                    TransformHelper transformHelperComp = null;
+                    if (ctx.isDataspaceProject())
+                    {
+                        transformHelpers.add(new PreserveExistingProjectData(ctx.getUser(), productAntigenTablePackage.getTableInfo(), "GenBankId", "RowId", _productAntigenIdMap));
+                    }
+                    transformHelpers.add(_productAntigenTableTransform);
+                    transformHelperComp = new TransformHelperComposition(transformHelpers);
+                    importTableData(ctx, vf, productAntigenTablePackage, null, transformHelperComp);
 
                     StudyQuerySchema.TablePackage treatmentTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_TABLE_NAME);
                     importTableData(ctx, vf, treatmentTablePackage, _treatmentTableTransform, null);
@@ -111,6 +121,13 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
 
                     StudyQuerySchema.TablePackage treatmentVisitMapTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_VISIT_MAP_TABLE_NAME);
                     importTableData(ctx, vf, treatmentVisitMapTablePackage, null, _treatmentVisitMapTransform);
+
+                    if (ctx.isDataspaceProject())
+                    {
+                        ctx.setProductIdMap(_productIdMap);
+                        ctx.setProductAntigenIdMap(_productAntigenIdMap);
+                        // TODO: personnel, treatment?
+                    }
 
                     transaction.commit();
                 }
@@ -125,10 +142,35 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
      */
     private class ProductTableTransform implements TransformBuilder
     {
-        @Override
-        public void createTransformInfo(StudyImportContext ctx, List<Map<String, Object>> origRows, List<Map<String, Object>> insertedRows)
+        protected String _fieldName;
+        protected Map<Object, Object> _idMap;
+
+        public ProductTableTransform(Map<Object, Object> idMap, String fieldName)
         {
-            for (int i=0; i < origRows.size(); i++)
+            _idMap = idMap;
+            _fieldName = fieldName;
+        }
+
+        public void createTransformInfo(StudyImportContext ctx, List<Map<String, Object>> origRows, List<Map<String, Object>> insertedRows) throws ImportException
+        {
+            Map<String, Map<String, Object>> rowMap = new HashMap<>();
+            for (Map<String, Object> row: origRows)
+                if (row.containsKey(_fieldName))
+                    rowMap.put(row.get(_fieldName).toString(), row);
+
+            for (Map<String, Object> inserted : insertedRows)
+            {
+                if (inserted.containsKey(_fieldName))
+                {
+                    Map<String, Object> orig = rowMap.get(inserted.get(_fieldName));
+                    if (orig.containsKey("RowId") && inserted.containsKey("RowId"))
+                    {
+                        _idMap.put(orig.get("RowId"), inserted.get("RowId"));
+                    }
+                }
+            }
+        }
+/*            for (int i=0; i < origRows.size(); i++)
             {
                 Map<String, Object> orig = origRows.get(i);
                 Map<String, Object> inserted = insertedRows.get(i);
@@ -138,7 +180,8 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     _productIdMap.put((Integer)orig.get("RowId"), (Integer)inserted.get("RowId"));
                 }
             }
-        }
+
+*/
     }
 
     private class ProductAntigenTableTransform implements TransformHelper

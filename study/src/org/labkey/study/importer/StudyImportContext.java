@@ -29,6 +29,7 @@ import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * User: adam
@@ -38,6 +39,12 @@ import java.io.IOException;
 public class StudyImportContext extends AbstractContext
 {
     private File _studyXml;
+
+    // Study design table maps (used only in Dataspace case) to help map dataset FKs
+    private Map<Object, Object> _productIdMap;
+    private Map<Object, Object> _productAntigenIdMap;
+    private Map<Object, Object> _personnelIdMap;
+    private Map<Object, Object> _treatmentIdMap;
 
     // Required for xstream serialization on Java 7
     @SuppressWarnings({"UnusedDeclaration"})
@@ -161,5 +168,45 @@ public class StudyImportContext extends AbstractContext
         {
             return null;
         }
+    }
+
+    public Map<Object, Object> getProductIdMap()
+    {
+        return _productIdMap;
+    }
+
+    public void setProductIdMap(Map<Object, Object> productIdMap)
+    {
+        _productIdMap = productIdMap;
+    }
+
+    public Map<Object, Object> getProductAntigenIdMap()
+    {
+        return _productAntigenIdMap;
+    }
+
+    public void setProductAntigenIdMap(Map<Object, Object> productAntigenIdMap)
+    {
+        _productAntigenIdMap = productAntigenIdMap;
+    }
+
+    public Map<Object, Object> getPersonnelIdMap()
+    {
+        return _personnelIdMap;
+    }
+
+    public void setPersonnelIdMap(Map<Object, Object> personnelIdMap)
+    {
+        _personnelIdMap = personnelIdMap;
+    }
+
+    public Map<Object, Object> getTreatmentIdMap()
+    {
+        return _treatmentIdMap;
+    }
+
+    public void setTreatmentIdMap(Map<Object, Object> treatmentIdMap)
+    {
+        _treatmentIdMap = treatmentIdMap;
     }
 }

@@ -44,7 +44,7 @@ public class DataspaceStudyFolderType extends StudyFolderType
         {
             try
             {
-                StudyManager.getInstance().deleteAllStudyData(container, user);
+                StudyManager.getInstance().deleteAllStudyData(container, user);     // TODO: should we retain study data?
             }
             catch (SQLException e)
             {

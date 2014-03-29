@@ -55,7 +55,8 @@ import org.labkey.study.query.StudyQuerySchema;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -206,8 +207,7 @@ public class DefaultStudyDesignImporter
     {
         TableInfo tableInfo = tablePackage.getTableInfo();
         Container container = tablePackage.getContainer();
-//        if (!tablePackage.isProjectLevel())           // TODO: implement a insert if not there using ETL Merge
-        if (!"Study".equalsIgnoreCase(tableInfo.getName()))
+        if (!"Study".equalsIgnoreCase(tableInfo.getName()) && !tablePackage.isProjectLevel())
         {
             // Consider: defer to QueryUpdateService?
             deleteData(container, tableInfo);
@@ -287,6 +287,24 @@ public class DefaultStudyDesignImporter
         List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows) throws ImportException;
     }
 
+    protected class TransformHelperComposition implements TransformHelper
+    {
+        private List<TransformHelper> _transformHelpers = new ArrayList<>();
+
+        public TransformHelperComposition(List<TransformHelper> transformHelpers)
+        {
+            _transformHelpers = transformHelpers;
+        }
+
+        @Override
+        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows) throws ImportException
+        {
+            List<Map<String, Object>> result = origRows;
+            for (TransformHelper transformHelper : _transformHelpers)
+                result = transformHelper.transform(ctx, result);
+            return result;
+        }
+    }
 
     /**
      * A transform helper which checks whether a data value already exists at the project level before importing the
@@ -296,14 +314,18 @@ public class DefaultStudyDesignImporter
     {
         private User _user;
         private TableInfo _tableInfo;
-        private String _fieldName;
-        private Collection _existingValues;
+        private String _fieldName;          // field to match on
+        private String _keyName;            // key field name
+        private Map<String, Object> _existingValues;
+        private Map _keyMap;
 
-        public PreserveExistingProjectData(User user, TableInfo table, String fieldName)
+        public PreserveExistingProjectData(User user, TableInfo table, String fieldName, @Nullable String keyName, @Nullable Map<Object, Object> keyMap)
         {
             _user = user;
             _tableInfo = table;
             _fieldName = fieldName;
+            _keyName = keyName;
+            _keyMap = keyMap;
         }
 
         private void initializeData()
@@ -318,8 +340,20 @@ public class DefaultStudyDesignImporter
                         currentFilter = _tableInfo.getContainerFilter();
                         ((ContainerFilterable)_tableInfo).setContainerFilter(new ContainerFilter.Project(_user));
                     }
-                    TableSelector selector = new TableSelector(_tableInfo, Collections.singleton(_fieldName));
-                    _existingValues = selector.getCollection(String.class);
+
+                    Set<String> columnNames = new HashSet<>();
+                    columnNames.add(_fieldName);
+                    if (null != _keyName)
+                        columnNames.add(_keyName);
+                    Collection<Map<String, Object>> existingRows;
+                    TableSelector selector = new TableSelector(_tableInfo, columnNames);
+                    existingRows = selector.getMapCollection();
+
+                    _existingValues = new HashMap<>();
+                    for (Map<String, Object> row : existingRows)
+                    {
+                        _existingValues.put(row.get(_fieldName).toString(), row.get(_keyName));
+                    }
                 }
                 finally
                 {
@@ -342,9 +376,15 @@ public class DefaultStudyDesignImporter
 
                 if (currentRow.containsKey(_fieldName))
                 {
-                    String value = currentRow.get(_fieldName).toString();
-                    if (!_existingValues.contains(value))
+                    String fieldNameValue = currentRow.get(_fieldName).toString();
+                    if (!_existingValues.containsKey(fieldNameValue))
                         newRows.add(currentRow);
+                    else if (null != _keyMap)
+                    {
+                        Object key = currentRow.get(_keyName);
+                        if (null != key)
+                            _keyMap.put(key, _existingValues.get(fieldNameValue));
+                    }
                 }
             }
             return newRows;

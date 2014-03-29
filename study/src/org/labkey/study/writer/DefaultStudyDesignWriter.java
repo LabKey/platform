@@ -198,24 +198,39 @@ public abstract class DefaultStudyDesignWriter
             List<FieldKey> fieldKeys = new ArrayList<>();
             for (ColumnInfo column : columns)
             {
-                if (null != column.getFk())
+                ForeignKey fk = column.getFk();
+                if (isColumnNumericForeignKeyToSharedTable(fk))
                 {
-                    ForeignKey fk = column.getFk();
-                    String lookupColumnName = fk.getLookupColumnName();
-                    TableInfo lookupTableInfo = fk.getLookupTableInfo();
-                    if (null != lookupTableInfo && StudyQuerySchema.isDataspaceProjectTable(lookupTableInfo.getName()) &&
-                            null != lookupColumnName && lookupTableInfo.getColumn(lookupColumnName).getJdbcType().isNumeric())
-                    {
-                        // Add extra column to tsv for numeric foreign key
-                        String displayName = fk.getLookupDisplayName();
-                        if (null == displayName)
-                            displayName = lookupTableInfo.getTitleColumn();
-                        fieldKeys.add(FieldKey.fromParts(column.getName(), displayName));   // TODO: push into ForeignKey
-                    }
+                    // Add extra column to tsv for numeric foreign key
+                    fieldKeys.add(getExtraForeignKeyColumnFieldKey(column, fk));
                 }
             }
             Map<FieldKey, ColumnInfo> newColumnMap = QueryService.get().getColumns(table, fieldKeys);
             columns.addAll(newColumnMap.values());
         }
+    }
+
+    public static boolean isColumnNumericForeignKeyToSharedTable(ForeignKey fk)
+    {
+        if (null != fk)
+        {
+            String lookupColumnName = fk.getLookupColumnName();
+            TableInfo lookupTableInfo = fk.getLookupTableInfo();
+            if (null != lookupTableInfo && StudyQuerySchema.isDataspaceProjectTable(lookupTableInfo.getName()) &&
+                null != lookupColumnName && lookupTableInfo.getColumn(lookupColumnName).getJdbcType().isNumeric())
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static FieldKey getExtraForeignKeyColumnFieldKey(ColumnInfo column, ForeignKey fk)
+    {
+        TableInfo lookupTableInfo = fk.getLookupTableInfo();
+        String displayName = fk.getLookupDisplayName();
+        if (null == displayName)
+            displayName = lookupTableInfo.getTitleColumn();
+        return FieldKey.fromParts(column.getName(), displayName);   // TODO: push into ForeignKey
     }
 }

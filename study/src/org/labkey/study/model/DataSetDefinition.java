@@ -93,6 +93,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.writer.DefaultStudyDesignWriter;
 import org.springframework.beans.factory.InitializingBean;
 
 import java.sql.Connection;
@@ -1857,6 +1858,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     {
                         // make sure guid is not null (12884)
                         out = it.addCoaleseColumn(match.getName(), in, new SimpleTranslator.GuidColumn());
+                    }
+                    else if (DefaultStudyDesignWriter.isColumnNumericForeignKeyToSharedTable(match.getFk()))
+                    {
+                        FieldKey extraColumnFieldKey = DefaultStudyDesignWriter.getExtraForeignKeyColumnFieldKey(match, match.getFk());
+                        out = it.addSharedTableLookupColumn(in, extraColumnFieldKey, match.getFk());
                     }
                     else
                     {

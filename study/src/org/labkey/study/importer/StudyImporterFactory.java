@@ -102,6 +102,9 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 // the initial study import task handles things like base study properties, MVIs, qcStates, visits, specimen settings, datasets definitions.
                 StudyImportInitialTask.doImport(job, studyImportContext, errors, studyFileName);
 
+                // study design tables
+                StudyImportFinalTask.doEarlyTableImport(job, studyImportContext, errors);
+
                 // the dataset import task handles importing the dataset data and updating the participant and participantVisit tables
                 String datasetsFileName = StudyImportDatasetTask.getDatasetsFileName(studyImportContext);
                 VirtualFile datasetsDirectory = StudyImportDatasetTask.getDatasetsDirectory(studyImportContext, studyDir);
