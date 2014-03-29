@@ -28,25 +28,33 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
@@ -483,6 +491,34 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
+    private class SharedTableLookupColumn implements Callable
+    {
+        final int _first;
+        final Integer _second;
+        Map<String, Integer> _lookupStringToRowIdMap;
+
+        SharedTableLookupColumn(int first, Integer second, Map<String, Integer> lookupStringToRowIdMap)
+        {
+            _first = first;
+            _second = second;
+            _lookupStringToRowIdMap = lookupStringToRowIdMap;
+        }
+
+        @Override
+        public Object call() throws Exception
+        {
+            Object value = _data.get(_first);
+            if (null != _second && !_lookupStringToRowIdMap.isEmpty())
+            {
+                String lookupString = (String)_data.get(_second);
+                Integer mappedValue = _lookupStringToRowIdMap.get(lookupString);
+                if (null != mappedValue)
+                    value = mappedValue;
+            }
+            return value;
+        }
+    }
+
     Map<String,Integer> getColumnNameMap()
     {
         if (null == _inputNameMap)
@@ -645,6 +681,39 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         return addColumn(col, new TimestampColumn());
     }
 
+
+    public int addSharedTableLookupColumn(int fromIndex, @Nullable FieldKey extraColumnFieldKey, @Nullable ForeignKey fk)
+    {
+        Integer extraColumnIndex = null;
+        final Map<String, Integer> lookupStringToRowIdMap = new HashMap<>();
+        if (null != extraColumnFieldKey)
+        {
+            assert (null != fk);
+            String columnHeaderName = extraColumnFieldKey.toDisplayString();
+            extraColumnIndex = getColumnNameMap().get(columnHeaderName);
+            TableInfo tableInfo = fk.getLookupTableInfo();
+            if (null != tableInfo)
+            {
+                Set<String> columnNames = new HashSet<>();
+                final String lookupColumnName = extraColumnFieldKey.getName();
+                final String lookupTablePkColumnName = tableInfo.getPkColumns().get(0).getName();     // Expect only 1
+                columnNames.add(lookupColumnName);
+                columnNames.add(lookupTablePkColumnName);
+                new TableSelector(tableInfo, columnNames).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
+                {
+                    @Override
+                    public void exec(Map<String, Object> row) throws SQLException
+                    {
+                        Integer rowId = (Integer)row.get(lookupTablePkColumnName);
+                        String name = (String)row.get(lookupColumnName);
+                        lookupStringToRowIdMap.put(name, rowId);
+                    }
+                });
+            }
+        }
+        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
+        return addColumn(col, new SharedTableLookupColumn(fromIndex, extraColumnIndex, lookupStringToRowIdMap));
+    }
 
     public static DataIterator wrapBuiltInColumns(DataIterator in , DataIteratorContext context, @Nullable Container c, @NotNull User user, @NotNull TableInfo target)
     {
