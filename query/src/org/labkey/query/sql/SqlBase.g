@@ -330,7 +330,7 @@ joinExpression
 fromRange
 	: (tableSpecification { weakKeywords(); } (AS? identifier)?) -> ^(RANGE tableSpecification identifier?)
 	| OPEN
-	    ( (subQuery) => subQuery CLOSE AS? identifier -> ^(RANGE subQuery identifier)
+	    ( (subQuery) => subQuery CLOSE (AS? identifier)? -> ^(RANGE subQuery identifier?)
 	    | joinExpression CLOSE -> joinExpression
 	    )
 	;

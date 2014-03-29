@@ -55,6 +55,8 @@ public class QTable implements QJoinOrTable
         if (_alias == null)
         {
             FieldKey fk = getTableKey();
+            if (null == fk)
+                return null;
             return null == fk.getParent() ? fk : new FieldKey(null, fk.getName());
         }
         return new FieldKey(null, _alias.getIdentifier());

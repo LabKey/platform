@@ -549,6 +549,12 @@ groupByLoop:
             QTable table = new QTable(expr);
             table.setAlias(alias);
             FieldKey aliasKey = table.getAlias();
+            if (null == aliasKey)
+            {
+                table.setAlias(new QIdentifier("_auto_alias_"+_tables.size() + "_"));
+                aliasKey = table.getAlias();
+                reportWarning("Subquery in FROM clause does not have an alias", expr);
+            }
             if (_tables.containsKey(aliasKey))
             {
                 parseError(aliasKey + " was specified more than once", table.getTable());
