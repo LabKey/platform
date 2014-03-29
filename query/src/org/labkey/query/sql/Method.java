@@ -47,6 +47,7 @@ import org.labkey.query.sql.antlr.SqlBaseLexer;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -379,6 +380,13 @@ public abstract class
             public MethodInfo getMethodInfo()
             {
                 return new UserNameInfo();
+            }
+        });
+        labkeyMethod.put("version", new Method("version", JdbcType.DECIMAL, 0, 0){
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new VersionMethodInfo(){};
             }
         });
         labkeyMethod.put("week", new JdbcMethod("week", JdbcType.INTEGER, 1, 1));
@@ -832,6 +840,19 @@ public abstract class
             ret.append("))");
 
             return ret;
+        }
+    }
+
+    class VersionMethodInfo extends AbstractQueryMethodInfo
+    {
+        VersionMethodInfo()
+        {
+            super(JdbcType.DECIMAL);
+        }
+
+        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+        {
+            return new SQLFragment("CAST(" + (new DecimalFormat("0.0###")).format(ModuleLoader.getInstance().getCoreModule().getVersion()) + " AS NUMERIC(15,4))");
         }
     }
 
