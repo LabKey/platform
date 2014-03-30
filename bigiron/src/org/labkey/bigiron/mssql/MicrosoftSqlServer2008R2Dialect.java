@@ -1034,6 +1034,13 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         GroupConcatInstallationManager.ensureGroupConcat(context);
     }
 
+    @Nullable
+    @Override
+    public String getAdminWarningMessage()
+    {
+        return _groupConcatInstalled ? null : "The GROUP_CONCAT aggregate function is not installed. This function is required for optimal operation of this server.";
+    }
+
     @Override
     public void prepare(DbScope scope)
     {
