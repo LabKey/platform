@@ -110,7 +110,7 @@ public class StudyPropertiesTable extends BaseStudyTable
         ColumnInfo dateBasedColumn = new ExprColumn(this, "DateBased", new SQLFragment("(CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + ".timepointType != 'VISIT' THEN " + bTRUE + " ELSE " + bFALSE + " END)"), JdbcType.BOOLEAN, timepointTypeColumn);
         dateBasedColumn.setUserEditable(false);
         dateBasedColumn.setHidden(true);
-        dateBasedColumn.setDescription("Deprecated.  Use 'timepointType' column instead.");
+        dateBasedColumn.setDescription("Deprecated. Use 'timepointType' column instead.");
         addColumn(dateBasedColumn);
 
         ColumnInfo lsidColumn = addRootColumn("LSID", false, false);

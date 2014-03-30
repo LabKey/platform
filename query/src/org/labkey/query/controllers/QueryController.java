@@ -1606,7 +1606,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.Export)
+    @Action(ActionType.SelectMetaData)    // This is called "export" but it doesn't export any data
     public class ExportScriptAction extends SimpleViewAction<ExportScriptForm>
     {
         public ModelAndView getView(ExportScriptForm form, BindException errors) throws Exception
