@@ -34,7 +34,7 @@ public interface WikiService
     public static final String SCHEMA_NAME = "wiki";
 
     /** Name of the table exposed with the list of renderer types */
-    public static final String RENDERER_TYPE_TABLE_NAME = "renderertype";
+    public static final String RENDERER_TYPE_TABLE_NAME = "RendererType";
 
     public WebPartView getView(Container c, String name, boolean renderContentOnly);
     public WebPartView getHistoryView(Container c, String name);
