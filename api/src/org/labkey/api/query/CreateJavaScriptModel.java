@@ -162,7 +162,7 @@ public class CreateJavaScriptModel extends ExportScriptModel
         {
             params.append(",\n");
             params.append(indent).append("success: onSuccess,\n");
-            params.append(indent).append("error: onError");
+            params.append(indent).append("failure: onError");
         }
 
         return params.toString();
