@@ -21,6 +21,7 @@ import org.labkey.api.data.EnumTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -39,10 +40,15 @@ public class WikiSchema extends UserSchema
 {
     private static final Set<String> TABLE_NAMES;
 
+    private static final String CURRENT_WIKI_VERSIONS = "CurrentWikiVersions";
+    private static final String ALL_WIKI_VERSIONS = "AllWikiVersions";
+
     static
     {
         Set<String> names = new TreeSet<>();
         names.add(WikiService.RENDERER_TYPE_TABLE_NAME);
+        names.add(CURRENT_WIKI_VERSIONS);
+        names.add(ALL_WIKI_VERSIONS);
         TABLE_NAMES = Collections.unmodifiableSet(names);
     }
 
@@ -77,6 +83,14 @@ public class WikiSchema extends UserSchema
             result.setPublicSchemaName(getName());
             result.setName(WikiService.RENDERER_TYPE_TABLE_NAME);
             return result;
+        }
+        else if (CURRENT_WIKI_VERSIONS.equalsIgnoreCase(name) || ALL_WIKI_VERSIONS.equalsIgnoreCase(name))
+        {
+            TableInfo dbTable = CommSchema.getInstance().getSchema().getTable(name);
+            FilteredTable filteredTable = new FilteredTable<>(dbTable, this);
+            filteredTable.wrapAllColumns(true);
+
+            return filteredTable;
         }
         return null;
     }

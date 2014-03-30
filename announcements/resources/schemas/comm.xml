@@ -253,7 +253,44 @@
       <ns:column columnName="RendererType"/>
     </ns:columns>
   </ns:table>
+  <ns:table tableName="CurrentWikiVersions" tableDbType="VIEW">
+    <ns:description>Contains one row per wiki page joined to its most current wiki version</ns:description>
+    <ns:tableUrl/>
+    <ns:columns>
+      <ns:column columnName="Container">
+        <ns:isHidden>true</ns:isHidden>
+      </ns:column>
+      <ns:column columnName="Name">
+        <ns:url>/wiki/page.view?name=${Name}</ns:url>
+      </ns:column>
+      <ns:column columnName="Title"/>
+      <ns:column columnName="Body"/>
+      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="ModifiedBy"/>
+      <ns:column columnName="Modified"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="AllWikiVersions" tableDbType="VIEW">
+    <ns:description>Contains one row per wiki version joined to its parent wiki page, providing the full version history of all pages</ns:description>
+    <ns:tableUrl/>
+    <ns:columns>
+      <ns:column columnName="Container">
+        <ns:isHidden>true</ns:isHidden>
+      </ns:column>
+      <ns:column columnName="Name">
+        <ns:url>/wiki/page.view?name=${Name}</ns:url>
+      </ns:column>
+      <ns:column columnName="Title"/>
+      <ns:column columnName="Body"/>
+      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="ModifiedBy"/>
+      <ns:column columnName="Modified"/>
+    </ns:columns>
+  </ns:table>
   <ns:table tableName="PagesAndVersions" tableDbType="VIEW">
+    <ns:description>Deprecated: Use CurrentWikiVersions instead. This view will be removed in a future release of LabKey Server.</ns:description>
     <ns:tableUrl/>
     <ns:columns>
       <ns:column columnName="Container">

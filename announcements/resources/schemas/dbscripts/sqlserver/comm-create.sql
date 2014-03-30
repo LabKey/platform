@@ -33,7 +33,23 @@ CREATE VIEW comm.Threads AS
 
 GO
 
--- View that joins each wiki with its current version.  Not used directly by LabKey, but helpful for administrators.
-CREATE VIEW comm.PagesAndVersions AS
+-- View that joins each wiki with its current version (one row per wiki)
+CREATE VIEW comm.CurrentWikiVersions AS
     SELECT p.Container, p.Name, pv.Title, pv.Body, p.CreatedBy, p.Created, p.ModifiedBy, p.Modified
         FROM comm.Pages p INNER JOIN comm.PageVersions pv ON p.PageVersionId = pv.RowId;
+
+GO
+
+-- View that joins every wiki version with its parent (one row per wiki version)
+CREATE VIEW comm.AllWikiVersions AS
+    SELECT p.Container, p.Name, pv.Title, pv.Body, p.CreatedBy, p.Created, p.ModifiedBy, p.Modified
+        FROM comm.PageVersions pv INNER JOIN comm.Pages p ON pv.PageEntityId = p.EntityId;
+
+GO
+
+-- Simple alias for backward compatibility... we used to expose the CurrentWikiVersions view as "PagesAndVersions", but
+-- switched to more explicit naming to distiniguish CurrentWikiVersions from AllWikiVersions
+CREATE VIEW comm.PagesAndVersions AS
+    SELECT * FROM comm.CurrentWikiVersions;
+
+GO
