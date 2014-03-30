@@ -13,19 +13,15 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
     title: 'Impersonate User',
 
     initComponent : function() {
-        this.buttons = ['->'];
-
-        this.buttons.push({
+        this.buttons = ['->', {
             text: 'Impersonate',
             scope: this,
-            handler: this.handleImpersonate
-        });
-
-        this.buttons.push({
+            handler: this.handleImpersonateUser
+        },{
             text: 'Cancel',
             scope: this,
             handler: this.handleCancel
-        });
+        }];
 
         this.items = [this.getPanel()];
 
@@ -48,7 +44,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
         });
 
         this.userCombo = Ext4.create('Ext.form.field.ComboBox', {
-            store: this.getImpersonationStore(),
+            store: this.getUserStore(),
             name: 'impersonate',
             allowBlank: false,
             valueField: 'userId',
@@ -74,7 +70,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
         };
     },
 
-    getImpersonationStore: function(){
+    getUserStore: function(){
         // define data models
         if (!Ext4.ModelManager.isRegistered('LABKEY.Security.ImpersonationUsers')) {
             Ext4.define('LABKEY.Security.ImpersonationUsers', {
@@ -100,7 +96,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
         });
     },
 
-    handleImpersonate: function(){
+    handleImpersonateUser: function(){
         if (!this.userCombo.isValid())
             return;
 
@@ -142,19 +138,15 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
     title: 'Impersonate Group',
 
     initComponent : function() {
-        this.buttons = ['->'];
-
-        this.buttons.push({
+        this.buttons = ['->', {
             text: 'Impersonate',
             scope: this,
-            handler: this.handleImpersonate
-        });
-
-        this.buttons.push({
+            handler: this.handleImpersonateGroup
+        },{
             text: 'Cancel',
             scope: this,
             handler: this.handleCancel
-        });
+        }];
 
         this.items = [this.getPanel()];
 
@@ -175,7 +167,7 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
         });
 
         this.groupCombo = Ext4.create('Ext.form.field.ComboBox', {
-            store: this.getImpersonationStore(),
+            store: this.getGroupStore(),
             name: 'impersonate',
             allowBlank: false,
             valueField: 'groupId',
@@ -201,7 +193,7 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
         };
     },
 
-    getImpersonationStore: function(){
+    getGroupStore: function(){
         // define data models
         if (!Ext4.ModelManager.isRegistered('LABKEY.Security.ImpersonationGroups')) {
             Ext4.define('LABKEY.Security.ImpersonationGroups', {
@@ -227,7 +219,7 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
         });
     },
 
-    handleImpersonate: function(){
+    handleImpersonateGroup: function(){
         if (!this.groupCombo.isValid())
             return;
 
@@ -259,38 +251,32 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
     }
 });
 
-// TODO: Message for no read scenario
-// TODO: Fix up combo?
 Ext4.define('LABKEY.Security.ImpersonateRoles', {
     extend: 'Ext.window.Window',
     modal: true,
     border: false,
-    width: 500,
+    width: 475,
     layout: 'fit',
     closeAction: 'destroy',
     title: 'Impersonate Roles',
 
     initComponent : function() {
-        this.buttons = ['->'];
-
-        this.buttons.push({
+        this.impersonateButton = Ext4.create('Ext.Button', {
             text: 'Impersonate',
+            disabled: true,
             scope: this,
-            handler: this.handleImpersonate
+            handler: this.handleImpersonateRole
         });
 
-        this.buttons.push({
+        this.buttons = ['->', this.impersonateButton, {
             text: 'Cancel',
             scope: this,
             handler: this.handleCancel
-        });
+        }];
 
         this.items = [this.getPanel()];
 
         this.callParent();
-        this.on('show', function() {
-            this.roleCombo.focus(false, 500);
-        }, this)
     },
 
     getPanel: function(){
@@ -304,34 +290,45 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
             margin: '0 0 15 0'
         });
 
-//        this.impersonateCombo = Ext4.create('Ext.form.field.ComboBox', {
-//            store: this.getRoleStore(),
-//            name: 'impersonate',
-//            allowBlank: false,
-//            valueField: 'roleName',
-//            displayField: 'displayName',
-//            fieldLabel: 'Role',
-//            triggerAction: 'all',
-//            labelWidth: 50,
-//            queryMode: 'local',
-//            typeAhead: true,
-//            forceSelection: true,
-//            tpl: Ext4.create('Ext.XTemplate',
-//                '<tpl for=".">',
-//                    '<div class="x4-boundlist-item">{displayName:htmlEncode}</div>',
-//                '</tpl>')
-//        });
+        this.roleGrid = Ext4.create('Ext.grid.Panel', {
+            id           : 'ImpersonateRolesGrid',
+            hideHeaders  : true,
+            maxHeight    : 300,
+            name         : 'roles',
+            store        : this.getRoleStore(),
+            columns: [
+                {text: 'Role', flex: 1, dataIndex: 'displayName'}
+            ],
+            selModel: Ext4.create('Ext.selection.CheckboxModel', {
+                mode: 'SIMPLE'
+            })
+        });
 
-        this.roleCombo = new Ext4.ux.CheckCombo({
-            id : 'ImpersonateRolesCombo',
-            fieldLabel  : 'Roles',
-            name        : 'role',
-            allowBlank: false,
-            store       : this.getRoleStore(),
-            queryMode   : 'local',
-            valueField: 'roleName',
-            displayField: 'displayName',
-            editable    : false
+        this.roleGrid.on("selectionChange", function(grid){
+            var selected = grid.getSelection();
+            var includesRead = false;
+
+            for (var i = 0; i < selected.length; i++)
+            {
+                var record = selected[i].data;
+                if (record.hasRead)
+                {
+                    includesRead = true;
+                    break;
+                }
+            }
+
+            // Enable/disable the "read permissions" warning if one or more roles are selected, but they don't include read permissions
+            this.divWarning.setVisible(selected.length > 0 && !includesRead);
+
+            // Enable/disable "Impersonate" button
+            this.impersonateButton.setDisabled(0 == selected.length);
+        }, this);
+
+        this.divWarning = Ext4.create('Ext.container.Container', {
+            html: "<div>Warning: The selected roles do not include read permissions; impersonating without read permissions is generally not useful.</div>",
+            margin: '5 0 0 0',
+            hidden: true
         });
 
         return {
@@ -339,7 +336,7 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
             padding: 10,
             border: false,
             layout: 'form',
-            items: [divContainer, this.roleCombo]
+            items: [divContainer, this.roleGrid, this.divWarning]
         };
     },
 
@@ -350,7 +347,8 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
                 extend: 'Ext.data.Model',
                 fields: [
                     {name: 'roleName', type: 'string'},
-                    {name: 'displayName', type: 'string'}
+                    {name: 'displayName', type: 'string'},
+                    {name: 'hasRead', type: 'boolean'}
                 ]
             });
         }
@@ -369,11 +367,13 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
         });
     },
 
-    handleImpersonate: function(){
-        if (!this.roleCombo.isValid())
-            return;
+    handleImpersonateRole: function(){
+        var roleNames = [];
+        var selected = this.roleGrid.getSelectionModel().selected.items;
 
-        var roleNames = this.roleCombo.getValue();
+        for (var i = 0; i < selected.length; i++)
+            roleNames.push(selected[i].data.roleName);
+
         Ext4.Ajax.request({
             url: LABKEY.ActionURL.buildURL('user', 'impersonateRoles'),
             method: 'POST',

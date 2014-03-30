@@ -1507,12 +1507,7 @@ LABKEY.Security = new function()
          */
         showImpersonateRole: function()
         {
-            // TODO: This seems like a total hack, but it gets the job done for now...
-            LABKEY.requiresCss('ux/CheckCombo/CheckCombo.css');
-            LABKEY.requiresScript('ux/CheckCombo/CheckCombo.js', true, function(){
-                this.ensureAndDisplay('LABKEY.Security.ImpersonateRoles', 'Impersonate.js');
-            }, this);
-//            this.ensureAndDisplay('LABKEY.Security.ImpersonateRole', 'Impersonate.js');
+            this.ensureAndDisplay('LABKEY.Security.ImpersonateRoles', 'Impersonate.js');
         },
 
         /**
@@ -1522,9 +1517,11 @@ LABKEY.Security = new function()
         {
             var display = function() {
                 Ext4.onReady(function() {
-                    Ext4.create(componentName, {
-                        autoShow: true
+                    var cmp = Ext4.create(componentName);
+                    cmp.on("afterlayout", function(cmp){
+                        cmp.center();
                     });
+                    cmp.show();
                 });
             };
 
