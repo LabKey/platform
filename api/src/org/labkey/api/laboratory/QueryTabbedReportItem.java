@@ -97,6 +97,11 @@ public class QueryTabbedReportItem extends TabbedReportItem
 
         json.put("schemaName", getSchemaName());
         json.put("queryName", getQueryName());
+        String viewName = getDefaultViewName(c, getOwnerKey());
+        if (viewName != null)
+        {
+            json.put("viewName", viewName);
+        }
 
         return json;
     }

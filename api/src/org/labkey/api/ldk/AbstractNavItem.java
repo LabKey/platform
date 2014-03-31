@@ -94,6 +94,26 @@ abstract public class AbstractNavItem implements NavItem
         return _targetContainer == null ? c : null;
     }
 
+    public ActionURL appendDefaultView(Container c, ActionURL url, String dataRegionName)
+    {
+        String view = getDefaultViewName(c, getPropertyManagerKey());
+        if (view != null)
+        {
+            url.addParameter(dataRegionName + ".viewName", view);
+        }
+
+        return url;
+    }
+
+    public static String getDefaultViewName(Container c, String key)
+    {
+        Map<String, String> map = PropertyManager.getProperties(c, NavItem.VIEW_PROPERTY_CATEGORY);
+        if (map != null && map.containsKey(key))
+            return map.get(key);
+
+        return null;
+    }
+
     @Override
     public String getPropertyManagerKey()
     {

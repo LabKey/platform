@@ -25,9 +25,11 @@ import org.labkey.api.query.FieldKey;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -108,8 +110,18 @@ abstract public class AbstractListDemographicsProvider extends AbstractDemograph
         map.put(_propName, records);
     }
 
+    @Override
     public Set<String> getKeys()
     {
         return Collections.singleton(_propName);
+    }
+
+    @Override
+    public Collection<FieldKey> getFieldKeysToTest()
+    {
+        Set<FieldKey> keys = new HashSet<>();
+        keys.add(FieldKey.fromString(_propName));
+
+        return Collections.unmodifiableSet(keys);
     }
 }

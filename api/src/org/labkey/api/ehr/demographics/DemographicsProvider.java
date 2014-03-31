@@ -44,5 +44,7 @@ public interface DemographicsProvider
     // returns the top-level keys used by this provider
     public Set<String> getKeys();
 
-    public Collection<FieldKey> getSkippedFieldKeys();
+    public Collection<FieldKey> getFieldKeysToTest();
+
+    public Set<String> getIdsToUpdate(Container c, String id, Map<String, Object> originalProps, Map<String, Object> newProps);
 }

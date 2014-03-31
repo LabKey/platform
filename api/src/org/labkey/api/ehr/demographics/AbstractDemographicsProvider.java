@@ -36,10 +36,12 @@ import org.labkey.api.security.User;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * User: bimber
@@ -77,7 +79,7 @@ abstract public class AbstractDemographicsProvider implements DemographicsProvid
 
     public Map<String, Map<String, Object>> getProperties(Container c, User u, Collection<String> ids)
     {
-        final Map<String, Map<String, Object>> ret = new HashMap<String, Map<String, Object>>();
+        final Map<String, Map<String, Object>> ret = new HashMap<>();
         final TableInfo ti = getTableInfo(c, u);
 
         SimpleFilter filter = getFilter(ids);
@@ -96,7 +98,7 @@ abstract public class AbstractDemographicsProvider implements DemographicsProvid
 
                 Map<String, Object> map = ret.get(id);
                 if (map == null)
-                    map = new HashMap<>();
+                    map = new TreeMap<>();
 
                 processRow(rs, cols, map);
 
@@ -141,9 +143,15 @@ abstract public class AbstractDemographicsProvider implements DemographicsProvid
         }
     }
 
-    public Collection<FieldKey> getSkippedFieldKeys()
+    public Collection<FieldKey> getFieldKeysToTest()
     {
-        return null;
+        return Collections.unmodifiableCollection(getFieldKeys());
+    }
+
+    public Set<String> getIdsToUpdate(Container c, String id, Map<String, Object> originalProps, Map<String, Object> newProps)
+    {
+        //this allows specific DemographicsProviders to inspect and potentially signal other animals to reache
+        return Collections.emptySet();
     }
 
     @Override

@@ -245,7 +245,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
                 if(!c.width)
                     theField.labelWidth = this.defaultFieldLabelWidth;
 
-                if (c.inputType == 'textarea' && !c.height){
+                if (c.inputType == 'textarea' && theField.xtype == 'textarea' && !c.height){
                     Ext4.apply(theField, {height: 100});
                 }
 

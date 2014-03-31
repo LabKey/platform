@@ -70,10 +70,15 @@ public class ShowEditUIButton extends SimpleButtonConfigFactory
         _urlParamMap = urlParamMap;
     }
 
+    protected String getHandlerName()
+    {
+        return "LDK.Utils.editUIButtonHandler";
+    }
+
     @Override
     protected String getJsHandler(TableInfo ti)
     {
-        String ret = "LDK.Utils.editUIButtonHandler(" + PageFlowUtil.jsString(_schemaName) + "," + PageFlowUtil.jsString(_queryName) + ",{";
+        String ret = getHandlerName() + "(" + PageFlowUtil.jsString(_schemaName) + "," + PageFlowUtil.jsString(_queryName) + ",{";
 
         String delim = "";
         if (_urlParamMap != null)

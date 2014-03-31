@@ -38,6 +38,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -206,4 +207,10 @@ abstract public class EHRService
     abstract public TableCustomizer getEHRCustomizer();
 
     abstract public void registerSingleFormOverride(SingleQueryFormProvider p);
+
+    abstract public void appendCalculatedIdCols(AbstractTableInfo ti, String dateFieldName);
+
+    abstract public Collection<String> ensureFlagActive(User u, Container c, String category, String flag, Date date, String remark, Collection<String> animalIds, boolean livingAnimalsOnly);
+
+    abstract public Collection<String> terminateFlagsIfExists(User u, Container c, String category, String flag, Date enddate, Collection<String> animalIds);
 }

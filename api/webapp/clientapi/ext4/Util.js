@@ -358,6 +358,9 @@
                 switch (meta.jsonType) {
                     case "boolean":
                         field.xtype = meta.xtype || 'checkbox';
+                            if (field.value === true){
+                                field.checked = true;
+                            }
                         break;
                     case "int":
                         field.xtype = meta.xtype || 'numberfield';
@@ -968,6 +971,14 @@
             field.editable   = (field.userEditable!==false && !field.readOnly && !field.autoIncrement && !field.calculated);
             field.allowBlank = field.nullable;
             field.jsonType   = field.jsonType || Util.findJsonType(field);
+
+            //this will convert values from strings to the correct type (such as booleans)
+            if (!Ext4.isEmpty(field.defaultValue)){
+                var type = Ext4.data.Types[LABKEY.ext4.Util.EXT_TYPE_MAP[field.jsonType]];
+                if (type){
+                    field.defaultValue = type.convert(field.defaultValue);
+                }
+            }
         },
 
         /**

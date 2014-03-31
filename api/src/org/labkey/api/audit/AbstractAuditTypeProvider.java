@@ -16,13 +16,19 @@
 package org.labkey.api.audit;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.data.DataMapColumn;
+import org.labkey.api.audit.data.DataMapDiffColumn;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -33,6 +39,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -61,6 +68,11 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public static final String COLUMN_NAME_CREATED_BY = "CreatedBy";
     public static final String COLUMN_NAME_IMPERSONATED_BY = "ImpersonatedBy";
     public static final String COLUMN_NAME_PROJECT_ID = "ProjectId";
+
+    public static final String OLD_RECORD_PROP_NAME = "oldRecordMap";
+    public static final String OLD_RECORD_PROP_CAPTION = "Old Record Values";
+    public static final String NEW_RECORD_PROP_NAME = "newRecordMap";
+    public static final String NEW_RECORD_PROP_CAPTION = "New Record Values";
 
     protected abstract AbstractAuditDomainKind getDomainKind();
 
@@ -238,5 +250,43 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
             return convertEvent(event);
         else
             throw new IllegalArgumentException("Provider needs to override convertEvent in order to handle a non-null dataMap");
+    }
+
+    protected void appendValueMapColumns(AbstractTableInfo table)
+    {
+        ColumnInfo oldCol = table.getColumn(FieldKey.fromString(OLD_RECORD_PROP_NAME));
+        ColumnInfo newCol = table.getColumn(FieldKey.fromString(NEW_RECORD_PROP_NAME));
+
+        if(oldCol != null){
+            ColumnInfo added = table.addColumn(new AliasedColumn(table, "OldValues", oldCol));
+            added.setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                public DisplayColumn createRenderer(final ColumnInfo colInfo)
+                {
+                    return new DataMapColumn(colInfo);
+                }
+            });
+            added.setLabel(OLD_RECORD_PROP_CAPTION);
+            oldCol.setHidden(true);
+        }
+
+        if(newCol != null)
+        {
+            ColumnInfo added = table.addColumn(new AliasedColumn(table, "NewValues", newCol));
+            added.setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                public DisplayColumn createRenderer(final ColumnInfo colInfo)
+                {
+                    return new DataMapColumn(colInfo);
+                }
+
+            });
+            added.setLabel(NEW_RECORD_PROP_CAPTION);
+            newCol.setHidden(true);
+        }
+
+        // add a column to show the differences between old and new values
+        if (oldCol != null && newCol != null)
+            table.addColumn(new DataMapDiffColumn(table, "DataChanges", oldCol, newCol));
     }
 }

@@ -91,26 +91,6 @@ abstract public class AbstractImportingNavItem extends AbstractNavItem implement
         return "importingNavItem";
     }
 
-    public static String getDefaultViewName(Container c, String key)
-    {
-        Map<String, String> map = PropertyManager.getProperties(c, NavItem.VIEW_PROPERTY_CATEGORY);
-        if (map != null && map.containsKey(key))
-            return map.get(key);
-
-        return null;
-    }
-
-    public ActionURL appendDefaultView(Container c, ActionURL url, String dataRegionName)
-    {
-        String view = getDefaultViewName(c, getPropertyManagerKey());
-        if (view != null)
-        {
-            url.addParameter(dataRegionName + ".viewName", view);
-        }
-
-        return url;
-    }
-
     protected void setTargetContainer(Container c)
     {
         _targetContainer = c;

@@ -441,13 +441,16 @@ api/src/org/labkey/api/defaults/SetDefaultValuesListAction.java -text
 api/src/org/labkey/api/di/DataIntegrationService.java -text
 api/src/org/labkey/api/di/ScheduledPipelineJobContext.java -text
 api/src/org/labkey/api/di/ScheduledPipelineJobDescriptor.java -text
+api/src/org/labkey/api/ehr/EHRDemographicsService.java -text
 api/src/org/labkey/api/ehr/EHRQCState.java -text
 api/src/org/labkey/api/ehr/EHRService.java -text
 api/src/org/labkey/api/ehr/buttons/ChangeQCStateButton.java -text
 api/src/org/labkey/api/ehr/buttons/CreateTaskFromIdsButton.java -text
 api/src/org/labkey/api/ehr/buttons/CreateTaskFromRecordsButton.java -text
+api/src/org/labkey/api/ehr/buttons/EHRShowEditUIButton.java -text
 api/src/org/labkey/api/ehr/buttons/GoToTaskButton.java -text
 api/src/org/labkey/api/ehr/buttons/MarkCompletedButton.java -text
+api/src/org/labkey/api/ehr/buttons/ReassignRequestButton.java -text
 api/src/org/labkey/api/ehr/dataentry/AbstractDataEntryForm.java -text
 api/src/org/labkey/api/ehr/dataentry/AbstractFormSection.java -text
 api/src/org/labkey/api/ehr/dataentry/AnimalDetailsFormSection.java -text
@@ -487,6 +490,7 @@ api/src/org/labkey/api/ehr/security/EHRCompletedAdminPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRCompletedDeletePermission.java -text
 api/src/org/labkey/api/ehr/security/EHRCompletedInsertPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRCompletedUpdatePermission.java -text
+api/src/org/labkey/api/ehr/security/EHRDataAdminPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRDataEntryPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRDeleteRequestedAdminPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRDeleteRequestedDeletePermission.java -text
@@ -497,6 +501,7 @@ api/src/org/labkey/api/ehr/security/EHRInProgressDeletePermission.java -text
 api/src/org/labkey/api/ehr/security/EHRInProgressInsertPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRInProgressUpdatePermission.java -text
 api/src/org/labkey/api/ehr/security/EHRLabworkEntryPermission.java -text
+api/src/org/labkey/api/ehr/security/EHRLocationEditPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRPathologyEntryPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRProcedureManagementPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRProjectEditPermission.java -text
