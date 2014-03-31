@@ -43,8 +43,10 @@ public interface QueryDefinition
 
     /** Returns the User this QueryDefinition was initialized with (ie, from the ViewContext).  QueryDefinitions do not have an owner. */
     User getUser();
-    /** Returns the Container this QueryDefinition was defined in. */
+    /** Returns the Container from which this QueryDefinition was initialized (may be different from getDefinitionContainer() for inherited queries). */
     Container getContainer();
+    /** Returns the Container this QueryDef was defined in. */
+    Container getDefinitionContainer();
     boolean canInherit();
     void setCanInherit(boolean f);
     boolean isHidden();
@@ -100,7 +102,7 @@ public interface QueryDefinition
 
     void setSql(String sql);
     void setMetadataXml(String xml);
-    void setContainer(Container container);
+    void setDefinitionContainer(Container container);
     void setContainerFilter(ContainerFilter containerFilter);
     ContainerFilter getContainerFilter();
 
