@@ -276,6 +276,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return sub;
     }
 
+    @Override
+    public void setContainer(Container container)
+    {
+        super.setContainer(container);
+        _study = null;
+    }
 
     public boolean isShared()
     {
