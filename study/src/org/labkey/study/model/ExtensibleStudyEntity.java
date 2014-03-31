@@ -16,6 +16,7 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -122,10 +123,11 @@ public abstract class ExtensibleStudyEntity<E> extends AbstractStudyEntity<E>
         }
 
         List<ObjectProperty> objectProperties = new ArrayList<>(props.size());
+        Map<String, DomainProperty> importMap = ImportAliasable.Helper.createImportMap(domain.getNonBaseProperties(), false);
 
         for (Map.Entry<String, Object> entry : props.entrySet())
         {
-            DomainProperty property = domain.getPropertyByName(entry.getKey());
+            DomainProperty property = importMap.get(entry.getKey());
 
             if (null != property)
             {

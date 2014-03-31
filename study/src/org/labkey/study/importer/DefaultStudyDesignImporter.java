@@ -57,7 +57,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -207,7 +206,9 @@ public class DefaultStudyDesignImporter
     {
         TableInfo tableInfo = tablePackage.getTableInfo();
         Container container = tablePackage.getContainer();
-        if (!"Study".equalsIgnoreCase(tableInfo.getName()) && !tablePackage.isProjectLevel())
+
+        // TODO: Why isn't tablePackage.isProjectLevel() true in STUDY_TABLE_NAME case
+        if (!StudyQuerySchema.STUDY_TABLE_NAME.equalsIgnoreCase(tableInfo.getName()) && !tablePackage.isProjectLevel())
         {
             // Consider: defer to QueryUpdateService?
             deleteData(container, tableInfo);

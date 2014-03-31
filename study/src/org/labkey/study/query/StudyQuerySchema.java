@@ -98,6 +98,7 @@ public class StudyQuerySchema extends UserSchema
     public static final String PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME = "ParticipantGroupCohortUnion";
     public static final String LOCATION_SPECIMEN_LIST_TABLE_NAME = "LocationSpecimenList";
 
+    public static final String STUDY_TABLE_NAME = "Study";
     public static final String PROPERTIES_TABLE_NAME = "StudyProperties";
     public static final String OBJECTIVE_TABLE_NAME = "Objective";
     public static final String PERSONNEL_TABLE_NAME = "Personnel";
@@ -378,7 +379,7 @@ public class StudyQuerySchema extends UserSchema
     @Override
     public TableInfo createTable(String name)
     {
-        if (PROPERTIES_TABLE_NAME.equalsIgnoreCase(name) || "Study".equalsIgnoreCase(name))
+        if (PROPERTIES_TABLE_NAME.equalsIgnoreCase(name) || STUDY_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyPropertiesTable ret = new StudyPropertiesTable(this);
             return ret;
