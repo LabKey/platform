@@ -59,6 +59,11 @@ public class MemberSet extends AbstractSet<Member>
         addAll(from);
     }
 
+    public MemberSet(Member m)
+    {
+        add(m);
+    }
+
 
     public MemberSet(Level l, Collection<Member> from)
     {

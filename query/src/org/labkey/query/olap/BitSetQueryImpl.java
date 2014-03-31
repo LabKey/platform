@@ -273,7 +273,7 @@ public class BitSetQueryImpl
             {
                 h = level.getHierarchy();
                 l = level;
-                try {count = level.getMembers().size();} catch (OlapException e){}
+                try {count = level.getMembers().size();} catch (OlapException e){/* */}
             }
             else if (null != hierarchy)
             {
@@ -415,7 +415,8 @@ public class BitSetQueryImpl
         if (null != outer && null != expr.membersQuery)
         {
             Result subquery = processExpr(expr.membersQuery);
-            Result filtered = _cubeHelper.membersQuery(outer, (MemberSetResult)subquery);
+            Result filtered;
+            filtered = _cubeHelper.membersQuery(outer, (MemberSetResult)subquery);
             return filtered;
         }
 
@@ -469,7 +470,7 @@ public class BitSetQueryImpl
     }
 
 
-    CellSet evaluate(Result rowsExpr, Result colsExpr, Result filterExpr) throws SQLException
+    CellSet evaluate(MemberSetResult rowsExpr, MemberSetResult colsExpr, Result filterExpr) throws SQLException
     {
         if (null == rowsExpr && null == colsExpr)
             throw new IllegalArgumentException();
@@ -481,15 +482,14 @@ public class BitSetQueryImpl
 
         if (_log.isDebugEnabled())
         {
-            synchronized (_log)
-            {
-                _log.debug("evaluate()");
-                _log.debug("\tmeasure   " + measure);
-                _log.debug("\tonrows    " + rowsExpr);
-                _log.debug("\toncolumns " + colsExpr);
-                _log.debug("\twhere     " + filterExpr);
-                _log.debug("\teval      " + filterSet);
-            }
+            StringBuilder sb = new StringBuilder();
+            sb.append("evaluate()");
+            sb.append("\tmeasure   ").append(measure);
+            sb.append("\tonrows    ").append(rowsExpr);
+            sb.append("\toncolumns ").append(colsExpr);
+            sb.append("\twhere     ").append(filterExpr);
+            sb.append("\teval      ").append(filterSet);
+            _log.debug(sb);
         }
 
         ArrayList<Number> measureValues = new ArrayList<>();
@@ -501,6 +501,11 @@ public class BitSetQueryImpl
             filterSet = null;
             countFilterSet = -1;
         }
+
+        if (null != colsExpr)
+            _cubeHelper.populateCache(measureLevel, colsExpr);
+        if (null != rowsExpr)
+            _cubeHelper.populateCache(measureLevel, rowsExpr);
 
         // ONE-AXIS
         if (null == colsExpr || null == rowsExpr)
@@ -528,11 +533,11 @@ public class BitSetQueryImpl
         else
         {
             HashMap<String,MemberSet> quickCache = new HashMap<>();
-            for (Member rowMember : ((MemberSetResult)rowsExpr).getCollection())
+            for (Member rowMember : rowsExpr.getCollection())
             {
                 MemberSet rowMemberSet = null;
 
-                for (Member colMember : ((MemberSetResult)colsExpr).getCollection())
+                for (Member colMember : colsExpr.getCollection())
                 {
                     int count;
                     if (0 == countFilterSet)
@@ -562,19 +567,16 @@ public class BitSetQueryImpl
 
         return new _CellSet(
                 measureValues,
-                colsExpr==null?null:((MemberSetResult)colsExpr).getCollection(),
-                rowsExpr==null?null:((MemberSetResult)rowsExpr).getCollection());
+                colsExpr==null?null:colsExpr.getCollection(),
+                rowsExpr==null?null:rowsExpr.getCollection());
     }
 
 
     MemberSet filter(Level measureLevel, Result result) throws SQLException
     {
         List<MemberSetResult> list = new ArrayList<>();
-        if (null == result)
-        {
 
-        }
-        else if (result instanceof CrossResult)
+        if (result instanceof CrossResult)
         {
             list.addAll(((CrossResult)result).results);
         }
@@ -582,8 +584,10 @@ public class BitSetQueryImpl
         {
             list.add((MemberSetResult)result);
         }
-        else
+        else if (null != result)
+        {
             throw new IllegalArgumentException();
+        }
 
         if (list.isEmpty())
             return null;   // unfiltered
@@ -603,10 +607,9 @@ public class BitSetQueryImpl
                 // extract only the measure level (e.g. [Subject].[Subject]
                 if (memberSetResult.hierarchy != null)
                 {
-                    Hierarchy h = memberSetResult.hierarchy;
                     memberSetResult = new MemberSetResult(measureLevel);
                 }
-                else if (memberSetResult.members instanceof MemberSet)
+                else if (null != memberSetResult.members)
                 {
                     memberSetResult = new MemberSetResult(memberSetResult.members.onlyFor(measureLevel));
                 }
@@ -742,8 +745,12 @@ public class BitSetQueryImpl
             if (name.endsWith("Count"))
                 name = name.substring(0,name.length()-5);
             Hierarchy h = cube.getHierarchies().get(name);
-            if (null == h && name.equals("Participant"))
+            if (null == h)
+                h = cube.getHierarchies().get("Participant");
+            if (null == h)
                 h = cube.getHierarchies().get("Subject");
+            if (null == h)
+                h = cube.getHierarchies().get("Patient");
             if (h != null)
                 qq.countDistinctLevel = h.getLevels().get(h.getLevels().size()-1);
         }
@@ -761,8 +768,8 @@ public class BitSetQueryImpl
         if (null != qq.filters && qq.filters.arguments.size() > 0)
             filterExpr = processExpr(qq.filters);
 
-        CellSet ret = evaluate(rowsExpr, columnsExpr, filterExpr);
-
+        CellSet ret;
+        ret = evaluate((MemberSetResult)rowsExpr, (MemberSetResult)columnsExpr, filterExpr);
         return ret;
     }
 
@@ -841,7 +848,25 @@ public class BitSetQueryImpl
             sb.append(") ON ROWS\n");
 //            sb.append(from.getUniqueName()).append(".members,");
 //            sb.append(to.getUniqueName()).append(".members ON ROWS\n");
-            sb.append("FROM " + cube.getUniqueName());
+            sb.append("FROM ").append(cube.getUniqueName());
+            return sb.toString();
+        }
+
+
+        String queryCrossjoin(Level from, MemberSetResult to)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append(
+                    "SELECT\n" +
+                            "  [Measures].DefaultMember ON COLUMNS,\n" +
+                            "  NON EMPTY CROSSJOIN(");
+            sb.append(from.getUniqueName()).append(".members");
+            sb.append(",");
+            to.toMdxSet(sb);
+            sb.append(") ON ROWS\n");
+//            sb.append(from.getUniqueName()).append(".members,");
+//            sb.append(to.getUniqueName()).append(".members ON ROWS\n");
+            sb.append("FROM ").append(cube.getUniqueName());
             return sb.toString();
         }
 
@@ -862,6 +887,10 @@ public class BitSetQueryImpl
         }
 
 
+        /**
+         * return a set of members in <MemberSetResult=outer> that intersect (non empty cross join) with <MemberSetResult=sub>.
+         * Note that this basically gives OR or UNION semantics w/respect to the sub members.
+         */
         MemberSetResult membersQuery(MemberSetResult outer, MemberSetResult sub) throws SQLException
         {
             MemberSet set;
@@ -896,6 +925,9 @@ public class BitSetQueryImpl
         }
 
 
+        /**
+         * return a set of members in <Level=outer> that intersect (non empty cross join) with <Member=sub>
+         */
         MemberSet membersQuery(Level outer, Member sub) throws SQLException
         {
             if (sub.getHierarchy().getUniqueName().equals(outer.getHierarchy().getUniqueName()))
@@ -916,10 +948,61 @@ public class BitSetQueryImpl
                 for (Position p :  cs.getAxes().get(1).getPositions())
                 {
                     Member m = p.getMembers().get(0);
+//                  CONSIDER: verify that count is not 0?  if (0 != cs.getCell(p).getValue())
                     set.add(m);
                 }
                 resultsCachePut(query, set);
                 return set;
+            }
+        }
+
+        void populateCache(Level outerLevel, MemberSetResult inner) throws SQLException
+        {
+            boolean cacheMiss = false;
+
+            // We cache by individual members, but we don't necessaryily want to load the cache one set at a time
+            // we could find just the members that are not yet cached, but I'm just going to check if ANY are missing
+            Hierarchy h = null;
+            for (Member sub : inner.getCollection())
+            {
+                if (sub.getHierarchy().getUniqueName().equals(outerLevel.getHierarchy().getUniqueName()))
+                    continue;
+                String query = queryIsNotEmpty(outerLevel, sub);
+                MemberSet s = resultsCacheGet(query);
+                if (null == s)
+                {
+                    cacheMiss = true;
+                    break;
+                }
+            }
+            if (!cacheMiss)
+                return;
+
+            HashMap<String,MemberSet> sets = new HashMap<>();
+            for (Member sub : inner.getCollection())
+                sets.put(sub.getUniqueName(), new MemberSet());
+
+            String queryXjoin = queryCrossjoin(outerLevel, inner);
+            try (CellSet cs = execute(queryXjoin))
+            {
+                for (Position p :  cs.getAxes().get(1).getPositions())
+                {
+                    Member outerMember = p.getMembers().get(0);
+                    Member sub = p.getMembers().get(1);
+                    assert outerMember.getLevel().getUniqueName().equals(outerLevel.getUniqueName());
+                    MemberSet s = sets.get(sub.getUniqueName());
+                    if (null == s)
+                        _log.warn("Unexpected member in cellset result: " + sub.getUniqueName());
+                    else
+                        s.add(outerMember);
+                }
+            }
+            for (Member sub : inner.getCollection())
+            {
+                String query = queryIsNotEmpty(outerLevel, sub);
+                MemberSet s = sets.get(sub.getUniqueName());
+                if (null != s)
+                    resultsCachePut(query,s);
             }
         }
     }

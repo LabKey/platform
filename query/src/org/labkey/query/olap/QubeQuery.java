@@ -20,6 +20,7 @@ import org.apache.commons.collections15.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONString;
 import org.junit.Assert;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
@@ -293,10 +294,10 @@ public class QubeQuery
         this.errors = errors;
         Object v = json.get("showEmpty");
         showEmpty = null==v ? false : (Boolean)ConvertUtils.convert(v.toString(), Boolean.class);
-        onRows = parseJsonExpr(json.get("onRows"), OP.XINTERSECT, OP.XINTERSECT);
+        onRows = parseJsonExpr(json.get("onRows"), OP.MEMBERS, OP.XINTERSECT);
         Object cols = null != json.get("onColumns") ? json.get("onColumns") : json.get("onCols");
-        onColumns = parseJsonExpr(cols, OP.XINTERSECT, OP.XINTERSECT);
-        filters = parseJsonExpr(json.get("filter"), OP.XINTERSECT, OP.XINTERSECT);
+        onColumns = parseJsonExpr(cols, OP.MEMBERS, OP.XINTERSECT);
+        filters = parseJsonExpr(json.get("filter"), OP.MEMBERS, OP.XINTERSECT);
 //        distinctMeasureFilters = parseJsonExpr(json.get("distinctMeasureFilters"), OP.XINTERSECT, OP.XINTERSECT);
     }
 
@@ -363,16 +364,29 @@ public class QubeQuery
             Level l = _getLevel(json, h);
 
             QubeMembersExpr e = new QubeMembersExpr(h,l,errors);
-            if (null != json.get("members"))
+            Object membersObj = json.get("members");
+            if (null != membersObj)
             {
-                if ("members".equals(json.get("members")))
-                    e.membersMember = true;
-                else if ("children".equals(json.get("members")))
-                    e.childrenMember = true;
-                else if (json.get("members") instanceof JSONArray)
+                if (membersObj instanceof JSONString || membersObj instanceof String)
+                {
+                    if ("members".equals(membersObj))
+                        e.membersMember = true;
+                    else if ("children".equals(membersObj))
+                        e.childrenMember = true;
+                    else
+                    {
+                        Member m = _getMember(membersObj, h, l);
+                        if (null == m)
+                        {
+                            errors.reject(SpringActionController.ERROR_MSG, "Member not found: " + String.valueOf(membersObj));
+                            throw errors;
+                        }
+                    }
+                }
+                else if (membersObj instanceof JSONArray)
                 {
                     TreeSet<Member> set = new TreeSet<>(new CompareMetaDataElement());
-                    JSONArray arr = (JSONArray)json.get("members");
+                    JSONArray arr = (JSONArray) membersObj;
                     for (int i=0 ; i<arr.length() ; i++)
                     {
                         Member m = _getMember(arr.get(i), h, l);
@@ -397,7 +411,7 @@ public class QubeQuery
             }
             else
             {
-                // treat like members:'members'
+                // treat like membersObj:'membersObj'
                 e.membersMember = true;
             }
             return e;

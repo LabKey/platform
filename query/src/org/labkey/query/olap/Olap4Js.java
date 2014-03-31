@@ -443,16 +443,25 @@ public class Olap4Js
                 out.write("\"level\":");
                 writeRef(member.getLevel(), out);
             }
-            out.write(",\"properties\":{");
-            String comma="";
+
+            String prefix=",\"properties\":{";
+            String suffix = "";
             for (Property p : member.getProperties())
             {
                 if (p instanceof Property.StandardMemberProperty) continue;
                 if (!p.isVisible()) continue;
-                out.write(comma); comma = ",";
-                out.write("\"" + p.getUniqueName() + "\":" + valueToString(member.getPropertyValue(p)));
+                Object value = member.getPropertyValue(p);
+                if (null == value)
+                    continue;
+                if (p.getUniqueName().equals("KEY") && member.getName().equals(value))
+                    continue;
+                out.write(prefix);
+                prefix = ",";
+                suffix = "}";
+                out.write("\"" + p.getUniqueName() + "\":" + valueToString(value));
             }
-            out.write("}");
+            out.write(suffix);
+
             out.write("}");
         }
 
