@@ -53,6 +53,18 @@
         return;
     }
 
+    if (c.equals(ContainerManager.getSharedContainer()))
+    {
+        %><tr><td>You cannot delete the Shared project.</td></tr>
+        <tr><td>
+            <%= button("OK").href(urlProvider(AdminUrls.class).getManageFoldersURL(c)) %>
+        </td></tr>
+        </table><%
+
+        return;
+
+    }
+
     // Attempting recursive delete.  Could be first or second confirmation page.  Either way, user must have
     // admin permissions to the entire tree.
     if (c.hasChildren() && !ContainerManager.hasTreePermission(c, user, AdminPermission.class))

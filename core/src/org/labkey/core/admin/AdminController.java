@@ -4204,6 +4204,9 @@ public class AdminController extends SpringActionController
             if (c.isRoot())
                 throw new NotFoundException("Can't move the root folder.");  // Don't show move tree from root
 
+            if (c.equals(ContainerManager.getSharedContainer()) || c.equals(ContainerManager.getHomeContainer()))
+                throw new UnsupportedOperationException("Moving /Shared or /home is not possible.");
+
             if (null == newParent)
             {
                 errors.reject(ERROR_MSG, "Target '" + form.getTarget() + "' folder does not exist.");
@@ -4712,6 +4715,9 @@ public class AdminController extends SpringActionController
             {
                 throw new UnauthorizedException();
             }
+
+            if (c.equals(ContainerManager.getSharedContainer()) || c.equals(ContainerManager.getHomeContainer()))
+                throw new UnsupportedOperationException("Deleting /Shared or /home is not possible.");
 
             if (form.getRecurse())
             {
