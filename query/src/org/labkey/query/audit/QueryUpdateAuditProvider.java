@@ -170,6 +170,8 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
                 return defaultVisibleColumns;
             }
         };
+        appendValueMapColumns(table);
+
         DetailsURL url = DetailsURL.fromString("query/queryAuditChanges.view?auditRowId=${rowId}");
         url.setStrictContainerContextEval(true);
         table.setDetailsURL(url);

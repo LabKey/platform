@@ -129,6 +129,8 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
                 return defaultVisibleColumns;
             }
         };
+        appendValueMapColumns(table);
+
         DetailsURL url = DetailsURL.fromString("dataset/datasetAuditHistory.view?auditRowId=${rowId}");
         url.setStrictContainerContextEval(true);
         table.setDetailsURL(url);
