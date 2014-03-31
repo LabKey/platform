@@ -27,9 +27,9 @@ import org.labkey.api.data.Container;
  */
 public class CustomQueryDefinitionImpl extends QueryDefinitionImpl
 {
-    public CustomQueryDefinitionImpl(User user, QueryDef queryDef)
+    public CustomQueryDefinitionImpl(User user, Container container, QueryDef queryDef)
     {
-        super(user, queryDef);
+        super(user, container, queryDef);
     }
 
     public CustomQueryDefinitionImpl(User user, Container container, UserSchema schema, String name)

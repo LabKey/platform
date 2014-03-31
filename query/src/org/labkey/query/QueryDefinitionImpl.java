@@ -90,6 +90,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     final static private QueryManager mgr = QueryManager.get();
     final static private Logger log = Logger.getLogger(QueryDefinitionImpl.class);
     protected User _user = null;
+    protected Container _container = null;
     protected UserSchema _schema = null;
     protected QueryDef _queryDef;
     protected List<QueryPropertyChange> _changes = null;
@@ -101,9 +102,10 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     private boolean _useCache = true;
     private Map<Pair<String, Boolean>, TableInfo> _cache = new HashMap<>();
 
-    public QueryDefinitionImpl(User user, QueryDef queryDef)
+    public QueryDefinitionImpl(User user, Container container, QueryDef queryDef)
     {
         _user = user;
+        _container = container;
         _queryDef = queryDef;
         _dirty = queryDef.getQueryDefId() == 0;
         if (_dirty)
@@ -121,6 +123,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     public QueryDefinitionImpl(User user, Container container, SchemaKey schema, String name)
     {
         _user = user;
+        _container = container;
         _queryDef = new QueryDef();
         _queryDef.setName(name);
         _queryDef.setSchemaPath(schema);
@@ -170,7 +173,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public boolean canEdit(User user)
     {
-        return getContainer().hasPermission(user, AdminPermission.class);
+        return getDefinitionContainer().hasPermission(user, AdminPermission.class);
     }
 
     public CustomView getCustomView(@NotNull User owner, @Nullable HttpServletRequest request, String name)
@@ -253,8 +256,15 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     {
         return _user;
     }
-    
+
+    @Override
     public Container getContainer()
+    {
+        return _container;
+    }
+
+    @Override
+    public Container getDefinitionContainer()
     {
         return ContainerManager.getForId(_queryDef.getContainerId());
     }
@@ -562,11 +572,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return _queryDef.getMetaData();
     }
 
-    public void setContainer(Container container)
+    public void setDefinitionContainer(Container container)
     {
-        if (container.equals(getContainer()))
+        if (container.equals(getDefinitionContainer()))
             return;
-        Container oldContainer = getContainer();
+        Container oldContainer = getDefinitionContainer();
         edit().setContainer(container.getId());
         _changes.add(new QueryPropertyChange<>(this, QueryProperty.Container, oldContainer, container));
     }
@@ -578,7 +588,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public Collection<QueryPropertyChange> save(User user, Container container, boolean fireChangeEvent) throws SQLException
     {
-        setContainer(container);
+        setDefinitionContainer(container);
         if (!_dirty)
             return null;
 
@@ -1070,7 +1080,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         public void save(User user) throws SQLException
         {
             setMetadataXml(_document.toString());
-            QueryDefinitionImpl.this.save(user, getContainer());
+            QueryDefinitionImpl.this.save(user, getDefinitionContainer());
         }
 
         public void delete(User user) throws SQLException

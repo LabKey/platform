@@ -53,7 +53,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
 
     public TableQueryDefinition(UserSchema schema, String tableName)
     {
-        super(schema.getUser(), getQueryDef(schema, tableName));
+        super(schema.getUser(), schema.getContainer(), getQueryDef(schema, tableName));
         _schema = schema;
 
         assert MemTracker.getInstance().put(this);

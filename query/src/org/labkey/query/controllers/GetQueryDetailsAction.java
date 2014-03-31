@@ -94,10 +94,10 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
 
         if (isUserDefined)
             resp.put("moduleName", queryDef.getModuleName());
-        boolean isInherited = (null != queryDef && queryDef.canInherit() && !container.equals(queryDef.getContainer()));
+        boolean isInherited = (null != queryDef && queryDef.canInherit() && !container.equals(queryDef.getDefinitionContainer()));
         resp.put("isInherited", isInherited);
         if (isInherited)
-            resp.put("containerPath", queryDef.getContainer().getPath());
+            resp.put("containerPath", queryDef.getDefinitionContainer().getPath());
 
         resp.put("isTemporary", null != queryDef && queryDef.isTemporary());
 

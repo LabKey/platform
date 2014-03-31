@@ -523,7 +523,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
 
                 if (queryDef != null && def.getType().equals(DataSet.TYPE_STANDARD))
                 {
-                    queryDef.setContainer(getSourceStudy().getContainer());
+                    queryDef.setDefinitionContainer(getSourceStudy().getContainer());
 
                     QuerySnapshotDefinition qsDef = QueryService.get().createQuerySnapshotDef(destStudy.getContainer(), queryDef, def.getName());
                     qsDef.setUpdateDelay(form.getUpdateDelay());

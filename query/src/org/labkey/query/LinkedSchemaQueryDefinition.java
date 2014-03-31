@@ -53,7 +53,7 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
 
     public LinkedSchemaQueryDefinition(LinkedSchema schema, QueryDefinition query)
     {
-        super(schema.getUser(), ((QueryDefinitionImpl)query).getQueryDef());
+        super(schema.getUser(), schema.getContainer(), ((QueryDefinitionImpl)query).getQueryDef());
         _schema = schema;
     }
 
@@ -74,12 +74,6 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     public UserSchema getSchema()
     {
         return _schema;
-    }
-
-    @Override
-    public Container getContainer()
-    {
-        return _schema.getContainer();
     }
 
     @Override
@@ -179,7 +173,6 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
         throw new UnsupportedOperationException();
     }
 
-    @Override
     public void setContainer(Container container)
     {
         throw new UnsupportedOperationException();

@@ -2161,7 +2161,7 @@ public class QueryController extends SpringActionController
             }
             QueryDefinition queryDef = form.getQueryDef();
             _queryName = form.getQueryName();
-            if (queryDef == null || !queryDef.getContainer().getId().equals(getContainer().getId()))
+            if (queryDef == null || !queryDef.getDefinitionContainer().getId().equals(getContainer().getId()))
                 throw new NotFoundException("Query not found");
 
 			_form = form;

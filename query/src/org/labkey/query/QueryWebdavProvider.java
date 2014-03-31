@@ -222,7 +222,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			_q.setSql(sql);
 			try
 			{
-				_q.save(user, _q.getContainer());
+				_q.save(user, _q.getDefinitionContainer());
 			}
 			catch (SQLException sqlx)
 			{

@@ -34,7 +34,7 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
 
     public ModuleCustomQueryDefinition(ModuleQueryDef moduleQueryDef, User user, Container container)
     {
-        super(user, moduleQueryDef.toQueryDef(container));
+        super(user, container, moduleQueryDef.toQueryDef(container));
         _moduleName = moduleQueryDef.getModuleName();
     }
 

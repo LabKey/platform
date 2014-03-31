@@ -265,7 +265,7 @@ public class QueryServiceImpl extends QueryService
         {
             Map.Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
             if (!ret.containsKey(key))
-                ret.put(key, new CustomQueryDefinitionImpl(user, queryDef));
+                ret.put(key, new CustomQueryDefinitionImpl(user, container, queryDef));
         }
 
         if (!inheritable)
@@ -288,7 +288,7 @@ public class QueryServiceImpl extends QueryService
                 Map.Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
 
                 if (!ret.containsKey(key))
-                    ret.put(key, new CustomQueryDefinitionImpl(user, queryDef));
+                    ret.put(key, new CustomQueryDefinitionImpl(user, container, queryDef));
             }
         }
 
@@ -298,7 +298,7 @@ public class QueryServiceImpl extends QueryService
             Map.Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
 
             if (!ret.containsKey(key))
-                ret.put(key, new CustomQueryDefinitionImpl(user, queryDef));
+                ret.put(key, new CustomQueryDefinitionImpl(user, container, queryDef));
         }
 
         return ret;
@@ -2246,7 +2246,7 @@ public class QueryServiceImpl extends QueryService
             qd.setName("junit" + GUID.makeHash());
             qd.setContainer(JunitUtil.getTestContainer().getId());
             qd.setSql(sql);
-            QueryDefinition qdef = new CustomQueryDefinitionImpl(TestContext.get().getUser(),qd);
+            QueryDefinition qdef = new CustomQueryDefinitionImpl(TestContext.get().getUser(),JunitUtil.getTestContainer(),qd);
             List<QueryException> errors = new ArrayList<>();
             TableInfo t = qdef.getTable(errors, false);
             assertTrue(errors.isEmpty());

@@ -128,7 +128,7 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
                 key.setQueryDefId(_snapshotDef.getQueryDefId());
                 _queryDef = key.selectObject();
             }
-            return _queryDef == null ? null : new CustomQueryDefinitionImpl(user, _queryDef);
+            return _queryDef == null ? null : new CustomQueryDefinitionImpl(user, getContainer(), _queryDef);
         }
         else if (_snapshotDef.getQueryTableName() != null)
         {
