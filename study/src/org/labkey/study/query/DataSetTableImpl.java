@@ -859,12 +859,15 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
     }
 
 
+    // TODO see BaseStudyTable.addWrapParticipantColumn(), do we need both?
     class ParticipantForeignKey extends LookupForeignKey
     {
         ParticipantForeignKey()
         {
             super(StudyService.get().getSubjectColumnName(_userSchema.getContainer()));
-            addJoin(new FieldKey(null,"Folder"),"Container",false);
+            // 19918: GROUP BY columns in custom query no longer retain ForeignKey configuration
+            if (_dsd.isShared())
+                addJoin(new FieldKey(null,"Folder"),"Container",false);
         }
 
         @Override
