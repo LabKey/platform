@@ -620,14 +620,14 @@ public class StudyQuerySchema extends UserSchema
             StudyTreatmentProductDomainKind domainKind = new StudyTreatmentProductDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), TREATMENT_PRODUCT_MAP_TABLE_NAME);
 
-            return new StudyTreatmentProductTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this);
+            return new StudyTreatmentProductTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this, isDataspace() ? new ContainerFilter.AllInProject(getUser()) : null);
         }
         if (TREATMENT_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyTreatmentDomainKind domainKind = new StudyTreatmentDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), TREATMENT_TABLE_NAME);
 
-            return new StudyTreatmentTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this);
+            return new StudyTreatmentTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this, isDataspace() ? new ContainerFilter.AllInProject(getUser()) : null);
         }
         if (TREATMENT_VISIT_MAP_TABLE_NAME.equalsIgnoreCase(name))
         {

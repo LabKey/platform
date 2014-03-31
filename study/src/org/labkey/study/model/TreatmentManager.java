@@ -74,7 +74,9 @@ public class TreatmentManager
 
     public List<ProductImpl> getStudyProducts(Container container, User user, @Nullable String role, @Nullable Integer rowId)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        //Using a user schema so containerFilter will be created for us later don't need
+        //SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        SimpleFilter filter = new SimpleFilter();
         if (role != null)
             filter.addCondition(FieldKey.fromParts("Role"), role);
         if (rowId != null)
@@ -86,7 +88,7 @@ public class TreatmentManager
 
     public List<ProductAntigenImpl> getStudyProductAntigens(Container container, User user, int productId)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("ProductId"), productId);
 
         TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
@@ -95,15 +97,14 @@ public class TreatmentManager
 
     public List<TreatmentImpl> getStudyTreatments(Container container, User user)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        SimpleFilter filter = new SimpleFilter();
         TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
         return new TableSelector(ti, filter, new Sort("RowId")).getArrayList(TreatmentImpl.class);
     }
 
     public TreatmentImpl getStudyTreatmentByRowId(Container container, User user, int rowId)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("RowId"), rowId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
         TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
         TreatmentImpl treatment = new TableSelector(ti, filter, null).getObject(TreatmentImpl.class);
 
@@ -133,8 +134,7 @@ public class TreatmentManager
 
     public List<TreatmentProductImpl> getStudyTreatmentProducts(Container container, User user, int treatmentId, Sort sort)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("TreatmentId"), treatmentId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("TreatmentId"), treatmentId);
 
         TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
         return new TableSelector(ti, filter, sort).getArrayList(TreatmentProductImpl.class);

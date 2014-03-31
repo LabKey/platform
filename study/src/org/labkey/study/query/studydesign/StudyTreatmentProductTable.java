@@ -15,6 +15,7 @@
  */
 package org.labkey.study.query.studydesign;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
@@ -47,9 +48,9 @@ public class StudyTreatmentProductTable extends DefaultStudyDesignTable
         defaultVisibleColumns.add(FieldKey.fromParts("Route"));
     }
 
-    public StudyTreatmentProductTable(Domain domain, DbSchema dbSchema, UserSchema schema)
+    public StudyTreatmentProductTable(Domain domain, DbSchema dbSchema, UserSchema schema, @Nullable ContainerFilter filter)
     {
-        super(domain, dbSchema, schema);
+        super(domain, dbSchema, schema, filter);
 
         setName(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
         setDescription("Contains one row per study treatment product");
