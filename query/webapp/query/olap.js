@@ -96,8 +96,8 @@ LABKEY.query.olap._private = new function() {
 
         return LABKEY.Ajax.request(
         {
-            url : LABKEY.ActionURL.buildURL("olap", "jsonQuery.api", config.containerPath),
-//            url : LABKEY.ActionURL.buildURL("olap", "countDistinctQuery.api", config.containerPath),
+//            url : LABKEY.ActionURL.buildURL("olap", "jsonQuery.api", config.containerPath),
+            url : LABKEY.ActionURL.buildURL("olap", "countDistinctQuery.api", config.containerPath),
             method : 'POST',
             success: function(r){postProcessExecuteMdx(r,config);},
             failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
