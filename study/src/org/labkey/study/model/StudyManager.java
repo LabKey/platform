@@ -4049,8 +4049,6 @@ public class StudyManager
 
     public Study getSharedStudy(Study study)
     {
-        if (!AppProps.getInstance().isExperimentalFeatureEnabled(StudyModule.EXPERIMENTALFEATURE_SHARED_DATASET))
-            return null;
         if (study.getContainer().isProject())
             return null;
         Container p = study.getContainer().getProject();

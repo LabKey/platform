@@ -112,9 +112,8 @@
 
 <%
     boolean isProject = getContainer().isProject();
-    boolean enableSharedDataset = AppProps.getInstance().isExperimentalFeatureEnabled(StudyModule.EXPERIMENTALFEATURE_SHARED_DATASET);
 
-    if (isProject && enableSharedDataset)
+    if (isProject)
     {
 %>
         <tr>
@@ -131,7 +130,7 @@
         <tr>
             <td>&nbsp;</td>
             <td align="left"><p><br>Enable sharing of dataset definitions created in this project-level study.
-                This is meant for development and testing purposes only.  You have been warned.</p></td>
+                If this option is enabled, all studies in this project will see the datasets defined in the root folder of the project.</p></td>
         </tr>
 <%}%>
 

@@ -1109,9 +1109,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     @NotNull
     public Boolean getShareDatasetDefinitions()
     {
-        return _shareDatasetDefinitions &&
-            AppProps.getInstance().isExperimentalFeatureEnabled(StudyModule.EXPERIMENTALFEATURE_SHARED_DATASET) &&
-            getContainer().isProject();
+        return _shareDatasetDefinitions && getContainer().isProject();
     }
 
 
@@ -1124,8 +1122,6 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     @Override
     public boolean isDataspaceStudy()
     {
-        if (!AppProps.getInstance().isExperimentalFeatureEnabled(StudyModule.EXPERIMENTALFEATURE_SHARED_DATASET))
-            return false;
         return getContainer().getFolderType() instanceof DataspaceStudyFolderType;
     }
 
