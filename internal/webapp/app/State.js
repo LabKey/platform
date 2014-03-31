@@ -606,8 +606,9 @@ Ext.define('LABKEY.app.controller.State', {
                     for (var j=0; j < newFilters[n].data.members.length; j++) {
 
                         match = true;
-                        oldFilters[i].data.members.push(newFilters[n].data.members[j]);
 
+                        if (!this.isExistingMemberByUname(oldFilters[i].data.members, newFilters[n].data.members[j]))
+                            oldFilters[i].data.members.push(newFilters[n].data.members[j]);
                     }
                 }
             }
@@ -636,6 +637,20 @@ Ext.define('LABKEY.app.controller.State', {
         }
 
         return oldFilters;
+    },
+
+    isExistingMemberByUname : function(memberArray, newMember) {
+        // issue 19999: don't push duplicate member if reselecting
+        for (var k = 0; k < memberArray.length; k++)
+        {
+            if (!memberArray[k].hasOwnProperty("uname") || !newMember.hasOwnProperty("uname"))
+                continue;
+
+            if (memberArray[k].uname.join() == newMember.uname.join())
+                return true;
+        }
+
+        return false;
     },
 
     /**
