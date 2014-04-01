@@ -18,12 +18,17 @@ package org.labkey.query.olap;
 import org.apache.commons.collections15.iterators.IteratorChain;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.SparseBitSet;
 import org.olap4j.OlapException;
 import org.olap4j.metadata.Hierarchy;
 import org.olap4j.metadata.Level;
 import org.olap4j.metadata.Member;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,11 +62,6 @@ public class MemberSet extends AbstractSet<Member>
     public MemberSet(Collection<Member> from)
     {
         addAll(from);
-    }
-
-    public MemberSet(Member m)
-    {
-        add(m);
     }
 
 
@@ -550,7 +550,7 @@ public class MemberSet extends AbstractSet<Member>
         @Override
         public boolean add(Member member)
         {
-            if (!member.getLevel().equals(_level))
+            if (!member.getLevel().getUniqueName().equals(_level.getUniqueName()))
                 throw new IllegalArgumentException();
             boolean ret = !_set.get(member.getOrdinal());
             _set.set(member.getOrdinal());
@@ -659,4 +659,229 @@ public class MemberSet extends AbstractSet<Member>
         }
     }
 
+
+
+
+
+
+
+    /** TESTING **/
+
+
+    static class MockOlapProxy implements InvocationHandler
+    {
+        final String uniqueName;
+        final int ordinal;
+
+        MockOlapProxy(String uniqueName, int ordinal)
+        {
+            this.uniqueName = uniqueName;
+            this.ordinal = ordinal;
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
+        {
+            switch (method.getName())
+            {
+                case "getUniqueName":
+                    return getUniqueName();
+                case "getOrdinal":
+                    return getOrdinal();
+                case "equals":
+                    throw new IllegalStateException("equals doesn't work use getUniqueName().equals(...)");
+                default:
+                    return null;
+            }
+        }
+
+        String getUniqueName()
+        {
+            return uniqueName;
+        }
+
+        int getOrdinal()
+        {
+            return ordinal;
+        }
+    }
+
+
+    static class MockLevelProxy extends MockOlapProxy
+    {
+        final Hierarchy h;
+        final String[] memberNames;
+        MockLevelProxy(Hierarchy h, String name, int ordinal, String[] members)
+        {
+            super(name,ordinal);
+            this.h = h;
+            this.memberNames = members;
+        }
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
+        {
+            switch (method.getName())
+            {
+                case "getHierarchy":
+                    return getHierarchy();
+                case "getMembers":
+                    return getMembers(proxy);
+                default:
+                    return super.invoke(proxy, method, args);
+            }
+        }
+        Hierarchy getHierarchy()
+        {
+            return h;
+        }
+        List<Member> getMembers(Object proxy)
+        {
+            ArrayList<Member> ret = new ArrayList<Member>(memberNames.length);
+            for (int i=0 ; i<memberNames.length ; i++)
+            {
+                String name = memberNames[i];
+                ret.add((Member)Proxy.newProxyInstance(MemberSet.class.getClassLoader(),new Class[]{Member.class}, new MockMemberProxy((Level)proxy,name,i)));
+            }
+            return ret;
+        }
+    }
+
+
+    static class MockMemberProxy extends MockOlapProxy
+    {
+        final Level l;
+        MockMemberProxy(Level l, String name, int ordinal)
+        {
+            super(name,ordinal);
+            this.l = l;
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
+        {
+            switch (method.getName())
+            {
+                case "getLevel":
+                    return getLevel();
+                case "getHierarchy":
+                    return getHierarchy();
+                default:
+                    return super.invoke(proxy, method, args);
+            }
+        }
+
+        Hierarchy getHierarchy()
+        {
+            return l.getHierarchy();
+        }
+        Level getLevel()
+        {
+            return l;
+        }
+    }
+
+
+    static String[] l1_members = {"Doe", "Jones"};
+    static String[] l2_members = {"Doe, John", "Doe, Jane", "Jones, Davie", "Jones, John Paul", "Jones, January"};
+
+    static Hierarchy h = (Hierarchy)Proxy.newProxyInstance(MemberSet.class.getClassLoader(), new Class<?>[]{Hierarchy.class}, new MockOlapProxy("Names",1));
+    static Level l0 = (Level)Proxy.newProxyInstance(MemberSet.class.getClassLoader(), new Class<?>[]{Level.class}, new MockLevelProxy(h,"[(ALL)]",0,new String[]{"ALL"}));
+    static Level l1 = (Level)Proxy.newProxyInstance(MemberSet.class.getClassLoader(), new Class<?>[]{Level.class}, new MockLevelProxy(h,"LastName",1,l1_members));
+    static Level l2 = (Level)Proxy.newProxyInstance(MemberSet.class.getClassLoader(), new Class<?>[]{Level.class}, new MockLevelProxy(h,"FullName",2,l2_members));
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testSparseBitSet()
+        {
+            SparseBitSet empty = new SparseBitSet();
+            empty.seal();
+            SparseBitSet fib = new SparseBitSet();
+            for (int f : Arrays.asList(
+                /* 1 */ 1, 1, 2, 3, 5, 8, 13, 21, 34, 55,
+                /* 11 */ 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765,
+                /* 21 */ 10946, 17711, 28657, 46368, 75025, 121393, 196418, 317811, 514229,  832040,
+                /* 31 */ 1346269, 2178309, 3524578, 5702887, 9227465, 14930352, 24157817, 39088169, 63245986, 102_334_155))
+                fib.set(f);
+            fib.seal();
+            SparseBitSet twosAndThrees = new SparseBitSet();
+            for (int i=0 ; i<=6 ; i++)
+            {
+                twosAndThrees.set((int)Math.pow(2,i) * 1);
+                twosAndThrees.set((int)Math.pow(2,i) * 3);
+                twosAndThrees.set((int)Math.pow(2,i) * 9);
+            }
+            twosAndThrees.seal();
+            SparseBitSet even = new SparseBitSet();
+            SparseBitSet odd = new SparseBitSet();
+            for (int i=0 ; i<50 ; i++)
+            {
+                even.set(i * 2);
+                odd.set(i * 2 + 1);
+            }
+            even.seal(); odd.seal();
+            assertEquals(0, empty.cardinality());
+            assertEquals(39, fib.cardinality());
+            assertEquals(21, twosAndThrees.cardinality());
+            assertEquals(50, even.cardinality());
+            assertEquals(50, odd.cardinality());
+            SparseBitSet t = new SparseBitSet();
+            t.or(fib);
+            t.and(odd);
+            assertEquals(7,t.cardinality());
+            assertEquals(7,countIntersect(fib,odd));
+
+            t = new SparseBitSet();
+            t.or(fib);
+            t.and(twosAndThrees);
+            // 1,2,3,8,144
+            assertEquals(5,t.cardinality());
+            assertEquals(5,countIntersect(fib,twosAndThrees));
+        }
+
+        @Test
+        public void testLevelMemberSet()
+        {
+
+        }
+
+        @Test
+        public void testMemberSet() throws OlapException
+        {
+            MemberSet allLevel0 = new MemberSet(l0, l0.getMembers());
+            MemberSet allLevel1= new MemberSet(l1, l1.getMembers());
+            MemberSet allLevel2= new MemberSet(l2, l2.getMembers());
+
+            assertEquals(1, allLevel0.size());
+            assertEquals(2, allLevel1.size());
+            assertEquals(5, allLevel2.size());
+
+            MemberSet all = new MemberSet();
+            all.addAll(allLevel0);
+            all.addAll(allLevel1);
+            all.addAll(allLevel2);
+            assertEquals(8, all.size());
+
+            List<Member> list = l2.getMembers();
+            MemberSet even = new MemberSet();
+            even.add(list.get(0));
+            even.add(list.get(2));
+            even.add(list.get(4));
+            assertEquals(3,even.size());
+            MemberSet odd = new MemberSet();
+            odd.add(list.get(1));
+            odd.add(list.get(3));
+            assertEquals(2, odd.size());
+
+            assertEquals(0, countIntersect(even,odd));
+            MemberSet union = new MemberSet();
+            union.addAll(even);
+            union.addAll(odd);
+            assertEquals(5, union.size());
+            assertEquals(3, countIntersect(even, union));
+            assertEquals(3, countIntersect(union, even));
+            assertEquals(2, countIntersect(odd, union));
+            assertEquals(2, countIntersect(union,odd));
+        }
+    }
 }
