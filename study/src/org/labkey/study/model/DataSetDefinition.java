@@ -1874,22 +1874,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     {
                         // Use rowId mapping tables or extra column if necessary to map FKs
                         FieldKey extraColumnFieldKey = DefaultStudyDesignWriter.getExtraForeignKeyColumnFieldKey(match, match.getFk());
-                        Map<Object, Object> sharedTableMap = null;
+                        Map<Object, Object> dataspaceTableIdMap = Collections.emptyMap();
                         if (null != _studyImportContext && null != match.getFk())
                         {
                             String lookupTableName = match.getFk().getLookupTableName();
-                            if (lookupTableName.equalsIgnoreCase("product"))
-                                sharedTableMap = _studyImportContext.getProductIdMap();
-                            else if (lookupTableName.equalsIgnoreCase("productantigen"))
-                                sharedTableMap = _studyImportContext.getProductAntigenIdMap();
-                            else if (lookupTableName.equalsIgnoreCase("personnel"))
-                                sharedTableMap = _studyImportContext.getPersonnelIdMap();
-                            else if (lookupTableName.equalsIgnoreCase("treatment"))
-                                sharedTableMap = _studyImportContext.getTreatmentIdMap();
+                            dataspaceTableIdMap = _studyImportContext.getDataspaceTableIdMap(lookupTableName);
                         }
-
                         out = it.addSharedTableLookupColumn(in, extraColumnFieldKey, match.getFk(),
-                                sharedTableMap);
+                                dataspaceTableIdMap);
                     }
                     else
                     {

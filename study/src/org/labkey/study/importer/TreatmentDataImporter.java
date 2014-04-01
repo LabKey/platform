@@ -124,9 +124,9 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
 
                     if (ctx.isDataspaceProject())
                     {
-                        ctx.setProductIdMap(_productIdMap);
-                        ctx.setProductAntigenIdMap(_productAntigenIdMap);
-                        ctx.setTreatmentIdMap(_treatmentIdMap);
+                        ctx.addDataspaceTableIdMap("Product", _productIdMap);
+                        ctx.addDataspaceTableIdMap("ProductAntigen", _productAntigenIdMap);
+                        ctx.addDataspaceTableIdMap("Treatment", _treatmentIdMap);
                     }
 
                     transaction.commit();

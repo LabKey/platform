@@ -63,7 +63,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
                 }
 
                 if (ctx.isDataspaceProject())
-                    ctx.setPersonnelIdMap(_personnelIdMap);
+                    ctx.addDataspaceTableIdMap("Personnel", _personnelIdMap);
             }
             else
                 throw new ImportException("Unable to open the folder at : " + dirType.getDir());

@@ -326,7 +326,7 @@ public class DefaultStudyDesignImporter
         @Override
         public void createTransformInfo(StudyImportContext ctx, List<Map<String, Object>> origRows, List<Map<String, Object>> insertedRows) throws ImportException
         {
-            Map<String, Map<String, Object>> rowMap = new HashMap<>();
+            Map<String, Map<String, Object>> rowMap = new CaseInsensitiveHashMap<>();
             for (Map<String, Object> row: origRows)
                 if (null != row.get(_fieldName))
                     rowMap.put(row.get(_fieldName).toString(), row);
@@ -420,7 +420,7 @@ public class DefaultStudyDesignImporter
                     TableSelector selector = new TableSelector(_tableInfo, columnNames);
                     existingRows = selector.getMapCollection();
 
-                    _existingValues = new HashMap<>();
+                    _existingValues = new CaseInsensitiveHashMap<>();
                     for (Map<String, Object> row : existingRows)
                     {
                         _existingValues.put(row.get(_fieldName).toString(), row.get(_keyName));

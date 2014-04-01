@@ -16,9 +16,11 @@
 package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlException;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.admin.LoggerGetter;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.XmlBeansUtil;
@@ -29,6 +31,7 @@ import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -41,10 +44,7 @@ public class StudyImportContext extends AbstractContext
     private File _studyXml;
 
     // Study design table maps (used only in Dataspace case) to help map dataset FKs
-    private Map<Object, Object> _productIdMap;
-    private Map<Object, Object> _productAntigenIdMap;
-    private Map<Object, Object> _personnelIdMap;
-    private Map<Object, Object> _treatmentIdMap;
+    private Map<String, Map<Object, Object>> _dataspaceTableIdMapMap = new CaseInsensitiveHashMap<>();
 
     // Required for xstream serialization on Java 7
     @SuppressWarnings({"UnusedDeclaration"})
@@ -170,43 +170,16 @@ public class StudyImportContext extends AbstractContext
         }
     }
 
-    public Map<Object, Object> getProductIdMap()
+    public Map<Object, Object> getDataspaceTableIdMap(String key)
     {
-        return _productIdMap;
+        Map<Object, Object> map = _dataspaceTableIdMapMap.get(key);
+        if (null == map)
+            map = Collections.emptyMap();
+        return map;
     }
 
-    public void setProductIdMap(Map<Object, Object> productIdMap)
+    public void addDataspaceTableIdMap(String key, @NotNull Map<Object, Object> map)
     {
-        _productIdMap = productIdMap;
-    }
-
-    public Map<Object, Object> getProductAntigenIdMap()
-    {
-        return _productAntigenIdMap;
-    }
-
-    public void setProductAntigenIdMap(Map<Object, Object> productAntigenIdMap)
-    {
-        _productAntigenIdMap = productAntigenIdMap;
-    }
-
-    public Map<Object, Object> getPersonnelIdMap()
-    {
-        return _personnelIdMap;
-    }
-
-    public void setPersonnelIdMap(Map<Object, Object> personnelIdMap)
-    {
-        _personnelIdMap = personnelIdMap;
-    }
-
-    public Map<Object, Object> getTreatmentIdMap()
-    {
-        return _treatmentIdMap;
-    }
-
-    public void setTreatmentIdMap(Map<Object, Object> treatmentIdMap)
-    {
-        _treatmentIdMap = treatmentIdMap;
+        _dataspaceTableIdMapMap.put(key, map);
     }
 }
