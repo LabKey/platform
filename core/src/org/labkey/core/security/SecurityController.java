@@ -324,6 +324,7 @@ public class SecurityController extends SpringActionController
     {
         private String group = null;
         private int id = Integer.MIN_VALUE;
+        private boolean exportActive;
 
         public void setId(int id)
         {
@@ -365,6 +366,16 @@ public class SecurityController extends SpringActionController
                 }
             }
             return group;
+        }
+
+        public boolean isExportActive()
+        {
+            return exportActive;
+        }
+
+        public void setExportActive(boolean exportActive)
+        {
+            this.exportActive = exportActive;
         }
     }
 
@@ -984,6 +995,8 @@ public class SecurityController extends SpringActionController
             }
             SimpleFilter filter = new SimpleFilter();
             filter.addInClause(FieldKey.fromParts("UserId"), userIds);
+            if (form.isExportActive())
+                filter.addCondition(FieldKey.fromParts("Active"), true);
             ctx.setBaseFilter(filter);
             rgn.prepareDisplayColumns(c);
             ExcelWriter ew = new ExcelWriter(rgn.getResultSet(ctx), rgn.getDisplayColumns())

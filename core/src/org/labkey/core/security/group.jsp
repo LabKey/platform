@@ -231,6 +231,9 @@ else
         ActionURL urlGroup = getViewContext().cloneActionURL();
         urlGroup.setAction("groupExport");
         urlGroup.replaceParameter("group", bean.groupName);
+
+        ActionURL urlGroupActive = urlGroup.clone();
+        urlGroupActive.addParameter("exportActive", true);
     %>
     </table>
     </div><%
@@ -248,6 +251,7 @@ else
     <%= button("Select All").submit(true).onClick("return selectAllCheckboxes(this.form, true);") %>
     <%= button("Clear All").submit(true).onClick("return selectAllCheckboxes(this.form, false);") %>
     <%= button("Export All to Excel").href(urlGroup) %>
+    <%= button("Export Active to Excel").href(urlGroupActive) %>
     </div><%
 }
 %><br>
