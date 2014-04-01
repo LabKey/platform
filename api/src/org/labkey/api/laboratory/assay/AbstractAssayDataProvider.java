@@ -184,7 +184,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
         JSONObject nameField = new JSONObject();
         nameField.put("hidden", true);
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-        nameField.put("value", ctx.getUser().getDisplayName(ctx.getUser()) + "_" + format.format(new Date()));
+        nameField.put("defaultValue", ctx.getUser().getDisplayName(ctx.getUser()) + "_" + format.format(new Date()));
         runMeta.put("Name", nameField);
 
         runMeta.put("runDate", new JSONObject().put("hidden", true));

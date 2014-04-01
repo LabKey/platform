@@ -127,12 +127,12 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         JSONObject runMeta = new JSONObject();
 
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-        runMeta.put("Name", new JSONObject().put("value", ctx.getUser().getDisplayName(ctx.getUser()) + "_" + format.format(new Date())));
+        runMeta.put("Name", new JSONObject().put("defaultValue", ctx.getUser().getDisplayName(ctx.getUser()) + "_" + format.format(new Date())));
 
         JSONObject runDate = new JSONObject();
         runDate.put("getInitialValue", "function(){return new Date();}");
         runDate.put("extFormat", "Y-m-d");
-        runMeta.put("performedBy", new JSONObject().put("value", ctx.getUser().getDisplayName(ctx.getUser())));
+        runMeta.put("performedBy", new JSONObject().put("defaultValue", ctx.getUser().getDisplayName(ctx.getUser())));
         runMeta.put("runDate", runDate);
         runMeta.put("comments", new JSONObject().put("height", 100));
         meta.put("Run", runMeta);

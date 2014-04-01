@@ -71,7 +71,7 @@ public class MarkCompletedButton extends SimpleButtonConfigFactory
     {
         ColumnInfo col = ti.getColumn("enddate");
         String xtype = "datefield";
-        if (col != null && col.getFormat().contains("HH"))
+        if (col != null && col.getFormat() != null && col.getFormat().contains("HH"))
             xtype = "xdatetime";
 
         String pkColName = null;
