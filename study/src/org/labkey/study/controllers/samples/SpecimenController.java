@@ -2590,6 +2590,7 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("coordinateSpecimens#requirements");
             return _appendManageStudy(root).addChild("Manage Default Requirements");
         }
     }
@@ -4074,6 +4075,7 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("specimenAdminTutorial");
             _appendManageStudy(root);
             root.addChild("Manage Repository Settings");
 
@@ -4665,8 +4667,7 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("specimenRequest"));
-
+            setHelpTopic("coordinateSpecimens#form");
             _appendManageStudy(root);
             root.addChild("Manage New Request Form");
 
@@ -4815,8 +4816,7 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("specimenRequest"));
-
+            setHelpTopic("coordinateSpecimens#notify");
             _appendManageStudy(root);
             root.addChild("Manage Notifications");
 
@@ -4861,7 +4861,7 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("specimenRequest"));
+            setHelpTopic(new HelpTopic("specimenRequest#display"));
             _appendManageStudy(root);
             root.addChild("Manage Specimen Display Settings");
 
@@ -5335,6 +5335,7 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("coordinateSpecimens#requestability");
             _appendManageStudy(root);
             root.addChild("Configure Requestability Rules");
             return root;
@@ -5614,6 +5615,7 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("manageSpecimens#group");
             _appendManageStudy(root);
             root.addChild("Configure Specimen Web Part");
 
@@ -5790,6 +5792,7 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("manageSpecimens#editProperties");
             _appendManageStudy(root);
             root.addChild("Specimen Properties");
             return root;

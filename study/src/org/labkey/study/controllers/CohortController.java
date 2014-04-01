@@ -138,6 +138,7 @@ public class CohortController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("manageCohorts");
             _appendManageStudy(root);
             root.addChild("Manage Cohorts");
             return root;

@@ -185,7 +185,7 @@ public class AssayController extends SpringActionController
     {
         public ModelAndView getView(ProtocolIdForm o, BindException errors) throws Exception
         {
-            setHelpTopic(new HelpTopic("assayUserGuide"));
+            setHelpTopic(new HelpTopic("adminAssays"));
             return AssayService.get().createAssayListView(getViewContext(), false, errors);
         }
 

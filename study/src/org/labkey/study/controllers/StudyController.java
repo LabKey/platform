@@ -441,6 +441,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("importDatasetFromFile");
             _appendNavTrailDatasetAdmin(root);
             return root.addChild("Define Dataset");
         }
@@ -1408,6 +1409,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("manageStudy");
             return _appendManageStudy(root);
         }
     }
@@ -1521,6 +1523,7 @@ public class StudyController extends BaseStudyController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("manageStudy");
             _appendManageStudy(root);
             return root.addChild("Study Properties");
         }
@@ -1606,6 +1609,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("manageVisits");
             _appendNavTrailVisitAdmin(root);
             return root;
         }
@@ -1628,6 +1632,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("manageDatasets");
             _appendManageStudy(root);
             return root.addChild("Manage Datasets");
         }
@@ -1717,6 +1722,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("manageLocations");
             _appendManageStudy(root);
             return root.addChild("Manage Locations");
         }
@@ -1886,6 +1892,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("studySchedule");
             _appendManageStudy(root);
             return root.addChild("Study Schedule");
         }
@@ -3275,6 +3282,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("manageQC");
             _appendManageStudy(root);
             return root.addChild("Manage Dataset QC States");
         }
@@ -6186,6 +6194,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("importExportStudy");
             _appendManageStudy(root);
             return root.addChild("Manage Reloading");
         }
@@ -6430,6 +6439,7 @@ public class StudyController extends BaseStudyController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("demoMode");
             _appendManageStudy(root);
             return root.addChild("Demo Mode");
         }
@@ -6622,6 +6632,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("participantGroups");
             _appendManageStudy(root);
             root.addChild("Manage " + getStudyRedirectIfNull().getSubjectNounSingular() + " Groups");
             return root;
@@ -7265,6 +7276,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("manageLocations");
             _appendManageStudy(root);
             root.addChild("Manage Location Types");
             return root;

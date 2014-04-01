@@ -610,6 +610,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
     public NavTree appendNavTrail(NavTree root)
     {
+        setHelpTopic("customizeFolder");
+
         Container container = getContainer();
 
         if (container.isRoot())

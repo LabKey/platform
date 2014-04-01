@@ -299,6 +299,7 @@ public class SecurityController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("configuringPerms");
             return root;
         }
     }
@@ -860,6 +861,7 @@ public class SecurityController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("globalGroups");
             return addGroupNavTrail(root, _group);
         }
     }

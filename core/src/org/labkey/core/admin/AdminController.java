@@ -4434,6 +4434,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("createProject");
             return null;
         }
     }

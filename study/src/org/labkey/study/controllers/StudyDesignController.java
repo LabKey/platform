@@ -78,6 +78,7 @@ public class StudyDesignController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("studyDesign#assay");
             if (getContainer().hasPermission(getUser(), ManageStudyPermission.class))
                 root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
             return root.addChild("Manage Assay Schedule");
@@ -109,6 +110,7 @@ public class StudyDesignController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("studyDesign#setup");
             if (getContainer().hasPermission(getUser(), ManageStudyPermission.class))
                 root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
             return root.addChild("Manage Study Products");
@@ -125,6 +127,7 @@ public class StudyDesignController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("studyDesign#immun");
             if (getContainer().hasPermission(getUser(), ManageStudyPermission.class))
                 root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
             return root.addChild("Manage Immunizations");
