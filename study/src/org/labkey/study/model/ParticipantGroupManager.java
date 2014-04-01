@@ -21,6 +21,8 @@ import org.junit.Test;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -30,6 +32,7 @@ import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -37,6 +40,8 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -57,6 +62,7 @@ import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.query.ParticipantTable;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -635,15 +641,31 @@ public class ParticipantGroupManager
 
             Study study = StudyManager.getInstance().getStudy(ContainerManager.getForId(group.getContainerId()));
             SqlExecutor executor = new SqlExecutor(scope);
+
+            //For dataspace folders, participants may come from multiple subfolders. We want to preserve this
+            //So pull participants and containers via the user schema which should be properly filtered
+            //TODO: Really need to pass in containers for each participant rather than rely on uniqueness of ids
+            final String subjectColumnName = StudyService.get().getSubjectColumnName(c);
+            final CaseInsensitiveHashMap<String> participantIdMap = new CaseInsensitiveHashMap<>();
+            QuerySchema schema = QueryService.get().getUserSchema(user, c, "study");
+            TableInfo participantTable = schema.getTable(StudyService.get().getSubjectTableName(c));
+            SimpleFilter participantFilter = new SimpleFilter();
+            participantFilter.addInClause(FieldKey.fromParts(subjectColumnName), Arrays.asList(group.getParticipantIds()));
+            TableSelector ts = new TableSelector(participantTable, PageFlowUtil.set(subjectColumnName, "container"), participantFilter, null);
+            ts.forEachMap(new Selector.ForEachBlock<Map<String, Object>>() {
+                @Override
+                public void exec(Map<String, Object> m) throws SQLException
+                {
+                    participantIdMap.put((String) m.get(subjectColumnName), (String) m.get("container"));
+                }
+            });
             for (String id : group.getParticipantIds())
             {
-                Participant p = StudyManager.getInstance().getParticipant(study, id);
-
                 // don't let the database catch the invalid ptid, so we can show a more reasonable error
-                if (p == null)
+                if (!participantIdMap.containsKey(id))
                     throw new ValidationException(String.format("The %s ID specified : %s does not exist in this study. Please enter a valid identifier.", study.getSubjectNounSingular(), id));
 
-                executor.execute(sql.getSQL(), group.getRowId(), id, group.getContainerId());
+                executor.execute(sql.getSQL(), group.getRowId(), id, participantIdMap.get(id));
             }
             GROUP_CACHE.remove(getCacheKey(group.getCategoryId()));
 
