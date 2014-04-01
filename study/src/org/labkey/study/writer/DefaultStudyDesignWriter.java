@@ -179,8 +179,7 @@ public abstract class DefaultStudyDesignWriter
         {
             super.writeColumn(column, columnXml);
 
-            // Since the specimen tables only return a SchemaTableInfo, the column names will be decapitalized,
-            // to preserve casing we defer to the DomainProperty names. This is mostly cosmetic
+            // TODO: verify whether this is necessary
             if (_properties.containsKey(column.getName()))
             {
                 DomainProperty dp = _properties.get(column.getName());

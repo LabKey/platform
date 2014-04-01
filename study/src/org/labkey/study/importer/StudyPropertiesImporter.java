@@ -8,6 +8,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.writer.StudyPropertiesWriter;
 import org.labkey.study.xml.ExportDirType;
+import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,7 +26,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
     /**
      * Exports additional study related properties into the properties sub folder
      */
-    public void importExtendedStudyProperties(StudyImportContext ctx, VirtualFile root) throws Exception
+    public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
         ExportDirType dirType = ctx.getXml().getProperties();
 

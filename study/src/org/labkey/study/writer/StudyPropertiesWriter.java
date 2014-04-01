@@ -18,7 +18,7 @@ public class StudyPropertiesWriter extends DefaultStudyDesignWriter
     /**
      * Exports additional study related properties into the properties sub folder
      */
-    public void writeExtendedStudyProperties(StudyImpl study, StudyExportContext ctx, VirtualFile dir) throws Exception
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile dir) throws Exception
     {
         Set<String> studyTableNames = new HashSet<>();
         StudyQuerySchema schema = StudyQuerySchema.createSchema(study, ctx.getUser(), true);

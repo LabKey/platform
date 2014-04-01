@@ -75,131 +75,154 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
         SpecimensDocument xmlSettingsDoc = SpecimensDocument.Factory.newInstance();
         SpecimenSettingsType xmlSettings = xmlSettingsDoc.addNewSpecimens();
 
-        RepositorySettings repositorySettings = study.getRepositorySettings();
-        xmlSettings.setRepositoryType(repositorySettings.isSimple() ? SpecimenRepositoryType.STANDARD : SpecimenRepositoryType.ADVANCED);
-        xmlSettings.setEnableRequests(repositorySettings.isEnableRequests());
-        xmlSettings.setEditableRepository(repositorySettings.isSpecimenDataEditable());
+        writeRepositoryType(xmlSettings, study, ctx);
+        writeLocationTypes(xmlSettings, study, ctx);
+        writeSpecimenGroupings(xmlSettings, study, ctx);
+        writeDisplaySettings(xmlSettings, study, ctx);
 
-        // specimen location types
-        SpecimenSettingsType.LocationTypes xmlLocationTypes = xmlSettings.addNewLocationTypes();
+        // these settings only apply if repository type is Advanced and specimen requests are enabled
+        RepositorySettings repositorySettings = study.getRepositorySettings();
+        if (!repositorySettings.isSimple() && repositorySettings.isEnableRequests())
+        {
+            writeRequestStatuses(xmlSettings, study, ctx);
+            writeActorsAndGroups(xmlSettings, study, ctx);
+            writeDefaultRequirements(xmlSettings, study, ctx);
+            writeRequestForm(xmlSettings, study, ctx);
+            writeNotifications(xmlSettings, study, ctx);
+            writeRequestabilityRules(xmlSettings, study, ctx);
+        }
+
+        // write out the xml
+        dir.saveXmlBean(DEFAULT_SETTINGS_FILE, xmlSettingsDoc);
+    }
+
+    private void writeRepositoryType(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx)
+    {
+        RepositorySettings repositorySettings = study.getRepositorySettings();
+
+        specimenSettingsType.setRepositoryType(repositorySettings.isSimple() ? SpecimenRepositoryType.STANDARD : SpecimenRepositoryType.ADVANCED);
+        specimenSettingsType.setEnableRequests(repositorySettings.isEnableRequests());
+        specimenSettingsType.setEditableRepository(repositorySettings.isSpecimenDataEditable());
+    }
+
+    private void writeLocationTypes(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx)
+    {
+        SpecimenSettingsType.LocationTypes xmlLocationTypes = specimenSettingsType.addNewLocationTypes();
         xmlLocationTypes.addNewRepository().setAllowRequests(study.isAllowReqLocRepository());
         xmlLocationTypes.addNewClinic().setAllowRequests(study.isAllowReqLocClinic());
         xmlLocationTypes.addNewSiteAffiliatedLab().setAllowRequests(study.isAllowReqLocSal());
         xmlLocationTypes.addNewEndpointLab().setAllowRequests(study.isAllowReqLocEndpoint());
+    }
 
-        // specimen webpart groupings
+    private void writeSpecimenGroupings(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx)
+    {
+        RepositorySettings repositorySettings = study.getRepositorySettings();
         ArrayList<String[]> groupings = repositorySettings.getSpecimenWebPartGroupings();
         if (groupings.size() > 0)
         {
-            SpecimenSettingsType.WebPartGroupings xmlWebPartGroupings = xmlSettings.addNewWebPartGroupings();
+            SpecimenSettingsType.WebPartGroupings xmlWebPartGroupings = specimenSettingsType.addNewWebPartGroupings();
             for (String[] grouping : groupings)
             {
                 SpecimenSettingsType.WebPartGroupings.Grouping xmlGrouping = xmlWebPartGroupings.addNewGrouping();
                 xmlGrouping.setGroupByArray(grouping);
             }
         }
+    }
 
-        // these settigns only apply if repository type is Advanced and specimen requests are enabled
-        if (!repositorySettings.isSimple() && repositorySettings.isEnableRequests())
+    private void writeRequestStatuses(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx)
+    {
+        SpecimenSettingsType.RequestStatuses xmlRequestStatuses = null;
+        List<SampleRequestStatus> statuses = study.getSampleRequestStatuses(ctx.getUser());
+        if (statuses.size() > 0)
         {
-            // request statuses
-            SpecimenSettingsType.RequestStatuses xmlRequestStatuses = null;
-            List<SampleRequestStatus> statuses = study.getSampleRequestStatuses(ctx.getUser());
-            if (statuses.size() > 0)
+            for (SampleRequestStatus status : statuses)
             {
-                for (SampleRequestStatus status : statuses)
+                if (!status.isSystemStatus()) // don't export system statuses
                 {
-                    if (!status.isSystemStatus()) // don't export system statuses
-                    {
-                        if (xmlRequestStatuses == null) xmlRequestStatuses = xmlSettings.addNewRequestStatuses();
-                        SpecimenSettingsType.RequestStatuses.Status xmlStatus = xmlRequestStatuses.addNewStatus();
-                        xmlStatus.setLabel(status.getLabel());
-                        xmlStatus.setFinalState(status.isFinalState());
-                        xmlStatus.setLockSpecimens(status.isSpecimensLocked());
-                    }
+                    if (xmlRequestStatuses == null) xmlRequestStatuses = specimenSettingsType.addNewRequestStatuses();
+                    SpecimenSettingsType.RequestStatuses.Status xmlStatus = xmlRequestStatuses.addNewStatus();
+                    xmlStatus.setLabel(status.getLabel());
+                    xmlStatus.setFinalState(status.isFinalState());
+                    xmlStatus.setLockSpecimens(status.isSpecimensLocked());
                 }
-            }
-            StatusSettings statusSettings = SampleManager.getInstance().getStatusSettings(study.getContainer());
-            if (!statusSettings.isUseShoppingCart()) // default is to use shopping cart
-            {
-                if (xmlRequestStatuses == null) xmlRequestStatuses = xmlSettings.addNewRequestStatuses();
-                xmlRequestStatuses.setMultipleSearch(statusSettings.isUseShoppingCart());
-            }
-
-            // request actors
-            SampleRequestActor[] actors = study.getSampleRequestActors();
-            if (actors != null && actors.length > 0)
-            {
-                SpecimenSettingsType.RequestActors xmlRequestActors = xmlSettings.addNewRequestActors();
-                for (SampleRequestActor actor : actors)
-                {
-                    SpecimenSettingsType.RequestActors.Actor xmlActor = xmlRequestActors.addNewActor();
-                    xmlActor.setLabel(actor.getLabel());
-                    xmlActor.setType(actor.isPerSite() ? SpecimenSettingsType.RequestActors.Actor.Type.LOCATION : SpecimenSettingsType.RequestActors.Actor.Type.STUDY);
-
-                    SpecimenSettingsType.RequestActors.Actor.Groups xmlGroups = xmlActor.addNewGroups();
-                    if (!actor.isPerSite())
-                    {
-                        if (actor.getMembers().length > 0)
-                        {
-                            GroupType xmlGroup = xmlGroups.addNewGroup();
-                            writeActorGroup(actor, null, xmlGroup);
-                        }
-                    }
-                    else
-                    {
-                        for (LocationImpl location : study.getLocations())
-                        {
-                            if (actor.getMembers(location).length > 0)
-                            {
-                                GroupType xmlGroup = xmlGroups.addNewGroup();
-                                writeActorGroup(actor, location, xmlGroup);
-                            }
-                        }
-                    }
-                }
-            }
-
-            // default requirements
-            SpecimenController.ManageReqsBean defRequirments = new SpecimenController.ManageReqsBean(ctx.getUser(), study.getContainer());
-            SpecimenSettingsType.DefaultRequirements xmlDefRequirements = null;
-            if (defRequirments.getOriginatorRequirements().length > 0)
-            {
-                xmlDefRequirements = xmlSettings.addNewDefaultRequirements();
-                DefaultRequirementsType xmlOrigLabReq = xmlDefRequirements.addNewOriginatingLab();
-                for (SampleRequestRequirement req : defRequirments.getOriginatorRequirements())
-                    writeDefaultRequirement(xmlOrigLabReq, req);
-            }
-            if (defRequirments.getProviderRequirements().length > 0)
-            {
-                if (xmlDefRequirements == null) xmlDefRequirements = xmlSettings.addNewDefaultRequirements();
-                DefaultRequirementsType xmlProviderReq = xmlDefRequirements.addNewProvidingLab();
-                for (SampleRequestRequirement req : defRequirments.getProviderRequirements())
-                    writeDefaultRequirement(xmlProviderReq, req);
-            }
-            if (defRequirments.getReceiverRequirements().length > 0)
-            {
-                if (xmlDefRequirements == null) xmlDefRequirements = xmlSettings.addNewDefaultRequirements();
-                DefaultRequirementsType xmlReceiverReq = xmlDefRequirements.addNewReceivingLab();
-                for (SampleRequestRequirement req : defRequirments.getReceiverRequirements())
-                    writeDefaultRequirement(xmlReceiverReq, req);
-            }
-            if (defRequirments.getGeneralRequirements().length > 0)
-            {
-                if (xmlDefRequirements == null) xmlDefRequirements = xmlSettings.addNewDefaultRequirements();
-                DefaultRequirementsType xmlGeneralReq = xmlDefRequirements.addNewGeneral();
-                for (SampleRequestRequirement req : defRequirments.getGeneralRequirements())
-                    writeDefaultRequirement(xmlGeneralReq, req);
             }
         }
+        StatusSettings statusSettings = SampleManager.getInstance().getStatusSettings(study.getContainer());
+        if (!statusSettings.isUseShoppingCart()) // default is to use shopping cart
+        {
+            if (xmlRequestStatuses == null) xmlRequestStatuses = specimenSettingsType.addNewRequestStatuses();
+            xmlRequestStatuses.setMultipleSearch(statusSettings.isUseShoppingCart());
+        }
+    }
 
-        writeDisplaySettings(xmlSettings, study, ctx);
-        writeRequestForm(xmlSettings, study, ctx);
-        writeNotifications(xmlSettings, study, ctx);
-        writeRequestabilityRules(xmlSettings, study, ctx);
+    private void writeActorsAndGroups(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx)
+    {
+        SampleRequestActor[] actors = study.getSampleRequestActors();
+        if (actors != null && actors.length > 0)
+        {
+            SpecimenSettingsType.RequestActors xmlRequestActors = specimenSettingsType.addNewRequestActors();
+            for (SampleRequestActor actor : actors)
+            {
+                SpecimenSettingsType.RequestActors.Actor xmlActor = xmlRequestActors.addNewActor();
+                xmlActor.setLabel(actor.getLabel());
+                xmlActor.setType(actor.isPerSite() ? SpecimenSettingsType.RequestActors.Actor.Type.LOCATION : SpecimenSettingsType.RequestActors.Actor.Type.STUDY);
 
-        // write out the xml
-        dir.saveXmlBean(DEFAULT_SETTINGS_FILE, xmlSettingsDoc);
+                SpecimenSettingsType.RequestActors.Actor.Groups xmlGroups = xmlActor.addNewGroups();
+                if (!actor.isPerSite())
+                {
+                    if (actor.getMembers().length > 0)
+                    {
+                        GroupType xmlGroup = xmlGroups.addNewGroup();
+                        writeActorGroup(actor, null, xmlGroup);
+                    }
+                }
+                else
+                {
+                    for (LocationImpl location : study.getLocations())
+                    {
+                        if (actor.getMembers(location).length > 0)
+                        {
+                            GroupType xmlGroup = xmlGroups.addNewGroup();
+                            writeActorGroup(actor, location, xmlGroup);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void writeDefaultRequirements(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx) throws SQLException
+    {
+        SpecimenController.ManageReqsBean defRequirments = new SpecimenController.ManageReqsBean(ctx.getUser(), study.getContainer());
+        SpecimenSettingsType.DefaultRequirements xmlDefRequirements = null;
+        if (defRequirments.getOriginatorRequirements().length > 0)
+        {
+            xmlDefRequirements = specimenSettingsType.addNewDefaultRequirements();
+            DefaultRequirementsType xmlOrigLabReq = xmlDefRequirements.addNewOriginatingLab();
+            for (SampleRequestRequirement req : defRequirments.getOriginatorRequirements())
+                writeDefaultRequirement(xmlOrigLabReq, req);
+        }
+        if (defRequirments.getProviderRequirements().length > 0)
+        {
+            if (xmlDefRequirements == null) xmlDefRequirements = specimenSettingsType.addNewDefaultRequirements();
+            DefaultRequirementsType xmlProviderReq = xmlDefRequirements.addNewProvidingLab();
+            for (SampleRequestRequirement req : defRequirments.getProviderRequirements())
+                writeDefaultRequirement(xmlProviderReq, req);
+        }
+        if (defRequirments.getReceiverRequirements().length > 0)
+        {
+            if (xmlDefRequirements == null) xmlDefRequirements = specimenSettingsType.addNewDefaultRequirements();
+            DefaultRequirementsType xmlReceiverReq = xmlDefRequirements.addNewReceivingLab();
+            for (SampleRequestRequirement req : defRequirments.getReceiverRequirements())
+                writeDefaultRequirement(xmlReceiverReq, req);
+        }
+        if (defRequirments.getGeneralRequirements().length > 0)
+        {
+            if (xmlDefRequirements == null) xmlDefRequirements = specimenSettingsType.addNewDefaultRequirements();
+            DefaultRequirementsType xmlGeneralReq = xmlDefRequirements.addNewGeneral();
+            for (SampleRequestRequirement req : defRequirments.getGeneralRequirements())
+                writeDefaultRequirement(xmlGeneralReq, req);
+        }
     }
 
     private void writeDefaultRequirement(DefaultRequirementsType xmlReqType, SampleRequestRequirement req)
@@ -224,7 +247,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
         ctx.getLogger().info("Exporting specimen display settings");
         DisplaySettings settings = SampleManager.getInstance().getDisplaySettings(ctx.getContainer());
 
-        org.labkey.study.xml.SpecimenSettingsType.DisplaySettings xmlSettings = specimenSettingsType.addNewDisplaySettings();
+        SpecimenSettingsType.DisplaySettings xmlSettings = specimenSettingsType.addNewDisplaySettings();
 
         SpecimenSettingsType.DisplaySettings.CommentsAndQC commentsAndQC = xmlSettings.addNewCommentsAndQC();
         commentsAndQC.setDefaultToCommentsMode(settings.isDefaultToCommentsMode());

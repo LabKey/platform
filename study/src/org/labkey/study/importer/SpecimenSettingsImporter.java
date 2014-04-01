@@ -18,7 +18,7 @@ package org.labkey.study.importer;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.*;
+import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.security.xml.GroupType;
@@ -394,7 +394,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
     private void importDisplaySettings(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings)
     {
         ctx.getLogger().info("Importing specimen display settings");
-        org.labkey.study.xml.SpecimenSettingsType.DisplaySettings xmlDisplay = xmlSettings.getDisplaySettings();
+        SpecimenSettingsType.DisplaySettings xmlDisplay = xmlSettings.getDisplaySettings();
         if (xmlDisplay != null)
         {
             DisplaySettings display = new DisplaySettings();
@@ -497,26 +497,13 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         if (xmlRules != null)
         {
             List<RequestabilityManager.RequestableRule> rules = new ArrayList<>();
-            Set<String> currentRules = new HashSet<>();
-
-            // seems like requestability rules should not get merged, instead just have the imported set
-            // replace any existing rules.
-/*
-            rules.addAll(RequestabilityManager.getInstance().getRules(ctx.getContainer()));
-            for (RequestabilityManager.RequestableRule rule : rules)
-                currentRules.add(rule.getType().name());
-*/
-
             SpecimenSettingsType.RequestabilityRules.Rule[] xmlRuleArray = xmlRules.getRuleArray();
             if (xmlRuleArray != null && xmlRuleArray.length > 0)
             {
                 for (SpecimenSettingsType.RequestabilityRules.Rule rule : xmlRuleArray)
                 {
-                    if (!currentRules.contains(rule.getType()))
-                    {
-                        RequestabilityManager.RuleType type = RequestabilityManager.RuleType.valueOf(rule.getType());
-                        rules.add(type.createRule(ctx.getContainer(), rule.getRuleData()));
-                    }
+                    RequestabilityManager.RuleType type = RequestabilityManager.RuleType.valueOf(rule.getType());
+                    rules.add(type.createRule(ctx.getContainer(), rule.getRuleData()));
                 }
                 RequestabilityManager.getInstance().saveRules(ctx.getContainer(), ctx.getUser(), rules);
             }

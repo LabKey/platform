@@ -112,7 +112,7 @@ class StudyXmlWriter implements InternalStudyWriter
         ctx.lockDocument();
 
         // export the study objectives and personnel tables
-        new StudyPropertiesWriter().writeExtendedStudyProperties(study, ctx, vf.getDir(PROPERTIES_DIRECTORY));
+        new StudyPropertiesWriter().write(study, ctx, vf.getDir(PROPERTIES_DIRECTORY));
     }
 
     public static StudyDocument getStudyDocument()

@@ -185,7 +185,7 @@ public class DefaultStudyDesignImporter
                     ctx.getLogger().warn("Unable to get domain for table: " + tableName);
             }
             else
-                ctx.getLogger().info("No tableinfo for table : " + tableName);
+                ctx.getLogger().warn("No tableinfo for table : " + tableName);
         }
     }
 
