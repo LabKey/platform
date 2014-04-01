@@ -154,6 +154,7 @@ public class ParticipantTable extends BaseStudyTable
         }
 
         addAliasesColumn();
+        addStudyColumn();
     }
 
     private void addAliasesColumn()
