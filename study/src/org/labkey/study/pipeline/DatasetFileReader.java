@@ -24,6 +24,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -59,6 +60,7 @@ public class DatasetFileReader
     private final StudyImpl _study;
     private final StudyManager _studyManager = StudyManager.getInstance();
     private final PipelineJob _job;
+    private final StudyImportContext _studyImportContext;
 
     private String _datasetsFileName;
     private VirtualFile _datasetsDirectory;
@@ -67,15 +69,16 @@ public class DatasetFileReader
 
     public DatasetFileReader(VirtualFile datasetsDirectory, String datasetsFileName, StudyImpl study)
     {
-        this(datasetsDirectory, datasetsFileName, study, null);
+        this(datasetsDirectory, datasetsFileName, study, null, null);
     }
 
-    public DatasetFileReader(VirtualFile datasetsDirectory, String datasetsFileName, StudyImpl study, PipelineJob job)
+    public DatasetFileReader(VirtualFile datasetsDirectory, String datasetsFileName, StudyImpl study, PipelineJob job, StudyImportContext studyImportContext)
     {
         _datasetsDirectory = datasetsDirectory;
         _datasetsFileName = datasetsFileName;
         _study = study;
         _job = job;
+        _studyImportContext = studyImportContext;
     }
 
     public String getDefinitionFileName()
@@ -322,7 +325,7 @@ public class DatasetFileReader
         if (ds.getDataSetId() == -1 && "Participant".equals(ds.getName()))
             runnable = new ParticipantImportRunnable(_job, _study, ds, root, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
         else
-            runnable = new DatasetImportRunnable(_job, _study, ds, root, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
+            runnable = new DatasetImportRunnable(_job, _study, ds, root, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap, _studyImportContext);
         return runnable;
     }
 

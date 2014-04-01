@@ -126,7 +126,6 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.study.QueryHelper;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudyCache;
-import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.controllers.BaseStudyController;
@@ -134,6 +133,7 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.importer.SchemaReader;
+import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.importer.StudyReload;
 import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyPersonnelDomainKind;
@@ -3049,31 +3049,36 @@ public class StudyManager
 
     /** @deprecated pass in a BatchValidationException, not List<String>  */
     @Deprecated
-    public List<String> importDatasetData(User user, DataSetDefinition def, DataLoader loader, Map<String, String> columnMap, List<String> errors, DataSetDefinition.CheckForDuplicates checkDuplicates, QCState defaultQCState, Logger logger)
+    public List<String> importDatasetData(User user, DataSetDefinition def, DataLoader loader, Map<String, String> columnMap,
+                                          List<String> errors, DataSetDefinition.CheckForDuplicates checkDuplicates,
+                                          QCState defaultQCState, StudyImportContext studyImportContext, Logger logger)
             throws IOException, ServletException, SQLException
     {
         parseData(user, def, loader, columnMap);
         DataIteratorContext context = new DataIteratorContext();
         context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
-        List<String> lsids = def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, logger, false);
+        List<String> lsids = def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, studyImportContext, logger, false);
         batchValidateExceptionToList(context.getErrors(),errors);
         return lsids;
     }
 
-    public List<String> importDatasetData(User user, DataSetDefinition def, DataLoader loader, Map<String, String> columnMap, BatchValidationException errors, DataSetDefinition.CheckForDuplicates checkDuplicates, QCState defaultQCState, Logger logger)
+    public List<String> importDatasetData(User user, DataSetDefinition def, DataLoader loader, Map<String, String> columnMap,
+                                          BatchValidationException errors, DataSetDefinition.CheckForDuplicates checkDuplicates,
+                                          QCState defaultQCState, StudyImportContext studyImportContext, Logger logger)
             throws IOException, ServletException, SQLException
     {
         parseData(user, def, loader, columnMap);
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
-        return def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, logger, false);
+        return def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, studyImportContext, logger, false);
     }
     
 
     /** @deprecated pass in a BatchValidationException, not List<String>  */
     @Deprecated
-    public List<String> importDatasetData(User user, DataSetDefinition def, List<Map<String, Object>> data, List<String> errors, DataSetDefinition.CheckForDuplicates checkDuplicates, QCState defaultQCState, Logger logger,
-                                          boolean forUpdate)
+    public List<String> importDatasetData(User user, DataSetDefinition def, List<Map<String, Object>> data,
+                                          List<String> errors, DataSetDefinition.CheckForDuplicates checkDuplicates,
+                                          QCState defaultQCState, Logger logger, boolean forUpdate)
     {
         if (data.isEmpty())
             return Collections.emptyList();
@@ -3081,7 +3086,7 @@ public class StudyManager
         DataIteratorBuilder it = new ListofMapsDataIterator.Builder(data.get(0).keySet(), data);
         DataIteratorContext context = new DataIteratorContext();
         context.setInsertOption(forUpdate ? QueryUpdateService.InsertOption.INSERT : QueryUpdateService.InsertOption.IMPORT);
-        List<String> lsids = def.importDatasetData(user, it, context, checkDuplicates, defaultQCState, logger, forUpdate);
+        List<String> lsids = def.importDatasetData(user, it, context, checkDuplicates, defaultQCState, null, logger, forUpdate);
         batchValidateExceptionToList(context.getErrors(),errors);
         return lsids;
     }
@@ -4443,7 +4448,7 @@ public class StudyManager
             StudyManager.getInstance().importDatasetData(
                     _context.getUser(),
                     (DataSetDefinition)def, dl, columnMap,
-                    errors, DataSetDefinition.CheckForDuplicates.sourceAndDestination, null, null);
+                    errors, DataSetDefinition.CheckForDuplicates.sourceAndDestination, null, null, null);
         }
 
 

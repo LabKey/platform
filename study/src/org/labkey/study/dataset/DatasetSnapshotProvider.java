@@ -219,7 +219,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                         // import the data
                         BatchValidationException ve = new BatchValidationException();
                         StudyManager.getInstance().importDatasetData(context.getUser(), def, new TabLoader(sb, true),
-                                new CaseInsensitiveHashMap<String>(), ve, DataSetDefinition.CheckForDuplicates.sourceAndDestination, null, null);
+                                new CaseInsensitiveHashMap<String>(), ve, DataSetDefinition.CheckForDuplicates.sourceAndDestination, null, null, null);
 
                         for (ValidationException e : ve.getRowErrors())
                             errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
@@ -417,7 +417,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                         // import the new data
                         newRows = StudyManager.getInstance().importDatasetData(form.getViewContext().getUser(),
                                 dsDef, new TabLoader(sb, true), new CaseInsensitiveHashMap<String>(),
-                                importErrors, DataSetDefinition.CheckForDuplicates.sourceAndDestination, null, null);
+                                importErrors, DataSetDefinition.CheckForDuplicates.sourceAndDestination, null, null, null);
 
                         for (String error : importErrors)
                             errors.reject(SpringActionController.ERROR_MSG, error);

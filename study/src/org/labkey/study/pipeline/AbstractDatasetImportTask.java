@@ -99,7 +99,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
             try
             {
                 QuerySnapshotService.get(StudySchema.getInstance().getSchemaName()).pauseUpdates(study.getContainer());
-                DatasetFileReader reader = new DatasetFileReader(datasetsDirectory, datasetsFileName, study, job);
+                DatasetFileReader reader = new DatasetFileReader(datasetsDirectory, datasetsFileName, study, job, ctx);
                 List<String> errors = new ArrayList<>();
 
                 try

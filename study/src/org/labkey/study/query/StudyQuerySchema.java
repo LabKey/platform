@@ -969,6 +969,7 @@ public class StudyQuerySchema extends UserSchema
     }
 
     private static Set<String> _dataspaceProjectLevelTables = new HashSet<>();
+    private static Set<String> _dataspaceFolderLevelTables = new HashSet<>();
     static
     {
         _dataspaceProjectLevelTables.add(STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
@@ -982,10 +983,18 @@ public class StudyQuerySchema extends UserSchema
         _dataspaceProjectLevelTables.add(PRODUCT_TABLE_NAME);
         _dataspaceProjectLevelTables.add(PRODUCT_ANTIGEN_TABLE_NAME);
         _dataspaceProjectLevelTables.add(PERSONNEL_TABLE_NAME);
+
+        _dataspaceFolderLevelTables.add(TREATMENT_TABLE_NAME);
+        _dataspaceFolderLevelTables.add(ASSAY_SPECIMEN_TABLE_NAME);
     }
 
     public static boolean isDataspaceProjectTable(String tableName)
     {
         return _dataspaceProjectLevelTables.contains(tableName);
+    }
+
+    public static boolean isDataspaceFolderTable(String tableName)
+    {
+        return _dataspaceFolderLevelTables.contains(tableName);
     }
 }

@@ -44,7 +44,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
 
     ParticipantImportRunnable(PipelineJob job, StudyImpl study, DataSetDefinition ds, VirtualFile root, String tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Date defaultReplaceCutoff, Map<String, String> columnMap)
     {
-        super(job, study, ds, root, tsv, action, deleteAfterImport, defaultReplaceCutoff, columnMap);
+        super(job, study, ds, root, tsv, action, deleteAfterImport, defaultReplaceCutoff, columnMap, null);
     }
 
 

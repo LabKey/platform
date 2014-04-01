@@ -17,6 +17,7 @@
 package org.labkey.study.pipeline;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -30,6 +31,7 @@ import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.Filter;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
+import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyImpl;
@@ -55,12 +57,15 @@ public class DatasetImportRunnable implements Runnable
     protected final DataSetDefinition _datasetDefinition;
     protected final PipelineJob _job;
     protected final StudyImpl _study;
+    @Nullable protected final StudyImportContext _studyImportContext;
     protected final Map<String, String> _columnMap = new DatasetFileReader.OneToOneStringMap();
 
     protected VirtualFile _root;
     protected String _tsvName;
 
-    DatasetImportRunnable(PipelineJob job, StudyImpl study, DataSetDefinition ds, VirtualFile root, String tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Date defaultReplaceCutoff, Map<String, String> columnMap)
+    DatasetImportRunnable(PipelineJob job, StudyImpl study, DataSetDefinition ds, VirtualFile root, String tsv,
+                          AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Date defaultReplaceCutoff,
+                          Map<String, String> columnMap, @Nullable StudyImportContext studyImportContext)
     {
         _job = job;
         _study = study;
@@ -72,6 +77,7 @@ public class DatasetImportRunnable implements Runnable
 
         _root = root;
         _tsvName = tsv;
+        _studyImportContext = studyImportContext;
     }
 
     public String validate()
@@ -188,6 +194,7 @@ public class DatasetImportRunnable implements Runnable
                             DataSetDefinition.CheckForDuplicates.sourceOnly,
                             //Set to TRUE if MERGEing
                             defaultQCState,
+                            _studyImportContext,
                             _job.getLogger()
                     );
                     if (errors.size() == 0)

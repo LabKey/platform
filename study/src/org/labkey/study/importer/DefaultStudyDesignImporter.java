@@ -201,7 +201,7 @@ public class DefaultStudyDesignImporter
     }
 
     protected void importTableData(StudyImportContext ctx, VirtualFile vf, StudyQuerySchema.TablePackage tablePackage,
-                                                     @Nullable TransformBuilder transformBuilder,
+                                                     @Nullable MapBuilder transformBuilder,
                                                      @Nullable TransformHelper transformHelper) throws Exception
     {
         TableInfo tableInfo = tablePackage.getTableInfo();
@@ -245,8 +245,8 @@ public class DefaultStudyDesignImporter
 
                         if (transformBuilder != null)
                         {
-                            if (!(transformBuilder instanceof TransformBuilder))
-                                throw new ImportException("The specified transform builder does not implement the TransformBuilder interface");
+                            if (!(transformBuilder instanceof MapBuilder))
+                                throw new ImportException("The specified transform builder does not implement the MapBuilder interface");
                             transformBuilder.createTransformInfo(ctx, rows, insertedRows);
                         }
                     }
@@ -275,7 +275,7 @@ public class DefaultStudyDesignImporter
      * Interface which allows the transform to create and initialize the transform based on the original
      * and inserted data.
      */
-    interface TransformBuilder
+    interface MapBuilder
     {
         void createTransformInfo(StudyImportContext ctx, List<Map<String, Object>> origRows, List<Map<String, Object>> insertedRows) throws ImportException;
     }
@@ -306,6 +306,76 @@ public class DefaultStudyDesignImporter
             return result;
         }
     }
+
+    /**
+     * Transform which manages foreign keys to the rowId of a shared table with RowId PK
+     *      Adds rowId mappings for inserted rows
+     */
+    protected class SharedTableMapBuilder implements MapBuilder
+
+    {
+        protected String _fieldName;
+        protected Map<Object, Object> _idMap;
+
+        public SharedTableMapBuilder(Map<Object, Object> idMap, String fieldName)
+        {
+            _idMap = idMap;
+            _fieldName = fieldName;
+        }
+
+        @Override
+        public void createTransformInfo(StudyImportContext ctx, List<Map<String, Object>> origRows, List<Map<String, Object>> insertedRows) throws ImportException
+        {
+            Map<String, Map<String, Object>> rowMap = new HashMap<>();
+            for (Map<String, Object> row: origRows)
+                if (null != row.get(_fieldName))
+                    rowMap.put(row.get(_fieldName).toString(), row);
+
+            for (Map<String, Object> inserted : insertedRows)
+            {
+                if (null != inserted.get(_fieldName))
+                {
+                    Map<String, Object> orig = rowMap.get(inserted.get(_fieldName));
+                    if (orig.containsKey("RowId") && inserted.containsKey("RowId"))
+                    {
+                        _idMap.put(orig.get("RowId"), inserted.get("RowId"));
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Transform which manages foreign keys to a non-shared table
+     */
+    protected class NonSharedTableMapBuilder implements MapBuilder
+    {
+        protected Map<Object, Object> _idMap;
+
+        public NonSharedTableMapBuilder(Map<Object, Object> idMap)
+        {
+            _idMap = idMap;
+        }
+
+        @Override
+        public void createTransformInfo(StudyImportContext ctx, List<Map<String, Object>> origRows, List<Map<String, Object>> insertedRows) throws ImportException
+        {
+            if (origRows.size() != insertedRows.size())
+                throw new ImportException("All original rows should be inserted into non-shared table.");
+
+            for (int i=0; i < origRows.size(); i++)
+            {
+                Map<String, Object> orig = origRows.get(i);
+                Map<String, Object> inserted = insertedRows.get(i);
+
+                if (orig.containsKey("RowId") && inserted.containsKey("RowId"))
+                {
+                    _idMap.put(orig.get("RowId"), inserted.get("RowId"));
+                }
+            }
+        }
+    }
+
 
     /**
      * A transform helper which checks whether a data value already exists at the project level before importing the

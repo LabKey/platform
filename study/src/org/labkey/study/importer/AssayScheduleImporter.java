@@ -39,10 +39,10 @@ import java.util.Map;
 public class AssayScheduleImporter extends DefaultStudyDesignImporter implements InternalStudyImporter
 {
     // shared transform data structures
-    Map<Integer, Integer> _assaySpecimenIdMap = new HashMap<>();
+    Map<Object, Object> _assaySpecimenIdMap = new HashMap<>();
     Map<Double, Visit> _visitMap = new HashMap<>();
 
-    private AssaySpecimenTransform _assaySpecimenTransform = new AssaySpecimenTransform();
+    private NonSharedTableMapBuilder _assaySpecimenTransform = new NonSharedTableMapBuilder(_assaySpecimenIdMap);
     private AssaySpecimenVisitMapTransform _assaySpecimenVisitMapTransform = new AssaySpecimenVisitMapTransform();
 
     @Override
@@ -96,27 +96,6 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
             }
             else
                 throw new ImportException("Unable to open the folder at : " + dirType.getDir());
-        }
-    }
-
-    /**
-     * Transform which manages foreign keys to the Treatment table
-     */
-    private class AssaySpecimenTransform implements TransformBuilder
-    {
-        @Override
-        public void createTransformInfo(StudyImportContext ctx, List<Map<String, Object>> origRows, List<Map<String, Object>> insertedRows)
-        {
-            for (int i=0; i < origRows.size(); i++)
-            {
-                Map<String, Object> orig = origRows.get(i);
-                Map<String, Object> inserted = insertedRows.get(i);
-
-                if (orig.containsKey("RowId") && inserted.containsKey("RowId"))
-                {
-                    _assaySpecimenIdMap.put((Integer)orig.get("RowId"), (Integer)inserted.get("RowId"));
-                }
-            }
         }
     }
 

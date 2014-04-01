@@ -149,7 +149,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         // for MERGE checking for duplicates within the source rows makes sense, but not against the existing rows
         DataIteratorBuilder insert = _dataset.getInsertDataIterator(user, data, null,
                 context.getInsertOption() == InsertOption.MERGE ? DataSetDefinition.CheckForDuplicates.sourceOnly : DataSetDefinition.CheckForDuplicates.sourceAndDestination
-                , context, defaultQCState, false);
+                , context, defaultQCState, null, false);
         return insert;
     }
 

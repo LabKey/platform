@@ -199,7 +199,7 @@ public abstract class DefaultStudyDesignWriter
             for (ColumnInfo column : columns)
             {
                 ForeignKey fk = column.getFk();
-                if (isColumnNumericForeignKeyToSharedTable(fk))
+                if (isColumnNumericForeignKeyToDataspaceTable(fk, false))
                 {
                     // Add extra column to tsv for numeric foreign key
                     fieldKeys.add(getExtraForeignKeyColumnFieldKey(column, fk));
@@ -210,14 +210,16 @@ public abstract class DefaultStudyDesignWriter
         }
     }
 
-    public static boolean isColumnNumericForeignKeyToSharedTable(ForeignKey fk)
+    public static boolean isColumnNumericForeignKeyToDataspaceTable(ForeignKey fk, boolean includeFolderLevel)
     {
         if (null != fk)
         {
             String lookupColumnName = fk.getLookupColumnName();
             TableInfo lookupTableInfo = fk.getLookupTableInfo();
-            if (null != lookupTableInfo && StudyQuerySchema.isDataspaceProjectTable(lookupTableInfo.getName()) &&
-                null != lookupColumnName && lookupTableInfo.getColumn(lookupColumnName).getJdbcType().isNumeric())
+            if (null != lookupTableInfo && null != lookupColumnName &&
+                lookupTableInfo.getColumn(lookupColumnName).getJdbcType().isNumeric() &&
+                (StudyQuerySchema.isDataspaceProjectTable(lookupTableInfo.getName()) ||
+                    (includeFolderLevel && StudyQuerySchema.isDataspaceFolderTable(lookupTableInfo.getName()))))
             {
                 return true;
             }

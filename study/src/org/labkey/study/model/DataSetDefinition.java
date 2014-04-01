@@ -91,6 +91,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
+import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.writer.DefaultStudyDesignWriter;
@@ -1666,8 +1667,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     /**
      * dataMaps have keys which are property URIs, and values which have already been converted.
      */
-    public List<String> importDatasetData(User user, DataIteratorBuilder in, DataIteratorContext context, CheckForDuplicates checkDuplicates, QCState defaultQCState, Logger logger
-            , boolean forUpdate)
+    public List<String> importDatasetData(User user, DataIteratorBuilder in, DataIteratorContext context,
+                                          CheckForDuplicates checkDuplicates, QCState defaultQCState,
+                                          StudyImportContext studyImportContext, Logger logger, boolean forUpdate)
     {
         if (getKeyManagementType() == KeyManagementType.RowId)
         {
@@ -1675,12 +1677,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             // increments, as we're imitating a sequence.
             synchronized (getManagedKeyLock())
             {
-                return insertData(user, in, checkDuplicates, context, defaultQCState, logger, forUpdate);
+                return insertData(user, in, checkDuplicates, context, defaultQCState, studyImportContext, logger, forUpdate);
             }
         }
         else
         {
-            return insertData(user, in, checkDuplicates, context, defaultQCState, logger, forUpdate);
+            return insertData(user, in, checkDuplicates, context, defaultQCState, studyImportContext, logger, forUpdate);
         }
     }
 
@@ -1746,17 +1748,20 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         boolean isForUpdate = false;
         boolean useImportAliases = false;
         Logger logger = null;
+        StudyImportContext _studyImportContext;
+
 
         DataIteratorBuilder builder = null;
         DataIterator input = null;
 
         ValidationException setupError = null;
 
-        DatasetDataIteratorBuilder(User user, boolean qc, QCState defaultQC)
+        DatasetDataIteratorBuilder(User user, boolean qc, QCState defaultQC, StudyImportContext studyImportContext)
         {
             this.user = user;
             this.needsQC = qc;
             this.defaultQC = defaultQC;
+            _studyImportContext = studyImportContext;
         }
 
         /**
@@ -1865,10 +1870,26 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                         // make sure guid is not null (12884)
                         out = it.addCoaleseColumn(match.getName(), in, new SimpleTranslator.GuidColumn());
                     }
-                    else if (DefaultStudyDesignWriter.isColumnNumericForeignKeyToSharedTable(match.getFk()))
+                    else if (DefaultStudyDesignWriter.isColumnNumericForeignKeyToDataspaceTable(match.getFk(), true))
                     {
+                        // Use rowId mapping tables or extra column if necessary to map FKs
                         FieldKey extraColumnFieldKey = DefaultStudyDesignWriter.getExtraForeignKeyColumnFieldKey(match, match.getFk());
-                        out = it.addSharedTableLookupColumn(in, extraColumnFieldKey, match.getFk());
+                        Map<Object, Object> sharedTableMap = null;
+                        if (null != _studyImportContext && null != match.getFk())
+                        {
+                            String lookupTableName = match.getFk().getLookupTableName();
+                            if (lookupTableName.equalsIgnoreCase("product"))
+                                sharedTableMap = _studyImportContext.getProductIdMap();
+                            else if (lookupTableName.equalsIgnoreCase("productantigen"))
+                                sharedTableMap = _studyImportContext.getProductAntigenIdMap();
+                            else if (lookupTableName.equalsIgnoreCase("personnel"))
+                                sharedTableMap = _studyImportContext.getPersonnelIdMap();
+                            else if (lookupTableName.equalsIgnoreCase("treatment"))
+                                sharedTableMap = _studyImportContext.getTreatmentIdMap();
+                        }
+
+                        out = it.addSharedTableLookupColumn(in, extraColumnFieldKey, match.getFk(),
+                                sharedTableMap);
                     }
                     else
                     {
@@ -2381,10 +2402,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     private List<String> insertData(User user, DataIteratorBuilder in,
             CheckForDuplicates checkDuplicates, DataIteratorContext context, QCState defaultQCState,
-            Logger logger, boolean forUpdate)
+            StudyImportContext studyImportContext, Logger logger, boolean forUpdate)
     {
         ArrayList<String> lsids = new ArrayList<>();
-        DataIteratorBuilder insert = getInsertDataIterator(user, in, lsids, checkDuplicates, context, defaultQCState, forUpdate);
+        DataIteratorBuilder insert = getInsertDataIterator(user, in, lsids, checkDuplicates, context, defaultQCState, studyImportContext, forUpdate);
 
         DbScope scope = ExperimentService.get().getSchema().getScope();
 
@@ -2492,7 +2513,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     public DataIteratorBuilder getInsertDataIterator(User user, DataIteratorBuilder in,
         @Nullable List<String> lsids,
         CheckForDuplicates checkDuplicates, DataIteratorContext context, QCState defaultQCState,
-        boolean forUpdate)
+        @Nullable StudyImportContext studyImportContext, boolean forUpdate)
     {
         TableInfo table = getTableInfo(user, false);
         boolean needToHandleQCState = table.getColumn(DataSetTableImpl.QCSTATE_ID_COLNAME) != null;
@@ -2500,7 +2521,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         DatasetDataIteratorBuilder b = new DatasetDataIteratorBuilder(
                 user,
                 needToHandleQCState,
-                defaultQCState);
+                defaultQCState,
+                studyImportContext);
         b.setInput(in);
         b.setCheckDuplicates(checkDuplicates);
         b.setForUpdate(forUpdate);
