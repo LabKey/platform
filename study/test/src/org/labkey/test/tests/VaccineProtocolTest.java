@@ -16,6 +16,7 @@
 
 package org.labkey.test.tests;
 
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
@@ -29,11 +30,6 @@ import org.labkey.test.util.PortalHelper;
 import java.io.File;
 import java.util.Arrays;
 
-/**
- * User: Mark Igra
- * Date: Jun 7, 2007
- * Time: 5:40:36 PM
- */
 @Category({DailyA.class, Study.class})
 public class VaccineProtocolTest extends BaseWebDriverTest
 {
@@ -45,7 +41,8 @@ public class VaccineProtocolTest extends BaseWebDriverTest
 
     private final PortalHelper portalHelper = new PortalHelper(this);
 
-    protected void doTestSteps()
+    @Test
+    public void testSteps()
     {
         _containerHelper.createProject(PROJECT_NAME, null);
         createSubfolder(PROJECT_NAME, PROJECT_NAME, FOLDER_NAME, "None", null);

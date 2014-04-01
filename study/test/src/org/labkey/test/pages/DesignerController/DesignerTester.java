@@ -18,7 +18,6 @@ package org.labkey.test.pages.DesignerController;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.labkey.test.BaseWebDriverTest;
-import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.openqa.selenium.WebElement;
 
