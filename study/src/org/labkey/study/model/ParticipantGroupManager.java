@@ -875,7 +875,7 @@ public class ParticipantGroupManager
     }
 
 
-    public ParticipantGroup[] getParticipantGroups(Container c, User user, ParticipantCategoryImpl def)
+    public ParticipantGroup[] getParticipantGroups(final Container c, User user, ParticipantCategoryImpl def)
     {
         if (!def.isNew())
         {
@@ -910,7 +910,7 @@ public class ParticipantGroupManager
                             group.setCategoryId(def.getRowId());
                             group.setCategoryLabel(def.getLabel());
                             group.setLabel(pg.getLabel());
-                            group.setContainer(pg.getContainerId());
+                            group.setContainer(c.getId()); //For dataspace participant container may not be group container
                             group.setRowId(pg.getRowId());
                             group.setFilters(pg.getFilters());
                             group.setDescription(pg.getDescription());
