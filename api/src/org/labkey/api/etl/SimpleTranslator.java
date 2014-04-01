@@ -496,15 +496,15 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         final int _first;
         final Integer _second;
         Map<String, Integer> _lookupStringToRowIdMap;
-        Map<Object, Object> _sharedTableMap;
+        Map<Object, Object> _dataspaceTableIdMap;
 
         SharedTableLookupColumn(int first, Integer second, Map<String, Integer> lookupStringToRowIdMap,
-                                @Nullable Map<Object, Object> sharedTableMap)
+                                @NotNull Map<Object, Object> dataspaceTableIdMap)
         {
             _first = first;
             _second = second;
             _lookupStringToRowIdMap = lookupStringToRowIdMap;
-            _sharedTableMap = sharedTableMap;
+            _dataspaceTableIdMap = dataspaceTableIdMap;
         }
 
         @Override
@@ -516,9 +516,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             Integer valueAsInt = null;
             if (value instanceof String)
                 valueAsInt = Integer.parseInt((String)value);
-            if (null != _sharedTableMap && _sharedTableMap.containsKey(valueAsInt))
+            if (_dataspaceTableIdMap.containsKey(valueAsInt))
             {
-                value = _sharedTableMap.get(valueAsInt);
+                value = _dataspaceTableIdMap.get(valueAsInt);
             }
             else if (null != _second && !_lookupStringToRowIdMap.isEmpty())
             {
@@ -695,7 +695,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
 
     public int addSharedTableLookupColumn(int fromIndex, @Nullable FieldKey extraColumnFieldKey, @Nullable ForeignKey fk,
-                                          @Nullable Map<Object, Object> sharedTableMap)
+                                          @NotNull Map<Object, Object> dataspaceTableIdMap)
     {
         Integer extraColumnIndex = null;
         final Map<String, Integer> lookupStringToRowIdMap = new HashMap<>();
@@ -725,7 +725,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
         }
         ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
-        return addColumn(col, new SharedTableLookupColumn(fromIndex, extraColumnIndex, lookupStringToRowIdMap, sharedTableMap));
+        return addColumn(col, new SharedTableLookupColumn(fromIndex, extraColumnIndex, lookupStringToRowIdMap, dataspaceTableIdMap));
     }
 
     public static DataIterator wrapBuiltInColumns(DataIterator in , DataIteratorContext context, @Nullable Container c, @NotNull User user, @NotNull TableInfo target)
