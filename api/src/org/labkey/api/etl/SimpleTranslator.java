@@ -496,19 +496,31 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         final int _first;
         final Integer _second;
         Map<String, Integer> _lookupStringToRowIdMap;
+        Map<Object, Object> _sharedTableMap;
 
-        SharedTableLookupColumn(int first, Integer second, Map<String, Integer> lookupStringToRowIdMap)
+        SharedTableLookupColumn(int first, Integer second, Map<String, Integer> lookupStringToRowIdMap,
+                                @Nullable Map<Object, Object> sharedTableMap)
         {
             _first = first;
             _second = second;
             _lookupStringToRowIdMap = lookupStringToRowIdMap;
+            _sharedTableMap = sharedTableMap;
         }
 
         @Override
         public Object call() throws Exception
         {
             Object value = _data.get(_first);
-            if (null != _second && !_lookupStringToRowIdMap.isEmpty())
+
+            // shared tables should be Integer->Integer
+            Integer valueAsInt = null;
+            if (value instanceof String)
+                valueAsInt = Integer.parseInt((String)value);
+            if (null != _sharedTableMap && _sharedTableMap.containsKey(valueAsInt))
+            {
+                value = _sharedTableMap.get(valueAsInt);
+            }
+            else if (null != _second && !_lookupStringToRowIdMap.isEmpty())
             {
                 String lookupString = (String)_data.get(_second);
                 Integer mappedValue = _lookupStringToRowIdMap.get(lookupString);
@@ -682,7 +694,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
-    public int addSharedTableLookupColumn(int fromIndex, @Nullable FieldKey extraColumnFieldKey, @Nullable ForeignKey fk)
+    public int addSharedTableLookupColumn(int fromIndex, @Nullable FieldKey extraColumnFieldKey, @Nullable ForeignKey fk,
+                                          @Nullable Map<Object, Object> sharedTableMap)
     {
         Integer extraColumnIndex = null;
         final Map<String, Integer> lookupStringToRowIdMap = new HashMap<>();
@@ -712,7 +725,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
         }
         ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
-        return addColumn(col, new SharedTableLookupColumn(fromIndex, extraColumnIndex, lookupStringToRowIdMap));
+        return addColumn(col, new SharedTableLookupColumn(fromIndex, extraColumnIndex, lookupStringToRowIdMap, sharedTableMap));
     }
 
     public static DataIterator wrapBuiltInColumns(DataIterator in , DataIteratorContext context, @Nullable Container c, @NotNull User user, @NotNull TableInfo target)
