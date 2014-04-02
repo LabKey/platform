@@ -184,14 +184,14 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             job.error("Could not find job in database");
             return null;
         }
-        if (PipelineJob.CANCELLING_STATUS.equals(statusFile.getStatus()))
+        if (PipelineJob.TaskStatus.cancelling.matches(statusFile.getStatus()))
         {
             job.info("Job has been cancelled, aborting Globus submit");
-            statusFile.setStatus(PipelineJob.CANCELLED_STATUS);
+            statusFile.setStatus(PipelineJob.TaskStatus.cancelled.toString());
             PipelineStatusManager.updateStatusFile(statusFile);
             return null;
         }
-        if (PipelineJob.CANCELLED_STATUS.equals(statusFile.getStatus()))
+        if (PipelineJob.TaskStatus.cancelled.matches(statusFile.getStatus()))
         {
             job.info("Job has been cancelled, aborting Globus submit");
             return null;

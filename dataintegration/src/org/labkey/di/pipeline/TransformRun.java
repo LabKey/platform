@@ -36,8 +36,8 @@ public class TransformRun
         NO_WORK("NO WORK"),
         PENDING("PENDING"),
         RUNNING("RUNNING"),
-        COMPLETE(PipelineJob.COMPLETE_STATUS),
-        ERROR(PipelineJob.ERROR_STATUS);
+        COMPLETE(PipelineJob.TaskStatus.complete.toString()),
+        ERROR(PipelineJob.TaskStatus.error.toString());
 
         final String _display;
         TransformRunStatus(String display)

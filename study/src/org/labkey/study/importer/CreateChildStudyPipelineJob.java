@@ -130,7 +130,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
             _sourceStudy = StudyManager.getInstance().getStudy(sourceContainer);
 
             StudyImpl destStudy = StudyManager.getInstance().getStudy(_dstContainer);
-            setStatus("RUNNING");
+            setStatus(TaskStatus.running);
 
             if (destStudy != null)
             {

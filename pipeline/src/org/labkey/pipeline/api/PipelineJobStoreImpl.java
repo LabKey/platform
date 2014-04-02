@@ -74,7 +74,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             // If the job is being retried from a non-error status, then don't
             // increment error and retry counts.  This happens when a server restart
             // causes all previously queued jobs to be requeued.
-            if (PipelineJob.ERROR_STATUS.equals(sf.getStatus()))
+            if (PipelineJob.TaskStatus.error.matches(sf.getStatus()))
                 job.retryUpdate();
 
             String oldJobId = sf.getJobId();
@@ -297,6 +297,6 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
         if (rec != null && rec.isJoinJob(job.getParentGUID()))
             rec.complete(job);
 
-        job.setStatus(PipelineJob.COMPLETE_STATUS);
+        job.setStatus(PipelineJob.TaskStatus.complete.toString());
     }
 }

@@ -90,7 +90,7 @@ public abstract class AbstractStudyPiplineJob extends PipelineJob
             if (stackSize > -1)
                 HttpView.resetStackSize(stackSize);
 
-            setStatus(success ? PipelineJob.COMPLETE_STATUS : PipelineJob.ERROR_STATUS);
+            setStatus(success ? TaskStatus.complete : TaskStatus.error);
         }
     }
 

@@ -16,17 +16,14 @@
 package org.labkey.filecontent;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.filecontent.designer.client.FilePropertiesService;
 
-import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -63,21 +60,15 @@ public class FilePropertiesServiceImpl extends DomainEditorServiceBase implement
 
     public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update)
     {
-        try {
-            if (orig.getDomainURI() != null)
-            {
-                DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(orig.getDomainURI(), orig.getName(), getContainer());
-                orig.setDomainId(dd.getDomainId());
-                orig.setContainer(getContainer().getId());
-                
-                return super.updateDomainDescriptor(orig, update);
-            }
-            else
-                throw new IllegalArgumentException("DomainURI cannot be null");
-        }
-        catch (SQLException e)
+        if (orig.getDomainURI() != null)
         {
-            throw UnexpectedException.wrap(e);
+            DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(orig.getDomainURI(), orig.getName(), getContainer());
+            orig.setDomainId(dd.getDomainId());
+            orig.setContainer(getContainer().getId());
+
+            return super.updateDomainDescriptor(orig, update);
         }
+        else
+            throw new IllegalArgumentException("DomainURI cannot be null");
     }
 }

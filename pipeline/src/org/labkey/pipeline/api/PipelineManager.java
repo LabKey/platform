@@ -219,7 +219,7 @@ public class PipelineManager
     public static void sendNotificationEmail(PipelineStatusFileImpl statusFile, Container c)
     {
         PipelineMessage message;
-        if (statusFile.getStatus().equals(PipelineJob.COMPLETE_STATUS))
+        if (PipelineJob.TaskStatus.complete.matches(statusFile.getStatus()))
         {
             String interval = PipelineEmailPreferences.get().getSuccessNotificationInterval(c);
             if (!"0".equals(interval) && interval != null) return;

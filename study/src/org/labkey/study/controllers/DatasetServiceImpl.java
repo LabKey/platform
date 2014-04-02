@@ -314,10 +314,6 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
         {
             throw UnexpectedException.wrap(e);
         }
-        catch (SQLException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
     }
 
 

@@ -108,20 +108,20 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     }
 
 
-    public void logRunFinish(String status, Integer expRunId, Integer recordCount)
+    public void logRunFinish(TaskStatus status, Integer expRunId, Integer recordCount)
     {
         TransformRun run = getTransformRun();
         if (run != null)
         {
             // Mark that the job has finished successfully
-            run.setStatus(status);
+            run.setStatus(status.toString());
             run.setEndTime(new Date());
             run.setExpRunId(expRunId);
             run.setRecordCount(recordCount);
             update(run);
         }
 
-        if (status.equals(PipelineJob.COMPLETE_STATUS))
+        if (TaskStatus.complete == status)
         {
             JSONObject state = _variableMap.toJSONObject();
             state.remove(TransformProperty.RanStep1);
@@ -146,13 +146,13 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     {
         super.done(throwable);
 
-        String status = PipelineJob.COMPLETE_STATUS;
+        TaskStatus status = TaskStatus.complete;
 
         if (this.isCancelled())
-            status = PipelineJob.CANCELLED_STATUS;
+            status = TaskStatus.cancelled;
 
         if (this.getErrors() > 0)
-            status = PipelineJob.ERROR_STATUS;
+            status = TaskStatus.error;
 
         logRunFinish(status, _expRunId, _recordCount);
     }
@@ -170,7 +170,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
         if (run == null)
         {
             getLogger().error("Unable to find database record for run with TransformRunId " + _runId);
-            setStatus(ERROR_STATUS);
+            setStatus(TaskStatus.error);
         }
 
         return run;

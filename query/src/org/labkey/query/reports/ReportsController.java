@@ -1142,7 +1142,7 @@ public class ReportsController extends SpringActionController
             vbox.addView(new HtmlView(html.toString()));
 
             if (statusFile != null &&
-                    !(statusFile.getStatus().equals(PipelineJob.WAITING_STATUS) ||
+                    !(PipelineJob.TaskStatus.waiting.matches(statusFile.getStatus()) ||
                       statusFile.getStatus().equals(RReportJob.PROCESSING_STATUS)))
                 vbox.addView(new RenderBackgroundRReportView((RReport)report));
 

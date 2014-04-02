@@ -157,6 +157,6 @@ public class ExperimentPipelineJob extends PipelineJob
             return;
 
         if (loadExperiment(this, getXarSource(), _deleteExistingRuns))
-            setStatus(COMPLETE_STATUS);
+            setStatus(TaskStatus.complete);
     }
 }

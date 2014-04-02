@@ -36,17 +36,17 @@ import java.util.HashSet;
 public class PipelineStatusFileImpl extends Entity implements Serializable, PipelineStatusFile
 {
     private static HashSet<String> _inactiveStatuses = new HashSet<>(Arrays.asList(
-            PipelineJob.COMPLETE_STATUS,
-            PipelineJob.CANCELLED_STATUS,
+            PipelineJob.TaskStatus.complete.toString(),
+            PipelineJob.TaskStatus.cancelled.toString(),
             PipelineJob.WAITING_FOR_FILES,
-            PipelineJob.ERROR_STATUS,
+            PipelineJob.TaskStatus.error.toString(),
             PipelineJob.SPLIT_STATUS    // Depends on status of split jobs
     ));
 
     private static HashSet<String> _emailStatuses = new HashSet<>(Arrays.asList(
-            PipelineJob.COMPLETE_STATUS,
-            PipelineJob.ERROR_STATUS,
-            PipelineJob.CANCELLED_STATUS
+            PipelineJob.TaskStatus.complete.toString(),
+            PipelineJob.TaskStatus.error.toString(),
+            PipelineJob.TaskStatus.cancelled.toString()
     ));
 
     protected int _rowId;
@@ -117,7 +117,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         setStatus(status);
         setInfo(info);
 
-        if (PipelineJob.COMPLETE_STATUS.equals(status))
+        if (PipelineJob.TaskStatus.complete.matches(status))
         {
             URLHelper urlData = job.getStatusHref();
             if (urlData != null)
@@ -139,7 +139,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         }
         // If there is an active task and this is waiting state, then checkpoint the
         // job to the database for retry.
-        else if (PipelineJob.WAITING_STATUS.equals(status) ||
+        else if (PipelineJob.TaskStatus.waiting.matches(status) ||
                 (job.getActiveTaskFactory() != null &&
                     PipelineJob.TaskStatus.waiting.equals(job.getActiveTaskStatus())))
         {
@@ -196,7 +196,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         }
 
         // Clear any stored job, if the status is complete.
-        if (PipelineJob.COMPLETE_STATUS.equals(_status))
+        if (PipelineJob.TaskStatus.complete.matches(_status))
         {
             _jobStore = null;
             _activeTaskId = null;
@@ -224,7 +224,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
 
     public boolean isCancellable()
     {
-        return (isActive() && !PipelineJob.CANCELLING_STATUS.equals(_status)) ||
+        return (isActive() && !PipelineJob.TaskStatus.cancelling.matches(_status)) ||
                 PipelineJob.WAITING_FOR_FILES.equals(_status) ||
                 PipelineJob.SPLIT_STATUS.equals(_status);
     }
@@ -332,7 +332,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         if (status != null && status.length() > MAX_STATUS_LENGTH)
             status = status.substring(0, MAX_STATUS_LENGTH);
         this._status = status;
-        if (PipelineJob.ERROR_STATUS.equalsIgnoreCase(status))
+        if (PipelineJob.TaskStatus.error.matches(status))
             _hadError = true;
     }
 

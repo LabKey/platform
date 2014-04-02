@@ -329,7 +329,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         {
             try
             {
-                incompleteFile.setStatus(PipelineJob.ERROR_STATUS);
+                incompleteFile.setStatus(PipelineJob.TaskStatus.error.toString());
                 incompleteFile.setInfo("type=Job restart");
                 incompleteFile.beforeUpdate(null, incompleteFile);
                 PipelineStatusManager.updateStatusFile(incompleteFile);

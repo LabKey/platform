@@ -23,7 +23,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.ExperimentException;
@@ -67,7 +66,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 
 import java.io.File;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -470,10 +468,6 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 catch (ExperimentException e)
                 {
                     throw new AssayException(e.getMessage());
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeSQLException(e);
                 }
             }
             else

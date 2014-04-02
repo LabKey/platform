@@ -57,7 +57,7 @@ public class XarExportPipelineJob extends PipelineJob
         setLogFile(new File(_exportFile.getPath() + ".log"));
 
         header("Experiment Import for " + _exportFile.getName());
-        setStatus(WAITING_STATUS);
+        setStatus(TaskStatus.waiting);
     }
 
     public ActionURL getStatusHref()
@@ -83,27 +83,15 @@ public class XarExportPipelineJob extends PipelineJob
             fOut = new FileOutputStream(_exportFile);
             exporter.write(fOut);
             getLogger().info("Export complete");
-            setStatus(COMPLETE_STATUS);
+            setStatus(TaskStatus.complete);
         }
-        catch (RuntimeException e)
-        {
-            logFailure(e);
-        }
-        catch (IOException e)
-        {
-            logFailure(e);
-        }
-        catch (SQLException e)
-        {
-            logFailure(e);
-        }
-        catch (ExperimentException e)
+        catch (RuntimeException | IOException | SQLException | ExperimentException e)
         {
             logFailure(e);
         }
         finally
         {
-            if (fOut != null) { try { fOut.close(); } catch (IOException e) {} }
+            if (fOut != null) { try { fOut.close(); } catch (IOException ignored) {} }
         }
     }
 

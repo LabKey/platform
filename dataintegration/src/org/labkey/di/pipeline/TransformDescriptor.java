@@ -304,7 +304,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         TransformPipelineJob job = new TransformPipelineJob((TransformJobContext)context, this);
         try
         {
-            PipelineService.get().setStatus(job, PipelineJob.WAITING_STATUS, null, true);
+            PipelineService.get().setStatus(job, PipelineJob.TaskStatus.waiting.toString(), null, true);
         }
         catch (Exception e)
         {
@@ -682,12 +682,12 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
                 assertNotNull(run.getRecordCount());
                 assertEquals(totalRecordCount, run.getRecordCount().intValue());
-                assertTrue(StringUtils.equalsIgnoreCase(status, PipelineJob.COMPLETE_STATUS));
+                assertTrue(PipelineJob.TaskStatus.complete.matches(status));
                 assertNotNull(expId);
             }
             else
             {
-                assertTrue(StringUtils.equalsIgnoreCase(status, PipelineJob.ERROR_STATUS));
+                assertTrue(PipelineJob.TaskStatus.error.matches(status));
                 assertNull(expId);
             }
 

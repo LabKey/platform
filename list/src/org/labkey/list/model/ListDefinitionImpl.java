@@ -488,7 +488,7 @@ public class ListDefinitionImpl implements ListDefinition
         return impl;
     }
 
-    public void delete(User user) throws SQLException, DomainNotFoundException
+    public void delete(User user) throws DomainNotFoundException
     {
         TableInfo table = getTable(user);
 

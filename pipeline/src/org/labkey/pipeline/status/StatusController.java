@@ -937,7 +937,7 @@ public class StatusController extends SpringActionController
         }
 
         // escalate pipeline failure button
-        if (!PipelineJob.COMPLETE_STATUS.equals(sf.getStatus()))
+        if (!PipelineJob.TaskStatus.complete.matches(sf.getStatus()))
         {
             final String escalationUsers = PipelineEmailPreferences.get().getEscalationUsers(c);
             if (!StringUtils.isEmpty(escalationUsers) && !getUser().isGuest())

@@ -91,7 +91,7 @@ public class StatusDataRegion extends DataRegion
         out.write("<td>Show:</td>");
 
         String name = "StatusFiles.Status~" + CompareType.NOT_IN.getPreferredUrlKey();
-        String value = PipelineJob.COMPLETE_STATUS + ";" + PipelineJob.CANCELLED_STATUS;
+        String value = PipelineJob.TaskStatus.complete.toString() + ";" + PipelineJob.TaskStatus.cancelled.toString();
         url.deleteParameters();
         url.addParameter(name, value);
         boolean selected = value.equals(urlFilter.getParameter(name)) || PipelineQueryView.createCompletedFilter().equals(ctx.getBaseFilter());
@@ -99,7 +99,7 @@ public class StatusDataRegion extends DataRegion
         boolean selSeen = selected;
 
         name = "StatusFiles.Status~eq";
-        value = PipelineJob.ERROR_STATUS;
+        value = PipelineJob.TaskStatus.error.toString();
         url.deleteParameters();
         url.addParameter(name, value);
         selected = !selSeen && value.equals(urlFilter.getParameter(name));

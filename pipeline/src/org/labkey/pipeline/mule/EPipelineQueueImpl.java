@@ -193,7 +193,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
                     job.getLogger().info("Cancelling job by deleting from JMS queue.");
                     PipelineJob.logStartStopInfo("Cancelling job by deleting from JMS queue. Job ID: " + job.getJobGUID() + ", " + statusFile.getFilePath());
                 }
-                statusFile.setStatus(PipelineJob.CANCELLED_STATUS);
+                statusFile.setStatus(PipelineJob.TaskStatus.cancelled.toString());
                 statusFile.save();
             }
         }

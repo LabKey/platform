@@ -73,12 +73,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         {
             ListDefinition definition = ListService.get().getList(getContainer(), list.getName());
             definition.delete(getUser());
-        }
-        catch (SQLException x)
-        {
             //NOTE: should we look for possible optimistic concurrency (ie. double-deleting)?
-
-            throw new RuntimeSQLException(x);
         }
         catch (Exception x)
         {

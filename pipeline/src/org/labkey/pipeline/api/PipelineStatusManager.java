@@ -121,6 +121,11 @@ public class PipelineStatusManager
         return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getObject(PipelineStatusFileImpl.class);
     }
 
+    public static boolean setStatusFile(PipelineJob job, User user, PipelineJob.TaskStatus status, @Nullable String info, boolean allowInsert)
+    {
+        return setStatusFile(job, user, status.toString(), info, allowInsert);
+    }
+
     public static boolean setStatusFile(PipelineJob job, User user, String status, @Nullable String info, boolean allowInsert)
     {
         PipelineStatusFileImpl sfExist = getJobStatusFile(job.getJobGUID());
@@ -150,10 +155,10 @@ public class PipelineStatusManager
         else
         {
             boolean cancelled = false;
-            if (PipelineJob.CANCELLING_STATUS.equals(sfExist.getStatus()) && sfSet.isActive())
+            if (PipelineJob.TaskStatus.cancelling.matches(sfExist.getStatus()) && sfSet.isActive())
             {
                 // Mark is as officially dead
-                sfSet.setStatus(PipelineJob.CANCELLED_STATUS);
+                sfSet.setStatus(PipelineJob.TaskStatus.cancelled.toString());
                 cancelled = true;
             }
             sfSet.beforeUpdate(user, sfExist);
@@ -165,19 +170,19 @@ public class PipelineStatusManager
             }
         }
 
-        if (isNotifyOnError(job) && PipelineJob.ERROR_STATUS.equals(sfSet.getStatus()) &&
-                (sfExist == null || !PipelineJob.ERROR_STATUS.equals(sfExist.getStatus())))
+        if (isNotifyOnError(job) && PipelineJob.TaskStatus.error.matches(sfSet.getStatus()) &&
+                (sfExist == null || !PipelineJob.TaskStatus.error.matches(sfExist.getStatus())))
         {
             LOG.info("Error status has changed - considering an email notification");
             PipelineManager.sendNotificationEmail(sfSet, job.getContainer());
         }
 
-        if (PipelineJob.ERROR_STATUS.equals(status))
+        if (PipelineJob.TaskStatus.error.matches(status))
         {
             // Count this error on the job.
             job.setErrors(job.getErrors() + 1);
         }
-        else if (PipelineJob.COMPLETE_STATUS.equals(status))
+        else if (PipelineJob.TaskStatus.complete.matches(status))
         {
             // Make sure the Enterprise Pipeline recognizes this as a completed
             // job, even if did it not have a TaskPipeline.
@@ -261,9 +266,9 @@ public class PipelineStatusManager
         if (sfExist == null)
             throw new NoSuchJobException("Status for the job " + job.getJobGUID() + " was not found.");
 
-        if (!PipelineJob.ERROR_STATUS.equals(sfExist.getStatus()))
+        if (!PipelineJob.TaskStatus.error.matches(sfExist.getStatus()))
         {
-            setStatusFile(job, job.getUser(), PipelineJob.ERROR_STATUS, null, false);
+            setStatusFile(job, job.getUser(), PipelineJob.TaskStatus.error, null, false);
         }
     }
 
@@ -336,7 +341,7 @@ public class PipelineStatusManager
     public static int getIncompleteStatusFileCount(String parentId, Container container)
     {
         return new SqlSelector(_schema.getSchema(), "SELECT COUNT(*) FROM " + _schema.getTableInfoStatusFiles() +  " WHERE Container = ? AND JobParent = ? AND Status <> ?",
-                container, parentId, PipelineJob.COMPLETE_STATUS).getObject(Integer.class);
+                container, parentId, PipelineJob.TaskStatus.complete.toString()).getObject(Integer.class);
     }
 
     public static List<PipelineStatusFileImpl> getStatusFilesForLocation(String location, boolean includeJobsOnQueue)
@@ -406,11 +411,11 @@ public class PipelineStatusManager
     private static SimpleFilter createQueueFilter()
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
-        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.ERROR_STATUS, CompareType.NEQ);
+        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.TaskStatus.complete.toString(), CompareType.NEQ);
+        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.TaskStatus.error.toString(), CompareType.NEQ);
         filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.WAITING_FOR_FILES, CompareType.NEQ);
         filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.SPLIT_STATUS, CompareType.NEQ);
-        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.CANCELLED_STATUS, CompareType.NEQ);
+        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.TaskStatus.cancelled.toString(), CompareType.NEQ);
         filter.addCondition(FieldKey.fromParts("Job"), null, CompareType.NONBLANK);
         return filter;
     }
@@ -432,7 +437,7 @@ public class PipelineStatusManager
                         throw new UnauthorizedException();
                     }
 
-                    setStatusFile(job, user, PipelineJob.COMPLETE_STATUS, null, false);
+                    setStatusFile(job, user, PipelineJob.TaskStatus.complete, null, false);
                     statusSet = true;
                 }
 
@@ -443,7 +448,7 @@ public class PipelineStatusManager
                     if (sf != null)
                     {
                         LOG.info("Job " + sf.getFilePath() + " was marked as complete by " + user);
-                        sf.setStatus(PipelineJob.COMPLETE_STATUS);
+                        sf.setStatus(PipelineJob.TaskStatus.complete.toString());
                         sf.setInfo(null);
                         PipelineStatusManager.updateStatusFile(sf);
                     }
@@ -619,16 +624,16 @@ public class PipelineStatusManager
                 }
             }
 
-            String newStatus;
+            PipelineJob.TaskStatus newStatus;
             if (PipelineJob.SPLIT_STATUS.equals(statusFile.getStatus()) || PipelineJob.WAITING_FOR_FILES.equals(statusFile.getStatus()))
             {
-                newStatus = PipelineJob.CANCELLED_STATUS;
+                newStatus = PipelineJob.TaskStatus.cancelled;
             }
             else
             {
-                newStatus = PipelineJob.CANCELLING_STATUS;
+                newStatus = PipelineJob.TaskStatus.cancelling;
             }
-            statusFile.setStatus(newStatus);
+            statusFile.setStatus(newStatus.toString());
             PipelineStatusManager.updateStatusFile(statusFile);
             PipelineService.get().getPipelineQueue().cancelJob(info.getUser(), jobContainer, statusFile);
             return true;

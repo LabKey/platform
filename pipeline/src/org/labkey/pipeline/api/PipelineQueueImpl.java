@@ -173,7 +173,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
                 job.getLogger().info("Cancelling job by removing from job queue.");
                 PipelineJob.logStartStopInfo("Cancelling job by removing from job queue. Job ID: " + job.getJobGUID() + ", " + statusFile.getFilePath());
                 // It should already be set to CANCELLING. Set to CANCELLED to indicate that it's dead.
-                statusFile.setStatus(PipelineJob.CANCELLED_STATUS);
+                statusFile.setStatus(PipelineJob.TaskStatus.cancelled.toString());
                 statusFile.save();
                 return true;
             }

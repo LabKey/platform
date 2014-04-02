@@ -48,13 +48,13 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
             PipelineStatusFileImpl pipelineStatusFile = PipelineStatusManager.getStatusFile(logFile);
             if (pipelineStatusFile == null)
             {
-                PipelineStatusManager.setStatusFile(job, job.getUser(), PipelineJob.WAITING_STATUS, null, true);
+                PipelineStatusManager.setStatusFile(job, job.getUser(), PipelineJob.TaskStatus.waiting, null, true);
             }
 
             PipelineStatusManager.resetJobId(job.getLogFile(), job.getJobGUID());
         }
 
-        if (job.setQueue(this, PipelineJob.WAITING_STATUS))
+        if (job.setQueue(this, PipelineJob.TaskStatus.waiting))
         {
             // Delay until the transaction has been committed so other threads can find the job in the database
             PipelineSchema.getInstance().getSchema().getScope().addCommitTask(new Runnable()

@@ -1742,9 +1742,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             transaction.commit();
         }
-        catch (SQLException e)
+        catch (ValidationException e)
         {
-            throw new RuntimeSQLException(e);
+            throw new ExperimentException(e);
         }
     }
 

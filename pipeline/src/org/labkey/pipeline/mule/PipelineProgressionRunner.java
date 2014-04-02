@@ -32,7 +32,7 @@ public class PipelineProgressionRunner
     {
         // Double check that the job hasn't been cancelled or otherwise deleted
         PipelineStatusFileImpl statusFile = PipelineStatusManager.getJobStatusFile(job.getJobGUID());
-        if (statusFile == null || PipelineJob.CANCELLED_STATUS.equals(statusFile.getStatus()) || PipelineJob.CANCELLING_STATUS.equals(statusFile.getStatus()))
+        if (statusFile == null || PipelineJob.TaskStatus.cancelled.matches(statusFile.getStatus()) || PipelineJob.TaskStatus.cancelling.matches(statusFile.getStatus()))
         {
             return;
         }

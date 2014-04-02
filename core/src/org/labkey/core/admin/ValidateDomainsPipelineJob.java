@@ -62,7 +62,7 @@ public class ValidateDomainsPipelineJob extends PipelineJob
     @Override
     public void run()
     {
-        setStatus("RUNNING");
+        setStatus(TaskStatus.running);
         getLogger().info("Starting to check domains");
         StorageProvisioner.ProvisioningReport pr = StorageProvisioner.getProvisioningReport();
         getLogger().info(String.format("%d domains use Storage Provisioner", pr.getProvisionedDomains().size()));
@@ -81,6 +81,6 @@ public class ValidateDomainsPipelineJob extends PipelineJob
             getLogger().error(error);
         }
         getLogger().info("Check complete, " + errorCount + " errors found");
-        setStatus(PipelineJob.COMPLETE_STATUS, "Job finished at: " + DateUtil.nowISO());
+        setStatus(TaskStatus.complete, "Job finished at: " + DateUtil.nowISO());
     }
 }

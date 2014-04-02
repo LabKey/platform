@@ -101,7 +101,7 @@ public class PipelineQueryView extends QueryView
     public static Filter createCompletedFilter()
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.COMPLETE_STATUS + ";" + PipelineJob.CANCELLED_STATUS, CompareType.NOT_IN);
+        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.TaskStatus.complete + ";" + PipelineJob.TaskStatus.cancelled, CompareType.NOT_IN);
         return filter;
     }
 

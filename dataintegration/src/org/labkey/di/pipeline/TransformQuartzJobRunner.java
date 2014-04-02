@@ -61,7 +61,7 @@ public class TransformQuartzJobRunner implements Job
 
             try
             {
-                PipelineService.get().setStatus(job, PipelineJob.WAITING_STATUS, null, true);
+                PipelineService.get().setStatus(job, PipelineJob.TaskStatus.waiting.toString(), null, true);
                 PipelineService.get().queueJob(job);
             }
             catch (Exception e)

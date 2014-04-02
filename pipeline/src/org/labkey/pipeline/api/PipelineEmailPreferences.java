@@ -400,11 +400,11 @@ public class PipelineEmailPreferences
                 SimpleFilter filter = new SimpleFilter();
 
                 if (_isSuccessNotification)
-                    filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.COMPLETE_STATUS, CompareType.EQUAL);
+                    filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.TaskStatus.complete.toString(), CompareType.EQUAL);
                 else
                 {
                     filter.addWhereClause("Status IN (?, ?)",
-                            new Object[]{PipelineJob.ERROR_STATUS, PipelineJob.CANCELLED_STATUS});
+                            new Object[]{PipelineJob.TaskStatus.error.toString(), PipelineJob.TaskStatus.cancelled.toString()});
                 }
 
                 if (!_c.isRoot())
