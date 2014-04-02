@@ -2,6 +2,7 @@ package org.labkey.query.olap;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
@@ -26,8 +27,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -84,21 +87,14 @@ public class BitSetQueryImpl
     }
 
 
-    abstract class EvalNode
+    abstract class Result
     {
-        final Type type;
-        EvalNode(Type t)
-        {
-            this.type = t;
-        }
-    }
-
-    abstract class Result extends EvalNode
-    {
-        Result(Type t)
-        {
-            super(t);
-        }
+        // return level if all members are in the same level, null otherwise
+        @Nullable abstract Level getLevel();
+        // return heirarchy if all members are in the same heirarchy, null otherwise
+        @Nullable abstract Hierarchy getHierarchy();
+        abstract void toMdxSet(StringBuilder sb);
+        @NotNull abstract Collection<Member> getCollection() throws OlapException;
     }
 
 
@@ -106,7 +102,6 @@ public class BitSetQueryImpl
     {
         MemberSetResult(Set<Member> members)
         {
-            super(Type.setOfMembers);
             this.level = null;
             this.hierarchy = null;
             if (members instanceof MemberSet)
@@ -126,20 +121,8 @@ public class BitSetQueryImpl
             }
         }
 
-    /*
-        MemberSetResult(Member m)
-        {
-            super(Type.setOfMembers);
-            this.members = null;
-            this.level = null;
-            this.hierarchy = null;
-            this.member = m;
-        }
-    */
-
         MemberSetResult(Level level)
         {
-            super(Type.setOfMembers);
             this.members = null;
             this.level = level;
             this.hierarchy = null;
@@ -148,7 +131,6 @@ public class BitSetQueryImpl
 
         MemberSetResult(Hierarchy h)
         {
-            super(Type.setOfMembers);
             this.members = null;
             this.level = null;
             this.hierarchy = h;
@@ -237,27 +219,6 @@ public class BitSetQueryImpl
         }
 
 
- /*
-        void addMembersTo(Set<Member> output) throws OlapException
-        {
-            if (null != level)
-            {
-                output.addAll(level.getMembers());
-            }
-            else if (null != members)
-            {
-                output.addAll(members);
-            }
-            else if (null != hierarchy)
-            {
-                for (Level level : hierarchy.getLevels())
-                    output.addAll(level.getMembers());
-            }
-            else
-                throw new IllegalStateException();
-        }
- */
-
         final Level level;              // all members of a level
         final Hierarchy hierarchy;      // all members of a hierarchy
         final Member member;            // special case, one member (used in filters)
@@ -292,13 +253,119 @@ public class BitSetQueryImpl
     }
 
 
+    class UnionResult extends Result
+    {
+        List<Result> results = new ArrayList<>();
+
+        UnionResult(Collection<Result> results)
+        {
+            this.results.addAll(results);
+        }
+
+        @Nullable
+        @Override
+        Level getLevel()
+        {
+            Level l = null;
+            for (Result r : results)
+            {
+                Level resultLevel = r.getLevel();
+                if (null == resultLevel)
+                    return null;
+                if (null == l)
+                    l = resultLevel;
+                else if (!l.getUniqueName().equals(resultLevel.getUniqueName()))
+                    return null;
+            }
+            return l;
+        }
+
+        @Nullable
+        @Override
+        Hierarchy getHierarchy()
+        {
+            Hierarchy h = null;
+            for (Result r : results)
+            {
+                Hierarchy resultHierarchy = r.getHierarchy();
+                if (null == resultHierarchy)
+                    return null;
+                if (null == h)
+                    h = resultHierarchy;
+                else if (!h.getUniqueName().equals(resultHierarchy.getUniqueName()))
+                    return null;
+            }
+            return h;
+        }
+
+        @NotNull
+        @Override
+        Collection<Member> getCollection() throws OlapException
+        {
+            LinkedHashSet<Member> ret = new LinkedHashSet<>();
+            for (Result r : results)
+                ret.addAll(r.getCollection());
+            return ret;
+        }
+
+        @Override
+        void toMdxSet(StringBuilder sb)
+        {
+            if (results.size() == 1)
+            {
+                results.get(0).toMdxSet(sb);
+                return;
+            }
+            sb.append(" UNION(");
+            String comma = "";
+            for (Result r : results)
+            {
+                sb.append(comma);
+                r.toMdxSet(sb);
+                comma = ", ";
+            }
+            sb.append(")\n");
+        }
+    }
+
+
     class CrossResult extends Result
     {
-        List<MemberSetResult> results = new ArrayList<>();
+        List<Result> results = new ArrayList<>();
 
         CrossResult()
+        {}
+
+        CrossResult(Collection<Result> results)
         {
-            super(Type.crossSet);
+            this.results.addAll(results);
+        }
+
+        @Nullable
+        @Override
+        Level getLevel()
+        {
+            return null;
+        }
+
+        @Nullable
+        @Override
+        Hierarchy getHierarchy()
+        {
+            return null;
+        }
+
+        @NotNull
+        @Override
+        Collection<Member> getCollection() throws OlapException
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        void toMdxSet(StringBuilder sb)
+        {
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -325,20 +392,21 @@ public class BitSetQueryImpl
 
 
 
-    // there are different types of data that can be manipulated by this "query language" to use
-    // the term loosely.
-    enum Type
-    {
-        countOfMembers,     // integer
-        member,             // individual categorical value
-        setOfMembers,       // set of categorical values
-        tupleMemberCount,   // (member, count)
-        tupleMemberMembers,  // (member, {members})
-        setOfTuples,         // {(member,count),(member,count)}
-        crossSet             // {{member}}, 0-1 memberset per hierarchy (no duplicates)
-    }
-
-
+//    // there are different types of data that can be manipulated by this "query language" to use
+//    // the term loosely.
+//    enum Type
+//    {
+//        countOfMembers,     // integer
+//        member,             // individual categorical value
+//        setOfMembers,       // set of categorical values
+//        tupleMemberCount,   // (member, count)
+//        tupleMemberMembers,  // (member, {members})
+//        setOfTuples,         // {(member,count),(member,count)}
+//        crossSet,             // {{member}}, 0-1 memberset per hierarchy (no duplicates)
+//        union             // {{member}}, 0-1 memberset per hierarchy (no duplicates)
+//    }
+//
+//
     enum Operator
     {
         Count,
@@ -470,7 +538,7 @@ public class BitSetQueryImpl
     }
 
 
-    CellSet evaluate(MemberSetResult rowsExpr, MemberSetResult colsExpr, Result filterExpr) throws SQLException
+    CellSet evaluate(Result rowsExpr, Result colsExpr, Result filterExpr) throws SQLException
     {
         if (null == rowsExpr && null == colsExpr)
             throw new IllegalArgumentException();
@@ -511,7 +579,7 @@ public class BitSetQueryImpl
         if (null == colsExpr || null == rowsExpr)
         {
             Result axis = null==colsExpr ? rowsExpr : colsExpr;
-            for (Member m : ((MemberSetResult)axis).getCollection())
+            for (Member m : axis.getCollection())
             {
                 int count;
                 if (0 == countFilterSet)
@@ -572,19 +640,19 @@ public class BitSetQueryImpl
     }
 
 
-    MemberSet filter(Level measureLevel, Result result) throws SQLException
+    MemberSet filter(Level measureLevel, Result filterAxisResult) throws SQLException
     {
-        List<MemberSetResult> list = new ArrayList<>();
+        List<Result> list = new ArrayList<>();
 
-        if (result instanceof CrossResult)
+        if (filterAxisResult instanceof CrossResult)
         {
-            list.addAll(((CrossResult)result).results);
+            list.addAll(((CrossResult)filterAxisResult).results);
         }
-        else if (result instanceof MemberSetResult)
+        else if (filterAxisResult instanceof MemberSetResult)
         {
-            list.add((MemberSetResult)result);
+            list.add((MemberSetResult)filterAxisResult);
         }
-        else if (null != result)
+        else if (null != filterAxisResult)
         {
             throw new IllegalArgumentException();
         }
@@ -593,41 +661,42 @@ public class BitSetQueryImpl
             return null;   // unfiltered
 
         MemberSet filteredSet = null;
-        for (MemberSetResult memberSetResult : list)
+        for (Result result : list)
         {
-            Level resultLevel = memberSetResult.getLevel();
-            Hierarchy resultHierarchy = memberSetResult.getHierarchy();
+            Level resultLevel = result.getLevel();
+            Hierarchy resultHierarchy = result.getHierarchy();
             String levelUniqueName = (null==resultLevel) ? null : resultLevel.getUniqueName();
 
             /* NOTE: some CDS queries filter on the subject hierarchy instead of the subject level
              * for backward compatibility, unwind that here
              */
-            if (null == resultLevel && null != resultHierarchy && resultHierarchy.getUniqueName().equals(measureLevel.getHierarchy().getUniqueName()))
+            if (result instanceof MemberSetResult && null == resultLevel && null != resultHierarchy &&
+                    resultHierarchy.getUniqueName().equals(measureLevel.getHierarchy().getUniqueName()))
             {
                 // extract only the measure level (e.g. [Subject].[Subject]
-                if (memberSetResult.hierarchy != null)
+                if (((MemberSetResult)result).hierarchy != null)
                 {
-                    memberSetResult = new MemberSetResult(measureLevel);
+                    result = new MemberSetResult(measureLevel);
                 }
-                else if (null != memberSetResult.members)
+                else if (null != ((MemberSetResult)result).members)
                 {
-                    memberSetResult = new MemberSetResult(memberSetResult.members.onlyFor(measureLevel));
+                    result = new MemberSetResult(((MemberSetResult)result).members.onlyFor(measureLevel));
                 }
                 resultLevel = measureLevel;
                 levelUniqueName = resultLevel.getUniqueName();
             }
 
-            MemberSetResult intersectSet;
+            Result intersectSet;
             if (measureLevel.getUniqueName().equals(levelUniqueName))
             {
-                intersectSet = memberSetResult;
+                intersectSet = result;
             }
             else
             {
                 // because we only support COUNT DISTINCT, we can treat this filter like
                 // NON EMPTY distinctLevel.members WHERE <filter>,
                 // for SUM() or COUNT() this wouldn't work
-                intersectSet = _cubeHelper.membersQuery(new MemberSetResult(measureLevel), memberSetResult);
+                intersectSet = _cubeHelper.membersQuery(new MemberSetResult(measureLevel), result);
             }
             if (null == filteredSet)
                 filteredSet = new MemberSet(intersectSet.getCollection());
@@ -698,6 +767,7 @@ public class BitSetQueryImpl
     }
 
 
+
     Result union(OP op, Collection<Result> results) throws OlapException
     {
         if (results.size() == 0)
@@ -705,15 +775,33 @@ public class BitSetQueryImpl
         if (results.size() == 1)
             return results.iterator().next();
 
-        List<Collection<Member>> sets = new ArrayList<>(results.size());
+        // if all members are part of the same hierarchy just return a simple MemberSetResult
+        // if there is more than one hierarchy involved, return a UnionResult
+        Set<String> hierarchies = new HashSet<>();
         for (Result r : results)
         {
             if (!(r instanceof MemberSetResult))
                 throw new IllegalArgumentException();
-            sets.add(((MemberSetResult)r).getCollection());
+            Hierarchy h = ((MemberSetResult)r).getHierarchy();
+            String name = null==h ? "NULL" : h.getUniqueName();
+            hierarchies.add(name);
         }
-        MemberSet s = MemberSet.union(sets);
-        return new MemberSetResult(s);
+
+        if (1 == hierarchies.size())
+        {
+            List<Collection<Member>> sets = new ArrayList<>(results.size());
+            for (Result r : results)
+            {
+                if (!(r instanceof MemberSetResult))
+                    throw new IllegalArgumentException();
+                sets.add(((MemberSetResult) r).getCollection());
+            }
+            MemberSet s = MemberSet.union(sets);
+            return new MemberSetResult(s);
+        }
+
+        // more than one hierarchy
+        return new UnionResult(results);
     }
 
 
@@ -769,7 +857,7 @@ public class BitSetQueryImpl
             filterExpr = processExpr(qq.filters);
 
         CellSet ret;
-        ret = evaluate((MemberSetResult)rowsExpr, (MemberSetResult)columnsExpr, filterExpr);
+        ret = evaluate(rowsExpr, columnsExpr, filterExpr);
         return ret;
     }
 
@@ -835,7 +923,7 @@ public class BitSetQueryImpl
         }
 
 
-        String queryCrossjoin(MemberSetResult from, MemberSetResult to)
+        String queryCrossjoin(Result from, Result to)
         {
             StringBuilder sb = new StringBuilder();
             sb.append(
@@ -853,7 +941,7 @@ public class BitSetQueryImpl
         }
 
 
-        String queryCrossjoin(Level from, MemberSetResult to)
+        String queryCrossjoin(Level from, Result to)
         {
             StringBuilder sb = new StringBuilder();
             sb.append(
@@ -891,13 +979,13 @@ public class BitSetQueryImpl
          * return a set of members in <MemberSetResult=outer> that intersect (non empty cross join) with <MemberSetResult=sub>.
          * Note that this basically gives OR or UNION semantics w/respect to the sub members.
          */
-        MemberSetResult membersQuery(MemberSetResult outer, MemberSetResult sub) throws SQLException
+        MemberSetResult membersQuery(MemberSetResult outer, Result sub) throws SQLException
         {
             MemberSet set;
 
-            if (null != outer.level && null != sub.members && sub.members.size() == 1)
+            if (null != outer.level && sub instanceof MemberSetResult && null != ((MemberSetResult)sub).members && ((MemberSetResult)sub).members.size() == 1)
             {
-                Iterator<Member> it = sub.members.iterator();
+                Iterator<Member> it = ((MemberSetResult)sub).members.iterator();
                 it.hasNext();
                 set = membersQuery(outer.level, it.next());
             }
@@ -956,8 +1044,18 @@ public class BitSetQueryImpl
             }
         }
 
-        void populateCache(Level outerLevel, MemberSetResult inner) throws SQLException
+        void populateCache(Level outerLevel, Result inner) throws SQLException
         {
+            // MDX doesn't allow union across different hierarchies, but I do, so here I iterate over
+            // the union components
+            if (inner instanceof UnionResult)
+            {
+                for (Result r : ((UnionResult) inner).results)
+                    populateCache(outerLevel, r);
+                return;
+            }
+
+
             boolean cacheMiss = false;
 
             // We cache by individual members, but we don't necessaryily want to load the cache one set at a time
