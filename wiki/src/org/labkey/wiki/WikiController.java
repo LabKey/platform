@@ -44,6 +44,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -1968,6 +1969,7 @@ public class WikiController extends SpringActionController
         }
     }
 
+    @ActionNames("edit, editWiki")
     @RequiresPermissionClass(ReadPermission.class) //will check below
     public class EditWikiAction extends SimpleViewAction<EditWikiForm>
     {

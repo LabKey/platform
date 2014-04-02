@@ -35,12 +35,12 @@ CREATE VIEW comm.Threads AS
 
 -- View that joins each wiki with its current version (one row per wiki)
 CREATE VIEW comm.CurrentWikiVersions AS
-    SELECT p.Container, p.Name, pv.Title, pv.Body, p.CreatedBy, p.Created, p.ModifiedBy, p.Modified
+    SELECT pv.RowId, p.Container, p.Name, pv.Title, pv.Version, pv.Body, p.CreatedBy, p.Created, p.ModifiedBy, p.Modified
         FROM comm.Pages p INNER JOIN comm.PageVersions pv ON p.PageVersionId = pv.RowId;
 
 -- View that joins every wiki version with its parent (one row per wiki version)
 CREATE VIEW comm.AllWikiVersions AS
-    SELECT p.Container, p.Name, pv.Title, pv.Body, p.CreatedBy, p.Created, p.ModifiedBy, p.Modified
+    SELECT pv.RowId, p.Container, p.Name, pv.Title, pv.Version, pv.Body, p.CreatedBy, p.Created, p.ModifiedBy, p.Modified
         FROM comm.PageVersions pv INNER JOIN comm.Pages p ON pv.PageEntityId = p.EntityId;
 
 -- Simple alias for backward compatibility... we used to expose the CurrentWikiVersions view as "PagesAndVersions", but

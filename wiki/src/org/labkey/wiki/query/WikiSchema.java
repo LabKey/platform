@@ -16,13 +16,15 @@
 package org.labkey.wiki.query;
 
 import org.labkey.api.announcements.CommSchema;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.EnumTableInfo;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.wiki.WikiRendererType;
@@ -87,10 +89,14 @@ public class WikiSchema extends UserSchema
         else if (CURRENT_WIKI_VERSIONS.equalsIgnoreCase(name) || ALL_WIKI_VERSIONS.equalsIgnoreCase(name))
         {
             TableInfo dbTable = CommSchema.getInstance().getSchema().getTable(name);
-            FilteredTable filteredTable = new FilteredTable<>(dbTable, this);
-            filteredTable.wrapAllColumns(true);
+            SimpleUserSchema.SimpleTable<WikiSchema> table = new SimpleUserSchema.SimpleTable<>(this, dbTable);
+            table.init();
 
-            return filteredTable;
+            // Change default sort to newest->oldest
+            ColumnInfo pk = table.getColumn("RowId");
+            pk.setSortDirection(Sort.SortDirection.DESC);
+
+            return table;
         }
         return null;
     }
