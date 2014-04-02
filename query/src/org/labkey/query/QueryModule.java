@@ -66,6 +66,7 @@ import org.labkey.query.audit.QueryUpdateAuditViewFactory;
 import org.labkey.query.controllers.OlapController;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.jdbc.QueryDriver;
+import org.labkey.query.olap.MemberSet;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.reports.AttachmentReport;
 import org.labkey.query.reports.LinkReport;
@@ -242,7 +243,8 @@ public class QueryModule extends DefaultModule
                 SimpleFilter.FilterTestCase.class,
                 TableWriter.TestCase.class,
                 AggregateQueryDataTransform.TestCase.class,
-                FilterClauseBuilder.TestCase.class
+                FilterClauseBuilder.TestCase.class,
+                MemberSet.TestCase.class
         ));
     }
 
