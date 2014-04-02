@@ -216,8 +216,12 @@ Ext.define('LABKEY.app.model.Filter', {
         }
 
         var newMembers = [];
+        var memberUniqueName = '[' + memberUname.join('].[') + ']';
+        var dataUniqueName;
+
         for (var m=0; m < this.data.members.length; m++) {
-            if (memberUname != this.data.members[m].uname)
+            dataUniqueName = '[' + this.data.members[m].uname.join('].[') + ']';
+            if (memberUniqueName !== dataUniqueName)
             {
                 newMembers.push(this.data.members[m]);
             }
