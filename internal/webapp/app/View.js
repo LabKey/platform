@@ -314,11 +314,14 @@ Ext.define('LABKEY.app.controller.View', {
             }
         }
 
-        history.pushState({
-            controller: controller,
-            view: view,
-            viewContext: viewContext
-        }, title, url);
+        // 19923: Only update history on supported browsers
+        if (!Ext.isIE9m) {
+            history.pushState({
+                controller: controller,
+                view: view,
+                viewContext: viewContext
+            }, title, url);
+        }
     },
 
     setAppActionName : function(appName) {
