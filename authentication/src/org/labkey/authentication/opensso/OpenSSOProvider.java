@@ -70,7 +70,7 @@ public class OpenSSOProvider implements AuthenticationProvider.RequestAuthentica
     }
 
     @Override
-    public AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws ValidEmail.InvalidEmailException, RedirectException
+    public AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws ValidEmail.InvalidEmailException
     {
 //        try
 //        {

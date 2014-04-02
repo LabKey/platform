@@ -15,7 +15,6 @@
  */
 package org.labkey.core.login;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
@@ -45,8 +44,6 @@ import java.util.LinkedList;
  */
 public class DbLoginAuthenticationProvider implements LoginFormAuthenticationProvider
 {
-    private static final Logger _log = Logger.getLogger(DbLoginAuthenticationProvider.class);
-
     public boolean isPermanent()
     {
         return true;

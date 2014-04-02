@@ -25,11 +25,11 @@ import org.expressme.openid.OpenIdManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.security.*;
+import org.labkey.api.security.AuthenticationProvider;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.RedirectException;
 import org.labkey.authentication.AuthenticationModule;
 
 import javax.servlet.http.HttpServletRequest;
@@ -92,7 +92,7 @@ public class GoogleOpenIdProvider implements AuthenticationProvider.RequestAuthe
 
 
     @Override
-    public AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws ValidEmail.InvalidEmailException, RedirectException
+    public AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws ValidEmail.InvalidEmailException
     {
         if (!AppProps.getInstance().isExperimentalFeatureEnabled(AuthenticationModule.EXPERIMENTAL_OPENID_GOOGLE))
             return AuthenticationResponse.createFailureResponse(FailureReason.notApplicable);
