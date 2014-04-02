@@ -30,7 +30,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
@@ -73,7 +72,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
     @Override
     // id and password will not be blank (not null, not empty, not whitespace only)
-    public AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException, RedirectException
+    public AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException
     {
         ValidEmail email = new ValidEmail(id);
         String hash = SecurityManager.getPasswordHash(email);
@@ -84,15 +83,14 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         if (!SecurityManager.matchPassword(password,hash))
             return AuthenticationResponse.createFailureResponse(FailureReason.badPassword);
 
-        // Password is correct for this user.  Now check password rules and expiration.
+        // Password is correct for this user; now check password rules and expiration.
 
         PasswordRule rule = DbLoginManager.getPasswordRule();
         Collection<String> messages = new LinkedList<>();
 
         if (!rule.isValidForLogin(password, user, messages))
         {
-            redirectIfPossible(user, returnURL, FailureReason.complexity);
-            return AuthenticationResponse.createFailureResponse(FailureReason.complexity);
+            return getChangePasswordResponse(user, returnURL, FailureReason.complexity);
         }
         else
         {
@@ -101,50 +99,45 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
             if (expiration.hasExpired(lastChanged))
             {
-                redirectIfPossible(user, returnURL, FailureReason.expired);
-                return AuthenticationResponse.createFailureResponse(FailureReason.expired);
+                return getChangePasswordResponse(user, returnURL, FailureReason.expired);
             }
         }
 
         return AuthenticationResponse.createSuccessResponse(email);
     }
 
-    // If this appears to be a browser request, then throw a redirect to the change password page. If not, just return.
-    // TODO: Better detection of browser case? TODO: Create audit log entry in redirect case? Right now, complexity and
-    // expiration issues during BASIC auth requests get logged but not the same issues during browser requests.
-    private void redirectIfPossible(User user, URLHelper returnURL, FailureReason reason) throws RedirectException
+    // If this appears to be a browser request then return an AuthenticationResponse that will result in redirect to the change password page.
+    private AuthenticationResponse getChangePasswordResponse(User user, URLHelper returnURL, FailureReason failureReason)
     {
-        ViewContext ctx = null;
+        ActionURL redirectURL = null;
 
         try
         {
-            ctx = HttpView.currentContext();
+            ViewContext ctx = HttpView.currentContext();
+
+            if (null != ctx)
+            {
+                Container c = ctx.getContainer();
+
+                if (null != c)
+                {
+                    // We have a container, so redirect to password change page
+
+                    // Fall back plan is the home page
+                    if (null == returnURL)
+                        returnURL = AppProps.getInstance().getHomePageActionURL();
+
+                    LoginUrls urls = PageFlowUtil.urlProvider(LoginUrls.class);
+                    redirectURL = urls.getChangePasswordURL(c, user, returnURL, "Your " + failureReason.getMessage() + "; please choose a new password.");
+                }
+            }
         }
         catch (EmptyStackException e)
         {
             // Basic auth is checked in AuthFilter, so there won't be a ViewContext in that case. #11653
         }
 
-        if (null != ctx)
-        {
-            Container c = ctx.getContainer();
-
-            if (null != c)
-            {
-                // We have a container, so redirect to password change page
-
-                // Fall back plan is the home page
-                if (null == returnURL)
-                    returnURL = AppProps.getInstance().getHomePageActionURL();
-
-                _log.info(user.getEmail() + " failed to login: " + reason.getMessage());
-
-                LoginUrls urls = PageFlowUtil.urlProvider(LoginUrls.class);
-                ActionURL changePasswordURL = urls.getChangePasswordURL(c, user, returnURL, "Your " + reason.getMessage() + "; please choose a new password.");
-
-                throw new RedirectException(changePasswordURL);
-            }
-        }
+        return AuthenticationResponse.createFailureResponse(failureReason, redirectURL);
     }
 
     public ActionURL getConfigurationLink()
