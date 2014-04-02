@@ -330,7 +330,7 @@ public class AuthenticationManager
             return;
         authMessages.put(key, msg);
         if (user.isGuest())
-            AuditLogService.get().addEvent(user, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, (String)null, msg);
+            AuditLogService.get().addEvent(user, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, null, msg);
         else
             UserManager.addAuditEvent(user, ContainerManager.getRoot(), user, msg);
     }
@@ -476,11 +476,16 @@ public class AuthenticationManager
                 addAuditEvent(User.guest, request, message);
                 _log.warn("Unknown user " + message);
             }
+
+            // For now, redirectURL is only checked in the failure case
+            ActionURL redirectURL = firstFailure.getRedirectURL();
+
+            if (null != redirectURL)
+                throw new RedirectException(redirectURL);
         }
 
         return new AuthenticationResult(AuthenticationStatus.BadCredentials);
     }
-
 
 
     // limit one bad login per second averaged out over 60sec
@@ -560,7 +565,6 @@ public class AuthenticationManager
             rl.add(1, false);
         }
     }
-
 
 
     // Attempts to authenticate using only LoginFormAuthenticationProviders (e.g., DbLogin, LDAP).  This is for the case

@@ -56,17 +56,20 @@ public abstract interface AuthenticationProvider
     {
         private final @Nullable ValidEmail _email;
         private final @Nullable FailureReason _failureReason;
+        private final @Nullable ActionURL _redirectURL;
 
-        private AuthenticationResponse(ValidEmail email)
+        private AuthenticationResponse(@NotNull ValidEmail email)
         {
             _email = email;
             _failureReason = null;
+            _redirectURL = null;
         }
 
-        private AuthenticationResponse(FailureReason failureReason)
+        private AuthenticationResponse(@NotNull FailureReason failureReason, @Nullable ActionURL redirectURL)
         {
             _email = null;
             _failureReason = failureReason;
+            _redirectURL = redirectURL;
         }
 
         public static AuthenticationResponse createSuccessResponse(ValidEmail email)
@@ -76,7 +79,12 @@ public abstract interface AuthenticationProvider
 
         public static AuthenticationResponse createFailureResponse(FailureReason failureReason)
         {
-            return new AuthenticationResponse(failureReason);
+            return new AuthenticationResponse(failureReason, null);
+        }
+
+        public static AuthenticationResponse createFailureResponse(FailureReason failureReason, @Nullable ActionURL redirectURL)
+        {
+            return new AuthenticationResponse(failureReason, redirectURL);
         }
 
         public boolean isAuthenticated()
@@ -96,6 +104,11 @@ public abstract interface AuthenticationProvider
             assert null != _email;
 
             return _email;
+        }
+
+        public @Nullable ActionURL getRedirectURL()
+        {
+            return _redirectURL;
         }
     }
 
