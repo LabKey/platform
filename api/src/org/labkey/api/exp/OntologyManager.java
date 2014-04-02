@@ -573,9 +573,8 @@ public class OntologyManager
             filter.addCondition(FieldKey.fromParts("Container"), container);
         }
 
-        ObjectProperty[] pvals = new TableSelector(getTinfoObjectPropertiesView(), filter, null).getArray(ObjectProperty.class);
 		m = new HashMap<>();
-		for (ObjectProperty value : pvals)
+		for (ObjectProperty value : new TableSelector(getTinfoObjectPropertiesView(), filter, null).getArrayList(ObjectProperty.class))
 		{
 			m.put(value.getPropertyURI(), value);
 		}
@@ -641,13 +640,11 @@ public class OntologyManager
         {
             DbSchema schema = getExpSchema();
             String sql = getSqlDialect().execute(getExpSchema(), "deleteObject", "?, ?");
-            Object[] params = new Object[] {c.getId(), null};
             SqlExecutor executor = new SqlExecutor(schema);
 
             for (String uri : uris)
             {
-                params[1] = uri;
-                executor.execute(sql, params);
+                executor.execute(sql, c.getId(), uri);
             }
         }
         finally
@@ -956,7 +953,7 @@ public class OntologyManager
     }
 
 
-    public static void deleteAllObjects(Container c, User user) throws SQLException
+    public static void deleteAllObjects(Container c, User user) throws ValidationException
 	{
         Container projectContainer = c.getProject();
         if (null==projectContainer)
@@ -1004,7 +1001,7 @@ public class OntologyManager
         }
 	}
 
-    public static void copyDescriptors (final Container c, final Container project) throws SQLException
+    private static void copyDescriptors(final Container c, final Container project) throws ValidationException
     {
         // if c is (was) a project, then nothing to do
         if (c.getId().equals(project.getId()))
@@ -1020,105 +1017,98 @@ public class OntologyManager
                 " AND O.Container <> PD.Container ";
 //                " GROUP BY O.ObjectURI, O.Container, PD.PropertyId ";
 
-        try
-        {
-            final Map<String, ObjectProperty> mObjsUsingMyProps = new HashMap<>();
-            final StringBuilder sqlIn= new StringBuilder();
-            final StringBuilder sep = new StringBuilder();
+        final Map<String, ObjectProperty> mObjsUsingMyProps = new HashMap<>();
+        final StringBuilder sqlIn= new StringBuilder();
+        final StringBuilder sep = new StringBuilder();
 
-            new SqlSelector(getExpSchema(), sql, c).forEach(new Selector.ForEachBlock<ResultSet>()
+        new SqlSelector(getExpSchema(), sql, c).forEach(new Selector.ForEachBlock<ResultSet>()
+        {
+            @Override
+            public void exec(ResultSet rs) throws SQLException
+            {
+                String objURI = rs.getString(1);
+                String objContainer = rs.getString(2);
+                Integer propId = rs.getInt(3);
+                String propURI = rs.getString(4);
+
+                sqlIn.append(sep).append(propId);
+
+                if (sep.length() == 0)
+                    sep.append(", ");
+
+                Map<String, ObjectProperty> mtemp = getPropertyObjects(ContainerManager.getForId(objContainer), objURI);
+
+                if (null != mtemp)
+                {
+                    for (Map.Entry<String, ObjectProperty> entry : mtemp.entrySet())
+                    {
+                        if (entry.getValue().getPropertyURI().equals(propURI))
+                            mObjsUsingMyProps.put(entry.getKey(), entry.getValue());
+                    }
+                }
+            }
+        });
+
+        //For each property that is referenced outside its container, get the
+        // domains that it belongs to and the other properties in those domains
+        // so we can make copies of those domains and properties
+        // Restrict it to properties and domains also in the same container
+
+        if (mObjsUsingMyProps.size() > 0)
+        {
+            sql = "SELECT PD.PropertyURI, DD.DomainURI " +
+                    " FROM " + getTinfoPropertyDescriptor() + " PD " +
+                    " LEFT JOIN (" + getTinfoPropertyDomain() + " PDM " +
+                    " INNER JOIN " + getTinfoPropertyDomain() + " PDM2 ON (PDM.DomainId = PDM2.DomainId) " +
+                    " INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId)) "+
+                    " ON (PD.PropertyId = PDM2.PropertyId) " +
+                    " WHERE PDM.PropertyId IN (" + sqlIn.toString() + ") " +
+                    " OR PD.PropertyId IN (" + sqlIn.toString() + ") ";
+
+            new SqlSelector(getExpSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
             {
                 @Override
-                public void exec(ResultSet rs) throws SQLException
+                public void exec(ResultSet rsMyProps) throws SQLException
                 {
-                    String objURI = rs.getString(1);
-                    String objContainer = rs.getString(2);
-                    Integer propId = rs.getInt(3);
-                    String propURI = rs.getString(4);
+                    String propUri = rsMyProps.getString(1);
+                    String domUri =  rsMyProps.getString(2);
+                    PropertyDescriptor pd = getPropertyDescriptor(propUri, c);
 
-                    sqlIn.append(sep).append(propId);
-
-                    if (sep.length() == 0)
-                        sep.append(", ");
-
-                    Map<String, ObjectProperty> mtemp = getPropertyObjects(ContainerManager.getForId(objContainer), objURI);
-
-                    if (null != mtemp)
+                    if (pd.getContainer().getId().equals(c.getId()))
                     {
-                        for (Map.Entry<String, ObjectProperty> entry : mtemp.entrySet())
+                        propDescCache.remove(getCacheKey(pd));
+                        domainPropertiesCache.clear();
+                        pd.setContainer(project);
+                        pd.setProject(project);
+                        pd.setPropertyId(0);
+                        pd = ensurePropertyDescriptor(pd);
+                    }
+
+                    if (null != domUri)
+                    {
+                        DomainDescriptor dd = getDomainDescriptor(domUri, c);
+                        if (dd.getContainer().getId().equals(c.getId()))
                         {
-                            if (entry.getValue().getPropertyURI().equals(propURI))
-                                mObjsUsingMyProps.put(entry.getKey(), entry.getValue());
+                            domainDescCache.remove(getCacheKey(dd));
+                            domainPropertiesCache.clear();
+                            dd.setContainer(project);
+                            dd.setProject(project);
+                            dd.setDomainId(0);
+                            dd = ensureDomainDescriptor(dd);
+                            ensurePropertyDomain(pd, dd);
                         }
                     }
                 }
             });
 
-            //For each property that is referenced outside its container, get the
-            // domains that it belongs to and the other properties in those domains
-            // so we can make copies of those domains and properties
-            // Restrict it to properties and domains also in the same container
+            clearCaches();
 
-            if (mObjsUsingMyProps.size() > 0)
+            // now unhook the objects that refer to my properties and rehook them to the properties in their own project
+            for (ObjectProperty op : mObjsUsingMyProps.values())
             {
-                sql = "SELECT PD.PropertyURI, DD.DomainURI " +
-                        " FROM " + getTinfoPropertyDescriptor() + " PD " +
-                        " LEFT JOIN (" + getTinfoPropertyDomain() + " PDM " +
-                        " INNER JOIN " + getTinfoPropertyDomain() + " PDM2 ON (PDM.DomainId = PDM2.DomainId) " +
-                        " INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId)) "+
-                        " ON (PD.PropertyId = PDM2.PropertyId) " +
-                        " WHERE PDM.PropertyId IN (" + sqlIn.toString() + ") " +
-                        " OR PD.PropertyId IN (" + sqlIn.toString() + ") ";
-
-                new SqlSelector(getExpSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
-                {
-                    @Override
-                    public void exec(ResultSet rsMyProps) throws SQLException
-                    {
-                        String propUri = rsMyProps.getString(1);
-                        String domUri =  rsMyProps.getString(2);
-                        PropertyDescriptor pd = getPropertyDescriptor(propUri, c);
-
-                        if (pd.getContainer().getId().equals(c.getId()))
-                        {
-                            propDescCache.remove(getCacheKey(pd));
-                            domainPropertiesCache.clear();
-                            pd.setContainer(project);
-                            pd.setProject(project);
-                            pd.setPropertyId(0);
-                            pd = ensurePropertyDescriptor(pd);
-                        }
-
-                        if (null != domUri)
-                        {
-                            DomainDescriptor dd = getDomainDescriptor(domUri, c);
-                            if (dd.getContainer().getId().equals(c.getId()))
-                            {
-                                domainDescCache.remove(getCacheKey(dd));
-                                domainPropertiesCache.clear();
-                                dd.setContainer(project);
-                                dd.setProject(project);
-                                dd.setDomainId(0);
-                                dd = ensureDomainDescriptor(dd);
-                                ensurePropertyDomain(pd, dd);
-                            }
-                        }
-                    }
-                });
-
-                clearCaches();
-
-                // now unhook the objects that refer to my properties and rehook them to the properties in their own project
-                for (ObjectProperty op : mObjsUsingMyProps.values())
-                {
-                    deleteProperty(op.getObjectURI(), op.getPropertyURI(), op.getContainer(), c);
-                    insertProperties(op.getContainer(), op.getObjectURI(), op);
-                }
+                deleteProperty(op.getObjectURI(), op.getPropertyURI(), op.getContainer(), c);
+                insertProperties(op.getContainer(), op.getObjectURI(), op);
             }
-        }
-        catch (ValidationException ve)
-        {
-            throw new SQLException(ve.getMessage());
         }
     }
 
@@ -1300,26 +1290,19 @@ public class OntologyManager
         PropertyDescriptor pd = getPropertyDescriptor(pdIn.getPropertyURI(), pdIn.getContainer());
         if (null == pd)
         {
-            try
+            assert pdIn.getPropertyId() == 0;
+            /* return 1 if inserted 0 if not inserted, uses OUT parameter for new PropertyDescriptor */
+            PropertyDescriptor[] out = new PropertyDescriptor[1];
+            int rowcount = insertPropertyIfNotExists(null, pdIn, out);
+            pd = out[0];
+            if (1 == rowcount && null != pd)
             {
-                assert pdIn.getPropertyId() == 0;
-                /* return 1 if inserted 0 if not inserted, uses OUT parameter for new PropertyDescriptor */
-                PropertyDescriptor[] out = new PropertyDescriptor[1];
-                int rowcount = insertPropertyIfNotExists(null, pdIn, out);
-                pd = out[0];
-                if (1 == rowcount && null != pd)
-                {
-                    propDescCache.put(getCacheKey(pd), pd);
-                    return pd;
-                }
-                if (null == pd)
-                {
-                    throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
-                }
+                propDescCache.put(getCacheKey(pd), pd);
+                return pd;
             }
-            catch (SQLException e)
+            if (null == pd)
             {
-                throw new RuntimeSQLException(e);
+                throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
             }
         }
 
@@ -1379,7 +1362,7 @@ public class OntologyManager
 	}
 
 
-    private static int insertPropertyIfNotExists(User user, PropertyDescriptor pd, PropertyDescriptor[] out) throws SQLException
+    private static int insertPropertyIfNotExists(User user, PropertyDescriptor pd, PropertyDescriptor[] out)
     {
         TableInfo t = getTinfoPropertyDescriptor();
         SQLFragment sql = new SQLFragment();
@@ -1533,7 +1516,7 @@ public class OntologyManager
         return colDiffs;
     }
 
-    public static DomainDescriptor ensureDomainDescriptor(String domainURI, String name, Container container) throws SQLException
+    public static DomainDescriptor ensureDomainDescriptor(String domainURI, String name, Container container)
     {
         DomainDescriptor ddIn = new DomainDescriptor(domainURI, container);
         ddIn.setName(name);
@@ -1624,7 +1607,7 @@ public class OntologyManager
         return colDiffs;
     }
 
-    private static void ensurePropertyDomain(PropertyDescriptor pd, DomainDescriptor dd) throws SQLException
+    private static void ensurePropertyDomain(PropertyDescriptor pd, DomainDescriptor dd)
     {
         ensurePropertyDomain(pd, dd, 0);
     }
@@ -2231,7 +2214,7 @@ public class OntologyManager
     }
 
 
-    public static PropertyDescriptor insertPropertyDescriptor(PropertyDescriptor pd) throws SQLException, ChangePropertyDescriptorException
+    public static PropertyDescriptor insertPropertyDescriptor(PropertyDescriptor pd) throws ChangePropertyDescriptorException
     {
 		assert pd.getPropertyId() == 0;
         validatePropertyDescriptor(pd);
@@ -2290,7 +2273,7 @@ public class OntologyManager
      * @deprecated  use PropertyService
      */
     public static boolean importOneType(final String domainURI, List<Map<String, Object>> maps, Collection<String> errors, final Container container, User user)
-            throws SQLException, ChangePropertyDescriptorException
+            throws ChangePropertyDescriptorException
     {
         return importTypes(new DomainURIFactory()
             {
@@ -2309,11 +2292,11 @@ public class OntologyManager
      */
     @Deprecated
     public static boolean importTypes(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container defaultContainer, boolean ignoreDuplicates, User user, @Nullable Domain domain)
-            throws SQLException, ChangePropertyDescriptorException
+            throws ChangePropertyDescriptorException
     {
         //_log.debug("importTypes(" + vocabulary + "," + typeColumn + "," + maps.length + ")");
-        LinkedHashMap<String, PropertyDescriptor> propsWithoutDomains = new LinkedHashMap<>();
-        LinkedHashMap<String, PropertyDescriptor> allProps = new LinkedHashMap<>();
+        Map<String, PropertyDescriptor> propsWithoutDomains = new LinkedHashMap<>();
+        Map<String, PropertyDescriptor> allProps = new LinkedHashMap<>();
         Map<String, Map<String, PropertyDescriptor>> newPropsByDomain = new  TreeMap<>();
         // Case insensitive set since we don't want property names that differ only by case
         Map<String, Set<String>> newPropertyURIsByDomain = new HashMap<>();
@@ -2425,18 +2408,10 @@ public class OntologyManager
                 {
                     if (domainProps.length == 0)
                     {
-                        try
-                        {
-                            // this is much faster than insertOrUpdatePropertyDescriptor()
-                            if (pdToInsert.getPropertyId() == 0)
-                                insertPropertyDescriptor(pdToInsert);
-                            pdInserted = ensurePropertyDomain(pdToInsert, dd, sortOrder++);
-                        }
-                        catch (SQLException x)
-                        {
-                            // it is possible that the property descriptor exists without being part of the domain
-                            // fall through
-                        }
+                        // this is much faster than insertOrUpdatePropertyDescriptor()
+                        if (pdToInsert.getPropertyId() == 0)
+                            insertPropertyDescriptor(pdToInsert);
+                        pdInserted = ensurePropertyDomain(pdToInsert, dd, sortOrder++);
                     }
                     if (null == pdInserted)
                         insertOrUpdatePropertyDescriptor(pdToInsert, dd, sortOrder++);
@@ -2805,97 +2780,83 @@ public class OntologyManager
 
 
         @Test
-        public void testBasicPropertiesObject() throws SQLException
+        public void testBasicPropertiesObject() throws ValidationException
 		{
-            try
-            {
-                Container c = ContainerManager.ensureContainer("/_ontologyManagerTest");
-                String parentObjectLsid = new Lsid("Junit", "OntologyManager", "parent").toString();
-                String childObjectLsid = new Lsid("Junit", "OntologyManager", "child").toString();
+            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest");
+            String parentObjectLsid = new Lsid("Junit", "OntologyManager", "parent").toString();
+            String childObjectLsid = new Lsid("Junit", "OntologyManager", "child").toString();
 
-                //First delete in case test case failed before
-                deleteOntologyObjects(c, parentObjectLsid);
-                assertNull(getOntologyObject(c, parentObjectLsid));
-                assertNull(getOntologyObject(c, childObjectLsid));
-                ensureObject(c, childObjectLsid, parentObjectLsid);
-                OntologyObject oParent = getOntologyObject(c, parentObjectLsid);
-                assertNotNull(oParent);
-                OntologyObject oChild = getOntologyObject(c, childObjectLsid);
-                assertNotNull(oChild);
-                assertNull(oParent.getOwnerObjectId());
-                assertEquals(oChild.getContainer(), c);
-                assertEquals(oParent.getContainer(), c);
+            //First delete in case test case failed before
+            deleteOntologyObjects(c, parentObjectLsid);
+            assertNull(getOntologyObject(c, parentObjectLsid));
+            assertNull(getOntologyObject(c, childObjectLsid));
+            ensureObject(c, childObjectLsid, parentObjectLsid);
+            OntologyObject oParent = getOntologyObject(c, parentObjectLsid);
+            assertNotNull(oParent);
+            OntologyObject oChild = getOntologyObject(c, childObjectLsid);
+            assertNotNull(oChild);
+            assertNull(oParent.getOwnerObjectId());
+            assertEquals(oChild.getContainer(), c);
+            assertEquals(oParent.getContainer(), c);
 
-                String strProp = new Lsid("Junit", "OntologyManager", "stringProp").toString();
-                insertProperties(c, parentObjectLsid, new ObjectProperty(childObjectLsid, c, strProp, "The String"));
+            String strProp = new Lsid("Junit", "OntologyManager", "stringProp").toString();
+            insertProperties(c, parentObjectLsid, new ObjectProperty(childObjectLsid, c, strProp, "The String"));
 
-                String intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
-                insertProperties(c, parentObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 5));
+            String intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
+            insertProperties(c, parentObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 5));
 
-                Calendar cal = Calendar.getInstance();
-                cal.set(Calendar.MILLISECOND, 0);
-                String dateProp = new Lsid("Junit", "OntologyManager", "dateProp").toString();
-                insertProperties(c, parentObjectLsid, new ObjectProperty(childObjectLsid, c, dateProp, cal.getTime()));
+            Calendar cal = Calendar.getInstance();
+            cal.set(Calendar.MILLISECOND, 0);
+            String dateProp = new Lsid("Junit", "OntologyManager", "dateProp").toString();
+            insertProperties(c, parentObjectLsid, new ObjectProperty(childObjectLsid, c, dateProp, cal.getTime()));
 
-                Map m = getProperties(c, oChild.getObjectURI());
-                assertNotNull(m);
-                assertEquals(m.size(), 3);
-                assertEquals(m.get(strProp), "The String");
-                assertEquals(m.get(intProp), 5);
-                assertEquals(m.get(dateProp), cal.getTime());
+            Map m = getProperties(c, oChild.getObjectURI());
+            assertNotNull(m);
+            assertEquals(m.size(), 3);
+            assertEquals(m.get(strProp), "The String");
+            assertEquals(m.get(intProp), 5);
+            assertEquals(m.get(dateProp), cal.getTime());
 
 
-                deleteOntologyObjects(c, parentObjectLsid);
-                assertNull(getOntologyObject(c, parentObjectLsid));
-                assertNull(getOntologyObject(c, childObjectLsid));
+            deleteOntologyObjects(c, parentObjectLsid);
+            assertNull(getOntologyObject(c, parentObjectLsid));
+            assertNull(getOntologyObject(c, childObjectLsid));
 
-                m = getProperties(c, oChild.getObjectURI());
-                assertTrue(null == m || m.size() == 0);
-            }
-            catch (ValidationException ve)
-            {
-                throw new SQLException(ve.getMessage());
-            }
+            m = getProperties(c, oChild.getObjectURI());
+            assertTrue(null == m || m.size() == 0);
         }
 
         @Test
-		public void testContainerDelete() throws SQLException
+		public void testContainerDelete() throws ValidationException
 		{
-            try
-            {
-                Container c = ContainerManager.ensureContainer("/_ontologyManagerTest");
-                //Clean up last time's mess
-                deleteAllObjects(c, TestContext.get().getUser());
-                assertEquals(0L, getObjectCount(c));
+            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest");
+            //Clean up last time's mess
+            deleteAllObjects(c, TestContext.get().getUser());
+            assertEquals(0L, getObjectCount(c));
 
-                String ownerObjectLsid = new Lsid("Junit", "OntologyManager", "parent").toString();
-                String childObjectLsid = new Lsid("Junit", "OntologyManager", "child").toString();
+            String ownerObjectLsid = new Lsid("Junit", "OntologyManager", "parent").toString();
+            String childObjectLsid = new Lsid("Junit", "OntologyManager", "child").toString();
 
-                ensureObject(c, childObjectLsid, ownerObjectLsid);
-                OntologyObject oParent = getOntologyObject(c, ownerObjectLsid);
-                assertNotNull(oParent);
-                OntologyObject oChild = getOntologyObject(c, childObjectLsid);
-                assertNotNull(oChild);
+            ensureObject(c, childObjectLsid, ownerObjectLsid);
+            OntologyObject oParent = getOntologyObject(c, ownerObjectLsid);
+            assertNotNull(oParent);
+            OntologyObject oChild = getOntologyObject(c, childObjectLsid);
+            assertNotNull(oChild);
 
-                String strProp = new Lsid("Junit", "OntologyManager", "stringProp").toString();
-                insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, strProp, "The String"));
+            String strProp = new Lsid("Junit", "OntologyManager", "stringProp").toString();
+            insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, strProp, "The String"));
 
-                String intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
-                insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 5));
+            String intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
+            insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 5));
 
-                Calendar cal = Calendar.getInstance();
-                cal.set(Calendar.MILLISECOND, 0);
-                String dateProp = new Lsid("Junit", "OntologyManager", "dateProp").toString();
-                insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, dateProp, cal.getTime()));
+            Calendar cal = Calendar.getInstance();
+            cal.set(Calendar.MILLISECOND, 0);
+            String dateProp = new Lsid("Junit", "OntologyManager", "dateProp").toString();
+            insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, dateProp, cal.getTime()));
 
-                deleteAllObjects(c, TestContext.get().getUser());
-                assertEquals(0L, getObjectCount(c));
-                assertTrue(ContainerManager.delete(c, TestContext.get().getUser()));
-            }
-            catch (ValidationException ve)
-            {
-                throw new SQLException(ve.getMessage());
-            }
+            deleteAllObjects(c, TestContext.get().getUser());
+            assertEquals(0L, getObjectCount(c));
+            assertTrue(ContainerManager.delete(c, TestContext.get().getUser()));
         }
 
         private void defineCrossFolderProperties(Container fldr1a, Container fldr1b) throws SQLException

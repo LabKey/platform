@@ -34,7 +34,6 @@ import org.labkey.api.writer.VirtualFile;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -314,7 +313,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
 
     void save(User user) throws Exception;
     void save(User user, boolean ensureKey) throws Exception;
-    void delete(User user) throws SQLException, DomainNotFoundException;
+    void delete(User user) throws DomainNotFoundException;
 
     ListItem createListItem();
     ListItem getListItem(Object key, User user);

@@ -257,8 +257,8 @@ abstract public class PipelineProvider
             public boolean isVisible(PipelineStatusFile statusFile)
             {
                 // We can retry if the job is in ERROR or CANCELLED and we still have the serialized job info
-                return (PipelineJob.ERROR_STATUS.equals(statusFile.getStatus()) ||
-                        PipelineJob.CANCELLED_STATUS.equals(statusFile.getStatus())) &&
+                return (PipelineJob.TaskStatus.error.matches(statusFile.getStatus()) ||
+                        PipelineJob.TaskStatus.cancelled.matches(statusFile.getStatus())) &&
                         statusFile.getJobStore() != null;
             }
         });
@@ -277,7 +277,7 @@ abstract public class PipelineProvider
     {
         if (PipelineProvider.CAPTION_RETRY_BUTTON.equals(name))
         {
-            if (!PipelineJob.ERROR_STATUS.equals(sf.getStatus()) && !PipelineJob.CANCELLED_STATUS.equals(sf.getStatus()))
+            if (!PipelineJob.TaskStatus.error.matches(sf.getStatus()) && !PipelineJob.TaskStatus.cancelled.matches(sf.getStatus()))
             {
                 throw new HandlerException("Unable to retry job that is not in the ERROR or CANCELLED state");
             }

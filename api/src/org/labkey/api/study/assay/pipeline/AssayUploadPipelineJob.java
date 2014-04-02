@@ -111,7 +111,7 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
         {
             _context.setLogger(getLogger());
 
-            setStatus("RUNNING");
+            setStatus(TaskStatus.running);
             getLogger().info("Starting assay upload");
 
             if (_context.getReRunId() != null)
@@ -142,7 +142,7 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
 
             // Do all the real work of the import
             _context.getProvider().getRunCreator().saveExperimentRun(_context, batch, _run, _forceSaveBatchProps);
-            setStatus(COMPLETE_STATUS);
+            setStatus(TaskStatus.complete);
             getLogger().info("Finished assay upload");
         }
         catch (Exception e)
@@ -161,12 +161,12 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
                     for (int i = messageLines.length - 4; i < messageLines.length; i++)
                         sb.append(messageLines[i]).append("\n");
                     getLogger().error(sb.toString());
-                    setStatus(ERROR_STATUS, sb.toString());
+                    setStatus(TaskStatus.error, sb.toString());
                 }
                 else
                 {
                     getLogger().error(e.getMessage() + "\n");
-                    setStatus(ERROR_STATUS, e.getMessage());
+                    setStatus(TaskStatus.error, e.getMessage());
                 }
             }
             getLogger().info("Error StackTrace", e);

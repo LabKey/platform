@@ -111,18 +111,22 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public enum TaskStatus
     {
+        /** Job is in the queue, waiting for its turn to run */
         waiting
         {
             public boolean isActive() { return true; }
         },
+        /** Job is doing its work */
         running
         {
             public boolean isActive() { return true; }
         },
+        /** Terminal state, job is finished and completed without errors */
         complete
         {
             public boolean isActive() { return false; }
         },
+        /** Terminal state (but often retryable), job is done running and completed with error(s) */
         error
         {
             public boolean isActive() { return false; }
@@ -139,6 +143,16 @@ abstract public class PipelineJob extends Job implements Serializable
         };
 
         public abstract boolean isActive();
+
+        public String toString()
+        {
+            return super.toString().toUpperCase();
+        }
+
+        public boolean matches(String statusText)
+        {
+            return toString().equalsIgnoreCase(statusText);
+        }
     }
     
     /**
@@ -167,11 +181,6 @@ abstract public class PipelineJob extends Job implements Serializable
     /*
      * Status strings
      */
-    public static final String WAITING_STATUS = TaskStatus.waiting.toString().toUpperCase();
-    public static final String COMPLETE_STATUS = TaskStatus.complete.toString().toUpperCase();
-    public static final String ERROR_STATUS = TaskStatus.error.toString().toUpperCase();
-    public static final String CANCELLED_STATUS = TaskStatus.cancelled.toString().toUpperCase();
-    public static final String CANCELLING_STATUS = TaskStatus.cancelling.toString().toUpperCase();
     public static final String WAITING_FOR_FILES = "WAITING FOR FILES";
     public static final String SPLIT_STATUS = "SPLIT WAITING";
 
@@ -434,11 +443,31 @@ abstract public class PipelineJob extends Job implements Serializable
             return setStatus(status.toString().toUpperCase(), null);
     }
 
+    /** Used for setting status to one of the standard states */
+    public boolean setStatus(TaskStatus status)
+    {
+        return setStatus(status.toString());
+    }
+
+    /**
+     * Used for setting status to a custom state, which is considered to be equivalent to TaskStatus.running
+     * unless it matches one of the standard states
+     */
     public boolean setStatus(String status)
     {
         return setStatus(status, null);
     }
 
+    /** Used for setting status to one of the standard states */
+    public boolean setStatus(TaskStatus status, String info)
+    {
+        return setStatus(status.toString(), info);
+    }
+
+    /**
+     * Used for setting status to a custom state, which is considered to be equivalent to TaskStatus.running
+     * unless it matches one of the standard states
+     */
     public boolean setStatus(String status, String info)
     {
         if (_settingStatus)
@@ -501,6 +530,11 @@ abstract public class PipelineJob extends Job implements Serializable
                 taskFactory.validateParameters(this);
             }
         }
+    }
+
+    public boolean setQueue(PipelineQueue queue, TaskStatus initialState)
+    {
+        return setQueue(queue, initialState.toString());
     }
 
     public boolean setQueue(PipelineQueue queue, String initialState)
@@ -1241,7 +1275,7 @@ abstract public class PipelineJob extends Job implements Serializable
             _isSettingStatus = true;
             try
             {
-                _job.setStatus(PipelineJob.ERROR_STATUS, message.toString());
+                _job.setStatus(TaskStatus.error, message.toString());
             }
             finally
             {

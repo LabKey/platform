@@ -149,18 +149,18 @@ public class RReportJob extends PipelineJob implements Serializable
                     info(output);
 
                 processOutputs(report, outputSubst);
-                setStatus(PipelineJob.COMPLETE_STATUS, "Job finished at: " + DateUtil.nowISO());
+                setStatus(TaskStatus.complete, "Job finished at: " + DateUtil.nowISO());
             }
             else
             {
-                setStatus(PipelineJob.ERROR_STATUS, "Job finished at: " + DateUtil.nowISO());
+                setStatus(TaskStatus.error, "Job finished at: " + DateUtil.nowISO());
             }
         }
         catch (Exception e)
         {
             _log.error("Error occurred running the report background job", e);
             error("Error occurred running the report background job", e);
-            setStatus(PipelineJob.ERROR_STATUS, "Job finished at: " + DateUtil.nowISO());
+            setStatus(TaskStatus.error, "Job finished at: " + DateUtil.nowISO());
         }
         finally
         {

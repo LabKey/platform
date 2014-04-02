@@ -22,7 +22,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.exp.*;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.DomainDescriptor;
+import org.labkey.api.exp.DomainNotFoundException;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -35,8 +41,10 @@ import org.labkey.data.xml.reportProps.PropertyDocument;
 import org.labkey.data.xml.reportProps.PropertyList;
 
 import java.beans.PropertyChangeEvent;
-import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: klum
@@ -175,16 +183,10 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
     @Nullable
     private Domain getDomain(Container container)
     {
-        try {
-            String uri = getDomainURI(container);
-            DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(uri, PROPERTIES_DOMAIN, container);
+        String uri = getDomainURI(container);
+        DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(uri, PROPERTIES_DOMAIN, container);
 
-            return PropertyService.get().getDomain(dd.getDomainId());
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
+        return PropertyService.get().getDomain(dd.getDomainId());
     }
 
     private String getDomainURI(@NotNull Container container)

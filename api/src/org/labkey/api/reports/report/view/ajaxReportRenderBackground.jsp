@@ -35,7 +35,7 @@
     File logFile = new File(bean.getReportDir(), RReportJob.LOG_FILE_NAME);
     PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile);
     boolean autoRefresh = statusFile != null &&
-            (statusFile.getStatus().equals(PipelineJob.WAITING_STATUS) || statusFile.getStatus().equals(RReportJob.PROCESSING_STATUS));
+            (PipelineJob.TaskStatus.waiting.matches(statusFile.getStatus()) || statusFile.getStatus().equals(RReportJob.PROCESSING_STATUS));
 
     // TODO: uniqueid
     // TODO: wrap javascript in anonymous function
@@ -119,7 +119,7 @@
                 extDiv.update(o.results);
             }
 
-            if (o.status == <%=q(PipelineJob.COMPLETE_STATUS)%>)
+            if (o.status == <%=q(PipelineJob.TaskStatus.complete.toString())%>)
                 stopPolling();
             else if (!timer)
                 timer = window.setInterval("pollForResults()", 4000);
