@@ -477,7 +477,7 @@ public class AuthenticationManager
                 _log.warn("Unknown user " + message);
             }
 
-            // For now, redirectURL is only checked in the failure case
+            // For now, redirectURL is only checked in the failure case, see #19778 for some history on redirect handling
             ActionURL redirectURL = firstFailure.getRedirectURL();
 
             if (null != redirectURL)
