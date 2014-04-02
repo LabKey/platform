@@ -86,7 +86,8 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
         if (hierarchies.length > 0) {
             var hierarchy = hierarchies[this.hIndex];
             var me = this;
-
+//            this.D1 = new Date();
+//            console.log('LOAD STORE');
             if (!this.totals[hierarchy.getName()]) {
                 // Asks for Total Count
                 this.olapProvider.onMDXReady(function(mdx) {
@@ -236,6 +237,8 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
 
             this.maxCount = max;
             this.fireEvent('maxcount', this.maxCount);
+//            var D2 = new Date();
+//            console.log('LOAD STORE COMPLETE:', D2 - this.D1);
 
             if (useSelection) {
                 this.fireEvent('selectrequest');
@@ -574,7 +577,7 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
         this.store.load(this.dimension, this.hierarchyIndex, true, this.showEmpty);
     },
 
-    onMaxCount : function(count) { },
+    onMaxCount : function(count) { this.positionTask.delay(10); },
 
     groupClick : function(rec, node) {
         var grps = this.store.getGroups(),
