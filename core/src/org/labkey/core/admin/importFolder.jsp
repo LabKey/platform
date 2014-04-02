@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -28,7 +27,7 @@
     requestOrigin = (request.getParameter("origin") != null) ? request.getParameter("origin") : "here";
 
     boolean canCreateSharedDatasets = false;
-    if (AppProps.getInstance().isExperimentalFeatureEnabled("SharedDatasets") && !c.isProject())
+    if (!c.isProject())
     {
         Container project = c.getProject();
         if (null != project && project != c)
