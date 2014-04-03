@@ -25,8 +25,6 @@ LABKEY.Mothership = (function () {
     var _debug = false;
 
     // Rethrow caught exceptions.
-    // Chrome 18 has a bug that causes the original stacktrace to be lost when an Error is rethrown.  A fix for this issue will appear in Chrome 19.
-    // http://code.google.com/p/chromium/issues/detail?id=60240
     var _rethrow = true;
 
     // Stack of last _maxLastErrors messages
@@ -66,7 +64,7 @@ LABKEY.Mothership = (function () {
 
     function log(msg) {
         if (_debug)
-            console.log(msg);
+            console.debug(msg);
     }
 
     function encodeQuery(data) {
@@ -207,9 +205,13 @@ LABKEY.Mothership = (function () {
 
         lastError(msg);
 
-        // A stacktrace can't be generated inside of window.onerror handler
-        // See: https://github.com/eriwen/javascript-stacktrace/issues/26
-        var stackTrace = gatherStack ? (errorObj ? errorObj : gatherStackTrace(err)) : msg;
+        var stackTrace;
+        if (gatherStack) {
+            if (errorObj && errorObj.stack)
+                stackTrace = errorObj.stack;
+            else
+                stackTrace = gatherStackTrace(err);
+        }
         if (!stackTrace)
             stackTrace = msg;
         if (err._allocation) {
@@ -257,20 +259,25 @@ LABKEY.Mothership = (function () {
     }
 
     function reportError(error) {
-        report(error, error.fileName, error.lineNumber || error.line, true, null);
+        report(error, error.fileName, error.lineNumber || error.line, true, error);
     }
 
     // Wraps a fn with a try/catch block
     function createWrap(fn) {
         if (!fn)
             return fn;
+
+        // Avoid double-wrapping the same callback
+        if (fn._wrapped)
+            return fn._wrapped;
+
         function wrap() {
             //log("wrap called");
             try {
                 return fn.apply(this, arguments);
             }
             catch (e) {
-                log("wrap caught error", e);
+                //log("wrap caught error", e);
                 if (fn._allocation)
                     e._allocation = fn._allocation;
                 reportError(e);
@@ -281,7 +288,13 @@ LABKEY.Mothership = (function () {
         fn._wrapped = wrap;
         if (_gatherAllocation)
         {
-            var allocation = gatherStackTrace();
+            var allocation;
+            if (Error.prototype.hasOwnProperty("stack")) {
+                var e = new Error();
+                allocation = e.stack
+            } else {
+                allocation = gatherStackTrace();
+            }
             if (allocation)
                 fn._allocation = "Callback Allocation:\n  " + allocation;
         }
@@ -341,6 +354,7 @@ LABKEY.Mothership = (function () {
 
             // Our replacement for removeListener
             function removeListener(fn, scope) {
+                //log("Ext.util.Event.removeListener called");
                 if (fn)
                     return un.call(this, fn._wrapped || fn, scope);
                 else
