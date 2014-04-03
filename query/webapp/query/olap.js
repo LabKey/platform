@@ -739,7 +739,7 @@ Ext4.define('LABKEY.query.olap.MDX', {
             configId : config.configId || this._cube.configId,
             schemaName : config.schemaName || this._cube.schemaName,
             cubeName : config.cubeName || this._cube.name,
-            query : {showEmpty:config.showEmpty, onRows:config.onRows, onCols:config.onCols, filter:config.filter},
+            query : {showEmpty:config.showEmpty, onRows:config.onRows, onColumns:(config.onColumns||config.onCols), filter:config.filter},
             log : config.log,
             originalConfig : config,
             scope : this,
