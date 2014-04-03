@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 -- For each thread, select RowId, EntityId, Container, Body, RendererType, CreatedBy, and Created from the original post and add Title, Status,
 --   Expires, CreatedBy, and Created from either the most recent response or the original post, if no responses.
 CREATE VIEW comm.Threads AS
@@ -38,9 +37,10 @@ CREATE VIEW comm.CurrentWikiVersions AS
     SELECT pv.RowId, p.Container, p.Name, pv.Title, pv.Version, pv.Body, p.CreatedBy, p.Created, p.ModifiedBy, p.Modified
         FROM comm.Pages p INNER JOIN comm.PageVersions pv ON p.PageVersionId = pv.RowId;
 
--- View that joins every wiki version with its parent (one row per wiki version)
+-- View that joins every wiki version with its parent (one row per wiki version). Report the wiki's Created & CreatedBy,
+-- but map the version's Created & CreatedBy to Modified & ModifiedBy, because that seems like the most useful mapping.
 CREATE VIEW comm.AllWikiVersions AS
-    SELECT pv.RowId, p.Container, p.Name, pv.Title, pv.Version, pv.Body, p.CreatedBy, p.Created, p.ModifiedBy, p.Modified
+    SELECT pv.RowId, p.Container, p.Name, pv.Title, pv.Version, pv.Body, p.CreatedBy, p.Created, pv.CreatedBy AS ModifiedBy, pv.Created AS Modified
         FROM comm.PageVersions pv INNER JOIN comm.Pages p ON pv.PageEntityId = p.EntityId;
 
 -- Simple alias for backward compatibility... we used to expose the CurrentWikiVersions view as "PagesAndVersions", but

@@ -40,9 +40,10 @@ CREATE VIEW comm.CurrentWikiVersions AS
 
 GO
 
--- View that joins every wiki version with its parent (one row per wiki version)
+-- View that joins every wiki version with its parent (one row per wiki version). Report the wiki's Created & CreatedBy,
+-- but map the version's Created & CreatedBy to Modified & ModifiedBy, because that seems like the most useful mapping.
 CREATE VIEW comm.AllWikiVersions AS
-    SELECT pv.RowId, p.Container, p.Name, pv.Title, pv.Version, pv.Body, p.CreatedBy, p.Created, p.ModifiedBy, p.Modified
+    SELECT pv.RowId, p.Container, p.Name, pv.Title, pv.Version, pv.Body, p.CreatedBy, p.Created, pv.CreatedBy AS ModifiedBy, pv.Created AS Modified
         FROM comm.PageVersions pv INNER JOIN comm.Pages p ON pv.PageEntityId = p.EntityId;
 
 GO

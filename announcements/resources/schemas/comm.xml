@@ -282,9 +282,13 @@
         <ns:isHidden>true</ns:isHidden>
       </ns:column>
       <ns:column columnName="CreatedBy"/>
-      <ns:column columnName="Created"/>
+      <ns:column columnName="Created">
+        <ns:formatString>DateTime</ns:formatString>
+      </ns:column>
       <ns:column columnName="ModifiedBy"/>
-      <ns:column columnName="Modified"/>
+      <ns:column columnName="Modified">
+        <ns:formatString>DateTime</ns:formatString>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="AllWikiVersions" tableDbType="VIEW">
@@ -311,9 +315,13 @@
         <ns:isHidden>true</ns:isHidden>
       </ns:column>
       <ns:column columnName="CreatedBy"/>
-      <ns:column columnName="Created"/>
+      <ns:column columnName="Created">
+        <ns:formatString>DateTime</ns:formatString>
+      </ns:column>
       <ns:column columnName="ModifiedBy"/>
-      <ns:column columnName="Modified"/>
+      <ns:column columnName="Modified">
+        <ns:formatString>DateTime</ns:formatString>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="PagesAndVersions" tableDbType="VIEW">
